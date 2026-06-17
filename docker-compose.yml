@@ -1,0 +1,19 @@
+services:
+  wavemind:
+    build:
+      context: .
+      args:
+        INSTALL_OPTIONAL: "false"
+    image: wavemind:2.0
+    restart: unless-stopped
+    environment:
+      WAVEMIND_DB: /data/wavemind.sqlite3
+      WAVEMIND_ENCODER: hash
+      WAVEMIND_INDEX: numpy
+      WAVEMIND_SCORE_THRESHOLD: "0.05"
+      WAVEMIND_LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+      - ./backups:/backups

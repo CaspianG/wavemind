@@ -1,0 +1,5 @@
+sentence-transformers>=3
+annoy>=1.17
+# faiss-cpu is not reliably available on native Windows wheels.
+faiss-cpu>=1.8; platform_system != "Windows"
+

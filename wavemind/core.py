@@ -1,0 +1,428 @@
+from __future__ import annotations
+
+import time
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Iterable
+
+import numpy as np
+
+from .encoders import FieldProjector, HashingTextEncoder, TextVectorEncoder
+from .indexes import NumpyVectorIndex, create_vector_index
+from .storage import MemoryRecord, SQLiteMemoryStore
+
+
+class WaveField:
+    def __init__(
+        self,
+        width: int = 128,
+        height: int = 128,
+        layers: int = 6,
+        radius: int = 1,
+        decay: float = 0.965,
+        speed: float = 0.14,
+        nonlin: float = 0.04,
+        threshold_nl: float = 3e-4,
+        stable_threshold: float = 8e-5,
+    ):
+        self.W = width
+        self.H = height
+        self.L = layers
+        self.radius = radius
+        self.decay = decay
+        self.speed = speed
+        self.nonlin = nonlin
+        self.threshold_nl = threshold_nl
+        self.stable_threshold = stable_threshold
+        self.state = np.zeros((height, width, layers), dtype=np.float32)
+
+    def feed(self, pattern: np.ndarray, strength: float = 1.0) -> None:
+        h = min(self.H, pattern.shape[0])
+        w = min(self.W, pattern.shape[1])
+        noise = np.random.uniform(0.94, 1.06, (h, w, self.L)).astype(np.float32)
+        self.state[:h, :w] += pattern[:h, :w, np.newaxis] * noise * strength
+
+    def forget(self, pattern: np.ndarray, strength: float = 0.5) -> None:
+        h = min(self.H, pattern.shape[0])
+        w = min(self.W, pattern.shape[1])
+        self.state[:h, :w] -= pattern[:h, :w, np.newaxis] * strength
+        np.clip(self.state, -12.0, 12.0, out=self.state)
+
+    def evolve(self, steps: int = 1) -> None:
+        rad = self.radius
+        for _ in range(steps):
+            state = self.state
+            neighbours = np.zeros_like(state)
+            count = 0
+            for dy in range(-rad, rad + 1):
+                for dx in range(-rad, rad + 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    neighbours += np.roll(np.roll(state, dy, axis=0), dx, axis=1)
+                    count += 1
+            average = neighbours / count
+            diff = average - state
+            diff = np.where(np.abs(diff) < self.threshold_nl, 0.0, diff)
+            diff = diff * self.speed - self.nonlin * (state ** 2) * diff
+            self.state = (state + diff) * self.decay
+
+    def field_resonance(self, pattern: np.ndarray) -> float:
+        h = min(self.H, pattern.shape[0])
+        w = min(self.W, pattern.shape[1])
+        field_mag = np.sum(np.abs(self.state[:h, :w]), axis=2)
+        pat = pattern[:h, :w]
+        denom = (np.linalg.norm(field_mag) * np.linalg.norm(pat)) + 1e-9
+        return float(np.dot(field_mag.flatten(), pat.flatten()) / denom)
+
+    def energy(self) -> float:
+        return float(np.sum(self.state ** 2))
+
+    def detect_clusters(self) -> list[list[tuple[int, int]]]:
+        magnitude = np.sum(np.abs(self.state), axis=2)
+        active = magnitude > self.stable_threshold
+        visited = np.zeros((self.H, self.W), dtype=bool)
+        clusters = []
+        ys, xs = np.where(active)
+        for y0, x0 in zip(ys.tolist(), xs.tolist()):
+            if visited[y0, x0]:
+                continue
+            cluster = []
+            stack = [(x0, y0)]
+            visited[y0, x0] = True
+            while stack:
+                cx, cy = stack.pop()
+                cluster.append((cx, cy))
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        if dx == 0 and dy == 0:
+                            continue
+                        nx, ny = cx + dx, cy + dy
+                        if 0 <= nx < self.W and 0 <= ny < self.H:
+                            if not visited[ny, nx] and active[ny, nx]:
+                                visited[ny, nx] = True
+                                stack.append((nx, ny))
+            clusters.append(cluster)
+        return clusters
+
+    def reset(self) -> None:
+        self.state[:] = 0.0
+
+
+@dataclass(frozen=True)
+class QueryResult:
+    id: int
+    text: str
+    score: float
+    vector_score: float
+    field_score: float
+    namespace: str
+    tags: tuple[str, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class WaveMind:
+    def __init__(
+        self,
+        db_path: str | Path | None = None,
+        width: int = 128,
+        height: int = 128,
+        layers: int = 6,
+        encoder: TextVectorEncoder | None = None,
+        index_kind: str = "numpy",
+        score_threshold: float = 0.0,
+        evolve_on_feed: int = 6,
+        vector_weight: float = 0.94,
+        field_weight: float = 0.04,
+        priority_weight: float = 0.02,
+        lexical_weight: float = 0.20,
+        short_query_lexical_weight: float = 2.0,
+        rerank_k: int = 10,
+        field_disable_after: int = 1000,
+        persist_access_on_query: bool = False,
+        query_feedback_strength: float = 0.0,
+    ):
+        self.encoder = encoder or HashingTextEncoder(vector_dim=384)
+        self.projector = FieldProjector(width, height, self.encoder.vector_dim)
+        self.field = WaveField(width=width, height=height, layers=layers)
+        self.store = SQLiteMemoryStore(db_path)
+        self.index = create_vector_index(index_kind, self.encoder.vector_dim)
+        self.score_threshold = float(score_threshold)
+        self._evolve_n = int(evolve_on_feed)
+        self.vector_weight = float(vector_weight)
+        self.field_weight = float(field_weight)
+        self.priority_weight = float(priority_weight)
+        self.lexical_weight = float(lexical_weight)
+        self.short_query_lexical_weight = float(short_query_lexical_weight)
+        self.rerank_k = int(rerank_k)
+        self.field_disable_after = int(field_disable_after)
+        self.persist_access_on_query = bool(persist_access_on_query)
+        self.query_feedback_strength = float(query_feedback_strength)
+        self._records_by_id: dict[int, MemoryRecord] = {}
+        self._namespace_ids: dict[str, set[int]] = {}
+        self._token_ids: dict[str, set[int]] = {}
+        self._field_magnitude = np.zeros((height, width), dtype=np.float32)
+        self._field_magnitude_norm = 0.0
+        self.load()
+
+    def remember(
+        self,
+        text: str,
+        namespace: str = "default",
+        tags: Iterable[str] | None = None,
+        ttl_seconds: float | None = None,
+        metadata: dict[str, Any] | None = None,
+        priority: float = 1.0,
+        strength: float = 1.0,
+    ) -> int:
+        vector = self.encoder.encode_vector(text)
+        pattern = self.projector.to_pattern(vector)
+        expires_at = time.time() + ttl_seconds if ttl_seconds is not None else None
+        record = MemoryRecord(
+            text=text,
+            namespace=namespace,
+            tags=tuple(tags or ()),
+            metadata=metadata or {},
+            vector=vector,
+            pattern=pattern,
+            expires_at=expires_at,
+            priority=priority,
+        )
+        id = self.store.insert(record)
+        record.id = id
+        self._cache_record(record)
+        self.index.add(id, vector)
+        self.field.feed(pattern, strength=strength * priority)
+        self.field.evolve(self._evolve_n)
+        self._refresh_field_magnitude()
+        return id
+
+    def query(
+        self,
+        text: str,
+        namespace: str = "default",
+        top_k: int = 3,
+        tags: Iterable[str] | None = None,
+        min_score: float | None = None,
+    ) -> list[QueryResult]:
+        allowed_ids = self._allowed_ids(namespace=namespace, tags=tags)
+        if not allowed_ids:
+            return []
+
+        query_vector = self.encoder.encode_vector(text)
+
+        vector_top_k = max(top_k, self.rerank_k)
+        candidates = self.index.search(
+            query_vector,
+            top_k=vector_top_k,
+            allowed_ids=allowed_ids,
+        )
+
+        threshold = self.score_threshold if min_score is None else float(min_score)
+        query_tokens = self._tokens(text)
+        field_weight = self._effective_field_weight(len(allowed_ids))
+        lexical_weight = self._effective_lexical_weight(query_tokens)
+        candidate_scores = {candidate.id: candidate.score for candidate in candidates}
+        for id in self._lexical_candidate_ids(query_tokens, allowed_ids):
+            if id not in candidate_scores:
+                record = self._records_by_id[id]
+                candidate_scores[id] = float(np.dot(query_vector, record.vector))
+
+        results: list[QueryResult] = []
+        for candidate_id, vector_score in candidate_scores.items():
+            record = self._records_by_id[candidate_id]
+            field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
+            priority_score = min(1.0, max(0.0, record.priority / 10.0))
+            lexical_score = self._lexical_match(query_tokens, record.text)
+            score = (
+                self.vector_weight * vector_score
+                + field_weight * field_score
+                + self.priority_weight * priority_score
+                + lexical_weight * lexical_score
+            )
+            if score < threshold:
+                continue
+            results.append(
+                QueryResult(
+                    id=int(record.id),
+                    text=record.text,
+                    score=float(score),
+                    vector_score=float(vector_score),
+                    field_score=float(field_score),
+                    namespace=record.namespace,
+                    tags=record.tags,
+                    metadata=record.metadata,
+                )
+            )
+
+        results.sort(key=lambda item: item.score, reverse=True)
+        selected = results[:top_k]
+        for result in selected:
+            record = self._records_by_id[result.id]
+            record.access_count += 1
+            record.priority += 0.05
+            if self.persist_access_on_query:
+                self.store.touch(result.id)
+            if self.query_feedback_strength > 0:
+                self.field.feed(record.pattern, strength=self.query_feedback_strength)
+        if selected and self.query_feedback_strength > 0:
+            self.field.evolve(1)
+            self._refresh_field_magnitude()
+        return selected
+
+    def forget(
+        self,
+        id: int | None = None,
+        text: str | None = None,
+        namespace: str | None = None,
+    ) -> int:
+        records = self.store.delete(id=id, text=text, namespace=namespace)
+        for record in records:
+            if record.id is not None:
+                self.index.remove(record.id)
+                self._uncache_record(record.id)
+            self.field.forget(record.pattern, strength=0.7)
+        if records:
+            self.field.evolve(4)
+            self._refresh_field_magnitude()
+        return len(records)
+
+    def save(self, backup_path: str | Path | None = None) -> Path | None:
+        self.store.conn.commit()
+        if backup_path is not None:
+            return self.store.backup(backup_path)
+        return None
+
+    def load(self) -> None:
+        records = self.store.list(include_expired=False)
+        self._build_cache(records)
+        self.index.build(records)
+        self.field.reset()
+        for record in records:
+            self.field.feed(record.pattern, strength=max(0.1, record.priority))
+        if records:
+            self.field.evolve(self._evolve_n)
+        self._refresh_field_magnitude()
+
+    def purge_expired(self) -> int:
+        purged = self.store.purge_expired()
+        if purged:
+            self.load()
+        return purged
+
+    def consolidate(self, steps: int = 40) -> None:
+        self.field.evolve(steps)
+        self._refresh_field_magnitude()
+
+    def stats(self, namespace: str | None = None) -> dict[str, Any]:
+        active = self.store.list(namespace=namespace, include_expired=False)
+        all_records = self.store.list(namespace=namespace, include_expired=True)
+        expired = [record for record in all_records if record.is_expired]
+        clusters = self.field.detect_clusters()
+        return {
+            "active_memories": len(active),
+            "expired_memories": len(expired),
+            "total_memories": len(all_records),
+            "field_energy": round(self.field.energy(), 6),
+            "clusters": len(clusters),
+            "field_shape": f"{self.field.H}x{self.field.W}x{self.field.L}",
+            "index": getattr(self.index, "name", type(self.index).__name__),
+            "vector_dim": self.encoder.vector_dim,
+        }
+
+    @property
+    def memory(self) -> list[tuple[str, np.ndarray]]:
+        return [(record.text, record.pattern) for record in self._records_by_id.values()]
+
+    def _build_cache(self, records: Iterable[MemoryRecord]) -> None:
+        self._records_by_id.clear()
+        self._namespace_ids.clear()
+        self._token_ids.clear()
+        for record in records:
+            self._cache_record(record)
+
+    def _cache_record(self, record: MemoryRecord) -> None:
+        if record.id is None:
+            return
+        id = int(record.id)
+        self._records_by_id[id] = record
+        self._namespace_ids.setdefault(record.namespace, set()).add(id)
+        for token in self._tokens(record.text):
+            self._token_ids.setdefault(token, set()).add(id)
+
+    def _uncache_record(self, id: int) -> None:
+        record = self._records_by_id.pop(int(id), None)
+        if record is None:
+            return
+        ids = self._namespace_ids.get(record.namespace)
+        if ids is not None:
+            ids.discard(int(id))
+            if not ids:
+                self._namespace_ids.pop(record.namespace, None)
+        for token in self._tokens(record.text):
+            token_ids = self._token_ids.get(token)
+            if token_ids is None:
+                continue
+            token_ids.discard(int(id))
+            if not token_ids:
+                self._token_ids.pop(token, None)
+
+    def _allowed_ids(
+        self,
+        namespace: str,
+        tags: Iterable[str] | None = None,
+    ) -> set[int]:
+        ids = set(self._namespace_ids.get(namespace, set()))
+        required_tags = set(tags or ())
+        if not ids:
+            return set()
+        allowed = set()
+        for id in ids:
+            record = self._records_by_id[id]
+            if record.is_expired:
+                continue
+            if required_tags and not required_tags.issubset(set(record.tags)):
+                continue
+            allowed.add(id)
+        return allowed
+
+    def _refresh_field_magnitude(self) -> None:
+        self._field_magnitude = np.sum(np.abs(self.field.state), axis=2)
+        self._field_magnitude_norm = float(np.linalg.norm(self._field_magnitude))
+
+    def _field_resonance(self, pattern: np.ndarray) -> float:
+        denom = (self._field_magnitude_norm * float(np.linalg.norm(pattern))) + 1e-9
+        return float(np.dot(self._field_magnitude.ravel(), pattern.ravel()) / denom)
+
+    def _effective_field_weight(self, allowed_count: int) -> float:
+        if self.field_disable_after > 0 and allowed_count > self.field_disable_after:
+            return 0.0
+        return self.field_weight
+
+    def _effective_lexical_weight(self, query_tokens: tuple[str, ...]) -> float:
+        if 0 < len(query_tokens) <= 2:
+            return self.short_query_lexical_weight
+        return self.lexical_weight
+
+    def _tokens(self, text: str) -> tuple[str, ...]:
+        return tuple(
+            token.replace("ё", "е")
+            for token in re.findall(r"[\w]+", text.lower(), flags=re.UNICODE)
+        )
+
+    def _lexical_match(self, query_tokens: tuple[str, ...], text: str) -> float:
+        if not query_tokens:
+            return 0.0
+        text_tokens = set(self._tokens(text))
+        matched = sum(1 for token in query_tokens if token in text_tokens)
+        return matched / len(query_tokens)
+
+    def _lexical_candidate_ids(
+        self,
+        query_tokens: tuple[str, ...],
+        allowed_ids: set[int],
+    ) -> set[int]:
+        candidate_ids: set[int] = set()
+        for token in query_tokens:
+            candidate_ids.update(self._token_ids.get(token, set()))
+        return candidate_ids & allowed_ids
