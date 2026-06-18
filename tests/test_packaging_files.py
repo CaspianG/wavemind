@@ -58,6 +58,15 @@ def test_install_scripts_create_venv_and_install_sentence_extra():
     assert 'pip install -e ".[sentence]"' in install_bat
 
 
+def test_docker_files_track_runtime_package_version():
+    requirements = Path("requirements.txt").read_text(encoding="utf-8")
+    compose = Path("docker-compose.yml").read_text(encoding="utf-8")
+
+    assert "pytest" not in requirements
+    assert "httpx" not in requirements
+    assert f"image: wavemind:{wavemind.__version__}" in compose
+
+
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
 
