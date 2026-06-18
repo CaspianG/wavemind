@@ -4,8 +4,13 @@ import argparse
 import json
 import os
 import re
+import sys
 import urllib.request
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import WaveMind
 
@@ -52,7 +57,7 @@ def openrouter_chat(
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/wavemind/wavemind",
+            "HTTP-Referer": "https://github.com/CaspianG/wavemind",
             "X-Title": "WaveMind memory demo",
         },
         method="POST",
@@ -92,9 +97,12 @@ def run_demo(db_path: str | Path = "agent_memory.sqlite3") -> str:
         history.append({"role": "assistant", "content": "Понял."})
 
     final_question = "как меня зовут?"
-    answer = answer_with_memory(memory, final_question, history)
-    print(answer)
-    return answer
+    try:
+        answer = answer_with_memory(memory, final_question, history)
+        print(answer)
+        return answer
+    finally:
+        memory.close()
 
 
 if __name__ == "__main__":
