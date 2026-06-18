@@ -37,8 +37,8 @@ dev = [
 wavemind = "wavemind.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/wavemind/wavemind"
-Repository = "https://github.com/wavemind/wavemind"
+Homepage = "https://github.com/CaspianG/wavemind"
+Repository = "https://github.com/CaspianG/wavemind"
 
 [tool.setuptools.packages.find]
 where = ["."]

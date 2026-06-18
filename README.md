@@ -1,7 +1,7 @@
 # WaveMind is persistent dynamic memory for AI agents: vector search first, wave-field priority second, SQLite as the source of truth.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-[![Tests](https://github.com/wavemind/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/wavemind/wavemind/actions/workflows/tests.yml)
+[![Tests](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Terminal Demo
