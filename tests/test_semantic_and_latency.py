@@ -131,6 +131,30 @@ def test_short_query_exact_match_can_beat_stronger_vector_candidate(tmp_path):
     assert results[0].id == expected_id
 
 
+def test_common_query_words_do_not_expand_lexical_candidates(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "stopwords.sqlite3",
+        encoder=FlatSemanticEncoder(),
+        width=16,
+        height=16,
+        layers=2,
+        index_kind="numpy",
+        rerank_k=1,
+    )
+    expected_id = mind.remember("rarebudget target memory", namespace="stopwords")
+    noise_ids = [
+        mind.remember(f"the user background filler memory {i}", namespace="stopwords")
+        for i in range(20)
+    ]
+
+    tokens = mind._tokens("what is the user rarebudget")
+    candidate_ids = mind._lexical_candidate_ids(tokens, {expected_id, *noise_ids})
+
+    assert "the" not in tokens
+    assert "user" not in tokens
+    assert candidate_ids == {expected_id}
+
+
 def test_field_weight_is_disabled_above_capacity_threshold(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "field-cutoff.sqlite3",

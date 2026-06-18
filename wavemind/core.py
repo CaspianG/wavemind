@@ -13,6 +13,32 @@ from .indexes import NumpyVectorIndex, create_vector_index
 from .storage import MemoryRecord, SQLiteMemoryStore
 
 
+LEXICAL_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "be",
+    "for",
+    "from",
+    "how",
+    "is",
+    "it",
+    "of",
+    "or",
+    "should",
+    "that",
+    "the",
+    "this",
+    "to",
+    "user",
+    "what",
+    "which",
+    "with",
+}
+
+
 class WaveField:
     def __init__(
         self,
@@ -408,6 +434,7 @@ class WaveMind:
         return tuple(
             token.replace("ё", "е")
             for token in re.findall(r"[\w]+", text.lower(), flags=re.UNICODE)
+            if token not in LEXICAL_STOPWORDS
         )
 
     def _lexical_match(self, query_tokens: tuple[str, ...], text: str) -> float:

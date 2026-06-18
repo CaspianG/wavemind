@@ -8,7 +8,7 @@ from .encoders import (
 )
 from .storage import MemoryRecord, SQLiteMemoryStore
 
-__version__ = "2.0.4"
+__version__ = "2.0.5"
 
 __all__ = [
     "FieldProjector",

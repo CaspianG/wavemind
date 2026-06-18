@@ -187,6 +187,34 @@ pip install -e ".[bench]"
 python benchmarks/agent_memory_benchmark.py --engines wavemind chroma --facts 200 --queries 50
 ```
 
+Dynamic agent-memory benchmark:
+
+200 memories, 8 checks, same precomputed `HashingTextEncoder` embeddings.
+This benchmark exercises hot memory, TTL, corrections, and namespace isolation.
+WaveMind applies its built-in memory policy. `Chroma static` is a plain vector-store baseline without application-layer TTL, delete handling, namespace filters, or recall reinforcement.
+Full machine-readable result: `benchmarks/dynamic_memory_results.json`.
+
+| engine | precision@1 | precision@3 | stale suppression | avg latency |
+|---|---:|---:|---:|---:|
+| WaveMind | 1.00 | 1.00 | 1.00 | 25.26 ms |
+| Chroma static | 0.57 | 1.00 | 0.00 | 1.75 ms |
+
+Category success:
+
+| behavior | WaveMind | Chroma static |
+|---|---:|---:|
+| hot memory | 1.00 | 0.50 |
+| TTL | 1.00 | 0.00 |
+| correction | 1.00 | 0.00 |
+| namespace isolation | 1.00 | 0.00 |
+
+Run locally from a cloned repository:
+
+```sh
+pip install -e ".[bench]"
+python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memories 200
+```
+
 ## Comparison
 
 | feature | WaveMind | Chroma | Qdrant |
@@ -209,13 +237,14 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files and measured about 53 ms per query on the benchmark machine.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
-- The current public benchmark does not yet prove the dynamic-memory advantage. The next benchmark must test hotness, TTL, corrections, namespace isolation, and repeated recall.
+- The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
+- Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
 
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
-- Dynamic agent-memory benchmark against Chroma/Qdrant: hotness, TTL, stale-fact suppression, corrections, and namespace isolation.
-- Expand the agent-memory benchmark to sentence-transformers, FAISS, Chroma default embeddings, and Qdrant.
+- Expand the dynamic benchmark to Qdrant, Chroma metadata-policy mode, sentence-transformers, and FAISS.
+- Optimize dynamic re-ranking latency after lexical candidate filtering.
 - Better semantic query expansion for short and ambiguous queries.
 - Namespace quotas, backups, and daemon hardening for SaaS use.
 - Webhook on recall for agent runtimes.

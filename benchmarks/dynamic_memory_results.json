@@ -1,0 +1,52 @@
+{
+  "scenario": {
+    "name": "dynamic_agent_memory",
+    "memories": 200,
+    "checks": 8,
+    "top_k": 3,
+    "behaviors": [
+      "correction",
+      "hot_memory",
+      "namespace",
+      "ttl"
+    ]
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "note": "Both engines receive the same embeddings. Chroma static is used as a plain vector-store baseline without application-layer TTL, delete, namespace filtering, or recall reinforcement."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "precision_at_1": 1.0,
+      "precision_at_3": 1.0,
+      "suppression_rate": 1.0,
+      "category_success": {
+        "correction": 1.0,
+        "hot_memory": 1.0,
+        "namespace": 1.0,
+        "ttl": 1.0
+      },
+      "avg_latency_ms": 25.26212499833491,
+      "p95_latency_ms": 28.486399998655543,
+      "checks": 8
+    },
+    {
+      "engine": "Chroma static",
+      "precision_at_1": 0.5714285714285714,
+      "precision_at_3": 1.0,
+      "suppression_rate": 0.0,
+      "category_success": {
+        "correction": 0.0,
+        "hot_memory": 0.5,
+        "namespace": 0.0,
+        "ttl": 0.0
+      },
+      "avg_latency_ms": 1.7523125043226173,
+      "p95_latency_ms": 6.284899995080195,
+      "checks": 8
+    }
+  ]
+}
