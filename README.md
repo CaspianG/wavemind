@@ -69,6 +69,35 @@ Offline runnable example:
 python examples/langchain_memory.py
 ```
 
+## Why Dynamic Memory
+
+WaveMind is not positioned as "a faster Chroma." Chroma, Qdrant, Pinecone, and Weaviate are vector databases: they store embeddings and return nearest neighbors. That is the right tool for many static RAG workloads.
+
+WaveMind is an agent memory layer. It still uses vector search first, but then applies memory-specific signals that a plain vector store does not model by default:
+
+| memory behavior | Why it matters for agents | WaveMind mechanism |
+|---|---|---|
+| Hot memories | Facts recalled repeatedly should become easier to recall again. | Wave-field hotness and priority updates. |
+| Aging memories | Old low-value facts should fade instead of competing forever. | TTL and decay-aware scoring. |
+| Scoped memory | One user, agent, workspace, or project should not leak into another. | Namespaces and tags. |
+| Explicit forgetting | Agents need deletion, privacy cleanup, and correction workflows. | `forget()` plus SQLite persistence. |
+| Stable restart behavior | A memory system must survive process restarts. | SQLite source of truth, reloadable indexes. |
+| Vector plus memory rank | Semantic similarity is necessary but not sufficient for long-running agents. | k-NN candidates first, wave field as re-ranker. |
+
+The current Chroma benchmark below is intentionally conservative: it compares static retrieval on the same facts and the same hash embeddings. That benchmark is useful, but it does not exercise WaveMind's main product thesis: memory that changes over time as an agent recalls, reinforces, ages, and forgets information.
+
+The benchmark that should decide whether WaveMind is worth using is a dynamic agent-memory benchmark:
+
+| scenario | What should happen |
+|---|---|
+| A user repeats a preference many times. | WaveMind should rank it higher than equally similar but unused facts. |
+| A fact expires via TTL. | WaveMind should suppress it without requiring manual vector cleanup. |
+| A user corrects an old fact. | WaveMind should prefer the newer or reinforced memory. |
+| A query is ambiguous across namespaces. | WaveMind should return only the scoped user's memory. |
+| A long conversation has many irrelevant facts. | WaveMind should preserve useful recall instead of treating all vectors equally. |
+
+In short: static vector search answers "what is nearest?" Agent memory also asks "what is still relevant, reinforced, scoped, and allowed to be remembered?"
+
 ## Benchmark
 
 Real Russian sentences from Tatoeba, 50 one-word queries, NumPy exact index.
@@ -99,6 +128,8 @@ Agent-memory benchmark against Chroma:
 200 Russian user facts, 50 natural-language questions, same precomputed `HashingTextEncoder` embeddings for WaveMind and Chroma.
 Full machine-readable result: `benchmarks/agent_memory_results.json`.
 
+This is a static retrieval benchmark. It measures baseline ranking and latency, not hotness, TTL, repeated recall, or memory aging.
+
 | engine | precision@1 | precision@3 | avg latency |
 |---|---:|---:|---:|
 | WaveMind | 0.82 | 0.90 | 2.25 ms |
@@ -123,7 +154,7 @@ python benchmarks/agent_memory_benchmark.py --engines wavemind chroma --facts 20
 | Best fit | Small to medium agent memory with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
 | Scale target today | Up to 1000 optimal on NumPy, FAISS recommended beyond 5000 | Larger than WaveMind local mode | Production scale |
 
-WaveMind is not trying to replace dedicated vector databases at scale. Its difference is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade.
+WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For agent memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
 
 ## Known Limitations
 
@@ -133,10 +164,12 @@ WaveMind is not trying to replace dedicated vector databases at scale. Its diffe
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files and measured about 53 ms per query on the benchmark machine.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
+- The current public benchmark does not yet prove the dynamic-memory advantage. The next benchmark must test hotness, TTL, corrections, namespace isolation, and repeated recall.
 
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
+- Dynamic agent-memory benchmark against Chroma/Qdrant: hotness, TTL, stale-fact suppression, corrections, and namespace isolation.
 - Expand the agent-memory benchmark to sentence-transformers, FAISS, Chroma default embeddings, and Qdrant.
 - Better semantic query expansion for short and ambiguous queries.
 - Namespace quotas, backups, and daemon hardening for SaaS use.
