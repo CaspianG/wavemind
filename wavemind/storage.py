@@ -45,7 +45,20 @@ class SQLiteMemoryStore:
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        self._closed = False
         self.ensure_schema()
+
+    def __enter__(self) -> "SQLiteMemoryStore":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def ensure_schema(self) -> None:
         self.conn.execute(
@@ -200,7 +213,10 @@ class SQLiteMemoryStore:
         return destination
 
     def close(self) -> None:
+        if self._closed:
+            return
         self.conn.close()
+        self._closed = True
 
     def _row_to_record(self, row: sqlite3.Row) -> MemoryRecord:
         pattern_shape = json.loads(row["pattern_shape"])
@@ -219,4 +235,3 @@ class SQLiteMemoryStore:
             priority=float(row["priority"]),
             access_count=int(row["access_count"]),
         )
-
