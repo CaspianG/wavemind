@@ -305,6 +305,21 @@ class WaveMind:
             return self.store.backup(backup_path)
         return None
 
+    def close(self) -> None:
+        self.store.close()
+
+    def __enter__(self) -> "WaveMind":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
     def load(self) -> None:
         records = self.store.list(include_expired=False)
         self._build_cache(records)
