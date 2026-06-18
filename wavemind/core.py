@@ -8,35 +8,19 @@ from typing import Any, Iterable
 
 import numpy as np
 
-from .encoders import FieldProjector, HashingTextEncoder, TextVectorEncoder
+from .encoders import (
+    DEFAULT_TOKEN_STOPWORDS,
+    FieldProjector,
+    HashingTextEncoder,
+    TextVectorEncoder,
+    is_stopword_token,
+    normalize_token,
+)
 from .indexes import NumpyVectorIndex, create_vector_index
 from .storage import MemoryRecord, SQLiteMemoryStore
 
 
-LEXICAL_STOPWORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "be",
-    "for",
-    "from",
-    "how",
-    "is",
-    "it",
-    "of",
-    "or",
-    "should",
-    "that",
-    "the",
-    "this",
-    "to",
-    "user",
-    "what",
-    "which",
-    "with",
-}
+LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
 
 
 class WaveField:
@@ -163,6 +147,7 @@ class WaveMind:
         priority_weight: float = 0.02,
         lexical_weight: float = 0.20,
         short_query_lexical_weight: float = 2.0,
+        max_lexical_token_frequency: int = 64,
         rerank_k: int = 10,
         field_disable_after: int = 1000,
         persist_access_on_query: bool = False,
@@ -180,6 +165,7 @@ class WaveMind:
         self.priority_weight = float(priority_weight)
         self.lexical_weight = float(lexical_weight)
         self.short_query_lexical_weight = float(short_query_lexical_weight)
+        self.max_lexical_token_frequency = int(max_lexical_token_frequency)
         self.rerank_k = int(rerank_k)
         self.field_disable_after = int(field_disable_after)
         self.persist_access_on_query = bool(persist_access_on_query)
@@ -432,9 +418,10 @@ class WaveMind:
 
     def _tokens(self, text: str) -> tuple[str, ...]:
         return tuple(
-            token.replace("ё", "е")
+            normalized
             for token in re.findall(r"[\w]+", text.lower(), flags=re.UNICODE)
-            if token not in LEXICAL_STOPWORDS
+            for normalized in (normalize_token(token),)
+            if normalized not in LEXICAL_STOPWORDS and not is_stopword_token(token)
         )
 
     def _lexical_match(self, query_tokens: tuple[str, ...], text: str) -> float:
@@ -451,5 +438,11 @@ class WaveMind:
     ) -> set[int]:
         candidate_ids: set[int] = set()
         for token in query_tokens:
-            candidate_ids.update(self._token_ids.get(token, set()))
+            token_ids = self._token_ids.get(token, set()) & allowed_ids
+            if (
+                self.max_lexical_token_frequency > 0
+                and len(token_ids) > self.max_lexical_token_frequency
+            ):
+                continue
+            candidate_ids.update(token_ids)
         return candidate_ids & allowed_ids
