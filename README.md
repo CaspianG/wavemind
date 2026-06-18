@@ -6,6 +6,8 @@
 
 ## Terminal Demo
 
+From a cloned repository:
+
 ```text
 $ python examples/demo.py
 ✓ Remembered: "Andrey is a trader who tracks market breakouts."
@@ -20,23 +22,51 @@ The demo is offline, keyless, and uses the built-in hash encoder.
 
 ## Quick Start
 
+Install from PyPI and create your first local memory:
+
 ```sh
-python -m pip install -e .
+python -m pip install wavemind
 wavemind remember "Andrey is a trader" --namespace demo
 wavemind query "trader" --namespace demo
 ```
 
-This creates `wavemind.sqlite3` in your current working directory.
+What happens here:
+
+- `remember` writes the text and its vector pattern into a local SQLite database.
+- By default, the database file is `wavemind.sqlite3` in your current working directory.
+- `--namespace demo` keeps this memory separate from other users, agents, or projects.
+- `query` reads from the same SQLite file and returns the closest remembered texts.
+
+## Optional Embeddings
 
 For sentence-transformer embeddings:
 
 ```sh
-python -m pip install -e ".[sentence]"
+python -m pip install "wavemind[sentence]"
 wavemind --encoder sentence remember "Andrey is a trader" --namespace demo
 wavemind --encoder sentence query "What does Andrey do?" --namespace demo
 ```
 
-One-file setup scripts are also included:
+## Data Location
+
+For an explicit database path, put global options before the command:
+
+```sh
+wavemind --db ./agent_memory.sqlite3 remember "Andrey is a trader" --namespace demo
+wavemind --db ./agent_memory.sqlite3 query "trader" --namespace demo
+```
+
+## Install From Source
+
+For contributors installing from a local clone:
+
+```sh
+git clone https://github.com/CaspianG/wavemind.git
+cd wavemind
+python -m pip install -e ".[sentence]"
+```
+
+One-file setup scripts are also included in the repository:
 
 ```sh
 sh install.sh
@@ -63,7 +93,7 @@ memory = WaveMindMemory(db_path="agent_memory.sqlite3")
 # Replace: memory = ConversationBufferMemory()
 ```
 
-Offline runnable example:
+Offline runnable example from a cloned repository:
 
 ```sh
 python examples/langchain_memory.py
@@ -116,7 +146,7 @@ Capacity check with the hash encoder:
 | 1000 | 0.88 | 1.00 | 1.50 ms |
 | 5000 | 0.72 | 0.88 | 5.68 ms |
 
-Run locally:
+Run locally from a cloned repository:
 
 ```sh
 python benchmarks/ru_sentences_benchmark.py --sentences 200 --queries 50 --encoder hash --index numpy
@@ -135,7 +165,7 @@ This is a static retrieval benchmark. It measures baseline ranking and latency, 
 | WaveMind | 0.82 | 0.90 | 2.25 ms |
 | Chroma | 0.82 | 0.88 | 0.93 ms |
 
-Run locally:
+Run locally from a cloned repository:
 
 ```sh
 pip install -e ".[bench]"
