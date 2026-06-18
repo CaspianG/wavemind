@@ -1,0 +1,64 @@
+{
+  "scenario": {
+    "name": "wavemind_capacity_checks",
+    "date": "2026-06-19",
+    "embedding": "HashingTextEncoder",
+    "index": "numpy-exact",
+    "note": "WaveMind-only local runs in the restricted Codex Windows environment. Chroma/FastAPI/pytest were unavailable locally because package installation and outbound sockets were blocked by policy."
+  },
+  "static_agent_memory": [
+    {
+      "memories": 200,
+      "queries": 50,
+      "precision_at_1": 0.96,
+      "precision_at_3": 0.98,
+      "avg_latency_ms": 4.048215998627711,
+      "p95_latency_ms": 8.180899996659718
+    },
+    {
+      "memories": 1000,
+      "queries": 50,
+      "precision_at_1": 0.96,
+      "precision_at_3": 0.98,
+      "avg_latency_ms": 3.53,
+      "p95_latency_ms": 5.20
+    },
+    {
+      "memories": 5000,
+      "queries": 50,
+      "precision_at_1": 0.94,
+      "precision_at_3": 0.98,
+      "avg_latency_ms": 13.71,
+      "p95_latency_ms": 17.20
+    }
+  ],
+  "dynamic_agent_memory": [
+    {
+      "memories": 200,
+      "checks": 8,
+      "precision_at_1": 1.0,
+      "precision_at_3": 1.0,
+      "suppression_rate": 1.0,
+      "avg_latency_ms": 38.40,
+      "p95_latency_ms": 41.14
+    },
+    {
+      "memories": 1000,
+      "checks": 8,
+      "precision_at_1": 1.0,
+      "precision_at_3": 1.0,
+      "suppression_rate": 1.0,
+      "avg_latency_ms": 54.29,
+      "p95_latency_ms": 72.38
+    },
+    {
+      "memories": 5000,
+      "checks": 8,
+      "precision_at_1": 1.0,
+      "precision_at_3": 1.0,
+      "suppression_rate": 1.0,
+      "avg_latency_ms": 48.36,
+      "p95_latency_ms": 86.13
+    }
+  ]
+}
