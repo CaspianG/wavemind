@@ -15,6 +15,13 @@ def test_benchmark_extra_installs_chroma():
     assert '"chromadb>=1.0"' in pyproject
 
 
+def test_langchain_extra_installs_classic_memory_api():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert "langchain = [" in pyproject
+    assert '"langchain-classic>=1.0"' in pyproject
+
+
 def test_install_scripts_create_venv_and_install_sentence_extra():
     install_sh = Path("install.sh").read_text(encoding="utf-8")
     install_bat = Path("install.bat").read_text(encoding="utf-8")

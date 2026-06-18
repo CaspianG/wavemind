@@ -46,6 +46,29 @@ sh install.sh
 install.bat
 ```
 
+## LangChain Memory
+
+Install the optional integration:
+
+```sh
+pip install "wavemind[langchain]"
+```
+
+Use WaveMind as a drop-in LangChain memory object:
+
+```python
+from wavemind.integrations.langchain import WaveMindMemory
+
+memory = WaveMindMemory(db_path="agent_memory.sqlite3")
+# Replace: memory = ConversationBufferMemory()
+```
+
+Offline runnable example:
+
+```sh
+python examples/langchain_memory.py
+```
+
 ## Benchmark
 
 Real Russian sentences from Tatoeba, 50 one-word queries, NumPy exact index.
