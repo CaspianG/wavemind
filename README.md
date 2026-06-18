@@ -56,6 +56,21 @@ wavemind --db ./agent_memory.sqlite3 remember "Andrey is a trader" --namespace d
 wavemind --db ./agent_memory.sqlite3 query "trader" --namespace demo
 ```
 
+## HTTP API
+
+Run the local FastAPI server:
+
+```sh
+wavemind --db ./agent_memory.sqlite3 serve --host 127.0.0.1 --port 8000
+```
+
+Store and query memory over HTTP:
+
+```sh
+curl -X POST http://127.0.0.1:8000/remember -H "Content-Type: application/json" -d "{\"text\":\"Andrey is a trader\",\"namespace\":\"demo\"}"
+curl -X POST http://127.0.0.1:8000/query -H "Content-Type: application/json" -d "{\"query\":\"trader\",\"namespace\":\"demo\",\"top_k\":1}"
+```
+
 ## Install From Source
 
 For contributors installing from a local clone:

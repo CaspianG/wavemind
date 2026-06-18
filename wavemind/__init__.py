@@ -8,6 +8,8 @@ from .encoders import (
 )
 from .storage import MemoryRecord, SQLiteMemoryStore
 
+__version__ = "2.0.3"
+
 __all__ = [
     "FieldProjector",
     "HashingTextEncoder",
@@ -18,5 +20,6 @@ __all__ = [
     "TextEncoder",
     "WaveField",
     "WaveMind",
+    "__version__",
     "create_text_encoder",
 ]

@@ -1,4 +1,13 @@
 from pathlib import Path
+import tomllib
+
+import wavemind
+
+
+def test_package_version_matches_pyproject():
+    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+
+    assert wavemind.__version__ == pyproject["project"]["version"]
 
 
 def test_sentence_extra_is_available_for_install_scripts():
@@ -20,6 +29,18 @@ def test_langchain_extra_installs_classic_memory_api():
 
     assert "langchain = [" in pyproject
     assert '"langchain-classic>=1.0"' in pyproject
+
+
+def test_dev_extra_runs_against_real_langchain_memory_api():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    integration = Path("wavemind/integrations/langchain.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "dev = [" in pyproject
+    assert '"langchain-classic>=1.0"' in pyproject
+    assert "class BaseMemory" not in integration
+    assert 'pip install "wavemind[langchain]"' in integration
 
 
 def test_install_scripts_create_venv_and_install_sentence_extra():

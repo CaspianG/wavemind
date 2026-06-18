@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from wavemind import HashingTextEncoder, WaveMind
+from wavemind import HashingTextEncoder, WaveMind, __version__
 from wavemind.api import create_app
 
 
@@ -50,3 +50,42 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
     empty = client.post("/query", json={"text": "кошка", "namespace": "pets"})
     assert empty.json()["results"] == []
 
+
+def test_fastapi_query_accepts_query_alias(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+        score_threshold=0.0,
+    )
+    client = TestClient(create_app(mind=mind))
+
+    remember = client.post(
+        "/remember",
+        json={"text": "Andrey is a trader", "namespace": "demo"},
+    )
+    assert remember.status_code == 200
+
+    query = client.post(
+        "/query",
+        json={"query": "trader", "namespace": "demo", "top_k": 1},
+    )
+
+    assert query.status_code == 200
+    assert query.json()["results"][0]["text"] == "Andrey is a trader"
+
+
+def test_fastapi_version_matches_package_version():
+    app = create_app(
+        mind=WaveMind(
+            db_path=None,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=16),
+        )
+    )
+
+    assert app.version == __version__

@@ -11,17 +11,10 @@ from wavemind import WaveMind
 
 try:
     from langchain_classic.base_memory import BaseMemory
-except ImportError:
-    try:
-        from langchain.schema import BaseMemory
-    except ImportError:
-
-        class BaseMemory:
-            """Small fallback so the integration can be imported without LangChain."""
-
-            def __init__(self, **data: Any):
-                for key, value in data.items():
-                    setattr(self, key, value)
+except ImportError as exc:  # pragma: no cover - exercised in clean installs.
+    raise ImportError(
+        'WaveMindMemory requires LangChain. Install it with: pip install "wavemind[langchain]"'
+    ) from exc
 
 
 class WaveMindMemory(BaseMemory):

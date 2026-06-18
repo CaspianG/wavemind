@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavemind"
-version = "2.0.2"
+version = "2.0.3"
 description = "Persistent dynamic memory engine with vector search and wave-field re-ranking"
 readme = "README.md"
 license = "MIT"
@@ -37,6 +37,7 @@ langchain = [
 dev = [
   "pytest>=8",
   "httpx>=0.27",
+  "langchain-classic>=1.0",
 ]
 
 [project.scripts]

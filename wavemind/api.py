@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, Query
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
+from . import __version__
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
@@ -30,7 +31,7 @@ class RememberResponse(BaseModel):
 
 
 class QueryRequest(BaseModel):
-    text: str
+    text: str = Field(validation_alias=AliasChoices("text", "query"))
     namespace: str = "default"
     top_k: int = 3
     tags: list[str] = Field(default_factory=list)
@@ -101,7 +102,7 @@ def build_default_mind() -> WaveMind:
 
 def create_app(mind: WaveMind | None = None) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
-    app = FastAPI(title="WaveMind", version="2.0.0")
+    app = FastAPI(title="WaveMind", version=__version__)
     app.state.mind = mind or build_default_mind()
 
     @app.post("/remember", response_model=RememberResponse)
