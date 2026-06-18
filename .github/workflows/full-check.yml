@@ -1,0 +1,135 @@
+name: full-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run pytest
+        run: pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+          python -m build
+          python -m twine check dist/*
+
+  smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run demo and CLI smoke
+        run: |
+          python examples/demo.py
+          wavemind --db /tmp/wavemind-smoke.sqlite3 remember "Andrey is testing WaveMind in CI" --namespace ci
+          wavemind --db /tmp/wavemind-smoke.sqlite3 query "testing CI" --namespace ci
+          wavemind --db /tmp/wavemind-smoke.sqlite3 stats --namespace ci
+
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Run WaveMind vs Chroma agent benchmark
+        run: |
+          python benchmarks/agent_memory_benchmark.py \
+            --engines wavemind chroma \
+            --facts 200 \
+            --queries 50 \
+            --output benchmarks/agent_memory_ci_results.json
+
+      - name: Run dynamic memory benchmark
+        run: |
+          python benchmarks/dynamic_memory_benchmark.py \
+            --engines wavemind chroma \
+            --memories 200 \
+            --output benchmarks/dynamic_memory_ci_results.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmarks/agent_memory_ci_results.json
+            benchmarks/dynamic_memory_ci_results.json
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t wavemind-ci .
+
+      - name: Run Docker API smoke
+        run: |
+          docker run -d --name wavemind-ci -p 8000:8000 wavemind-ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/stats >/tmp/wavemind-stats.json; then
+              break
+            fi
+            sleep 1
+          done
+          cat /tmp/wavemind-stats.json
+          curl -fsS -X POST http://127.0.0.1:8000/remember \
+            -H "Content-Type: application/json" \
+            -d '{"text":"Andrey is testing WaveMind Docker API","namespace":"ci"}'
+          curl -fsS -X POST http://127.0.0.1:8000/query \
+            -H "Content-Type: application/json" \
+            -d '{"query":"Docker API","namespace":"ci","top_k":1}' \
+            | tee /tmp/wavemind-query.json
+          grep -q "Docker API" /tmp/wavemind-query.json
