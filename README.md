@@ -14,7 +14,7 @@ $ python examples/demo.py
 ✓ Remembered: "Andrey prefers short practical answers about AI agents."
 
 Query: "Andrey trader agent"
-→ Result 1 (0.54): "Andrey is a trader who tracks market breakouts."
+→ Result 1 (0.60): "Andrey is a trader who tracks market breakouts."
 → Result 2 (0.30): "Andrey prefers short practical answers about AI agents."
 ```
 
