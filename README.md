@@ -180,6 +180,20 @@ This is a static retrieval benchmark. It measures baseline ranking and latency, 
 | WaveMind | 0.82 | 0.90 | 2.25 ms |
 | Chroma | 0.82 | 0.88 | 0.93 ms |
 
+WaveMind-only capacity checks from the current ranking path:
+
+| scenario | memories | precision@1 | precision@3 | avg latency | p95 latency |
+|---|---:|---:|---:|---:|---:|
+| static agent facts | 200 | 0.96 | 0.98 | 4.05 ms | 8.18 ms |
+| static agent facts | 1000 | 0.96 | 0.98 | 3.53 ms | 5.20 ms |
+| static agent facts | 5000 | 0.94 | 0.98 | 13.71 ms | 17.20 ms |
+| dynamic memory policy | 200 | 1.00 | 1.00 | 38.40 ms | 41.14 ms |
+| dynamic memory policy | 1000 | 1.00 | 1.00 | 54.29 ms | 72.38 ms |
+| dynamic memory policy | 5000 | 1.00 | 1.00 | 48.36 ms | 86.13 ms |
+
+Machine-readable local capacity result: `benchmarks/wavemind_capacity_results.json`.
+These capacity checks are WaveMind-only because the local restricted environment did not have Chroma installed.
+
 Run locally from a cloned repository:
 
 ```sh
@@ -239,6 +253,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
+- Current WaveMind-only dynamic checks keep `precision@1` at 1.00 through 5000 memories, but average latency is around 48-54 ms. The next optimization target is field/re-ranking latency, not basic recall quality.
 
 ## Roadmap
 
