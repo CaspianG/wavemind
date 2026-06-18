@@ -71,6 +71,23 @@ python benchmarks/ru_sentences_benchmark.py --sentences 200 --queries 50 --encod
 python benchmarks/ru_sentences_benchmark.py --sentences 200 --queries 50 --encoder sentence --index numpy
 ```
 
+Agent-memory benchmark against Chroma:
+
+200 Russian user facts, 50 natural-language questions, same precomputed `HashingTextEncoder` embeddings for WaveMind and Chroma.
+Full machine-readable result: `benchmarks/agent_memory_results.json`.
+
+| engine | precision@1 | precision@3 | avg latency |
+|---|---:|---:|---:|
+| WaveMind | 0.82 | 0.90 | 2.25 ms |
+| Chroma | 0.82 | 0.88 | 0.93 ms |
+
+Run locally:
+
+```sh
+pip install -e ".[bench]"
+python benchmarks/agent_memory_benchmark.py --engines wavemind chroma --facts 200 --queries 50
+```
+
 ## Comparison
 
 | feature | WaveMind | Chroma | Qdrant |
@@ -91,12 +108,13 @@ WaveMind is not trying to replace dedicated vector databases at scale. Its diffe
 - At 5000 records, one-word `precision@1` is currently 0.72 with the hash encoder; many misses are ambiguous queries where another sentence containing the same word ranks first.
 - For `N > 5000`, use the FAISS backend with `--index faiss` or another production vector index.
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files and measured about 53 ms per query on the benchmark machine.
-- The bundled benchmark is a retrieval sanity check, not a full agent-memory benchmark against Chroma or Qdrant yet.
+- The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
+- In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
-- Larger public benchmark against Chroma and Qdrant on agent-memory tasks.
+- Expand the agent-memory benchmark to sentence-transformers, FAISS, Chroma default embeddings, and Qdrant.
 - Better semantic query expansion for short and ambiguous queries.
 - Namespace quotas, backups, and daemon hardening for SaaS use.
 - Webhook on recall for agent runtimes.

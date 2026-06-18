@@ -1,0 +1,33 @@
+{
+  "scenario": {
+    "name": "agent_user_memory",
+    "facts": 200,
+    "queries": 50,
+    "language": "ru",
+    "top_k": 3
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "note": "WaveMind and Chroma receive the same precomputed query/document embeddings."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "precision_at_1": 0.82,
+      "precision_at_3": 0.9,
+      "avg_latency_ms": 2.2485719999531284,
+      "p95_latency_ms": 6.887700001243502,
+      "queries": 50
+    },
+    {
+      "engine": "Chroma",
+      "precision_at_1": 0.82,
+      "precision_at_3": 0.88,
+      "avg_latency_ms": 0.9327239998674486,
+      "p95_latency_ms": 1.0869999969145283,
+      "queries": 50
+    }
+  ]
+}

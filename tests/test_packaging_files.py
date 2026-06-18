@@ -8,6 +8,13 @@ def test_sentence_extra_is_available_for_install_scripts():
     assert '"sentence-transformers>=3"' in pyproject
 
 
+def test_benchmark_extra_installs_chroma():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert "bench = [" in pyproject
+    assert '"chromadb>=1.0"' in pyproject
+
+
 def test_install_scripts_create_venv_and_install_sentence_extra():
     install_sh = Path("install.sh").read_text(encoding="utf-8")
     install_bat = Path("install.bat").read_text(encoding="utf-8")

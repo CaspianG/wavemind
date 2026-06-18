@@ -28,6 +28,9 @@ indexes = [
   "annoy>=1.17",
   "faiss-cpu>=1.8; platform_system != 'Windows'",
 ]
+bench = [
+  "chromadb>=1.0",
+]
 dev = [
   "pytest>=8",
   "httpx>=0.27",
