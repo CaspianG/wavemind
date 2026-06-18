@@ -155,6 +155,31 @@ def test_common_query_words_do_not_expand_lexical_candidates(tmp_path):
     assert candidate_ids == {expected_id}
 
 
+def test_frequent_tokens_do_not_expand_lexical_candidate_pool(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "frequent-tokens.sqlite3",
+        encoder=FlatSemanticEncoder(),
+        width=16,
+        height=16,
+        layers=2,
+        index_kind="numpy",
+        rerank_k=1,
+    )
+    try:
+        expected_id = mind.remember("rarebudget target memory", namespace="frequent")
+        noise_ids = [
+            mind.remember(f"память фоновая запись номер {i}", namespace="frequent")
+            for i in range(80)
+        ]
+
+        tokens = mind._tokens("память rarebudget")
+        candidate_ids = mind._lexical_candidate_ids(tokens, {expected_id, *noise_ids})
+
+        assert candidate_ids == {expected_id}
+    finally:
+        mind.store.close()
+
+
 def test_field_weight_is_disabled_above_capacity_threshold(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "field-cutoff.sqlite3",
