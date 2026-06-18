@@ -1,13 +1,15 @@
 from pathlib import Path
-import tomllib
+import re
 
 import wavemind
 
 
 def test_package_version_matches_pyproject():
-    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'^version = "([^"]+)"$', pyproject, flags=re.MULTILINE)
 
-    assert wavemind.__version__ == pyproject["project"]["version"]
+    assert match is not None
+    assert wavemind.__version__ == match.group(1)
 
 
 def test_sentence_extra_is_available_for_install_scripts():
