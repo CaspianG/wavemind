@@ -56,6 +56,29 @@ wavemind --db ./agent_memory.sqlite3 remember "Andrey is a trader" --namespace d
 wavemind --db ./agent_memory.sqlite3 query "trader" --namespace demo
 ```
 
+WaveMind is local-first. One SQLite file is the source of truth for texts,
+metadata, vectors, namespaces, tags, TTL, and recall state. For real agents,
+prefer an explicit path under your application's state directory:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/wavemind.sqlite3")
+memory.remember("The user prefers short answers.", namespace="user:42", tags=["preference"])
+```
+
+Useful storage patterns:
+
+| runtime | Suggested database path |
+|---|---|
+| local CLI experiment | `./wavemind.sqlite3` |
+| Python app or agent | `./state/wavemind.sqlite3` |
+| OpenClaw sidecar | `~/.openclaw/wavemind/<agent-id>.sqlite3` |
+| server daemon | `/var/lib/wavemind/wavemind.sqlite3` |
+| Docker | mounted volume, for example `/data/wavemind.sqlite3` |
+
+Keep the SQLite file out of git. Back it up like any other application state.
+
 ## HTTP API
 
 Run the local FastAPI server:
@@ -113,6 +136,142 @@ Offline runnable example from a cloned repository:
 ```sh
 python examples/langchain_memory.py
 ```
+
+## Integration Patterns
+
+WaveMind only needs two touch points in an agent or app:
+
+1. Before the model call, `query()` for relevant memories and inject the short
+   results into the prompt.
+2. After the turn, `remember()` durable facts, preferences, summaries, tool
+   outcomes, or user corrections.
+
+That makes it usable in more than LangChain:
+
+| Use case | Integration style |
+|---|---|
+| LangChain or LangGraph agent | Use `WaveMindMemory` from `wavemind.integrations.langchain`. |
+| Custom Python agent | Create one `WaveMind` instance and call `query()` before the LLM. |
+| Node, Go, Ruby, PHP, or no-code app | Run `wavemind serve` and call the HTTP API. |
+| Multi-user SaaS | Use `namespace="user:<id>"` or `namespace="tenant:<id>:agent:<id>"`. |
+| Temporary context | Store with `ttl_seconds=...` so stale memory expires automatically. |
+| Preference/profile memory | Store with tags such as `profile`, `preference`, `project`, `decision`. |
+| Corrections/privacy | Use `forget()` or namespace deletion workflows. |
+
+Minimal custom agent loop:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/wavemind.sqlite3")
+
+def run_turn(user_id: str, user_text: str, history: list[str]) -> str:
+    namespace = f"user:{user_id}"
+    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
+    recalled = "\n".join(f"- {hit.text}" for hit in hits)
+
+    prompt = f"Relevant memory:\n{recalled}\n\nUser: {user_text}"
+    answer = call_your_llm(prompt, history)
+
+    memory.remember(f"User said: {user_text}", namespace=namespace, tags=["conversation"])
+    memory.remember(f"Assistant answered: {answer}", namespace=namespace, tags=["conversation"])
+    return answer
+```
+
+## OpenClaw Integration
+
+[OpenClaw memory](https://docs.openclaw.ai/concepts/memory) is file-centered:
+it writes durable memory into `MEMORY.md`, daily notes under `memory/`, and uses
+tools such as `memory_search` / `memory_get`. OpenClaw's documented agent loop
+also exposes hooks such as `before_prompt_build`, `agent_end`,
+`message_received`, and `message_sent`.
+
+The safest WaveMind integration is a sidecar, not a replacement:
+
+- Keep OpenClaw's Markdown memory as the human-readable source of durable truth.
+- Use WaveMind as the dynamic recall layer for hotness, TTL, namespaces, and
+  correction-sensitive ranking.
+- Store the SQLite file outside committed workspace files, for example
+  `~/.openclaw/wavemind/<agent-id>.sqlite3`.
+- Query WaveMind from `before_prompt_build` and inject a compact memory block
+  with `prependContext`.
+- Capture new durable summaries from `agent_end` or message hooks.
+
+Sketch of the adapter logic:
+
+```python
+from pathlib import Path
+from wavemind import WaveMind
+
+db_path = Path.home() / ".openclaw" / "wavemind" / "main.sqlite3"
+memory = WaveMind(db_path=db_path)
+
+def before_prompt_build(agent_id: str, user_text: str) -> str:
+    namespace = f"openclaw:{agent_id}"
+    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
+    return "\n".join(f"- {hit.text}" for hit in hits)
+
+def agent_end(agent_id: str, summary: str) -> None:
+    namespace = f"openclaw:{agent_id}"
+    memory.remember(summary, namespace=namespace, tags=["summary"], priority=1.5)
+```
+
+For a production OpenClaw plugin, translate that sketch into the documented
+plugin hook surface: `before_prompt_build` for recall and `agent_end` /
+`message_received` / `message_sent` for capture.
+
+## Hermes and Custom Agent Loops
+
+The public [HERMES Agent](https://github.com/aziksh-ospanov/HERMES) is a
+LangChain / LangGraph mathematical-reasoning agent. Its README describes
+`HermesReasoner` as a LangChain `BaseTool` and mentions an optional in-memory
+embedding store for previously verified claims.
+
+WaveMind fits there as a persistent memory layer around that loop:
+
+- Recall previously verified claims before `HermesReasoner` is invoked.
+- Store successfully verified claims with `tags=["verified-claim"]`.
+- Scope by `user_id`, project, benchmark, or theorem namespace.
+- Replace short-lived in-memory vector recall when the agent needs restarts,
+  TTL, explicit forgetting, or cross-session reuse.
+
+Generic Hermes-style loop:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/hermes_claims.sqlite3")
+
+def verify_with_memory(user_id: str, problem: str) -> str:
+    namespace = f"hermes:{user_id}"
+    claims = memory.query(problem, namespace=namespace, tags=["verified-claim"], top_k=5)
+    context = "\n".join(f"- {claim.text}" for claim in claims)
+
+    result = call_hermes_reasoner(problem=problem, extra_context=context)
+
+    if result.label == "CORRECT":
+        memory.remember(result.claim, namespace=namespace, tags=["verified-claim"], priority=2.0)
+    return result.text
+```
+
+For any other agent framework, the rule is the same: recall before the model,
+capture after the turn, isolate users with namespaces, and use TTL for temporary
+facts.
+
+## Non-Agent Use Cases
+
+WaveMind can store any small-to-medium memory stream where freshness and usage
+matter:
+
+| Use case | Example |
+|---|---|
+| Support memory | Recall past user issues, plans, bugs, and resolutions. |
+| Product research | Store interview snippets with `tags=["customer", "pain"]`. |
+| Team knowledge | Remember project decisions and suppress expired decisions with TTL. |
+| Personal assistant | Store preferences, routines, people, and recurring context. |
+| Game/NPC memory | Give characters scoped memory that strengthens after repeated events. |
+| Trading research | Store labeled OHLCV pattern notes before building a backtest layer. |
+| Document notebook | Import text/PDF/JSON chunks and query by namespace/project. |
 
 ## Why Dynamic Memory
 
