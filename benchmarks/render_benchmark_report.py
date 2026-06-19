@@ -1,0 +1,147 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_matrix(root: Path = PROJECT_ROOT) -> dict[str, Any]:
+    path = root / "benchmarks" / "benchmark_matrix_results.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def fmt(value: Any) -> str:
+    if value is None:
+        return "-"
+    if isinstance(value, float):
+        if value < 10:
+            return f"{value:.2f}"
+        return f"{value:.1f}"
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value) if value else "-"
+    return str(value)
+
+
+METRIC_LABELS = {
+    "precision_at_1": "precision@1",
+    "precision_at_3": "precision@3",
+    "evidence_recall_at_k": "evidence recall@k",
+    "mrr_at_k": "MRR@k",
+    "stale_suppression": "stale suppression",
+    "suppression_rate": "stale suppression",
+    "context_budget_saved": "context saved",
+    "avg_latency_ms": "avg latency",
+    "p95_latency_ms": "p95 latency",
+}
+
+
+def metric_label(key: str) -> str:
+    return METRIC_LABELS.get(key, key.replace("_", " "))
+
+
+def metric_line(current: dict[str, Any] | None) -> str:
+    if not current:
+        return "No checked-in result yet."
+    parts: list[str] = []
+    for engine, metrics in current.items():
+        if metrics is None:
+            parts.append(f"{engine}: no checked-in result")
+        elif isinstance(metrics, list):
+            rows = len(metrics)
+            last = metrics[-1] if metrics else {}
+            parts.append(
+                f"{engine}: {rows} points, last p@1 {fmt(last.get('precision_at_1'))}, "
+                f"avg {fmt(last.get('avg_latency_ms'))} ms"
+            )
+        else:
+            metric_bits = [
+                f"{metric_label(key)} {fmt(value)}"
+                for key, value in metrics.items()
+            ]
+            parts.append(f"{engine}: " + ", ".join(metric_bits))
+    return "<br>".join(parts)
+
+
+def table(entries: list[dict[str, Any]], include_results: bool) -> str:
+    if include_results:
+        header = "| benchmark | category | status | current result | next step |\n|---|---|---|---|---|\n"
+    else:
+        header = "| benchmark | category | status | competitors | target |\n|---|---|---|---|---|\n"
+    rows: list[str] = []
+    for entry in entries:
+        name = entry["name"]
+        if entry.get("source_url"):
+            name = f"[{name}]({entry['source_url']})"
+        if include_results:
+            rows.append(
+                f"| {name} | {entry['category']} | {entry['status']} | "
+                f"{metric_line(entry.get('current'))} | {entry.get('next_step', '-')} |"
+            )
+        else:
+            competitors = ", ".join(entry.get("competitors", [])) or "-"
+            rows.append(
+                f"| {name} | {entry['category']} | {entry['status']} | "
+                f"{competitors} | {entry.get('target', '-')} |"
+            )
+    return header + "\n".join(rows) + "\n"
+
+
+def render_report(root: Path = PROJECT_ROOT) -> str:
+    payload = load_matrix(root)
+    entries = payload["benchmarks"]
+    completed = [entry for entry in entries if entry["status"] == "implemented"]
+    runner_ready = [entry for entry in entries if entry["status"] == "runner-ready"]
+    planned = [entry for entry in entries if entry["status"] == "planned"]
+
+    lines = [
+        "# WaveMind Benchmark Report",
+        "",
+        "This report is generated from `benchmarks/benchmark_matrix_results.json`.",
+        "It separates completed local runs from runner-ready public benchmarks and planned external evaluations.",
+        "",
+        "Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.",
+        "",
+        "## Completed Runs",
+        "",
+        table(completed, include_results=True).rstrip(),
+        "",
+        "## Runner-Ready Public Benchmarks",
+        "",
+        table(runner_ready, include_results=True).rstrip(),
+        "",
+        "## Public Benchmark Roadmap",
+        "",
+        table(planned, include_results=False).rstrip(),
+        "",
+        "## Reading Guide",
+        "",
+        "- Retrieval benchmarks such as BEIR, MTEB, and MIRACL test whether WaveMind can preserve vector-search quality.",
+        "- Vector database benchmarks such as ANN-Benchmarks and VectorDBBench test latency, recall, and scale, not memory policy.",
+        "- Agent-memory benchmarks such as LoCoMo and LongMemEval are the most important public proof targets for WaveMind.",
+        "- The synthetic dynamic-memory and long-memory evidence checks remain useful regression tests, but they are not substitutes for public datasets.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/BENCHMARK_REPORT.md"),
+    )
+    args = parser.parse_args()
+    report = render_report()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(report, encoding="utf-8")
+    print(f"Wrote {args.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
