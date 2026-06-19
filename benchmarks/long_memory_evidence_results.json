@@ -1,0 +1,58 @@
+{
+  "scenario": {
+    "name": "long_memory_evidence",
+    "dataset": "synthetic",
+    "memories": 200,
+    "queries": 8,
+    "top_k": 5,
+    "description": "Retrieval-only long-term memory evidence benchmark. It measures expected evidence recall, stale suppression, personalization, namespace isolation, context budget, and latency."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "evidence_recall_at_k": 1.0,
+      "evidence_precision_at_k": 0.2,
+      "mrr_at_k": 1.0,
+      "precision_at_1": 1.0,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "correction": 1.0,
+        "namespace": 1.0,
+        "personalization": 1.0,
+        "profile": 1.0,
+        "ttl": 1.0
+      },
+      "context_tokens_returned": 647,
+      "context_budget_saved": 0.8660455486542443,
+      "avg_latency_ms": 6.103262499891571,
+      "p95_latency_ms": 7.430999998177867,
+      "queries": 8
+    },
+    {
+      "engine": "Static vector",
+      "evidence_recall_at_k": 1.0,
+      "evidence_precision_at_k": 0.2,
+      "mrr_at_k": 0.7857142857142857,
+      "precision_at_1": 0.5714285714285714,
+      "stale_suppression": 0.0,
+      "category_success": {
+        "correction": 0.0,
+        "namespace": 0.0,
+        "personalization": 0.0,
+        "profile": 1.0,
+        "ttl": 0.0
+      },
+      "context_tokens_returned": 595,
+      "context_budget_saved": 0.8768115942028986,
+      "avg_latency_ms": 0.647949999802222,
+      "p95_latency_ms": 1.0117999991052784,
+      "queries": 8
+    }
+  ]
+}

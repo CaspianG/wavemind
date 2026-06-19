@@ -1,8 +1,47 @@
-# WaveMind is persistent dynamic memory for AI agents: vector search first, wave-field priority second, SQLite as the source of truth.
+<div align="center">
+
+# WaveMind
+
+**Persistent dynamic memory for AI agents.**
+
+Vector search finds similar memories. A wave-field priority layer makes useful
+memories hotter, lets stale facts fade, and keeps user/project memory scoped.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![PyPI](https://img.shields.io/pypi/v/wavemind.svg)](https://pypi.org/project/wavemind/)
 [![Tests](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+[Quick Start](#quick-start) |
+[LangChain](#langchain-memory) |
+[OpenClaw](#openclaw-integration) |
+[HTTP API](#http-api) |
+[Benchmarks](#benchmark) |
+[Limitations](#known-limitations)
+
+</div>
+
+## At a Glance
+
+| If you need... | WaveMind gives you... |
+|---|---|
+| Agent memory that survives restarts | SQLite-backed `remember()`, `query()`, and `forget()`. |
+| Scoped memory per user, agent, or project | Namespaces and tags on every record. |
+| Memory that changes over time | Hotness, priority, TTL, and decay-aware ranking. |
+| Easy integration | Python API, CLI, FastAPI server, and LangChain memory class. |
+| Honest local benchmarks | Static Chroma comparison plus dynamic memory-policy checks. |
+
+```mermaid
+flowchart LR
+    U[User / tool event] --> R[WaveMind query]
+    R --> K[k-NN candidates]
+    K --> W[Wave-field re-rank]
+    W --> P[Prompt memory block]
+    P --> L[LLM / agent turn]
+    L --> S[remember facts, summaries, corrections]
+    S --> D[(SQLite source of truth)]
+    D --> R
+```
 
 ## Terminal Demo
 
@@ -10,12 +49,12 @@ From a cloned repository:
 
 ```text
 $ python examples/demo.py
-✓ Remembered: "Andrey is a trader who tracks market breakouts."
-✓ Remembered: "Andrey prefers short practical answers about AI agents."
+[ok] Remembered: "Andrey is a trader who tracks market breakouts."
+[ok] Remembered: "Andrey prefers short practical answers about AI agents."
 
 Query: "Andrey trader agent"
-→ Result 1 (0.54): "Andrey is a trader who tracks market breakouts."
-→ Result 2 (0.30): "Andrey prefers short practical answers about AI agents."
+-> Result 1 (0.60): "Andrey is a trader who tracks market breakouts."
+-> Result 2 (0.30): "Andrey prefers short practical answers about AI agents."
 ```
 
 The demo is offline, keyless, and uses the built-in hash encoder.
@@ -55,6 +94,29 @@ For an explicit database path, put global options before the command:
 wavemind --db ./agent_memory.sqlite3 remember "Andrey is a trader" --namespace demo
 wavemind --db ./agent_memory.sqlite3 query "trader" --namespace demo
 ```
+
+WaveMind is local-first. One SQLite file is the source of truth for texts,
+metadata, vectors, namespaces, tags, TTL, and recall state. For real agents,
+prefer an explicit path under your application's state directory:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/wavemind.sqlite3")
+memory.remember("The user prefers short answers.", namespace="user:42", tags=["preference"])
+```
+
+Useful storage patterns:
+
+| runtime | Suggested database path |
+|---|---|
+| local CLI experiment | `./wavemind.sqlite3` |
+| Python app or agent | `./state/wavemind.sqlite3` |
+| OpenClaw sidecar | `~/.openclaw/wavemind/<agent-id>.sqlite3` |
+| server daemon | `/var/lib/wavemind/wavemind.sqlite3` |
+| Docker | mounted volume, for example `/data/wavemind.sqlite3` |
+
+Keep the SQLite file out of git. Back it up like any other application state.
 
 ## HTTP API
 
@@ -114,6 +176,142 @@ Offline runnable example from a cloned repository:
 python examples/langchain_memory.py
 ```
 
+## Integration Patterns
+
+WaveMind only needs two touch points in an agent or app:
+
+1. Before the model call, `query()` for relevant memories and inject the short
+   results into the prompt.
+2. After the turn, `remember()` durable facts, preferences, summaries, tool
+   outcomes, or user corrections.
+
+That makes it usable in more than LangChain:
+
+| Use case | Integration style |
+|---|---|
+| LangChain or LangGraph agent | Use `WaveMindMemory` from `wavemind.integrations.langchain`. |
+| Custom Python agent | Create one `WaveMind` instance and call `query()` before the LLM. |
+| Node, Go, Ruby, PHP, or no-code app | Run `wavemind serve` and call the HTTP API. |
+| Multi-user SaaS | Use `namespace="user:<id>"` or `namespace="tenant:<id>:agent:<id>"`. |
+| Temporary context | Store with `ttl_seconds=...` so stale memory expires automatically. |
+| Preference/profile memory | Store with tags such as `profile`, `preference`, `project`, `decision`. |
+| Corrections/privacy | Use `forget()` or namespace deletion workflows. |
+
+Minimal custom agent loop:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/wavemind.sqlite3")
+
+def run_turn(user_id: str, user_text: str, history: list[str]) -> str:
+    namespace = f"user:{user_id}"
+    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
+    recalled = "\n".join(f"- {hit.text}" for hit in hits)
+
+    prompt = f"Relevant memory:\n{recalled}\n\nUser: {user_text}"
+    answer = call_your_llm(prompt, history)
+
+    memory.remember(f"User said: {user_text}", namespace=namespace, tags=["conversation"])
+    memory.remember(f"Assistant answered: {answer}", namespace=namespace, tags=["conversation"])
+    return answer
+```
+
+## OpenClaw Integration
+
+[OpenClaw memory](https://docs.openclaw.ai/concepts/memory) is file-centered:
+it writes durable memory into `MEMORY.md`, daily notes under `memory/`, and uses
+tools such as `memory_search` / `memory_get`. OpenClaw's documented agent loop
+also exposes hooks such as `before_prompt_build`, `agent_end`,
+`message_received`, and `message_sent`.
+
+The safest WaveMind integration is a sidecar, not a replacement:
+
+- Keep OpenClaw's Markdown memory as the human-readable source of durable truth.
+- Use WaveMind as the dynamic recall layer for hotness, TTL, namespaces, and
+  correction-sensitive ranking.
+- Store the SQLite file outside committed workspace files, for example
+  `~/.openclaw/wavemind/<agent-id>.sqlite3`.
+- Query WaveMind from `before_prompt_build` and inject a compact memory block
+  with `prependContext`.
+- Capture new durable summaries from `agent_end` or message hooks.
+
+Sketch of the adapter logic:
+
+```python
+from pathlib import Path
+from wavemind import WaveMind
+
+db_path = Path.home() / ".openclaw" / "wavemind" / "main.sqlite3"
+memory = WaveMind(db_path=db_path)
+
+def before_prompt_build(agent_id: str, user_text: str) -> str:
+    namespace = f"openclaw:{agent_id}"
+    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
+    return "\n".join(f"- {hit.text}" for hit in hits)
+
+def agent_end(agent_id: str, summary: str) -> None:
+    namespace = f"openclaw:{agent_id}"
+    memory.remember(summary, namespace=namespace, tags=["summary"], priority=1.5)
+```
+
+For a production OpenClaw plugin, translate that sketch into the documented
+plugin hook surface: `before_prompt_build` for recall and `agent_end` /
+`message_received` / `message_sent` for capture.
+
+## Hermes and Custom Agent Loops
+
+The public [HERMES Agent](https://github.com/aziksh-ospanov/HERMES) is a
+LangChain / LangGraph mathematical-reasoning agent. Its README describes
+`HermesReasoner` as a LangChain `BaseTool` and mentions an optional in-memory
+embedding store for previously verified claims.
+
+WaveMind fits there as a persistent memory layer around that loop:
+
+- Recall previously verified claims before `HermesReasoner` is invoked.
+- Store successfully verified claims with `tags=["verified-claim"]`.
+- Scope by `user_id`, project, benchmark, or theorem namespace.
+- Replace short-lived in-memory vector recall when the agent needs restarts,
+  TTL, explicit forgetting, or cross-session reuse.
+
+Generic Hermes-style loop:
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/hermes_claims.sqlite3")
+
+def verify_with_memory(user_id: str, problem: str) -> str:
+    namespace = f"hermes:{user_id}"
+    claims = memory.query(problem, namespace=namespace, tags=["verified-claim"], top_k=5)
+    context = "\n".join(f"- {claim.text}" for claim in claims)
+
+    result = call_hermes_reasoner(problem=problem, extra_context=context)
+
+    if result.label == "CORRECT":
+        memory.remember(result.claim, namespace=namespace, tags=["verified-claim"], priority=2.0)
+    return result.text
+```
+
+For any other agent framework, the rule is the same: recall before the model,
+capture after the turn, isolate users with namespaces, and use TTL for temporary
+facts.
+
+## Non-Agent Use Cases
+
+WaveMind can store any small-to-medium memory stream where freshness and usage
+matter:
+
+| Use case | Example |
+|---|---|
+| Support memory | Recall past user issues, plans, bugs, and resolutions. |
+| Product research | Store interview snippets with `tags=["customer", "pain"]`. |
+| Team knowledge | Remember project decisions and suppress expired decisions with TTL. |
+| Personal assistant | Store preferences, routines, people, and recurring context. |
+| Game/NPC memory | Give characters scoped memory that strengthens after repeated events. |
+| Trading research | Store labeled OHLCV pattern notes before building a backtest layer. |
+| Document notebook | Import text/PDF/JSON chunks and query by namespace/project. |
+
 ## Why Dynamic Memory
 
 WaveMind is not positioned as "a faster Chroma." Chroma, Qdrant, Pinecone, and Weaviate are vector databases: they store embeddings and return nearest neighbors. That is the right tool for many static RAG workloads.
@@ -144,6 +342,107 @@ The benchmark that should decide whether WaveMind is worth using is a dynamic ag
 In short: static vector search answers "what is nearest?" Agent memory also asks "what is still relevant, reinforced, scoped, and allowed to be remembered?"
 
 ## Benchmark
+
+WaveMind tracks benchmarks in two layers:
+
+- **Implemented local checks** - fast, reproducible scripts that run from this repository and protect the core memory behavior.
+- **Public benchmark roadmap** - external retrieval and memory benchmarks that should decide whether WaveMind is competitive outside hand-made demos.
+
+Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
+
+Visual summary generated from the checked-in JSON results:
+
+![WaveMind benchmark summary](docs/assets/benchmark-summary.svg)
+
+Regenerate the matrix and chart locally:
+
+```sh
+python benchmarks/benchmark_registry.py --output benchmarks/benchmark_matrix_results.json
+python benchmarks/render_benchmark_charts.py --output docs/assets/benchmark-summary.svg
+```
+
+The chart only shows completed local measurements. Planned public benchmarks stay
+in the matrix until the dataset, engine, and result JSON are committed.
+
+Current read:
+
+| area | result | honest interpretation |
+|---|---|---|
+| Static agent recall | WaveMind `precision@1` equals Chroma at `0.82`; WaveMind `precision@3` is `0.90` vs Chroma `0.88`. | Competitive quality, but Chroma is faster on the static vector-store path. |
+| Dynamic memory policy | WaveMind reaches `1.00` stale suppression; Chroma static is `0.00`. | This is the strongest current differentiation: hotness, TTL, corrections, and namespaces. |
+| Long-term evidence | WaveMind reaches `1.00` evidence recall@5, `1.00` precision@1, and `1.00` stale suppression on the synthetic long-memory evidence benchmark. | This is the first proof-shaped benchmark for agent memory: it measures whether stale/corrected/expired/cross-user facts stay out of retrieved evidence. |
+| Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
+| Next public proof | BEIR-style runner supports WaveMind, Chroma, and Qdrant on the same qrels. | The next README number should come from SciFact/NFCorpus, not another hand-made scenario. |
+
+### Real Benchmark Matrix
+
+| benchmark | what it proves | status | baseline / competitor | target |
+|---|---|---|---|---|
+| Agent user-memory retrieval | Natural-language recall over 200 user facts. | implemented | Chroma | Match Chroma `precision@1`, beat `precision@3`, stay under 5 ms at 200 memories. |
+| Dynamic memory policy | Hot memory, TTL, corrections, stale suppression, namespace isolation. | implemented | Chroma static | Keep `precision@1` and stale suppression at 1.00, cut avg latency below 10 ms at 1000 memories. |
+| WaveMind capacity curve | How recall and latency change at 200 / 1000 / 5000 memories. | implemented | WaveMind-only today | Keep `precision@1 >= 0.95` at 5000 memories and dynamic latency below 20 ms. |
+| Long-term memory evidence | Evidence retrieval from long histories with profile, preference, correction, TTL, namespace, and filler noise. | implemented | Static vector, Chroma/Qdrant runners optional | Prove dynamic memory behavior before adding public LoCoMo/LongMemEval adapters. |
+| BEIR-style open retrieval runner | Public `corpus.jsonl`, `queries.jsonl`, `qrels/*.tsv` datasets with the same metrics for each engine. | implemented | WaveMind / Chroma / Qdrant | Use identical embeddings and report `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, and latency. |
+| [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
+| [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
+| [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | planned | Chroma / Qdrant / FAISS | Reach same-embedding parity on Russian `nDCG@10`. |
+| [ANN-Benchmarks](https://github.com/erikbern/ann-benchmarks) style curve | Recall/latency tradeoff for vector indexes. | planned | FAISS / Annoy / Qdrant HNSW | Keep `recall@10 >= 0.95` while beating NumPy exact latency. |
+| [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. | planned | Chroma RAG / Qdrant RAG / Mem0-style memory | Beat static vector-store RAG on temporal/correction questions by 15+ points. |
+| [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | planned | Chroma RAG / Qdrant RAG / Mem0-style memory | Improve update/abstention evidence recall under 100 ms retrieval latency. |
+| [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | planned | AgentRunbook-R / Chroma RAG / Qdrant RAG | Prove WaveMind can retrieve compact evidence from agent trajectories. |
+| [LMEB](https://github.com/KaLM-Embedding/LMEB) | Long-horizon memory embedding tasks beyond normal passage retrieval. | planned | Embedding-only baselines / Chroma / Qdrant | Choose the default semantic encoder using memory-specific tasks. |
+| [RAGBench](https://huggingface.co/datasets/rungalileo/ragbench) | Downstream RAG context and answer quality. | planned | Chroma RAG / Qdrant RAG / Pinecone RAG | Show whether stale-memory suppression improves context relevance. |
+
+The planned rows are not claimed wins. They are the public evaluation path WaveMind needs before strong production claims.
+
+### Open Retrieval Benchmarks
+
+Many retrieval benchmarks use the same simple shape:
+
+- `corpus.jsonl` - documents with `_id`, optional `title`, and `text`.
+- `queries.jsonl` - queries with `_id` and `text`.
+- `qrels/test.tsv` - judged relevance rows: `query-id`, `corpus-id`, `score`.
+
+WaveMind includes a BEIR-style runner so the same downloaded dataset can be used
+for WaveMind, Chroma, and Qdrant:
+
+```sh
+pip install -e ".[bench]"
+python benchmarks/open_retrieval_benchmark.py --dataset ./benchmarks/data/scifact --engines wavemind chroma qdrant --top-k 10
+```
+
+That runner reports `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, average
+latency, and p95 latency. It intentionally uses the same WaveMind encoder for
+all engines, so the comparison is about retrieval/index behavior rather than
+which embedding model each project chooses by default.
+
+### Current Local Runs
+
+Long-term memory evidence benchmark:
+
+200 memories, 8 evidence queries, same `HashingTextEncoder` embeddings.
+This benchmark asks a stricter agent-memory question than static retrieval:
+did the system return the right evidence while suppressing stale, corrected,
+expired, or cross-user evidence?
+Full machine-readable result: `benchmarks/long_memory_evidence_results.json`.
+
+| engine | evidence recall@5 | precision@1 | stale suppression | context saved | avg latency |
+|---|---:|---:|---:|---:|---:|
+| WaveMind | 1.00 | 1.00 | 1.00 | 0.87 | 6.10 ms |
+| Static vector | 1.00 | 0.57 | 0.00 | 0.88 | 0.65 ms |
+
+Run locally from a cloned repository:
+
+```sh
+python benchmarks/long_memory_evidence_benchmark.py --dataset synthetic --engines wavemind static --memories 200 --top-k 5
+```
+
+To compare the same normalized benchmark with Chroma or Qdrant, install the benchmark extras and include those engines:
+
+```sh
+pip install -e ".[bench]"
+python benchmarks/long_memory_evidence_benchmark.py --dataset synthetic --engines wavemind chroma qdrant --memories 200 --top-k 5
+```
 
 Real Russian sentences from Tatoeba, 50 one-word queries, NumPy exact index.
 
@@ -179,6 +478,20 @@ This is a static retrieval benchmark. It measures baseline ranking and latency, 
 |---|---:|---:|---:|
 | WaveMind | 0.82 | 0.90 | 2.25 ms |
 | Chroma | 0.82 | 0.88 | 0.93 ms |
+
+WaveMind-only capacity checks from the current ranking path:
+
+| scenario | memories | precision@1 | precision@3 | avg latency | p95 latency |
+|---|---:|---:|---:|---:|---:|
+| static agent facts | 200 | 0.96 | 0.98 | 4.05 ms | 8.18 ms |
+| static agent facts | 1000 | 0.96 | 0.98 | 3.53 ms | 5.20 ms |
+| static agent facts | 5000 | 0.94 | 0.98 | 13.71 ms | 17.20 ms |
+| dynamic memory policy | 200 | 1.00 | 1.00 | 38.40 ms | 41.14 ms |
+| dynamic memory policy | 1000 | 1.00 | 1.00 | 54.29 ms | 72.38 ms |
+| dynamic memory policy | 5000 | 1.00 | 1.00 | 48.36 ms | 86.13 ms |
+
+Machine-readable local capacity result: `benchmarks/wavemind_capacity_results.json`.
+These capacity checks are WaveMind-only because the local restricted environment did not have Chroma installed.
 
 Run locally from a cloned repository:
 
@@ -238,12 +551,17 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
+- The long-term memory evidence benchmark is currently synthetic. It is useful for regression and product-shape proof, but it is not a substitute for LoCoMo or LongMemEval public results.
+- BEIR, MTEB, MIRACL, LoCoMo, LongMemEval, LMEB, ANN-Benchmarks, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
+- Public benchmark adapters require optional datasets, heavier dependencies, or running services. They are intentionally outside the minimal `pip install wavemind` path.
 - Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
+- Current WaveMind-only dynamic checks keep `precision@1` at 1.00 through 5000 memories, but average latency is around 48-54 ms. The next optimization target is field/re-ranking latency, not basic recall quality.
 
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
-- Expand the dynamic benchmark to Qdrant, Chroma metadata-policy mode, sentence-transformers, and FAISS.
+- Add public benchmark adapters in this order: BEIR SciFact/NFCorpus, MIRACL Russian, ANN-style index curve, then LoCoMo/LongMemEval retrieval evidence.
+- Expand competitor baselines to Qdrant local/service mode, Chroma metadata-policy mode, FAISS, Annoy, and sentence-transformers.
 - Optimize dynamic re-ranking latency after lexical candidate filtering.
 - Better semantic query expansion for short and ambiguous queries.
 - Namespace quotas, backups, and daemon hardening for SaaS use.

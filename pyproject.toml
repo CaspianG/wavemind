@@ -30,6 +30,7 @@ indexes = [
 ]
 bench = [
   "chromadb>=1.0",
+  "qdrant-client>=1.9",
 ]
 langchain = [
   "langchain-classic>=1.0",
