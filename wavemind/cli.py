@@ -37,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--width", type=int, default=128)
     parser.add_argument("--height", type=int, default=128)
     parser.add_argument("--layers", type=int, default=6)
+    parser.add_argument("--graph-weight", type=float, default=0.0)
+    parser.add_argument("--graph-steps", type=int, default=2)
+    parser.add_argument("--graph-expand-k", type=int, default=10)
 
     sub = parser.add_subparsers(dest="command")
 
@@ -96,6 +99,9 @@ def make_mind(args) -> WaveMind:
         encoder=encoder,
         index_kind=args.index,
         score_threshold=args.score_threshold,
+        graph_weight=args.graph_weight,
+        graph_steps=args.graph_steps,
+        graph_expand_k=args.graph_expand_k,
     )
 
 
@@ -191,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
                     f"{result.score:.4f} "
                     f"vector={result.vector_score:.4f} "
                     f"field={result.field_score:.4f} "
+                    f"graph={result.graph_score:.4f} "
                     f"id={result.id} {result.text}"
                 )
         return 0
