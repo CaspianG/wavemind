@@ -21,7 +21,7 @@ memories hotter, lets stale facts fade, and keeps user/project memory scoped.
 
 </div>
 
-## At A Glance
+## At a Glance
 
 | If you need... | WaveMind gives you... |
 |---|---|
