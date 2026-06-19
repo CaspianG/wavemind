@@ -1,8 +1,47 @@
-# WaveMind is persistent dynamic memory for AI agents: vector search first, wave-field priority second, SQLite as the source of truth.
+<div align="center">
+
+# WaveMind
+
+**Persistent dynamic memory for AI agents.**
+
+Vector search finds similar memories. A wave-field priority layer makes useful
+memories hotter, lets stale facts fade, and keeps user/project memory scoped.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![PyPI](https://img.shields.io/pypi/v/wavemind.svg)](https://pypi.org/project/wavemind/)
 [![Tests](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+[Quick Start](#quick-start) ·
+[LangChain](#langchain-memory) ·
+[OpenClaw](#openclaw-integration) ·
+[HTTP API](#http-api) ·
+[Benchmarks](#benchmark) ·
+[Limitations](#known-limitations)
+
+</div>
+
+## At A Glance
+
+| If you need... | WaveMind gives you... |
+|---|---|
+| Agent memory that survives restarts | SQLite-backed `remember()`, `query()`, and `forget()`. |
+| Scoped memory per user, agent, or project | Namespaces and tags on every record. |
+| Memory that changes over time | Hotness, priority, TTL, and decay-aware ranking. |
+| Easy integration | Python API, CLI, FastAPI server, and LangChain memory class. |
+| Honest local benchmarks | Static Chroma comparison plus dynamic memory-policy checks. |
+
+```mermaid
+flowchart LR
+    U[User / tool event] --> R[WaveMind query]
+    R --> K[k-NN candidates]
+    K --> W[Wave-field re-rank]
+    W --> P[Prompt memory block]
+    P --> L[LLM / agent turn]
+    L --> S[remember facts, summaries, corrections]
+    S --> D[(SQLite source of truth)]
+    D --> R
+```
 
 ## Terminal Demo
 
