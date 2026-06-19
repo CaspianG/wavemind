@@ -67,6 +67,15 @@ def test_docker_files_track_runtime_package_version():
     assert f"image: wavemind:{wavemind.__version__}" in compose
 
 
+def test_dockerfile_copies_readme_before_editable_install():
+    dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+    readme_copy = "COPY README.md pyproject.toml requirements.txt requirements-optional.txt ./"
+    editable_install = "RUN pip install --no-cache-dir -e ."
+
+    assert readme_copy in dockerfile
+    assert dockerfile.index(readme_copy) < dockerfile.index(editable_install)
+
+
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
 
