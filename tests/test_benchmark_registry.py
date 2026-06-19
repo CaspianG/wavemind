@@ -20,6 +20,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert "Qdrant" in entries["beir_style_open_retrieval"]["competitors"]
     assert entries["beir"]["status"] == "planned"
     assert entries["miracl_ru"]["category"] == "multilingual-retrieval"
+    assert entries["vectordbbench"]["category"] == "vector-db"
     assert entries["longmemeval"]["category"] == "long-term-agent-memory"
     assert entries["lmeb"]["source_url"].startswith("https://")
 
