@@ -16,6 +16,7 @@ from .encoders import (
     is_stopword_token,
     normalize_token,
 )
+from .field_graph import MemoryFieldGraph
 from .indexes import NumpyVectorIndex, create_vector_index
 from .storage import MemoryRecord, SQLiteMemoryStore
 
@@ -126,6 +127,7 @@ class QueryResult:
     score: float
     vector_score: float
     field_score: float
+    graph_score: float
     namespace: str
     tags: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -150,12 +152,16 @@ class WaveMind:
         max_lexical_token_frequency: int = 64,
         rerank_k: int = 10,
         field_disable_after: int = 1000,
+        graph_weight: float = 0.0,
+        graph_steps: int = 2,
+        graph_expand_k: int = 10,
         persist_access_on_query: bool = False,
         query_feedback_strength: float = 0.0,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
         self.field = WaveField(width=width, height=height, layers=layers)
+        self.graph = MemoryFieldGraph()
         self.store = SQLiteMemoryStore(db_path)
         self.index = create_vector_index(index_kind, self.encoder.vector_dim)
         self.score_threshold = float(score_threshold)
@@ -168,11 +174,15 @@ class WaveMind:
         self.max_lexical_token_frequency = int(max_lexical_token_frequency)
         self.rerank_k = int(rerank_k)
         self.field_disable_after = int(field_disable_after)
+        self.graph_weight = float(graph_weight)
+        self.graph_steps = int(graph_steps)
+        self.graph_expand_k = int(graph_expand_k)
         self.persist_access_on_query = bool(persist_access_on_query)
         self.query_feedback_strength = float(query_feedback_strength)
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
         self._token_ids: dict[str, set[int]] = {}
+        self._graph_dirty = True
         self._field_magnitude = np.zeros((height, width), dtype=np.float32)
         self._field_magnitude_norm = 0.0
         self.load()
@@ -204,6 +214,7 @@ class WaveMind:
         record.id = id
         self._cache_record(record)
         self.index.add(id, vector)
+        self._mark_graph_dirty()
         self.field.feed(pattern, strength=strength * priority)
         self.field.evolve(self._evolve_n)
         self._refresh_field_magnitude()
@@ -239,16 +250,34 @@ class WaveMind:
             if id not in candidate_scores:
                 record = self._records_by_id[id]
                 candidate_scores[id] = float(np.dot(query_vector, record.vector))
+        graph_scores: dict[int, float] = {}
+        if self.graph_weight > 0.0 and candidate_scores:
+            self._ensure_graph()
+            graph_scores = self.graph.propagate(
+                {id: max(0.0, score) for id, score in candidate_scores.items()},
+                allowed_ids=allowed_ids,
+                steps=self.graph_steps,
+            )
+            for id, _ in sorted(
+                graph_scores.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )[: max(0, self.graph_expand_k)]:
+                if id not in candidate_scores and id in self._records_by_id:
+                    record = self._records_by_id[id]
+                    candidate_scores[id] = float(np.dot(query_vector, record.vector))
 
         results: list[QueryResult] = []
         for candidate_id, vector_score in candidate_scores.items():
             record = self._records_by_id[candidate_id]
             field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
+            graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
             priority_score = min(1.0, max(0.0, record.priority / 10.0))
             lexical_score = self._lexical_match(query_tokens, record.text)
             score = (
                 self.vector_weight * vector_score
                 + field_weight * field_score
+                + self.graph_weight * graph_score
                 + self.priority_weight * priority_score
                 + lexical_weight * lexical_score
             )
@@ -261,6 +290,7 @@ class WaveMind:
                     score=float(score),
                     vector_score=float(vector_score),
                     field_score=float(field_score),
+                    graph_score=float(graph_score),
                     namespace=record.namespace,
                     tags=record.tags,
                     metadata=record.metadata,
@@ -280,6 +310,8 @@ class WaveMind:
         if selected and self.query_feedback_strength > 0:
             self.field.evolve(1)
             self._refresh_field_magnitude()
+        if selected and self.graph_weight > 0:
+            self._ensure_graph()
         return selected
 
     def forget(
@@ -293,6 +325,7 @@ class WaveMind:
             if record.id is not None:
                 self.index.remove(record.id)
                 self._uncache_record(record.id)
+                self.graph.remove(record.id)
             self.field.forget(record.pattern, strength=0.7)
         if records:
             self.field.evolve(4)
@@ -324,6 +357,9 @@ class WaveMind:
         records = self.store.list(include_expired=False)
         self._build_cache(records)
         self.index.build(records)
+        self._mark_graph_dirty()
+        if self.graph_weight > 0:
+            self._ensure_graph()
         self.field.reset()
         for record in records:
             self.field.feed(record.pattern, strength=max(0.1, record.priority))
@@ -340,13 +376,16 @@ class WaveMind:
     def consolidate(self, steps: int = 40) -> None:
         self.field.evolve(steps)
         self._refresh_field_magnitude()
+        if self.graph_weight > 0:
+            self._ensure_graph()
+            self.graph.decay_energy(steps=max(1, steps // 10))
 
     def stats(self, namespace: str | None = None) -> dict[str, Any]:
         active = self.store.list(namespace=namespace, include_expired=False)
         all_records = self.store.list(namespace=namespace, include_expired=True)
         expired = [record for record in all_records if record.is_expired]
         clusters = self.field.detect_clusters()
-        return {
+        payload = {
             "active_memories": len(active),
             "expired_memories": len(expired),
             "total_memories": len(all_records),
@@ -355,7 +394,39 @@ class WaveMind:
             "field_shape": f"{self.field.H}x{self.field.W}x{self.field.L}",
             "index": getattr(self.index, "name", type(self.index).__name__),
             "vector_dim": self.encoder.vector_dim,
+            "graph_enabled": self.graph_weight > 0.0,
         }
+        if self.graph_weight > 0.0:
+            self._ensure_graph()
+            payload.update(self.graph.stats())
+        else:
+            payload.update(
+                {
+                    "graph_nodes": len(self._records_by_id),
+                    "graph_edges": 0,
+                    "graph_positive_edges": 0,
+                    "graph_negative_edges": 0,
+                    "graph_energy": 0.0,
+                }
+            )
+        return payload
+
+    def concept_candidates(
+        self,
+        namespace: str | None = None,
+        min_energy: float = 0.05,
+        min_size: int = 2,
+    ) -> list[dict[str, object]]:
+        self._ensure_graph()
+        concepts = self.graph.concept_candidates(min_energy=min_energy, min_size=min_size)
+        if namespace is None:
+            return concepts
+        allowed_ids = self._namespace_ids.get(namespace, set())
+        return [
+            concept
+            for concept in concepts
+            if set(concept["memory_ids"]).issubset(allowed_ids)
+        ]
 
     @property
     def memory(self) -> list[tuple[str, np.ndarray]]:
@@ -367,6 +438,7 @@ class WaveMind:
         self._token_ids.clear()
         for record in records:
             self._cache_record(record)
+        self._mark_graph_dirty()
 
     def _cache_record(self, record: MemoryRecord) -> None:
         if record.id is None:
@@ -376,6 +448,7 @@ class WaveMind:
         self._namespace_ids.setdefault(record.namespace, set()).add(id)
         for token in self._tokens(record.text):
             self._token_ids.setdefault(token, set()).add(id)
+        self._mark_graph_dirty()
 
     def _uncache_record(self, id: int) -> None:
         record = self._records_by_id.pop(int(id), None)
@@ -393,6 +466,16 @@ class WaveMind:
             token_ids.discard(int(id))
             if not token_ids:
                 self._token_ids.pop(token, None)
+        self._mark_graph_dirty()
+
+    def _mark_graph_dirty(self) -> None:
+        self._graph_dirty = True
+
+    def _ensure_graph(self) -> None:
+        if not self._graph_dirty:
+            return
+        self.graph.build(self._records_by_id.values())
+        self._graph_dirty = False
 
     def _allowed_ids(
         self,
