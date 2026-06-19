@@ -387,7 +387,7 @@ Current read:
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
 | [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | planned | Chroma / Qdrant / FAISS | Reach same-embedding parity on Russian `nDCG@10`. |
 | [ANN-Benchmarks](https://github.com/erikbern/ann-benchmarks) style curve | Recall/latency tradeoff for vector indexes. | planned | FAISS / Annoy / Qdrant HNSW | Keep `recall@10 >= 0.95` while beating NumPy exact latency. |
-| [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. | planned | Chroma RAG / Qdrant RAG / Mem0-style memory | Beat static vector-store RAG on temporal/correction questions by 15+ points. |
+| [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. Retrieval-only runner is implemented for official `locomo10.json`. | runner ready | Static vector / Chroma / Qdrant first; RAG answer baselines next | Publish full `evidence_recall@k`, `precision@1`, `MRR@k`, and latency on the official file. |
 | [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | planned | Chroma RAG / Qdrant RAG / Mem0-style memory | Improve update/abstention evidence recall under 100 ms retrieval latency. |
 | [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | planned | AgentRunbook-R / Chroma RAG / Qdrant RAG | Prove WaveMind can retrieve compact evidence from agent trajectories. |
 | [LMEB](https://github.com/KaLM-Embedding/LMEB) | Long-horizon memory embedding tasks beyond normal passage retrieval. | planned | Embedding-only baselines / Chroma / Qdrant | Choose the default semantic encoder using memory-specific tasks. |
@@ -415,6 +415,41 @@ That runner reports `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, average
 latency, and p95 latency. It intentionally uses the same WaveMind encoder for
 all engines, so the comparison is about retrieval/index behavior rather than
 which embedding model each project chooses by default.
+
+### LoCoMo Evidence Retrieval
+
+WaveMind now includes a retrieval-only runner for the public
+[LoCoMo](https://github.com/snap-research/locomo) dataset. It treats LoCoMo
+conversation turns as memories and LoCoMo QA `evidence` dialog IDs as relevance
+labels. This measures the memory layer before any LLM answer-generation noise.
+
+Run it on the official `locomo10.json` file:
+
+```sh
+mkdir -p benchmarks/data
+curl -L https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json -o benchmarks/data/locomo10.json
+python benchmarks/locomo_memory_benchmark.py --dataset benchmarks/data/locomo10.json --engines wavemind static chroma qdrant --top-k 5 --output benchmarks/locomo_evidence_results.json
+```
+
+Metrics reported:
+
+- `evidence_recall@k` - whether the labeled LoCoMo evidence turns appear in the returned memory block.
+- `precision@1` - whether the first returned memory is labeled evidence.
+- `MRR@k` - how high the first relevant evidence turn appears.
+- `context_budget_saved` - how much smaller the returned evidence block is than the full conversation memory.
+- `avg_latency_ms` and `p95_latency_ms` - retrieval latency only.
+
+If Chroma or Qdrant are not installed, use the baseline-only command:
+
+```sh
+python benchmarks/locomo_memory_benchmark.py --dataset benchmarks/data/locomo10.json --engines wavemind static --top-k 5
+```
+
+The current repository does not claim a full LoCoMo score yet. The runner is
+implemented and smoke-tested; the checked-in result should be added only after a
+real run on the official dataset. LongMemEval is the next public memory
+benchmark target. Its retrieval layer can use the same evidence-first pattern,
+while answer quality can be evaluated later with a local Ollama model.
 
 ### Current Local Runs
 
@@ -552,6 +587,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - The long-term memory evidence benchmark is currently synthetic. It is useful for regression and product-shape proof, but it is not a substitute for LoCoMo or LongMemEval public results.
+- The LoCoMo runner is implemented, but a full official `locomo10.json` result is not checked in yet because this local environment could not download from `raw.githubusercontent.com`.
 - BEIR, MTEB, MIRACL, LoCoMo, LongMemEval, LMEB, ANN-Benchmarks, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
 - Public benchmark adapters require optional datasets, heavier dependencies, or running services. They are intentionally outside the minimal `pip install wavemind` path.
 - Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
@@ -560,7 +596,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
-- Add public benchmark adapters in this order: BEIR SciFact/NFCorpus, MIRACL Russian, ANN-style index curve, then LoCoMo/LongMemEval retrieval evidence.
+- Add public benchmark adapters in this order: finish the full LoCoMo run, BEIR SciFact/NFCorpus, MIRACL Russian, ANN-style index curve, then LongMemEval retrieval evidence.
 - Expand competitor baselines to Qdrant local/service mode, Chroma metadata-policy mode, FAISS, Annoy, and sentence-transformers.
 - Optimize dynamic re-ranking latency after lexical candidate filtering.
 - Better semantic query expansion for short and ambiguous queries.
