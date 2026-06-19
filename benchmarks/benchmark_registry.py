@@ -33,13 +33,16 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
 
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
+    field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
     long_memory_payload = _load_json(root / "benchmarks" / "long_memory_evidence_results.json")
+    locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
 
     agent_results = _engine_results(agent_payload)
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
+    locomo_results = _engine_results(locomo_payload)
 
     return [
         {
@@ -85,6 +88,49 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep precision@1 and stale suppression at 1.00 while reducing avg latency below 10 ms at 1000 memories.",
             "next_step": "Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search.",
+        },
+        {
+            "id": "field_memory_dynamics",
+            "name": "Field memory graph dynamics",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/field_memory_dynamics_benchmark.py",
+            "dataset": "13 deterministic memories: 5 conflicting fact pairs and 3 related concept memories",
+            "competitors": ["WaveMind static"],
+            "metrics": [
+                "precision@1",
+                "precision@3",
+                "stale_suppression",
+                "concept_formation",
+                "decay_ratio",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind graph": _metric_summary(
+                    (field_payload or {}).get("wave_graph"),
+                    (
+                        "precision@1",
+                        "precision@3",
+                        "stale_suppression",
+                        "concept_formation",
+                        "decay_ratio",
+                        "avg_latency_ms",
+                    ),
+                ),
+                "WaveMind static": _metric_summary(
+                    (field_payload or {}).get("wave_static"),
+                    (
+                        "precision@1",
+                        "precision@3",
+                        "stale_suppression",
+                        "concept_formation",
+                        "decay_ratio",
+                        "avg_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+            "next_step": "Make MemoryFieldGraph incremental and add public-dataset conflict/update scenarios instead of only deterministic synthetic checks.",
         },
         {
             "id": "wavemind_capacity",
@@ -157,6 +203,49 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
             "next_step": "Download SciFact or NFCorpus into benchmarks/data and publish the first full public-dataset result JSON.",
         },
+        {
+            "id": "locomo_evidence_retrieval",
+            "name": "LoCoMo evidence retrieval runner",
+            "category": "long-term-conversation-memory",
+            "status": "runner-ready",
+            "source": "benchmarks/locomo_memory_benchmark.py",
+            "source_url": "https://github.com/snap-research/locomo",
+            "dataset": "Official LoCoMo locomo10.json, using conversation turns as memories and QA evidence dialog ids as relevance labels.",
+            "competitors": ["Static vector", "Chroma static", "Qdrant static"],
+            "metrics": [
+                "evidence_recall@k",
+                "precision@1",
+                "MRR@k",
+                "context_budget_saved",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind": _metric_summary(
+                    locomo_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Static vector": _metric_summary(
+                    locomo_results.get("Static vector"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Run the official LoCoMo QA evidence retrieval task against WaveMind, static vector search, Chroma, and Qdrant with identical embeddings.",
+            "next_step": "Download locomo10.json in an unrestricted network environment and commit benchmarks/locomo_evidence_results.json from the full run.",
+        },
     ]
 
 
@@ -210,16 +299,28 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
         "next_step": "Add a generated-vector benchmark that compares NumPy exact, Annoy, and FAISS when optional dependencies are installed.",
     },
     {
-        "id": "locomo",
-        "name": "LoCoMo",
+        "id": "vectordbbench",
+        "name": "VectorDBBench",
+        "category": "vector-db",
+        "status": "planned",
+        "source_url": "https://github.com/zilliztech/VectorDBBench",
+        "dataset": "Vector database benchmark scenarios for insertion, search, filtered search, and cost/performance comparisons.",
+        "competitors": ["Chroma", "Qdrant", "Milvus", "Weaviate", "Pinecone", "FAISS"],
+        "metrics": ["qps", "serial_latency_ms", "recall@k", "load_time", "cost_performance"],
+        "target": "Use this only after WaveMind has a production index path; current NumPy mode is not a fair vector database competitor.",
+        "next_step": "Add a WaveMind adapter or a methodology note that compares WaveMind as a memory layer above a vector database, not as a standalone cloud vector DB.",
+    },
+    {
+        "id": "locomo_answer_generation",
+        "name": "LoCoMo answer generation",
         "category": "long-term-conversation-memory",
         "status": "planned",
         "source_url": "https://arxiv.org/abs/2402.17753",
-        "dataset": "Very long-term conversations with QA, event summaries, and temporal consistency checks.",
+        "dataset": "LoCoMo questions answered from retrieved evidence with an LLM.",
         "competitors": ["Chroma RAG", "Qdrant RAG", "Mem0-style memory"],
-        "metrics": ["answer_accuracy", "evidence_recall@k", "avg_latency_ms"],
+        "metrics": ["answer_accuracy", "faithfulness", "avg_end_to_end_latency_ms"],
         "target": "Beat static vector-store RAG on temporal/correction questions by at least 15 percentage points while returning compact evidence.",
-        "next_step": "Build a retrieval-only LoCoMo adapter first, then add an optional LLM-answering layer.",
+        "next_step": "After the retrieval-only LoCoMo run is published, add an optional Ollama answer-generation layer using the user's installed local model.",
     },
     {
         "id": "longmemeval",

@@ -8,6 +8,141 @@ from typing import Protocol
 import numpy as np
 
 
+RUSSIAN_SUFFIXES = (
+    "иями",
+    "ями",
+    "ами",
+    "ого",
+    "ему",
+    "ому",
+    "ыми",
+    "ими",
+    "ией",
+    "ые",
+    "ие",
+    "ой",
+    "ый",
+    "ий",
+    "ая",
+    "яя",
+    "ое",
+    "ее",
+    "ах",
+    "ях",
+    "ам",
+    "ям",
+    "ом",
+    "ем",
+    "ей",
+    "ью",
+    "у",
+    "ю",
+    "а",
+    "я",
+    "ы",
+    "и",
+    "е",
+    "о",
+    "ь",
+)
+
+
+DEFAULT_TOKEN_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "be",
+        "for",
+        "from",
+        "how",
+        "is",
+        "it",
+        "of",
+        "or",
+        "should",
+        "s",
+        "that",
+        "the",
+        "this",
+        "to",
+        "user",
+        "what",
+        "which",
+        "with",
+        "а",
+        "без",
+        "в",
+        "во",
+        "где",
+        "для",
+        "до",
+        "его",
+        "ее",
+        "её",
+        "зачем",
+        "и",
+        "из",
+        "или",
+        "к",
+        "как",
+        "какая",
+        "какие",
+        "каким",
+        "каких",
+        "какого",
+        "какой",
+        "каком",
+        "какую",
+        "кем",
+        "ко",
+        "когда",
+        "лучше",
+        "на",
+        "но",
+        "нужен",
+        "нужна",
+        "нужно",
+        "о",
+        "об",
+        "он",
+        "она",
+        "от",
+        "по",
+        "пользователь",
+        "пользователя",
+        "почему",
+        "при",
+        "про",
+        "с",
+        "со",
+        "у",
+        "чем",
+        "что",
+        "это",
+    }
+)
+
+
+def normalize_token(token: str) -> str:
+    token = token.lower().replace("ё", "е")
+    if not any("а" <= char <= "я" for char in token):
+        return token
+    if len(token) <= 4:
+        return token
+    for suffix in RUSSIAN_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= 4:
+            return token[: -len(suffix)]
+    return token
+
+
+def is_stopword_token(token: str) -> bool:
+    raw = token.lower().replace("ё", "е")
+    return raw in DEFAULT_TOKEN_STOPWORDS or normalize_token(raw) in DEFAULT_TOKEN_STOPWORDS
+
+
 class TextVectorEncoder(Protocol):
     vector_dim: int
 
@@ -28,6 +163,7 @@ class HashingTextEncoder:
     vector_dim: int = 384
     token_weight: float = 4.0
     char_ngram_weight: float = 0.10
+    stopwords: frozenset[str] = DEFAULT_TOKEN_STOPWORDS
 
     def encode_vector(self, text: str) -> np.ndarray:
         text = text.lower().strip()
@@ -35,7 +171,13 @@ class HashingTextEncoder:
         if not text:
             return vector
 
-        tokens = re.findall(r"[\w]+", text, flags=re.UNICODE)
+        tokens = []
+        for token in re.findall(r"[\w]+", text, flags=re.UNICODE):
+            if is_stopword_token(token):
+                continue
+            normalized = normalize_token(token)
+            if normalized not in self.stopwords:
+                tokens.append(normalized)
         for token in tokens:
             self._add_feature(vector, f"tok:{token}", self.token_weight)
 

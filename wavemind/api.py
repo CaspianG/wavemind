@@ -44,6 +44,7 @@ class QueryResultResponse(BaseModel):
     score: float
     vector_score: float
     field_score: float
+    graph_score: float
     namespace: str
     tags: list[str]
     metadata: dict[str, Any]
@@ -97,6 +98,9 @@ def build_default_mind() -> WaveMind:
         encoder=encoder,
         index_kind=index_kind,
         score_threshold=score_threshold,
+        graph_weight=float(os.environ.get("WAVEMIND_GRAPH_WEIGHT", "0.0")),
+        graph_steps=int(os.environ.get("WAVEMIND_GRAPH_STEPS", "2")),
+        graph_expand_k=int(os.environ.get("WAVEMIND_GRAPH_EXPAND_K", "10")),
     )
 
 
@@ -135,6 +139,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                     score=result.score,
                     vector_score=result.vector_score,
                     field_score=result.field_score,
+                    graph_score=result.graph_score,
                     namespace=result.namespace,
                     tags=list(result.tags),
                     metadata=result.metadata,

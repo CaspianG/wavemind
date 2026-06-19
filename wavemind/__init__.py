@@ -6,6 +6,7 @@ from .encoders import (
     TextEncoder,
     create_text_encoder,
 )
+from .field_graph import MemoryFieldGraph
 from .storage import MemoryRecord, SQLiteMemoryStore
 
 __version__ = "2.0.5"
@@ -13,6 +14,7 @@ __version__ = "2.0.5"
 __all__ = [
     "FieldProjector",
     "HashingTextEncoder",
+    "MemoryFieldGraph",
     "MemoryRecord",
     "QueryResult",
     "SentenceTransformerTextEncoder",

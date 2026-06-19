@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="980" viewBox="0 0 1180 980" role="img" aria-label="WaveMind benchmark summary">
-<rect width="1180" height="980" fill="#f6f8fb" />
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1180" viewBox="0 0 1180 1180" role="img" aria-label="WaveMind benchmark summary">
+<rect width="1180" height="1180" fill="#f6f8fb" />
 <text x="42.0" y="54.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="30" font-weight="800" fill="#111827">WaveMind Benchmark Summary</text>
 <text x="42.0" y="82.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="400" fill="#556070">Generated from repository JSON results. Planned public benchmarks are not drawn as wins.</text>
 <rect x="40.0" y="120.0" width="520.0" height="245.0" rx="10" fill="#ffffff" stroke="#d7deea" />
@@ -44,6 +44,8 @@
 <text x="958.0" y="345.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.00</text>
 <text x="970.0" y="207.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#0a7f5a">latency 25.26 ms</text>
 <text x="970.0" y="247.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#64748b">latency 1.75 ms</text>
+<text x="646.0" y="354.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">Field graph p@1 1.00 / stale 1.00</text>
+<text x="920.0" y="354.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#64748b">static 0.20 / 0.20</text>
 <rect x="40.0" y="405.0" width="1100.0" height="205.0" rx="10" fill="#ffffff" stroke="#d7deea" />
 <text x="64.0" y="441.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Long-term memory evidence</text>
 <text x="64.0" y="466.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Synthetic long-history evidence retrieval: profile, preference, correction, TTL, namespace, and filler noise.</text>
@@ -103,4 +105,28 @@
 <text x="63.0" y="723.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085">ms</text>
 <text x="66.0" y="895.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Current fact from JSON: static p@1 is 0.94 at 5000 memories; dynamic policy p@1 is 1.00 through 5000 memories.</text>
 <text x="66.0" y="917.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Target: keep public retrieval quality at Chroma/Qdrant parity while cutting dynamic latency below 20 ms at 5000 memories.</text>
+<rect x="40.0" y="950.0" width="1100.0" height="175.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<text x="64.0" y="986.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
+<text x="64.0" y="1011.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed local checks are evidence. Public benchmarks below are the next proof path, not claimed wins.</text>
+<rect x="66.0" y="1030.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="82.0" y="1046.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
+<text x="100.0" y="1055.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">BEIR-style</text>
+<text x="82.0" y="1077.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">runner ready</text>
+<text x="82.0" y="1093.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">needs public qrels</text>
+<rect x="336.0" y="1030.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="352.0" y="1046.0" width="10.0" height="10.0" rx="5" fill="#7c3aed" />
+<text x="370.0" y="1055.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LoCoMo</text>
+<text x="352.0" y="1077.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#7c3aed">runner ready</text>
+<text x="352.0" y="1093.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">needs locomo10.json</text>
+<rect x="606.0" y="1030.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="622.0" y="1046.0" width="10.0" height="10.0" rx="5" fill="#b35c00" />
+<text x="640.0" y="1055.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LongMemEval</text>
+<text x="622.0" y="1077.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#b35c00">planned</text>
+<text x="622.0" y="1093.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">agent-memory proof</text>
+<rect x="876.0" y="1030.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="892.0" y="1046.0" width="10.0" height="10.0" rx="5" fill="#0a7f5a" />
+<text x="910.0" y="1055.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">VectorDBBench</text>
+<text x="892.0" y="1077.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">planned</text>
+<text x="892.0" y="1093.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">index-scale proof</text>
+<text x="66.0" y="1148.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.</text>
 </svg>

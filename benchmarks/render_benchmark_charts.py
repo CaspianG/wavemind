@@ -107,8 +107,19 @@ def line_chart(
     return lines
 
 
+def roadmap_card(x: float, y: float, title: str, status: str, detail: str, color: str) -> list[str]:
+    return [
+        f'<rect x="{x:.1f}" y="{y:.1f}" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />',
+        svg_rect(x + 16, y + 16, 10, 10, color, radius=5),
+        svg_text(x + 34, y + 25, title, size=14, weight="700", fill="#111827"),
+        svg_text(x + 16, y + 47, status, size=12, weight="700", fill=color),
+        svg_text(x + 16, y + 63, detail, size=11, fill="#667085"),
+    ]
+
+
 def build_svg(root: Path = PROJECT_ROOT) -> str:
     agent = by_engine(load_json(root / "benchmarks" / "agent_memory_results.json"))
+    field = load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     dynamic = by_engine(load_json(root / "benchmarks" / "dynamic_memory_results.json"))
     long_memory = by_engine(load_json(root / "benchmarks" / "long_memory_evidence_results.json"))
     capacity = load_json(root / "benchmarks" / "wavemind_capacity_results.json")
@@ -117,6 +128,8 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     chroma_agent = agent["Chroma"]
     wm_dynamic = dynamic["WaveMind"]
     chroma_dynamic = dynamic["Chroma static"]
+    wm_field = field["wave_graph"]
+    static_field = field["wave_static"]
     wm_long = long_memory["WaveMind"]
     static_long = long_memory["Static vector"]
     static_points = [
@@ -129,8 +142,8 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     ]
 
     items: list[str] = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="980" viewBox="0 0 1180 980" role="img" aria-label="WaveMind benchmark summary">',
-        '<rect width="1180" height="980" fill="#f6f8fb" />',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1180" viewBox="0 0 1180 1180" role="img" aria-label="WaveMind benchmark summary">',
+        '<rect width="1180" height="1180" fill="#f6f8fb" />',
         svg_text(42, 54, "WaveMind Benchmark Summary", size=30, weight="800", fill="#111827"),
         svg_text(42, 82, "Generated from repository JSON results. Planned public benchmarks are not drawn as wins.", size=14, fill="#556070"),
     ]
@@ -150,6 +163,8 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     items.extend(metric_bar(646, 326, "Chroma static stale suppression", float(chroma_dynamic["suppression_rate"]), "#64748b"))
     items.append(svg_text(970, 207, f"latency {ms(float(wm_dynamic['avg_latency_ms']))}", size=12, fill="#0a7f5a"))
     items.append(svg_text(970, 247, f"latency {ms(float(chroma_dynamic['avg_latency_ms']))}", size=12, fill="#64748b"))
+    items.append(svg_text(646, 354, f"Field graph p@1 {float(wm_field['precision@1']):.2f} / stale {float(wm_field['stale_suppression']):.2f}", size=12, weight="700", fill="#0a7f5a"))
+    items.append(svg_text(920, 354, f"static {float(static_field['precision@1']):.2f} / {float(static_field['stale_suppression']):.2f}", size=12, fill="#64748b"))
 
     items.extend(panel(40, 405, 1100, 205, "Long-term memory evidence", "Synthetic long-history evidence retrieval: profile, preference, correction, TTL, namespace, and filler noise."))
     items.extend(metric_bar(66, 483, "WaveMind evidence recall@5", float(wm_long["evidence_recall_at_k"]), "#7c3aed", width=255))
@@ -164,6 +179,12 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     items.extend(line_chart(105, 735, 970, 115, static_points, dynamic_points))
     items.append(svg_text(66, 895, "Current fact from JSON: static p@1 is 0.94 at 5000 memories; dynamic policy p@1 is 1.00 through 5000 memories.", size=13, fill="#344054"))
     items.append(svg_text(66, 917, "Target: keep public retrieval quality at Chroma/Qdrant parity while cutting dynamic latency below 20 ms at 5000 memories.", size=13, fill="#344054"))
+    items.extend(panel(40, 950, 1100, 175, "Public benchmark roadmap", "Completed local checks are evidence. Public benchmarks below are the next proof path, not claimed wins."))
+    items.extend(roadmap_card(66, 1030, "BEIR-style", "runner ready", "needs public qrels", "#246bfe"))
+    items.extend(roadmap_card(336, 1030, "LoCoMo", "runner ready", "needs locomo10.json", "#7c3aed"))
+    items.extend(roadmap_card(606, 1030, "LongMemEval", "planned", "agent-memory proof", "#b35c00"))
+    items.extend(roadmap_card(876, 1030, "VectorDBBench", "planned", "index-scale proof", "#0a7f5a"))
+    items.append(svg_text(66, 1148, "Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.", size=13, fill="#344054"))
     items.append("</svg>")
     return "\n".join(items) + "\n"
 
