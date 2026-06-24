@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1360" viewBox="0 0 1180 1360" role="img" aria-label="WaveMind benchmark summary">
-<rect width="1180" height="1360" fill="#f6f8fb" />
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1535" viewBox="0 0 1180 1535" role="img" aria-label="WaveMind benchmark summary">
+<rect width="1180" height="1535" fill="#f6f8fb" />
 <text x="42.0" y="54.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="30" font-weight="800" fill="#111827">WaveMind Benchmark Summary</text>
 <text x="42.0" y="82.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="400" fill="#556070">Generated from repository JSON results. Planned public benchmarks are not drawn as wins.</text>
 <rect x="40.0" y="120.0" width="520.0" height="245.0" rx="10" fill="#ffffff" stroke="#d7deea" />
@@ -103,52 +103,76 @@
 <text x="63.0" y="723.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085">ms</text>
 <text x="66.0" y="895.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Current fact from JSON: static p@1 is 0.94 at 5000 memories; dynamic policy p@1 is 1.00 through 5000 memories.</text>
 <text x="66.0" y="917.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Target: keep public retrieval quality at Chroma/Qdrant parity while cutting dynamic latency below 20 ms at 5000 memories.</text>
-<rect x="40.0" y="950.0" width="1100.0" height="190.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<rect x="40.0" y="950.0" width="1100.0" height="335.0" rx="10" fill="#ffffff" stroke="#d7deea" />
 <text x="64.0" y="986.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark runs</text>
-<text x="64.0" y="1011.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Official public datasets with identical hash embeddings. These are retrieval/evidence checks, not final semantic-answer scores.</text>
+<text x="64.0" y="1011.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Official public datasets with identical embeddings per run. These are retrieval/evidence checks, not final answer-quality scores.</text>
 <text x="66.0" y="1028.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo WaveMind evidence recall@5</text>
 <rect x="66.0" y="1036.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
 <rect x="66.0" y="1036.0" width="98.4" height="12.0" rx="6" fill="#7c3aed" />
 <text x="333.0" y="1047.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.39</text>
 <text x="66.0" y="1070.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo Chroma static evidence recall@5</text>
 <rect x="66.0" y="1078.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="66.0" y="1078.0" width="48.2" height="12.0" rx="6" fill="#64748b" />
-<text x="333.0" y="1089.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.19</text>
+<rect x="66.0" y="1078.0" width="47.1" height="12.0" rx="6" fill="#64748b" />
+<text x="333.0" y="1089.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.18</text>
 <text x="410.0" y="1028.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo static vector evidence recall@5</text>
 <rect x="410.0" y="1036.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
 <rect x="410.0" y="1036.0" width="51.8" height="12.0" rx="6" fill="#94a3b8" />
 <text x="677.0" y="1047.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#94a3b8">0.20</text>
-<text x="755.0" y="1028.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">BEIR SciFact WaveMind nDCG@10</text>
+<text x="755.0" y="1028.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo Qdrant static evidence recall@5</text>
 <rect x="755.0" y="1036.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="755.0" y="1036.0" width="90.3" height="12.0" rx="6" fill="#246bfe" />
-<text x="1022.0" y="1047.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">0.35</text>
-<text x="755.0" y="1070.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">BEIR SciFact Chroma nDCG@10</text>
-<rect x="755.0" y="1078.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="755.0" y="1078.0" width="88.9" height="12.0" rx="6" fill="#64748b" />
-<text x="1022.0" y="1089.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.35</text>
-<text x="66.0" y="1122.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency: LoCoMo WaveMind 13.02 ms vs Chroma 1.93 ms; SciFact WaveMind 84.59 ms vs Chroma 1.93 ms.</text>
-<rect x="40.0" y="1165.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
-<text x="64.0" y="1201.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
-<text x="64.0" y="1226.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>
-<rect x="66.0" y="1235.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="82.0" y="1251.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
-<text x="100.0" y="1260.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">BEIR SciFact</text>
-<text x="82.0" y="1282.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">implemented</text>
-<text x="82.0" y="1298.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash retrieval run</text>
-<rect x="336.0" y="1235.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="352.0" y="1251.0" width="10.0" height="10.0" rx="5" fill="#7c3aed" />
-<text x="370.0" y="1260.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LoCoMo</text>
-<text x="352.0" y="1282.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#7c3aed">implemented</text>
-<text x="352.0" y="1298.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">evidence retrieval</text>
-<rect x="606.0" y="1235.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="622.0" y="1251.0" width="10.0" height="10.0" rx="5" fill="#b35c00" />
-<text x="640.0" y="1260.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LongMemEval</text>
-<text x="622.0" y="1282.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#b35c00">planned</text>
-<text x="622.0" y="1298.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">agent-memory proof</text>
-<rect x="876.0" y="1235.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="892.0" y="1251.0" width="10.0" height="10.0" rx="5" fill="#0a7f5a" />
-<text x="910.0" y="1260.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">VectorDBBench</text>
-<text x="892.0" y="1282.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">planned</text>
-<text x="892.0" y="1298.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">index-scale proof</text>
-<text x="66.0" y="1342.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.</text>
+<rect x="755.0" y="1036.0" width="51.8" height="12.0" rx="6" fill="#64748b" />
+<text x="1022.0" y="1047.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.20</text>
+<text x="66.0" y="1130.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">BEIR SciFact WaveMind nDCG@10</text>
+<rect x="66.0" y="1138.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="66.0" y="1138.0" width="90.3" height="12.0" rx="6" fill="#246bfe" />
+<text x="333.0" y="1149.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">0.35</text>
+<text x="410.0" y="1130.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">BEIR SciFact Chroma nDCG@10</text>
+<rect x="410.0" y="1138.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="410.0" y="1138.0" width="89.1" height="12.0" rx="6" fill="#64748b" />
+<text x="677.0" y="1149.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.35</text>
+<text x="755.0" y="1130.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">BEIR SciFact Qdrant nDCG@10</text>
+<rect x="755.0" y="1138.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="755.0" y="1138.0" width="90.3" height="12.0" rx="6" fill="#0a7f5a" />
+<text x="1022.0" y="1149.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">0.35</text>
+<text x="66.0" y="1192.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo sentence WaveMind recall@5</text>
+<rect x="66.0" y="1200.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="66.0" y="1200.0" width="139.4" height="12.0" rx="6" fill="#7c3aed" />
+<text x="333.0" y="1211.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.55</text>
+<text x="410.0" y="1192.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo sentence Chroma recall@5</text>
+<rect x="410.0" y="1200.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="410.0" y="1200.0" width="97.7" height="12.0" rx="6" fill="#64748b" />
+<text x="677.0" y="1211.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.38</text>
+<text x="755.0" y="1192.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LongMemEval-50 WaveMind recall@5</text>
+<rect x="755.0" y="1200.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="755.0" y="1200.0" width="234.6" height="12.0" rx="6" fill="#b35c00" />
+<text x="1022.0" y="1211.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#b35c00">0.92</text>
+<text x="755.0" y="1234.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LongMemEval-50 Chroma recall@5</text>
+<rect x="755.0" y="1242.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="755.0" y="1242.0" width="25.5" height="12.0" rx="6" fill="#64748b" />
+<text x="1022.0" y="1253.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.10</text>
+<text x="66.0" y="1262.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency: LoCoMo sentence WaveMind 13.05 ms vs Chroma 1.55 ms; LongMemEval-50 WaveMind 2.56 ms vs Chroma 3.08 ms.</text>
+<rect x="40.0" y="1310.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<text x="64.0" y="1346.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
+<text x="64.0" y="1371.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>
+<rect x="66.0" y="1380.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="82.0" y="1396.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
+<text x="100.0" y="1405.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">BEIR SciFact</text>
+<text x="82.0" y="1427.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">implemented</text>
+<text x="82.0" y="1443.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash retrieval run</text>
+<rect x="336.0" y="1380.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="352.0" y="1396.0" width="10.0" height="10.0" rx="5" fill="#7c3aed" />
+<text x="370.0" y="1405.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LoCoMo</text>
+<text x="352.0" y="1427.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#7c3aed">implemented</text>
+<text x="352.0" y="1443.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash + sentence</text>
+<rect x="606.0" y="1380.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="622.0" y="1396.0" width="10.0" height="10.0" rx="5" fill="#b35c00" />
+<text x="640.0" y="1405.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LongMemEval</text>
+<text x="622.0" y="1427.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#b35c00">subset done</text>
+<text x="622.0" y="1443.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">full run next</text>
+<rect x="876.0" y="1380.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="892.0" y="1396.0" width="10.0" height="10.0" rx="5" fill="#0a7f5a" />
+<text x="910.0" y="1405.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">VectorDBBench</text>
+<text x="892.0" y="1427.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">planned</text>
+<text x="892.0" y="1443.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">index-scale proof</text>
+<text x="66.0" y="1487.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.</text>
 </svg>

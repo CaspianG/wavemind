@@ -16,6 +16,7 @@ from benchmarks.long_memory_evidence_benchmark import (
     EvidenceDataset,
     EvidenceQuery,
     LongMemory,
+    cache_encoder_for_dataset,
     run_chroma_static,
     run_qdrant_static,
     run_static_vector,
@@ -242,7 +243,8 @@ def run_benchmark(
         limit_samples=limit_samples,
         limit_queries=limit_queries,
     )
-    encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {
         "wavemind": run_wavemind,
         "static": run_static_vector,
@@ -277,7 +279,8 @@ def run_benchmark(
         },
         "embedding": {
             "kind": encoder_kind,
-            "class": type(encoder).__name__,
+            "class": type(base_encoder).__name__,
+            "cached": True,
             "vector_dim": getattr(encoder, "vector_dim", None),
             "note": "All engines receive embeddings from the same WaveMind encoder.",
         },

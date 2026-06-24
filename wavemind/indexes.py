@@ -27,6 +27,7 @@ class NumpyVectorIndex:
         self.vector_dim = int(vector_dim)
         self._vectors: dict[int, np.ndarray] = {}
         self._ids = np.array([], dtype=np.int64)
+        self._id_to_pos: dict[int, int] = {}
         self._matrix = np.zeros((0, self.vector_dim), dtype=np.float32)
         self._dirty = True
 
@@ -49,11 +50,13 @@ class NumpyVectorIndex:
             return
         if not self._vectors:
             self._ids = np.array([], dtype=np.int64)
+            self._id_to_pos = {}
             self._matrix = np.zeros((0, self.vector_dim), dtype=np.float32)
             self._dirty = False
             return
         items = sorted(self._vectors.items())
         self._ids = np.array([id for id, _ in items], dtype=np.int64)
+        self._id_to_pos = {int(id): pos for pos, (id, _) in enumerate(items)}
         self._matrix = np.stack([vector for _, vector in items]).astype(np.float32)
         self._dirty = False
 
@@ -72,11 +75,16 @@ class NumpyVectorIndex:
             ids = self._ids
             matrix = self._matrix
         else:
-            mask = np.fromiter((int(id) in allowed_ids for id in self._ids), dtype=bool)
-            if not np.any(mask):
+            positions = [
+                self._id_to_pos[int(id)]
+                for id in allowed_ids
+                if int(id) in self._id_to_pos
+            ]
+            if not positions:
                 return []
-            ids = self._ids[mask]
-            matrix = self._matrix[mask]
+            position_array = np.fromiter(positions, dtype=np.int64)
+            ids = self._ids[position_array]
+            matrix = self._matrix[position_array]
         if ids.size == 0:
             return []
 
@@ -100,28 +108,48 @@ class FaissVectorIndex(NumpyVectorIndex):
         self._faiss = faiss
         self._index = faiss.IndexFlatIP(self.vector_dim)
         self._id_order: list[int] = []
+        self._ann_dirty = True
 
     def build(self, records: Iterable) -> None:
         self._vectors.clear()
-        self._id_order.clear()
-        vectors = []
         for record in records:
-            vector = _normalize(record.vector)
-            self._vectors[int(record.id)] = vector
-            self._id_order.append(int(record.id))
-            vectors.append(vector)
-        self._index = self._faiss.IndexFlatIP(self.vector_dim)
-        if vectors:
-            self._index.add(np.stack(vectors).astype(np.float32))
+            self._vectors[int(record.id)] = _normalize(record.vector)
         self._dirty = True
+        self._ann_dirty = True
+        self._ensure_ann()
 
     def add(self, id: int, vector: np.ndarray) -> None:
         self._vectors[int(id)] = _normalize(vector)
-        self.build([type("Record", (), {"id": k, "vector": v}) for k, v in self._vectors.items()])
+        self._dirty = True
+        self._ann_dirty = True
 
     def remove(self, id: int) -> None:
         self._vectors.pop(int(id), None)
-        self.build([type("Record", (), {"id": k, "vector": v}) for k, v in self._vectors.items()])
+        self._dirty = True
+        self._ann_dirty = True
+
+    def _ensure_ann(self) -> None:
+        if not self._ann_dirty:
+            return
+        items = sorted(self._vectors.items())
+        self._id_order = [int(id) for id, _ in items]
+        self._index = self._faiss.IndexFlatIP(self.vector_dim)
+        if items:
+            self._index.add(np.stack([vector for _, vector in items]).astype(np.float32))
+        self._ann_dirty = False
+
+    def _ann_search_limit(self, top_k: int, allowed_ids: set[int] | None) -> int:
+        total = len(self._vectors)
+        if allowed_ids is None:
+            return min(top_k, total)
+        allowed_count = sum(1 for id in allowed_ids if int(id) in self._vectors)
+        if allowed_count <= 0:
+            return 0
+        if allowed_count == total:
+            return min(top_k, total)
+        if allowed_count / max(1, total) >= 0.80:
+            return min(total, max(top_k * 8, top_k + 128))
+        return 0
 
     def search(
         self,
@@ -129,17 +157,24 @@ class FaissVectorIndex(NumpyVectorIndex):
         top_k: int = 3,
         allowed_ids: set[int] | None = None,
     ) -> list[IndexResult]:
-        if allowed_ids is not None:
+        search_k = self._ann_search_limit(top_k, allowed_ids)
+        if search_k <= 0:
             return super().search(vector, top_k=top_k, allowed_ids=allowed_ids)
+        self._ensure_ann()
         if top_k <= 0 or not self._id_order:
             return []
         query = _normalize(vector).reshape(1, -1).astype(np.float32)
-        scores, positions = self._index.search(query, min(top_k, len(self._id_order)))
+        scores, positions = self._index.search(query, search_k)
         results = []
         for score, pos in zip(scores[0], positions[0]):
             if pos < 0:
                 continue
-            results.append(IndexResult(self._id_order[int(pos)], float(score)))
+            id = self._id_order[int(pos)]
+            if allowed_ids is not None and id not in allowed_ids:
+                continue
+            results.append(IndexResult(id, float(score)))
+            if len(results) >= top_k:
+                break
         return results
 
 
@@ -157,28 +192,53 @@ class AnnoyVectorIndex(NumpyVectorIndex):
         self._index = AnnoyIndex(self.vector_dim, "angular")
         self._id_order: list[int] = []
         self._built = False
+        self._ann_dirty = True
 
     def build(self, records: Iterable) -> None:
         self._vectors.clear()
-        self._id_order.clear()
+        for record in records:
+            self._vectors[int(record.id)] = _normalize(record.vector)
+        self._dirty = True
+        self._ann_dirty = True
+        self._ensure_ann()
+
+    def add(self, id: int, vector: np.ndarray) -> None:
+        self._vectors[int(id)] = _normalize(vector)
+        self._dirty = True
+        self._ann_dirty = True
+        self._built = False
+
+    def remove(self, id: int) -> None:
+        self._vectors.pop(int(id), None)
+        self._dirty = True
+        self._ann_dirty = True
+        self._built = False
+
+    def _ensure_ann(self) -> None:
+        if not self._ann_dirty:
+            return
+        items = sorted(self._vectors.items())
+        self._id_order = [int(id) for id, _ in items]
         self._index = self._AnnoyIndex(self.vector_dim, "angular")
-        for pos, record in enumerate(records):
-            vector = _normalize(record.vector)
-            self._vectors[int(record.id)] = vector
-            self._id_order.append(int(record.id))
+        for pos, (_, vector) in enumerate(items):
             self._index.add_item(pos, vector.tolist())
         if self._id_order:
             self._index.build(self.n_trees)
         self._built = True
-        self._dirty = True
+        self._ann_dirty = False
 
-    def add(self, id: int, vector: np.ndarray) -> None:
-        self._vectors[int(id)] = _normalize(vector)
-        self.build([type("Record", (), {"id": k, "vector": v}) for k, v in self._vectors.items()])
-
-    def remove(self, id: int) -> None:
-        self._vectors.pop(int(id), None)
-        self.build([type("Record", (), {"id": k, "vector": v}) for k, v in self._vectors.items()])
+    def _ann_search_limit(self, top_k: int, allowed_ids: set[int] | None) -> int:
+        total = len(self._vectors)
+        if allowed_ids is None:
+            return min(top_k, total)
+        allowed_count = sum(1 for id in allowed_ids if int(id) in self._vectors)
+        if allowed_count <= 0:
+            return 0
+        if allowed_count == total:
+            return min(top_k, total)
+        if allowed_count / max(1, total) >= 0.80:
+            return min(total, max(top_k * 8, top_k + 128))
+        return 0
 
     def search(
         self,
@@ -186,19 +246,27 @@ class AnnoyVectorIndex(NumpyVectorIndex):
         top_k: int = 3,
         allowed_ids: set[int] | None = None,
     ) -> list[IndexResult]:
-        if allowed_ids is not None:
+        search_k = self._ann_search_limit(top_k, allowed_ids)
+        if search_k <= 0:
             return super().search(vector, top_k=top_k, allowed_ids=allowed_ids)
+        self._ensure_ann()
         if top_k <= 0 or not self._id_order or not self._built:
             return []
         positions, distances = self._index.get_nns_by_vector(
             _normalize(vector).tolist(),
-            min(top_k, len(self._id_order)),
+            search_k,
             include_distances=True,
         )
-        return [
-            IndexResult(self._id_order[int(pos)], float(1.0 - distance / 2.0))
-            for pos, distance in zip(positions, distances)
-        ]
+        results = []
+        for pos, distance in zip(positions, distances):
+            id = self._id_order[int(pos)]
+            if allowed_ids is not None and id not in allowed_ids:
+                continue
+            score = 1.0 - (float(distance) * float(distance) / 2.0)
+            results.append(IndexResult(id, score))
+            if len(results) >= top_k:
+                break
+        return results
 
 
 def create_vector_index(kind: str, vector_dim: int):

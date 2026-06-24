@@ -182,6 +182,7 @@ class WaveMind:
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
         self._token_ids: dict[str, set[int]] = {}
+        self._record_tokens: dict[int, frozenset[str]] = {}
         self._graph_dirty = True
         self._field_magnitude = np.zeros((height, width), dtype=np.float32)
         self._field_magnitude_norm = 0.0
@@ -273,7 +274,7 @@ class WaveMind:
             field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
             graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
             priority_score = min(1.0, max(0.0, record.priority / 10.0))
-            lexical_score = self._lexical_match(query_tokens, record.text)
+            lexical_score = self._lexical_match(query_tokens, record.id, record.text)
             score = (
                 self.vector_weight * vector_score
                 + field_weight * field_score
@@ -436,6 +437,7 @@ class WaveMind:
         self._records_by_id.clear()
         self._namespace_ids.clear()
         self._token_ids.clear()
+        self._record_tokens.clear()
         for record in records:
             self._cache_record(record)
         self._mark_graph_dirty()
@@ -446,7 +448,9 @@ class WaveMind:
         id = int(record.id)
         self._records_by_id[id] = record
         self._namespace_ids.setdefault(record.namespace, set()).add(id)
-        for token in self._tokens(record.text):
+        tokens = self._tokens(record.text)
+        self._record_tokens[id] = frozenset(tokens)
+        for token in tokens:
             self._token_ids.setdefault(token, set()).add(id)
         self._mark_graph_dirty()
 
@@ -459,7 +463,10 @@ class WaveMind:
             ids.discard(int(id))
             if not ids:
                 self._namespace_ids.pop(record.namespace, None)
-        for token in self._tokens(record.text):
+        tokens = self._record_tokens.pop(int(id), None)
+        if tokens is None:
+            tokens = frozenset(self._tokens(record.text))
+        for token in tokens:
             token_ids = self._token_ids.get(token)
             if token_ids is None:
                 continue
@@ -522,10 +529,12 @@ class WaveMind:
             if normalized not in LEXICAL_STOPWORDS and not is_stopword_token(token)
         )
 
-    def _lexical_match(self, query_tokens: tuple[str, ...], text: str) -> float:
+    def _lexical_match(self, query_tokens: tuple[str, ...], id: int | None, text: str) -> float:
         if not query_tokens:
             return 0.0
-        text_tokens = set(self._tokens(text))
+        text_tokens = self._record_tokens.get(int(id)) if id is not None else None
+        if text_tokens is None:
+            text_tokens = frozenset(self._tokens(text))
         matched = sum(1 for token in query_tokens if token in text_tokens)
         return matched / len(query_tokens)
 

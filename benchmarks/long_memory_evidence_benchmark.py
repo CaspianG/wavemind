@@ -7,6 +7,7 @@ import statistics
 import sys
 import tempfile
 import time
+from collections.abc import Iterable as IterableABC
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
@@ -63,6 +64,41 @@ class EvidenceMetrics:
     avg_latency_ms: float
     p95_latency_ms: float
     queries: int
+
+
+class CachedTextEncoder:
+    def __init__(self, encoder, texts: Iterable[str]):
+        self.encoder = encoder
+        self.vector_dim = int(getattr(encoder, "vector_dim"))
+        unique_texts = list(dict.fromkeys(str(text) for text in texts))
+        self._cache: dict[str, np.ndarray] = {}
+        if not unique_texts:
+            return
+        if hasattr(encoder, "encode_vectors"):
+            vectors = encoder.encode_vectors(unique_texts)
+            for text, vector in zip(unique_texts, vectors):
+                self._cache[text] = np.asarray(vector, dtype=np.float32)
+            return
+        for text in unique_texts:
+            self._cache[text] = np.asarray(encoder.encode_vector(text), dtype=np.float32)
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        key = str(text)
+        if key not in self._cache:
+            self._cache[key] = np.asarray(self.encoder.encode_vector(key), dtype=np.float32)
+        return self._cache[key]
+
+    def encode_vectors(self, texts: IterableABC[str]) -> np.ndarray:
+        vectors = [self.encode_vector(text) for text in texts]
+        if not vectors:
+            return np.zeros((0, self.vector_dim), dtype=np.float32)
+        return np.stack(vectors).astype(np.float32)
+
+
+def cache_encoder_for_dataset(dataset: EvidenceDataset, encoder) -> CachedTextEncoder:
+    texts = [memory.text for memory in dataset.memories]
+    texts.extend(query.text for query in dataset.queries)
+    return CachedTextEncoder(encoder, texts)
 
 
 CORE_MEMORIES = (
@@ -195,13 +231,17 @@ def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetri
 
 
 def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
-    vectors = {item.id: encoder.encode_vector(item.text) for item in dataset.memories}
+    memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
+    vectors = {
+        item.id: vector
+        for item, vector in zip(dataset.memories, memory_vectors)
+    }
     text_by_id = {item.id: item.text for item in dataset.memories}
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
-    for query in dataset.queries:
-        qvec = encoder.encode_vector(query.text)
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
         scored = [(item_id, float(np.dot(qvec, vector))) for item_id, vector in vectors.items()]
         scored.sort(key=lambda item: item[1], reverse=True)
@@ -223,17 +263,19 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     batch_size = 1000
     for offset in range(0, len(dataset.memories), batch_size):
         batch = dataset.memories[offset : offset + batch_size]
+        vectors = encoder.encode_vectors(item.text for item in batch)
         collection.add(
             ids=[item.id for item in batch],
             documents=[item.text for item in batch],
-            embeddings=[encoder.encode_vector(item.text).tolist() for item in batch],
+            embeddings=[vector.tolist() for vector in vectors],
         )
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
-    for query in dataset.queries:
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
-        result = collection.query(query_embeddings=[encoder.encode_vector(query.text).tolist()], n_results=top_k, include=["documents"])
+        result = collection.query(query_embeddings=[qvec.tolist()], n_results=top_k, include=["documents"])
         latencies.append((time.perf_counter() - started) * 1000.0)
         rankings[query.id] = list(result.get("ids", [[]])[0])
         texts[query.id] = list(result.get("documents", [[]])[0])
@@ -250,7 +292,11 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     collection_name = f"wavemind_long_memory_{time.time_ns()}"
     client.recreate_collection(collection_name=collection_name, vectors_config=VectorParams(size=int(encoder.vector_dim), distance=Distance.COSINE))
     text_by_id = {item.id: item.text for item in dataset.memories}
-    points = [PointStruct(id=i, vector=encoder.encode_vector(item.text).tolist(), payload={"evidence_id": item.id}) for i, item in enumerate(dataset.memories, start=1)]
+    memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
+    points = [
+        PointStruct(id=i, vector=vector.tolist(), payload={"evidence_id": item.id})
+        for i, (item, vector) in enumerate(zip(dataset.memories, memory_vectors), start=1)
+    ]
     numeric_to_id = {i: item.id for i, item in enumerate(dataset.memories, start=1)}
     batch_size = 1000
     for offset in range(0, len(points), batch_size):
@@ -258,12 +304,13 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
-    for query in dataset.queries:
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
         if hasattr(client, "query_points"):
-            hits = list(client.query_points(collection_name=collection_name, query=encoder.encode_vector(query.text).tolist(), limit=top_k, with_payload=True).points)
+            hits = list(client.query_points(collection_name=collection_name, query=qvec.tolist(), limit=top_k, with_payload=True).points)
         else:
-            hits = client.search(collection_name=collection_name, query_vector=encoder.encode_vector(query.text).tolist(), limit=top_k, with_payload=True)
+            hits = client.search(collection_name=collection_name, query_vector=qvec.tolist(), limit=top_k, with_payload=True)
         latencies.append((time.perf_counter() - started) * 1000.0)
         ids = [str(getattr(hit, "payload", {}).get("evidence_id") or numeric_to_id.get(int(hit.id), "")) for hit in hits]
         rankings[query.id] = ids
@@ -283,7 +330,8 @@ def load_dataset(kind: str, memory_count: int) -> EvidenceDataset:
 
 def run_benchmark(dataset_kind: str, engines: Iterable[str], memory_count: int = 200, encoder_kind: str = "hash", top_k: int = 5) -> dict:
     dataset = load_dataset(dataset_kind, memory_count)
-    encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
+    encoder = cache_encoder_for_dataset(dataset, base_encoder)
     runners = {"wavemind": run_wavemind, "static": run_static_vector, "static-vector": run_static_vector, "chroma": run_chroma_static, "chroma-static": run_chroma_static, "qdrant": run_qdrant_static, "qdrant-static": run_qdrant_static}
     results = []
     for engine in engines:
@@ -291,7 +339,7 @@ def run_benchmark(dataset_kind: str, engines: Iterable[str], memory_count: int =
         if key not in runners:
             raise ValueError(f"Unknown engine: {engine}")
         results.append(asdict(runners[key](dataset, encoder, top_k)))
-    return {"scenario": {"name": "long_memory_evidence", "dataset": dataset.name, "memories": len(dataset.memories), "queries": len(dataset.queries), "top_k": top_k, "description": "Retrieval-only long-term memory evidence benchmark. It measures expected evidence recall, stale suppression, personalization, namespace isolation, context budget, and latency."}, "embedding": {"kind": encoder_kind, "class": type(encoder).__name__, "vector_dim": getattr(encoder, "vector_dim", None), "note": "All engines receive embeddings from the same WaveMind encoder."}, "results": results}
+    return {"scenario": {"name": "long_memory_evidence", "dataset": dataset.name, "memories": len(dataset.memories), "queries": len(dataset.queries), "top_k": top_k, "description": "Retrieval-only long-term memory evidence benchmark. It measures expected evidence recall, stale suppression, personalization, namespace isolation, context budget, and latency."}, "embedding": {"kind": encoder_kind, "class": type(base_encoder).__name__, "cached": True, "vector_dim": getattr(encoder, "vector_dim", None), "note": "All engines receive embeddings from the same WaveMind encoder."}, "results": results}
 
 
 def print_table(payload: dict) -> None:

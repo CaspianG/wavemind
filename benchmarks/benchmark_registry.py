@@ -39,12 +39,16 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     long_memory_payload = _load_json(root / "benchmarks" / "long_memory_evidence_results.json")
     open_retrieval_payload = _load_json(root / "benchmarks" / "open_retrieval_scifact_results.json")
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
+    locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
+    longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
 
     agent_results = _engine_results(agent_payload)
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
     open_retrieval_results = _engine_results(open_retrieval_payload)
     locomo_results = _engine_results(locomo_payload)
+    locomo_sentence_results = _engine_results(locomo_sentence_payload)
+    longmemeval_results = _engine_results(longmemeval_payload)
 
     return [
         {
@@ -237,7 +241,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
-            "next_step": "Add Qdrant and sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset.",
+            "next_step": "Add sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset.",
         },
         {
             "id": "locomo_evidence_retrieval",
@@ -289,9 +293,107 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p95_latency_ms",
                     ),
                 ),
+                "Qdrant static": _metric_summary(
+                    locomo_results.get("Qdrant static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "WaveMind sentence": _metric_summary(
+                    locomo_sentence_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma sentence": _metric_summary(
+                    locomo_sentence_results.get("Chroma static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant sentence": _metric_summary(
+                    locomo_sentence_results.get("Qdrant static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
             },
-            "target": "Improve LoCoMo evidence_recall@5 beyond the current hash-encoder run with semantic embeddings and field-aware evidence compression.",
-            "next_step": "Run LoCoMo with sentence-transformers and add Qdrant static; then add answer generation with a local LLM.",
+            "target": "Improve LoCoMo evidence_recall@5 with semantic embeddings and keep retrieval latency below 20 ms for WaveMind.",
+            "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness.",
+        },
+        {
+            "id": "longmemeval_evidence_50",
+            "name": "LongMemEval evidence retrieval subset",
+            "category": "long-term-agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/longmemeval_memory_benchmark.py",
+            "source_url": "https://github.com/xiaowu0162/LongMemEval",
+            "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+            "competitors": ["Static vector", "Chroma static", "Qdrant static"],
+            "metrics": [
+                "evidence_recall@k",
+                "precision@1",
+                "MRR@k",
+                "context_budget_saved",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind": _metric_summary(
+                    longmemeval_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma static": _metric_summary(
+                    longmemeval_results.get("Chroma static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant static": _metric_summary(
+                    longmemeval_results.get("Qdrant static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Run the full LongMemEval-S retrieval set and then add LLM answer accuracy/abstention evaluation.",
+            "next_step": "Run full LongMemEval-S and turn-level evidence mode with sentence-transformers.",
         },
     ]
 

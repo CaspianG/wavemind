@@ -122,6 +122,8 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     dynamic = by_engine(load_json(root / "benchmarks" / "dynamic_memory_results.json"))
     open_retrieval = by_engine(load_json(root / "benchmarks" / "open_retrieval_scifact_results.json"))
     locomo = by_engine(load_json(root / "benchmarks" / "locomo_evidence_results.json"))
+    locomo_sentence = by_engine(load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json"))
+    longmemeval = by_engine(load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json"))
     long_memory = by_engine(load_json(root / "benchmarks" / "long_memory_evidence_results.json"))
     capacity = load_json(root / "benchmarks" / "wavemind_capacity_results.json")
 
@@ -131,9 +133,15 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     chroma_dynamic = dynamic["Chroma static"]
     wm_open = open_retrieval["WaveMind"]
     chroma_open = open_retrieval["Chroma"]
+    qdrant_open = open_retrieval["Qdrant"]
     wm_locomo = locomo["WaveMind"]
     static_locomo = locomo["Static vector"]
     chroma_locomo = locomo["Chroma static"]
+    qdrant_locomo = locomo["Qdrant static"]
+    wm_locomo_sentence = locomo_sentence["WaveMind"]
+    chroma_locomo_sentence = locomo_sentence["Chroma static"]
+    wm_longmemeval = longmemeval["WaveMind"]
+    chroma_longmemeval = longmemeval["Chroma static"]
     wm_long = long_memory["WaveMind"]
     static_long = long_memory["Static vector"]
     static_points = [
@@ -146,8 +154,8 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     ]
 
     items: list[str] = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1360" viewBox="0 0 1180 1360" role="img" aria-label="WaveMind benchmark summary">',
-        '<rect width="1180" height="1360" fill="#f6f8fb" />',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1535" viewBox="0 0 1180 1535" role="img" aria-label="WaveMind benchmark summary">',
+        '<rect width="1180" height="1535" fill="#f6f8fb" />',
         svg_text(42, 54, "WaveMind Benchmark Summary", size=30, weight="800", fill="#111827"),
         svg_text(42, 82, "Generated from repository JSON results. Planned public benchmarks are not drawn as wins.", size=14, fill="#556070"),
     ]
@@ -181,20 +189,26 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     items.extend(line_chart(105, 735, 970, 115, static_points, dynamic_points))
     items.append(svg_text(66, 895, "Current fact from JSON: static p@1 is 0.94 at 5000 memories; dynamic policy p@1 is 1.00 through 5000 memories.", size=13, fill="#344054"))
     items.append(svg_text(66, 917, "Target: keep public retrieval quality at Chroma/Qdrant parity while cutting dynamic latency below 20 ms at 5000 memories.", size=13, fill="#344054"))
-    items.extend(panel(40, 950, 1100, 190, "Public benchmark runs", "Official public datasets with identical hash embeddings. These are retrieval/evidence checks, not final semantic-answer scores."))
+    items.extend(panel(40, 950, 1100, 335, "Public benchmark runs", "Official public datasets with identical embeddings per run. These are retrieval/evidence checks, not final answer-quality scores."))
     items.extend(metric_bar(66, 1028, "LoCoMo WaveMind evidence recall@5", float(wm_locomo["evidence_recall_at_k"]), "#7c3aed", width=255))
     items.extend(metric_bar(66, 1070, "LoCoMo Chroma static evidence recall@5", float(chroma_locomo["evidence_recall_at_k"]), "#64748b", width=255))
     items.extend(metric_bar(410, 1028, "LoCoMo static vector evidence recall@5", float(static_locomo["evidence_recall_at_k"]), "#94a3b8", width=255))
-    items.extend(metric_bar(755, 1028, "BEIR SciFact WaveMind nDCG@10", float(wm_open["ndcg_at_k"]), "#246bfe", width=255))
-    items.extend(metric_bar(755, 1070, "BEIR SciFact Chroma nDCG@10", float(chroma_open["ndcg_at_k"]), "#64748b", width=255))
-    items.append(svg_text(66, 1122, f"Latency: LoCoMo WaveMind {ms(float(wm_locomo['avg_latency_ms']))} vs Chroma {ms(float(chroma_locomo['avg_latency_ms']))}; SciFact WaveMind {ms(float(wm_open['avg_latency_ms']))} vs Chroma {ms(float(chroma_open['avg_latency_ms']))}.", size=13, fill="#344054"))
+    items.extend(metric_bar(755, 1028, "LoCoMo Qdrant static evidence recall@5", float(qdrant_locomo["evidence_recall_at_k"]), "#64748b", width=255))
+    items.extend(metric_bar(66, 1130, "BEIR SciFact WaveMind nDCG@10", float(wm_open["ndcg_at_k"]), "#246bfe", width=255))
+    items.extend(metric_bar(410, 1130, "BEIR SciFact Chroma nDCG@10", float(chroma_open["ndcg_at_k"]), "#64748b", width=255))
+    items.extend(metric_bar(755, 1130, "BEIR SciFact Qdrant nDCG@10", float(qdrant_open["ndcg_at_k"]), "#0a7f5a", width=255))
+    items.extend(metric_bar(66, 1192, "LoCoMo sentence WaveMind recall@5", float(wm_locomo_sentence["evidence_recall_at_k"]), "#7c3aed", width=255))
+    items.extend(metric_bar(410, 1192, "LoCoMo sentence Chroma recall@5", float(chroma_locomo_sentence["evidence_recall_at_k"]), "#64748b", width=255))
+    items.extend(metric_bar(755, 1192, "LongMemEval-50 WaveMind recall@5", float(wm_longmemeval["evidence_recall_at_k"]), "#b35c00", width=255))
+    items.extend(metric_bar(755, 1234, "LongMemEval-50 Chroma recall@5", float(chroma_longmemeval["evidence_recall_at_k"]), "#64748b", width=255))
+    items.append(svg_text(66, 1262, f"Latency: LoCoMo sentence WaveMind {ms(float(wm_locomo_sentence['avg_latency_ms']))} vs Chroma {ms(float(chroma_locomo_sentence['avg_latency_ms']))}; LongMemEval-50 WaveMind {ms(float(wm_longmemeval['avg_latency_ms']))} vs Chroma {ms(float(chroma_longmemeval['avg_latency_ms']))}.", size=13, fill="#344054"))
 
-    items.extend(panel(40, 1165, 1100, 155, "Public benchmark roadmap", "Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins."))
-    items.extend(roadmap_card(66, 1235, "BEIR SciFact", "implemented", "hash retrieval run", "#246bfe"))
-    items.extend(roadmap_card(336, 1235, "LoCoMo", "implemented", "evidence retrieval", "#7c3aed"))
-    items.extend(roadmap_card(606, 1235, "LongMemEval", "planned", "agent-memory proof", "#b35c00"))
-    items.extend(roadmap_card(876, 1235, "VectorDBBench", "planned", "index-scale proof", "#0a7f5a"))
-    items.append(svg_text(66, 1342, "Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.", size=13, fill="#344054"))
+    items.extend(panel(40, 1310, 1100, 155, "Public benchmark roadmap", "Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins."))
+    items.extend(roadmap_card(66, 1380, "BEIR SciFact", "implemented", "hash retrieval run", "#246bfe"))
+    items.extend(roadmap_card(336, 1380, "LoCoMo", "implemented", "hash + sentence", "#7c3aed"))
+    items.extend(roadmap_card(606, 1380, "LongMemEval", "subset done", "full run next", "#b35c00"))
+    items.extend(roadmap_card(876, 1380, "VectorDBBench", "planned", "index-scale proof", "#0a7f5a"))
+    items.append(svg_text(66, 1487, "Also planned: MTEB Retrieval, MIRACL Russian, ANN-Benchmarks style curve, LMEB, and RAGBench.", size=13, fill="#344054"))
     items.append("</svg>")
     return "\n".join(items) + "\n"
 

@@ -247,21 +247,28 @@
           "recall_at_k": 0.4822222222222222,
           "mrr_at_k": 0.31723280423280426,
           "precision_at_1": 0.24,
-          "avg_latency_ms": 84.59273800000422,
-          "p95_latency_ms": 157.63309999965713
+          "avg_latency_ms": 117.02300000005077,
+          "p95_latency_ms": 256.56770000023243
         },
         "Chroma": {
-          "ndcg_at_k": 0.3484952423270274,
-          "recall_at_k": 0.47055555555555556,
-          "mrr_at_k": 0.31330291005291006,
-          "precision_at_1": 0.24,
-          "avg_latency_ms": 1.9327806666812346,
-          "p95_latency_ms": 2.7665000006891205
+          "ndcg_at_k": 0.34950128427474425,
+          "recall_at_k": 0.4672222222222222,
+          "mrr_at_k": 0.31546560846560845,
+          "precision_at_1": 0.24333333333333335,
+          "avg_latency_ms": 1.7941083333729086,
+          "p95_latency_ms": 2.3873000009189127
         },
-        "Qdrant": null
+        "Qdrant": {
+          "ndcg_at_k": 0.3543131876597741,
+          "recall_at_k": 0.4822222222222222,
+          "mrr_at_k": 0.31723280423280426,
+          "precision_at_1": 0.24,
+          "avg_latency_ms": 17.71107433324384,
+          "p95_latency_ms": 23.283700000320096
+        }
       },
       "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
-      "next_step": "Add Qdrant and sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset."
+      "next_step": "Add sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset."
     },
     {
       "id": "locomo_evidence_retrieval",
@@ -289,28 +296,109 @@
           "precision_at_1": 0.238745574102175,
           "mrr_at_k": 0.3073849266565503,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 13.018861557925877,
-          "p95_latency_ms": 21.59639999990759
+          "avg_latency_ms": 19.652891856360075,
+          "p95_latency_ms": 37.5144999998156
         },
         "Static vector": {
           "evidence_recall_at_k": 0.20295630246089943,
           "precision_at_1": 0.11684370257966616,
           "mrr_at_k": 0.1535491485415613,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 13.597954779956256,
-          "p95_latency_ms": 16.772300000411633
+          "avg_latency_ms": 23.1400655538735,
+          "p95_latency_ms": 34.70080000079179
         },
         "Chroma static": {
-          "evidence_recall_at_k": 0.18887773223665397,
-          "precision_at_1": 0.10925644916540213,
-          "mrr_at_k": 0.14333164727701905,
+          "evidence_recall_at_k": 0.18453613722738063,
+          "precision_at_1": 0.11026808295397066,
+          "mrr_at_k": 0.14253920080930704,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 1.9268576631346948,
-          "p95_latency_ms": 2.7861999997185194
+          "avg_latency_ms": 3.056627111793856,
+          "p95_latency_ms": 5.825300000651623
+        },
+        "Qdrant static": {
+          "evidence_recall_at_k": 0.20295630246089943,
+          "precision_at_1": 0.11684370257966616,
+          "mrr_at_k": 0.1535491485415613,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 23.633159281743826,
+          "p95_latency_ms": 36.11140000066371
+        },
+        "WaveMind sentence": {
+          "evidence_recall_at_k": 0.5467003466883669,
+          "precision_at_1": 0.3333333333333333,
+          "mrr_at_k": 0.43166413758219524,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 13.045345422361397,
+          "p95_latency_ms": 22.991100000581355
+        },
+        "Chroma sentence": {
+          "evidence_recall_at_k": 0.3830341130796366,
+          "precision_at_1": 0.20536165907941326,
+          "mrr_at_k": 0.28752318327432136,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 1.5476434496441964,
+          "p95_latency_ms": 2.1997000003466383
+        },
+        "Qdrant sentence": {
+          "evidence_recall_at_k": 0.38404574686820514,
+          "precision_at_1": 0.20536165907941326,
+          "mrr_at_k": 0.2877760917214635,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 26.805272129464843,
+          "p95_latency_ms": 31.365500000902102
         }
       },
-      "target": "Improve LoCoMo evidence_recall@5 beyond the current hash-encoder run with semantic embeddings and field-aware evidence compression.",
-      "next_step": "Run LoCoMo with sentence-transformers and add Qdrant static; then add answer generation with a local LLM."
+      "target": "Improve LoCoMo evidence_recall@5 with semantic embeddings and keep retrieval latency below 20 ms for WaveMind.",
+      "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness."
+    },
+    {
+      "id": "longmemeval_evidence_50",
+      "name": "LongMemEval evidence retrieval subset",
+      "category": "long-term-agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/longmemeval_memory_benchmark.py",
+      "source_url": "https://github.com/xiaowu0162/LongMemEval",
+      "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+      "competitors": [
+        "Static vector",
+        "Chroma static",
+        "Qdrant static"
+      ],
+      "metrics": [
+        "evidence_recall@k",
+        "precision@1",
+        "MRR@k",
+        "context_budget_saved",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "evidence_recall_at_k": 0.92,
+          "precision_at_1": 0.78,
+          "mrr_at_k": 0.8383333333333334,
+          "context_budget_saved": 0.8693431169150008,
+          "avg_latency_ms": 2.5593559999470017,
+          "p95_latency_ms": 5.2978000003349734
+        },
+        "Chroma static": {
+          "evidence_recall_at_k": 0.1,
+          "precision_at_1": 0.04,
+          "mrr_at_k": 0.058333333333333334,
+          "context_budget_saved": 0.9172965265305569,
+          "avg_latency_ms": 3.0771299999105395,
+          "p95_latency_ms": 3.4225999988848343
+        },
+        "Qdrant static": {
+          "evidence_recall_at_k": 0.12,
+          "precision_at_1": 0.04,
+          "mrr_at_k": 0.06333333333333334,
+          "context_budget_saved": 0.9181278909935786,
+          "avg_latency_ms": 10.521501999901375,
+          "p95_latency_ms": 15.854299999773502
+        }
+      },
+      "target": "Run the full LongMemEval-S retrieval set and then add LLM answer accuracy/abstention evaluation.",
+      "next_step": "Run full LongMemEval-S and turn-level evidence mode with sentence-transformers."
     },
     {
       "id": "beir",

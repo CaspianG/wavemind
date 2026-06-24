@@ -12,6 +12,7 @@
   "embedding": {
     "kind": "hash",
     "class": "HashingTextEncoder",
+    "cached": true,
     "vector_dim": 384,
     "note": "All engines receive embeddings from the same WaveMind encoder."
   },
@@ -32,8 +33,8 @@
       },
       "context_tokens_returned": 442598,
       "context_budget_saved": 0.0,
-      "avg_latency_ms": 13.018861557925877,
-      "p95_latency_ms": 21.59639999990759,
+      "avg_latency_ms": 19.652891856360075,
+      "p95_latency_ms": 37.5144999998156,
       "queries": 1977
     },
     {
@@ -52,28 +53,48 @@
       },
       "context_tokens_returned": 383229,
       "context_budget_saved": 0.0,
-      "avg_latency_ms": 13.597954779956256,
-      "p95_latency_ms": 16.772300000411633,
+      "avg_latency_ms": 23.1400655538735,
+      "p95_latency_ms": 34.70080000079179,
       "queries": 1977
     },
     {
       "engine": "Chroma static",
-      "evidence_recall_at_k": 0.18887773223665397,
-      "evidence_precision_at_k": 0.041982802225594334,
-      "mrr_at_k": 0.14333164727701905,
-      "precision_at_1": 0.10925644916540213,
+      "evidence_recall_at_k": 0.18453613722738063,
+      "evidence_precision_at_k": 0.04107233181588265,
+      "mrr_at_k": 0.14253920080930704,
+      "precision_at_1": 0.11026808295397066,
       "stale_suppression": 1.0,
       "category_success": {
-        "1": 0.099644128113879,
-        "2": 0.203125,
-        "3": 0.07865168539325842,
+        "1": 0.10320284697508897,
+        "2": 0.184375,
+        "3": 0.06741573033707865,
         "4": 0.267538644470868,
-        "5": 0.18161434977578475
+        "5": 0.17488789237668162
       },
-      "context_tokens_returned": 381086,
+      "context_tokens_returned": 381287,
       "context_budget_saved": 0.0,
-      "avg_latency_ms": 1.9268576631346948,
-      "p95_latency_ms": 2.7861999997185194,
+      "avg_latency_ms": 3.056627111793856,
+      "p95_latency_ms": 5.825300000651623,
+      "queries": 1977
+    },
+    {
+      "engine": "Qdrant static",
+      "evidence_recall_at_k": 0.20295630246089943,
+      "evidence_precision_at_k": 0.04501770359129995,
+      "mrr_at_k": 0.1535491485415613,
+      "precision_at_1": 0.11684370257966616,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.10676156583629894,
+        "2": 0.209375,
+        "3": 0.0898876404494382,
+        "4": 0.28894173602853745,
+        "5": 0.19730941704035873
+      },
+      "context_tokens_returned": 383229,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 23.633159281743826,
+      "p95_latency_ms": 36.11140000066371,
       "queries": 1977
     }
   ]

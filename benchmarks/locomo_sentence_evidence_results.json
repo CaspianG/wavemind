@@ -1,0 +1,101 @@
+{
+  "scenario": {
+    "name": "locomo_evidence_retrieval",
+    "dataset": "benchmarks\\data\\locomo10.json",
+    "source_url": "https://github.com/snap-research/locomo",
+    "conversations": 10,
+    "memories": 5882,
+    "queries": 1977,
+    "top_k": 5,
+    "description": "LoCoMo retrieval-only evidence benchmark. It uses conversation turns as memories and QA evidence dialog ids as relevance labels."
+  },
+  "embedding": {
+    "kind": "sentence",
+    "class": "SentenceTransformerTextEncoder",
+    "cached": true,
+    "vector_dim": 768,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "evidence_recall_at_k": 0.5467003466883669,
+      "evidence_precision_at_k": 0.12979261507334347,
+      "mrr_at_k": 0.43166413758219524,
+      "precision_at_1": 0.3333333333333333,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.5587188612099644,
+        "2": 0.66875,
+        "3": 0.38202247191011235,
+        "4": 0.652794292508918,
+        "5": 0.5224215246636771
+      },
+      "context_tokens_returned": 446383,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 13.045345422361397,
+      "p95_latency_ms": 22.991100000581355,
+      "queries": 1977
+    },
+    {
+      "engine": "Static vector",
+      "evidence_recall_at_k": 0.38404574686820514,
+      "evidence_precision_at_k": 0.09165402124430956,
+      "mrr_at_k": 0.2877760917214635,
+      "precision_at_1": 0.20536165907941326,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.4199288256227758,
+        "2": 0.4625,
+        "3": 0.25842696629213485,
+        "4": 0.5160523186682521,
+        "5": 0.2982062780269058
+      },
+      "context_tokens_returned": 383476,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 14.807387556892143,
+      "p95_latency_ms": 18.96120000128576,
+      "queries": 1977
+    },
+    {
+      "engine": "Chroma static",
+      "evidence_recall_at_k": 0.3830341130796366,
+      "evidence_precision_at_k": 0.09145169448659586,
+      "mrr_at_k": 0.28752318327432136,
+      "precision_at_1": 0.20536165907941326,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.4199288256227758,
+        "2": 0.4625,
+        "3": 0.25842696629213485,
+        "4": 0.5136741973840666,
+        "5": 0.2982062780269058
+      },
+      "context_tokens_returned": 383250,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 1.5476434496441964,
+      "p95_latency_ms": 2.1997000003466383,
+      "queries": 1977
+    },
+    {
+      "engine": "Qdrant static",
+      "evidence_recall_at_k": 0.38404574686820514,
+      "evidence_precision_at_k": 0.09165402124430956,
+      "mrr_at_k": 0.2877760917214635,
+      "precision_at_1": 0.20536165907941326,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "1": 0.4199288256227758,
+        "2": 0.4625,
+        "3": 0.25842696629213485,
+        "4": 0.5160523186682521,
+        "5": 0.2982062780269058
+      },
+      "context_tokens_returned": 383476,
+      "context_budget_saved": 0.0,
+      "avg_latency_ms": 26.805272129464843,
+      "p95_latency_ms": 31.365500000902102,
+      "queries": 1977
+    }
+  ]
+}

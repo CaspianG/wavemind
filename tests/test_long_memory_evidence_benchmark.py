@@ -68,6 +68,38 @@ def test_metrics_reward_expected_evidence_and_stale_suppression():
     assert metrics.context_budget_saved > 0.0
 
 
+def test_cached_encoder_batches_unique_dataset_texts():
+    import numpy as np
+
+    from benchmarks.long_memory_evidence_benchmark import CachedTextEncoder
+
+    class FakeEncoder:
+        vector_dim = 4
+
+        def __init__(self):
+            self.calls = 0
+
+        def encode_vectors(self, texts):
+            items = list(texts)
+            self.calls += 1
+            return np.stack(
+                [
+                    np.array([index + 1, 0.0, 0.0, 0.0], dtype=np.float32)
+                    for index, _ in enumerate(items)
+                ]
+            )
+
+        def encode_vector(self, text):
+            raise AssertionError("cache miss should not call single encode")
+
+    fake = FakeEncoder()
+    cached = CachedTextEncoder(fake, ["alpha", "beta", "alpha"])
+
+    assert fake.calls == 1
+    assert np.allclose(cached.encode_vector("alpha"), [1.0, 0.0, 0.0, 0.0])
+    assert np.allclose(cached.encode_vector("beta"), [2.0, 0.0, 0.0, 0.0])
+
+
 def test_long_memory_cli_writes_json_for_wavemind(tmp_path):
     output = tmp_path / "long-memory-result.json"
     project_root = Path(__file__).resolve().parents[1]

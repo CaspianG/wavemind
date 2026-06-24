@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
+from collections.abc import Iterable
 from typing import Protocol
 
 import numpy as np
@@ -149,6 +150,9 @@ class TextVectorEncoder(Protocol):
     def encode_vector(self, text: str) -> np.ndarray:
         ...
 
+    def encode_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        ...
+
 
 def _l2_normalize(vector: np.ndarray) -> np.ndarray:
     vector = np.asarray(vector, dtype=np.float32)
@@ -192,6 +196,12 @@ class HashingTextEncoder:
 
         return _l2_normalize(vector)
 
+    def encode_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        vectors = [self.encode_vector(text) for text in texts]
+        if not vectors:
+            return np.zeros((0, self.vector_dim), dtype=np.float32)
+        return np.stack(vectors).astype(np.float32)
+
     def _add_feature(self, vector: np.ndarray, feature: str, weight: float) -> None:
         digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=16).digest()
         bucket = int.from_bytes(digest[:8], "little") % self.vector_dim
@@ -224,9 +234,24 @@ class SentenceTransformerTextEncoder:
             self.vector_dim = 768
 
     def encode_vector(self, text: str) -> np.ndarray:
-        encoded = self.model.encode([text], normalize_embeddings=True)
-        vector = np.asarray(encoded[0], dtype=np.float32)
-        return _l2_normalize(vector)
+        return self.encode_vectors([text])[0]
+
+    def encode_vectors(self, texts: Iterable[str]) -> np.ndarray:
+        batch = list(texts)
+        if not batch:
+            return np.zeros((0, self.vector_dim), dtype=np.float32)
+        try:
+            encoded = self.model.encode(
+                batch,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+            )
+        except TypeError:
+            encoded = self.model.encode(batch, normalize_embeddings=True)
+        vectors = np.asarray(encoded, dtype=np.float32)
+        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        norms = np.where(norms <= 1e-12, 1.0, norms)
+        return (vectors / norms).astype(np.float32)
 
 
 class FieldProjector:
