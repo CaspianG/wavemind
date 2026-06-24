@@ -29,10 +29,16 @@ def fmt(value: Any) -> str:
 METRIC_LABELS = {
     "precision_at_1": "precision@1",
     "precision_at_3": "precision@3",
+    "precision@1": "precision@1",
+    "precision@3": "precision@3",
+    "ndcg_at_k": "nDCG@k",
+    "recall_at_k": "Recall@k",
     "evidence_recall_at_k": "evidence recall@k",
     "mrr_at_k": "MRR@k",
     "stale_suppression": "stale suppression",
     "suppression_rate": "stale suppression",
+    "concept_formation": "concept formation",
+    "decay_ratio": "decay ratio",
     "context_budget_saved": "context saved",
     "avg_latency_ms": "avg latency",
     "p95_latency_ms": "p95 latency",
@@ -97,6 +103,12 @@ def render_report(root: Path = PROJECT_ROOT) -> str:
     runner_ready = [entry for entry in entries if entry["status"] == "runner-ready"]
     planned = [entry for entry in entries if entry["status"] == "planned"]
 
+    runner_ready_block = (
+        table(runner_ready, include_results=True).rstrip()
+        if runner_ready
+        else "None currently. LoCoMo and BEIR/SciFact now have checked-in retrieval results."
+    )
+
     lines = [
         "# WaveMind Benchmark Report",
         "",
@@ -111,7 +123,7 @@ def render_report(root: Path = PROJECT_ROOT) -> str:
         "",
         "## Runner-Ready Public Benchmarks",
         "",
-        table(runner_ready, include_results=True).rstrip(),
+        runner_ready_block,
         "",
         "## Public Benchmark Roadmap",
         "",

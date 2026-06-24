@@ -220,7 +220,14 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         raise RuntimeError('Install Chroma for this benchmark: pip install -e ".[bench]"') from exc
     client = chromadb.Client(Settings(anonymized_telemetry=False))
     collection = client.create_collection(name=f"wavemind_long_memory_{time.time_ns()}", metadata={"hnsw:space": "cosine"}, embedding_function=None)
-    collection.add(ids=[item.id for item in dataset.memories], documents=[item.text for item in dataset.memories], embeddings=[encoder.encode_vector(item.text).tolist() for item in dataset.memories])
+    batch_size = 1000
+    for offset in range(0, len(dataset.memories), batch_size):
+        batch = dataset.memories[offset : offset + batch_size]
+        collection.add(
+            ids=[item.id for item in batch],
+            documents=[item.text for item in batch],
+            embeddings=[encoder.encode_vector(item.text).tolist() for item in batch],
+        )
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
@@ -245,7 +252,9 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     text_by_id = {item.id: item.text for item in dataset.memories}
     points = [PointStruct(id=i, vector=encoder.encode_vector(item.text).tolist(), payload={"evidence_id": item.id}) for i, item in enumerate(dataset.memories, start=1)]
     numeric_to_id = {i: item.id for i, item in enumerate(dataset.memories, start=1)}
-    client.upsert(collection_name=collection_name, points=points)
+    batch_size = 1000
+    for offset in range(0, len(points), batch_size):
+        client.upsert(collection_name=collection_name, points=points[offset : offset + batch_size])
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []

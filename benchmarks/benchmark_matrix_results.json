@@ -70,6 +70,45 @@
       "next_step": "Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search."
     },
     {
+      "id": "field_memory_dynamics",
+      "name": "Field memory graph dynamics",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/field_memory_dynamics_benchmark.py",
+      "dataset": "13 deterministic memories: conflicting facts, related concept memories, activation spreading, inhibition, and decay",
+      "competitors": [
+        "WaveMind static"
+      ],
+      "metrics": [
+        "precision@1",
+        "precision@3",
+        "stale_suppression",
+        "concept_formation",
+        "decay_ratio",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind graph": {
+          "precision@1": 1.0,
+          "precision@3": 1.0,
+          "stale_suppression": 1.0,
+          "concept_formation": 1.0,
+          "decay_ratio": 0.81,
+          "avg_latency_ms": 0.8194
+        },
+        "WaveMind static": {
+          "precision@1": 0.2,
+          "precision@3": 1.0,
+          "stale_suppression": 0.2,
+          "concept_formation": 0.0,
+          "decay_ratio": 0.0,
+          "avg_latency_ms": 0.4269
+        }
+      },
+      "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+      "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets."
+    },
+    {
       "id": "wavemind_capacity",
       "name": "WaveMind capacity curve",
       "category": "capacity",
@@ -169,7 +208,7 @@
           "stale_suppression": 1.0,
           "context_budget_saved": 0.8660455486542443,
           "avg_latency_ms": 6.103262499891571,
-          "p95_latency_ms": 7.430999998177867
+          "p95_latency_ms": 8.99239999930421
         },
         "Static vector": {
           "evidence_recall_at_k": 1.0,
@@ -177,7 +216,7 @@
           "stale_suppression": 0.0,
           "context_budget_saved": 0.8768115942028986,
           "avg_latency_ms": 0.647949999802222,
-          "p95_latency_ms": 1.0117999991052784
+          "p95_latency_ms": 0.9362000004330184
         }
       },
       "target": "Show dynamic-memory gains on stale suppression, correction, namespace isolation, and personalization before adding public LoCoMo/LongMemEval adapters.",
@@ -202,15 +241,33 @@
         "avg_latency_ms",
         "p95_latency_ms"
       ],
-      "current": null,
+      "current": {
+        "WaveMind": {
+          "ndcg_at_k": 0.3543131876597741,
+          "recall_at_k": 0.4822222222222222,
+          "mrr_at_k": 0.31723280423280426,
+          "precision_at_1": 0.24,
+          "avg_latency_ms": 84.59273800000422,
+          "p95_latency_ms": 157.63309999965713
+        },
+        "Chroma": {
+          "ndcg_at_k": 0.3484952423270274,
+          "recall_at_k": 0.47055555555555556,
+          "mrr_at_k": 0.31330291005291006,
+          "precision_at_1": 0.24,
+          "avg_latency_ms": 1.9327806666812346,
+          "p95_latency_ms": 2.7665000006891205
+        },
+        "Qdrant": null
+      },
       "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
-      "next_step": "Download SciFact or NFCorpus into benchmarks/data and publish the first full public-dataset result JSON."
+      "next_step": "Add Qdrant and sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset."
     },
     {
       "id": "locomo_evidence_retrieval",
       "name": "LoCoMo evidence retrieval runner",
       "category": "long-term-conversation-memory",
-      "status": "runner-ready",
+      "status": "implemented",
       "source": "benchmarks/locomo_memory_benchmark.py",
       "source_url": "https://github.com/snap-research/locomo",
       "dataset": "Official LoCoMo locomo10.json, using conversation turns as memories and QA evidence dialog ids as relevance labels.",
@@ -227,11 +284,33 @@
         "avg_latency_ms"
       ],
       "current": {
-        "WaveMind": null,
-        "Static vector": null
+        "WaveMind": {
+          "evidence_recall_at_k": 0.3858619176123416,
+          "precision_at_1": 0.238745574102175,
+          "mrr_at_k": 0.3073849266565503,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 13.018861557925877,
+          "p95_latency_ms": 21.59639999990759
+        },
+        "Static vector": {
+          "evidence_recall_at_k": 0.20295630246089943,
+          "precision_at_1": 0.11684370257966616,
+          "mrr_at_k": 0.1535491485415613,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 13.597954779956256,
+          "p95_latency_ms": 16.772300000411633
+        },
+        "Chroma static": {
+          "evidence_recall_at_k": 0.18887773223665397,
+          "precision_at_1": 0.10925644916540213,
+          "mrr_at_k": 0.14333164727701905,
+          "context_budget_saved": 0.0,
+          "avg_latency_ms": 1.9268576631346948,
+          "p95_latency_ms": 2.7861999997185194
+        }
       },
-      "target": "Run the official LoCoMo QA evidence retrieval task against WaveMind, static vector search, Chroma, and Qdrant with identical embeddings.",
-      "next_step": "Download locomo10.json in an unrestricted network environment and commit benchmarks/locomo_evidence_results.json from the full run."
+      "target": "Improve LoCoMo evidence_recall@5 beyond the current hash-encoder run with semantic embeddings and field-aware evidence compression.",
+      "next_step": "Run LoCoMo with sentence-transformers and add Qdrant static; then add answer generation with a local LLM."
     },
     {
       "id": "beir",

@@ -34,13 +34,16 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
+    field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
     long_memory_payload = _load_json(root / "benchmarks" / "long_memory_evidence_results.json")
+    open_retrieval_payload = _load_json(root / "benchmarks" / "open_retrieval_scifact_results.json")
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
 
     agent_results = _engine_results(agent_payload)
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
+    open_retrieval_results = _engine_results(open_retrieval_payload)
     locomo_results = _engine_results(locomo_payload)
 
     return [
@@ -87,6 +90,49 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep precision@1 and stale suppression at 1.00 while reducing avg latency below 10 ms at 1000 memories.",
             "next_step": "Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search.",
+        },
+        {
+            "id": "field_memory_dynamics",
+            "name": "Field memory graph dynamics",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/field_memory_dynamics_benchmark.py",
+            "dataset": "13 deterministic memories: conflicting facts, related concept memories, activation spreading, inhibition, and decay",
+            "competitors": ["WaveMind static"],
+            "metrics": [
+                "precision@1",
+                "precision@3",
+                "stale_suppression",
+                "concept_formation",
+                "decay_ratio",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind graph": _metric_summary(
+                    (field_payload or {}).get("wave_graph"),
+                    (
+                        "precision@1",
+                        "precision@3",
+                        "stale_suppression",
+                        "concept_formation",
+                        "decay_ratio",
+                        "avg_latency_ms",
+                    ),
+                ),
+                "WaveMind static": _metric_summary(
+                    (field_payload or {}).get("wave_static"),
+                    (
+                        "precision@1",
+                        "precision@3",
+                        "stale_suppression",
+                        "concept_formation",
+                        "decay_ratio",
+                        "avg_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+            "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets.",
         },
         {
             "id": "wavemind_capacity",
@@ -155,15 +201,49 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "dataset": "Any local BEIR-style corpus.jsonl, queries.jsonl, and qrels/<split>.tsv dataset.",
             "competitors": ["Chroma", "Qdrant"],
             "metrics": ["nDCG@k", "Recall@k", "MRR@k", "precision@1", "avg_latency_ms", "p95_latency_ms"],
-            "current": None,
+            "current": {
+                "WaveMind": _metric_summary(
+                    open_retrieval_results.get("WaveMind"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma": _metric_summary(
+                    open_retrieval_results.get("Chroma"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant": _metric_summary(
+                    open_retrieval_results.get("Qdrant"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
             "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
-            "next_step": "Download SciFact or NFCorpus into benchmarks/data and publish the first full public-dataset result JSON.",
+            "next_step": "Add Qdrant and sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset.",
         },
         {
             "id": "locomo_evidence_retrieval",
             "name": "LoCoMo evidence retrieval runner",
             "category": "long-term-conversation-memory",
-            "status": "runner-ready",
+            "status": "implemented" if locomo_payload else "runner-ready",
             "source": "benchmarks/locomo_memory_benchmark.py",
             "source_url": "https://github.com/snap-research/locomo",
             "dataset": "Official LoCoMo locomo10.json, using conversation turns as memories and QA evidence dialog ids as relevance labels.",
@@ -198,9 +278,20 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p95_latency_ms",
                     ),
                 ),
+                "Chroma static": _metric_summary(
+                    locomo_results.get("Chroma static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
             },
-            "target": "Run the official LoCoMo QA evidence retrieval task against WaveMind, static vector search, Chroma, and Qdrant with identical embeddings.",
-            "next_step": "Download locomo10.json in an unrestricted network environment and commit benchmarks/locomo_evidence_results.json from the full run.",
+            "target": "Improve LoCoMo evidence_recall@5 beyond the current hash-encoder run with semantic embeddings and field-aware evidence compression.",
+            "next_step": "Run LoCoMo with sentence-transformers and add Qdrant static; then add answer generation with a local LLM.",
         },
     ]
 

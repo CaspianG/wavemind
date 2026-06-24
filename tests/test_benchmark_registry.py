@@ -14,10 +14,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert payload["schema"] == "wavemind.benchmark_matrix.v1"
     assert entries["agent_memory_static_chroma"]["status"] == "implemented"
     assert entries["dynamic_memory_policy"]["status"] == "implemented"
+    assert entries["field_memory_dynamics"]["status"] == "implemented"
     assert entries["long_memory_evidence_synthetic"]["status"] == "implemented"
     assert "Static vector" in entries["long_memory_evidence_synthetic"]["competitors"]
     assert entries["beir_style_open_retrieval"]["status"] == "implemented"
     assert "Qdrant" in entries["beir_style_open_retrieval"]["competitors"]
+    assert entries["beir_style_open_retrieval"]["current"]["WaveMind"]["ndcg_at_k"] > 0
+    assert entries["locomo_evidence_retrieval"]["status"] == "implemented"
+    assert entries["locomo_evidence_retrieval"]["current"]["WaveMind"]["evidence_recall_at_k"] > 0
     assert entries["beir"]["status"] == "planned"
     assert entries["miracl_ru"]["category"] == "multilingual-retrieval"
     assert entries["vectordbbench"]["category"] == "vector-db"

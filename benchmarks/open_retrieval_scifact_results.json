@@ -1,0 +1,38 @@
+{
+  "scenario": {
+    "name": "open_retrieval_beir_format",
+    "dataset": "scifact",
+    "documents": 5183,
+    "queries": 300,
+    "split": "test",
+    "top_k": 10
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "ndcg_at_k": 0.3543131876597741,
+      "recall_at_k": 0.4822222222222222,
+      "mrr_at_k": 0.31723280423280426,
+      "precision_at_1": 0.24,
+      "avg_latency_ms": 84.59273800000422,
+      "p95_latency_ms": 157.63309999965713,
+      "queries": 300
+    },
+    {
+      "engine": "Chroma",
+      "ndcg_at_k": 0.3484952423270274,
+      "recall_at_k": 0.47055555555555556,
+      "mrr_at_k": 0.31330291005291006,
+      "precision_at_1": 0.24,
+      "avg_latency_ms": 1.9327806666812346,
+      "p95_latency_ms": 2.7665000006891205,
+      "queries": 300
+    }
+  ]
+}
