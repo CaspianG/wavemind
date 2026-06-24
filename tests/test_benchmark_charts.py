@@ -29,5 +29,7 @@ def test_benchmark_chart_renderer_writes_svg(tmp_path):
     assert "Dynamic memory policy" in svg
     assert "Long-term memory evidence" in svg
     assert "Capacity and latency curve" in svg
+    assert "Public benchmark roadmap" in svg
+    assert "VectorDBBench" in svg
     assert "WaveMind evidence recall@5" in svg
     assert "0.94 at 5000 memories" in svg

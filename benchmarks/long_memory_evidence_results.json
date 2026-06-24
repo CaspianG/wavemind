@@ -31,7 +31,7 @@
       "context_tokens_returned": 647,
       "context_budget_saved": 0.8660455486542443,
       "avg_latency_ms": 6.103262499891571,
-      "p95_latency_ms": 7.430999998177867,
+      "p95_latency_ms": 8.992399999304209,
       "queries": 8
     },
     {
@@ -51,7 +51,7 @@
       "context_tokens_returned": 595,
       "context_budget_saved": 0.8768115942028986,
       "avg_latency_ms": 0.647949999802222,
-      "p95_latency_ms": 1.0117999991052784,
+      "p95_latency_ms": 0.9362000004330184,
       "queries": 8
     }
   ]

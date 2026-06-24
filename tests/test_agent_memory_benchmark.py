@@ -72,3 +72,40 @@ def test_agent_memory_benchmark_cli_writes_json_for_wavemind(tmp_path):
     assert payload["results"][0]["engine"] == "WaveMind"
     assert "precision_at_1" in payload["results"][0]
     assert "avg_latency_ms" in payload["results"][0]
+
+
+def test_hash_retrieval_ignores_russian_stopwords_for_language_query():
+    from benchmarks.agent_memory_benchmark import build_agent_memory_scenario
+    from wavemind import WaveMind
+    from wavemind.encoders import create_text_encoder
+
+    scenario = build_agent_memory_scenario(fact_count=200, query_count=50)
+    language_query = next(query for query in scenario.queries if query.expected_id == "fact_language")
+    memory = WaveMind(
+        db_path=":memory:",
+        encoder=create_text_encoder(kind="hash", vector_dim=384),
+        index_kind="numpy",
+        score_threshold=0.0,
+        width=64,
+        height=64,
+        layers=3,
+        evolve_on_feed=3,
+        field_weight=0.04,
+        lexical_weight=0.20,
+        short_query_lexical_weight=2.0,
+        rerank_k=10,
+    )
+    try:
+        for fact in scenario.facts:
+            memory.remember(
+                fact.text,
+                namespace="agent",
+                tags=fact.tags,
+                metadata={"benchmark_id": fact.id},
+            )
+
+        results = memory.query(language_query.text, namespace="agent", top_k=1)
+
+        assert results[0].metadata["benchmark_id"] == "fact_language"
+    finally:
+        memory.store.close()

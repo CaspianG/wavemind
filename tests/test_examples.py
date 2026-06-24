@@ -42,6 +42,21 @@ def test_offline_demo_prints_recall_flow():
     assert "→ Result 2" in result.stdout
 
 
+def test_agent_example_help_runs_from_checkout():
+    project_root = Path(__file__).resolve().parents[1]
+
+    result = subprocess.run(
+        [sys.executable, "examples/agent_with_memory.py", "--help"],
+        cwd=project_root,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "usage: agent_with_memory.py" in result.stdout
+
+
 def test_agent_example_remembers_and_recalls_user_profile(tmp_path):
     module = load_example()
     memory = module.build_memory(tmp_path / "agent.sqlite3")

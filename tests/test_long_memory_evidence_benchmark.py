@@ -60,7 +60,8 @@ def test_metrics_reward_expected_evidence_and_stale_suppression():
     assert metrics.evidence_recall_at_k == 1.0
     assert metrics.precision_at_1 == 1.0
     assert metrics.stale_suppression == 0.5
-    assert metrics.category_success["correction"] == 1.0
+    # A correction only fully succeeds when stale conflicting evidence is suppressed too.
+    assert metrics.category_success["correction"] == 0.0
     assert metrics.category_success["ttl"] == 1.0
     assert metrics.avg_latency_ms == 3.0
     assert metrics.context_tokens_returned > 0

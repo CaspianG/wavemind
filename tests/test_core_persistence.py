@@ -71,3 +71,14 @@ def test_namespace_tags_threshold_ttl_and_forget(tmp_path):
     purged = mind.purge_expired()
     assert purged == 1
     assert mind.store.get(expired_id) is None
+    mind.close()
+
+
+def test_close_releases_sqlite_file(tmp_path):
+    db_path = tmp_path / "memory.sqlite3"
+    mind = make_mind(db_path)
+    mind.remember("Windows should be able to delete this SQLite file")
+    mind.close()
+
+    db_path.unlink()
+    assert not db_path.exists()

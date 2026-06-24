@@ -9,7 +9,7 @@ ENV WAVEMIND_LOG_LEVEL=INFO
 
 WORKDIR /app
 
-COPY pyproject.toml requirements.txt requirements-optional.txt ./
+COPY README.md pyproject.toml requirements.txt requirements-optional.txt ./
 RUN pip install --no-cache-dir -r requirements.txt \
     && if [ "$INSTALL_OPTIONAL" = "true" ]; then pip install --no-cache-dir -r requirements-optional.txt; fi
 
@@ -21,4 +21,3 @@ VOLUME ["/data", "/backups"]
 EXPOSE 8000
 
 CMD ["uvicorn", "wavemind.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
-

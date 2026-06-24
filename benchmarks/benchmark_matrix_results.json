@@ -70,45 +70,6 @@
       "next_step": "Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search."
     },
     {
-      "id": "field_memory_dynamics",
-      "name": "Field memory graph dynamics",
-      "category": "agent-memory",
-      "status": "implemented",
-      "source": "benchmarks/field_memory_dynamics_benchmark.py",
-      "dataset": "13 deterministic memories: 5 conflicting fact pairs and 3 related concept memories",
-      "competitors": [
-        "WaveMind static"
-      ],
-      "metrics": [
-        "precision@1",
-        "precision@3",
-        "stale_suppression",
-        "concept_formation",
-        "decay_ratio",
-        "avg_latency_ms"
-      ],
-      "current": {
-        "WaveMind graph": {
-          "precision@1": 1.0,
-          "precision@3": 1.0,
-          "stale_suppression": 1.0,
-          "concept_formation": 1.0,
-          "decay_ratio": 0.81,
-          "avg_latency_ms": 0.8194
-        },
-        "WaveMind static": {
-          "precision@1": 0.2,
-          "precision@3": 1.0,
-          "stale_suppression": 0.2,
-          "concept_formation": 0.0,
-          "decay_ratio": 0.0,
-          "avg_latency_ms": 0.4269
-        }
-      },
-      "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
-      "next_step": "Make MemoryFieldGraph incremental and add public-dataset conflict/update scenarios instead of only deterministic synthetic checks."
-    },
-    {
       "id": "wavemind_capacity",
       "name": "WaveMind capacity curve",
       "category": "capacity",

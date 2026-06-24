@@ -33,7 +33,6 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
 
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
-    field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
     long_memory_payload = _load_json(root / "benchmarks" / "long_memory_evidence_results.json")
@@ -88,49 +87,6 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep precision@1 and stale suppression at 1.00 while reducing avg latency below 10 ms at 1000 memories.",
             "next_step": "Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search.",
-        },
-        {
-            "id": "field_memory_dynamics",
-            "name": "Field memory graph dynamics",
-            "category": "agent-memory",
-            "status": "implemented",
-            "source": "benchmarks/field_memory_dynamics_benchmark.py",
-            "dataset": "13 deterministic memories: 5 conflicting fact pairs and 3 related concept memories",
-            "competitors": ["WaveMind static"],
-            "metrics": [
-                "precision@1",
-                "precision@3",
-                "stale_suppression",
-                "concept_formation",
-                "decay_ratio",
-                "avg_latency_ms",
-            ],
-            "current": {
-                "WaveMind graph": _metric_summary(
-                    (field_payload or {}).get("wave_graph"),
-                    (
-                        "precision@1",
-                        "precision@3",
-                        "stale_suppression",
-                        "concept_formation",
-                        "decay_ratio",
-                        "avg_latency_ms",
-                    ),
-                ),
-                "WaveMind static": _metric_summary(
-                    (field_payload or {}).get("wave_static"),
-                    (
-                        "precision@1",
-                        "precision@3",
-                        "stale_suppression",
-                        "concept_formation",
-                        "decay_ratio",
-                        "avg_latency_ms",
-                    ),
-                ),
-            },
-            "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
-            "next_step": "Make MemoryFieldGraph incremental and add public-dataset conflict/update scenarios instead of only deterministic synthetic checks.",
         },
         {
             "id": "wavemind_capacity",

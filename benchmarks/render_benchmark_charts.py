@@ -119,7 +119,6 @@ def roadmap_card(x: float, y: float, title: str, status: str, detail: str, color
 
 def build_svg(root: Path = PROJECT_ROOT) -> str:
     agent = by_engine(load_json(root / "benchmarks" / "agent_memory_results.json"))
-    field = load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     dynamic = by_engine(load_json(root / "benchmarks" / "dynamic_memory_results.json"))
     long_memory = by_engine(load_json(root / "benchmarks" / "long_memory_evidence_results.json"))
     capacity = load_json(root / "benchmarks" / "wavemind_capacity_results.json")
@@ -128,8 +127,6 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     chroma_agent = agent["Chroma"]
     wm_dynamic = dynamic["WaveMind"]
     chroma_dynamic = dynamic["Chroma static"]
-    wm_field = field["wave_graph"]
-    static_field = field["wave_static"]
     wm_long = long_memory["WaveMind"]
     static_long = long_memory["Static vector"]
     static_points = [
@@ -163,8 +160,6 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     items.extend(metric_bar(646, 326, "Chroma static stale suppression", float(chroma_dynamic["suppression_rate"]), "#64748b"))
     items.append(svg_text(970, 207, f"latency {ms(float(wm_dynamic['avg_latency_ms']))}", size=12, fill="#0a7f5a"))
     items.append(svg_text(970, 247, f"latency {ms(float(chroma_dynamic['avg_latency_ms']))}", size=12, fill="#64748b"))
-    items.append(svg_text(646, 354, f"Field graph p@1 {float(wm_field['precision@1']):.2f} / stale {float(wm_field['stale_suppression']):.2f}", size=12, weight="700", fill="#0a7f5a"))
-    items.append(svg_text(920, 354, f"static {float(static_field['precision@1']):.2f} / {float(static_field['stale_suppression']):.2f}", size=12, fill="#64748b"))
 
     items.extend(panel(40, 405, 1100, 205, "Long-term memory evidence", "Synthetic long-history evidence retrieval: profile, preference, correction, TTL, namespace, and filler noise."))
     items.extend(metric_bar(66, 483, "WaveMind evidence recall@5", float(wm_long["evidence_recall_at_k"]), "#7c3aed", width=255))
