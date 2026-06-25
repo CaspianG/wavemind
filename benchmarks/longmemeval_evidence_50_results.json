@@ -22,64 +22,64 @@
       "engine": "WaveMind",
       "evidence_recall_at_k": 0.92,
       "evidence_precision_at_k": 0.184,
-      "mrr_at_k": 0.8383333333333334,
-      "precision_at_1": 0.78,
+      "mrr_at_k": 0.8266666666666667,
+      "precision_at_1": 0.76,
       "stale_suppression": 1.0,
       "category_success": {
         "single-session-user": 0.92
       },
-      "context_tokens_returned": 646083,
-      "context_budget_saved": 0.8693431169150008,
-      "avg_latency_ms": 2.5593559999470017,
-      "p95_latency_ms": 5.2978000003349734,
+      "context_tokens_returned": 649006,
+      "context_budget_saved": 0.8687520008056814,
+      "avg_latency_ms": 1.4468799997848691,
+      "p95_latency_ms": 1.5179000001808163,
       "queries": 50
     },
     {
       "engine": "Static vector",
-      "evidence_recall_at_k": 0.12,
-      "evidence_precision_at_k": 0.024,
-      "mrr_at_k": 0.06333333333333334,
-      "precision_at_1": 0.04,
+      "evidence_recall_at_k": 0.6,
+      "evidence_precision_at_k": 0.12000000000000001,
+      "mrr_at_k": 0.3853333333333333,
+      "precision_at_1": 0.26,
       "stale_suppression": 1.0,
       "category_success": {
-        "single-session-user": 0.12
+        "single-session-user": 0.6
       },
-      "context_tokens_returned": 404848,
-      "context_budget_saved": 0.9181278909935786,
-      "avg_latency_ms": 5.944902000082948,
-      "p95_latency_ms": 7.154599999921629,
+      "context_tokens_returned": 560309,
+      "context_budget_saved": 0.8866891289440013,
+      "avg_latency_ms": 0.07896599970990792,
+      "p95_latency_ms": 0.09069999941857532,
       "queries": 50
     },
     {
       "engine": "Chroma static",
-      "evidence_recall_at_k": 0.1,
-      "evidence_precision_at_k": 0.02,
-      "mrr_at_k": 0.058333333333333334,
-      "precision_at_1": 0.04,
+      "evidence_recall_at_k": 0.6,
+      "evidence_precision_at_k": 0.12000000000000001,
+      "mrr_at_k": 0.3853333333333333,
+      "precision_at_1": 0.26,
       "stale_suppression": 1.0,
       "category_success": {
-        "single-session-user": 0.1
+        "single-session-user": 0.6
       },
-      "context_tokens_returned": 408959,
-      "context_budget_saved": 0.9172965265305569,
-      "avg_latency_ms": 3.0771299999105395,
-      "p95_latency_ms": 3.4225999988848343,
+      "context_tokens_returned": 560309,
+      "context_budget_saved": 0.8866891289440013,
+      "avg_latency_ms": 3.724182000005385,
+      "p95_latency_ms": 3.6077999975532293,
       "queries": 50
     },
     {
       "engine": "Qdrant static",
-      "evidence_recall_at_k": 0.12,
-      "evidence_precision_at_k": 0.024,
-      "mrr_at_k": 0.06333333333333334,
-      "precision_at_1": 0.04,
+      "evidence_recall_at_k": 0.6,
+      "evidence_precision_at_k": 0.12000000000000001,
+      "mrr_at_k": 0.3853333333333333,
+      "precision_at_1": 0.26,
       "stale_suppression": 1.0,
       "category_success": {
-        "single-session-user": 0.12
+        "single-session-user": 0.6
       },
-      "context_tokens_returned": 404848,
-      "context_budget_saved": 0.9181278909935786,
-      "avg_latency_ms": 10.521501999901375,
-      "p95_latency_ms": 15.854299999773502,
+      "context_tokens_returned": 560309,
+      "context_budget_saved": 0.8866891289440013,
+      "avg_latency_ms": 44.992548000154784,
+      "p95_latency_ms": 53.176699999312405,
       "queries": 50
     }
   ]

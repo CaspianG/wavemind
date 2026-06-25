@@ -25,7 +25,9 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["beir"]["status"] == "planned"
     assert entries["miracl_ru"]["category"] == "multilingual-retrieval"
     assert entries["vectordbbench"]["category"] == "vector-db"
-    assert entries["longmemeval"]["category"] == "long-term-agent-memory"
+    assert entries["longmemeval_evidence_retrieval"]["status"] == "implemented"
+    assert entries["ann_index_curve"]["status"] == "implemented"
+    assert entries["longmemeval_answer_generation"]["status"] == "runner-ready"
     assert entries["lmeb"]["source_url"].startswith("https://")
 
 

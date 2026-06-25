@@ -1,0 +1,106 @@
+{
+  "scenario": {
+    "name": "longmemeval_evidence_retrieval",
+    "dataset": "benchmarks\\data\\longmemeval_s_cleaned.json",
+    "source_url": "https://github.com/xiaowu0162/LongMemEval",
+    "data_url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned",
+    "granularity": "session",
+    "memories": 22419,
+    "queries": 470,
+    "top_k": 5,
+    "description": "LongMemEval retrieval-only evidence benchmark. It indexes each question's long chat history and measures whether expected evidence sessions or turns are retrieved."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "cached": true,
+    "vector_dim": 384,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "evidence_recall_at_k": 0.7822340425531915,
+      "evidence_precision_at_k": 0.2851063829787234,
+      "mrr_at_k": 0.7619858156028368,
+      "precision_at_1": 0.6957446808510638,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "knowledge-update": 1.0,
+        "multi-session": 0.8925619834710744,
+        "single-session-assistant": 0.8571428571428571,
+        "single-session-preference": 0.3333333333333333,
+        "single-session-user": 0.9375,
+        "temporal-reasoning": 0.8582677165354331
+      },
+      "context_tokens_returned": 6071624,
+      "context_budget_saved": 0.8693293423228203,
+      "avg_latency_ms": 7.273759574402109,
+      "p95_latency_ms": 9.142700000666082,
+      "queries": 470
+    },
+    {
+      "engine": "Static vector",
+      "evidence_recall_at_k": 0.5197163120567376,
+      "evidence_precision_at_k": 0.18000000000000002,
+      "mrr_at_k": 0.4642553191489362,
+      "precision_at_1": 0.3553191489361702,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "knowledge-update": 0.8055555555555556,
+        "multi-session": 0.628099173553719,
+        "single-session-assistant": 0.8392857142857143,
+        "single-session-preference": 0.1,
+        "single-session-user": 0.65625,
+        "temporal-reasoning": 0.6456692913385826
+      },
+      "context_tokens_returned": 5118349,
+      "context_budget_saved": 0.8898452819128235,
+      "avg_latency_ms": 0.08320085116986561,
+      "p95_latency_ms": 0.10430000111227855,
+      "queries": 470
+    },
+    {
+      "engine": "Chroma static",
+      "evidence_recall_at_k": 0.5175886524822695,
+      "evidence_precision_at_k": 0.17957446808510638,
+      "mrr_at_k": 0.46354609929078017,
+      "precision_at_1": 0.3553191489361702,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "knowledge-update": 0.8055555555555556,
+        "multi-session": 0.628099173553719,
+        "single-session-assistant": 0.8392857142857143,
+        "single-session-preference": 0.1,
+        "single-session-user": 0.640625,
+        "temporal-reasoning": 0.6456692913385826
+      },
+      "context_tokens_returned": 5119869,
+      "context_budget_saved": 0.8898125691823137,
+      "avg_latency_ms": 15.96392723395764,
+      "p95_latency_ms": 18.677100000786595,
+      "queries": 470
+    },
+    {
+      "engine": "Qdrant static",
+      "evidence_recall_at_k": 0.5197163120567376,
+      "evidence_precision_at_k": 0.18000000000000002,
+      "mrr_at_k": 0.4642553191489362,
+      "precision_at_1": 0.3553191489361702,
+      "stale_suppression": 1.0,
+      "category_success": {
+        "knowledge-update": 0.8055555555555556,
+        "multi-session": 0.628099173553719,
+        "single-session-assistant": 0.8392857142857143,
+        "single-session-preference": 0.1,
+        "single-session-user": 0.65625,
+        "temporal-reasoning": 0.6456692913385826
+      },
+      "context_tokens_returned": 5118349,
+      "context_budget_saved": 0.8898452819128235,
+      "avg_latency_ms": 398.48050340422446,
+      "p95_latency_ms": 432.8767000006337,
+      "queries": 470
+    }
+  ]
+}

@@ -31,6 +31,23 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
     return {key: result[key] for key in keys if key in result}
 
 
+def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not payload:
+        return {}
+    size_results = payload.get("results", [])
+    if not size_results:
+        return {}
+    latest = size_results[-1]
+    return {
+        str(result["engine"]): _metric_summary(
+            result,
+            ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "build_ms"),
+        )
+        for result in latest.get("results", [])
+        if "engine" in result
+    }
+
+
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
@@ -40,7 +57,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     open_retrieval_payload = _load_json(root / "benchmarks" / "open_retrieval_scifact_results.json")
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
-    longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
+    longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
+    ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
+    answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
     agent_results = _engine_results(agent_payload)
     dynamic_results = _engine_results(dynamic_payload)
@@ -49,6 +68,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_results = _engine_results(locomo_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
+    ann_results = _ann_latest_results(ann_payload)
+    answer_metrics = (answer_payload or {}).get("metrics")
 
     return [
         {
@@ -193,8 +214,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Show dynamic-memory gains on stale suppression, correction, namespace isolation, and personalization before adding public LoCoMo/LongMemEval adapters.",
-            "next_step": "Run the same normalized evidence benchmark with Chroma and Qdrant installed, then add LoCoMo or LongMemEval adapters.",
+            "target": "Keep this as a small regression check for stale suppression, correction, namespace isolation, and personalization.",
+            "next_step": "Use public LoCoMo and LongMemEval for external claims; keep this synthetic scenario for fast regression testing.",
         },
         {
             "id": "beir_style_open_retrieval",
@@ -342,13 +363,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness.",
         },
         {
-            "id": "longmemeval_evidence_50",
-            "name": "LongMemEval evidence retrieval subset",
+            "id": "longmemeval_evidence_retrieval",
+            "name": "LongMemEval evidence retrieval",
             "category": "long-term-agent-memory",
             "status": "implemented",
             "source": "benchmarks/longmemeval_memory_benchmark.py",
             "source_url": "https://github.com/xiaowu0162/LongMemEval",
-            "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+            "dataset": "Official LongMemEval-S cleaned file, 470 non-abstention questions, 22419 session memories, session-level evidence retrieval.",
             "competitors": ["Static vector", "Chroma static", "Qdrant static"],
             "metrics": [
                 "evidence_recall@k",
@@ -380,6 +401,17 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p95_latency_ms",
                     ),
                 ),
+                "Static vector": _metric_summary(
+                    longmemeval_results.get("Static vector"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
                 "Qdrant static": _metric_summary(
                     longmemeval_results.get("Qdrant static"),
                     (
@@ -392,8 +424,49 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Run the full LongMemEval-S retrieval set and then add LLM answer accuracy/abstention evaluation.",
-            "next_step": "Run full LongMemEval-S and turn-level evidence mode with sentence-transformers.",
+            "target": "Keep full LongMemEval-S evidence recall above static vector-store baselines while staying below 20 ms retrieval latency.",
+            "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation.",
+        },
+        {
+            "id": "ann_index_curve",
+            "name": "ANN index latency curve",
+            "category": "index-latency",
+            "status": "implemented",
+            "source": "benchmarks/ann_index_curve_benchmark.py",
+            "source_url": "https://github.com/erikbern/ann-benchmarks",
+            "dataset": "Generated normalized 128-d vectors at 1000, 5000, 10000, and 50000 points; recall@10 measured against exact cosine neighbors.",
+            "competitors": ["Annoy", "Qdrant local"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
+            "current": ann_results,
+            "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
+            "next_step": "Add FAISS on Linux/macOS CI and tune Annoy/Qdrant service-mode curves beyond 50000 vectors.",
+        },
+        {
+            "id": "longmemeval_answer_generation",
+            "name": "LongMemEval answer generation",
+            "category": "long-term-agent-memory",
+            "status": "runner-ready",
+            "source": "benchmarks/longmemeval_answer_benchmark.py",
+            "source_url": "https://github.com/xiaowu0162/LongMemEval",
+            "dataset": "LongMemEval-S questions answered from WaveMind-retrieved evidence. Extractive smoke result is checked in; Ollama mode requires a local model.",
+            "competitors": ["Ollama local LLM", "Chroma RAG", "Qdrant RAG"],
+            "metrics": ["exact_match", "contains_answer", "token_f1", "evidence_recall@k"],
+            "current": {
+                "extractive smoke": _metric_summary(
+                    answer_metrics,
+                    (
+                        "queries",
+                        "evidence_recall_at_k",
+                        "exact_match",
+                        "contains_answer",
+                        "token_f1",
+                        "avg_retrieval_ms",
+                        "avg_generation_ms",
+                    ),
+                )
+            },
+            "target": "Run Ollama answer generation once a local model is available and compare answer accuracy/faithfulness against Chroma/Qdrant RAG.",
+            "next_step": "Install or select a local Ollama model, then run --provider ollama over the full LongMemEval-S retrieval set.",
         },
     ]
 
@@ -436,18 +509,6 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
         "next_step": "Add MIRACL ru/dev loader behind an optional benchmark extra because the dataset is too large for the base package.",
     },
     {
-        "id": "ann_benchmarks",
-        "name": "ANN-Benchmarks style index curve",
-        "category": "index-latency",
-        "status": "planned",
-        "source_url": "https://github.com/erikbern/ann-benchmarks",
-        "dataset": "Approximate nearest-neighbor recall/latency methodology for vector indexes.",
-        "competitors": ["FAISS", "Annoy", "Qdrant HNSW"],
-        "metrics": ["recall@10", "queries_per_second", "p95_latency_ms"],
-        "target": "At 5000 to 100000 memories, preserve recall@10 >= 0.95 while cutting query latency below the NumPy exact path.",
-        "next_step": "Add a generated-vector benchmark that compares NumPy exact, Annoy, and FAISS when optional dependencies are installed.",
-    },
-    {
         "id": "vectordbbench",
         "name": "VectorDBBench",
         "category": "vector-db",
@@ -470,18 +531,6 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
         "metrics": ["answer_accuracy", "faithfulness", "avg_end_to_end_latency_ms"],
         "target": "Beat static vector-store RAG on temporal/correction questions by at least 15 percentage points while returning compact evidence.",
         "next_step": "After the retrieval-only LoCoMo run is published, add an optional Ollama answer-generation layer using the user's installed local model.",
-    },
-    {
-        "id": "longmemeval",
-        "name": "LongMemEval",
-        "category": "long-term-agent-memory",
-        "status": "planned",
-        "source_url": "https://arxiv.org/abs/2410.10813",
-        "dataset": "Long-term chat-assistant memory with information extraction, multi-session reasoning, temporal reasoning, updates, and abstention.",
-        "competitors": ["Chroma RAG", "Qdrant RAG", "Mem0-style memory"],
-        "metrics": ["hit@5", "mrr", "answer_accuracy", "abstention_accuracy"],
-        "target": "Demonstrate update/abstention gains over static vector recall without exceeding 100 ms retrieval latency.",
-        "next_step": "Store session facts, corrections, and timestamps as first-class metadata and evaluate retrieval evidence before LLM answering.",
     },
     {
         "id": "longmemeval_v2",

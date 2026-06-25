@@ -100,6 +100,38 @@ def test_cached_encoder_batches_unique_dataset_texts():
     assert np.allclose(cached.encode_vector("beta"), [2.0, 0.0, 0.0, 0.0])
 
 
+def test_static_vector_baseline_respects_query_namespace():
+    from benchmarks.long_memory_evidence_benchmark import (
+        EvidenceDataset,
+        EvidenceQuery,
+        LongMemory,
+        run_static_vector,
+    )
+    from wavemind.encoders import HashingTextEncoder
+
+    dataset = EvidenceDataset(
+        name="namespace-fixture",
+        memories=[
+            LongMemory("a", "budget is 2000 dollars", namespace="user-a"),
+            LongMemory("b", "budget is 50 dollars", namespace="user-b"),
+        ],
+        queries=[
+            EvidenceQuery(
+                id="q",
+                text="budget dollars",
+                namespace="user-a",
+                expected_evidence_ids=("a",),
+                forbidden_evidence_ids=("b",),
+            )
+        ],
+    )
+
+    metrics = run_static_vector(dataset, HashingTextEncoder(vector_dim=64), top_k=2)
+
+    assert metrics.precision_at_1 == 1.0
+    assert metrics.stale_suppression == 1.0
+
+
 def test_long_memory_cli_writes_json_for_wavemind(tmp_path):
     output = tmp_path / "long-memory-result.json"
     project_root = Path(__file__).resolve().parents[1]

@@ -212,7 +212,7 @@ def _to_metrics(dataset: EvidenceDataset, rankings: dict[str, list[str]], texts:
 
 def run_wavemind(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
     with tempfile.TemporaryDirectory() as tmp:
-        memory = WaveMind(db_path=Path(tmp) / "long-memory.sqlite3", encoder=encoder, index_kind="numpy", score_threshold=0.0, vector_weight=0.78, field_weight=0.06, priority_weight=0.16, lexical_weight=0.35, short_query_lexical_weight=1.5, rerank_k=max(top_k, 30), persist_access_on_query=False, query_feedback_strength=0.0)
+        memory = WaveMind(db_path=Path(tmp) / "long-memory.sqlite3", encoder=encoder, index_kind="numpy", score_threshold=0.0, evolve_on_feed=0, vector_weight=0.78, field_weight=0.06, priority_weight=0.16, lexical_weight=0.35, short_query_lexical_weight=1.5, rerank_k=max(top_k, 30), persist_access_on_query=False, query_feedback_strength=0.0)
         try:
             for item in dataset.memories:
                 memory.remember(item.text, namespace=item.namespace, tags=item.tags, ttl_seconds=item.ttl_seconds, priority=item.priority, metadata={"evidence_id": item.id, "timestamp": item.timestamp})
@@ -237,13 +237,19 @@ def run_static_vector(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
         for item, vector in zip(dataset.memories, memory_vectors)
     }
     text_by_id = {item.id: item.text for item in dataset.memories}
+    ids_by_namespace: dict[str, list[str]] = {}
+    for item in dataset.memories:
+        ids_by_namespace.setdefault(item.namespace, []).append(item.id)
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
     latencies: list[float] = []
     query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
     for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
-        scored = [(item_id, float(np.dot(qvec, vector))) for item_id, vector in vectors.items()]
+        scored = [
+            (item_id, float(np.dot(qvec, vectors[item_id])))
+            for item_id in ids_by_namespace.get(query.namespace, [])
+        ]
         scored.sort(key=lambda item: item[1], reverse=True)
         selected = [item_id for item_id, _ in scored[:top_k]]
         latencies.append((time.perf_counter() - started) * 1000.0)
@@ -268,6 +274,7 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
             ids=[item.id for item in batch],
             documents=[item.text for item in batch],
             embeddings=[vector.tolist() for vector in vectors],
+            metadatas=[{"namespace": item.namespace} for item in batch],
         )
     rankings: dict[str, list[str]] = {}
     texts: dict[str, list[str]] = {}
@@ -275,7 +282,12 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
     for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
-        result = collection.query(query_embeddings=[qvec.tolist()], n_results=top_k, include=["documents"])
+        result = collection.query(
+            query_embeddings=[qvec.tolist()],
+            n_results=top_k,
+            where={"namespace": query.namespace},
+            include=["documents"],
+        )
         latencies.append((time.perf_counter() - started) * 1000.0)
         rankings[query.id] = list(result.get("ids", [[]])[0])
         texts[query.id] = list(result.get("documents", [[]])[0])
@@ -285,7 +297,7 @@ def run_chroma_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
 def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> EvidenceMetrics:
     try:
         from qdrant_client import QdrantClient
-        from qdrant_client.models import Distance, PointStruct, VectorParams
+        from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
     except ImportError as exc:
         raise RuntimeError('Install Qdrant client for this benchmark: pip install -e ".[bench]"') from exc
     client = QdrantClient(":memory:")
@@ -294,7 +306,11 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     text_by_id = {item.id: item.text for item in dataset.memories}
     memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
     points = [
-        PointStruct(id=i, vector=vector.tolist(), payload={"evidence_id": item.id})
+        PointStruct(
+            id=i,
+            vector=vector.tolist(),
+            payload={"evidence_id": item.id, "namespace": item.namespace},
+        )
         for i, (item, vector) in enumerate(zip(dataset.memories, memory_vectors), start=1)
     ]
     numeric_to_id = {i: item.id for i, item in enumerate(dataset.memories, start=1)}
@@ -307,10 +323,32 @@ def run_qdrant_static(dataset: EvidenceDataset, encoder, top_k: int) -> Evidence
     query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
     for query, qvec in zip(dataset.queries, query_vectors):
         started = time.perf_counter()
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="namespace",
+                    match=MatchValue(value=query.namespace),
+                )
+            ]
+        )
         if hasattr(client, "query_points"):
-            hits = list(client.query_points(collection_name=collection_name, query=qvec.tolist(), limit=top_k, with_payload=True).points)
+            hits = list(
+                client.query_points(
+                    collection_name=collection_name,
+                    query=qvec.tolist(),
+                    query_filter=query_filter,
+                    limit=top_k,
+                    with_payload=True,
+                ).points
+            )
         else:
-            hits = client.search(collection_name=collection_name, query_vector=qvec.tolist(), limit=top_k, with_payload=True)
+            hits = client.search(
+                collection_name=collection_name,
+                query_vector=qvec.tolist(),
+                query_filter=query_filter,
+                limit=top_k,
+                with_payload=True,
+            )
         latencies.append((time.perf_counter() - started) * 1000.0)
         ids = [str(getattr(hit, "payload", {}).get("evidence_id") or numeric_to_id.get(int(hit.id), "")) for hit in hits]
         rankings[query.id] = ids

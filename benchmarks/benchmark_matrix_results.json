@@ -219,8 +219,8 @@
           "p95_latency_ms": 0.9362000004330184
         }
       },
-      "target": "Show dynamic-memory gains on stale suppression, correction, namespace isolation, and personalization before adding public LoCoMo/LongMemEval adapters.",
-      "next_step": "Run the same normalized evidence benchmark with Chroma and Qdrant installed, then add LoCoMo or LongMemEval adapters."
+      "target": "Keep this as a small regression check for stale suppression, correction, namespace isolation, and personalization.",
+      "next_step": "Use public LoCoMo and LongMemEval for external claims; keep this synthetic scenario for fast regression testing."
     },
     {
       "id": "beir_style_open_retrieval",
@@ -296,69 +296,69 @@
           "precision_at_1": 0.238745574102175,
           "mrr_at_k": 0.3073849266565503,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 19.652891856360075,
-          "p95_latency_ms": 37.5144999998156
+          "avg_latency_ms": 3.945537733953253,
+          "p95_latency_ms": 7.4385999996593455
         },
         "Static vector": {
-          "evidence_recall_at_k": 0.20295630246089943,
-          "precision_at_1": 0.11684370257966616,
-          "mrr_at_k": 0.1535491485415613,
+          "evidence_recall_at_k": 0.26294056593529946,
+          "precision_at_1": 0.1325240263024785,
+          "mrr_at_k": 0.18898162198617433,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 23.1400655538735,
-          "p95_latency_ms": 34.70080000079179
+          "avg_latency_ms": 1.9353865452554788,
+          "p95_latency_ms": 3.867299999910756
         },
         "Chroma static": {
-          "evidence_recall_at_k": 0.18453613722738063,
-          "precision_at_1": 0.11026808295397066,
-          "mrr_at_k": 0.14253920080930704,
+          "evidence_recall_at_k": 0.25687076320388824,
+          "precision_at_1": 0.1294891249367729,
+          "mrr_at_k": 0.18479177204518632,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 3.056627111793856,
-          "p95_latency_ms": 5.825300000651623
+          "avg_latency_ms": 7.03458275165298,
+          "p95_latency_ms": 9.736899999552406
         },
         "Qdrant static": {
-          "evidence_recall_at_k": 0.20295630246089943,
-          "precision_at_1": 0.11684370257966616,
-          "mrr_at_k": 0.1535491485415613,
+          "evidence_recall_at_k": 0.26294056593529946,
+          "precision_at_1": 0.1325240263024785,
+          "mrr_at_k": 0.18898162198617433,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 23.633159281743826,
-          "p95_latency_ms": 36.11140000066371
+          "avg_latency_ms": 147.58425523521922,
+          "p95_latency_ms": 210.23070000046573
         },
         "WaveMind sentence": {
           "evidence_recall_at_k": 0.5467003466883669,
           "precision_at_1": 0.3333333333333333,
           "mrr_at_k": 0.43166413758219524,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 13.045345422361397,
-          "p95_latency_ms": 22.991100000581355
+          "avg_latency_ms": 3.4381425392000162,
+          "p95_latency_ms": 5.559599998377962
         },
         "Chroma sentence": {
-          "evidence_recall_at_k": 0.3830341130796366,
-          "precision_at_1": 0.20536165907941326,
-          "mrr_at_k": 0.28752318327432136,
+          "evidence_recall_at_k": 0.4073891965394242,
+          "precision_at_1": 0.21800708143651998,
+          "mrr_at_k": 0.30438374641713034,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 1.5476434496441964,
-          "p95_latency_ms": 2.1997000003466383
+          "avg_latency_ms": 4.9688652503754005,
+          "p95_latency_ms": 6.301900000835303
         },
         "Qdrant sentence": {
-          "evidence_recall_at_k": 0.38404574686820514,
-          "precision_at_1": 0.20536165907941326,
-          "mrr_at_k": 0.2877760917214635,
+          "evidence_recall_at_k": 0.40865373877513483,
+          "precision_at_1": 0.2190187152250885,
+          "mrr_at_k": 0.30537008936098464,
           "context_budget_saved": 0.0,
-          "avg_latency_ms": 26.805272129464843,
-          "p95_latency_ms": 31.365500000902102
+          "avg_latency_ms": 124.33854309557003,
+          "p95_latency_ms": 149.71969999896828
         }
       },
       "target": "Improve LoCoMo evidence_recall@5 with semantic embeddings and keep retrieval latency below 20 ms for WaveMind.",
       "next_step": "Add LoCoMo answer generation with a local LLM and measure answer accuracy/faithfulness."
     },
     {
-      "id": "longmemeval_evidence_50",
-      "name": "LongMemEval evidence retrieval subset",
+      "id": "longmemeval_evidence_retrieval",
+      "name": "LongMemEval evidence retrieval",
       "category": "long-term-agent-memory",
       "status": "implemented",
       "source": "benchmarks/longmemeval_memory_benchmark.py",
       "source_url": "https://github.com/xiaowu0162/LongMemEval",
-      "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+      "dataset": "Official LongMemEval-S cleaned file, 470 non-abstention questions, 22419 session memories, session-level evidence retrieval.",
       "competitors": [
         "Static vector",
         "Chroma static",
@@ -373,32 +373,114 @@
       ],
       "current": {
         "WaveMind": {
-          "evidence_recall_at_k": 0.92,
-          "precision_at_1": 0.78,
-          "mrr_at_k": 0.8383333333333334,
-          "context_budget_saved": 0.8693431169150008,
-          "avg_latency_ms": 2.5593559999470017,
-          "p95_latency_ms": 5.2978000003349734
+          "evidence_recall_at_k": 0.7822340425531915,
+          "precision_at_1": 0.6957446808510638,
+          "mrr_at_k": 0.7619858156028368,
+          "context_budget_saved": 0.8693293423228203,
+          "avg_latency_ms": 7.273759574402109,
+          "p95_latency_ms": 9.142700000666082
         },
         "Chroma static": {
-          "evidence_recall_at_k": 0.1,
-          "precision_at_1": 0.04,
-          "mrr_at_k": 0.058333333333333334,
-          "context_budget_saved": 0.9172965265305569,
-          "avg_latency_ms": 3.0771299999105395,
-          "p95_latency_ms": 3.4225999988848343
+          "evidence_recall_at_k": 0.5175886524822695,
+          "precision_at_1": 0.3553191489361702,
+          "mrr_at_k": 0.46354609929078017,
+          "context_budget_saved": 0.8898125691823137,
+          "avg_latency_ms": 15.96392723395764,
+          "p95_latency_ms": 18.677100000786595
+        },
+        "Static vector": {
+          "evidence_recall_at_k": 0.5197163120567376,
+          "precision_at_1": 0.3553191489361702,
+          "mrr_at_k": 0.4642553191489362,
+          "context_budget_saved": 0.8898452819128235,
+          "avg_latency_ms": 0.08320085116986561,
+          "p95_latency_ms": 0.10430000111227855
         },
         "Qdrant static": {
-          "evidence_recall_at_k": 0.12,
-          "precision_at_1": 0.04,
-          "mrr_at_k": 0.06333333333333334,
-          "context_budget_saved": 0.9181278909935786,
-          "avg_latency_ms": 10.521501999901375,
-          "p95_latency_ms": 15.854299999773502
+          "evidence_recall_at_k": 0.5197163120567376,
+          "precision_at_1": 0.3553191489361702,
+          "mrr_at_k": 0.4642553191489362,
+          "context_budget_saved": 0.8898452819128235,
+          "avg_latency_ms": 398.48050340422446,
+          "p95_latency_ms": 432.8767000006337
         }
       },
-      "target": "Run the full LongMemEval-S retrieval set and then add LLM answer accuracy/abstention evaluation.",
-      "next_step": "Run full LongMemEval-S and turn-level evidence mode with sentence-transformers."
+      "target": "Keep full LongMemEval-S evidence recall above static vector-store baselines while staying below 20 ms retrieval latency.",
+      "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation."
+    },
+    {
+      "id": "ann_index_curve",
+      "name": "ANN index latency curve",
+      "category": "index-latency",
+      "status": "implemented",
+      "source": "benchmarks/ann_index_curve_benchmark.py",
+      "source_url": "https://github.com/erikbern/ann-benchmarks",
+      "dataset": "Generated normalized 128-d vectors at 1000, 5000, 10000, and 50000 points; recall@10 measured against exact cosine neighbors.",
+      "competitors": [
+        "Annoy",
+        "Qdrant local"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "WaveMind numpy": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 5.286507999899186,
+          "p95_latency_ms": 5.752799999754643,
+          "build_ms": 539.3323999996937
+        },
+        "WaveMind annoy": {
+          "recall_at_k": 0.73,
+          "avg_latency_ms": 3.442136000012397,
+          "p95_latency_ms": 4.905399999188376,
+          "build_ms": 3800.882999999885
+        },
+        "Qdrant local": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 48.70105900001363,
+          "p95_latency_ms": 66.2173000000621,
+          "build_ms": 13771.477899999809
+        }
+      },
+      "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
+      "next_step": "Add FAISS on Linux/macOS CI and tune Annoy/Qdrant service-mode curves beyond 50000 vectors."
+    },
+    {
+      "id": "longmemeval_answer_generation",
+      "name": "LongMemEval answer generation",
+      "category": "long-term-agent-memory",
+      "status": "runner-ready",
+      "source": "benchmarks/longmemeval_answer_benchmark.py",
+      "source_url": "https://github.com/xiaowu0162/LongMemEval",
+      "dataset": "LongMemEval-S questions answered from WaveMind-retrieved evidence. Extractive smoke result is checked in; Ollama mode requires a local model.",
+      "competitors": [
+        "Ollama local LLM",
+        "Chroma RAG",
+        "Qdrant RAG"
+      ],
+      "metrics": [
+        "exact_match",
+        "contains_answer",
+        "token_f1",
+        "evidence_recall@k"
+      ],
+      "current": {
+        "extractive smoke": {
+          "queries": 20,
+          "evidence_recall_at_k": 1.0,
+          "exact_match": 0.0,
+          "contains_answer": 0.05,
+          "token_f1": 0.018367529146058867,
+          "avg_retrieval_ms": 1.299194999592146,
+          "avg_generation_ms": 0.04707000043708831
+        }
+      },
+      "target": "Run Ollama answer generation once a local model is available and compare answer accuracy/faithfulness against Chroma/Qdrant RAG.",
+      "next_step": "Install or select a local Ollama model, then run --provider ollama over the full LongMemEval-S retrieval set."
     },
     {
       "id": "beir",
@@ -461,26 +543,6 @@
       "next_step": "Add MIRACL ru/dev loader behind an optional benchmark extra because the dataset is too large for the base package."
     },
     {
-      "id": "ann_benchmarks",
-      "name": "ANN-Benchmarks style index curve",
-      "category": "index-latency",
-      "status": "planned",
-      "source_url": "https://github.com/erikbern/ann-benchmarks",
-      "dataset": "Approximate nearest-neighbor recall/latency methodology for vector indexes.",
-      "competitors": [
-        "FAISS",
-        "Annoy",
-        "Qdrant HNSW"
-      ],
-      "metrics": [
-        "recall@10",
-        "queries_per_second",
-        "p95_latency_ms"
-      ],
-      "target": "At 5000 to 100000 memories, preserve recall@10 >= 0.95 while cutting query latency below the NumPy exact path.",
-      "next_step": "Add a generated-vector benchmark that compares NumPy exact, Annoy, and FAISS when optional dependencies are installed."
-    },
-    {
       "id": "vectordbbench",
       "name": "VectorDBBench",
       "category": "vector-db",
@@ -524,27 +586,6 @@
       ],
       "target": "Beat static vector-store RAG on temporal/correction questions by at least 15 percentage points while returning compact evidence.",
       "next_step": "After the retrieval-only LoCoMo run is published, add an optional Ollama answer-generation layer using the user's installed local model."
-    },
-    {
-      "id": "longmemeval",
-      "name": "LongMemEval",
-      "category": "long-term-agent-memory",
-      "status": "planned",
-      "source_url": "https://arxiv.org/abs/2410.10813",
-      "dataset": "Long-term chat-assistant memory with information extraction, multi-session reasoning, temporal reasoning, updates, and abstention.",
-      "competitors": [
-        "Chroma RAG",
-        "Qdrant RAG",
-        "Mem0-style memory"
-      ],
-      "metrics": [
-        "hit@5",
-        "mrr",
-        "answer_accuracy",
-        "abstention_accuracy"
-      ],
-      "target": "Demonstrate update/abstention gains over static vector recall without exceeding 100 ms retrieval latency.",
-      "next_step": "Store session facts, corrections, and timestamps as first-class metadata and evaluate retrieval evidence before LLM answering."
     },
     {
       "id": "longmemeval_v2",

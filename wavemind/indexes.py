@@ -181,7 +181,7 @@ class FaissVectorIndex(NumpyVectorIndex):
 class AnnoyVectorIndex(NumpyVectorIndex):
     name = "annoy-angular"
 
-    def __init__(self, vector_dim: int, n_trees: int = 16):
+    def __init__(self, vector_dim: int, n_trees: int = 64, search_k_factor: int = 1024):
         try:
             from annoy import AnnoyIndex
         except ImportError as exc:
@@ -189,6 +189,7 @@ class AnnoyVectorIndex(NumpyVectorIndex):
         super().__init__(vector_dim)
         self._AnnoyIndex = AnnoyIndex
         self.n_trees = int(n_trees)
+        self.search_k_factor = int(search_k_factor)
         self._index = AnnoyIndex(self.vector_dim, "angular")
         self._id_order: list[int] = []
         self._built = False
@@ -255,6 +256,7 @@ class AnnoyVectorIndex(NumpyVectorIndex):
         positions, distances = self._index.get_nns_by_vector(
             _normalize(vector).tolist(),
             search_k,
+            search_k=max(self.n_trees * search_k, self.search_k_factor * top_k),
             include_distances=True,
         )
         results = []

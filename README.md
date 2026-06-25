@@ -385,15 +385,16 @@ Current read:
 
 | area | result | honest interpretation |
 |---|---|---|
-| Public agent-memory evidence | On official LoCoMo `locomo10.json`, WaveMind reaches `evidence_recall@5 0.386` with hash embeddings and `0.547` with sentence-transformers. Chroma static reaches `0.185` / `0.383`; Qdrant static reaches `0.203` / `0.384`. | First real public memory benchmark result: WaveMind retrieves more labeled evidence, but Chroma is still the fastest static vector-store baseline. |
+| Public agent-memory evidence | On official LoCoMo `locomo10.json`, WaveMind reaches `evidence_recall@5 0.386` with hash embeddings and `0.547` with sentence-transformers. Fair namespace-filtered Chroma reaches `0.257` / `0.407`; Qdrant reaches `0.263` / `0.409`. | WaveMind retrieves more labeled evidence. Chroma is still the fastest static vector-store baseline. Qdrant local payload filtering is much slower than service-mode Qdrant should be. |
 | Public retrieval sanity check | On BEIR SciFact, WaveMind reaches `nDCG@10 0.354`, `Recall@10 0.482`; Qdrant matches that quality; Chroma reaches `0.350` / `0.467` with identical hash embeddings. | Same-embedding retrieval quality is close. Chroma is fastest at `1.79 ms`; Qdrant local is `17.71 ms`; WaveMind exact path is `117.02 ms`. |
 | Static agent recall | WaveMind `precision@1` equals Chroma at `0.82`; WaveMind `precision@3` is `0.90` vs Chroma `0.88`. | Competitive quality, but Chroma is faster on the static vector-store path. |
 | Dynamic memory policy | WaveMind reaches `1.00` stale suppression; Chroma static is `0.00`. | This is the strongest current differentiation: hotness, TTL, corrections, and namespaces. |
 | Field memory dynamics | Graph-enabled WaveMind reaches `1.00` `precision@1`, `1.00` stale suppression, and `1.00` concept formation vs static WaveMind at `0.20` / `0.20` / `0.00`. | This is still synthetic, but it is the first regression check for memory-to-memory excitation, conflict inhibition, and decay. |
 | Long-term evidence | WaveMind reaches `1.00` evidence recall@5, `1.00` precision@1, and `1.00` stale suppression on the synthetic long-memory evidence benchmark. | This is the first proof-shaped benchmark for agent memory: it measures whether stale/corrected/expired/cross-user facts stay out of retrieved evidence. |
 | Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
-| LongMemEval subset | On the official LongMemEval-S cleaned file, first 50 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.920` and `precision@1 0.780`; Chroma static reaches `0.100` / `0.040`; Qdrant static reaches `0.120` / `0.040`. | Strong early signal for long-term memory retrieval, but this is a 50-query subset, not a full LongMemEval score. |
-| Next public proof | Full LongMemEval-S, LoCoMo answer generation, and an ANN/VectorDBBench-style latency curve. | The next serious memory number should test updates, abstention, temporal reasoning, answer quality with an LLM, and scaling beyond exact NumPy search. |
+| LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
+| ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `5.29 ms`; Annoy is faster at `3.44 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `48.70 ms`. | Current local scale boundary is clear: Annoy needs more tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
+| Next public proof | LongMemEval / LoCoMo answer generation with a local LLM. | Retrieval is now measured. The next serious number should test answer accuracy, abstention, and faithfulness. |
 
 ### Real Benchmark Matrix
 
@@ -405,13 +406,13 @@ Current read:
 | WaveMind capacity curve | How recall and latency change at 200 / 1000 / 5000 memories. | implemented | WaveMind-only today | Keep `precision@1 >= 0.95` at 5000 memories and dynamic latency below 20 ms. |
 | Long-term memory evidence | Evidence retrieval from long histories with profile, preference, correction, TTL, namespace, and filler noise. | implemented | Static vector / Chroma / Qdrant | Keep this as a small regression test while public LoCoMo and LongMemEval runners carry the stronger evidence claims. |
 | BEIR-style open retrieval runner | Public `corpus.jsonl`, `queries.jsonl`, `qrels/*.tsv` datasets with the same metrics for each engine. | implemented | WaveMind / Chroma / Qdrant | Use identical embeddings and report `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, and latency. Current checked-in run: BEIR SciFact. |
+| ANN/VectorDBBench-style local curve | Recall/latency tradeoff for candidate indexes on generated vectors. | implemented | NumPy exact / Annoy / Qdrant local | Use this as the local engineering curve; official VectorDBBench remains future work. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
 | [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | planned | Chroma / Qdrant / FAISS | Reach same-embedding parity on Russian `nDCG@10`. |
-| [ANN-Benchmarks](https://github.com/erikbern/ann-benchmarks) style curve | Recall/latency tradeoff for vector indexes. | planned | FAISS / Annoy / Qdrant HNSW | Keep `recall@10 >= 0.95` while beating NumPy exact latency. |
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | Vector database insertion/search/filter/cost-performance benchmark. | planned | Chroma / Qdrant / Milvus / Weaviate / Pinecone / FAISS | Use only after WaveMind has a production index path; today it is a memory layer, not a standalone cloud vector DB. |
 | [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. Retrieval-only runner is implemented for official `locomo10.json`. | implemented | Static vector / Chroma / Qdrant | Improve answer generation accuracy on top of the stronger sentence-transformers evidence retrieval run. |
-| [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented subset, full run planned | Static vector / Chroma / Qdrant / Mem0-style memory | Move from the first 50 official questions to the full LongMemEval-S retrieval and answer-quality run. |
+| [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented retrieval, answer runner ready | Static vector / Chroma / Qdrant / Mem0-style memory | Add LLM answer quality and abstention after retrieval. |
 | [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | planned | AgentRunbook-R / Chroma RAG / Qdrant RAG | Prove WaveMind can retrieve compact evidence from agent trajectories. |
 | [LMEB](https://github.com/KaLM-Embedding/LMEB) | Long-horizon memory embedding tasks beyond normal passage retrieval. | planned | Embedding-only baselines / Chroma / Qdrant | Choose the default semantic encoder using memory-specific tasks. |
 | [RAGBench](https://huggingface.co/datasets/rungalileo/ragbench) | Downstream RAG context and answer quality. | planned | Chroma RAG / Qdrant RAG / Pinecone RAG | Show whether stale-memory suppression improves context relevance. |
@@ -494,10 +495,10 @@ Checked-in official LoCoMo retrieval result:
 
 | engine | evidence recall@5 | precision@1 | MRR@5 | avg latency | p95 latency |
 |---|---:|---:|---:|---:|---:|
-| WaveMind | 0.386 | 0.239 | 0.307 | 19.65 ms | 37.51 ms |
-| Static vector | 0.203 | 0.117 | 0.154 | 23.14 ms | 34.70 ms |
-| Chroma static | 0.185 | 0.110 | 0.143 | 3.06 ms | 5.83 ms |
-| Qdrant static | 0.203 | 0.117 | 0.154 | 23.63 ms | 36.11 ms |
+| WaveMind | 0.386 | 0.239 | 0.307 | 3.95 ms | 7.44 ms |
+| Static vector | 0.263 | 0.133 | 0.189 | 1.94 ms | 3.87 ms |
+| Chroma static | 0.257 | 0.129 | 0.185 | 7.03 ms | 9.74 ms |
+| Qdrant static | 0.263 | 0.133 | 0.189 | 147.58 ms | 210.23 ms |
 
 Checked-in semantic LoCoMo run:
 
@@ -507,10 +508,10 @@ machine-readable result: `benchmarks/locomo_sentence_evidence_results.json`.
 
 | engine | evidence recall@5 | precision@1 | MRR@5 | avg latency | p95 latency |
 |---|---:|---:|---:|---:|---:|
-| WaveMind | 0.547 | 0.333 | 0.432 | 13.05 ms | 22.99 ms |
-| Static vector | 0.384 | 0.205 | 0.288 | 14.81 ms | 18.96 ms |
-| Chroma static | 0.383 | 0.205 | 0.288 | 1.55 ms | 2.20 ms |
-| Qdrant static | 0.384 | 0.205 | 0.288 | 26.81 ms | 31.37 ms |
+| WaveMind | 0.547 | 0.333 | 0.432 | 3.44 ms | 5.56 ms |
+| Static vector | 0.409 | 0.219 | 0.305 | 1.25 ms | 2.05 ms |
+| Chroma static | 0.407 | 0.218 | 0.304 | 4.97 ms | 6.30 ms |
+| Qdrant static | 0.409 | 0.219 | 0.305 | 124.34 ms | 149.72 ms |
 
 Read this as retrieval-only evidence quality, not full QA quality. It uses the
 same embeddings for every engine inside each table. The sentence-transformers
@@ -526,29 +527,63 @@ WaveMind also includes a retrieval-only runner for the official
 question's long chat history and measures whether the expected evidence sessions
 or turns are retrieved before answer generation.
 
-Run a bounded session-level subset:
+Run the full session-level retrieval benchmark:
 
 ```sh
-python benchmarks/longmemeval_memory_benchmark.py --dataset benchmarks/data/longmemeval_s_cleaned.json --engines wavemind static chroma qdrant --granularity session --top-k 5 --limit-queries 50 --output benchmarks/longmemeval_evidence_50_results.json
+python benchmarks/longmemeval_memory_benchmark.py --dataset benchmarks/data/longmemeval_s_cleaned.json --engines wavemind static chroma qdrant --granularity session --top-k 5 --output benchmarks/longmemeval_evidence_results.json
 ```
 
-Checked-in official LongMemEval-S subset result:
+Checked-in official LongMemEval-S retrieval result:
 
-First 50 non-abstention questions from `longmemeval_s_cleaned.json`,
-2436 session memories, `HashingTextEncoder`, top-k 5. This is a real official
-dataset subset, not the full LongMemEval score. Full machine-readable result:
-`benchmarks/longmemeval_evidence_50_results.json`.
+470 non-abstention questions from `longmemeval_s_cleaned.json`,
+22419 session memories, `HashingTextEncoder`, top-k 5. Full machine-readable
+result: `benchmarks/longmemeval_evidence_results.json`.
 
 | engine | evidence recall@5 | precision@1 | MRR@5 | context saved | avg latency | p95 latency |
 |---|---:|---:|---:|---:|---:|---:|
-| WaveMind | 0.920 | 0.780 | 0.838 | 0.869 | 2.56 ms | 5.30 ms |
-| Static vector | 0.120 | 0.040 | 0.063 | 0.918 | 5.94 ms | 7.15 ms |
-| Chroma static | 0.100 | 0.040 | 0.058 | 0.917 | 3.08 ms | 3.42 ms |
-| Qdrant static | 0.120 | 0.040 | 0.063 | 0.918 | 10.52 ms | 15.85 ms |
+| WaveMind | 0.782 | 0.696 | 0.762 | 0.869 | 7.27 ms | 9.14 ms |
+| Static vector | 0.520 | 0.355 | 0.464 | 0.890 | 0.08 ms | 0.10 ms |
+| Chroma static | 0.518 | 0.355 | 0.464 | 0.890 | 15.96 ms | 18.68 ms |
+| Qdrant static | 0.520 | 0.355 | 0.464 | 0.890 | 398.48 ms | 432.88 ms |
 
-This result is intentionally labeled as a subset. The next step is the full
-LongMemEval-S run, turn-level evidence mode, and answer-quality evaluation with
-a local LLM.
+The Chroma and Qdrant baselines now use the same namespace/payload scope as
+WaveMind. Qdrant is run in local embedded mode; the Qdrant client warns that
+local mode is not recommended above 20000 points, so this latency should not be
+read as a service-mode Qdrant result. The next step is answer-quality evaluation
+with a local LLM.
+
+Answer-generation runner:
+
+```sh
+python benchmarks/longmemeval_answer_benchmark.py --dataset benchmarks/data/longmemeval_s_cleaned.json --provider ollama --model YOUR_LOCAL_MODEL --top-k 5 --output benchmarks/longmemeval_answer_results.json
+```
+
+There is also an extractive smoke run that does not require a model:
+`benchmarks/longmemeval_answer_extractive_20_results.json`. It is only a runner
+check, not a meaningful final answer-quality benchmark.
+
+### ANN Index Curve
+
+WaveMind includes a local ANN/VectorDBBench-style curve for candidate indexes.
+It generates normalized vectors, queries with noisy copies, and measures
+`recall@10` against exact cosine neighbors.
+
+```sh
+python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy annoy qdrant --output benchmarks/ann_index_curve_results.json
+```
+
+Checked-in 50000-vector point:
+
+| engine | recall@10 | avg latency | p95 latency | build |
+|---|---:|---:|---:|---:|
+| WaveMind numpy | 1.000 | 5.29 ms | 5.75 ms | 539.3 ms |
+| WaveMind annoy | 0.730 | 3.44 ms | 4.91 ms | 3800.9 ms |
+| Qdrant local | 1.000 | 48.70 ms | 66.22 ms | 13771.5 ms |
+
+Read this as an engineering curve, not an official VectorDBBench result. Annoy
+is faster at 50000 vectors but loses too much recall with the current settings;
+NumPy exact is still reliable at this size; FAISS/service-mode Qdrant are the
+next production index paths to test.
 
 ### Current Local Runs
 
@@ -699,7 +734,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 
 - Optimal capacity on the current NumPy exact index is up to 1000 records.
 - At 5000 records, one-word `precision@1` is currently 0.72 with the hash encoder; many misses are ambiguous queries where another sentence containing the same word ranks first.
-- For `N > 5000`, use the Annoy or FAISS backend as candidate generation, or put WaveMind above a production vector index such as Qdrant.
+- For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; use FAISS or a production vector service before claiming large-scale ANN quality.
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files. Benchmark runners cache embeddings so retrieval latency is measured separately from model encoding latency.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - The BEIR SciFact run uses the hash encoder to isolate index/retrieval behavior. It is not a semantic embedding leaderboard result.
@@ -708,9 +743,11 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
-- The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but it is not a substitute for full LoCoMo or full LongMemEval public runs.
-- The LongMemEval number in this README is a 50-query official subset. It is useful evidence, but it is not a full LongMemEval leaderboard-equivalent score.
-- MTEB, MIRACL, LMEB, ANN-Benchmarks, VectorDBBench, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
+- The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
+- The LongMemEval result is retrieval-only. It is not a full LongMemEval answer-generation leaderboard-equivalent score.
+- Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; service-mode Qdrant should be benchmarked separately.
+- MTEB, MIRACL, LMEB, official VectorDBBench, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
+- Ollama answer generation is implemented, but the current machine has no local Ollama model available and the local Ollama API returns 502/connection-reset. The checked-in answer file is extractive smoke only, not an LLM score.
 - Public benchmark adapters require optional datasets, heavier dependencies, or running services. They are intentionally outside the minimal `pip install wavemind` path.
 - Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
 - Current WaveMind-only dynamic checks keep `precision@1` at 1.00 through 5000 memories, but average latency is around 48-54 ms. The next optimization target is field/re-ranking latency, not basic recall quality.
@@ -718,7 +755,8 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 ## Roadmap
 
 - FAISS-first production index path with persisted index rebuilds.
-- Add public benchmark adapters in this order: full LongMemEval-S, BEIR NFCorpus, MIRACL Russian, ANN/VectorDBBench-style index curves, then LoCoMo/LongMemEval answer generation.
+- Run LoCoMo/LongMemEval answer generation once a local LLM is available.
+- Add public benchmark adapters in this order: BEIR NFCorpus, MIRACL Russian, service-mode Qdrant/FAISS curves, official VectorDBBench, then RAGBench.
 - Expand competitor baselines to Qdrant local/service mode, Chroma metadata-policy mode, FAISS, Annoy, and sentence-transformers.
 - Optimize dynamic re-ranking latency after lexical candidate filtering.
 - Better semantic query expansion for short and ambiguous queries.
