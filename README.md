@@ -2,46 +2,96 @@
 
 # WaveMind
 
-**Persistent dynamic memory for AI agents.**
+**A local-first dynamic memory field for software that needs to remember.**
 
-Vector search finds similar memories. A wave-field priority layer makes useful
-memories hotter, lets stale facts fade, and keeps user/project memory scoped.
+Most storage systems answer one question: "what record is closest to this
+query?" WaveMind adds a second question: "what information still matters right
+now?"
+
+It stores text, vectors, metadata, and recall state in SQLite. A wave-field
+priority layer then reinforces useful memories, lets stale facts fade, respects
+namespaces, and keeps the final recall set small enough for real applications.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![PyPI](https://img.shields.io/pypi/v/wavemind.svg)](https://pypi.org/project/wavemind/)
 [![Tests](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+[Concept](#concept) |
 [Quick Start](#quick-start) |
 [LangChain](#langchain-memory) |
 [OpenClaw](#openclaw-integration) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
+[Roadmap](#roadmap) |
 [Limitations](#known-limitations)
 
 </div>
+
+## Concept
+
+WaveMind is not a replacement for every database. It is a memory layer for
+information that changes in importance over time: preferences, decisions,
+corrections, notes, research snippets, support history, agent context, or any
+small-to-medium knowledge stream where "latest", "repeated", "expired", and
+"scoped to this user/project" matter.
+
+The simple version:
+
+```text
+ordinary vector search:  find the nearest text
+WaveMind:                find the nearest useful memory
+```
+
+Under the hood, WaveMind still starts with normal vector search. The difference
+is the memory state around it: hotness, priority, decay, TTL, tags, namespaces,
+and optional memory-to-memory graph dynamics. That state is why the same stored
+fact can become stronger after repeated use, weaker after time passes, or
+disappear from recall after expiry.
 
 ## At a Glance
 
 | If you need... | WaveMind gives you... |
 |---|---|
-| Agent memory that survives restarts | SQLite-backed `remember()`, `query()`, and `forget()`. |
-| Scoped memory per user, agent, or project | Namespaces and tags on every record. |
-| Memory that changes over time | Hotness, priority, TTL, and decay-aware ranking. |
+| Memory that survives restarts | SQLite-backed `remember()`, `query()`, and `forget()`. |
+| Scoped recall per user, app, agent, or project | Namespaces and tags on every record. |
+| Information that changes importance over time | Hotness, priority, TTL, and decay-aware ranking. |
+| A local data source you can inspect and back up | One SQLite file is the source of truth. |
 | Easy integration | Python API, CLI, FastAPI server, and LangChain memory class. |
-| Honest benchmarks | Public BEIR/SciFact retrieval run plus dynamic memory-policy checks. |
+| Honest benchmarks | Public LoCoMo, LongMemEval, BEIR/SciFact, and local policy checks. |
 
 ```mermaid
 flowchart LR
-    U[User / tool event] --> R[WaveMind query]
-    R --> K[k-NN candidates]
-    K --> W[Wave-field re-rank]
-    W --> P[Prompt memory block]
-    P --> L[LLM / agent turn]
-    L --> S[remember facts, summaries, corrections]
-    S --> D[(SQLite source of truth)]
-    D --> R
+    A["Text, event, note, document, or agent turn"] --> S["remember()"]
+    S --> D[("SQLite: text + metadata + vectors + memory state")]
+    Q["query()"] --> K["k-NN candidate search"]
+    D --> K
+    K --> W["wave-field re-rank"]
+    W --> R["small ranked recall set"]
+    R --> P["app, search UI, prompt, API, or tool"]
+    P --> F["recall feedback updates hotness / priority"]
+    F --> D
 ```
+
+## What The Wave Field Does
+
+The "field" is the dynamic layer around stored memories. It is not just a
+marketing name for embeddings.
+
+| signal | Plain meaning | Effect |
+|---|---|---|
+| vector similarity | This text is semantically close to the query. | Gets into the candidate set. |
+| hotness | This memory has been useful before. | Moves upward during recall. |
+| decay | This memory has not mattered recently. | Slowly loses influence. |
+| priority | The app says this fact is important. | Raises ranking even before repetition. |
+| TTL | This fact is temporary. | Drops out after expiry. |
+| namespace and tags | This belongs to one user/project/type. | Prevents cross-user or cross-topic leakage. |
+| graph dynamics | Related memories can excite or inhibit each other. | Helps clusters and corrections behave like memory, not a flat list. |
+
+Technically, the current `MemoryFieldGraph` is a discrete graph over stored
+memories, not a continuous mathematical physics field. That honesty matters:
+WaveMind is useful today as a dynamic memory engine, while the research path is
+to make the field dynamics more explicit, measurable, and scalable.
 
 ## Terminal Demo
 
@@ -50,11 +100,11 @@ From a cloned repository:
 ```text
 $ python examples/demo.py
 [ok] Remembered: "Andrey is a trader who tracks market breakouts."
-[ok] Remembered: "Andrey prefers short practical answers about AI agents."
+[ok] Remembered: "Andrey prefers short practical answers about product decisions."
 
-Query: "Andrey trader agent"
+Query: "Andrey trader preferences"
 -> Result 1 (0.60): "Andrey is a trader who tracks market breakouts."
--> Result 2 (0.30): "Andrey prefers short practical answers about AI agents."
+-> Result 2 (0.30): "Andrey prefers short practical answers about product decisions."
 ```
 
 The demo is offline, keyless, and uses the built-in hash encoder.
@@ -91,8 +141,8 @@ wavemind --encoder sentence query "What does Andrey do?" --namespace demo
 For an explicit database path, put global options before the command:
 
 ```sh
-wavemind --db ./agent_memory.sqlite3 remember "Andrey is a trader" --namespace demo
-wavemind --db ./agent_memory.sqlite3 query "trader" --namespace demo
+wavemind --db ./app_memory.sqlite3 remember "Andrey is a trader" --namespace demo
+wavemind --db ./app_memory.sqlite3 query "trader" --namespace demo
 ```
 
 WaveMind is local-first. One SQLite file is the source of truth for texts,
@@ -123,7 +173,7 @@ Keep the SQLite file out of git. Back it up like any other application state.
 Run the local FastAPI server:
 
 ```sh
-wavemind --db ./agent_memory.sqlite3 serve --host 127.0.0.1 --port 8000
+wavemind --db ./app_memory.sqlite3 serve --host 127.0.0.1 --port 8000
 ```
 
 Store and query memory over HTTP:
@@ -178,12 +228,13 @@ python examples/langchain_memory.py
 
 ## Integration Patterns
 
-WaveMind only needs two touch points in an agent or app:
+WaveMind only needs two touch points in an agent, service, notebook, or app:
 
-1. Before the model call, `query()` for relevant memories and inject the short
-   results into the prompt.
-2. After the turn, `remember()` durable facts, preferences, summaries, tool
-   outcomes, or user corrections.
+1. Before work happens, `query()` for relevant memory and pass the short result
+   into the next step: a prompt, search screen, tool call, support workflow, or
+   decision function.
+2. After work happens, `remember()` durable facts, preferences, summaries,
+   outcomes, corrections, or notes.
 
 That makes it usable in more than LangChain:
 
@@ -193,6 +244,9 @@ That makes it usable in more than LangChain:
 | Custom Python agent | Create one `WaveMind` instance and call `query()` before the LLM. |
 | Node, Go, Ruby, PHP, or no-code app | Run `wavemind serve` and call the HTTP API. |
 | Multi-user SaaS | Use `namespace="user:<id>"` or `namespace="tenant:<id>:agent:<id>"`. |
+| Knowledge base or notebook | Store notes by project namespace and retrieve a small evidence set. |
+| Support or CRM workflow | Store issues, preferences, resolutions, and corrections with tags. |
+| Research workflow | Store observations with source metadata and expire temporary hypotheses. |
 | Temporary context | Store with `ttl_seconds=...` so stale memory expires automatically. |
 | Preference/profile memory | Store with tags such as `profile`, `preference`, `project`, `decision`. |
 | Corrections/privacy | Use `forget()` or namespace deletion workflows. |
@@ -299,8 +353,9 @@ facts.
 
 ## Non-Agent Use Cases
 
-WaveMind can store any small-to-medium memory stream where freshness and usage
-matter:
+WaveMind can store any small-to-medium memory stream where meaning, freshness,
+and repeated use matter. It is useful when "show me the nearest text" is not
+enough and the application needs "show me what is relevant now."
 
 | Use case | Example |
 |---|---|
@@ -311,35 +366,45 @@ matter:
 | Game/NPC memory | Give characters scoped memory that strengthens after repeated events. |
 | Trading research | Store labeled OHLCV pattern notes before building a backtest layer. |
 | Document notebook | Import text/PDF/JSON chunks and query by namespace/project. |
+| Personal knowledge base | Keep decisions, recurring context, people, links, and notes searchable without sending them to a hosted vector DB. |
 
 ## Why Dynamic Memory
 
-WaveMind is not positioned as "a faster Chroma." Chroma, Qdrant, Pinecone, and Weaviate are vector databases: they store embeddings and return nearest neighbors. That is the right tool for many static RAG workloads.
+WaveMind is not positioned as "a faster Chroma." Chroma, Qdrant, Pinecone, and
+Weaviate are vector databases: they store embeddings and return nearest
+neighbors. That is the right tool for many static RAG workloads.
 
-WaveMind is an agent memory layer. It still uses vector search first, but then applies memory-specific signals that a plain vector store does not model by default:
+WaveMind is a dynamic memory layer. It still uses vector search first, but then
+applies memory-specific signals that a plain vector store does not model by
+default:
 
-| memory behavior | Why it matters for agents | WaveMind mechanism |
+| memory behavior | Why it matters | WaveMind mechanism |
 |---|---|---|
-| Hot memories | Facts recalled repeatedly should become easier to recall again. | Wave-field hotness and priority updates. |
+| Hot memories | Information that keeps being useful should become easier to recall again. | Wave-field hotness and priority updates. |
 | Aging memories | Old low-value facts should fade instead of competing forever. | TTL and decay-aware scoring. |
-| Scoped memory | One user, agent, workspace, or project should not leak into another. | Namespaces and tags. |
-| Explicit forgetting | Agents need deletion, privacy cleanup, and correction workflows. | `forget()` plus SQLite persistence. |
+| Scoped memory | One user, app, workspace, or project should not leak into another. | Namespaces and tags. |
+| Explicit forgetting | Real systems need deletion, privacy cleanup, and correction workflows. | `forget()` plus SQLite persistence. |
 | Stable restart behavior | A memory system must survive process restarts. | SQLite source of truth, reloadable indexes. |
-| Vector plus memory rank | Semantic similarity is necessary but not sufficient for long-running agents. | k-NN candidates first, wave field as re-ranker. |
+| Vector plus memory rank | Semantic similarity is necessary but not sufficient for long-running memory. | k-NN candidates first, wave field as re-ranker. |
 
-The current Chroma benchmark below is intentionally conservative: it compares static retrieval on the same facts and the same hash embeddings. That benchmark is useful, but it does not exercise WaveMind's main product thesis: memory that changes over time as an agent recalls, reinforces, ages, and forgets information.
+The current Chroma benchmark below is intentionally conservative: it compares
+static retrieval on the same facts and the same hash embeddings. That benchmark
+is useful, but it does not exercise WaveMind's main thesis: memory that changes
+over time as software recalls, reinforces, ages, and forgets information.
 
-The benchmark that should decide whether WaveMind is worth using is a dynamic agent-memory benchmark:
+The benchmark that should decide whether WaveMind is worth using is a dynamic
+memory benchmark:
 
 | scenario | What should happen |
 |---|---|
-| A user repeats a preference many times. | WaveMind should rank it higher than equally similar but unused facts. |
+| A fact, preference, or decision is used many times. | WaveMind should rank it higher than equally similar but unused facts. |
 | A fact expires via TTL. | WaveMind should suppress it without requiring manual vector cleanup. |
-| A user corrects an old fact. | WaveMind should prefer the newer or reinforced memory. |
+| A user or system corrects an old fact. | WaveMind should prefer the newer or reinforced memory. |
 | A query is ambiguous across namespaces. | WaveMind should return only the scoped user's memory. |
-| A long conversation has many irrelevant facts. | WaveMind should preserve useful recall instead of treating all vectors equally. |
+| A long history has many irrelevant facts. | WaveMind should preserve useful recall instead of treating all vectors equally. |
 
-In short: static vector search answers "what is nearest?" Agent memory also asks "what is still relevant, reinforced, scoped, and allowed to be remembered?"
+In short: static vector search answers "what is nearest?" Dynamic memory also
+asks "what is still relevant, reinforced, scoped, and allowed to be remembered?"
 
 ## Benchmark
 
@@ -720,15 +785,15 @@ python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memori
 
 | feature | WaveMind | Chroma | Qdrant |
 |---|---|---|---|
-| Primary role | Agent memory engine | Embedding database | Production vector database |
+| Primary role | Dynamic memory engine | Embedding database | Production vector database |
 | Local SQLite persistence | Yes | Yes | No, separate service/storage |
 | HTTP API | FastAPI included | Included | Included |
 | Dynamic memory priority | Wave-field hotness, TTL, priority | Metadata/filter driven | Payload/filter driven |
 | Built-in forgetting | TTL and explicit forget | Manual delete/filtering | Manual delete/filtering |
-| Best fit | Small to medium agent memory with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
+| Best fit | Small to medium memory streams with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
 | Scale target today | Up to 1000 optimal on NumPy, FAISS recommended beyond 5000 | Larger than WaveMind local mode | Production scale |
 
-WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For agent memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
+WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
 
 ## Known Limitations
 
@@ -754,15 +819,30 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 
 ## Roadmap
 
-- FAISS-first production index path with persisted index rebuilds.
-- Run LoCoMo/LongMemEval answer generation once a local LLM is available.
-- Add public benchmark adapters in this order: BEIR NFCorpus, MIRACL Russian, service-mode Qdrant/FAISS curves, official VectorDBBench, then RAGBench.
-- Expand competitor baselines to Qdrant local/service mode, Chroma metadata-policy mode, FAISS, Annoy, and sentence-transformers.
-- Optimize dynamic re-ranking latency after lexical candidate filtering.
-- Better semantic query expansion for short and ambiguous queries.
-- Namespace quotas, backups, and daemon hardening for SaaS use.
-- Webhook on recall for agent runtimes.
-- OHLCV pattern-memory experiments for market research and backtests.
+Full roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+Near-term priorities:
+
+- FAISS-first candidate index with persisted rebuilds.
+- Postgres + pgvector prototype for multi-tenant deployments.
+- Service-mode Qdrant and FAISS latency baselines.
+- LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.
+- More framework examples: LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw,
+  and HTTP-only sidecar use.
+- Faster dynamic re-ranking through smaller candidate windows, caching, and
+  background updates.
+- Better observability: Prometheus metrics, OpenTelemetry traces, audit logs,
+  and backup/restore workflows.
+
+Longer-term direction:
+
+- scale from thousands of memories to 100k-1M on one node;
+- keep SQLite as the local source of truth while adding Postgres and external
+  vector backends for production;
+- evolve `MemoryFieldGraph` from a regression-tested graph into a stronger
+  field-memory model with excitation, inhibition, decay, and consolidation;
+- build enterprise features only after benchmarked retrieval, latency, and
+  answer-quality evidence are solid.
 
 ## License
 
