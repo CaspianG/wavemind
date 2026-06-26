@@ -18,7 +18,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import NumpyVectorIndex, create_vector_index
-from .storage import MemoryRecord, SQLiteMemoryStore
+from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
 
 
 LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
@@ -157,6 +157,7 @@ class WaveMind:
         graph_expand_k: int = 10,
         persist_access_on_query: bool = False,
         query_feedback_strength: float = 0.0,
+        audit_queries: bool = False,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
@@ -179,6 +180,7 @@ class WaveMind:
         self.graph_expand_k = int(graph_expand_k)
         self.persist_access_on_query = bool(persist_access_on_query)
         self.query_feedback_strength = float(query_feedback_strength)
+        self.audit_queries = bool(audit_queries)
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
         self._token_ids: dict[str, set[int]] = {}
@@ -219,6 +221,17 @@ class WaveMind:
         self.field.feed(pattern, strength=strength * priority)
         self.field.evolve(self._evolve_n)
         self._refresh_field_magnitude()
+        self.store.log_audit_event(
+            "remember",
+            namespace=namespace,
+            memory_id=id,
+            metadata={
+                "tags": list(record.tags),
+                "ttl_seconds": ttl_seconds,
+                "priority": float(priority),
+                "text_length": len(text),
+            },
+        )
         return id
 
     def query(
@@ -313,6 +326,18 @@ class WaveMind:
             self._refresh_field_magnitude()
         if selected and self.graph_weight > 0:
             self._ensure_graph()
+        if self.audit_queries:
+            self.store.log_audit_event(
+                "query",
+                namespace=namespace,
+                metadata={
+                    "top_k": int(top_k),
+                    "result_count": len(selected),
+                    "candidate_count": len(candidate_scores),
+                    "tags": list(tags or []),
+                    "min_score": threshold,
+                },
+            )
         return selected
 
     def forget(
@@ -331,12 +356,27 @@ class WaveMind:
         if records:
             self.field.evolve(4)
             self._refresh_field_magnitude()
+        for record in records:
+            self.store.log_audit_event(
+                "forget",
+                namespace=record.namespace,
+                memory_id=record.id,
+                metadata={
+                    "tags": list(record.tags),
+                    "text_length": len(record.text),
+                },
+            )
         return len(records)
 
     def save(self, backup_path: str | Path | None = None) -> Path | None:
         self.store.conn.commit()
         if backup_path is not None:
-            return self.store.backup(backup_path)
+            path = self.store.backup(backup_path)
+            self.store.log_audit_event(
+                "backup",
+                metadata={"destination": str(path)},
+            )
+            return path
         return None
 
     def close(self) -> None:
@@ -372,6 +412,7 @@ class WaveMind:
         purged = self.store.purge_expired()
         if purged:
             self.load()
+            self.store.log_audit_event("purge_expired", metadata={"deleted": purged})
         return purged
 
     def consolidate(self, steps: int = 40) -> None:
@@ -390,6 +431,7 @@ class WaveMind:
             "active_memories": len(active),
             "expired_memories": len(expired),
             "total_memories": len(all_records),
+            "audit_events": self.store.audit_count(namespace=namespace),
             "field_energy": round(self.field.energy(), 6),
             "clusters": len(clusters),
             "field_shape": f"{self.field.H}x{self.field.W}x{self.field.L}",
@@ -411,6 +453,18 @@ class WaveMind:
                 }
             )
         return payload
+
+    def audit_events(
+        self,
+        namespace: str | None = None,
+        action: str | None = None,
+        limit: int = 100,
+    ) -> list[AuditEvent]:
+        return self.store.list_audit_events(
+            namespace=namespace,
+            action=action,
+            limit=limit,
+        )
 
     def concept_candidates(
         self,

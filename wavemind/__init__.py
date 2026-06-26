@@ -7,13 +7,14 @@ from .encoders import (
     create_text_encoder,
 )
 from .field_graph import MemoryFieldGraph
-from .storage import MemoryRecord, SQLiteMemoryStore
+from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
 
 __version__ = "2.0.5"
 
 __all__ = [
     "FieldProjector",
     "HashingTextEncoder",
+    "AuditEvent",
     "MemoryFieldGraph",
     "MemoryRecord",
     "QueryResult",

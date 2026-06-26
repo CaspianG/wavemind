@@ -19,6 +19,8 @@ policy matters more than raw vector-database scale:
 - Annoy exists as an ANN option, but current recall still needs tuning.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
+- SQLite audit events and a Prometheus-compatible `/metrics` endpoint now cover
+  the first observability layer.
 - Public retrieval evidence exists for LoCoMo, LongMemEval, and BEIR/SciFact,
   but full answer-quality evaluation is still the next proof step.
 
@@ -84,7 +86,8 @@ Potential infrastructure:
 - Redis for hot-memory and query caches;
 - Celery, RQ, Temporal, or a simple built-in worker for background tasks;
 - OpenTelemetry spans for profiling production requests;
-- Prometheus metrics for latency, recall feedback, TTL expiry, and index health.
+- expand Prometheus-compatible metrics for latency, recall feedback, TTL expiry,
+  and index health.
 
 ### 4. Field And Graph Memory
 

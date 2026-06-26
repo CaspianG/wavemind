@@ -38,6 +38,17 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             stats = client.get("/stats", params={"namespace": "pets"})
             assert stats.status_code == 200
             assert stats.json()["active_memories"] == 1
+            assert stats.json()["audit_events"] == 1
+
+            audit = client.get("/audit", params={"namespace": "pets"})
+            assert audit.status_code == 200
+            assert audit.json()["events"][0]["action"] == "remember"
+            assert audit.json()["events"][0]["memory_id"] == memory_id
+
+            metrics = client.get("/metrics", params={"namespace": "pets"})
+            assert metrics.status_code == 200
+            assert "wavemind_active_memories 1" in metrics.text
+            assert "wavemind_audit_events 1" in metrics.text
 
             deleted = client.request(
                 "DELETE",

@@ -66,6 +66,12 @@ def build_parser() -> argparse.ArgumentParser:
     stats = sub.add_parser("stats", help="Show memory stats")
     stats.add_argument("--namespace")
 
+    audit = sub.add_parser("audit", help="Show audit log events")
+    audit.add_argument("--namespace")
+    audit.add_argument("--action")
+    audit.add_argument("--limit", type=int, default=20)
+    audit.add_argument("--json", action="store_true")
+
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
     imp.add_argument("--namespace", default="default")
@@ -208,6 +214,37 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "stats":
         print_stats(mind.stats(namespace=args.namespace))
+        return 0
+
+    if args.command == "audit":
+        events = mind.audit_events(
+            namespace=args.namespace,
+            action=args.action,
+            limit=args.limit,
+        )
+        payload = [
+            {
+                "id": event.id,
+                "created_at": event.created_at,
+                "action": event.action,
+                "namespace": event.namespace,
+                "memory_id": event.memory_id,
+                "metadata": event.metadata,
+            }
+            for event in events
+        ]
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            for event in events:
+                namespace = event.namespace or "-"
+                memory_id = event.memory_id if event.memory_id is not None else "-"
+                print(
+                    f"{event.created_at:.3f} "
+                    f"action={event.action} "
+                    f"namespace={namespace} "
+                    f"memory_id={memory_id}"
+                )
         return 0
 
     if args.command == "import":

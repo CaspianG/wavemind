@@ -184,6 +184,19 @@ curl -X POST http://127.0.0.1:8000/remember -H "Content-Type: application/json" 
 curl -X POST http://127.0.0.1:8000/query -H "Content-Type: application/json" -d "{\"query\":\"trader\",\"namespace\":\"demo\",\"top_k\":1}"
 ```
 
+Operational endpoints:
+
+```sh
+curl http://127.0.0.1:8000/stats?namespace=demo
+curl http://127.0.0.1:8000/audit?namespace=demo
+curl http://127.0.0.1:8000/metrics
+```
+
+`/audit` returns mutation events such as `remember`, `forget`, `backup`, and
+`purge_expired`. Query audit is opt-in with `WAVEMIND_AUDIT_QUERIES=1` because
+writing an audit row for every query changes latency. `/metrics` returns a
+Prometheus-compatible text payload without adding a required dependency.
+
 ## Install From Source
 
 For contributors installing from a local clone:
@@ -791,6 +804,7 @@ python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memori
 | Primary role | Dynamic memory engine | Embedding database | Production vector database |
 | Local SQLite persistence | Yes | Yes | No, separate service/storage |
 | HTTP API | FastAPI included | Included | Included |
+| Audit log / metrics | SQLite audit events plus `/metrics` | App-layer only | App-layer / service metrics |
 | Dynamic memory priority | Wave-field hotness, TTL, priority | Metadata/filter driven | Payload/filter driven |
 | Built-in forgetting | TTL and explicit forget | Manual delete/filtering | Manual delete/filtering |
 | Best fit | Small to medium memory streams with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
@@ -834,8 +848,8 @@ Near-term priorities:
   and HTTP-only sidecar use.
 - Faster dynamic re-ranking through smaller candidate windows, caching, and
   background updates.
-- Better observability: Prometheus metrics, OpenTelemetry traces, audit logs,
-  and backup/restore workflows.
+- Better observability: audit logs and Prometheus-compatible metrics are now
+  started; OpenTelemetry traces and richer backup/restore workflows are next.
 
 Longer-term direction:
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, Query
+from fastapi.responses import PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
@@ -76,6 +77,46 @@ class ImportResponse(BaseModel):
     ids: list[int]
 
 
+class AuditEventResponse(BaseModel):
+    id: int
+    created_at: float
+    action: str
+    namespace: str | None
+    memory_id: int | None
+    metadata: dict[str, Any]
+
+
+class AuditResponse(BaseModel):
+    events: list[AuditEventResponse]
+
+
+def _metrics_text(stats: dict[str, Any]) -> str:
+    metric_names = {
+        "active_memories": "wavemind_active_memories",
+        "expired_memories": "wavemind_expired_memories",
+        "total_memories": "wavemind_total_memories",
+        "audit_events": "wavemind_audit_events",
+        "field_energy": "wavemind_field_energy",
+        "clusters": "wavemind_clusters",
+        "graph_nodes": "wavemind_graph_nodes",
+        "graph_edges": "wavemind_graph_edges",
+        "graph_positive_edges": "wavemind_graph_positive_edges",
+        "graph_negative_edges": "wavemind_graph_negative_edges",
+        "graph_energy": "wavemind_graph_energy",
+    }
+    lines = [
+        "# HELP wavemind_active_memories Active non-expired memories.",
+        "# TYPE wavemind_active_memories gauge",
+    ]
+    for key, metric in metric_names.items():
+        value = stats.get(key)
+        if isinstance(value, bool):
+            value = 1 if value else 0
+        if isinstance(value, (int, float)):
+            lines.append(f"{metric} {value}")
+    return "\n".join(lines) + "\n"
+
+
 def build_default_mind() -> WaveMind:
     db_path = (
         Path(os.environ["WAVEMIND_DB"])
@@ -101,6 +142,8 @@ def build_default_mind() -> WaveMind:
         graph_weight=float(os.environ.get("WAVEMIND_GRAPH_WEIGHT", "0.0")),
         graph_steps=int(os.environ.get("WAVEMIND_GRAPH_STEPS", "2")),
         graph_expand_k=int(os.environ.get("WAVEMIND_GRAPH_EXPAND_K", "10")),
+        audit_queries=os.environ.get("WAVEMIND_AUDIT_QUERIES", "0").lower()
+        in {"1", "true", "yes", "on"},
     )
 
 
@@ -167,6 +210,38 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.get("/stats")
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
+
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics(namespace: str | None = None) -> PlainTextResponse:
+        return PlainTextResponse(
+            _metrics_text(app.state.mind.stats(namespace=namespace)),
+            media_type="text/plain; version=0.0.4",
+        )
+
+    @app.get("/audit", response_model=AuditResponse)
+    def audit(
+        namespace: str | None = None,
+        action: str | None = None,
+        limit: int = Query(default=100, ge=0, le=1000),
+    ) -> AuditResponse:
+        events = app.state.mind.audit_events(
+            namespace=namespace,
+            action=action,
+            limit=limit,
+        )
+        return AuditResponse(
+            events=[
+                AuditEventResponse(
+                    id=int(event.id),
+                    created_at=event.created_at,
+                    action=event.action,
+                    namespace=event.namespace,
+                    memory_id=event.memory_id,
+                    metadata=event.metadata,
+                )
+                for event in events
+            ]
+        )
 
     @app.post("/import", response_model=ImportResponse)
     def batch_import(request: ImportRequest) -> ImportResponse:

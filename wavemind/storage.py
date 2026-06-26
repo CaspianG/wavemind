@@ -30,6 +30,16 @@ class MemoryRecord:
         return self.expires_at is not None and self.expires_at <= time.time()
 
 
+@dataclass(frozen=True)
+class AuditEvent:
+    action: str
+    created_at: float
+    namespace: str | None = None
+    memory_id: int | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    id: int | None = None
+
+
 def _array_to_blob(array: np.ndarray) -> bytes:
     return np.asarray(array, dtype=np.float32).tobytes()
 
@@ -83,6 +93,21 @@ class SQLiteMemoryStore:
         )
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_namespace ON memories(namespace)")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_expires_at ON memories(expires_at)")
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS audit_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at REAL NOT NULL,
+                action TEXT NOT NULL,
+                namespace TEXT,
+                memory_id INTEGER,
+                metadata TEXT NOT NULL
+            )
+            """
+        )
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_action ON audit_events(action)")
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_namespace ON audit_events(namespace)")
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at)")
         self.conn.commit()
 
     def insert(self, record: MemoryRecord) -> int:
@@ -200,6 +225,70 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
 
+    def log_audit_event(
+        self,
+        action: str,
+        namespace: str | None = None,
+        memory_id: int | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> int:
+        cur = self.conn.execute(
+            """
+            INSERT INTO audit_events (
+                created_at, action, namespace, memory_id, metadata
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                time.time(),
+                action,
+                namespace,
+                int(memory_id) if memory_id is not None else None,
+                json.dumps(metadata or {}, ensure_ascii=False),
+            ),
+        )
+        self.conn.commit()
+        return int(cur.lastrowid)
+
+    def list_audit_events(
+        self,
+        namespace: str | None = None,
+        action: str | None = None,
+        limit: int = 100,
+    ) -> list[AuditEvent]:
+        params: list[Any] = []
+        where = []
+        if namespace is not None:
+            where.append("namespace = ?")
+            params.append(namespace)
+        if action is not None:
+            where.append("action = ?")
+            params.append(action)
+        sql = "SELECT * FROM audit_events"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY created_at DESC, id DESC LIMIT ?"
+        params.append(max(0, int(limit)))
+        rows = self.conn.execute(sql, params).fetchall()
+        return [self._row_to_audit_event(row) for row in rows]
+
+    def audit_count(
+        self,
+        namespace: str | None = None,
+        action: str | None = None,
+    ) -> int:
+        params: list[Any] = []
+        where = []
+        if namespace is not None:
+            where.append("namespace = ?")
+            params.append(namespace)
+        if action is not None:
+            where.append("action = ?")
+            params.append(action)
+        sql = "SELECT COUNT(*) FROM audit_events"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        return int(self.conn.execute(sql, params).fetchone()[0])
+
     def count(self, namespace: str | None = None, include_expired: bool = False) -> int:
         return len(self.list(namespace=namespace, include_expired=include_expired))
 
@@ -234,4 +323,14 @@ class SQLiteMemoryStore:
             expires_at=row["expires_at"],
             priority=float(row["priority"]),
             access_count=int(row["access_count"]),
+        )
+
+    def _row_to_audit_event(self, row: sqlite3.Row) -> AuditEvent:
+        return AuditEvent(
+            id=int(row["id"]),
+            created_at=float(row["created_at"]),
+            action=row["action"],
+            namespace=row["namespace"],
+            memory_id=int(row["memory_id"]) if row["memory_id"] is not None else None,
+            metadata=json.loads(row["metadata"]),
         )

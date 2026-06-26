@@ -74,6 +74,42 @@ def test_namespace_tags_threshold_ttl_and_forget(tmp_path):
     mind.close()
 
 
+def test_audit_events_track_mutations_without_query_audit_by_default(tmp_path):
+    db_path = tmp_path / "audit.sqlite3"
+    mind = make_mind(db_path)
+
+    memory_id = mind.remember(
+        "audit memory should record mutations",
+        namespace="audit",
+        tags=["ops"],
+    )
+    assert mind.query("audit memory", namespace="audit")
+    assert mind.forget(id=memory_id, namespace="audit") == 1
+
+    events = mind.audit_events(namespace="audit", limit=10)
+    actions = [event.action for event in events]
+
+    assert actions == ["forget", "remember"]
+    assert events[0].memory_id == memory_id
+    assert events[1].metadata["tags"] == ["ops"]
+    assert mind.stats(namespace="audit")["audit_events"] == 2
+    mind.close()
+
+
+def test_query_audit_is_opt_in(tmp_path):
+    mind = make_mind(tmp_path / "query-audit.sqlite3", audit_queries=True)
+
+    mind.remember("query audit can be enabled", namespace="audit")
+    mind.query("query audit", namespace="audit", top_k=1)
+
+    query_events = mind.audit_events(namespace="audit", action="query", limit=5)
+
+    assert len(query_events) == 1
+    assert query_events[0].metadata["top_k"] == 1
+    assert query_events[0].metadata["result_count"] == 1
+    mind.close()
+
+
 def test_close_releases_sqlite_file(tmp_path):
     db_path = tmp_path / "memory.sqlite3"
     mind = make_mind(db_path)

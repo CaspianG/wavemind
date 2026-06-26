@@ -41,6 +41,12 @@ def test_module_cli_remember_query_stats_and_backup(tmp_path):
 
     stats = run_cli("--db", str(db_path), "stats", "--namespace", "cli")
     assert "active_memories: 1" in stats.stdout
+    assert "audit_events: 1" in stats.stdout
+
+    audit = run_cli("--db", str(db_path), "audit", "--namespace", "cli", "--json")
+    audit_events = json.loads(audit.stdout)
+    assert audit_events[0]["action"] == "remember"
+    assert audit_events[0]["namespace"] == "cli"
 
     backup = run_cli("--db", str(db_path), "backup", "--out", str(backup_path))
     assert "backup:" in backup.stdout
