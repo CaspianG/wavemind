@@ -261,7 +261,7 @@ def main() -> int:
         "--engines",
         nargs="+",
         choices=["numpy", "annoy", "faiss", "qdrant"],
-        default=["numpy", "annoy", "qdrant"],
+        default=["numpy", "annoy", "faiss", "qdrant"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/ann_index_curve_results.json"))
     args = parser.parse_args()

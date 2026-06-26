@@ -1,0 +1,51 @@
+name: Benchmark request
+description: Request or propose a reproducible benchmark.
+title: "[Benchmark]: "
+labels: ["benchmark"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Benchmark question
+      description: What should this benchmark prove or disprove?
+      placeholder: "Example: Does WaveMind improve LongMemEval answer quality over static vector retrieval?"
+    validations:
+      required: true
+  - type: input
+    id: dataset
+    attributes:
+      label: Dataset
+      placeholder: "LoCoMo, LongMemEval, BEIR/SciFact, MIRACL Russian, RAGBench..."
+    validations:
+      required: true
+  - type: textarea
+    id: engines
+    attributes:
+      label: Engines / baselines
+      description: Which systems should be compared?
+      placeholder: "WaveMind, static vector, Chroma, Qdrant, FAISS, Mem0-style, Zep-style..."
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Metrics
+      description: Quality and latency metrics to report.
+      placeholder: "precision@1, recall@5, MRR@5, nDCG@10, answer F1, faithfulness, avg latency, p95 latency..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction plan
+      description: Command, dataset download, expected output JSON, and any required services.
+      render: shell
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Benchmark claim rules
+      options:
+        - label: The result should not be described as a win unless the JSON output and reproduction command are committed.
+          required: true
+        - label: Retrieval-only results should not be described as answer-quality results.
+          required: true

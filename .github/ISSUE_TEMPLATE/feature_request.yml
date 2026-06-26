@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose a new capability or improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or developer problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should WaveMind do?
+    validations:
+      required: true
+  - type: dropdown
+    id: roadmap_area
+    attributes:
+      label: Roadmap area
+      options:
+        - Technical scaling
+        - Benchmark proof
+        - Community / documentation
+        - Enterprise readiness
+        - Integration
+        - Developer experience
+        - Research / field dynamics
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Tradeoffs
+      description: Latency, storage, compatibility, dependency, or maintenance costs.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What tests, docs, examples, or benchmarks should prove this is done?

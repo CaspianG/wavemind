@@ -1,0 +1,34 @@
+name: Integration request
+description: Request a framework, app, or backend integration.
+title: "[Integration]: "
+labels: ["integration"]
+body:
+  - type: input
+    id: target
+    attributes:
+      label: Target system
+      placeholder: "LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw, Qdrant, pgvector..."
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: How should WaveMind be used in this system?
+    validations:
+      required: true
+  - type: textarea
+    id: api_surface
+    attributes:
+      label: Expected API surface
+      description: Python class, HTTP sidecar, plugin hook, storage backend, or benchmark adapter.
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Official docs, examples, or existing adapter patterns.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Example file, tests, docs, benchmark, or packaging changes required.

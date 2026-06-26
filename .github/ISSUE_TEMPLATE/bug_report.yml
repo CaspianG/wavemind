@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a reproducible WaveMind bug.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Minimal commands or code that reproduce the issue.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Core memory
+        - CLI
+        - FastAPI
+        - SQLite storage
+        - Vector index
+        - Field graph
+        - Benchmark
+        - Integration
+        - Packaging
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: WaveMind version
+      placeholder: "2.0.5"
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, optional extras, and relevant dependency versions.
+      render: text

@@ -83,3 +83,13 @@ def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     assert "3.10" in workflow
     assert "3.11" in workflow
     assert "pytest -q" in workflow
+
+
+def test_manifest_includes_docs_without_large_benchmark_data():
+    manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
+
+    assert "include CONTRIBUTING.md" in manifest
+    assert "include docs/ROADMAP.md" in manifest
+    assert "include docs/assets/benchmark-summary.svg" in manifest
+    assert "include benchmarks/*.json" in manifest
+    assert "prune benchmarks/data" in manifest

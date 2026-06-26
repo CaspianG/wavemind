@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+include install.sh
+include install.bat
+include Dockerfile
+include docker-compose.yml
+include requirements.txt
+include requirements-optional.txt
+include docs/ROADMAP.md
+include docs/assets/benchmark-summary.svg
+include benchmarks/*.py
+include benchmarks/*.json
+include benchmarks/*.md
+prune benchmarks/data

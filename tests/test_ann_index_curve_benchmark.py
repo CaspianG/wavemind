@@ -26,6 +26,28 @@ def test_ann_curve_runner_produces_exact_numpy_result():
     assert result["build_ms"] >= 0.0
 
 
+def test_ann_curve_runner_reports_missing_optional_faiss_without_fallback():
+    from benchmarks.ann_index_curve_benchmark import run_benchmark
+
+    payload = run_benchmark(
+        sizes=[40],
+        dim=16,
+        query_count=5,
+        top_k=3,
+        seed=7,
+        engines=["faiss"],
+        noise=0.01,
+    )
+
+    result = payload["results"][0]["results"][0]
+    assert result["engine"] == "WaveMind faiss"
+    if result.get("skipped"):
+        assert "faiss" in result["reason"].lower()
+    else:
+        assert result["recall_at_k"] == 1.0
+        assert result["avg_latency_ms"] >= 0.0
+
+
 def test_ann_curve_cli_writes_json(tmp_path):
     output = tmp_path / "ann.json"
     project_root = Path(__file__).resolve().parents[1]

@@ -24,6 +24,7 @@ namespaces, and keeps the final recall set small enough for real applications.
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
 [Roadmap](#roadmap) |
+[Contributing](#contributing) |
 [Limitations](#known-limitations)
 
 </div>
@@ -634,7 +635,7 @@ It generates normalized vectors, queries with noisy copies, and measures
 `recall@10` against exact cosine neighbors.
 
 ```sh
-python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy annoy qdrant --output benchmarks/ann_index_curve_results.json
+python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy annoy faiss qdrant --output benchmarks/ann_index_curve_results.json
 ```
 
 Checked-in 50000-vector point:
@@ -647,8 +648,10 @@ Checked-in 50000-vector point:
 
 Read this as an engineering curve, not an official VectorDBBench result. Annoy
 is faster at 50000 vectors but loses too much recall with the current settings;
-NumPy exact is still reliable at this size; FAISS/service-mode Qdrant are the
-next production index paths to test.
+NumPy exact is still reliable at this size; FAISS and service-mode Qdrant are
+the next production index paths to test. If FAISS is not installed, the runner
+marks `WaveMind faiss` as `skipped` instead of silently falling back to another
+backend.
 
 ### Current Local Runs
 
@@ -843,6 +846,25 @@ Longer-term direction:
   field-memory model with excitation, inhibition, decay, and consolidation;
 - build enterprise features only after benchmarked retrieval, latency, and
   answer-quality evidence are solid.
+
+## Contributing
+
+Contributing guide: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Useful contribution paths:
+
+- add reproducible benchmark adapters and checked-in result JSON;
+- improve FAISS, Qdrant, pgvector, or other candidate-index backends;
+- add examples for LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw, and
+  HTTP-only sidecar deployments;
+- improve dynamic memory behavior around TTL, corrections, namespaces, graph
+  excitation/inhibition, and consolidation;
+- harden production operations: backups, audit logs, metrics, tracing, and
+  migration tools.
+
+GitHub issue templates are included for bugs, features, benchmarks, and
+integrations. Benchmark claims need a reproduction command and committed result
+artifact before they are added to README.
 
 ## License
 
