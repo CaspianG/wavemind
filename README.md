@@ -137,6 +137,39 @@ wavemind --encoder sentence remember "Andrey is a trader" --namespace demo
 wavemind --encoder sentence query "What does Andrey do?" --namespace demo
 ```
 
+## Optional Index Backends
+
+The default index is NumPy exact search. It is simple and reliable for local
+memory. For larger candidate generation, WaveMind also exposes optional index
+backends:
+
+| index | Install | Notes |
+|---|---|---|
+| `numpy` | default | Exact cosine search, local, linear scan. |
+| `annoy` | `pip install "wavemind[indexes]"` | Local ANN. Faster at larger N, but recall must be checked. |
+| `faiss` | `pip install "wavemind[indexes]"` | FAISS flat inner-product path where `faiss-cpu` is available. |
+| `pgvector` | `pip install "wavemind[postgres]"` | PostgreSQL/pgvector candidate index. SQLite can still remain the local source of truth. |
+
+pgvector setup:
+
+```sh
+export WAVEMIND_PGVECTOR_DSN="postgresql://user:password@localhost:5432/wavemind"
+wavemind --index pgvector remember "Andrey is a trader" --namespace demo
+wavemind --index pgvector query "trader" --namespace demo
+```
+
+Optional pgvector environment variables:
+
+- `WAVEMIND_PGVECTOR_TABLE` - table name, default `wavemind_vectors`.
+- `WAVEMIND_PGVECTOR_COLLECTION` - collection key, default `default`.
+- `WAVEMIND_PGVECTOR_CREATE_HNSW=1` - create an HNSW index using
+  `vector_cosine_ops` when the installed pgvector version supports it.
+
+If `WAVEMIND_PGVECTOR_DSN` is missing, WaveMind raises a clear error instead of
+silently falling back to another index backend.
+The pgvector table is created with the current encoder dimension, so use a
+separate table when switching between different vector sizes.
+
 ## Data Location
 
 For an explicit database path, put global options before the command:
@@ -651,6 +684,9 @@ It generates normalized vectors, queries with noisy copies, and measures
 python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy annoy faiss qdrant --output benchmarks/ann_index_curve_results.json
 ```
 
+Add `pgvector` to `--engines` when `WAVEMIND_PGVECTOR_DSN` points at a
+PostgreSQL database with pgvector enabled.
+
 Checked-in 50000-vector point:
 
 | engine | recall@10 | avg latency | p95 latency | build |
@@ -825,6 +861,8 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
+- The pgvector backend is currently a candidate-index backend, not a full
+  Postgres source-of-truth replacement for SQLite.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
 - The LongMemEval result is retrieval-only. It is not a full LongMemEval answer-generation leaderboard-equivalent score.
 - Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; service-mode Qdrant should be benchmarked separately.
@@ -841,7 +879,8 @@ Full roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Near-term priorities:
 
 - FAISS-first candidate index with persisted rebuilds.
-- Postgres + pgvector prototype for multi-tenant deployments.
+- Postgres source-of-truth prototype on top of the initial pgvector candidate
+  index.
 - Service-mode Qdrant and FAISS latency baselines.
 - LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.
 - More framework examples: LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw,

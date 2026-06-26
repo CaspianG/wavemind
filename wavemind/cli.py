@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="WaveMind persistent dynamic memory engine",
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
-    parser.add_argument("--index", default="numpy", choices=["numpy", "faiss", "annoy"])
+    parser.add_argument("--index", default="numpy", choices=["numpy", "faiss", "annoy", "pgvector"])
     parser.add_argument("--encoder", default="hash", choices=["hash", "sentence"])
     parser.add_argument(
         "--model",

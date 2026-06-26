@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+import re
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -18,6 +21,17 @@ def _normalize(vector: np.ndarray) -> np.ndarray:
     if norm <= 1e-12:
         return vector
     return (vector / norm).astype(np.float32)
+
+
+def _vector_literal(vector: np.ndarray) -> str:
+    normalized = _normalize(vector)
+    return json.dumps([float(value) for value in normalized], separators=(",", ":"))
+
+
+def _safe_identifier(value: str, label: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+        raise ValueError(f"{label} must be a simple SQL identifier")
+    return value
 
 
 class NumpyVectorIndex:
@@ -271,6 +285,160 @@ class AnnoyVectorIndex(NumpyVectorIndex):
         return results
 
 
+class PgVectorIndex:
+    name = "pgvector-cosine"
+
+    def __init__(
+        self,
+        vector_dim: int,
+        dsn: str | None = None,
+        table: str | None = None,
+        collection: str | None = None,
+        create_hnsw: bool | None = None,
+    ):
+        self.vector_dim = int(vector_dim)
+        self.dsn = dsn or os.environ.get("WAVEMIND_PGVECTOR_DSN")
+        if not self.dsn:
+            raise ValueError(
+                "Set WAVEMIND_PGVECTOR_DSN to use the pgvector index backend"
+            )
+        try:
+            import psycopg
+        except ImportError as exc:
+            raise ImportError(
+                'Install PostgreSQL support with: pip install "wavemind[postgres]"'
+            ) from exc
+        self._psycopg = psycopg
+        self.table = _safe_identifier(
+            table or os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_vectors"),
+            "WAVEMIND_PGVECTOR_TABLE",
+        )
+        self.collection = collection or os.environ.get(
+            "WAVEMIND_PGVECTOR_COLLECTION",
+            "default",
+        )
+        if create_hnsw is None:
+            create_hnsw = os.environ.get("WAVEMIND_PGVECTOR_CREATE_HNSW", "0").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        self.create_hnsw = bool(create_hnsw)
+        self.conn = psycopg.connect(self.dsn, autocommit=True)
+        self._closed = False
+        self._ensure_schema()
+
+    def _ensure_schema(self) -> None:
+        self.conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        self.conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.table} (
+                collection TEXT NOT NULL,
+                memory_id BIGINT NOT NULL,
+                embedding vector({self.vector_dim}) NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                PRIMARY KEY (collection, memory_id)
+            )
+            """
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.table}_collection_idx "
+            f"ON {self.table} (collection)"
+        )
+        if self.create_hnsw:
+            self.conn.execute(
+                f"CREATE INDEX IF NOT EXISTS {self.table}_embedding_hnsw_idx "
+                f"ON {self.table} USING hnsw (embedding vector_cosine_ops)"
+            )
+
+    def add(self, id: int, vector: np.ndarray) -> None:
+        self.conn.execute(
+            f"""
+            INSERT INTO {self.table} (
+                collection, memory_id, embedding, updated_at
+            ) VALUES (%s, %s, %s::vector, now())
+            ON CONFLICT (collection, memory_id)
+            DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
+            """,
+            (self.collection, int(id), _vector_literal(vector)),
+        )
+
+    def remove(self, id: int) -> None:
+        self.conn.execute(
+            f"DELETE FROM {self.table} WHERE collection = %s AND memory_id = %s",
+            (self.collection, int(id)),
+        )
+
+    def build(self, records: Iterable) -> None:
+        self.conn.execute(
+            f"DELETE FROM {self.table} WHERE collection = %s",
+            (self.collection,),
+        )
+        rows = [
+            (self.collection, int(record.id), _vector_literal(record.vector))
+            for record in records
+            if record.id is not None
+        ]
+        if not rows:
+            return
+        with self.conn.cursor() as cur:
+            cur.executemany(
+                f"""
+                INSERT INTO {self.table} (
+                    collection, memory_id, embedding, updated_at
+                ) VALUES (%s, %s, %s::vector, now())
+                ON CONFLICT (collection, memory_id)
+                DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
+                """,
+                rows,
+            )
+
+    def search(
+        self,
+        vector: np.ndarray,
+        top_k: int = 3,
+        allowed_ids: set[int] | None = None,
+    ) -> list[IndexResult]:
+        if top_k <= 0:
+            return []
+        query = _vector_literal(vector)
+        params: list[object] = [query, self.collection]
+        where = "collection = %s"
+        if allowed_ids is not None:
+            ids = sorted(int(id) for id in allowed_ids)
+            if not ids:
+                return []
+            where += " AND memory_id = ANY(%s)"
+            params.append(ids)
+        params.extend([query, int(top_k)])
+        rows = self.conn.execute(
+            f"""
+            SELECT memory_id, 1.0 - (embedding <=> %s::vector) AS score
+            FROM {self.table}
+            WHERE {where}
+            ORDER BY embedding <=> %s::vector
+            LIMIT %s
+            """,
+            params,
+        ).fetchall()
+        return [IndexResult(int(row[0]), float(row[1])) for row in rows]
+
+    def __len__(self) -> int:
+        return int(
+            self.conn.execute(
+                f"SELECT COUNT(*) FROM {self.table} WHERE collection = %s",
+                (self.collection,),
+            ).fetchone()[0]
+        )
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self.conn.close()
+        self._closed = True
+
+
 def create_vector_index(kind: str, vector_dim: int):
     kind = (kind or "numpy").lower()
     if kind in {"numpy", "exact"}:
@@ -279,6 +447,8 @@ def create_vector_index(kind: str, vector_dim: int):
         return FaissVectorIndex(vector_dim)
     if kind == "annoy":
         return AnnoyVectorIndex(vector_dim)
+    if kind in {"pgvector", "postgres", "postgresql"}:
+        return PgVectorIndex(vector_dim)
     raise ValueError(
-        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, faiss, or annoy."
+        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, faiss, annoy, or pgvector."
     )

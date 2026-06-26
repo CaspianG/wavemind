@@ -16,13 +16,15 @@ pytest -q
 Optional extras:
 
 ```sh
-python -m pip install -e ".[sentence,bench,indexes]"
+python -m pip install -e ".[sentence,bench,indexes,postgres]"
 ```
 
 Notes:
 
 - `faiss-cpu` is not installed by the `indexes` extra on Windows because the
   package is not consistently available there.
+- `postgres` installs `psycopg`; it still requires a running PostgreSQL
+  database with the pgvector extension available.
 - Benchmark dependencies such as Chroma and Qdrant are intentionally optional.
 - Public datasets are not downloaded by default.
 

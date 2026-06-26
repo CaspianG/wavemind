@@ -1,3 +1,6 @@
+import sys
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -7,7 +10,13 @@ from wavemind.encoders import (
     SentenceTransformerTextEncoder,
     create_text_encoder,
 )
-from wavemind.indexes import AnnoyVectorIndex, NumpyVectorIndex, create_vector_index
+from wavemind.indexes import (
+    AnnoyVectorIndex,
+    NumpyVectorIndex,
+    _safe_identifier,
+    _vector_literal,
+    create_vector_index,
+)
 
 
 def test_hashing_encoder_is_deterministic_and_normalized():
@@ -134,6 +143,95 @@ def test_annoy_vector_index_returns_cosine_neighbors_with_filters():
 def test_index_factory_rejects_auto_to_avoid_silent_backend_switching():
     with pytest.raises(ValueError, match="explicit"):
         create_vector_index("auto", vector_dim=4)
+
+
+def test_pgvector_index_requires_explicit_dsn(monkeypatch):
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+
+    with pytest.raises(ValueError, match="WAVEMIND_PGVECTOR_DSN"):
+        create_vector_index("pgvector", vector_dim=4)
+
+
+def test_pgvector_helpers_normalize_vectors_and_validate_identifiers():
+    literal = _vector_literal(np.array([3.0, 4.0], dtype=np.float32))
+
+    assert literal.startswith("[")
+    assert literal.endswith("]")
+    assert np.allclose(np.fromstring(literal.strip("[]"), sep=","), [0.6, 0.8])
+    assert _safe_identifier("wavemind_vectors_1", "table") == "wavemind_vectors_1"
+    with pytest.raises(ValueError):
+        _safe_identifier("bad-name;drop", "table")
+
+
+def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypatch):
+    class FakeResult:
+        def __init__(self, rows=None):
+            self.rows = rows or []
+
+        def fetchall(self):
+            return self.rows
+
+        def fetchone(self):
+            return self.rows[0]
+
+    class FakeCursor:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def executemany(self, sql, rows):
+            self.connection.executemany_calls.append((sql, list(rows)))
+
+    class FakeConnection:
+        def __init__(self):
+            self.calls = []
+            self.executemany_calls = []
+            self.closed = False
+
+        def execute(self, sql, params=None):
+            self.calls.append((sql, params))
+            if "SELECT memory_id" in sql:
+                return FakeResult(rows=[(42, 0.91)])
+            if "SELECT COUNT" in sql:
+                return FakeResult(rows=[(1,)])
+            return FakeResult()
+
+        def cursor(self):
+            return FakeCursor(self)
+
+        def close(self):
+            self.closed = True
+
+    fake_connection = FakeConnection()
+    fake_psycopg = SimpleNamespace(
+        connect=lambda dsn, autocommit=True: fake_connection
+    )
+    monkeypatch.setitem(sys.modules, "psycopg", fake_psycopg)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_DSN", "postgresql://example")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_TABLE", "wm_vectors")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_COLLECTION", "tests")
+
+    index = create_vector_index("pgvector", vector_dim=3)
+    index.add(42, np.array([1.0, 0.0, 0.0], dtype=np.float32))
+    results = index.search(
+        np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        top_k=1,
+        allowed_ids={42},
+    )
+
+    assert results[0].id == 42
+    assert results[0].score == 0.91
+    assert len(index) == 1
+    assert any("CREATE EXTENSION IF NOT EXISTS vector" in sql for sql, _ in fake_connection.calls)
+    assert any("memory_id = ANY" in sql for sql, _ in fake_connection.calls)
+    index.close()
+    index.close()
+    assert fake_connection.closed is True
 
 
 def test_encoder_factory_rejects_auto_to_avoid_silent_encoder_switching():

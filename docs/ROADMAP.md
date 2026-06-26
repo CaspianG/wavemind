@@ -17,6 +17,7 @@ policy matters more than raw vector-database scale:
   tags, and namespaces.
 - NumPy exact search is reliable but linear.
 - Annoy exists as an ANN option, but current recall still needs tuning.
+- FAISS and pgvector are exposed as explicit optional candidate-index backends.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - SQLite audit events and a Prometheus-compatible `/metrics` endpoint now cover
@@ -51,7 +52,8 @@ Priorities:
 
 - Add a FAISS-first index path for local and single-node production use.
 - Keep SQLite as the durable local source of truth.
-- Add Postgres + pgvector as the multi-tenant source-of-truth option.
+- Keep pgvector as an optional candidate-index backend and add a separate
+  Postgres source-of-truth backend when multi-tenant storage needs it.
 - Support external vector services such as Qdrant for larger deployments.
 - Rebuild and persist ANN indexes safely after batch imports or recovery.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
@@ -185,7 +187,8 @@ Enterprise requirements:
 ### Short Term: 1 To 3 Months
 
 - FAISS candidate index with persisted rebuilds.
-- Postgres + pgvector prototype.
+- Postgres source-of-truth prototype on top of the initial pgvector candidate
+  index.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
 - Service-mode Qdrant latency baseline.
 - Better README examples for non-agent use cases.

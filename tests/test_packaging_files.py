@@ -26,6 +26,13 @@ def test_benchmark_extra_installs_chroma():
     assert '"chromadb>=1.0"' in pyproject
 
 
+def test_postgres_extra_installs_psycopg_for_pgvector():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert "postgres = [" in pyproject
+    assert '"psycopg[binary]>=3.1"' in pyproject
+
+
 def test_langchain_extra_installs_classic_memory_api():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 

@@ -48,6 +48,26 @@ def test_ann_curve_runner_reports_missing_optional_faiss_without_fallback():
         assert result["avg_latency_ms"] >= 0.0
 
 
+def test_ann_curve_runner_reports_missing_pgvector_dsn_without_fallback(monkeypatch):
+    from benchmarks.ann_index_curve_benchmark import run_benchmark
+
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+    payload = run_benchmark(
+        sizes=[40],
+        dim=16,
+        query_count=5,
+        top_k=3,
+        seed=7,
+        engines=["pgvector"],
+        noise=0.01,
+    )
+
+    result = payload["results"][0]["results"][0]
+    assert result["engine"] == "WaveMind pgvector"
+    assert result["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in result["reason"]
+
+
 def test_ann_curve_cli_writes_json(tmp_path):
     output = tmp_path / "ann.json"
     project_root = Path(__file__).resolve().parents[1]

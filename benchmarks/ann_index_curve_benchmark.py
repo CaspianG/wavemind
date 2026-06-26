@@ -158,10 +158,10 @@ def run_size(
         key = engine.lower()
         if key in {"numpy", "exact"}:
             results.append(run_wavemind_index("numpy", vectors, queries, expected, top_k))
-        elif key in {"annoy", "faiss"}:
+        elif key in {"annoy", "faiss", "pgvector"}:
             try:
                 results.append(run_wavemind_index(key, vectors, queries, expected, top_k))
-            except ImportError as exc:
+            except (ImportError, ValueError) as exc:
                 results.append(
                     {
                         "engine": f"WaveMind {key}",
@@ -260,7 +260,7 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["numpy", "annoy", "faiss", "qdrant"],
+        choices=["numpy", "annoy", "faiss", "pgvector", "qdrant"],
         default=["numpy", "annoy", "faiss", "qdrant"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/ann_index_curve_results.json"))

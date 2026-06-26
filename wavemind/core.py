@@ -380,6 +380,9 @@ class WaveMind:
         return None
 
     def close(self) -> None:
+        close_index = getattr(self.index, "close", None)
+        if callable(close_index):
+            close_index()
         self.store.close()
 
     def __enter__(self) -> "WaveMind":
