@@ -92,11 +92,25 @@ def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     assert "pytest -q" in workflow
 
 
+def test_release_workflow_builds_and_creates_github_release():
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert 'tags:' in workflow
+    assert '"v*"' in workflow
+    assert "python -m build" in workflow
+    assert "python -m twine check dist/*" in workflow
+    assert "softprops/action-gh-release" in workflow
+
+
 def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
 
     assert "include CONTRIBUTING.md" in manifest
+    assert "include SECURITY.md" in manifest
+    assert "include SUPPORT.md" in manifest
     assert "include docs/ROADMAP.md" in manifest
+    assert "include docs/RELEASE.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
+    assert "include examples/*.py" in manifest
     assert "prune benchmarks/data" in manifest

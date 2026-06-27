@@ -18,10 +18,12 @@ policy matters more than raw vector-database scale:
 - NumPy exact search is reliable but linear.
 - Annoy exists as an ANN option, but current recall still needs tuning.
 - FAISS and pgvector are exposed as explicit optional candidate-index backends.
+- Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - SQLite audit events and a Prometheus-compatible `/metrics` endpoint now cover
   the first observability layer.
+- API key roles and opt-in rate limiting are available for FastAPI deployments.
 - Public retrieval evidence exists for LoCoMo, LongMemEval, and BEIR/SciFact,
   but full answer-quality evaluation is still the next proof step.
 
@@ -63,6 +65,7 @@ Priorities:
 WaveMind should scale by isolating memory early:
 
 - shard by namespace, tenant, user, project, or agent;
+- use `ShardedWaveMind` for local namespace-level SQLite sharding;
 - keep namespace filters inside candidate generation where possible;
 - support per-namespace quotas and retention policy;
 - expose migration tools for moving one namespace between databases;
@@ -139,11 +142,13 @@ easy to improve.
 Priorities:
 
 - examples gallery for LangChain, LangGraph, CrewAI, AutoGen, OpenClaw,
-  LlamaIndex, custom Python loops, and HTTP-only use;
+  LlamaIndex, namespace sharding, custom Python loops, and HTTP-only use;
 - clear `good first issue` and `help wanted` labels;
 - GitHub Discussions for support and design proposals;
 - benchmark scripts that contributors can run locally;
 - Docker images for the API server and sidecar mode;
+- release automation and release checklist;
+- support and security policy docs;
 - Helm chart for Kubernetes deployments after the server path is stable;
 - short technical posts explaining stale memory, corrections, namespaces,
   dynamic priority, and benchmark methodology.

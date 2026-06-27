@@ -230,6 +230,26 @@ curl http://127.0.0.1:8000/metrics
 writing an audit row for every query changes latency. `/metrics` returns a
 Prometheus-compatible text payload without adding a required dependency.
 
+Production API controls are opt-in:
+
+```sh
+export WAVEMIND_READ_KEYS="read-key"
+export WAVEMIND_WRITE_KEYS="write-key"
+export WAVEMIND_ADMIN_KEYS="admin-key"
+export WAVEMIND_RATE_LIMIT_PER_MINUTE=120
+```
+
+Role behavior:
+
+| role | Env var | Allows |
+|---|---|---|
+| read | `WAVEMIND_READ_KEYS` | `/query`, `/stats`, `/metrics` |
+| write | `WAVEMIND_WRITE_KEYS` | read actions plus `/remember` and `/import` |
+| admin | `WAVEMIND_ADMIN_KEYS` or `WAVEMIND_API_KEYS` | all actions, including `/audit` and `/forget` |
+
+Keys are accepted through `Authorization: Bearer <key>` or `X-API-Key: <key>`.
+If no key env vars are set, authentication is disabled for local development.
+
 ## Install From Source
 
 For contributors installing from a local clone:
@@ -297,6 +317,18 @@ That makes it usable in more than LangChain:
 | Temporary context | Store with `ttl_seconds=...` so stale memory expires automatically. |
 | Preference/profile memory | Store with tags such as `profile`, `preference`, `project`, `decision`. |
 | Corrections/privacy | Use `forget()` or namespace deletion workflows. |
+
+Framework examples in this repository:
+
+| Framework / pattern | Example |
+|---|---|
+| LangChain memory | `examples/langchain_memory.py` |
+| OpenAI/OpenRouter-style agent loop | `examples/agent_with_memory.py` |
+| LangGraph hooks | `examples/framework_integrations.py` |
+| LlamaIndex-style retriever | `examples/framework_integrations.py` |
+| CrewAI-style tools | `examples/framework_integrations.py` |
+| AutoGen-style hooks | `examples/framework_integrations.py` |
+| Namespace sharding | `examples/sharded_memory.py` |
 
 Minimal custom agent loop:
 
@@ -598,6 +630,27 @@ If Chroma or Qdrant are not installed, use the baseline-only command:
 ```sh
 python benchmarks/locomo_memory_benchmark.py --dataset benchmarks/data/locomo10.json --engines wavemind static --top-k 5
 ```
+
+## Namespace Sharding
+
+For multi-tenant local deployments, `ShardedWaveMind` routes namespaces across
+multiple SQLite files:
+
+```python
+from wavemind import ShardedWaveMind
+
+memory = ShardedWaveMind(root_path="./state/wavemind-shards", shard_count=16)
+memory.remember("Tenant A prefers short support replies.", namespace="tenant:a")
+memory.remember("Tenant B tracks trading research.", namespace="tenant:b")
+
+print(memory.query("support replies", namespace="tenant:a", top_k=3))
+print(memory.stats())
+memory.close()
+```
+
+This is namespace-level sharding for isolation and local scale. It is not a
+distributed HA cluster yet; the roadmap keeps replication, operator support, and
+managed service work separate.
 
 Checked-in official LoCoMo retrieval result:
 

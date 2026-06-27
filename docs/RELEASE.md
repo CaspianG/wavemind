@@ -1,0 +1,46 @@
+# Release Process
+
+WaveMind uses Git tags for releases.
+
+## Checklist
+
+1. Make sure `main` is green in GitHub Actions.
+2. Update the version in `pyproject.toml` and `wavemind/__init__.py`.
+3. Run local checks:
+
+```sh
+pytest -q
+python -m build
+python -m twine check dist/*
+```
+
+On Windows PowerShell:
+
+```powershell
+pytest -q
+python -m build
+python -m twine check dist\*
+```
+
+4. Commit the version bump.
+5. Create and push a tag:
+
+```sh
+git tag vX.Y.Z
+git push origin main --tags
+```
+
+## Automation
+
+- `.github/workflows/release.yml` creates a GitHub Release and uploads built
+  artifacts for tags that match `v*`.
+- `.github/workflows/publish.yml` publishes to PyPI through trusted publishing
+  when the `pypi` environment is configured.
+
+## Rules
+
+- Do not publish a release with failing tests.
+- Do not add benchmark claims to release notes unless the result JSON is
+  committed under `benchmarks/`.
+- If the release changes public benchmark numbers, update README and
+  `benchmarks/BENCHMARK_REPORT.md` before tagging.

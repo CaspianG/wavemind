@@ -8,6 +8,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import PgVectorIndex
+from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
 
 __version__ = "2.0.5"
@@ -18,9 +19,11 @@ __all__ = [
     "AuditEvent",
     "MemoryFieldGraph",
     "MemoryRecord",
+    "NamespaceShardRouter",
     "QueryResult",
     "PgVectorIndex",
     "SentenceTransformerTextEncoder",
+    "ShardedWaveMind",
     "SQLiteMemoryStore",
     "TextEncoder",
     "WaveField",

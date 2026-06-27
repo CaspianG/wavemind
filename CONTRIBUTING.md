@@ -33,6 +33,7 @@ Notes:
 - Documentation examples for real applications and frameworks.
 - Benchmark adapters that produce checked-in JSON output.
 - Small tests around TTL, namespaces, corrections, and graph behavior.
+- Production hardening around auth, rate limits, metrics, backups, and sharding.
 - Import/export tools.
 - CLI and FastAPI ergonomics.
 
@@ -90,6 +91,7 @@ Current scale roadmap:
 - Observability through metrics, traces, and audit logs.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full roadmap.
+See [`docs/RELEASE.md`](docs/RELEASE.md) for release mechanics.
 
 ## Pull Request Style
 

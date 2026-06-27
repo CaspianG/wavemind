@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import logging
 import os
+import time
+from collections import deque
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
-from fastapi import Body, FastAPI, Query
-from fastapi.responses import PlainTextResponse
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
@@ -16,6 +19,99 @@ from .importers import import_path
 
 
 logger = logging.getLogger("wavemind.api")
+ROLE_LEVELS = {"read": 1, "write": 2, "admin": 3}
+
+
+class APIAuth:
+    def __init__(self, keys: dict[str, str]):
+        self.keys = keys
+
+    @classmethod
+    def from_env(cls) -> "APIAuth":
+        keys: dict[str, str] = {}
+        for env_name, role in (
+            ("WAVEMIND_READ_KEYS", "read"),
+            ("WAVEMIND_WRITE_KEYS", "write"),
+            ("WAVEMIND_API_KEYS", "admin"),
+            ("WAVEMIND_ADMIN_KEYS", "admin"),
+        ):
+            for key in _split_keys(os.environ.get(env_name, "")):
+                keys[key] = role
+        return cls(keys)
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.keys)
+
+    def role_for_request(self, request: Request) -> str | None:
+        key = request.headers.get("x-api-key")
+        authorization = request.headers.get("authorization", "")
+        if authorization.lower().startswith("bearer "):
+            key = authorization[7:].strip()
+        if not key:
+            return None
+        return self.keys.get(key)
+
+    def check(self, request: Request, required_role: str) -> None:
+        if not self.enabled:
+            return
+        role = self.role_for_request(request)
+        if role is None:
+            raise HTTPException(status_code=401, detail="Missing or invalid API key")
+        if ROLE_LEVELS[role] < ROLE_LEVELS[required_role]:
+            raise HTTPException(status_code=403, detail="Insufficient API key role")
+
+
+class InMemoryRateLimiter:
+    def __init__(self, requests_per_minute: int):
+        self.requests_per_minute = max(0, int(requests_per_minute))
+        self._hits: dict[str, deque[float]] = {}
+        self._lock = Lock()
+
+    @classmethod
+    def from_env(cls) -> "InMemoryRateLimiter | None":
+        raw = os.environ.get("WAVEMIND_RATE_LIMIT_PER_MINUTE", "0")
+        limit = int(raw or "0")
+        if limit <= 0:
+            return None
+        return cls(limit)
+
+    def allow(self, request: Request) -> bool:
+        if self.requests_per_minute <= 0:
+            return True
+        now = time.time()
+        key = _rate_limit_key(request)
+        cutoff = now - 60.0
+        with self._lock:
+            hits = self._hits.setdefault(key, deque())
+            while hits and hits[0] <= cutoff:
+                hits.popleft()
+            if len(hits) >= self.requests_per_minute:
+                return False
+            hits.append(now)
+            return True
+
+
+def _split_keys(raw: str) -> list[str]:
+    return [key.strip() for key in raw.split(",") if key.strip()]
+
+
+def _rate_limit_key(request: Request) -> str:
+    authorization = request.headers.get("authorization", "")
+    if authorization.lower().startswith("bearer "):
+        return f"key:{authorization[7:].strip()}"
+    api_key = request.headers.get("x-api-key")
+    if api_key:
+        return f"key:{api_key}"
+    client = request.client.host if request.client else "unknown"
+    return f"ip:{client}"
+
+
+def require_role(role: str):
+    def dependency(request: Request) -> None:
+        request.app.state.auth.check(request, role)
+
+    return dependency
 
 
 class RememberRequest(BaseModel):
@@ -151,8 +247,20 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
     app.state.mind = mind or build_default_mind()
+    app.state.auth = APIAuth.from_env()
+    app.state.rate_limiter = InMemoryRateLimiter.from_env()
 
-    @app.post("/remember", response_model=RememberResponse)
+    @app.middleware("http")
+    async def rate_limit(request: Request, call_next):
+        limiter = request.app.state.rate_limiter
+        if limiter is not None and not limiter.allow(request):
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded"},
+            )
+        return await call_next(request)
+
+    @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
         id = app.state.mind.remember(
             request.text,
@@ -165,7 +273,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         logger.info("remembered id=%s namespace=%s", id, request.namespace)
         return RememberResponse(id=id)
 
-    @app.post("/query", response_model=QueryResponse)
+    @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
         results = app.state.mind.query(
             request.text,
@@ -191,7 +299,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             ]
         )
 
-    @app.delete("/forget", response_model=ForgetResponse)
+    @app.delete("/forget", response_model=ForgetResponse, dependencies=[Depends(require_role("admin"))])
     def forget(
         request: ForgetRequest | None = Body(default=None),
         id: int | None = Query(default=None),
@@ -207,18 +315,18 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         logger.info("forgot deleted=%s namespace=%s", deleted, payload.namespace)
         return ForgetResponse(deleted=deleted)
 
-    @app.get("/stats")
+    @app.get("/stats", dependencies=[Depends(require_role("read"))])
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
 
-    @app.get("/metrics", response_class=PlainTextResponse)
+    @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:
         return PlainTextResponse(
             _metrics_text(app.state.mind.stats(namespace=namespace)),
             media_type="text/plain; version=0.0.4",
         )
 
-    @app.get("/audit", response_model=AuditResponse)
+    @app.get("/audit", response_model=AuditResponse, dependencies=[Depends(require_role("admin"))])
     def audit(
         namespace: str | None = None,
         action: str | None = None,
@@ -243,7 +351,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             ]
         )
 
-    @app.post("/import", response_model=ImportResponse)
+    @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])
     def batch_import(request: ImportRequest) -> ImportResponse:
         ids = import_path(
             request.path,

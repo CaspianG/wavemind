@@ -105,3 +105,90 @@ def test_fastapi_version_matches_package_version():
         assert app.version == __version__
     finally:
         mind.close()
+
+
+def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
+    monkeypatch.setenv("WAVEMIND_READ_KEYS", "read-key")
+    monkeypatch.setenv("WAVEMIND_WRITE_KEYS", "write-key")
+    monkeypatch.setenv("WAVEMIND_ADMIN_KEYS", "admin-key")
+    mind = WaveMind(
+        db_path=tmp_path / "auth.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        memory_id = mind.remember("role based API memory", namespace="auth")
+        with TestClient(create_app(mind=mind)) as client:
+            missing = client.get("/stats", params={"namespace": "auth"})
+            assert missing.status_code == 401
+
+            read_stats = client.get(
+                "/stats",
+                params={"namespace": "auth"},
+                headers={"X-API-Key": "read-key"},
+            )
+            assert read_stats.status_code == 200
+
+            read_write = client.post(
+                "/remember",
+                json={"text": "read key cannot write", "namespace": "auth"},
+                headers={"X-API-Key": "read-key"},
+            )
+            assert read_write.status_code == 403
+
+            write = client.post(
+                "/remember",
+                json={"text": "write key can write", "namespace": "auth"},
+                headers={"Authorization": "Bearer write-key"},
+            )
+            assert write.status_code == 200
+
+            write_audit = client.get(
+                "/audit",
+                params={"namespace": "auth"},
+                headers={"X-API-Key": "write-key"},
+            )
+            assert write_audit.status_code == 403
+
+            admin_audit = client.get(
+                "/audit",
+                params={"namespace": "auth"},
+                headers={"X-API-Key": "admin-key"},
+            )
+            assert admin_audit.status_code == 200
+
+            deleted = client.request(
+                "DELETE",
+                "/forget",
+                json={"id": memory_id, "namespace": "auth"},
+                headers={"X-API-Key": "admin-key"},
+            )
+            assert deleted.status_code == 200
+    finally:
+        mind.close()
+
+
+def test_fastapi_rate_limit_is_opt_in(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_READ_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_WRITE_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_ADMIN_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_API_KEYS", raising=False)
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_PER_MINUTE", "2")
+    mind = WaveMind(
+        db_path=tmp_path / "rate.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            assert client.get("/stats").status_code == 200
+            assert client.get("/stats").status_code == 200
+            limited = client.get("/stats")
+            assert limited.status_code == 429
+            assert limited.json()["detail"] == "Rate limit exceeded"
+    finally:
+        mind.close()

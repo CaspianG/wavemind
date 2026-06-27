@@ -5,6 +5,48 @@ import subprocess
 import sys
 
 
+def test_framework_integrations_example_runs_from_checkout():
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "examples/framework_integrations.py"],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "LangGraph recall:" in result.stdout
+    assert "LlamaIndex-style retriever:" in result.stdout
+    assert "CrewAI-style tools:" in result.stdout
+    assert "AutoGen-style hooks:" in result.stdout
+
+
+def test_sharded_memory_example_runs_from_temp_directory(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, str(project_root / "examples" / "sharded_memory.py")],
+        cwd=tmp_path,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "Tenant A:" in result.stdout
+    assert "Tenant B:" in result.stdout
+    assert "Shard stats:" in result.stdout
+    assert (tmp_path / ".wavemind-shards").exists()
+
+
 def load_example():
     path = Path("examples/agent_with_memory.py")
     spec = importlib.util.spec_from_file_location("agent_with_memory", path)
