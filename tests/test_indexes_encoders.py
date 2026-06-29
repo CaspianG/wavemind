@@ -13,6 +13,7 @@ from wavemind.encoders import (
 from wavemind.indexes import (
     AnnoyVectorIndex,
     NumpyVectorIndex,
+    QuantizedVectorIndex,
     _safe_identifier,
     _vector_literal,
     create_vector_index,
@@ -120,6 +121,37 @@ def test_numpy_vector_index_returns_exact_cosine_neighbors_with_filters():
 def test_index_factory_creates_explicit_numpy_backend():
     index = create_vector_index("numpy", vector_dim=4)
     assert isinstance(index, NumpyVectorIndex)
+
+
+def test_quantized_vector_index_returns_cosine_neighbors_with_filters():
+    index = QuantizedVectorIndex(vector_dim=3)
+    index.add(1, np.array([1.0, 0.0, 0.0], dtype=np.float32))
+    index.add(2, np.array([0.0, 1.0, 0.0], dtype=np.float32))
+    index.add(3, np.array([0.8, 0.2, 0.0], dtype=np.float32))
+
+    all_results = index.search(
+        np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        top_k=2,
+    )
+    filtered_results = index.search(
+        np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        top_k=2,
+        allowed_ids={1, 3},
+    )
+
+    assert index.name == "quantized-int8"
+    assert len(index) == 3
+    assert [result.id for result in all_results] == [1, 3]
+    assert [result.id for result in filtered_results] == [1, 3]
+    assert filtered_results[0].score > filtered_results[1].score
+
+
+def test_index_factory_creates_explicit_quantized_backend():
+    index = create_vector_index("quantized", vector_dim=4)
+    alias = create_vector_index("int8", vector_dim=4)
+
+    assert isinstance(index, QuantizedVectorIndex)
+    assert isinstance(alias, QuantizedVectorIndex)
 
 
 def test_annoy_vector_index_returns_cosine_neighbors_with_filters():

@@ -155,18 +155,22 @@
 <text x="64.0" y="1346.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">ANN index curve</text>
 <text x="64.0" y="1371.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Generated 128-d vectors, 100 queries, recall@10 against exact cosine neighbors. Latest point: 50000 vectors.</text>
 <text x="66.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NumPy exact recall@10</text>
-<rect x="66.0" y="1386.0" width="220.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="66.0" y="1386.0" width="220.0" height="12.0" rx="6" fill="#246bfe" />
-<text x="298.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">1.00</text>
-<text x="390.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Annoy recall@10</text>
-<rect x="390.0" y="1386.0" width="220.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="390.0" y="1386.0" width="160.6" height="12.0" rx="6" fill="#7c3aed" />
-<text x="622.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.73</text>
-<text x="714.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Qdrant local recall@10</text>
-<rect x="714.0" y="1386.0" width="220.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="714.0" y="1386.0" width="220.0" height="12.0" rx="6" fill="#0a7f5a" />
-<text x="946.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">1.00</text>
-<text x="66.0" y="1412.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 5.29 ms; Annoy 3.44 ms; Qdrant local 48.70 ms.</text>
+<rect x="66.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="66.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#246bfe" />
+<text x="248.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">1.00</text>
+<text x="320.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Quantized int8 recall@10</text>
+<rect x="320.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="320.0" y="1386.0" width="158.8" height="12.0" rx="6" fill="#b35c00" />
+<text x="502.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#b35c00">0.93</text>
+<text x="574.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Annoy recall@10</text>
+<rect x="574.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="574.0" y="1386.0" width="124.1" height="12.0" rx="6" fill="#7c3aed" />
+<text x="756.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.73</text>
+<text x="828.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Qdrant local recall@10</text>
+<rect x="828.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="828.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#0a7f5a" />
+<text x="1010.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">1.00</text>
+<text x="66.0" y="1412.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 6.49 ms; int8 24.92 ms; Annoy 4.92 ms; Qdrant local 43.49 ms.</text>
 <rect x="40.0" y="1450.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
 <text x="64.0" y="1486.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
 <text x="64.0" y="1511.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>

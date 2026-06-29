@@ -160,7 +160,11 @@ def main() -> int:
     parser.add_argument("--queries", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
-    parser.add_argument("--index", choices=["numpy", "faiss", "annoy", "pgvector"], default="numpy")
+    parser.add_argument(
+        "--index",
+        choices=["numpy", "quantized", "faiss", "annoy", "pgvector"],
+        default="numpy",
+    )
     args = parser.parse_args()
     print(
         json.dumps(

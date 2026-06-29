@@ -23,6 +23,11 @@ def _normalize(vector: np.ndarray) -> np.ndarray:
     return (vector / norm).astype(np.float32)
 
 
+def _quantize_unit_vector(vector: np.ndarray) -> np.ndarray:
+    normalized = _normalize(vector)
+    return np.clip(np.rint(normalized * 127.0), -127, 127).astype(np.int8)
+
+
 def _vector_literal(vector: np.ndarray) -> str:
     normalized = _normalize(vector)
     return json.dumps([float(value) for value in normalized], separators=(",", ":"))
@@ -103,6 +108,93 @@ class NumpyVectorIndex:
             return []
 
         scores = matrix @ query
+        order = np.argsort(scores)[::-1][:top_k]
+        return [IndexResult(int(ids[int(i)]), float(scores[int(i)])) for i in order]
+
+    def __len__(self) -> int:
+        return len(self._vectors)
+
+
+class QuantizedVectorIndex:
+    name = "quantized-int8"
+
+    def __init__(self, vector_dim: int):
+        self.vector_dim = int(vector_dim)
+        self._vectors: dict[int, np.ndarray] = {}
+        self._ids = np.array([], dtype=np.int64)
+        self._id_to_pos: dict[int, int] = {}
+        self._matrix_dtype = np.int16 if self.vector_dim <= 8192 else np.int32
+        self._matrix = np.zeros((0, self.vector_dim), dtype=self._matrix_dtype)
+        self._norms = np.ones((0,), dtype=np.float32)
+        self._dirty = True
+
+    def add(self, id: int, vector: np.ndarray) -> None:
+        self._vectors[int(id)] = _quantize_unit_vector(vector)
+        self._dirty = True
+
+    def remove(self, id: int) -> None:
+        self._vectors.pop(int(id), None)
+        self._dirty = True
+
+    def build(self, records: Iterable) -> None:
+        self._vectors.clear()
+        for record in records:
+            self.add(record.id, record.vector)
+        self._dirty = True
+
+    def _ensure_matrix(self) -> None:
+        if not self._dirty:
+            return
+        if not self._vectors:
+            self._ids = np.array([], dtype=np.int64)
+            self._id_to_pos = {}
+            self._matrix = np.zeros((0, self.vector_dim), dtype=self._matrix_dtype)
+            self._norms = np.ones((0,), dtype=np.float32)
+            self._dirty = False
+            return
+        items = sorted(self._vectors.items())
+        self._ids = np.array([id for id, _ in items], dtype=np.int64)
+        self._id_to_pos = {int(id): pos for pos, (id, _) in enumerate(items)}
+        self._matrix = np.stack([vector for _, vector in items]).astype(self._matrix_dtype)
+        norms = np.linalg.norm(self._matrix.astype(np.float32), axis=1)
+        self._norms = np.where(norms <= 1e-12, 1.0, norms).astype(np.float32)
+        self._dirty = False
+
+    def search(
+        self,
+        vector: np.ndarray,
+        top_k: int = 3,
+        allowed_ids: set[int] | None = None,
+    ) -> list[IndexResult]:
+        if top_k <= 0 or not self._vectors:
+            return []
+
+        self._ensure_matrix()
+        query = _quantize_unit_vector(vector)
+        query_norm = float(np.linalg.norm(query.astype(np.float32)))
+        if query_norm <= 1e-12:
+            query_norm = 1.0
+        if allowed_ids is None:
+            ids = self._ids
+            matrix = self._matrix
+            norms = self._norms
+        else:
+            positions = [
+                self._id_to_pos[int(id)]
+                for id in allowed_ids
+                if int(id) in self._id_to_pos
+            ]
+            if not positions:
+                return []
+            position_array = np.fromiter(positions, dtype=np.int64)
+            ids = self._ids[position_array]
+            matrix = self._matrix[position_array]
+            norms = self._norms[position_array]
+        if ids.size == 0:
+            return []
+
+        dots = matrix @ query.astype(self._matrix_dtype)
+        scores = dots.astype(np.float32) / (norms * query_norm)
         order = np.argsort(scores)[::-1][:top_k]
         return [IndexResult(int(ids[int(i)]), float(scores[int(i)])) for i in order]
 
@@ -443,6 +535,8 @@ def create_vector_index(kind: str, vector_dim: int):
     kind = (kind or "numpy").lower()
     if kind in {"numpy", "exact"}:
         return NumpyVectorIndex(vector_dim)
+    if kind in {"quantized", "int8"}:
+        return QuantizedVectorIndex(vector_dim)
     if kind == "faiss":
         return FaissVectorIndex(vector_dim)
     if kind == "annoy":
@@ -450,5 +544,5 @@ def create_vector_index(kind: str, vector_dim: int):
     if kind in {"pgvector", "postgres", "postgresql"}:
         return PgVectorIndex(vector_dim)
     raise ValueError(
-        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, faiss, annoy, or pgvector."
+        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, quantized, faiss, annoy, or pgvector."
     )

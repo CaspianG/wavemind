@@ -16,6 +16,8 @@ policy matters more than raw vector-database scale:
 - SQLite is the source of truth for text, metadata, vectors, TTL, recall state,
   tags, and namespaces.
 - NumPy exact search is reliable but linear.
+- Quantized int8 search is available as an explicit compression experiment, but
+  the current kernel is not yet a latency win over NumPy exact search.
 - Annoy exists as an ANN option, but current recall still needs tuning.
 - FAISS and pgvector are exposed as explicit optional candidate-index backends.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
@@ -58,6 +60,8 @@ Priorities:
   Postgres source-of-truth backend when multi-tenant storage needs it.
 - Support external vector services such as Qdrant for larger deployments.
 - Rebuild and persist ANN indexes safely after batch imports or recovery.
+- Tune the quantized int8 path so lower memory footprint does not increase query
+  latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
 
 ### 2. Namespace And Tenant Scale

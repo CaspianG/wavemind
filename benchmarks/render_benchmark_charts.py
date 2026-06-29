@@ -151,6 +151,7 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     wm_longmemeval = longmemeval["WaveMind"]
     chroma_longmemeval = longmemeval["Chroma static"]
     numpy_ann = ann_curve["WaveMind numpy"]
+    quantized_ann = ann_curve["WaveMind quantized"]
     annoy_ann = ann_curve["WaveMind annoy"]
     qdrant_ann = ann_curve["Qdrant local"]
     wm_long = long_memory["WaveMind"]
@@ -215,10 +216,11 @@ def build_svg(root: Path = PROJECT_ROOT) -> str:
     items.append(svg_text(66, 1262, f"Latency: LoCoMo sentence WaveMind {ms(float(wm_locomo_sentence['avg_latency_ms']))} vs Chroma {ms(float(chroma_locomo_sentence['avg_latency_ms']))}; LongMemEval full WaveMind {ms(float(wm_longmemeval['avg_latency_ms']))} vs Chroma {ms(float(chroma_longmemeval['avg_latency_ms']))}.", size=13, fill="#344054"))
 
     items.extend(panel(40, 1310, 1100, 115, "ANN index curve", "Generated 128-d vectors, 100 queries, recall@10 against exact cosine neighbors. Latest point: 50000 vectors."))
-    items.extend(metric_bar(66, 1378, "NumPy exact recall@10", float(numpy_ann["recall_at_k"]), "#246bfe", width=220))
-    items.extend(metric_bar(390, 1378, "Annoy recall@10", float(annoy_ann["recall_at_k"]), "#7c3aed", width=220))
-    items.extend(metric_bar(714, 1378, "Qdrant local recall@10", float(qdrant_ann["recall_at_k"]), "#0a7f5a", width=220))
-    items.append(svg_text(66, 1412, f"Latency at 50000: NumPy {ms(float(numpy_ann['avg_latency_ms']))}; Annoy {ms(float(annoy_ann['avg_latency_ms']))}; Qdrant local {ms(float(qdrant_ann['avg_latency_ms']))}.", size=13, fill="#344054"))
+    items.extend(metric_bar(66, 1378, "NumPy exact recall@10", float(numpy_ann["recall_at_k"]), "#246bfe", width=170))
+    items.extend(metric_bar(320, 1378, "Quantized int8 recall@10", float(quantized_ann["recall_at_k"]), "#b35c00", width=170))
+    items.extend(metric_bar(574, 1378, "Annoy recall@10", float(annoy_ann["recall_at_k"]), "#7c3aed", width=170))
+    items.extend(metric_bar(828, 1378, "Qdrant local recall@10", float(qdrant_ann["recall_at_k"]), "#0a7f5a", width=170))
+    items.append(svg_text(66, 1412, f"Latency at 50000: NumPy {ms(float(numpy_ann['avg_latency_ms']))}; int8 {ms(float(quantized_ann['avg_latency_ms']))}; Annoy {ms(float(annoy_ann['avg_latency_ms']))}; Qdrant local {ms(float(qdrant_ann['avg_latency_ms']))}.", size=13, fill="#344054"))
 
     items.extend(panel(40, 1450, 1100, 155, "Public benchmark roadmap", "Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins."))
     items.extend(roadmap_card(66, 1520, "BEIR SciFact", "implemented", "hash retrieval run", "#246bfe"))

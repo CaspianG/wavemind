@@ -146,6 +146,7 @@ backends:
 | index | Install | Notes |
 |---|---|---|
 | `numpy` | default | Exact cosine search, local, linear scan. |
+| `quantized` | default | Local int8-compressed candidate index. Useful for memory-footprint experiments; current kernel is approximate and not yet faster than NumPy. |
 | `annoy` | `pip install "wavemind[indexes]"` | Local ANN. Faster at larger N, but recall must be checked. |
 | `faiss` | `pip install "wavemind[indexes]"` | FAISS flat inner-product path where `faiss-cpu` is available. |
 | `pgvector` | `pip install "wavemind[postgres]"` | PostgreSQL/pgvector candidate index. SQLite can still remain the local source of truth. |
@@ -537,7 +538,7 @@ Current read:
 | Long-term evidence | WaveMind reaches `1.00` evidence recall@5, `1.00` precision@1, and `1.00` stale suppression on the synthetic long-memory evidence benchmark. | This is the first proof-shaped benchmark for agent memory: it measures whether stale/corrected/expired/cross-user facts stay out of retrieved evidence. |
 | Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
 | LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
-| ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `5.29 ms`; Annoy is faster at `3.44 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `48.70 ms`. | Current local scale boundary is clear: Annoy needs more tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
+| ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
 | Next public proof | LongMemEval / LoCoMo answer generation with a local LLM. | Retrieval is now measured. The next serious number should test answer accuracy, abstention, and faithfulness. |
 
 ### Real Benchmark Matrix
@@ -550,7 +551,7 @@ Current read:
 | WaveMind capacity curve | How recall and latency change at 200 / 1000 / 5000 memories. | implemented | WaveMind-only today | Keep `precision@1 >= 0.95` at 5000 memories and dynamic latency below 20 ms. |
 | Long-term memory evidence | Evidence retrieval from long histories with profile, preference, correction, TTL, namespace, and filler noise. | implemented | Static vector / Chroma / Qdrant | Keep this as a small regression test while public LoCoMo and LongMemEval runners carry the stronger evidence claims. |
 | BEIR-style open retrieval runner | Public `corpus.jsonl`, `queries.jsonl`, `qrels/*.tsv` datasets with the same metrics for each engine. | implemented | WaveMind / Chroma / Qdrant | Use identical embeddings and report `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, and latency. Current checked-in run: BEIR SciFact. |
-| ANN/VectorDBBench-style local curve | Recall/latency tradeoff for candidate indexes on generated vectors. | implemented | NumPy exact / Annoy / Qdrant local | Use this as the local engineering curve; official VectorDBBench remains future work. |
+| ANN/VectorDBBench-style local curve | Recall/latency tradeoff for candidate indexes on generated vectors. | implemented | NumPy exact / quantized int8 / Annoy / Qdrant local | Use this as the local engineering curve; official VectorDBBench remains future work. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
 | [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | planned | Chroma / Qdrant / FAISS | Reach same-embedding parity on Russian `nDCG@10`. |
@@ -734,7 +735,7 @@ It generates normalized vectors, queries with noisy copies, and measures
 `recall@10` against exact cosine neighbors.
 
 ```sh
-python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy annoy faiss qdrant --output benchmarks/ann_index_curve_results.json
+python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy quantized annoy faiss qdrant --output benchmarks/ann_index_curve_results.json
 ```
 
 Add `pgvector` to `--engines` when `WAVEMIND_PGVECTOR_DSN` points at a
@@ -744,16 +745,20 @@ Checked-in 50000-vector point:
 
 | engine | recall@10 | avg latency | p95 latency | build |
 |---|---:|---:|---:|---:|
-| WaveMind numpy | 1.000 | 5.29 ms | 5.75 ms | 539.3 ms |
-| WaveMind annoy | 0.730 | 3.44 ms | 4.91 ms | 3800.9 ms |
-| Qdrant local | 1.000 | 48.70 ms | 66.22 ms | 13771.5 ms |
+| WaveMind numpy | 1.000 | 6.49 ms | 6.41 ms | 744.7 ms |
+| WaveMind quantized | 0.934 | 24.92 ms | 37.36 ms | 2088.7 ms |
+| WaveMind annoy | 0.730 | 4.92 ms | 7.37 ms | 4090.1 ms |
+| WaveMind faiss | skipped | - | - | - |
+| Qdrant local | 1.000 | 43.49 ms | 59.68 ms | 17525.7 ms |
 
 Read this as an engineering curve, not an official VectorDBBench result. Annoy
-is faster at 50000 vectors but loses too much recall with the current settings;
-NumPy exact is still reliable at this size; FAISS and service-mode Qdrant are
-the next production index paths to test. If FAISS is not installed, the runner
-marks `WaveMind faiss` as `skipped` instead of silently falling back to another
-backend.
+is faster than exact NumPy at 50000 vectors but loses too much recall with the
+current settings. The new `quantized` backend compresses vectors and keeps
+`0.934` recall@10 on this run, but the current Python/NumPy kernel is slower
+than exact NumPy; it is a memory-footprint baseline, not a latency win yet.
+FAISS and service-mode Qdrant remain the next production index paths to test.
+If FAISS is not installed, the runner marks `WaveMind faiss` as `skipped`
+instead of silently falling back to another backend.
 
 ### Current Local Runs
 
@@ -905,7 +910,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 
 - Optimal capacity on the current NumPy exact index is up to 1000 records.
 - At 5000 records, one-word `precision@1` is currently 0.72 with the hash encoder; many misses are ambiguous queries where another sentence containing the same word ranks first.
-- For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; use FAISS or a production vector service before claiming large-scale ANN quality.
+- For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; the `quantized` backend reaches `0.934` recall@10 but is slower than NumPy on the current kernel. Use FAISS or a production vector service before claiming large-scale ANN quality.
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files. Benchmark runners cache embeddings so retrieval latency is measured separately from model encoding latency.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - The BEIR SciFact run uses the hash encoder to isolate index/retrieval behavior. It is not a semantic embedding leaderboard result.
@@ -916,6 +921,8 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
 - The pgvector backend is currently a candidate-index backend, not a full
   Postgres source-of-truth replacement for SQLite.
+- The `quantized` backend is an explicit int8 candidate-index experiment. It
+  reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
 - The LongMemEval result is retrieval-only. It is not a full LongMemEval answer-generation leaderboard-equivalent score.
 - Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; service-mode Qdrant should be benchmarked separately.
@@ -934,6 +941,8 @@ Near-term priorities:
 - FAISS-first candidate index with persisted rebuilds.
 - Postgres source-of-truth prototype on top of the initial pgvector candidate
   index.
+- Tune the new quantized int8 backend so compression does not cost more latency
+  than exact NumPy on common workloads.
 - Service-mode Qdrant and FAISS latency baselines.
 - LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.
 - More framework examples: LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw,

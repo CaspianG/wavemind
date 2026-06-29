@@ -7,7 +7,7 @@ from .encoders import (
     create_text_encoder,
 )
 from .field_graph import MemoryFieldGraph
-from .indexes import PgVectorIndex
+from .indexes import PgVectorIndex, QuantizedVectorIndex
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
 
@@ -22,6 +22,7 @@ __all__ = [
     "NamespaceShardRouter",
     "QueryResult",
     "PgVectorIndex",
+    "QuantizedVectorIndex",
     "SentenceTransformerTextEncoder",
     "ShardedWaveMind",
     "SQLiteMemoryStore",

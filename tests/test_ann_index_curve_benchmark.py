@@ -26,6 +26,26 @@ def test_ann_curve_runner_produces_exact_numpy_result():
     assert result["build_ms"] >= 0.0
 
 
+def test_ann_curve_runner_produces_quantized_result():
+    from benchmarks.ann_index_curve_benchmark import run_benchmark
+
+    payload = run_benchmark(
+        sizes=[40],
+        dim=16,
+        query_count=5,
+        top_k=3,
+        seed=7,
+        engines=["quantized"],
+        noise=0.01,
+    )
+
+    result = payload["results"][0]["results"][0]
+    assert result["engine"] == "WaveMind quantized"
+    assert result["recall_at_k"] >= 0.8
+    assert result["avg_latency_ms"] >= 0.0
+    assert result["build_ms"] >= 0.0
+
+
 def test_ann_curve_runner_reports_missing_optional_faiss_without_fallback():
     from benchmarks.ann_index_curve_benchmark import run_benchmark
 

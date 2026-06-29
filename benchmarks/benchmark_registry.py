@@ -435,11 +435,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "source": "benchmarks/ann_index_curve_benchmark.py",
             "source_url": "https://github.com/erikbern/ann-benchmarks",
             "dataset": "Generated normalized 128-d vectors at 1000, 5000, 10000, and 50000 points; recall@10 measured against exact cosine neighbors.",
-            "competitors": ["Annoy", "Qdrant local"],
+            "competitors": ["Quantized int8", "Annoy", "Qdrant local"],
             "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
             "current": ann_results,
             "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
-            "next_step": "Add FAISS on Linux/macOS CI and tune Annoy/Qdrant service-mode curves beyond 50000 vectors.",
+            "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors.",
         },
         {
             "id": "longmemeval_answer_generation",

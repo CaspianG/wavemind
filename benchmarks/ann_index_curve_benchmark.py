@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from wavemind.indexes import NumpyVectorIndex, create_vector_index
+from wavemind.indexes import create_vector_index
 
 
 @dataclass(frozen=True)
@@ -158,6 +158,8 @@ def run_size(
         key = engine.lower()
         if key in {"numpy", "exact"}:
             results.append(run_wavemind_index("numpy", vectors, queries, expected, top_k))
+        elif key in {"quantized", "int8"}:
+            results.append(run_wavemind_index("quantized", vectors, queries, expected, top_k))
         elif key in {"annoy", "faiss", "pgvector"}:
             try:
                 results.append(run_wavemind_index(key, vectors, queries, expected, top_k))
@@ -260,8 +262,8 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["numpy", "annoy", "faiss", "pgvector", "qdrant"],
-        default=["numpy", "annoy", "faiss", "qdrant"],
+        choices=["numpy", "quantized", "annoy", "faiss", "pgvector", "qdrant"],
+        default=["numpy", "quantized", "annoy", "faiss", "qdrant"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/ann_index_curve_results.json"))
     args = parser.parse_args()

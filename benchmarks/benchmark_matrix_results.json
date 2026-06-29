@@ -417,6 +417,7 @@
       "source_url": "https://github.com/erikbern/ann-benchmarks",
       "dataset": "Generated normalized 128-d vectors at 1000, 5000, 10000, and 50000 points; recall@10 measured against exact cosine neighbors.",
       "competitors": [
+        "Quantized int8",
         "Annoy",
         "Qdrant local"
       ],
@@ -429,25 +430,32 @@
       "current": {
         "WaveMind numpy": {
           "recall_at_k": 1.0,
-          "avg_latency_ms": 5.286507999899186,
-          "p95_latency_ms": 5.752799999754643,
-          "build_ms": 539.3323999996937
+          "avg_latency_ms": 6.485460000003513,
+          "p95_latency_ms": 6.407600001693936,
+          "build_ms": 744.6611000013945
+        },
+        "WaveMind quantized": {
+          "recall_at_k": 0.934,
+          "avg_latency_ms": 24.921987000016088,
+          "p95_latency_ms": 37.360799997259164,
+          "build_ms": 2088.689999996859
         },
         "WaveMind annoy": {
           "recall_at_k": 0.73,
-          "avg_latency_ms": 3.442136000012397,
-          "p95_latency_ms": 4.905399999188376,
-          "build_ms": 3800.882999999885
+          "avg_latency_ms": 4.92407000008825,
+          "p95_latency_ms": 7.37469999876339,
+          "build_ms": 4090.066400000069
         },
+        "WaveMind faiss": {},
         "Qdrant local": {
           "recall_at_k": 1.0,
-          "avg_latency_ms": 48.70105900001363,
-          "p95_latency_ms": 66.2173000000621,
-          "build_ms": 13771.477899999809
+          "avg_latency_ms": 43.48527499991178,
+          "p95_latency_ms": 59.675500000594184,
+          "build_ms": 17525.668000002042
         }
       },
       "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
-      "next_step": "Add FAISS on Linux/macOS CI and tune Annoy/Qdrant service-mode curves beyond 50000 vectors."
+      "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors."
     },
     {
       "id": "longmemeval_answer_generation",
