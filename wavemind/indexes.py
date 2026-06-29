@@ -531,6 +531,207 @@ class PgVectorIndex:
         self._closed = True
 
 
+class QdrantVectorIndex:
+    name = "qdrant-cosine"
+
+    def __init__(
+        self,
+        vector_dim: int,
+        url: str | None = None,
+        collection: str | None = None,
+        api_key: str | None = None,
+        recreate: bool | None = None,
+    ):
+        self.vector_dim = int(vector_dim)
+        self.url = url or os.environ.get("WAVEMIND_QDRANT_URL")
+        if not self.url:
+            raise ValueError(
+                "Set WAVEMIND_QDRANT_URL to use the qdrant index backend"
+            )
+        try:
+            from qdrant_client import QdrantClient
+            from qdrant_client.models import (
+                Distance,
+                FieldCondition,
+                Filter,
+                MatchAny,
+                PointStruct,
+                VectorParams,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                'Install Qdrant support with: pip install "wavemind[indexes]"'
+            ) from exc
+
+        self._Distance = Distance
+        self._FieldCondition = FieldCondition
+        self._Filter = Filter
+        self._MatchAny = MatchAny
+        self._PointStruct = PointStruct
+        self._VectorParams = VectorParams
+        self.collection = collection or os.environ.get(
+            "WAVEMIND_QDRANT_COLLECTION",
+            "wavemind_vectors",
+        )
+        self.api_key = api_key or os.environ.get("WAVEMIND_QDRANT_API_KEY")
+        if recreate is None:
+            recreate = os.environ.get("WAVEMIND_QDRANT_RECREATE", "0").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        if self.url == ":memory:":
+            self.client = QdrantClient(":memory:")
+        else:
+            self.client = QdrantClient(url=self.url, api_key=self.api_key)
+        self._closed = False
+        self._ensure_collection(recreate=bool(recreate))
+
+    def _collection_exists(self) -> bool:
+        collection_exists = getattr(self.client, "collection_exists", None)
+        if callable(collection_exists):
+            return bool(collection_exists(collection_name=self.collection))
+        try:
+            self.client.get_collection(collection_name=self.collection)
+            return True
+        except Exception:
+            return False
+
+    def _ensure_collection(self, recreate: bool = False) -> None:
+        vectors_config = self._VectorParams(
+            size=self.vector_dim,
+            distance=self._Distance.COSINE,
+        )
+        exists = self._collection_exists()
+        if recreate:
+            delete_collection = getattr(self.client, "delete_collection", None)
+            if exists and callable(delete_collection):
+                delete_collection(collection_name=self.collection)
+                exists = False
+            if exists:
+                self.client.recreate_collection(
+                    collection_name=self.collection,
+                    vectors_config=vectors_config,
+                )
+                return
+            self.client.create_collection(
+                collection_name=self.collection,
+                vectors_config=vectors_config,
+            )
+            return
+
+        if not exists:
+            self.client.create_collection(
+                collection_name=self.collection,
+                vectors_config=vectors_config,
+            )
+
+    def _point(self, id: int, vector: np.ndarray):
+        memory_id = int(id)
+        return self._PointStruct(
+            id=memory_id,
+            vector=_normalize(vector).tolist(),
+            payload={"memory_id": memory_id},
+        )
+
+    def add(self, id: int, vector: np.ndarray) -> None:
+        self.client.upsert(
+            collection_name=self.collection,
+            points=[self._point(id, vector)],
+        )
+
+    def remove(self, id: int) -> None:
+        self.client.delete(
+            collection_name=self.collection,
+            points_selector=[int(id)],
+        )
+
+    def build(self, records: Iterable) -> None:
+        self._ensure_collection(recreate=True)
+        points = [
+            self._point(record.id, record.vector)
+            for record in records
+            if record.id is not None
+        ]
+        for offset in range(0, len(points), 1000):
+            self.client.upsert(
+                collection_name=self.collection,
+                points=points[offset : offset + 1000],
+            )
+
+    def _allowed_filter(self, allowed_ids: set[int] | None):
+        if allowed_ids is None:
+            return None
+        ids = sorted(int(id) for id in allowed_ids)
+        if not ids:
+            return None
+        return self._Filter(
+            must=[
+                self._FieldCondition(
+                    key="memory_id",
+                    match=self._MatchAny(any=ids),
+                )
+            ]
+        )
+
+    def search(
+        self,
+        vector: np.ndarray,
+        top_k: int = 3,
+        allowed_ids: set[int] | None = None,
+    ) -> list[IndexResult]:
+        if top_k <= 0:
+            return []
+        if allowed_ids is not None and not allowed_ids:
+            return []
+        query_filter = self._allowed_filter(allowed_ids)
+        query = _normalize(vector).tolist()
+        query_points = getattr(self.client, "query_points", None)
+        if callable(query_points):
+            response = query_points(
+                collection_name=self.collection,
+                query=query,
+                query_filter=query_filter,
+                limit=int(top_k),
+                with_payload=True,
+            )
+            hits = getattr(response, "points", response)
+        else:
+            hits = self.client.search(
+                collection_name=self.collection,
+                query_vector=query,
+                query_filter=query_filter,
+                limit=int(top_k),
+                with_payload=True,
+            )
+
+        results = []
+        for hit in hits:
+            payload = getattr(hit, "payload", None) or {}
+            memory_id = int(payload.get("memory_id", getattr(hit, "id")))
+            if allowed_ids is not None and memory_id not in allowed_ids:
+                continue
+            results.append(IndexResult(memory_id, float(getattr(hit, "score", 0.0))))
+        return results
+
+    def __len__(self) -> int:
+        return int(
+            self.client.count(
+                collection_name=self.collection,
+                exact=True,
+            ).count
+        )
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        close = getattr(self.client, "close", None)
+        if callable(close):
+            close()
+        self._closed = True
+
+
 def create_vector_index(kind: str, vector_dim: int):
     kind = (kind or "numpy").lower()
     if kind in {"numpy", "exact"}:
@@ -543,6 +744,8 @@ def create_vector_index(kind: str, vector_dim: int):
         return AnnoyVectorIndex(vector_dim)
     if kind in {"pgvector", "postgres", "postgresql"}:
         return PgVectorIndex(vector_dim)
+    if kind == "qdrant":
+        return QdrantVectorIndex(vector_dim)
     raise ValueError(
-        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, quantized, faiss, annoy, or pgvector."
+        f"Unknown vector index kind: {kind}. Choose an explicit index: numpy, quantized, faiss, annoy, pgvector, or qdrant."
     )

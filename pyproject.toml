@@ -27,6 +27,7 @@ ml = [
 indexes = [
   "annoy>=1.17",
   "faiss-cpu>=1.8; platform_system != 'Windows'",
+  "qdrant-client>=1.9",
 ]
 postgres = [
   "psycopg[binary]>=3.1",

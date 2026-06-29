@@ -14,6 +14,7 @@ from wavemind.indexes import (
     AnnoyVectorIndex,
     NumpyVectorIndex,
     QuantizedVectorIndex,
+    QdrantVectorIndex,
     _safe_identifier,
     _vector_literal,
     create_vector_index,
@@ -264,6 +265,157 @@ def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypat
     index.close()
     index.close()
     assert fake_connection.closed is True
+
+
+def test_qdrant_index_requires_explicit_url(monkeypatch):
+    monkeypatch.delenv("WAVEMIND_QDRANT_URL", raising=False)
+
+    with pytest.raises(ValueError, match="WAVEMIND_QDRANT_URL"):
+        create_vector_index("qdrant", vector_dim=4)
+
+
+def test_qdrant_index_uses_client_without_local_fallback(monkeypatch):
+    class FakeDistance:
+        COSINE = "cosine"
+
+    class FakeVectorParams:
+        def __init__(self, size, distance):
+            self.size = size
+            self.distance = distance
+
+    class FakePointStruct:
+        def __init__(self, id, vector, payload):
+            self.id = id
+            self.vector = vector
+            self.payload = payload
+
+    class FakeMatchAny:
+        def __init__(self, any):
+            self.any = any
+
+    class FakeFieldCondition:
+        def __init__(self, key, match):
+            self.key = key
+            self.match = match
+
+    class FakeFilter:
+        def __init__(self, must):
+            self.must = must
+
+    class FakeHit:
+        def __init__(self, point, score):
+            self.id = point.id
+            self.payload = point.payload
+            self.score = score
+
+    class FakeResponse:
+        def __init__(self, points):
+            self.points = points
+
+    class FakeCount:
+        def __init__(self, count):
+            self.count = count
+
+    class FakeQdrantClient:
+        instances = []
+
+        def __init__(self, *args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+            self.collections = {}
+            self.recreated = []
+            self.closed = False
+            FakeQdrantClient.instances.append(self)
+
+        def collection_exists(self, collection_name):
+            return collection_name in self.collections
+
+        def create_collection(self, collection_name, vectors_config):
+            self.collections[collection_name] = {}
+            self.vectors_config = vectors_config
+
+        def recreate_collection(self, collection_name, vectors_config):
+            self.collections[collection_name] = {}
+            self.vectors_config = vectors_config
+            self.recreated.append(collection_name)
+
+        def upsert(self, collection_name, points):
+            self.collections.setdefault(collection_name, {})
+            for point in points:
+                self.collections[collection_name][int(point.id)] = point
+
+        def delete(self, collection_name, points_selector):
+            for id in points_selector:
+                self.collections.get(collection_name, {}).pop(int(id), None)
+
+        def query_points(
+            self,
+            collection_name,
+            query,
+            query_filter=None,
+            limit=3,
+            with_payload=True,
+        ):
+            allowed = None
+            if query_filter is not None:
+                allowed = set(query_filter.must[0].match.any)
+            query_vector = np.asarray(query, dtype=np.float32)
+            hits = []
+            for point in self.collections.get(collection_name, {}).values():
+                memory_id = point.payload["memory_id"]
+                if allowed is not None and memory_id not in allowed:
+                    continue
+                score = float(np.dot(query_vector, np.asarray(point.vector, dtype=np.float32)))
+                hits.append(FakeHit(point, score))
+            hits.sort(key=lambda hit: hit.score, reverse=True)
+            return FakeResponse(hits[:limit])
+
+        def count(self, collection_name, exact=True):
+            return FakeCount(len(self.collections.get(collection_name, {})))
+
+        def close(self):
+            self.closed = True
+
+    fake_qdrant = SimpleNamespace(QdrantClient=FakeQdrantClient)
+    fake_models = SimpleNamespace(
+        Distance=FakeDistance,
+        FieldCondition=FakeFieldCondition,
+        Filter=FakeFilter,
+        MatchAny=FakeMatchAny,
+        PointStruct=FakePointStruct,
+        VectorParams=FakeVectorParams,
+    )
+    monkeypatch.setitem(sys.modules, "qdrant_client", fake_qdrant)
+    monkeypatch.setitem(sys.modules, "qdrant_client.models", fake_models)
+    monkeypatch.setenv("WAVEMIND_QDRANT_URL", ":memory:")
+    monkeypatch.setenv("WAVEMIND_QDRANT_COLLECTION", "tests")
+
+    index = create_vector_index("qdrant", vector_dim=3)
+    assert isinstance(index, QdrantVectorIndex)
+    assert FakeQdrantClient.instances[-1].args == (":memory:",)
+
+    records = [
+        SimpleNamespace(id=1, vector=np.array([1.0, 0.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=2, vector=np.array([0.0, 1.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=3, vector=np.array([0.8, 0.2, 0.0], dtype=np.float32)),
+    ]
+    index.build(records)
+    index.add(4, np.array([0.7, 0.3, 0.0], dtype=np.float32))
+
+    results = index.search(
+        np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        top_k=3,
+        allowed_ids={1, 3, 4},
+    )
+
+    assert [result.id for result in results] == [1, 3, 4]
+    assert results[0].score > results[-1].score
+    assert len(index) == 4
+    index.remove(1)
+    assert [result.id for result in index.search(np.array([1.0, 0.0, 0.0], dtype=np.float32), top_k=3)] == [3, 4, 2]
+    index.close()
+    index.close()
+    assert FakeQdrantClient.instances[-1].closed is True
 
 
 def test_encoder_factory_rejects_auto_to_avoid_silent_encoder_switching():

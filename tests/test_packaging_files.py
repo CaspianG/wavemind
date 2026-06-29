@@ -33,6 +33,17 @@ def test_postgres_extra_installs_psycopg_for_pgvector():
     assert '"psycopg[binary]>=3.1"' in pyproject
 
 
+def test_indexes_extra_installs_qdrant_client():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    optional_requirements = Path("requirements-optional.txt").read_text(
+        encoding="utf-8"
+    )
+
+    assert "indexes = [" in pyproject
+    assert '"qdrant-client>=1.9"' in pyproject
+    assert "qdrant-client>=1.9" in optional_requirements
+
+
 def test_langchain_extra_installs_classic_memory_api():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 

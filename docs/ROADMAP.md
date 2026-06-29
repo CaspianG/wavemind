@@ -19,7 +19,8 @@ policy matters more than raw vector-database scale:
 - Quantized int8 search is available as an explicit compression experiment, but
   the current kernel is not yet a latency win over NumPy exact search.
 - Annoy exists as an ANN option, but current recall still needs tuning.
-- FAISS and pgvector are exposed as explicit optional candidate-index backends.
+- FAISS, pgvector, and Qdrant are exposed as explicit optional
+  candidate-index backends.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
@@ -59,6 +60,8 @@ Priorities:
 - Keep pgvector as an optional candidate-index backend and add a separate
   Postgres source-of-truth backend when multi-tenant storage needs it.
 - Support external vector services such as Qdrant for larger deployments.
+  The first Qdrant candidate-index backend is available; the remaining work is
+  service-mode latency, rebuild strategy, and operational health checks.
 - Rebuild and persist ANN indexes safely after batch imports or recovery.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.

@@ -150,6 +150,7 @@ backends:
 | `annoy` | `pip install "wavemind[indexes]"` | Local ANN. Faster at larger N, but recall must be checked. |
 | `faiss` | `pip install "wavemind[indexes]"` | FAISS flat inner-product path where `faiss-cpu` is available. |
 | `pgvector` | `pip install "wavemind[postgres]"` | PostgreSQL/pgvector candidate index. SQLite can still remain the local source of truth. |
+| `qdrant` | `pip install "wavemind[indexes]"` | Qdrant service/local-mode candidate index. SQLite remains the source of truth; Qdrant stores vectors. |
 
 pgvector setup:
 
@@ -170,6 +171,20 @@ If `WAVEMIND_PGVECTOR_DSN` is missing, WaveMind raises a clear error instead of
 silently falling back to another index backend.
 The pgvector table is created with the current encoder dimension, so use a
 separate table when switching between different vector sizes.
+
+Qdrant setup:
+
+```sh
+export WAVEMIND_QDRANT_URL="http://localhost:6333"
+export WAVEMIND_QDRANT_COLLECTION="wavemind_vectors"
+wavemind --index qdrant remember "Andrey is a trader" --namespace demo
+wavemind --index qdrant query "trader" --namespace demo
+```
+
+For local experiments you can set `WAVEMIND_QDRANT_URL=":memory:"`, but
+production latency and durability should be measured against a real Qdrant
+service. If `WAVEMIND_QDRANT_URL` is missing, WaveMind raises a clear error
+instead of silently falling back to another backend.
 
 ## Data Location
 
@@ -921,6 +936,9 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
 - The pgvector backend is currently a candidate-index backend, not a full
   Postgres source-of-truth replacement for SQLite.
+- The Qdrant backend is also a candidate-index backend. WaveMind rebuilds it
+  from SQLite on load/build, so large service-mode deployments still need a
+  measured rebuild strategy and index-health monitoring.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
@@ -943,7 +961,8 @@ Near-term priorities:
   index.
 - Tune the new quantized int8 backend so compression does not cost more latency
   than exact NumPy on common workloads.
-- Service-mode Qdrant and FAISS latency baselines.
+- Service-mode Qdrant and FAISS latency baselines using the explicit Qdrant
+  backend, not only the standalone Qdrant benchmark baseline.
 - LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.
 - More framework examples: LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw,
   and HTTP-only sidecar use.

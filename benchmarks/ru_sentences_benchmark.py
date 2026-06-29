@@ -162,7 +162,7 @@ def main() -> int:
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument(
         "--index",
-        choices=["numpy", "quantized", "faiss", "annoy", "pgvector"],
+        choices=["numpy", "quantized", "faiss", "annoy", "pgvector", "qdrant"],
         default="numpy",
     )
     args = parser.parse_args()

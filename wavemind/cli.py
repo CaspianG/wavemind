@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--index",
         default="numpy",
-        choices=["numpy", "quantized", "faiss", "annoy", "pgvector"],
+        choices=["numpy", "quantized", "faiss", "annoy", "pgvector", "qdrant"],
     )
     parser.add_argument("--encoder", default="hash", choices=["hash", "sentence"])
     parser.add_argument(
