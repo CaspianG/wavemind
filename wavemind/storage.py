@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -299,6 +301,66 @@ class SQLiteMemoryStore:
         with target:
             self.conn.backup(target)
         target.close()
+        return destination
+
+    def backup_timestamped(
+        self,
+        directory: str | Path,
+        prefix: str = "wavemind",
+        keep_last: int | None = None,
+    ) -> Path:
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        destination = directory / f"{prefix}-{timestamp}.sqlite3"
+        if destination.exists():
+            destination = directory / f"{prefix}-{timestamp}-{time.time_ns()}.sqlite3"
+        path = self.backup(destination)
+        if keep_last is not None:
+            self.prune_backups(directory, prefix=prefix, keep_last=keep_last)
+        return path
+
+    @staticmethod
+    def prune_backups(
+        directory: str | Path,
+        prefix: str = "wavemind",
+        keep_last: int = 10,
+    ) -> list[Path]:
+        keep_last = max(0, int(keep_last))
+        directory = Path(directory)
+        if not directory.exists():
+            return []
+        backups = sorted(
+            directory.glob(f"{prefix}-*.sqlite3"),
+            key=lambda path: (path.stat().st_mtime, path.name),
+            reverse=True,
+        )
+        deleted = []
+        for path in backups[keep_last:]:
+            path.unlink()
+            deleted.append(path)
+        return deleted
+
+    @staticmethod
+    def restore_backup(
+        source: str | Path,
+        destination: str | Path,
+        overwrite: bool = False,
+    ) -> Path:
+        source = Path(source)
+        destination = Path(destination)
+        if not source.exists():
+            raise FileNotFoundError(f"Backup does not exist: {source}")
+        if destination.exists() and not overwrite:
+            raise FileExistsError(
+                f"Destination already exists: {destination}. Pass overwrite=True to replace it."
+            )
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(str(source)) as source_conn:
+            source_conn.execute("SELECT name FROM sqlite_master LIMIT 1").fetchall()
+        if destination.exists():
+            destination.unlink()
+        shutil.copy2(source, destination)
         return destination
 
     def close(self) -> None:

@@ -368,13 +368,30 @@ class WaveMind:
             )
         return len(records)
 
-    def save(self, backup_path: str | Path | None = None) -> Path | None:
+    def save(
+        self,
+        backup_path: str | Path | None = None,
+        keep_last: int | None = None,
+        backup_prefix: str = "wavemind",
+    ) -> Path | None:
         self.store.conn.commit()
         if backup_path is not None:
-            path = self.store.backup(backup_path)
+            backup_path = Path(backup_path)
+            if backup_path.suffix:
+                path = self.store.backup(backup_path)
+            else:
+                path = self.store.backup_timestamped(
+                    backup_path,
+                    prefix=backup_prefix,
+                    keep_last=keep_last,
+                )
             self.store.log_audit_event(
                 "backup",
-                metadata={"destination": str(path)},
+                metadata={
+                    "destination": str(path),
+                    "keep_last": keep_last,
+                    "prefix": backup_prefix,
+                },
             )
             return path
         return None

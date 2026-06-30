@@ -9,6 +9,7 @@ from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
+from .storage import SQLiteMemoryStore
 
 
 def configure_stdio() -> None:
@@ -85,6 +86,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     backup = sub.add_parser("backup", help="Backup SQLite database")
     backup.add_argument("--out", required=True)
+    backup.add_argument("--keep-last", type=int)
+    backup.add_argument("--prefix", default="wavemind")
+
+    restore = sub.add_parser("restore", help="Restore a SQLite backup")
+    restore.add_argument("--from", dest="source", required=True)
+    restore.add_argument("--to", dest="destination")
+    restore.add_argument("--overwrite", action="store_true")
 
     bench = sub.add_parser("benchmark", help="Run a synthetic recall benchmark")
     bench.add_argument("--namespace", default="bench")
@@ -179,6 +187,18 @@ def main(argv: list[str] | None = None) -> int:
         uvicorn.run(create_app(mind=make_mind(args)), host=args.host, port=args.port)
         return 0
 
+    if args.command == "restore":
+        destination = Path(args.destination) if args.destination else (
+            Path(args.db) if args.db else Path.cwd() / "wavemind.sqlite3"
+        )
+        path = SQLiteMemoryStore.restore_backup(
+            source=args.source,
+            destination=destination,
+            overwrite=args.overwrite,
+        )
+        print(f"restored: {path}")
+        return 0
+
     mind = make_mind(args)
     if args.command == "remember":
         id = mind.remember(
@@ -264,7 +284,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "backup":
-        path = mind.save(args.out)
+        path = mind.save(
+            args.out,
+            keep_last=args.keep_last,
+            backup_prefix=args.prefix,
+        )
         print(f"backup: {path}")
         return 0
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from wavemind import HashingTextEncoder, QueryResult, WaveMind
+from wavemind import HashingTextEncoder, QueryResult, SQLiteMemoryStore, WaveMind
 
 
 def make_mind(db_path: Path, **kwargs) -> WaveMind:
@@ -108,6 +108,54 @@ def test_query_audit_is_opt_in(tmp_path):
     assert query_events[0].metadata["top_k"] == 1
     assert query_events[0].metadata["result_count"] == 1
     mind.close()
+
+
+def test_timestamped_backup_retention_and_restore(tmp_path):
+    db_path = tmp_path / "memory.sqlite3"
+    backup_dir = tmp_path / "backups"
+    restored_path = tmp_path / "restored.sqlite3"
+    mind = make_mind(db_path)
+
+    memory_id = mind.remember("backup restore memory", namespace="ops")
+    created = []
+    for _ in range(3):
+        created.append(mind.save(backup_dir, keep_last=2, backup_prefix="ops"))
+
+    backups = sorted(backup_dir.glob("ops-*.sqlite3"))
+    assert len(backups) == 2
+    assert created[-1] in backups
+
+    SQLiteMemoryStore.restore_backup(created[-1], restored_path)
+    restored = make_mind(restored_path)
+    try:
+        results = restored.query("backup restore", namespace="ops", top_k=1)
+        assert results[0].id == memory_id
+        assert results[0].text == "backup restore memory"
+    finally:
+        mind.close()
+        restored.close()
+
+
+def test_restore_refuses_to_overwrite_without_explicit_flag(tmp_path):
+    source = tmp_path / "source.sqlite3"
+    destination = tmp_path / "destination.sqlite3"
+    mind = make_mind(source)
+    mind.remember("source memory")
+    backup = mind.save(tmp_path / "backup.sqlite3")
+    destination.write_text("existing", encoding="utf-8")
+
+    try:
+        try:
+            SQLiteMemoryStore.restore_backup(backup, destination)
+            raised = False
+        except FileExistsError:
+            raised = True
+        assert raised is True
+
+        restored = SQLiteMemoryStore.restore_backup(backup, destination, overwrite=True)
+        assert restored == destination
+    finally:
+        mind.close()
 
 
 def test_close_releases_sqlite_file(tmp_path):

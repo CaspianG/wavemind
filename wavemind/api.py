@@ -173,6 +173,16 @@ class ImportResponse(BaseModel):
     ids: list[int]
 
 
+class BackupRequest(BaseModel):
+    path: str
+    keep_last: int | None = Field(default=None, ge=0)
+    prefix: str = "wavemind"
+
+
+class BackupResponse(BaseModel):
+    path: str
+
+
 class AuditEventResponse(BaseModel):
     id: int
     created_at: float
@@ -362,5 +372,14 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             overlap=request.overlap,
         )
         return ImportResponse(ids=ids)
+
+    @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
+    def backup(request: BackupRequest) -> BackupResponse:
+        path = app.state.mind.save(
+            request.path,
+            keep_last=request.keep_last,
+            backup_prefix=request.prefix,
+        )
+        return BackupResponse(path=str(path))
 
     return app

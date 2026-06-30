@@ -27,6 +27,8 @@ policy matters more than raw vector-database scale:
 - SQLite audit events and a Prometheus-compatible `/metrics` endpoint now cover
   the first observability layer.
 - API key roles and opt-in rate limiting are available for FastAPI deployments.
+- SQLite backup, timestamped retention, restore, and admin-only HTTP backup are
+  available as the first durability layer.
 - Public retrieval evidence exists for LoCoMo, LongMemEval, and BEIR/SciFact,
   but full answer-quality evaluation is still the next proof step.
 
@@ -187,7 +189,8 @@ Enterprise requirements:
 - role-based access control;
 - encryption at rest and in transit;
 - audit logs for remember, query, recall feedback, and forget;
-- backup, restore, and point-in-time recovery;
+- backup, restore, and point-in-time recovery. The first SQLite backup/restore
+  layer is implemented; point-in-time recovery and replication are future work;
 - data residency controls;
 - SSO/OAuth integration;
 - SLOs for latency, throughput, and durability;
@@ -209,7 +212,8 @@ Enterprise requirements:
 ### Medium Term: 3 To 6 Months
 
 - Graph memory v2 with incremental edge updates.
-- Background worker for decay, consolidation, graph updates, and backups.
+- Background worker for decay, consolidation, graph updates, and scheduled
+  backups.
 - Docker image and Helm chart for API/sidecar deployment.
 - Observability: Prometheus metrics and OpenTelemetry tracing.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,

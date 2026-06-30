@@ -218,6 +218,30 @@ Useful storage patterns:
 
 Keep the SQLite file out of git. Back it up like any other application state.
 
+## Backup And Restore
+
+Exact one-file backup:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 backup --out ./backups/wavemind.sqlite3
+```
+
+Timestamped backups with retention:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 backup --out ./backups --prefix wavemind --keep-last 7
+```
+
+Restore into a new or replacement SQLite file:
+
+```sh
+wavemind restore --from ./backups/wavemind-20260630-120000.sqlite3 --to ./state/wavemind.sqlite3 --overwrite
+```
+
+The backup command uses SQLite's backup API, so it is safe to run while the
+process is alive. Restore is intentionally an explicit command and refuses to
+overwrite an existing database unless `--overwrite` is passed.
+
 ## HTTP API
 
 Run the local FastAPI server:
@@ -239,6 +263,7 @@ Operational endpoints:
 curl http://127.0.0.1:8000/stats?namespace=demo
 curl http://127.0.0.1:8000/audit?namespace=demo
 curl http://127.0.0.1:8000/metrics
+curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
 ```
 
 `/audit` returns mutation events such as `remember`, `forget`, `backup`, and
@@ -261,7 +286,7 @@ Role behavior:
 |---|---|---|
 | read | `WAVEMIND_READ_KEYS` | `/query`, `/stats`, `/metrics` |
 | write | `WAVEMIND_WRITE_KEYS` | read actions plus `/remember` and `/import` |
-| admin | `WAVEMIND_ADMIN_KEYS` or `WAVEMIND_API_KEYS` | all actions, including `/audit` and `/forget` |
+| admin | `WAVEMIND_ADMIN_KEYS` or `WAVEMIND_API_KEYS` | all actions, including `/audit`, `/backup`, and `/forget` |
 
 Keys are accepted through `Authorization: Bearer <key>` or `X-API-Key: <key>`.
 If no key env vars are set, authentication is disabled for local development.

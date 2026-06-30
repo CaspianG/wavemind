@@ -50,6 +50,19 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert "wavemind_active_memories 1" in metrics.text
             assert "wavemind_audit_events 1" in metrics.text
 
+            backup_dir = tmp_path / "api-backups"
+            backup = client.post(
+                "/backup",
+                json={
+                    "path": str(backup_dir),
+                    "keep_last": 1,
+                    "prefix": "api",
+                },
+            )
+            assert backup.status_code == 200
+            assert backup.json()["path"].endswith(".sqlite3")
+            assert len(list(backup_dir.glob("api-*.sqlite3"))) == 1
+
             deleted = client.request(
                 "DELETE",
                 "/forget",
@@ -158,6 +171,20 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
                 headers={"X-API-Key": "admin-key"},
             )
             assert admin_audit.status_code == 200
+
+            read_backup = client.post(
+                "/backup",
+                json={"path": str(tmp_path / "read-backup.sqlite3")},
+                headers={"X-API-Key": "read-key"},
+            )
+            assert read_backup.status_code == 403
+
+            admin_backup = client.post(
+                "/backup",
+                json={"path": str(tmp_path / "admin-backup.sqlite3")},
+                headers={"X-API-Key": "admin-key"},
+            )
+            assert admin_backup.status_code == 200
 
             deleted = client.request(
                 "DELETE",
