@@ -17,8 +17,8 @@ from .encoders import (
     normalize_token,
 )
 from .field_graph import MemoryFieldGraph
-from .indexes import NumpyVectorIndex, create_vector_index
-from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
+from .indexes import create_vector_index
+from .storage import AuditEvent, MemoryRecord, create_memory_store
 
 
 LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
@@ -141,6 +141,9 @@ class WaveMind:
         height: int = 128,
         layers: int = 6,
         encoder: TextVectorEncoder | None = None,
+        store: Any | None = None,
+        store_kind: str | None = None,
+        postgres_dsn: str | None = None,
         index_kind: str = "numpy",
         score_threshold: float = 0.0,
         evolve_on_feed: int = 6,
@@ -163,7 +166,11 @@ class WaveMind:
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
         self.field = WaveField(width=width, height=height, layers=layers)
         self.graph = MemoryFieldGraph()
-        self.store = SQLiteMemoryStore(db_path)
+        self.store = store or create_memory_store(
+            kind=store_kind,
+            path=db_path,
+            postgres_dsn=postgres_dsn,
+        )
         self.index = create_vector_index(index_kind, self.encoder.vector_dim)
         self.score_threshold = float(score_threshold)
         self._evolve_n = int(evolve_on_feed)
@@ -374,13 +381,27 @@ class WaveMind:
         keep_last: int | None = None,
         backup_prefix: str = "wavemind",
     ) -> Path | None:
-        self.store.conn.commit()
+        commit = getattr(self.store, "commit", None)
+        if callable(commit):
+            commit()
         if backup_path is not None:
             backup_path = Path(backup_path)
             if backup_path.suffix:
-                path = self.store.backup(backup_path)
+                backup = getattr(self.store, "backup", None)
+                if not callable(backup):
+                    raise NotImplementedError(
+                        "This memory store does not support file backups. "
+                        "Use the database engine's native backup tooling."
+                    )
+                path = backup(backup_path)
             else:
-                path = self.store.backup_timestamped(
+                backup_timestamped = getattr(self.store, "backup_timestamped", None)
+                if not callable(backup_timestamped):
+                    raise NotImplementedError(
+                        "This memory store does not support timestamped file backups. "
+                        "Use the database engine's native backup tooling."
+                    )
+                path = backup_timestamped(
                     backup_path,
                     prefix=backup_prefix,
                     keep_last=keep_last,

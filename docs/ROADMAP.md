@@ -15,6 +15,8 @@ policy matters more than raw vector-database scale:
 
 - SQLite is the source of truth for text, metadata, vectors, TTL, recall state,
   tags, and namespaces.
+- PostgreSQL is available as an explicit source-of-truth backend for
+  multi-tenant deployments that need managed database operations.
 - NumPy exact search is reliable but linear.
 - Quantized int8 search is available as an explicit compression experiment, but
   the current kernel is not yet a latency win over NumPy exact search.
@@ -59,8 +61,8 @@ Priorities:
 
 - Add a FAISS-first index path for local and single-node production use.
 - Keep SQLite as the durable local source of truth.
-- Keep pgvector as an optional candidate-index backend and add a separate
-  Postgres source-of-truth backend when multi-tenant storage needs it.
+- Keep pgvector as an optional candidate-index backend and harden the separate
+  Postgres source-of-truth backend for multi-tenant storage.
 - Support external vector services such as Qdrant for larger deployments.
   The first Qdrant candidate-index backend is available; the remaining work is
   service-mode latency, rebuild strategy, and operational health checks.
@@ -202,8 +204,8 @@ Enterprise requirements:
 ### Short Term: 1 To 3 Months
 
 - FAISS candidate index with persisted rebuilds.
-- Postgres source-of-truth prototype on top of the initial pgvector candidate
-  index.
+- Harden the new Postgres source-of-truth backend with migration tooling,
+  service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
 - Service-mode Qdrant latency baseline.
 - Better README examples for non-agent use cases.

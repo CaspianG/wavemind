@@ -9,7 +9,13 @@ from .encoders import (
 from .field_graph import MemoryFieldGraph
 from .indexes import PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
 from .sharding import NamespaceShardRouter, ShardedWaveMind
-from .storage import AuditEvent, MemoryRecord, SQLiteMemoryStore
+from .storage import (
+    AuditEvent,
+    MemoryRecord,
+    PostgresMemoryStore,
+    SQLiteMemoryStore,
+    create_memory_store,
+)
 
 __version__ = "2.0.5"
 
@@ -22,6 +28,7 @@ __all__ = [
     "NamespaceShardRouter",
     "QueryResult",
     "PgVectorIndex",
+    "PostgresMemoryStore",
     "QdrantVectorIndex",
     "QuantizedVectorIndex",
     "SentenceTransformerTextEncoder",
@@ -31,5 +38,6 @@ __all__ = [
     "WaveField",
     "WaveMind",
     "__version__",
+    "create_memory_store",
     "create_text_encoder",
 ]

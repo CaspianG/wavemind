@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import shutil
 import sqlite3
 import time
@@ -48,6 +50,21 @@ def _array_to_blob(array: np.ndarray) -> bytes:
 
 def _array_from_blob(blob: bytes, shape: Iterable[int]) -> np.ndarray:
     return np.frombuffer(blob, dtype=np.float32).copy().reshape(tuple(shape))
+
+
+def _safe_identifier(value: str, label: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+        raise ValueError(f"{label} must be a simple SQL identifier")
+    return value
+
+
+def _row_get(row: Any, key: str) -> Any:
+    if isinstance(row, dict):
+        return row[key]
+    try:
+        return row[key]
+    except (KeyError, TypeError):
+        return getattr(row, key)
 
 
 class SQLiteMemoryStore:
@@ -363,6 +380,9 @@ class SQLiteMemoryStore:
         shutil.copy2(source, destination)
         return destination
 
+    def commit(self) -> None:
+        self.conn.commit()
+
     def close(self) -> None:
         if self._closed:
             return
@@ -396,3 +416,352 @@ class SQLiteMemoryStore:
             memory_id=int(row["memory_id"]) if row["memory_id"] is not None else None,
             metadata=json.loads(row["metadata"]),
         )
+
+
+class PostgresMemoryStore:
+    def __init__(
+        self,
+        dsn: str | None = None,
+        memories_table: str | None = None,
+        audit_table: str | None = None,
+    ):
+        self.dsn = dsn or os.environ.get("WAVEMIND_POSTGRES_DSN")
+        if not self.dsn:
+            raise ValueError(
+                "Set WAVEMIND_POSTGRES_DSN to use the postgres storage backend"
+            )
+        try:
+            import psycopg
+            from psycopg.rows import dict_row
+        except ImportError as exc:
+            raise ImportError(
+                'Install PostgreSQL support with: pip install "wavemind[postgres]"'
+            ) from exc
+        self._psycopg = psycopg
+        self.memories_table = _safe_identifier(
+            memories_table
+            or os.environ.get("WAVEMIND_POSTGRES_MEMORIES_TABLE", "wavemind_memories"),
+            "WAVEMIND_POSTGRES_MEMORIES_TABLE",
+        )
+        self.audit_table = _safe_identifier(
+            audit_table
+            or os.environ.get("WAVEMIND_POSTGRES_AUDIT_TABLE", "wavemind_audit_events"),
+            "WAVEMIND_POSTGRES_AUDIT_TABLE",
+        )
+        self.conn = psycopg.connect(
+            self.dsn,
+            autocommit=True,
+            row_factory=dict_row,
+        )
+        self._closed = False
+        self.ensure_schema()
+
+    def __enter__(self) -> "PostgresMemoryStore":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def ensure_schema(self) -> None:
+        self.conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.memories_table} (
+                id BIGSERIAL PRIMARY KEY,
+                namespace TEXT NOT NULL,
+                text TEXT NOT NULL,
+                vector BYTEA NOT NULL,
+                vector_dim INTEGER NOT NULL,
+                pattern BYTEA NOT NULL,
+                pattern_shape TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                created_at DOUBLE PRECISION NOT NULL,
+                updated_at DOUBLE PRECISION NOT NULL,
+                expires_at DOUBLE PRECISION,
+                priority DOUBLE PRECISION NOT NULL,
+                access_count INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.memories_table}_namespace_idx "
+            f"ON {self.memories_table} (namespace)"
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.memories_table}_expires_at_idx "
+            f"ON {self.memories_table} (expires_at)"
+        )
+        self.conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.audit_table} (
+                id BIGSERIAL PRIMARY KEY,
+                created_at DOUBLE PRECISION NOT NULL,
+                action TEXT NOT NULL,
+                namespace TEXT,
+                memory_id BIGINT,
+                metadata TEXT NOT NULL
+            )
+            """
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.audit_table}_action_idx "
+            f"ON {self.audit_table} (action)"
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.audit_table}_namespace_idx "
+            f"ON {self.audit_table} (namespace)"
+        )
+        self.conn.execute(
+            f"CREATE INDEX IF NOT EXISTS {self.audit_table}_created_at_idx "
+            f"ON {self.audit_table} (created_at)"
+        )
+
+    def insert(self, record: MemoryRecord) -> int:
+        now = time.time()
+        record.created_at = record.created_at or now
+        record.updated_at = now
+        row = self.conn.execute(
+            f"""
+            INSERT INTO {self.memories_table} (
+                namespace, text, vector, vector_dim, pattern, pattern_shape,
+                tags, metadata, created_at, updated_at, expires_at, priority, access_count
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                record.namespace,
+                record.text,
+                _array_to_blob(record.vector),
+                int(record.vector.shape[0]),
+                _array_to_blob(record.pattern),
+                json.dumps(list(record.pattern.shape)),
+                json.dumps(list(record.tags), ensure_ascii=False),
+                json.dumps(record.metadata, ensure_ascii=False),
+                record.created_at,
+                record.updated_at,
+                record.expires_at,
+                float(record.priority),
+                int(record.access_count),
+            ),
+        ).fetchone()
+        record.id = int(_row_get(row, "id"))
+        return record.id
+
+    def get(self, id: int) -> MemoryRecord | None:
+        row = self.conn.execute(
+            f"SELECT * FROM {self.memories_table} WHERE id = %s",
+            (int(id),),
+        ).fetchone()
+        return self._row_to_record(row) if row else None
+
+    def list(
+        self,
+        namespace: str | None = None,
+        include_expired: bool = False,
+        tags: Iterable[str] | None = None,
+    ) -> list[MemoryRecord]:
+        params: list[Any] = []
+        where = []
+        if namespace is not None:
+            where.append("namespace = %s")
+            params.append(namespace)
+        if not include_expired:
+            where.append("(expires_at IS NULL OR expires_at > %s)")
+            params.append(time.time())
+        sql = f"SELECT * FROM {self.memories_table}"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        rows = self.conn.execute(sql, params).fetchall()
+        records = [self._row_to_record(row) for row in rows]
+        required_tags = set(tags or [])
+        if required_tags:
+            records = [
+                record
+                for record in records
+                if required_tags.issubset(set(record.tags))
+            ]
+        return records
+
+    def delete(
+        self,
+        id: int | None = None,
+        text: str | None = None,
+        namespace: str | None = None,
+    ) -> list[MemoryRecord]:
+        params: list[Any] = []
+        where = []
+        if id is not None:
+            where.append("id = %s")
+            params.append(int(id))
+        if text is not None:
+            where.append("text = %s")
+            params.append(text)
+        if namespace is not None:
+            where.append("namespace = %s")
+            params.append(namespace)
+        if not where:
+            raise ValueError("delete requires id or text")
+
+        sql_where = " AND ".join(where)
+        rows = self.conn.execute(
+            f"SELECT * FROM {self.memories_table} WHERE {sql_where}",
+            params,
+        ).fetchall()
+        records = [self._row_to_record(row) for row in rows]
+        self.conn.execute(
+            f"DELETE FROM {self.memories_table} WHERE {sql_where}",
+            params,
+        )
+        return records
+
+    def purge_expired(self) -> int:
+        rows = self.conn.execute(
+            f"""
+            DELETE FROM {self.memories_table}
+            WHERE expires_at IS NOT NULL AND expires_at <= %s
+            RETURNING id
+            """,
+            (time.time(),),
+        ).fetchall()
+        return len(rows)
+
+    def touch(self, id: int, priority_delta: float = 0.05) -> None:
+        self.conn.execute(
+            f"""
+            UPDATE {self.memories_table}
+            SET access_count = access_count + 1,
+                priority = priority + %s,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (float(priority_delta), time.time(), int(id)),
+        )
+
+    def log_audit_event(
+        self,
+        action: str,
+        namespace: str | None = None,
+        memory_id: int | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> int:
+        row = self.conn.execute(
+            f"""
+            INSERT INTO {self.audit_table} (
+                created_at, action, namespace, memory_id, metadata
+            ) VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                time.time(),
+                action,
+                namespace,
+                int(memory_id) if memory_id is not None else None,
+                json.dumps(metadata or {}, ensure_ascii=False),
+            ),
+        ).fetchone()
+        return int(_row_get(row, "id"))
+
+    def list_audit_events(
+        self,
+        namespace: str | None = None,
+        action: str | None = None,
+        limit: int = 100,
+    ) -> list[AuditEvent]:
+        params: list[Any] = []
+        where = []
+        if namespace is not None:
+            where.append("namespace = %s")
+            params.append(namespace)
+        if action is not None:
+            where.append("action = %s")
+            params.append(action)
+        sql = f"SELECT * FROM {self.audit_table}"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY created_at DESC, id DESC LIMIT %s"
+        params.append(max(0, int(limit)))
+        rows = self.conn.execute(sql, params).fetchall()
+        return [self._row_to_audit_event(row) for row in rows]
+
+    def audit_count(
+        self,
+        namespace: str | None = None,
+        action: str | None = None,
+    ) -> int:
+        params: list[Any] = []
+        where = []
+        if namespace is not None:
+            where.append("namespace = %s")
+            params.append(namespace)
+        if action is not None:
+            where.append("action = %s")
+            params.append(action)
+        sql = f"SELECT COUNT(*) AS count FROM {self.audit_table}"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        row = self.conn.execute(sql, params).fetchone()
+        return int(_row_get(row, "count"))
+
+    def count(self, namespace: str | None = None, include_expired: bool = False) -> int:
+        return len(self.list(namespace=namespace, include_expired=include_expired))
+
+    def commit(self) -> None:
+        commit = getattr(self.conn, "commit", None)
+        if callable(commit):
+            commit()
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self.conn.close()
+        self._closed = True
+
+    def _row_to_record(self, row: Any) -> MemoryRecord:
+        pattern_shape = json.loads(_row_get(row, "pattern_shape"))
+        vector_dim = int(_row_get(row, "vector_dim"))
+        return MemoryRecord(
+            id=int(_row_get(row, "id")),
+            namespace=_row_get(row, "namespace"),
+            text=_row_get(row, "text"),
+            vector=_array_from_blob(_row_get(row, "vector"), (vector_dim,)),
+            pattern=_array_from_blob(_row_get(row, "pattern"), pattern_shape),
+            tags=tuple(json.loads(_row_get(row, "tags"))),
+            metadata=json.loads(_row_get(row, "metadata")),
+            created_at=float(_row_get(row, "created_at")),
+            updated_at=float(_row_get(row, "updated_at")),
+            expires_at=_row_get(row, "expires_at"),
+            priority=float(_row_get(row, "priority")),
+            access_count=int(_row_get(row, "access_count")),
+        )
+
+    def _row_to_audit_event(self, row: Any) -> AuditEvent:
+        memory_id = _row_get(row, "memory_id")
+        return AuditEvent(
+            id=int(_row_get(row, "id")),
+            created_at=float(_row_get(row, "created_at")),
+            action=_row_get(row, "action"),
+            namespace=_row_get(row, "namespace"),
+            memory_id=int(memory_id) if memory_id is not None else None,
+            metadata=json.loads(_row_get(row, "metadata")),
+        )
+
+
+def create_memory_store(
+    kind: str | None = None,
+    path: str | Path | None = None,
+    postgres_dsn: str | None = None,
+):
+    kind = (kind or os.environ.get("WAVEMIND_STORE", "sqlite")).lower()
+    if kind in {"sqlite", "local"}:
+        return SQLiteMemoryStore(path)
+    if kind in {"postgres", "postgresql"}:
+        return PostgresMemoryStore(dsn=postgres_dsn)
+    raise ValueError(
+        f"Unknown memory store kind: {kind}. Choose an explicit store: sqlite or postgres."
+    )

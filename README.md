@@ -218,6 +218,30 @@ Useful storage patterns:
 
 Keep the SQLite file out of git. Back it up like any other application state.
 
+## Storage Backends
+
+SQLite is the default source of truth. For multi-tenant production deployments,
+WaveMind also exposes PostgreSQL as an explicit source-of-truth backend:
+
+```sh
+export WAVEMIND_STORE="postgres"
+export WAVEMIND_POSTGRES_DSN="postgresql://user:password@localhost:5432/wavemind"
+wavemind --store postgres remember "Andrey is a trader" --namespace user:andrey
+wavemind --store postgres query "trader" --namespace user:andrey
+```
+
+Optional table environment variables:
+
+- `WAVEMIND_POSTGRES_MEMORIES_TABLE`, default `wavemind_memories`.
+- `WAVEMIND_POSTGRES_AUDIT_TABLE`, default `wavemind_audit_events`.
+
+Postgres storage is separate from `pgvector`: Postgres storage keeps memories,
+metadata, TTL, audit events, and vectors as durable application state; pgvector
+is a candidate index backend for nearest-neighbor search. You can use SQLite
+storage with pgvector, Postgres storage with NumPy/FAISS/Qdrant, or eventually
+Postgres storage plus pgvector when you want both state and vector search inside
+PostgreSQL.
+
 ## Backup And Restore
 
 Exact one-file backup:
@@ -241,6 +265,9 @@ wavemind restore --from ./backups/wavemind-20260630-120000.sqlite3 --to ./state/
 The backup command uses SQLite's backup API, so it is safe to run while the
 process is alive. Restore is intentionally an explicit command and refuses to
 overwrite an existing database unless `--overwrite` is passed.
+For Postgres storage, use database-native backup tooling such as `pg_dump`,
+managed snapshots, or point-in-time recovery instead of WaveMind's SQLite file
+backup command.
 
 ## HTTP API
 

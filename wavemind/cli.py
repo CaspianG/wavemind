@@ -27,6 +27,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="WaveMind persistent dynamic memory engine",
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
+    parser.add_argument("--store", default=None, choices=["sqlite", "postgres"])
+    parser.add_argument("--postgres-dsn", default=None)
     parser.add_argument(
         "--index",
         default="numpy",
@@ -111,6 +113,8 @@ def make_mind(args) -> WaveMind:
     db_path = Path(args.db) if args.db else Path.cwd() / "wavemind.sqlite3"
     return WaveMind(
         db_path=db_path,
+        store_kind=args.store,
+        postgres_dsn=args.postgres_dsn,
         width=args.width,
         height=args.height,
         layers=args.layers,

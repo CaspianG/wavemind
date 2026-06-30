@@ -243,6 +243,8 @@ def build_default_mind() -> WaveMind:
     return WaveMind(
         db_path=db_path,
         encoder=encoder,
+        store_kind=os.environ.get("WAVEMIND_STORE"),
+        postgres_dsn=os.environ.get("WAVEMIND_POSTGRES_DSN"),
         index_kind=index_kind,
         score_threshold=score_threshold,
         graph_weight=float(os.environ.get("WAVEMIND_GRAPH_WEIGHT", "0.0")),
