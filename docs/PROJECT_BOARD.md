@@ -19,13 +19,15 @@ Use this as the canonical GitHub Projects layout for public roadmap work.
 5. **Launch**
    - Filter: `label:marketing` or `label:launch`.
    - Track publish-ready posts, launch channels, feedback, and follow-up issues.
+   - Use Area `Docs` until a dedicated `Marketing` single-select option is
+     added to the live GitHub Project.
 
 ## Fields
 
 | Field | Type | Values |
 |---|---|---|
 | Status | Single select | Backlog, Ready, In progress, Review, Done |
-| Area | Single select | Indexing, Observability, Benchmarks, Integration, Docs, Security, Marketing |
+| Area | Single select | Indexing, Observability, Benchmarks, Integration, Docs, Security |
 | Priority | Single select | P0, P1, P2, P3 |
 | Release | Text | v2.1, v2.2, v3.0 |
 | Evidence | Text | Benchmark result, test path, or docs link |
