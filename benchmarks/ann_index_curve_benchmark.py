@@ -100,19 +100,22 @@ def run_qdrant(
     top_k: int,
     service: bool = False,
 ) -> dict[str, Any]:
+    if service:
+        url = os.environ.get("WAVEMIND_QDRANT_URL")
+        if not url:
+            raise RuntimeError("Set WAVEMIND_QDRANT_URL to run the Qdrant service profile")
+    else:
+        url = ":memory:"
     try:
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
     except ImportError as exc:
         raise RuntimeError("Install qdrant-client to run the Qdrant ANN curve") from exc
     if service:
-        url = os.environ.get("WAVEMIND_QDRANT_URL")
-        if not url:
-            raise RuntimeError("Set WAVEMIND_QDRANT_URL to run the Qdrant service profile")
         client = QdrantClient(url=url, api_key=os.environ.get("WAVEMIND_QDRANT_API_KEY"))
         engine = "Qdrant service"
     else:
-        client = QdrantClient(":memory:")
+        client = QdrantClient(url)
         engine = "Qdrant local"
     collection_name = f"wavemind_ann_curve_{time.time_ns()}"
     try:
