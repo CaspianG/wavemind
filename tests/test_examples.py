@@ -78,10 +78,32 @@ def test_offline_demo_prints_recall_flow():
         check=True,
     )
 
-    assert '✓ Remembered: "' in result.stdout
+    assert '[ok] Remembered: "' in result.stdout
     assert 'Query: "' in result.stdout
-    assert "→ Result 1" in result.stdout
-    assert "→ Result 2" in result.stdout
+    assert "-> Result 1" in result.stdout
+    assert "-> Result 2" in result.stdout
+
+
+def test_dynamic_memory_demo_prints_core_differentiators():
+    env = os.environ.copy()
+    project_root = Path(__file__).resolve().parents[1]
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "examples/dynamic_memory_demo.py"],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "WaveMind dynamic memory demo" in result.stdout
+    assert "[ok] corrected newer budget outranks the stale budget" in result.stdout
+    assert "[ok] namespace isolation keeps Maria separate from Andrey" in result.stdout
+    assert "[ok] expired temporary memory is not recalled" in result.stdout
+    assert "[ok] numpy-exact healthy=True expected=3 vectors=3" in result.stdout
 
 
 def test_agent_example_help_runs_from_checkout():

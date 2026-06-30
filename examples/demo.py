@@ -33,12 +33,12 @@ def main() -> int:
 
     for text in memories:
         memory.remember(text, namespace="demo")
-        print(f'✓ Remembered: "{text}"')
+        print(f'[ok] Remembered: "{text}"')
 
     query = "Andrey trader agent"
     print(f'\nQuery: "{query}"')
     for index, result in enumerate(memory.query(query, namespace="demo", top_k=2), start=1):
-        print(f'→ Result {index} ({result.score:.2f}): "{result.text}"')
+        print(f'-> Result {index} ({result.score:.2f}): "{result.text}"')
 
     return 0
 

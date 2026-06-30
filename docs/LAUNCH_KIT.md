@@ -64,11 +64,15 @@ question first-class.
 - Namespaces, tags, TTL, score thresholds, audit log, backup/restore.
 - Prometheus-compatible metrics and optional OpenTelemetry traces.
 - Benchmarks checked into the repository with commands and JSON results.
+- Offline demos: `examples/demo.py` and `examples/dynamic_memory_demo.py`.
+- Use-case gallery: `docs/USE_CASES.md`.
 
 ## GitHub Page Checklist
 
 - README explains the problem in the first viewport.
 - README has a terminal demo and a visual card.
+- Dynamic demo script is documented in `docs/DEMO_SCRIPT.md`.
+- Use-case gallery is linked from README.
 - Badges point to `CaspianG/wavemind`.
 - Topics include: `ai-agents`, `memory`, `vector-search`, `llm`, `rag`,
   `python`, `sqlite`, `langchain`.

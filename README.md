@@ -23,6 +23,7 @@ namespaces, and keeps the final recall set small enough for real applications.
 [Quick Start](#quick-start) |
 [LangChain](#langchain-memory) |
 [OpenClaw](#openclaw-integration) |
+[Use Cases](docs/USE_CASES.md) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
 [Roadmap](#roadmap) |
@@ -112,6 +113,15 @@ Query: "Andrey trader preferences"
 ```
 
 The demo is offline, keyless, and uses the built-in hash encoder.
+
+To see the dynamic-memory behavior that plain vector search does not provide:
+
+```sh
+python examples/dynamic_memory_demo.py
+```
+
+It demonstrates a corrected fact outranking a stale fact, temporary memory
+expiring, namespace isolation, and index-health reporting.
 
 ## Quick Start
 
@@ -437,6 +447,8 @@ That makes it usable in more than LangChain:
 | Temporary context | Store with `ttl_seconds=...` so stale memory expires automatically. |
 | Preference/profile memory | Store with tags such as `profile`, `preference`, `project`, `decision`. |
 | Corrections/privacy | Use `forget()` or namespace deletion workflows. |
+
+More examples: [`docs/USE_CASES.md`](docs/USE_CASES.md).
 
 Framework examples in this repository:
 
