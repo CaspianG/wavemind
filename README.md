@@ -428,10 +428,16 @@ Framework examples in this repository:
 | LangChain memory | `examples/langchain_memory.py` |
 | OpenAI/OpenRouter-style agent loop | `examples/agent_with_memory.py` |
 | LangGraph hooks | `wavemind.integrations.langgraph`, `examples/framework_integrations.py` |
-| LlamaIndex-style retriever | `wavemind.integrations.llamaindex`, `examples/framework_integrations.py` |
+| LlamaIndex-style retriever | `wavemind.integrations.llamaindex`, `examples/llamaindex_retriever.py` |
 | CrewAI-style tools | `wavemind.integrations.crewai`, `examples/framework_integrations.py` |
 | AutoGen-style hooks | `wavemind.integrations.autogen`, `examples/framework_integrations.py` |
 | Namespace sharding | `examples/sharded_memory.py` |
+
+Run the dedicated offline LlamaIndex-style retriever example:
+
+```sh
+python examples/llamaindex_retriever.py
+```
 
 Minimal custom agent loop:
 

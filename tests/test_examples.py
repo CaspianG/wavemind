@@ -26,6 +26,29 @@ def test_framework_integrations_example_runs_from_checkout():
     assert "AutoGen-style hooks:" in result.stdout
 
 
+def test_llamaindex_retriever_example_runs_from_checkout():
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "examples/llamaindex_retriever.py"],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "Remembered 3 memories." in result.stdout
+    assert "WaveMindRetriever nodes:" in result.stdout
+    assert "Injected prompt:" in result.stdout
+    assert "Context helper:" in result.stdout
+    assert "Context information is below." in result.stdout
+    assert "WaveMind project uses offline retrieval" in result.stdout
+
+
 def test_sharded_memory_example_runs_from_temp_directory(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     env = os.environ.copy()
