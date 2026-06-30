@@ -23,11 +23,13 @@ policy matters more than raw vector-database scale:
 - Annoy exists as an ANN option, but current recall still needs tuning.
 - FAISS, pgvector, and Qdrant are exposed as explicit optional
   candidate-index backends.
+- FAISS can persist a validated index snapshot and id map for single-node
+  deployments where startup rebuild time matters.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
-- SQLite audit events and a Prometheus-compatible `/metrics` endpoint now cover
-  the first observability layer.
+- SQLite audit events, a Prometheus-compatible `/metrics` endpoint, and
+  optional OpenTelemetry traces now cover the first observability layer.
 - API key roles and opt-in rate limiting are available for FastAPI deployments.
 - SQLite backup, timestamped retention, restore, and admin-only HTTP backup are
   available as the first durability layer.
@@ -66,7 +68,9 @@ Priorities:
 - Support external vector services such as Qdrant for larger deployments.
   The first Qdrant candidate-index backend is available; the remaining work is
   service-mode latency, rebuild strategy, and operational health checks.
-- Rebuild and persist ANN indexes safely after batch imports or recovery.
+- Rebuild and persist ANN indexes safely after batch imports or recovery. The
+  first persisted FAISS snapshot path is implemented; production still needs
+  service-mode profiles and operational health checks.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
@@ -139,7 +143,8 @@ Near-term benchmark priorities:
 - Finish LoCoMo and LongMemEval answer generation, not retrieval only.
 - Compare against static vector retrieval, Chroma, Qdrant, Mem0-style memory,
   Zep-style memory, and LangGraph persistent memory patterns where possible.
-- Add service-mode Qdrant and FAISS baselines for fair latency curves.
+- Add service-mode Qdrant, pgvector, and persisted-FAISS baselines for fair
+  latency curves.
 - Add MIRACL Russian to prove multilingual retrieval behavior.
 - Add RAGBench once answer generation and citation/fidelity metrics are stable.
 - Keep every published result backed by a checked-in JSON artifact and a command
@@ -152,13 +157,15 @@ easy to improve.
 
 Priorities:
 
-- examples gallery for LangChain, LangGraph, CrewAI, AutoGen, OpenClaw,
-  LlamaIndex, namespace sharding, custom Python loops, and HTTP-only use;
+- examples gallery and package adapters for LangChain, LangGraph, CrewAI,
+  AutoGen, OpenClaw, LlamaIndex, namespace sharding, custom Python loops, and
+  HTTP-only use;
 - clear `good first issue` and `help wanted` labels;
 - GitHub Discussions for support and design proposals;
 - benchmark scripts that contributors can run locally;
 - Docker images for the API server and sidecar mode;
-- release automation and release checklist;
+- release automation, generated release-note categories, labels spec, and
+  release checklist;
 - support and security policy docs;
 - Helm chart for Kubernetes deployments after the server path is stable;
 - short technical posts explaining stale memory, corrections, namespaces,
@@ -203,13 +210,13 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
-- FAISS candidate index with persisted rebuilds.
+- Service-mode benchmark profiles for persisted FAISS, Qdrant, and pgvector.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
 - Service-mode Qdrant latency baseline.
 - Better README examples for non-agent use cases.
-- Integration examples for LangGraph, LlamaIndex, CrewAI, and AutoGen.
+- Harden integration adapters for LangGraph, LlamaIndex, CrewAI, and AutoGen.
 
 ### Medium Term: 3 To 6 Months
 
@@ -217,7 +224,8 @@ Enterprise requirements:
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
 - Docker image and Helm chart for API/sidecar deployment.
-- Observability: Prometheus metrics and OpenTelemetry tracing.
+- Observability: richer Prometheus metrics, trace dashboards, alert examples,
+  and index-health telemetry.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
 - Community benchmark dashboard generated from checked-in result JSON.

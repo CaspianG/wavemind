@@ -1,0 +1,33 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - github-actions
+  categories:
+    - title: Production readiness
+      labels:
+        - production
+        - observability
+        - security
+    - title: Scale and indexing
+      labels:
+        - indexing
+        - pgvector
+        - qdrant
+        - faiss
+        - benchmark
+    - title: Agent integrations
+      labels:
+        - integration
+        - langchain
+        - langgraph
+        - llamaindex
+        - crewai
+        - autogen
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Other changes
+      labels:
+        - "*"

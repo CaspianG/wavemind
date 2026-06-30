@@ -4,6 +4,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable
 
 import numpy as np
@@ -205,7 +206,12 @@ class QuantizedVectorIndex:
 class FaissVectorIndex(NumpyVectorIndex):
     name = "faiss-flat-ip"
 
-    def __init__(self, vector_dim: int):
+    def __init__(
+        self,
+        vector_dim: int,
+        index_path: str | Path | None = None,
+        autosave: bool | None = None,
+    ):
         try:
             import faiss
         except ImportError as exc:
@@ -215,24 +221,53 @@ class FaissVectorIndex(NumpyVectorIndex):
         self._index = faiss.IndexFlatIP(self.vector_dim)
         self._id_order: list[int] = []
         self._ann_dirty = True
+        env_path = os.environ.get("WAVEMIND_FAISS_PATH")
+        self.index_path = Path(index_path or env_path).expanduser() if index_path or env_path else None
+        if autosave is None:
+            autosave = os.environ.get("WAVEMIND_FAISS_AUTOSAVE", "1").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        self.autosave = bool(autosave)
+        self.loaded_from_persisted = False
+
+    @property
+    def metadata_path(self) -> Path | None:
+        if self.index_path is None:
+            return None
+        return self.index_path.with_name(self.index_path.name + ".ids.json")
 
     def build(self, records: Iterable) -> None:
+        records = list(records)
         self._vectors.clear()
         for record in records:
-            self._vectors[int(record.id)] = _normalize(record.vector)
+            if record.id is not None:
+                self._vectors[int(record.id)] = _normalize(record.vector)
         self._dirty = True
         self._ann_dirty = True
+        expected_ids = sorted(int(record.id) for record in records if record.id is not None)
+        if self._load_persisted(expected_ids=expected_ids):
+            return
         self._ensure_ann()
+        self._save_persisted()
 
     def add(self, id: int, vector: np.ndarray) -> None:
         self._vectors[int(id)] = _normalize(vector)
         self._dirty = True
         self._ann_dirty = True
+        if self.autosave and self.index_path is not None:
+            self._ensure_ann()
+            self._save_persisted()
 
     def remove(self, id: int) -> None:
         self._vectors.pop(int(id), None)
         self._dirty = True
         self._ann_dirty = True
+        if self.autosave and self.index_path is not None:
+            self._ensure_ann()
+            self._save_persisted()
 
     def _ensure_ann(self) -> None:
         if not self._ann_dirty:
@@ -243,6 +278,50 @@ class FaissVectorIndex(NumpyVectorIndex):
         if items:
             self._index.add(np.stack([vector for _, vector in items]).astype(np.float32))
         self._ann_dirty = False
+        self.loaded_from_persisted = False
+
+    def _load_persisted(self, expected_ids: list[int]) -> bool:
+        metadata_path = self.metadata_path
+        if self.index_path is None or metadata_path is None:
+            return False
+        if not self.index_path.exists() or not metadata_path.exists():
+            return False
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return False
+        ids = [int(id) for id in metadata.get("ids", [])]
+        if int(metadata.get("vector_dim", -1)) != self.vector_dim:
+            return False
+        if ids != expected_ids:
+            return False
+        try:
+            self._index = self._faiss.read_index(str(self.index_path))
+        except Exception:
+            return False
+        if getattr(self._index, "d", self.vector_dim) != self.vector_dim:
+            return False
+        self._id_order = ids
+        self._ann_dirty = False
+        self.loaded_from_persisted = True
+        return True
+
+    def _save_persisted(self) -> None:
+        metadata_path = self.metadata_path
+        if self.index_path is None or metadata_path is None:
+            return
+        self.index_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata_path.parent.mkdir(parents=True, exist_ok=True)
+        self._faiss.write_index(self._index, str(self.index_path))
+        metadata = {
+            "backend": self.name,
+            "vector_dim": self.vector_dim,
+            "ids": self._id_order,
+        }
+        metadata_path.write_text(
+            json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
     def _ann_search_limit(self, top_k: int, allowed_ids: set[int] | None) -> int:
         total = len(self._vectors)
@@ -740,6 +819,11 @@ def create_vector_index(kind: str, vector_dim: int):
         return QuantizedVectorIndex(vector_dim)
     if kind == "faiss":
         return FaissVectorIndex(vector_dim)
+    if kind in {"faiss-persisted", "persisted-faiss"}:
+        path = os.environ.get("WAVEMIND_FAISS_PATH")
+        if not path:
+            raise ValueError("Set WAVEMIND_FAISS_PATH to use the persisted FAISS backend")
+        return FaissVectorIndex(vector_dim, index_path=path)
     if kind == "annoy":
         return AnnoyVectorIndex(vector_dim)
     if kind in {"pgvector", "postgres", "postgresql"}:

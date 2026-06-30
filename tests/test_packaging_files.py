@@ -44,6 +44,15 @@ def test_indexes_extra_installs_qdrant_client():
     assert "qdrant-client>=1.9" in optional_requirements
 
 
+def test_otel_and_production_extras_are_available():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert "otel = [" in pyproject
+    assert '"opentelemetry-sdk>=1.25"' in pyproject
+    assert "production = [" in pyproject
+    assert '"opentelemetry-instrumentation-fastapi>=0.46b0"' in pyproject
+
+
 def test_langchain_extra_installs_classic_memory_api():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 
@@ -121,6 +130,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include SUPPORT.md" in manifest
     assert "include docs/ROADMAP.md" in manifest
     assert "include docs/RELEASE.md" in manifest
+    assert "include docs/PROJECT_BOARD.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include examples/*.py" in manifest

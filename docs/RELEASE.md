@@ -23,7 +23,13 @@ python -m twine check dist\*
 ```
 
 4. Commit the version bump.
-5. Create and push a tag:
+5. Confirm release notes categories and labels:
+
+```sh
+git diff -- .github/release.yml .github/labels.yml
+```
+
+6. Create and push a tag:
 
 ```sh
 git tag vX.Y.Z
@@ -34,6 +40,8 @@ git push origin main --tags
 
 - `.github/workflows/release.yml` creates a GitHub Release and uploads built
   artifacts for tags that match `v*`.
+- `.github/release.yml` groups generated release notes into production,
+  indexing, integrations, and documentation sections.
 - `.github/workflows/publish.yml` publishes to PyPI through trusted publishing
   when the `pypi` environment is configured.
 

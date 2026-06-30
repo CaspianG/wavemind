@@ -7,7 +7,7 @@ from .encoders import (
     create_text_encoder,
 )
 from .field_graph import MemoryFieldGraph
-from .indexes import PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
+from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import (
     AuditEvent,
@@ -17,10 +17,11 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.0.5"
+__version__ = "2.1.0"
 
 __all__ = [
     "FieldProjector",
+    "FaissVectorIndex",
     "HashingTextEncoder",
     "AuditEvent",
     "MemoryFieldGraph",

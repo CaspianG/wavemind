@@ -18,6 +18,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import create_vector_index
+from .observability import trace_span
 from .storage import AuditEvent, MemoryRecord, create_memory_store
 
 
@@ -207,8 +208,16 @@ class WaveMind:
         priority: float = 1.0,
         strength: float = 1.0,
     ) -> int:
-        vector = self.encoder.encode_vector(text)
-        pattern = self.projector.to_pattern(vector)
+        with trace_span(
+            "wavemind.remember.encode",
+            {
+                "wavemind.namespace": namespace,
+                "wavemind.text_length": len(text),
+                "wavemind.vector_dim": self.encoder.vector_dim,
+            },
+        ):
+            vector = self.encoder.encode_vector(text)
+            pattern = self.projector.to_pattern(vector)
         expires_at = time.time() + ttl_seconds if ttl_seconds is not None else None
         record = MemoryRecord(
             text=text,
@@ -220,14 +229,23 @@ class WaveMind:
             expires_at=expires_at,
             priority=priority,
         )
-        id = self.store.insert(record)
+        with trace_span("wavemind.remember.store", {"wavemind.namespace": namespace}):
+            id = self.store.insert(record)
         record.id = id
         self._cache_record(record)
-        self.index.add(id, vector)
+        with trace_span(
+            "wavemind.remember.index",
+            {
+                "wavemind.index": getattr(self.index, "name", type(self.index).__name__),
+                "wavemind.memory_id": int(id),
+            },
+        ):
+            self.index.add(id, vector)
         self._mark_graph_dirty()
-        self.field.feed(pattern, strength=strength * priority)
-        self.field.evolve(self._evolve_n)
-        self._refresh_field_magnitude()
+        with trace_span("wavemind.remember.field", {"wavemind.evolve_steps": self._evolve_n}):
+            self.field.feed(pattern, strength=strength * priority)
+            self.field.evolve(self._evolve_n)
+            self._refresh_field_magnitude()
         self.store.log_audit_event(
             "remember",
             namespace=namespace,
@@ -253,14 +271,30 @@ class WaveMind:
         if not allowed_ids:
             return []
 
-        query_vector = self.encoder.encode_vector(text)
+        with trace_span(
+            "wavemind.query.encode",
+            {
+                "wavemind.namespace": namespace,
+                "wavemind.top_k": int(top_k),
+                "wavemind.allowed_ids": len(allowed_ids),
+            },
+        ):
+            query_vector = self.encoder.encode_vector(text)
 
         vector_top_k = max(top_k, self.rerank_k)
-        candidates = self.index.search(
-            query_vector,
-            top_k=vector_top_k,
-            allowed_ids=allowed_ids,
-        )
+        with trace_span(
+            "wavemind.query.index_search",
+            {
+                "wavemind.index": getattr(self.index, "name", type(self.index).__name__),
+                "wavemind.top_k": int(vector_top_k),
+                "wavemind.allowed_ids": len(allowed_ids),
+            },
+        ):
+            candidates = self.index.search(
+                query_vector,
+                top_k=vector_top_k,
+                allowed_ids=allowed_ids,
+            )
 
         threshold = self.score_threshold if min_score is None else float(min_score)
         query_tokens = self._tokens(text)
@@ -273,50 +307,65 @@ class WaveMind:
                 candidate_scores[id] = float(np.dot(query_vector, record.vector))
         graph_scores: dict[int, float] = {}
         if self.graph_weight > 0.0 and candidate_scores:
-            self._ensure_graph()
-            graph_scores = self.graph.propagate(
-                {id: max(0.0, score) for id, score in candidate_scores.items()},
-                allowed_ids=allowed_ids,
-                steps=self.graph_steps,
-            )
-            for id, _ in sorted(
-                graph_scores.items(),
-                key=lambda item: item[1],
-                reverse=True,
-            )[: max(0, self.graph_expand_k)]:
-                if id not in candidate_scores and id in self._records_by_id:
-                    record = self._records_by_id[id]
-                    candidate_scores[id] = float(np.dot(query_vector, record.vector))
+            with trace_span(
+                "wavemind.query.graph",
+                {
+                    "wavemind.graph_steps": self.graph_steps,
+                    "wavemind.candidate_count": len(candidate_scores),
+                },
+            ):
+                self._ensure_graph()
+                graph_scores = self.graph.propagate(
+                    {id: max(0.0, score) for id, score in candidate_scores.items()},
+                    allowed_ids=allowed_ids,
+                    steps=self.graph_steps,
+                )
+                for id, _ in sorted(
+                    graph_scores.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )[: max(0, self.graph_expand_k)]:
+                    if id not in candidate_scores and id in self._records_by_id:
+                        record = self._records_by_id[id]
+                        candidate_scores[id] = float(np.dot(query_vector, record.vector))
 
         results: list[QueryResult] = []
-        for candidate_id, vector_score in candidate_scores.items():
-            record = self._records_by_id[candidate_id]
-            field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
-            graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
-            priority_score = min(1.0, max(0.0, record.priority / 10.0))
-            lexical_score = self._lexical_match(query_tokens, record.id, record.text)
-            score = (
-                self.vector_weight * vector_score
-                + field_weight * field_score
-                + self.graph_weight * graph_score
-                + self.priority_weight * priority_score
-                + lexical_weight * lexical_score
-            )
-            if score < threshold:
-                continue
-            results.append(
-                QueryResult(
-                    id=int(record.id),
-                    text=record.text,
-                    score=float(score),
-                    vector_score=float(vector_score),
-                    field_score=float(field_score),
-                    graph_score=float(graph_score),
-                    namespace=record.namespace,
-                    tags=record.tags,
-                    metadata=record.metadata,
+        with trace_span(
+            "wavemind.query.rerank",
+            {
+                "wavemind.candidate_count": len(candidate_scores),
+                "wavemind.field_weight": field_weight,
+                "wavemind.lexical_weight": lexical_weight,
+            },
+        ):
+            for candidate_id, vector_score in candidate_scores.items():
+                record = self._records_by_id[candidate_id]
+                field_score = self._field_resonance(record.pattern) if field_weight > 0 else 0.0
+                graph_score = graph_scores.get(candidate_id, self.graph.energy(candidate_id) if self.graph_weight > 0 else 0.0)
+                priority_score = min(1.0, max(0.0, record.priority / 10.0))
+                lexical_score = self._lexical_match(query_tokens, record.id, record.text)
+                score = (
+                    self.vector_weight * vector_score
+                    + field_weight * field_score
+                    + self.graph_weight * graph_score
+                    + self.priority_weight * priority_score
+                    + lexical_weight * lexical_score
                 )
-            )
+                if score < threshold:
+                    continue
+                results.append(
+                    QueryResult(
+                        id=int(record.id),
+                        text=record.text,
+                        score=float(score),
+                        vector_score=float(vector_score),
+                        field_score=float(field_score),
+                        graph_score=float(graph_score),
+                        namespace=record.namespace,
+                        tags=record.tags,
+                        metadata=record.metadata,
+                    )
+                )
 
         results.sort(key=lambda item: item.score, reverse=True)
         selected = results[:top_k]
@@ -353,10 +402,25 @@ class WaveMind:
         text: str | None = None,
         namespace: str | None = None,
     ) -> int:
-        records = self.store.delete(id=id, text=text, namespace=namespace)
+        with trace_span(
+            "wavemind.forget.store",
+            {
+                "wavemind.namespace": namespace,
+                "wavemind.memory_id": id,
+                "wavemind.has_text": text is not None,
+            },
+        ):
+            records = self.store.delete(id=id, text=text, namespace=namespace)
         for record in records:
             if record.id is not None:
-                self.index.remove(record.id)
+                with trace_span(
+                    "wavemind.forget.index",
+                    {
+                        "wavemind.index": getattr(self.index, "name", type(self.index).__name__),
+                        "wavemind.memory_id": int(record.id),
+                    },
+                ):
+                    self.index.remove(record.id)
                 self._uncache_record(record.id)
                 self.graph.remove(record.id)
             self.field.forget(record.pattern, strength=0.7)
@@ -381,41 +445,48 @@ class WaveMind:
         keep_last: int | None = None,
         backup_prefix: str = "wavemind",
     ) -> Path | None:
-        commit = getattr(self.store, "commit", None)
-        if callable(commit):
-            commit()
-        if backup_path is not None:
-            backup_path = Path(backup_path)
-            if backup_path.suffix:
-                backup = getattr(self.store, "backup", None)
-                if not callable(backup):
-                    raise NotImplementedError(
-                        "This memory store does not support file backups. "
-                        "Use the database engine's native backup tooling."
+        with trace_span(
+            "wavemind.save",
+            {
+                "wavemind.backup_requested": backup_path is not None,
+                "wavemind.keep_last": keep_last,
+            },
+        ):
+            commit = getattr(self.store, "commit", None)
+            if callable(commit):
+                commit()
+            if backup_path is not None:
+                backup_path = Path(backup_path)
+                if backup_path.suffix:
+                    backup = getattr(self.store, "backup", None)
+                    if not callable(backup):
+                        raise NotImplementedError(
+                            "This memory store does not support file backups. "
+                            "Use the database engine's native backup tooling."
+                        )
+                    path = backup(backup_path)
+                else:
+                    backup_timestamped = getattr(self.store, "backup_timestamped", None)
+                    if not callable(backup_timestamped):
+                        raise NotImplementedError(
+                            "This memory store does not support timestamped file backups. "
+                            "Use the database engine's native backup tooling."
+                        )
+                    path = backup_timestamped(
+                        backup_path,
+                        prefix=backup_prefix,
+                        keep_last=keep_last,
                     )
-                path = backup(backup_path)
-            else:
-                backup_timestamped = getattr(self.store, "backup_timestamped", None)
-                if not callable(backup_timestamped):
-                    raise NotImplementedError(
-                        "This memory store does not support timestamped file backups. "
-                        "Use the database engine's native backup tooling."
-                    )
-                path = backup_timestamped(
-                    backup_path,
-                    prefix=backup_prefix,
-                    keep_last=keep_last,
+                self.store.log_audit_event(
+                    "backup",
+                    metadata={
+                        "destination": str(path),
+                        "keep_last": keep_last,
+                        "prefix": backup_prefix,
+                    },
                 )
-            self.store.log_audit_event(
-                "backup",
-                metadata={
-                    "destination": str(path),
-                    "keep_last": keep_last,
-                    "prefix": backup_prefix,
-                },
-            )
-            return path
-        return None
+                return path
+            return None
 
     def close(self) -> None:
         close_index = getattr(self.index, "close", None)
@@ -436,18 +507,22 @@ class WaveMind:
             pass
 
     def load(self) -> None:
-        records = self.store.list(include_expired=False)
-        self._build_cache(records)
-        self.index.build(records)
-        self._mark_graph_dirty()
-        if self.graph_weight > 0:
-            self._ensure_graph()
-        self.field.reset()
-        for record in records:
-            self.field.feed(record.pattern, strength=max(0.1, record.priority))
-        if records:
-            self.field.evolve(self._evolve_n)
-        self._refresh_field_magnitude()
+        with trace_span(
+            "wavemind.load",
+            {"wavemind.index": getattr(self.index, "name", type(self.index).__name__)},
+        ):
+            records = self.store.list(include_expired=False)
+            self._build_cache(records)
+            self.index.build(records)
+            self._mark_graph_dirty()
+            if self.graph_weight > 0:
+                self._ensure_graph()
+            self.field.reset()
+            for record in records:
+                self.field.feed(record.pattern, strength=max(0.1, record.priority))
+            if records:
+                self.field.evolve(self._evolve_n)
+            self._refresh_field_magnitude()
 
     def purge_expired(self) -> int:
         purged = self.store.purge_expired()

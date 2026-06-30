@@ -1,0 +1,54 @@
+- name: good first issue
+  color: "7057ff"
+  description: Good entry point for first-time contributors.
+- name: help wanted
+  color: "008672"
+  description: Maintainers would welcome external help.
+- name: benchmark
+  color: "1d76db"
+  description: Reproducible benchmark, dataset, or metric work.
+- name: production
+  color: "b60205"
+  description: Production hardening, reliability, or operations.
+- name: observability
+  color: "5319e7"
+  description: Metrics, traces, logs, and debugging.
+- name: indexing
+  color: "006b75"
+  description: Candidate indexes, ANN, FAISS, pgvector, Qdrant.
+- name: faiss
+  color: "0e8a16"
+  description: FAISS backend or benchmark work.
+- name: pgvector
+  color: "0e8a16"
+  description: PostgreSQL/pgvector backend or benchmark work.
+- name: qdrant
+  color: "0e8a16"
+  description: Qdrant backend or benchmark work.
+- name: integration
+  color: "fbca04"
+  description: Framework or platform integration.
+- name: langchain
+  color: "fbca04"
+  description: LangChain memory integration.
+- name: langgraph
+  color: "fbca04"
+  description: LangGraph integration.
+- name: llamaindex
+  color: "fbca04"
+  description: LlamaIndex integration.
+- name: crewai
+  color: "fbca04"
+  description: CrewAI integration.
+- name: autogen
+  color: "fbca04"
+  description: AutoGen integration.
+- name: documentation
+  color: "0075ca"
+  description: README, docs, examples, or website copy.
+- name: security
+  color: "d73a4a"
+  description: Auth, RBAC, audit, privacy, or compliance.
+- name: ignore-for-release
+  color: "ededed"
+  description: Exclude from generated release notes.

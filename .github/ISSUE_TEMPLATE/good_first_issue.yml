@@ -1,0 +1,29 @@
+name: Good first issue
+description: Small, scoped contribution task for new contributors.
+title: "[Good first issue]: "
+labels: ["good first issue", "help wanted"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be changed or improved?
+      placeholder: "Example: add a small LlamaIndex notebook that uses WaveMindRetriever."
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Likely files
+      description: Point contributors at the smallest relevant area.
+      placeholder: "examples/, wavemind/integrations/, tests/"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true before the issue is done?
+      placeholder: "- Test added\n- README/example updated\n- pytest -q passes"
+    validations:
+      required: true

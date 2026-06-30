@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavemind"
-version = "2.0.5"
+version = "2.1.0"
 description = "Local-first dynamic memory field with vector search and wave-field re-ranking"
 readme = "README.md"
 license = "MIT"
@@ -32,12 +32,28 @@ indexes = [
 postgres = [
   "psycopg[binary]>=3.1",
 ]
+otel = [
+  "opentelemetry-api>=1.25",
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp>=1.25",
+  "opentelemetry-instrumentation-fastapi>=0.46b0",
+]
 bench = [
   "chromadb>=1.0",
   "qdrant-client>=1.9",
 ]
 langchain = [
   "langchain-classic>=1.0",
+]
+production = [
+  "annoy>=1.17",
+  "faiss-cpu>=1.8; platform_system != 'Windows'",
+  "qdrant-client>=1.9",
+  "psycopg[binary]>=3.1",
+  "opentelemetry-api>=1.25",
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp>=1.25",
+  "opentelemetry-instrumentation-fastapi>=0.46b0",
 ]
 dev = [
   "pytest>=8",

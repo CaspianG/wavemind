@@ -60,6 +60,7 @@ disappear from recall after expiry.
 | A local data source you can inspect and back up | One SQLite file is the source of truth. |
 | Easy integration | Python API, CLI, FastAPI server, and LangChain memory class. |
 | Honest benchmarks | Public LoCoMo, LongMemEval, BEIR/SciFact, and local policy checks. |
+| Production hooks | API keys, rate limits, audit log, Prometheus metrics, OpenTelemetry traces, backups, and optional external indexes. |
 
 ```mermaid
 flowchart LR
@@ -149,8 +150,21 @@ backends:
 | `quantized` | default | Local int8-compressed candidate index. Useful for memory-footprint experiments; current kernel is approximate and not yet faster than NumPy. |
 | `annoy` | `pip install "wavemind[indexes]"` | Local ANN. Faster at larger N, but recall must be checked. |
 | `faiss` | `pip install "wavemind[indexes]"` | FAISS flat inner-product path where `faiss-cpu` is available. |
+| `faiss-persisted` | `pip install "wavemind[indexes]"` | FAISS with an explicit persisted index snapshot and id map. |
 | `pgvector` | `pip install "wavemind[postgres]"` | PostgreSQL/pgvector candidate index. SQLite can still remain the local source of truth. |
 | `qdrant` | `pip install "wavemind[indexes]"` | Qdrant service/local-mode candidate index. SQLite remains the source of truth; Qdrant stores vectors. |
+
+Persisted FAISS setup:
+
+```sh
+export WAVEMIND_FAISS_PATH="./state/wavemind.faiss"
+wavemind --index faiss-persisted remember "Andrey is a trader" --namespace demo
+wavemind --index faiss-persisted query "trader" --namespace demo
+```
+
+SQLite or Postgres remains the source of truth. The persisted FAISS files are a
+candidate-index snapshot and are validated against the current memory ids on
+load. If the snapshot does not match the stored memories, WaveMind rebuilds it.
 
 pgvector setup:
 
@@ -290,6 +304,7 @@ Operational endpoints:
 curl http://127.0.0.1:8000/stats?namespace=demo
 curl http://127.0.0.1:8000/audit?namespace=demo
 curl http://127.0.0.1:8000/metrics
+curl http://127.0.0.1:8000/observability
 curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
 ```
 
@@ -297,6 +312,22 @@ curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d
 `purge_expired`. Query audit is opt-in with `WAVEMIND_AUDIT_QUERIES=1` because
 writing an audit row for every query changes latency. `/metrics` returns a
 Prometheus-compatible text payload without adding a required dependency.
+
+OpenTelemetry traces are optional and off by default:
+
+```sh
+pip install "wavemind[otel]"
+export WAVEMIND_OTEL_ENABLED=1
+export WAVEMIND_OTEL_SERVICE_NAME=wavemind-api
+export WAVEMIND_OTEL_EXPORTER=otlp
+export WAVEMIND_OTEL_ENDPOINT="http://localhost:4318/v1/traces"
+wavemind --db ./app_memory.sqlite3 serve --host 127.0.0.1 --port 8000
+```
+
+Use `WAVEMIND_OTEL_EXPORTER=console` for local trace inspection. FastAPI
+requests are instrumented, and core memory phases such as encode, index search,
+graph propagation, reranking, load, and backup create spans when OpenTelemetry
+is enabled.
 
 Production API controls are opt-in:
 
@@ -375,7 +406,11 @@ That makes it usable in more than LangChain:
 
 | Use case | Integration style |
 |---|---|
-| LangChain or LangGraph agent | Use `WaveMindMemory` from `wavemind.integrations.langchain`. |
+| LangChain agent | Use `WaveMindMemory` from `wavemind.integrations.langchain`. |
+| LangGraph workflow | Use `make_recall_node()` and `make_persist_node()` from `wavemind.integrations.langgraph`. |
+| LlamaIndex pipeline | Use `WaveMindRetriever` from `wavemind.integrations.llamaindex`. |
+| CrewAI crew | Use `WaveMindCrewAITools` from `wavemind.integrations.crewai`. |
+| AutoGen loop | Use `WaveMindAutoGenMemory` from `wavemind.integrations.autogen`. |
 | Custom Python agent | Create one `WaveMind` instance and call `query()` before the LLM. |
 | Node, Go, Ruby, PHP, or no-code app | Run `wavemind serve` and call the HTTP API. |
 | Multi-user SaaS | Use `namespace="user:<id>"` or `namespace="tenant:<id>:agent:<id>"`. |
@@ -392,10 +427,10 @@ Framework examples in this repository:
 |---|---|
 | LangChain memory | `examples/langchain_memory.py` |
 | OpenAI/OpenRouter-style agent loop | `examples/agent_with_memory.py` |
-| LangGraph hooks | `examples/framework_integrations.py` |
-| LlamaIndex-style retriever | `examples/framework_integrations.py` |
-| CrewAI-style tools | `examples/framework_integrations.py` |
-| AutoGen-style hooks | `examples/framework_integrations.py` |
+| LangGraph hooks | `wavemind.integrations.langgraph`, `examples/framework_integrations.py` |
+| LlamaIndex-style retriever | `wavemind.integrations.llamaindex`, `examples/framework_integrations.py` |
+| CrewAI-style tools | `wavemind.integrations.crewai`, `examples/framework_integrations.py` |
+| AutoGen-style hooks | `wavemind.integrations.autogen`, `examples/framework_integrations.py` |
 | Namespace sharding | `examples/sharded_memory.py` |
 
 Minimal custom agent loop:
@@ -802,11 +837,23 @@ It generates normalized vectors, queries with noisy copies, and measures
 `recall@10` against exact cosine neighbors.
 
 ```sh
-python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy quantized annoy faiss qdrant --output benchmarks/ann_index_curve_results.json
+python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --dim 128 --queries 100 --top-k 10 --engines numpy quantized annoy faiss qdrant-local --output benchmarks/ann_index_curve_results.json
 ```
 
 Add `pgvector` to `--engines` when `WAVEMIND_PGVECTOR_DSN` points at a
 PostgreSQL database with pgvector enabled.
+Add `qdrant-service` when `WAVEMIND_QDRANT_URL` points at a running Qdrant
+service. Add `faiss-persisted` when `WAVEMIND_FAISS_PATH` points at the FAISS
+snapshot file to validate persisted-index startup behavior.
+
+Production profile example:
+
+```sh
+export WAVEMIND_FAISS_PATH="./state/ann-curve.faiss"
+export WAVEMIND_QDRANT_URL="http://localhost:6333"
+export WAVEMIND_PGVECTOR_DSN="postgresql://user:password@localhost:5432/wavemind"
+python benchmarks/ann_index_curve_benchmark.py --sizes 10000 50000 --dim 128 --queries 100 --top-k 10 --engines faiss-persisted qdrant-service pgvector --output benchmarks/production_index_profile_results.json
+```
 
 Checked-in 50000-vector point:
 
@@ -823,9 +870,10 @@ is faster than exact NumPy at 50000 vectors but loses too much recall with the
 current settings. The new `quantized` backend compresses vectors and keeps
 `0.934` recall@10 on this run, but the current Python/NumPy kernel is slower
 than exact NumPy; it is a memory-footprint baseline, not a latency win yet.
-FAISS and service-mode Qdrant remain the next production index paths to test.
-If FAISS is not installed, the runner marks `WaveMind faiss` as `skipped`
-instead of silently falling back to another backend.
+FAISS persistence, service-mode Qdrant, and pgvector are now explicit benchmark
+profiles. If a required package, service, or environment variable is missing,
+the runner marks that engine as `skipped` instead of silently falling back to
+another backend.
 
 ### Current Local Runs
 
@@ -986,16 +1034,20 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
-- The pgvector backend is currently a candidate-index backend, not a full
-  Postgres source-of-truth replacement for SQLite.
+- pgvector is a candidate-index backend. PostgreSQL source-of-truth storage is
+  also available separately, but migrations, PITR docs, and service benchmark
+  profiles still need more real deployment coverage.
 - The Qdrant backend is also a candidate-index backend. WaveMind rebuilds it
   from SQLite on load/build, so large service-mode deployments still need a
   measured rebuild strategy and index-health monitoring.
+- The persisted FAISS backend validates a snapshot against current memory ids
+  and avoids unnecessary FAISS rebuilds when the snapshot matches. It is still
+  a single-node flat-index path, not distributed HA.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
 - The LongMemEval result is retrieval-only. It is not a full LongMemEval answer-generation leaderboard-equivalent score.
-- Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; service-mode Qdrant should be benchmarked separately.
+- Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; use the `qdrant-service` benchmark profile before making production latency claims.
 - MTEB, MIRACL, LMEB, official VectorDBBench, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
 - Ollama answer generation is implemented, but the current machine has no local Ollama model available and the local Ollama API returns 502/connection-reset. The checked-in answer file is extractive smoke only, not an LLM score.
 - Public benchmark adapters require optional datasets, heavier dependencies, or running services. They are intentionally outside the minimal `pip install wavemind` path.
@@ -1008,20 +1060,21 @@ Full roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 Near-term priorities:
 
-- FAISS-first candidate index with persisted rebuilds.
-- Postgres source-of-truth prototype on top of the initial pgvector candidate
-  index.
+- Service-mode Qdrant, pgvector, and persisted-FAISS benchmark runs on a real
+  production-like machine.
+- Migration tooling and operational docs for Postgres source-of-truth storage.
 - Tune the new quantized int8 backend so compression does not cost more latency
   than exact NumPy on common workloads.
 - Service-mode Qdrant and FAISS latency baselines using the explicit Qdrant
   backend, not only the standalone Qdrant benchmark baseline.
 - LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.
-- More framework examples: LangGraph, LlamaIndex, CrewAI, AutoGen, OpenClaw,
-  and HTTP-only sidecar use.
+- Harden framework adapters: LangGraph, LlamaIndex, CrewAI, AutoGen,
+  OpenClaw, and HTTP-only sidecar use.
 - Faster dynamic re-ranking through smaller candidate windows, caching, and
   background updates.
-- Better observability: audit logs and Prometheus-compatible metrics are now
-  started; OpenTelemetry traces and richer backup/restore workflows are next.
+- Better production operations: OpenTelemetry is optional and implemented;
+  richer latency histograms, index-health metrics, alerting examples, and
+  restore drills are next.
 
 Longer-term direction:
 

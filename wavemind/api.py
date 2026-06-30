@@ -16,6 +16,7 @@ from . import __version__
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
+from .observability import configure_observability, instrument_fastapi_app
 
 
 logger = logging.getLogger("wavemind.api")
@@ -196,6 +197,14 @@ class AuditResponse(BaseModel):
     events: list[AuditEventResponse]
 
 
+class ObservabilityResponse(BaseModel):
+    enabled: bool
+    exporter: str
+    service_name: str
+    fastapi_instrumented: bool = False
+    reason: str | None = None
+
+
 def _metrics_text(stats: dict[str, Any]) -> str:
     metric_names = {
         "active_memories": "wavemind_active_memories",
@@ -258,6 +267,12 @@ def build_default_mind() -> WaveMind:
 def create_app(mind: WaveMind | None = None) -> FastAPI:
     logging.basicConfig(level=os.environ.get("WAVEMIND_LOG_LEVEL", "INFO"))
     app = FastAPI(title="WaveMind", version=__version__)
+    observability = configure_observability(service_version=__version__)
+    app.state.observability = observability.as_dict()
+    if observability.enabled:
+        app.state.observability["fastapi_instrumented"] = instrument_fastapi_app(app)
+    else:
+        app.state.observability["fastapi_instrumented"] = False
     app.state.mind = mind or build_default_mind()
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
@@ -337,6 +352,10 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             _metrics_text(app.state.mind.stats(namespace=namespace)),
             media_type="text/plain; version=0.0.4",
         )
+
+    @app.get("/observability", response_model=ObservabilityResponse, dependencies=[Depends(require_role("admin"))])
+    def observability() -> ObservabilityResponse:
+        return ObservabilityResponse(**app.state.observability)
 
     @app.get("/audit", response_model=AuditResponse, dependencies=[Depends(require_role("admin"))])
     def audit(

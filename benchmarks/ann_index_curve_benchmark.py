@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
 import sys
 import time
@@ -97,48 +98,72 @@ def run_qdrant(
     queries: np.ndarray,
     expected: list[set[int]],
     top_k: int,
+    service: bool = False,
 ) -> dict[str, Any]:
     try:
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
     except ImportError as exc:
         raise RuntimeError("Install qdrant-client to run the Qdrant ANN curve") from exc
-    client = QdrantClient(":memory:")
+    if service:
+        url = os.environ.get("WAVEMIND_QDRANT_URL")
+        if not url:
+            raise RuntimeError("Set WAVEMIND_QDRANT_URL to run the Qdrant service profile")
+        client = QdrantClient(url=url, api_key=os.environ.get("WAVEMIND_QDRANT_API_KEY"))
+        engine = "Qdrant service"
+    else:
+        client = QdrantClient(":memory:")
+        engine = "Qdrant local"
     collection_name = f"wavemind_ann_curve_{time.time_ns()}"
-    started = time.perf_counter()
-    client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=VectorParams(size=int(vectors.shape[1]), distance=Distance.COSINE),
-    )
-    points = [
-        PointStruct(id=index + 1, vector=vector.tolist())
-        for index, vector in enumerate(vectors)
-    ]
-    for offset in range(0, len(points), 1000):
-        client.upsert(collection_name=collection_name, points=points[offset : offset + 1000])
-    build_ms = (time.perf_counter() - started) * 1000.0
-    ids: list[list[int]] = []
-    latencies: list[float] = []
-    for query in queries:
+    try:
         started = time.perf_counter()
-        hits = list(
-            client.query_points(
-                collection_name=collection_name,
-                query=query.tolist(),
-                limit=top_k,
-                with_payload=False,
-            ).points
+        client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=int(vectors.shape[1]), distance=Distance.COSINE),
         )
-        latencies.append((time.perf_counter() - started) * 1000.0)
-        ids.append([int(hit.id) for hit in hits])
-    return {
-        "engine": "Qdrant local",
-        "recall_at_k": _recall_at_k(ids, expected, top_k),
-        "avg_latency_ms": statistics.mean(latencies) if latencies else 0.0,
-        "p95_latency_ms": _p95(latencies),
-        "build_ms": build_ms,
-        "queries": len(queries),
-    }
+        points = [
+            PointStruct(id=index + 1, vector=vector.tolist())
+            for index, vector in enumerate(vectors)
+        ]
+        for offset in range(0, len(points), 1000):
+            client.upsert(collection_name=collection_name, points=points[offset : offset + 1000])
+        build_ms = (time.perf_counter() - started) * 1000.0
+        ids: list[list[int]] = []
+        latencies: list[float] = []
+        for query in queries:
+            started = time.perf_counter()
+            hits = list(
+                client.query_points(
+                    collection_name=collection_name,
+                    query=query.tolist(),
+                    limit=top_k,
+                    with_payload=False,
+                ).points
+            )
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            ids.append([int(hit.id) for hit in hits])
+        return {
+            "engine": engine,
+            "recall_at_k": _recall_at_k(ids, expected, top_k),
+            "avg_latency_ms": statistics.mean(latencies) if latencies else 0.0,
+            "p95_latency_ms": _p95(latencies),
+            "build_ms": build_ms,
+            "queries": len(queries),
+        }
+    finally:
+        if os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() not in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
+            try:
+                client.delete_collection(collection_name=collection_name)
+            except Exception:
+                pass
+        close = getattr(client, "close", None)
+        if callable(close):
+            close()
 
 
 def run_size(
@@ -160,7 +185,7 @@ def run_size(
             results.append(run_wavemind_index("numpy", vectors, queries, expected, top_k))
         elif key in {"quantized", "int8"}:
             results.append(run_wavemind_index("quantized", vectors, queries, expected, top_k))
-        elif key in {"annoy", "faiss", "pgvector"}:
+        elif key in {"annoy", "faiss", "pgvector", "faiss-persisted", "persisted-faiss"}:
             try:
                 results.append(run_wavemind_index(key, vectors, queries, expected, top_k))
             except (ImportError, ValueError) as exc:
@@ -171,13 +196,24 @@ def run_size(
                         "reason": str(exc),
                     }
                 )
-        elif key == "qdrant":
+        elif key in {"qdrant", "qdrant-local"}:
             try:
-                results.append(run_qdrant(vectors, queries, expected, top_k))
+                results.append(run_qdrant(vectors, queries, expected, top_k, service=False))
             except RuntimeError as exc:
                 results.append(
                     {
                         "engine": "Qdrant local",
+                        "skipped": True,
+                        "reason": str(exc),
+                    }
+                )
+        elif key == "qdrant-service":
+            try:
+                results.append(run_qdrant(vectors, queries, expected, top_k, service=True))
+            except RuntimeError as exc:
+                results.append(
+                    {
+                        "engine": "Qdrant service",
                         "skipped": True,
                         "reason": str(exc),
                     }
@@ -262,8 +298,18 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["numpy", "quantized", "annoy", "faiss", "pgvector", "qdrant"],
-        default=["numpy", "quantized", "annoy", "faiss", "qdrant"],
+        choices=[
+            "numpy",
+            "quantized",
+            "annoy",
+            "faiss",
+            "faiss-persisted",
+            "pgvector",
+            "qdrant",
+            "qdrant-local",
+            "qdrant-service",
+        ],
+        default=["numpy", "quantized", "annoy", "faiss", "qdrant-local"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/ann_index_curve_results.json"))
     args = parser.parse_args()

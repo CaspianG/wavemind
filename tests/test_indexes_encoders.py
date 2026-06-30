@@ -1,4 +1,6 @@
+import json
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -12,6 +14,7 @@ from wavemind.encoders import (
 )
 from wavemind.indexes import (
     AnnoyVectorIndex,
+    FaissVectorIndex,
     NumpyVectorIndex,
     QuantizedVectorIndex,
     QdrantVectorIndex,
@@ -171,6 +174,71 @@ def test_annoy_vector_index_returns_cosine_neighbors_with_filters():
 
     assert [result.id for result in results] == [1, 3]
     assert results[0].score > results[1].score
+
+
+def test_faiss_vector_index_can_persist_and_reload(monkeypatch, tmp_path):
+    class FakeFaissIndex:
+        def __init__(self, dim):
+            self.d = dim
+            self.vectors = np.zeros((0, dim), dtype=np.float32)
+
+        def add(self, matrix):
+            self.vectors = np.asarray(matrix, dtype=np.float32)
+
+        def search(self, query, top_k):
+            scores = self.vectors @ np.asarray(query, dtype=np.float32)[0]
+            order = np.argsort(scores)[::-1][:top_k]
+            return scores[order].reshape(1, -1), order.astype(np.int64).reshape(1, -1)
+
+    def write_index(index, path):
+        payload = {
+            "dim": index.d,
+            "vectors": index.vectors.tolist(),
+        }
+        Path(path).write_text(json.dumps(payload), encoding="utf-8")
+
+    def read_index(path):
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        index = FakeFaissIndex(payload["dim"])
+        index.add(np.asarray(payload["vectors"], dtype=np.float32))
+        return index
+
+    fake_faiss = SimpleNamespace(
+        IndexFlatIP=FakeFaissIndex,
+        write_index=write_index,
+        read_index=read_index,
+    )
+    monkeypatch.setitem(sys.modules, "faiss", fake_faiss)
+
+    records = [
+        SimpleNamespace(id=1, vector=np.array([1.0, 0.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=2, vector=np.array([0.0, 1.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=3, vector=np.array([0.8, 0.2, 0.0], dtype=np.float32)),
+    ]
+    index_path = tmp_path / "vectors.faiss"
+    index = FaissVectorIndex(vector_dim=3, index_path=index_path)
+    index.build(records)
+
+    assert index_path.exists()
+    assert index.metadata_path is not None
+    assert index.metadata_path.exists()
+
+    reloaded = FaissVectorIndex(vector_dim=3, index_path=index_path)
+    reloaded.build(records)
+    results = reloaded.search(
+        np.array([1.0, 0.0, 0.0], dtype=np.float32),
+        top_k=2,
+    )
+
+    assert reloaded.loaded_from_persisted is True
+    assert [result.id for result in results] == [1, 3]
+
+
+def test_persisted_faiss_requires_explicit_path(monkeypatch):
+    monkeypatch.delenv("WAVEMIND_FAISS_PATH", raising=False)
+
+    with pytest.raises(ValueError, match="WAVEMIND_FAISS_PATH"):
+        create_vector_index("faiss-persisted", vector_dim=4)
 
 
 def test_index_factory_rejects_auto_to_avoid_silent_backend_switching():
