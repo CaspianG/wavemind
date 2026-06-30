@@ -122,6 +122,23 @@ def test_numpy_vector_index_returns_exact_cosine_neighbors_with_filters():
     assert results[0].score > results[1].score
 
 
+def test_numpy_vector_index_health_reports_missing_and_extra_ids():
+    index = NumpyVectorIndex(vector_dim=3)
+    index.add(1, np.array([1.0, 0.0, 0.0], dtype=np.float32))
+    index.add(99, np.array([0.0, 1.0, 0.0], dtype=np.float32))
+
+    health = index.health(expected_ids={1, 2}).as_dict()
+
+    assert health["healthy"] is False
+    assert health["exact"] is True
+    assert health["expected_count"] == 2
+    assert health["vector_count"] == 2
+    assert health["missing_count"] == 1
+    assert health["extra_count"] == 1
+    assert health["missing_ids_sample"] == [2]
+    assert health["extra_ids_sample"] == [99]
+
+
 def test_index_factory_creates_explicit_numpy_backend():
     index = create_vector_index("numpy", vector_dim=4)
     assert isinstance(index, NumpyVectorIndex)

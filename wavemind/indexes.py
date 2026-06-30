@@ -16,6 +16,98 @@ class IndexResult:
     score: float
 
 
+@dataclass(frozen=True)
+class IndexHealth:
+    backend: str
+    vector_dim: int
+    healthy: bool
+    exact: bool
+    expected_count: int | None = None
+    vector_count: int | None = None
+    missing_ids: tuple[int, ...] = ()
+    extra_ids: tuple[int, ...] = ()
+    dirty: bool = False
+    persisted: bool = False
+    loaded_from_persisted: bool = False
+    path: str | None = None
+    reason: str | None = None
+
+    @property
+    def missing_count(self) -> int:
+        return len(self.missing_ids)
+
+    @property
+    def extra_count(self) -> int:
+        return len(self.extra_ids)
+
+    def as_dict(self, sample: int = 20) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "backend": self.backend,
+            "healthy": self.healthy,
+            "exact": self.exact,
+            "vector_dim": self.vector_dim,
+            "expected_count": self.expected_count,
+            "vector_count": self.vector_count,
+            "missing_count": self.missing_count,
+            "extra_count": self.extra_count,
+            "missing_ids_sample": list(self.missing_ids[:sample]),
+            "extra_ids_sample": list(self.extra_ids[:sample]),
+            "dirty": self.dirty,
+            "persisted": self.persisted,
+            "loaded_from_persisted": self.loaded_from_persisted,
+            "path": self.path,
+        }
+        if self.reason:
+            payload["reason"] = self.reason
+        return payload
+
+
+def _index_health(
+    *,
+    backend: str,
+    vector_dim: int,
+    ids: Iterable[int] | None = None,
+    expected_ids: Iterable[int] | None = None,
+    vector_count: int | None = None,
+    dirty: bool = False,
+    persisted: bool = False,
+    loaded_from_persisted: bool = False,
+    path: str | None = None,
+    reason: str | None = None,
+) -> IndexHealth:
+    expected = None if expected_ids is None else {int(id) for id in expected_ids}
+    actual = None if ids is None else {int(id) for id in ids}
+    if vector_count is None and actual is not None:
+        vector_count = len(actual)
+    expected_count = None if expected is None else len(expected)
+    missing: tuple[int, ...] = ()
+    extra: tuple[int, ...] = ()
+    exact = actual is not None
+    if exact and expected is not None:
+        missing = tuple(sorted(expected - actual))
+        extra = tuple(sorted(actual - expected))
+        healthy = not missing and not extra
+    elif expected_count is not None and vector_count is not None:
+        healthy = expected_count == vector_count
+    else:
+        healthy = True
+    return IndexHealth(
+        backend=backend,
+        vector_dim=int(vector_dim),
+        healthy=healthy,
+        exact=exact,
+        expected_count=expected_count,
+        vector_count=vector_count,
+        missing_ids=missing,
+        extra_ids=extra,
+        dirty=dirty,
+        persisted=persisted,
+        loaded_from_persisted=loaded_from_persisted,
+        path=path,
+        reason=reason,
+    )
+
+
 def _normalize(vector: np.ndarray) -> np.ndarray:
     vector = np.asarray(vector, dtype=np.float32)
     norm = float(np.linalg.norm(vector))
@@ -115,6 +207,15 @@ class NumpyVectorIndex:
     def __len__(self) -> int:
         return len(self._vectors)
 
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        return _index_health(
+            backend=self.name,
+            vector_dim=self.vector_dim,
+            ids=self._vectors.keys(),
+            expected_ids=expected_ids,
+            dirty=self._dirty,
+        )
+
 
 class QuantizedVectorIndex:
     name = "quantized-int8"
@@ -201,6 +302,15 @@ class QuantizedVectorIndex:
 
     def __len__(self) -> int:
         return len(self._vectors)
+
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        return _index_health(
+            backend=self.name,
+            vector_dim=self.vector_dim,
+            ids=self._vectors.keys(),
+            expected_ids=expected_ids,
+            dirty=self._dirty,
+        )
 
 
 class FaissVectorIndex(NumpyVectorIndex):
@@ -362,6 +472,19 @@ class FaissVectorIndex(NumpyVectorIndex):
                 break
         return results
 
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        ids = self._vectors.keys() if self._ann_dirty else self._id_order
+        return _index_health(
+            backend=self.name,
+            vector_dim=self.vector_dim,
+            ids=ids,
+            expected_ids=expected_ids,
+            dirty=self._ann_dirty,
+            persisted=self.index_path is not None,
+            loaded_from_persisted=self.loaded_from_persisted,
+            path=str(self.index_path) if self.index_path is not None else None,
+        )
+
 
 class AnnoyVectorIndex(NumpyVectorIndex):
     name = "annoy-angular"
@@ -454,6 +577,16 @@ class AnnoyVectorIndex(NumpyVectorIndex):
             if len(results) >= top_k:
                 break
         return results
+
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        ids = self._vectors.keys() if self._ann_dirty else self._id_order
+        return _index_health(
+            backend=self.name,
+            vector_dim=self.vector_dim,
+            ids=ids,
+            expected_ids=expected_ids,
+            dirty=self._ann_dirty,
+        )
 
 
 class PgVectorIndex:
@@ -602,6 +735,33 @@ class PgVectorIndex:
                 (self.collection,),
             ).fetchone()[0]
         )
+
+    def ids(self) -> set[int]:
+        rows = self.conn.execute(
+            f"SELECT memory_id FROM {self.table} WHERE collection = %s",
+            (self.collection,),
+        ).fetchall()
+        return {int(row[0]) for row in rows}
+
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        try:
+            return _index_health(
+                backend=self.name,
+                vector_dim=self.vector_dim,
+                ids=self.ids(),
+                expected_ids=expected_ids,
+                dirty=False,
+            )
+        except Exception as exc:
+            return _index_health(
+                backend=self.name,
+                vector_dim=self.vector_dim,
+                ids=None,
+                expected_ids=expected_ids,
+                vector_count=len(self),
+                dirty=False,
+                reason=f"Exact pgvector id scan failed: {exc}",
+            )
 
     def close(self) -> None:
         if self._closed:
@@ -801,6 +961,45 @@ class QdrantVectorIndex:
                 exact=True,
             ).count
         )
+
+    def ids(self) -> set[int]:
+        scroll = getattr(self.client, "scroll", None)
+        if not callable(scroll):
+            raise RuntimeError("Qdrant client does not expose scroll")
+        ids: set[int] = set()
+        offset = None
+        while True:
+            points, offset = scroll(
+                collection_name=self.collection,
+                with_payload=True,
+                limit=1024,
+                offset=offset,
+            )
+            for point in points:
+                payload = getattr(point, "payload", None) or {}
+                ids.add(int(payload.get("memory_id", getattr(point, "id"))))
+            if offset is None:
+                return ids
+
+    def health(self, expected_ids: Iterable[int] | None = None) -> IndexHealth:
+        try:
+            return _index_health(
+                backend=self.name,
+                vector_dim=self.vector_dim,
+                ids=self.ids(),
+                expected_ids=expected_ids,
+                dirty=False,
+            )
+        except Exception as exc:
+            return _index_health(
+                backend=self.name,
+                vector_dim=self.vector_dim,
+                ids=None,
+                expected_ids=expected_ids,
+                vector_count=len(self),
+                dirty=False,
+                reason=f"Exact Qdrant id scan failed: {exc}",
+            )
 
     def close(self) -> None:
         if self._closed:

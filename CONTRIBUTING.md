@@ -92,6 +92,8 @@ Current scale roadmap:
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full roadmap.
 See [`docs/RELEASE.md`](docs/RELEASE.md) for release mechanics.
+See [`docs/LAUNCH_KIT.md`](docs/LAUNCH_KIT.md) for public positioning,
+benchmark-claim guardrails, and community launch drafts.
 
 ## Pull Request Style
 

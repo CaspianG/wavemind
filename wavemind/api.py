@@ -218,6 +218,11 @@ def _metrics_text(stats: dict[str, Any]) -> str:
         "graph_positive_edges": "wavemind_graph_positive_edges",
         "graph_negative_edges": "wavemind_graph_negative_edges",
         "graph_energy": "wavemind_graph_energy",
+        "index_healthy": "wavemind_index_healthy",
+        "index_expected_records": "wavemind_index_expected_records",
+        "index_vector_records": "wavemind_index_vector_records",
+        "index_missing_records": "wavemind_index_missing_records",
+        "index_extra_records": "wavemind_index_extra_records",
     }
     lines = [
         "# HELP wavemind_active_memories Active non-expired memories.",
@@ -345,6 +350,14 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.get("/stats", dependencies=[Depends(require_role("read"))])
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
+
+    @app.get("/index/health", dependencies=[Depends(require_role("read"))])
+    def index_health():
+        return app.state.mind.index_health()
+
+    @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
+    def rebuild_index():
+        return app.state.mind.rebuild_index()
 
     @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:

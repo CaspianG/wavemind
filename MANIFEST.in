@@ -12,7 +12,10 @@ include requirements-optional.txt
 include docs/ROADMAP.md
 include docs/RELEASE.md
 include docs/PROJECT_BOARD.md
+include docs/LAUNCH_KIT.md
+include docs/RU_LAUNCH_POSTS.md
 include docs/assets/benchmark-summary.svg
+include docs/assets/wavemind-social-card.svg
 include benchmarks/*.py
 include benchmarks/*.json
 include benchmarks/*.md

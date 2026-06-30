@@ -46,6 +46,12 @@
 - name: documentation
   color: "0075ca"
   description: README, docs, examples, or website copy.
+- name: marketing
+  color: "c5def5"
+  description: Launch copy, positioning, public posts, and community growth.
+- name: launch
+  color: "bfdadc"
+  description: Release launch checklist, distribution, and follow-up work.
 - name: security
   color: "d73a4a"
   description: Auth, RBAC, audit, privacy, or compliance.

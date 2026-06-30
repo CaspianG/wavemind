@@ -16,13 +16,16 @@ Use this as the canonical GitHub Projects layout for public roadmap work.
 4. **Integrations**
    - Filter: `label:integration`.
    - Track target framework, adapter status, example status, and tests.
+5. **Launch**
+   - Filter: `label:marketing` or `label:launch`.
+   - Track publish-ready posts, launch channels, feedback, and follow-up issues.
 
 ## Fields
 
 | Field | Type | Values |
 |---|---|---|
 | Status | Single select | Backlog, Ready, In progress, Review, Done |
-| Area | Single select | Indexing, Observability, Benchmarks, Integration, Docs, Security |
+| Area | Single select | Indexing, Observability, Benchmarks, Integration, Docs, Security, Marketing |
 | Priority | Single select | P0, P1, P2, P3 |
 | Release | Text | v2.1, v2.2, v3.0 |
 | Evidence | Text | Benchmark result, test path, or docs link |
@@ -37,4 +40,4 @@ Create these as public issues and add them to the board:
 | Persist FAISS index snapshots and validate reloads | indexing, faiss | P0 |
 | Run service-mode Qdrant and pgvector benchmark profiles | benchmark, qdrant, pgvector | P1 |
 | Promote LlamaIndex/CrewAI/AutoGen/LangGraph adapters from examples to package APIs | integration | P1 |
-| Publish benchmark report thread for HN/Reddit/LocalLLaMA | benchmark, documentation | P2 |
+| Publish benchmark report thread for HN/Reddit/LocalLLaMA | benchmark, documentation, marketing, launch | P2 |

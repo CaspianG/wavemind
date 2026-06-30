@@ -110,6 +110,32 @@ def test_query_audit_is_opt_in(tmp_path):
     mind.close()
 
 
+def test_index_health_and_rebuild_detect_index_drift(tmp_path):
+    mind = make_mind(tmp_path / "index-health.sqlite3")
+    try:
+        first_id = mind.remember("index health first memory", namespace="ops")
+        second_id = mind.remember("index health second memory", namespace="ops")
+
+        assert mind.index_health()["healthy"] is True
+
+        mind.index.remove(first_id)
+        drifted = mind.index_health()
+
+        assert drifted["healthy"] is False
+        assert drifted["missing_count"] == 1
+        assert drifted["missing_ids_sample"] == [first_id]
+
+        repaired = mind.rebuild_index()
+
+        assert repaired["healthy"] is True
+        assert repaired["vector_count"] == 2
+        assert mind.query("first memory", namespace="ops", top_k=1)[0].id == first_id
+        assert mind.query("second memory", namespace="ops", top_k=1)[0].id == second_id
+        assert mind.audit_events(action="index_rebuild", limit=1)[0].metadata["healthy"] is True
+    finally:
+        mind.close()
+
+
 def test_timestamped_backup_retention_and_restore(tmp_path):
     db_path = tmp_path / "memory.sqlite3"
     backup_dir = tmp_path / "backups"

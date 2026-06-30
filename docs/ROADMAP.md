@@ -25,6 +25,8 @@ policy matters more than raw vector-database scale:
   candidate-index backends.
 - FAISS can persist a validated index snapshot and id map for single-node
   deployments where startup rebuild time matters.
+- Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
+  rebuild operations, and Prometheus-compatible index-health metrics.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
@@ -70,7 +72,7 @@ Priorities:
   service-mode latency, rebuild strategy, and operational health checks.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
   first persisted FAISS snapshot path is implemented; production still needs
-  service-mode profiles and operational health checks.
+  service-mode profiles and deeper latency traces.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
@@ -225,7 +227,7 @@ Enterprise requirements:
   backups.
 - Docker image and Helm chart for API/sidecar deployment.
 - Observability: richer Prometheus metrics, trace dashboards, alert examples,
-  and index-health telemetry.
+  and latency histograms.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
 - Community benchmark dashboard generated from checked-in result JSON.

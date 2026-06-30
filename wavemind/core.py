@@ -524,6 +524,61 @@ class WaveMind:
                 self.field.evolve(self._evolve_n)
             self._refresh_field_magnitude()
 
+    def index_health(self) -> dict[str, Any]:
+        expected_ids = set(self._records_by_id)
+        health = getattr(self.index, "health", None)
+        if callable(health):
+            return health(expected_ids=expected_ids).as_dict()
+        vector_count = len(self.index) if hasattr(self.index, "__len__") else None
+        healthy = vector_count is None or vector_count == len(expected_ids)
+        return {
+            "backend": getattr(self.index, "name", type(self.index).__name__),
+            "healthy": healthy,
+            "exact": False,
+            "vector_dim": self.encoder.vector_dim,
+            "expected_count": len(expected_ids),
+            "vector_count": vector_count,
+            "missing_count": 0,
+            "extra_count": 0,
+            "missing_ids_sample": [],
+            "extra_ids_sample": [],
+            "dirty": False,
+            "persisted": False,
+            "loaded_from_persisted": False,
+            "path": None,
+            "reason": "Index backend does not expose exact health checks",
+        }
+
+    def rebuild_index(self) -> dict[str, Any]:
+        records = list(self._records_by_id.values())
+        with trace_span(
+            "wavemind.index.rebuild",
+            {
+                "wavemind.index": getattr(self.index, "name", type(self.index).__name__),
+                "wavemind.records": len(records),
+            },
+        ):
+            self.index.build(records)
+        health = self.index_health()
+        self.store.log_audit_event(
+            "index_rebuild",
+            metadata={
+                "backend": health["backend"],
+                "healthy": health["healthy"],
+                "expected_count": health["expected_count"],
+                "vector_count": health["vector_count"],
+                "missing_count": health["missing_count"],
+                "extra_count": health["extra_count"],
+            },
+        )
+        return health
+
+    def ensure_index_health(self, rebuild: bool = True) -> dict[str, Any]:
+        health = self.index_health()
+        if rebuild and not health["healthy"]:
+            return self.rebuild_index()
+        return health
+
     def purge_expired(self) -> int:
         purged = self.store.purge_expired()
         if purged:
@@ -543,6 +598,7 @@ class WaveMind:
         all_records = self.store.list(namespace=namespace, include_expired=True)
         expired = [record for record in all_records if record.is_expired]
         clusters = self.field.detect_clusters()
+        index_health = self.index_health()
         payload = {
             "active_memories": len(active),
             "expired_memories": len(expired),
@@ -552,6 +608,12 @@ class WaveMind:
             "clusters": len(clusters),
             "field_shape": f"{self.field.H}x{self.field.W}x{self.field.L}",
             "index": getattr(self.index, "name", type(self.index).__name__),
+            "index_healthy": index_health["healthy"],
+            "index_expected_records": index_health["expected_count"],
+            "index_vector_records": index_health["vector_count"],
+            "index_missing_records": index_health["missing_count"],
+            "index_extra_records": index_health["extra_count"],
+            "index_health": index_health,
             "vector_dim": self.encoder.vector_dim,
             "graph_enabled": self.graph_weight > 0.0,
         }

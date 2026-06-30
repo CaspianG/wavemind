@@ -42,11 +42,25 @@ def test_module_cli_remember_query_stats_and_backup(tmp_path):
     stats = run_cli("--db", str(db_path), "stats", "--namespace", "cli")
     assert "active_memories: 1" in stats.stdout
     assert "audit_events: 1" in stats.stdout
+    assert "index_healthy: True" in stats.stdout
+
+    index_health = run_cli("--db", str(db_path), "index-health", "--json")
+    health = json.loads(index_health.stdout)
+    assert health["healthy"] is True
+    assert health["expected_count"] == 1
+
+    rebuilt = run_cli("--db", str(db_path), "rebuild-index", "--json")
+    rebuild_health = json.loads(rebuilt.stdout)
+    assert rebuild_health["healthy"] is True
 
     audit = run_cli("--db", str(db_path), "audit", "--namespace", "cli", "--json")
     audit_events = json.loads(audit.stdout)
     assert audit_events[0]["action"] == "remember"
     assert audit_events[0]["namespace"] == "cli"
+
+    global_audit = run_cli("--db", str(db_path), "audit", "--json")
+    global_events = json.loads(global_audit.stdout)
+    assert global_events[0]["action"] == "index_rebuild"
 
     backup = run_cli("--db", str(db_path), "backup", "--out", str(backup_path))
     assert "backup:" in backup.stdout

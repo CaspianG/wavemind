@@ -32,7 +32,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--index",
         default="numpy",
-        choices=["numpy", "quantized", "faiss", "annoy", "pgvector", "qdrant"],
+        choices=[
+            "numpy",
+            "quantized",
+            "faiss",
+            "faiss-persisted",
+            "annoy",
+            "pgvector",
+            "qdrant",
+        ],
     )
     parser.add_argument("--encoder", default="hash", choices=["hash", "sentence"])
     parser.add_argument(
@@ -72,6 +80,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     stats = sub.add_parser("stats", help="Show memory stats")
     stats.add_argument("--namespace")
+
+    index_health = sub.add_parser("index-health", help="Check vector index consistency")
+    index_health.add_argument("--json", action="store_true")
+
+    rebuild_index = sub.add_parser("rebuild-index", help="Rebuild vector index from stored memories")
+    rebuild_index.add_argument("--json", action="store_true")
 
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
@@ -242,6 +256,22 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "stats":
         print_stats(mind.stats(namespace=args.namespace))
+        return 0
+
+    if args.command == "index-health":
+        health = mind.index_health()
+        if args.json:
+            print(json.dumps(health, ensure_ascii=False, indent=2))
+        else:
+            print_stats(health)
+        return 0
+
+    if args.command == "rebuild-index":
+        health = mind.rebuild_index()
+        if args.json:
+            print(json.dumps(health, ensure_ascii=False, indent=2))
+        else:
+            print_stats(health)
         return 0
 
     if args.command == "audit":

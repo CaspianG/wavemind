@@ -17,6 +17,8 @@ namespaces, and keeps the final recall set small enough for real applications.
 [![Tests](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml/badge.svg)](https://github.com/CaspianG/wavemind/actions/workflows/tests.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
+
 [Concept](#concept) |
 [Quick Start](#quick-start) |
 [LangChain](#langchain-memory) |
@@ -165,6 +167,16 @@ wavemind --index faiss-persisted query "trader" --namespace demo
 SQLite or Postgres remains the source of truth. The persisted FAISS files are a
 candidate-index snapshot and are validated against the current memory ids on
 load. If the snapshot does not match the stored memories, WaveMind rebuilds it.
+You can also check and rebuild the candidate index explicitly:
+
+```sh
+wavemind --index faiss-persisted index-health --json
+wavemind --index faiss-persisted rebuild-index
+```
+
+Index health compares durable memory ids against the candidate index. Local
+indexes report exact missing/extra ids; service backends report exact ids when
+the backend exposes an id scan and otherwise fall back to count-based health.
 
 pgvector setup:
 
@@ -305,6 +317,8 @@ curl http://127.0.0.1:8000/stats?namespace=demo
 curl http://127.0.0.1:8000/audit?namespace=demo
 curl http://127.0.0.1:8000/metrics
 curl http://127.0.0.1:8000/observability
+curl http://127.0.0.1:8000/index/health
+curl -X POST http://127.0.0.1:8000/index/rebuild
 curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
 ```
 
@@ -312,6 +326,9 @@ curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d
 `purge_expired`. Query audit is opt-in with `WAVEMIND_AUDIT_QUERIES=1` because
 writing an audit row for every query changes latency. `/metrics` returns a
 Prometheus-compatible text payload without adding a required dependency.
+`/index/health` reports source-of-truth versus candidate-index consistency.
+`/index/rebuild` rebuilds the candidate index from stored active memories and
+logs an `index_rebuild` audit event.
 
 OpenTelemetry traces are optional and off by default:
 
@@ -342,9 +359,9 @@ Role behavior:
 
 | role | Env var | Allows |
 |---|---|---|
-| read | `WAVEMIND_READ_KEYS` | `/query`, `/stats`, `/metrics` |
+| read | `WAVEMIND_READ_KEYS` | `/query`, `/stats`, `/metrics`, `/index/health` |
 | write | `WAVEMIND_WRITE_KEYS` | read actions plus `/remember` and `/import` |
-| admin | `WAVEMIND_ADMIN_KEYS` or `WAVEMIND_API_KEYS` | all actions, including `/audit`, `/backup`, and `/forget` |
+| admin | `WAVEMIND_ADMIN_KEYS` or `WAVEMIND_API_KEYS` | all actions, including `/audit`, `/backup`, `/index/rebuild`, and `/forget` |
 
 Keys are accepted through `Authorization: Bearer <key>` or `X-API-Key: <key>`.
 If no key env vars are set, authentication is disabled for local development.
@@ -1057,6 +1074,7 @@ WaveMind is not trying to replace dedicated vector databases at scale. The inten
 ## Roadmap
 
 Full roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Launch and positioning kit: [`docs/LAUNCH_KIT.md`](docs/LAUNCH_KIT.md).
 
 Near-term priorities:
 

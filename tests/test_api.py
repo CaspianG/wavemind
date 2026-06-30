@@ -49,6 +49,12 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert metrics.status_code == 200
             assert "wavemind_active_memories 1" in metrics.text
             assert "wavemind_audit_events 1" in metrics.text
+            assert "wavemind_index_healthy 1" in metrics.text
+
+            health = client.get("/index/health")
+            assert health.status_code == 200
+            assert health.json()["healthy"] is True
+            assert health.json()["expected_count"] == 1
 
             backup_dir = tmp_path / "api-backups"
             backup = client.post(
@@ -62,6 +68,14 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert backup.status_code == 200
             assert backup.json()["path"].endswith(".sqlite3")
             assert len(list(backup_dir.glob("api-*.sqlite3"))) == 1
+
+            mind.index.remove(memory_id)
+            drifted = client.get("/index/health")
+            assert drifted.json()["healthy"] is False
+
+            rebuilt = client.post("/index/rebuild")
+            assert rebuilt.status_code == 200
+            assert rebuilt.json()["healthy"] is True
 
             deleted = client.request(
                 "DELETE",
