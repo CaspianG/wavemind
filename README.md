@@ -33,7 +33,7 @@ users or projects isolated.
 
 ## What Is WaveMind?
 
-WaveMind is a small memory engine you can embed in a product.
+WaveMind is a dynamic memory engine you can embed in a product.
 
 Use it when your app needs to remember things like user preferences, decisions,
 corrections, notes, research snippets, support history, agent context, or

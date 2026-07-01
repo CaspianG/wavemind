@@ -113,4 +113,4 @@ python -m pip install wavemind
 
 - "Vector search finds similar text. WaveMind tries to remember what still matters."
 - "Local-first memory: SQLite source of truth, vector candidates, dynamic recall."
-- "Corrections, TTL, namespaces, audit log, and index health in one small memory layer."
+- "Corrections, TTL, namespaces, audit log, and index health in one dynamic memory layer."
