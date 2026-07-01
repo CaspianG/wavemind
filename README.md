@@ -2,15 +2,12 @@
 
 # WaveMind
 
-**A local-first dynamic memory field for software that needs to remember.**
+**Local-first dynamic memory for apps, agents, notebooks, and tools.**
 
-Most storage systems answer one question: "what record is closest to this
-query?" WaveMind adds a second question: "what information still matters right
-now?"
-
-It stores text, vectors, metadata, and recall state in SQLite. A wave-field
-priority layer then reinforces useful memories, lets stale facts fade, respects
-namespaces, and keeps the final recall set small enough for real applications.
+WaveMind stores memories in SQLite, finds relevant candidates with vector
+search, then uses a wave-field priority layer to decide what still matters:
+hot facts rise, stale facts fade, temporary facts expire, and namespaces keep
+users or projects isolated.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![PyPI](https://img.shields.io/pypi/v/wavemind.svg)](https://pypi.org/project/wavemind/)
@@ -19,10 +16,10 @@ namespaces, and keeps the final recall set small enough for real applications.
 
 <img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
 
-[Concept](#concept) |
 [Quick Start](#quick-start) |
+[Python Example](#python-example) |
+[Where Data Lives](#where-data-lives) |
 [LangChain](#langchain-memory) |
-[OpenClaw](#openclaw-integration) |
 [Use Cases](docs/USE_CASES.md) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
@@ -32,71 +29,127 @@ namespaces, and keeps the final recall set small enough for real applications.
 
 </div>
 
-## Concept
+## What Is WaveMind?
 
-WaveMind is not a replacement for every database. It is a memory layer for
-information that changes in importance over time: preferences, decisions,
-corrections, notes, research snippets, support history, agent context, or any
-small-to-medium knowledge stream where "latest", "repeated", "expired", and
-"scoped to this user/project" matter.
+WaveMind is a small memory engine you can embed in a product.
 
-The simple version:
+Use it when your app needs to remember things like user preferences, decisions,
+corrections, notes, research snippets, support history, agent context, or
+temporary facts.
+
+The short version:
 
 ```text
-ordinary vector search:  find the nearest text
-WaveMind:                find the nearest useful memory
+normal vector search:  find the nearest text
+WaveMind:              find the nearest useful memory
 ```
 
-Under the hood, WaveMind still starts with normal vector search. The difference
-is the memory state around it: hotness, priority, decay, TTL, tags, namespaces,
-and optional memory-to-memory graph dynamics. That state is why the same stored
-fact can become stronger after repeated use, weaker after time passes, or
-disappear from recall after expiry.
+WaveMind is not trying to replace every vector database. It is the memory layer
+around retrieval: persistence, namespaces, TTL, hotness, priority, decay,
+explicit forgetting, audit events, and optional graph dynamics.
 
-## At a Glance
+## Why Use It?
 
 | If you need... | WaveMind gives you... |
 |---|---|
-| Memory that survives restarts | SQLite-backed `remember()`, `query()`, and `forget()`. |
-| Scoped recall per user, app, agent, or project | Namespaces and tags on every record. |
-| Information that changes importance over time | Hotness, priority, TTL, and decay-aware ranking. |
-| A local data source you can inspect and back up | One SQLite file is the source of truth. |
-| Easy integration | Python API, CLI, FastAPI server, and LangChain memory class. |
-| Honest benchmarks | Public LoCoMo, LongMemEval, BEIR/SciFact, and local policy checks. |
-| Production hooks | API keys, rate limits, audit log, Prometheus metrics, OpenTelemetry traces, backups, and optional external indexes. |
+| Memory that survives restarts | One SQLite file stores text, vectors, metadata, TTL, and recall state. |
+| Per-user or per-project recall | Namespaces and tags keep memories separated. |
+| Temporary facts | `ttl_seconds` lets facts expire automatically. |
+| Corrections and changing preferences | Newer or reinforced memories can outrank stale ones. |
+| A simple integration path | Python API, CLI, FastAPI server, and LangChain memory class. |
+| Production hygiene | Backups, audit log, API keys, rate limits, Prometheus metrics, and OpenTelemetry traces. |
 
-```mermaid
-flowchart LR
-    A["Text, event, note, document, or agent turn"] --> S["remember()"]
-    S --> D[("SQLite: text + metadata + vectors + memory state")]
-    Q["query()"] --> K["k-NN candidate search"]
-    D --> K
-    K --> W["wave-field re-rank"]
-    W --> R["small ranked recall set"]
-    R --> P["app, search UI, prompt, API, or tool"]
-    P --> F["recall feedback updates hotness / priority"]
-    F --> D
+## Quick Start
+
+Three commands from install to first recall:
+
+```sh
+python -m pip install wavemind
+wavemind remember "Andrey is a trader" --namespace demo
+wavemind query "What does Andrey do?" --namespace demo
 ```
 
-## What The Wave Field Does
+By default, WaveMind creates `wavemind.sqlite3` in the current working
+directory. That file is the local source of truth. Keep it out of git and back
+it up like application state.
 
-The "field" is the dynamic layer around stored memories. It is not just a
-marketing name for embeddings.
+## Python Example
 
-| signal | Plain meaning | Effect |
-|---|---|---|
-| vector similarity | This text is semantically close to the query. | Gets into the candidate set. |
-| hotness | This memory has been useful before. | Moves upward during recall. |
-| decay | This memory has not mattered recently. | Slowly loses influence. |
-| priority | The app says this fact is important. | Raises ranking even before repetition. |
-| TTL | This fact is temporary. | Drops out after expiry. |
-| namespace and tags | This belongs to one user/project/type. | Prevents cross-user or cross-topic leakage. |
-| graph dynamics | Related memories can excite or inhibit each other. | Helps clusters and corrections behave like memory, not a flat list. |
+```python
+from wavemind import WaveMind
 
-Technically, the current `MemoryFieldGraph` is a discrete graph over stored
-memories, not a continuous mathematical physics field. That honesty matters:
-WaveMind is useful today as a dynamic memory engine, while the research path is
-to make the field dynamics more explicit, measurable, and scalable.
+memory = WaveMind(db_path="./state/wavemind.sqlite3")
+
+memory.remember(
+    "The user prefers short practical answers.",
+    namespace="user:42",
+    tags=["preference"],
+)
+
+hits = memory.query("How should I answer this user?", namespace="user:42", top_k=3)
+for hit in hits:
+    print(hit.score, hit.text)
+```
+
+The integration pattern is intentionally small:
+
+1. Call `query()` before your app, agent, tool, or UI needs context.
+2. Pass the returned memories into your prompt, screen, search result, or
+   decision function.
+3. Call `remember()` after something worth keeping happens.
+
+## Where Data Lives
+
+WaveMind is local-first. The SQLite database stores memories, vectors, metadata,
+namespaces, tags, TTL, hotness, priority, and audit events.
+
+| runtime | Suggested database path |
+|---|---|
+| quick CLI experiment | `./wavemind.sqlite3` |
+| Python app or agent | `./state/wavemind.sqlite3` |
+| desktop app | user data directory, for example `%APPDATA%` or `~/.local/share` |
+| server daemon | `/var/lib/wavemind/wavemind.sqlite3` |
+| Docker | mounted volume, for example `/data/wavemind.sqlite3` |
+
+Explicit path:
+
+```sh
+wavemind --db ./state/app_memory.sqlite3 remember "Andrey prefers short answers" --namespace user:42
+wavemind --db ./state/app_memory.sqlite3 query "answer style" --namespace user:42
+```
+
+## Common Ways To Use It
+
+| You are building... | Start with... |
+|---|---|
+| Python app | `from wavemind import WaveMind` |
+| LangChain agent | `WaveMindMemory` from `wavemind.integrations.langchain` |
+| LangGraph workflow | `make_recall_node()` and `make_persist_node()` |
+| LlamaIndex pipeline | `WaveMindRetriever` |
+| CrewAI or AutoGen loop | The adapters in `wavemind.integrations` |
+| Node, Go, Ruby, PHP, or no-code app | `wavemind serve` and the HTTP API |
+| Personal knowledge base | Store notes by project namespace and query locally |
+| Support or CRM workflow | Store customer issues, resolutions, preferences, and corrections |
+| Research or trading notebook | Store observations with source metadata and TTL for temporary hypotheses |
+
+## Minimal Agent Loop
+
+```python
+from wavemind import WaveMind
+
+memory = WaveMind(db_path="./state/agent.sqlite3")
+
+def run_turn(user_id: str, user_text: str) -> str:
+    namespace = f"user:{user_id}"
+    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
+    recalled = "\n".join(f"- {hit.text}" for hit in hits)
+
+    answer = call_your_llm(f"Relevant memory:\n{recalled}\n\nUser: {user_text}")
+
+    memory.remember(f"User said: {user_text}", namespace=namespace, tags=["conversation"])
+    memory.remember(f"Assistant answered: {answer}", namespace=namespace, tags=["conversation"])
+    return answer
+```
 
 ## Terminal Demo
 
@@ -114,31 +167,48 @@ Query: "Andrey trader preferences"
 
 The demo is offline, keyless, and uses the built-in hash encoder.
 
-To see the dynamic-memory behavior that plain vector search does not provide:
+To see the behavior that plain vector search does not provide:
 
 ```sh
 python examples/dynamic_memory_demo.py
 ```
 
-It demonstrates a corrected fact outranking a stale fact, temporary memory
+That demo shows corrected facts outranking stale facts, temporary memory
 expiring, namespace isolation, and index-health reporting.
 
-## Quick Start
+## How The Memory Field Works
 
-Install from PyPI and create your first local memory:
-
-```sh
-python -m pip install wavemind
-wavemind remember "Andrey is a trader" --namespace demo
-wavemind query "trader" --namespace demo
+```mermaid
+flowchart LR
+    A["Text, event, note, document, or agent turn"] --> S["remember()"]
+    S --> D[("SQLite: text + metadata + vectors + memory state")]
+    Q["query()"] --> K["k-NN candidate search"]
+    D --> K
+    K --> W["wave-field re-rank"]
+    W --> R["small ranked recall set"]
+    R --> P["app, search UI, prompt, API, or tool"]
+    P --> F["recall feedback updates hotness / priority"]
+    F --> D
 ```
 
-What happens here:
+The wave field is the dynamic layer around stored memories. It is not a
+replacement for embeddings; it is the policy that decides which candidate
+memories should still matter.
 
-- `remember` writes the text and its vector pattern into a local SQLite database.
-- By default, the database file is `wavemind.sqlite3` in your current working directory.
-- `--namespace demo` keeps this memory separate from other users, agents, or projects.
-- `query` reads from the same SQLite file and returns the closest remembered texts.
+| signal | Plain meaning | Effect |
+|---|---|---|
+| vector similarity | This text is semantically close to the query. | Gets into the candidate set. |
+| hotness | This memory has been useful before. | Moves upward during recall. |
+| decay | This memory has not mattered recently. | Slowly loses influence. |
+| priority | The app says this fact is important. | Raises ranking even before repetition. |
+| TTL | This fact is temporary. | Drops out after expiry. |
+| namespace and tags | This belongs to one user/project/type. | Prevents cross-user or cross-topic leakage. |
+| graph dynamics | Related memories can excite or inhibit each other. | Helps clusters and corrections behave like memory, not a flat list. |
+
+Technically, the current `MemoryFieldGraph` is a discrete graph over stored
+memories, not a continuous mathematical physics field. That honesty matters:
+WaveMind is useful today as a dynamic memory engine, while the research path is
+to make the field dynamics more explicit, measurable, and scalable.
 
 ## Optional Embeddings
 
@@ -221,38 +291,6 @@ For local experiments you can set `WAVEMIND_QDRANT_URL=":memory:"`, but
 production latency and durability should be measured against a real Qdrant
 service. If `WAVEMIND_QDRANT_URL` is missing, WaveMind raises a clear error
 instead of silently falling back to another backend.
-
-## Data Location
-
-For an explicit database path, put global options before the command:
-
-```sh
-wavemind --db ./app_memory.sqlite3 remember "Andrey is a trader" --namespace demo
-wavemind --db ./app_memory.sqlite3 query "trader" --namespace demo
-```
-
-WaveMind is local-first. One SQLite file is the source of truth for texts,
-metadata, vectors, namespaces, tags, TTL, and recall state. For real agents,
-prefer an explicit path under your application's state directory:
-
-```python
-from wavemind import WaveMind
-
-memory = WaveMind(db_path="./state/wavemind.sqlite3")
-memory.remember("The user prefers short answers.", namespace="user:42", tags=["preference"])
-```
-
-Useful storage patterns:
-
-| runtime | Suggested database path |
-|---|---|
-| local CLI experiment | `./wavemind.sqlite3` |
-| Python app or agent | `./state/wavemind.sqlite3` |
-| OpenClaw sidecar | `~/.openclaw/wavemind/<agent-id>.sqlite3` |
-| server daemon | `/var/lib/wavemind/wavemind.sqlite3` |
-| Docker | mounted volume, for example `/data/wavemind.sqlite3` |
-
-Keep the SQLite file out of git. Back it up like any other application state.
 
 ## Storage Backends
 
@@ -419,7 +457,7 @@ Offline runnable example from a cloned repository:
 python examples/langchain_memory.py
 ```
 
-## Integration Patterns
+## Framework Integrations
 
 WaveMind only needs two touch points in an agent, service, notebook, or app:
 
@@ -461,26 +499,6 @@ Framework examples in this repository:
 | CrewAI-style tools | `wavemind.integrations.crewai`, `examples/framework_integrations.py` |
 | AutoGen-style hooks | `wavemind.integrations.autogen`, `examples/framework_integrations.py` |
 | Namespace sharding | `examples/sharded_memory.py` |
-
-Minimal custom agent loop:
-
-```python
-from wavemind import WaveMind
-
-memory = WaveMind(db_path="./state/wavemind.sqlite3")
-
-def run_turn(user_id: str, user_text: str, history: list[str]) -> str:
-    namespace = f"user:{user_id}"
-    hits = memory.query(user_text, namespace=namespace, top_k=5, min_score=0.25)
-    recalled = "\n".join(f"- {hit.text}" for hit in hits)
-
-    prompt = f"Relevant memory:\n{recalled}\n\nUser: {user_text}"
-    answer = call_your_llm(prompt, history)
-
-    memory.remember(f"User said: {user_text}", namespace=namespace, tags=["conversation"])
-    memory.remember(f"Assistant answered: {answer}", namespace=namespace, tags=["conversation"])
-    return answer
-```
 
 ## OpenClaw Integration
 
