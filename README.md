@@ -17,6 +17,7 @@ users or projects isolated.
 <img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
 
 [Quick Start](#quick-start) |
+[CLI](#cli-cheat-sheet) |
 [Python Example](#python-example) |
 [HTTP Example](#http-example) |
 [Where Data Lives](#where-data-lives) |
@@ -74,7 +75,7 @@ explicit forgetting, audit events, and optional graph dynamics.
 
 ## Quick Start
 
-Three commands from install to first recall:
+The shortest path from install to first recall:
 
 ```sh
 python -m pip install wavemind
@@ -82,9 +83,33 @@ wavemind remember "Andrey is a trader" --namespace demo
 wavemind query "What does Andrey do?" --namespace demo
 ```
 
+Need a reminder after install?
+
+```sh
+wavemind quickstart
+```
+
 By default, WaveMind creates `wavemind.sqlite3` in the current working
 directory. That file is the local source of truth. Keep it out of git and back
 it up like application state.
+
+## CLI Cheat Sheet
+
+Start here if you only want to use WaveMind from the terminal:
+
+| Goal | Command |
+|---|---|
+| Show first-run help | `wavemind quickstart` |
+| Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
+| Search memory | `wavemind query "answer style" --namespace user:42` |
+| See stored state | `wavemind stats --namespace user:42` |
+| Delete a namespace | `wavemind forget --namespace user:42` |
+| Import notes | `wavemind import ./notes.txt --namespace project:alpha` |
+| Use another database file | `wavemind --db ./state/memory.sqlite3 query "budget" --namespace user:42` |
+| Start the HTTP API | `wavemind --db ./state/memory.sqlite3 serve --host 127.0.0.1 --port 8000` |
+
+After this point, choose the integration path you need: Python, HTTP, LangChain,
+framework adapters, benchmarks, or production deployment.
 
 ## Python Example
 

@@ -136,3 +136,12 @@ def test_cli_default_database_is_created_in_working_directory(tmp_path):
     assert "remembered id=" in result.stdout
     assert (tmp_path / "wavemind.sqlite3").exists()
     assert not (tmp_path / "data").exists()
+
+
+def test_cli_quickstart_prints_first_run_commands():
+    result = run_cli("quickstart")
+
+    assert "WaveMind quickstart" in result.stdout
+    assert "python -m pip install wavemind" in result.stdout
+    assert 'wavemind remember "Andrey is a trader" --namespace demo' in result.stdout
+    assert 'wavemind query "What does Andrey do?" --namespace demo' in result.stdout

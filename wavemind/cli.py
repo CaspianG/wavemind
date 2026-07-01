@@ -25,6 +25,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wavemind",
         description="WaveMind persistent dynamic memory engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            'Try: wavemind quickstart\n'
+            'Then: wavemind remember "Andrey is a trader" --namespace demo\n'
+            'And:  wavemind query "What does Andrey do?" --namespace demo'
+        ),
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
     parser.add_argument("--store", default=None, choices=["sqlite", "postgres"])
@@ -57,6 +63,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--graph-expand-k", type=int, default=10)
 
     sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("quickstart", help="Show the shortest CLI path")
 
     remember = sub.add_parser("remember", help="Store a memory")
     remember.add_argument("text")
@@ -146,6 +154,34 @@ def print_stats(stats: dict) -> None:
         print(f"{key}: {value}")
 
 
+def print_quickstart() -> None:
+    print(
+        """WaveMind quickstart
+
+Install:
+  python -m pip install wavemind
+
+Store one memory:
+  wavemind remember "Andrey is a trader" --namespace demo
+
+Query it:
+  wavemind query "What does Andrey do?" --namespace demo
+
+Check state:
+  wavemind stats --namespace demo
+
+Where data goes:
+  ./wavemind.sqlite3 in the current directory by default
+
+Useful next commands:
+  wavemind --help
+  wavemind import ./notes.txt --namespace demo
+  wavemind serve --host 127.0.0.1 --port 8000
+  wavemind forget --namespace demo
+"""
+    )
+
+
 def run_interactive(args) -> int:
     mind = make_mind(args)
     print("WaveMind v2 interactive CLI. Type help or exit.")
@@ -191,6 +227,10 @@ def main(argv: list[str] | None = None) -> int:
             parser.print_help()
             return 0
         return run_interactive(args)
+
+    if args.command == "quickstart":
+        print_quickstart()
+        return 0
 
     if args.command == "test":
         import pytest
