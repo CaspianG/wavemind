@@ -18,6 +18,7 @@ users or projects isolated.
 
 [Quick Start](#quick-start) |
 [Python Example](#python-example) |
+[HTTP Example](#http-example) |
 [Where Data Lives](#where-data-lives) |
 [LangChain](#langchain-memory) |
 [Chroma Migration](docs/CHROMA_MIGRATION.md) |
@@ -48,6 +49,17 @@ WaveMind:              find the nearest useful memory
 WaveMind is not trying to replace every vector database. It is the memory layer
 around retrieval: persistence, namespaces, TTL, hotness, priority, decay,
 explicit forgetting, audit events, and optional graph dynamics.
+
+## 60-Second Version
+
+| Question | Answer |
+|---|---|
+| What does it store? | Text memories, vectors, metadata, tags, TTL, priority, and recall state. |
+| Where does it store data? | A local SQLite file by default; Postgres is available for production state. |
+| How do I use it? | CLI, Python API, FastAPI HTTP server, LangChain memory, or framework adapters. |
+| What is different from Chroma/Qdrant? | WaveMind adds memory policy: hotness, decay, TTL, correction handling, and scoped recall. |
+| When should I not use it? | For huge static document search where a mature vector DB is already the right tool. |
+| What is the simplest install? | `python -m pip install wavemind` |
 
 ## Why Use It?
 
@@ -99,6 +111,26 @@ The integration pattern is intentionally small:
    decision function.
 3. Call `remember()` after something worth keeping happens.
 
+## HTTP Example
+
+The FastAPI server is included in the base install:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 serve --host 127.0.0.1 --port 8000
+```
+
+Then use WaveMind from any language:
+
+```sh
+curl -X POST http://127.0.0.1:8000/remember \
+  -H "Content-Type: application/json" \
+  -d "{\"text\":\"Andrey prefers short answers\",\"namespace\":\"user:42\",\"tags\":[\"preference\"]}"
+
+curl -X POST http://127.0.0.1:8000/query \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"How should I answer?\",\"namespace\":\"user:42\",\"top_k\":3}"
+```
+
 ## Where Data Lives
 
 WaveMind is local-first. The SQLite database stores memories, vectors, metadata,
@@ -132,6 +164,9 @@ wavemind --db ./state/app_memory.sqlite3 query "answer style" --namespace user:4
 | Personal knowledge base | Store notes by project namespace and query locally |
 | Support or CRM workflow | Store customer issues, resolutions, preferences, and corrections |
 | Research or trading notebook | Store observations with source metadata and TTL for temporary hypotheses |
+
+For migrations from existing local vector memory, start with
+[`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
 
 ## Minimal Agent Loop
 
