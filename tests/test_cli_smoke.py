@@ -145,3 +145,9 @@ def test_cli_quickstart_prints_first_run_commands():
     assert "python -m pip install wavemind" in result.stdout
     assert 'wavemind remember "Andrey is a trader" --namespace demo' in result.stdout
     assert 'wavemind query "What does Andrey do?" --namespace demo' in result.stdout
+
+
+def test_cli_version_prints_package_version():
+    result = run_cli("--version")
+
+    assert result.stdout.strip().startswith("wavemind ")

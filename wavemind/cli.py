@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .core import WaveMind
 from .encoders import create_text_encoder
@@ -33,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--store", default=None, choices=["sqlite", "postgres"])
     parser.add_argument("--postgres-dsn", default=None)
     parser.add_argument(
