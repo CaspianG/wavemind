@@ -32,12 +32,58 @@ def write_longmemeval_fixture(path: Path) -> None:
 
 
 def test_answer_metrics_normalize_and_score_tokens():
-    from benchmarks.longmemeval_answer_benchmark import normalize_answer, token_f1
+    from benchmarks.longmemeval_answer_benchmark import clean_generated_answer, normalize_answer, token_f1
 
     assert normalize_answer("Business Administration!") == "business administration"
     assert token_f1("Business Administration", "Business Administration") == 1.0
     assert token_f1("Administration", "Business Administration") > 0.0
     assert token_f1("crypto trader", "Business Administration") == 0.0
+    assert clean_generated_answer("Answer: Business Administration") == "Business Administration"
+    assert clean_generated_answer("<think>hidden</think>\nFinal Answer: 2000 dollars") == "2000 dollars"
+
+
+def test_ollama_loopback_urls_bypass_system_proxy(monkeypatch):
+    from benchmarks import longmemeval_answer_benchmark as bench
+
+    opened = []
+
+    class DummyResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            return b'{"models":[]}'
+
+    def fake_open(target, timeout):
+        opened.append((target, timeout))
+        return DummyResponse()
+
+    monkeypatch.setattr(bench._NO_PROXY_OPENER, "open", fake_open)
+
+    assert bench.ollama_models("http://127.0.0.1:11434") == []
+    assert opened and opened[0][0] == "http://127.0.0.1:11434/api/tags"
+
+
+def test_compact_evidence_selects_question_relevant_lines():
+    from benchmarks.longmemeval_answer_benchmark import compact_evidence
+
+    contexts = [
+        "\n".join(
+            [
+                "assistant: Here is unrelated setup text.",
+                "user: I graduated with a degree in Business Administration.",
+                "assistant: Congratulations on your degree.",
+            ]
+        )
+    ]
+
+    snippets = compact_evidence("What degree did I graduate with?", contexts)
+
+    assert len(snippets) == 1
+    assert "Business Administration" in snippets[0]
 
 
 def test_longmemeval_answer_cli_extractive_mode(tmp_path):

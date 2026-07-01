@@ -786,7 +786,7 @@ Current read:
 | Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
 | LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
 | ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
-| Next public proof | LongMemEval / LoCoMo answer generation with a local LLM. | Retrieval is now measured. The next serious number should test answer accuracy, abstention, and faithfulness. |
+| LongMemEval local answer generation | With WaveMind compact evidence and local Ollama `qwen2.5:1.5b`, the first 50 LongMemEval-S questions reach `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`. | This is a lightweight local smoke run, not a leaderboard-grade result. It proves the answer runner works and shows the next gap: stronger models and Chroma/Qdrant RAG answer baselines. |
 
 ### Real Benchmark Matrix
 
@@ -805,7 +805,7 @@ Current read:
 | [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | runner ready | Chroma / Qdrant / FAISS | NoMIRACL Russian compact run is implemented; full-corpus MIRACL Russian remains the next heavier profile. |
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | Vector database insertion/search/filter/cost-performance benchmark. | planned | Chroma / Qdrant / Milvus / Weaviate / Pinecone / FAISS | Use only after WaveMind has a production index path; today it is a memory layer, not a standalone cloud vector DB. |
 | [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. Retrieval-only runner is implemented for official `locomo10.json`. | implemented | Static vector / Chroma / Qdrant | Improve answer generation accuracy on top of the stronger sentence-transformers evidence retrieval run. |
-| [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented retrieval, answer runner ready | Static vector / Chroma / Qdrant / Mem0-style memory | Add LLM answer quality and abstention after retrieval. |
+| [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented retrieval + local Ollama answer smoke | Static vector / Chroma / Qdrant / Mem0-style memory | Add stronger LLM answer quality, abstention, and Chroma/Qdrant RAG answer baselines. |
 | [LongMemEval-V2](https://arxiv.org/abs/2605.12493) | Web-agent memory: state recall, dynamic state, workflow gotchas. | planned | AgentRunbook-R / Chroma RAG / Qdrant RAG | Prove WaveMind can retrieve compact evidence from agent trajectories. |
 | [LMEB](https://github.com/KaLM-Embedding/LMEB) | Long-horizon memory embedding tasks beyond normal passage retrieval. | planned | Embedding-only baselines / Chroma / Qdrant | Choose the default semantic encoder using memory-specific tasks. |
 | [RAGBench](https://huggingface.co/datasets/rungalileo/ragbench) | Downstream RAG context and answer quality. | planned | Chroma RAG / Qdrant RAG / Pinecone RAG | Show whether stale-memory suppression improves context relevance. |
@@ -993,18 +993,31 @@ result: `benchmarks/longmemeval_evidence_results.json`.
 The Chroma and Qdrant baselines now use the same namespace/payload scope as
 WaveMind. Qdrant is run in local embedded mode; the Qdrant client warns that
 local mode is not recommended above 20000 points, so this latency should not be
-read as a service-mode Qdrant result. The next step is answer-quality evaluation
-with a local LLM.
+read as a service-mode Qdrant result.
 
-Answer-generation runner:
+Answer-generation runner with local Ollama:
 
 ```sh
 python benchmarks/longmemeval_answer_benchmark.py --dataset benchmarks/data/longmemeval_s_cleaned.json --provider ollama --model YOUR_LOCAL_MODEL --top-k 5 --output benchmarks/longmemeval_answer_results.json
 ```
 
+Checked-in local answer-generation smoke runs:
+
+50 non-abstention LongMemEval-S questions, WaveMind compact evidence,
+`HashingTextEncoder`, top-k 5. Full machine-readable results:
+`benchmarks/longmemeval_answer_qwen25_0_5b_50_results.json` and
+`benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json`.
+
+| system | questions | evidence recall@5 | exact match | contains answer | token F1 | avg retrieval | avg generation |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind + Ollama `qwen2.5:0.5b` | 50 | 0.920 | 0.120 | 0.180 | 0.183 | 3.09 ms | 1286.54 ms |
+| WaveMind + Ollama `qwen2.5:1.5b` | 50 | 0.920 | 0.240 | 0.380 | 0.333 | 2.23 ms | 1544.92 ms |
+
 There is also an extractive smoke run that does not require a model:
 `benchmarks/longmemeval_answer_extractive_20_results.json`. It is only a runner
-check, not a meaningful final answer-quality benchmark.
+check, not a meaningful final answer-quality benchmark. The Ollama runs are real
+local LLM runs, but still lightweight smoke results rather than official
+LongMemEval leaderboard scores.
 
 ### ANN Index Curve
 
@@ -1225,10 +1238,10 @@ If you already use Chroma for local memory, see the practical migration guide:
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
-- The LongMemEval result is retrieval-only. It is not a full LongMemEval answer-generation leaderboard-equivalent score.
+- The main LongMemEval evidence result is retrieval-only. The checked-in Ollama answer-generation results use lightweight local Qwen2.5 models over 50 questions and are not full LongMemEval leaderboard-equivalent scores.
 - Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; use the `qdrant-service` benchmark profile before making production latency claims.
 - MTEB, MIRACL, LMEB, official VectorDBBench, and RAGBench are listed as the public benchmark roadmap, not as completed results yet.
-- Ollama answer generation is implemented, but the current machine has no local Ollama model available and the local Ollama API returns 502/connection-reset. The checked-in answer file is extractive smoke only, not an LLM score.
+- Local Ollama answer generation now works with `qwen2.5:0.5b` and `qwen2.5:1.5b`; answer quality is still limited by small-model reasoning and should be rerun with stronger local/API models before making product claims.
 - Public benchmark adapters require optional datasets, heavier dependencies, or running services. They are intentionally outside the minimal `pip install wavemind` path.
 - Dynamic memory is slower than static Chroma in the current local benchmark: 25.26 ms vs 1.75 ms average query latency on this machine.
 - Current WaveMind-only dynamic checks keep `precision@1` at 1.00 through 5000 memories, but average latency is around 48-54 ms. The next optimization target is field/re-ranking latency, not basic recall quality.

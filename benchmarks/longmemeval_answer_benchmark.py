@@ -9,6 +9,7 @@ import tempfile
 import time
 import urllib.request
 import urllib.error
+from urllib.parse import urlparse
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,9 @@ from benchmarks.longmemeval_memory_benchmark import (
 )
 from wavemind import WaveMind
 from wavemind.encoders import create_text_encoder
+
+
+_NO_PROXY_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 @dataclass(frozen=True)
@@ -71,6 +75,80 @@ def token_f1(prediction: str, expected: str) -> float:
     precision = overlap / len(pred_tokens)
     recall = overlap / len(expected_tokens)
     return 2 * precision * recall / (precision + recall)
+
+
+def _is_loopback_url(url: str) -> bool:
+    hostname = (urlparse(url).hostname or "").lower()
+    return hostname in {"localhost", "127.0.0.1", "::1"}
+
+
+def _urlopen(url_or_request, timeout: int):
+    url = url_or_request.full_url if isinstance(url_or_request, urllib.request.Request) else str(url_or_request)
+    if _is_loopback_url(url):
+        return _NO_PROXY_OPENER.open(url_or_request, timeout=timeout)
+    return urllib.request.urlopen(url_or_request, timeout=timeout)
+
+
+def clean_generated_answer(text: str) -> str:
+    text = re.sub(r"<think>.*?</think>", " ", text, flags=re.IGNORECASE | re.DOTALL)
+    text = text.strip()
+    text = re.sub(r"^(final\s+answer|answer)\s*:\s*", "", text, flags=re.IGNORECASE).strip()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return lines[-1] if len(lines) > 1 and len(lines[-1]) <= 160 else text
+
+
+def _question_terms(question: str) -> set[str]:
+    return {
+        token
+        for token in normalize_answer(question).split()
+        if len(token) > 2
+        and token
+        not in {
+            "what",
+            "where",
+            "when",
+            "which",
+            "who",
+            "how",
+            "did",
+            "does",
+            "was",
+            "were",
+            "the",
+            "with",
+            "for",
+            "from",
+            "that",
+            "this",
+            "your",
+            "you",
+            "did",
+        }
+    }
+
+
+def compact_evidence(question: str, contexts: list[str], max_chars_per_context: int = 900) -> list[str]:
+    terms = _question_terms(question)
+    snippets: list[str] = []
+    for context in contexts:
+        lines = [line.strip() for line in context.splitlines() if line.strip()]
+        if not lines:
+            continue
+        scored: list[tuple[int, int, str]] = []
+        for index, line in enumerate(lines):
+            normalized = normalize_answer(line)
+            score = sum(1 for term in terms if term in normalized)
+            if score:
+                scored.append((score, -index, line))
+        selected = [
+            line
+            for _score, _negative_index, line in sorted(scored, reverse=True)[:4]
+        ]
+        if not selected:
+            selected = lines[:3]
+        snippet = "\n".join(selected)
+        snippets.append(snippet[:max_chars_per_context])
+    return snippets
 
 
 def answer_map(path: str | Path, include_abstention: bool = False) -> dict[str, str]:
@@ -146,7 +224,7 @@ def generate_extractive(question: str, contexts: list[str]) -> str:
 
 def ollama_models(base_url: str) -> list[str]:
     try:
-        with urllib.request.urlopen(f"{base_url.rstrip('/')}/api/tags", timeout=15) as response:
+        with _urlopen(f"{base_url.rstrip('/')}/api/tags", timeout=15) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except (OSError, urllib.error.HTTPError, urllib.error.URLError) as exc:
         raise RuntimeError(f"Ollama is not reachable at {base_url}: {exc}") from exc
@@ -159,12 +237,14 @@ def generate_ollama(
     model: str,
     base_url: str,
 ) -> str:
+    evidence = compact_evidence(question, contexts)
     prompt = (
         "Answer the question using only the evidence below. "
-        "If the evidence is insufficient, answer: I don't know.\n\n"
+        "If the evidence is insufficient, answer: I don't know. "
+        "Return only the final short answer. Do not explain.\n\n"
         f"Question: {question}\n\n"
         "Evidence:\n"
-        + "\n\n".join(f"[{index + 1}] {text}" for index, text in enumerate(contexts))
+        + "\n\n".join(f"[{index + 1}] {text}" for index, text in enumerate(evidence))
         + "\n\nAnswer:"
     )
     payload = json.dumps(
@@ -182,11 +262,11 @@ def generate_ollama(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=120) as response:
+        with _urlopen(request, timeout=120) as response:
             result = json.loads(response.read().decode("utf-8"))
     except (OSError, urllib.error.HTTPError, urllib.error.URLError) as exc:
         raise RuntimeError(f"Ollama generation failed for model {model}: {exc}") from exc
-    return str(result.get("response") or "").strip()
+    return clean_generated_answer(str(result.get("response") or ""))
 
 
 def run_benchmark(

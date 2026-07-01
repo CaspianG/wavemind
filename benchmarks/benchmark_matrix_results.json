@@ -510,10 +510,10 @@
       "id": "longmemeval_answer_generation",
       "name": "LongMemEval answer generation",
       "category": "long-term-agent-memory",
-      "status": "runner-ready",
+      "status": "implemented",
       "source": "benchmarks/longmemeval_answer_benchmark.py",
       "source_url": "https://github.com/xiaowu0162/LongMemEval",
-      "dataset": "LongMemEval-S questions answered from WaveMind-retrieved evidence. Extractive smoke result is checked in; Ollama mode requires a local model.",
+      "dataset": "LongMemEval-S questions answered from WaveMind-retrieved compact evidence. Checked-in local runs use Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
       "competitors": [
         "Ollama local LLM",
         "Chroma RAG",
@@ -534,10 +534,28 @@
           "token_f1": 0.018367529146058867,
           "avg_retrieval_ms": 1.299194999592146,
           "avg_generation_ms": 0.04707000043708831
+        },
+        "WaveMind + qwen2.5:0.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.92,
+          "exact_match": 0.12,
+          "contains_answer": 0.18,
+          "token_f1": 0.18308614585546518,
+          "avg_retrieval_ms": 3.086559998919256,
+          "avg_generation_ms": 1286.5445959984208
+        },
+        "WaveMind + qwen2.5:1.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.92,
+          "exact_match": 0.24,
+          "contains_answer": 0.38,
+          "token_f1": 0.33311619190404795,
+          "avg_retrieval_ms": 2.2298719992977567,
+          "avg_generation_ms": 1544.9195320013678
         }
       },
-      "target": "Run Ollama answer generation once a local model is available and compare answer accuracy/faithfulness against Chroma/Qdrant RAG.",
-      "next_step": "Install or select a local Ollama model, then run --provider ollama over the full LongMemEval-S retrieval set."
+      "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
+      "next_step": "Add Chroma/Qdrant answer-generation baselines and run all 470 non-abstention questions with a stronger local model."
     },
     {
       "id": "beir",

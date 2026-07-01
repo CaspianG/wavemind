@@ -72,6 +72,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_results = _engine_results(longmemeval_payload)
     ann_results = _ann_latest_results(ann_payload)
     answer_metrics = (answer_payload or {}).get("metrics")
+    answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
+    answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
+    answer_qwen05_metrics = (answer_qwen05_payload or {}).get("metrics")
+    answer_qwen15_metrics = (answer_qwen15_payload or {}).get("metrics")
 
     return [
         {
@@ -495,10 +499,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "id": "longmemeval_answer_generation",
             "name": "LongMemEval answer generation",
             "category": "long-term-agent-memory",
-            "status": "runner-ready",
+            "status": "implemented",
             "source": "benchmarks/longmemeval_answer_benchmark.py",
             "source_url": "https://github.com/xiaowu0162/LongMemEval",
-            "dataset": "LongMemEval-S questions answered from WaveMind-retrieved evidence. Extractive smoke result is checked in; Ollama mode requires a local model.",
+            "dataset": "LongMemEval-S questions answered from WaveMind-retrieved compact evidence. Checked-in local runs use Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
             "competitors": ["Ollama local LLM", "Chroma RAG", "Qdrant RAG"],
             "metrics": ["exact_match", "contains_answer", "token_f1", "evidence_recall@k"],
             "current": {
@@ -513,10 +517,34 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "avg_retrieval_ms",
                         "avg_generation_ms",
                     ),
-                )
+                ),
+                "WaveMind + qwen2.5:0.5b": _metric_summary(
+                    answer_qwen05_metrics,
+                    (
+                        "queries",
+                        "evidence_recall_at_k",
+                        "exact_match",
+                        "contains_answer",
+                        "token_f1",
+                        "avg_retrieval_ms",
+                        "avg_generation_ms",
+                    ),
+                ),
+                "WaveMind + qwen2.5:1.5b": _metric_summary(
+                    answer_qwen15_metrics,
+                    (
+                        "queries",
+                        "evidence_recall_at_k",
+                        "exact_match",
+                        "contains_answer",
+                        "token_f1",
+                        "avg_retrieval_ms",
+                        "avg_generation_ms",
+                    ),
+                ),
             },
-            "target": "Run Ollama answer generation once a local model is available and compare answer accuracy/faithfulness against Chroma/Qdrant RAG.",
-            "next_step": "Install or select a local Ollama model, then run --provider ollama over the full LongMemEval-S retrieval set.",
+            "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
+            "next_step": "Add Chroma/Qdrant answer-generation baselines and run all 470 non-abstention questions with a stronger local model.",
         },
     ]
 
