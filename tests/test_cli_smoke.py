@@ -118,6 +118,7 @@ def test_legacy_script_delegates_to_new_cli(tmp_path):
         check=True,
     )
     assert "WaveMind" in result.stdout
+    assert "studio" in result.stdout
 
 
 def test_cli_benchmark_seeds_all_synthetic_cases(tmp_path):
@@ -145,6 +146,7 @@ def test_cli_quickstart_prints_first_run_commands():
     assert "python -m pip install wavemind" in result.stdout
     assert 'wavemind remember "Andrey is a trader" --namespace demo' in result.stdout
     assert 'wavemind query "What does Andrey do?" --namespace demo' in result.stdout
+    assert "wavemind studio" in result.stdout
 
 
 def test_cli_version_prints_package_version():

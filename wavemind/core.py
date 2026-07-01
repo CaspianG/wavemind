@@ -439,6 +439,45 @@ class WaveMind:
             )
         return len(records)
 
+    def feedback(
+        self,
+        id: int,
+        useful: bool = True,
+        strength: float = 0.25,
+    ) -> bool:
+        record = self._records_by_id.get(int(id))
+        if record is None or record.is_expired:
+            return False
+        delta = abs(float(strength))
+        if useful:
+            record.priority += delta
+            record.access_count += 1
+            self.field.feed(record.pattern, strength=delta)
+        else:
+            record.priority = max(0.0, record.priority - delta)
+            self.field.forget(record.pattern, strength=delta)
+        update_memory_state = getattr(self.store, "update_memory_state", None)
+        if callable(update_memory_state):
+            update_memory_state(
+                record.id,
+                priority=record.priority,
+                access_count=record.access_count,
+            )
+        self.field.evolve(1)
+        self._refresh_field_magnitude()
+        self.store.log_audit_event(
+            "feedback",
+            namespace=record.namespace,
+            memory_id=record.id,
+            metadata={
+                "useful": bool(useful),
+                "strength": delta,
+                "priority": float(record.priority),
+                "access_count": int(record.access_count),
+            },
+        )
+        return True
+
     def save(
         self,
         backup_path: str | Path | None = None,

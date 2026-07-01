@@ -18,6 +18,7 @@ users or projects isolated.
 
 [Quick Start](#quick-start) |
 [CLI](#cli-cheat-sheet) |
+[Studio](#wavemind-studio) |
 [Python Example](#python-example) |
 [HTTP Example](#http-example) |
 [Where Data Lives](#where-data-lives) |
@@ -89,6 +90,12 @@ Need a reminder after install?
 wavemind quickstart
 ```
 
+Want to see and manage memory in a browser?
+
+```sh
+wavemind studio
+```
+
 By default, WaveMind creates `wavemind.sqlite3` in the current working
 directory. That file is the local source of truth. Keep it out of git and back
 it up like application state.
@@ -102,6 +109,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Show first-run help | `wavemind quickstart` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
+| Open local dashboard | `wavemind studio` |
 | See stored state | `wavemind stats --namespace user:42` |
 | Delete a namespace | `wavemind forget --namespace user:42` |
 | Import notes | `wavemind import ./notes.txt --namespace project:alpha` |
@@ -110,6 +118,33 @@ Start here if you only want to use WaveMind from the terminal:
 
 After this point, choose the integration path you need: Python, HTTP, LangChain,
 framework adapters, benchmarks, or production deployment.
+
+## WaveMind Studio
+
+WaveMind Studio is the built-in local dashboard. It runs on top of the same
+FastAPI app and SQLite database as the CLI:
+
+```sh
+wavemind studio
+```
+
+It opens `http://127.0.0.1:8000/studio` and gives you:
+
+| View | What it is for |
+|---|---|
+| Memory map | See field energy as a heatmap. |
+| Namespace explorer | Inspect memories per user, project, agent, or tenant. |
+| Live query tester | Test recall before wiring it into an app. |
+| Feedback buttons | Mark recalled memories as useful or not useful. |
+| Import/export | Import local files and export a namespace snapshot. |
+| Backup | Create SQLite backups from the browser. |
+| Conflict visualizer | Inspect correction groups when memories disagree. |
+
+For a server-safe local bind:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 studio --host 127.0.0.1 --port 8000
+```
 
 ## Python Example
 

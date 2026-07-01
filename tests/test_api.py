@@ -119,6 +119,69 @@ def test_fastapi_query_accepts_query_alias(tmp_path):
         mind.close()
 
 
+def test_fastapi_studio_dashboard_state_heatmap_and_feedback(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "studio.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        memory_id = mind.remember(
+            "Andrey prefers WaveMind Studio for visual memory inspection",
+            namespace="studio",
+            tags=["ui"],
+            metadata={"conflict_group": "preference.ui"},
+        )
+        mind.remember(
+            "Andrey prefers terminal-only memory inspection",
+            namespace="studio",
+            tags=["ui"],
+            metadata={"conflict_group": "preference.ui"},
+        )
+        before = mind.store.get(memory_id)
+        assert before is not None
+
+        with TestClient(create_app(mind=mind)) as client:
+            page = client.get("/studio")
+            assert page.status_code == 200
+            assert "WaveMind Studio" in page.text
+
+            state = client.get("/studio/state", params={"namespace": "studio"})
+            assert state.status_code == 200
+            payload = state.json()
+            assert "studio" in payload["namespaces"]
+            assert payload["stats"]["active_memories"] == 2
+            assert payload["memories"][0]["namespace"] == "studio"
+            assert payload["conflict_groups"][0]["group"] == "preference.ui"
+
+            fallback_state = client.get("/studio/state", params={"namespace": "default"})
+            assert fallback_state.status_code == 200
+            assert fallback_state.json()["selected_namespace"] == "studio"
+            assert fallback_state.json()["memories"][0]["namespace"] == "studio"
+
+            heatmap = client.get("/studio/heatmap", params={"bins": 8})
+            assert heatmap.status_code == 200
+            heatmap_payload = heatmap.json()
+            assert heatmap_payload["bins"] == 8
+            assert len(heatmap_payload["values"]) == 64
+            assert max(heatmap_payload["values"]) <= 1.0
+
+            feedback = client.post(
+                "/studio/feedback",
+                json={"id": memory_id, "useful": True, "strength": 0.5},
+            )
+            assert feedback.status_code == 200
+            after = mind.store.get(memory_id)
+            assert after is not None
+            assert after.priority > before.priority
+            assert after.access_count == before.access_count + 1
+            assert mind.audit_events(namespace="studio", action="feedback", limit=1)
+    finally:
+        mind.close()
+
+
 def test_fastapi_version_matches_package_version():
     mind = WaveMind(
         db_path=None,

@@ -128,6 +128,11 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default="0.0.0.0")
     serve.add_argument("--port", type=int, default=8000)
 
+    studio = sub.add_parser("studio", help="Run local WaveMind Studio dashboard")
+    studio.add_argument("--host", default="127.0.0.1")
+    studio.add_argument("--port", type=int, default=8000)
+    studio.add_argument("--no-open", action="store_true")
+
     sub.add_parser("test", help="Run pytest suite")
     return parser
 
@@ -177,6 +182,7 @@ Where data goes:
 
 Useful next commands:
   wavemind --help
+  wavemind studio
   wavemind import ./notes.txt --namespace demo
   wavemind serve --host 127.0.0.1 --port 8000
   wavemind forget --namespace demo
@@ -244,6 +250,22 @@ def main(argv: list[str] | None = None) -> int:
 
         from .api import create_app
 
+        uvicorn.run(create_app(mind=make_mind(args)), host=args.host, port=args.port)
+        return 0
+
+    if args.command == "studio":
+        import webbrowser
+        from threading import Timer
+
+        import uvicorn
+
+        from .api import create_app
+
+        open_host = "127.0.0.1" if args.host in {"0.0.0.0", "::"} else args.host
+        url = f"http://{open_host}:{args.port}/studio"
+        print(f"WaveMind Studio: {url}")
+        if not args.no_open:
+            Timer(1.0, lambda: webbrowser.open(url)).start()
         uvicorn.run(create_app(mind=make_mind(args)), host=args.host, port=args.port)
         return 0
 

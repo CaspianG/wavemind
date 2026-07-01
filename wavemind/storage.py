@@ -244,6 +244,32 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
 
+    def update_memory_state(
+        self,
+        id: int,
+        *,
+        priority: float | None = None,
+        access_count: int | None = None,
+    ) -> None:
+        fields = []
+        params: list[Any] = []
+        if priority is not None:
+            fields.append("priority = ?")
+            params.append(float(priority))
+        if access_count is not None:
+            fields.append("access_count = ?")
+            params.append(int(access_count))
+        if not fields:
+            return
+        fields.append("updated_at = ?")
+        params.append(time.time())
+        params.append(int(id))
+        self.conn.execute(
+            f"UPDATE memories SET {', '.join(fields)} WHERE id = ?",
+            params,
+        )
+        self.conn.commit()
+
     def log_audit_event(
         self,
         action: str,
@@ -641,6 +667,31 @@ class PostgresMemoryStore:
             WHERE id = %s
             """,
             (float(priority_delta), time.time(), int(id)),
+        )
+
+    def update_memory_state(
+        self,
+        id: int,
+        *,
+        priority: float | None = None,
+        access_count: int | None = None,
+    ) -> None:
+        fields = []
+        params: list[Any] = []
+        if priority is not None:
+            fields.append("priority = %s")
+            params.append(float(priority))
+        if access_count is not None:
+            fields.append("access_count = %s")
+            params.append(int(access_count))
+        if not fields:
+            return
+        fields.append("updated_at = %s")
+        params.append(time.time())
+        params.append(int(id))
+        self.conn.execute(
+            f"UPDATE {self.memories_table} SET {', '.join(fields)} WHERE id = %s",
+            params,
         )
 
     def log_audit_event(

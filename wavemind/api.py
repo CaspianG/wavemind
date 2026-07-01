@@ -9,7 +9,7 @@ from threading import Lock
 from typing import Any
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
@@ -17,6 +17,7 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
 from .observability import configure_observability, instrument_fastapi_app
+from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
 
 logger = logging.getLogger("wavemind.api")
@@ -205,6 +206,12 @@ class ObservabilityResponse(BaseModel):
     reason: str | None = None
 
 
+class FeedbackRequest(BaseModel):
+    id: int
+    useful: bool = True
+    strength: float = Field(default=0.25, ge=0.0, le=10.0)
+
+
 def _metrics_text(stats: dict[str, Any]) -> str:
     metric_names = {
         "active_memories": "wavemind_active_memories",
@@ -291,6 +298,32 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 content={"detail": "Rate limit exceeded"},
             )
         return await call_next(request)
+
+    @app.get("/studio", response_class=HTMLResponse, include_in_schema=False)
+    def studio() -> HTMLResponse:
+        return HTMLResponse(STUDIO_HTML)
+
+    @app.get("/studio/state", dependencies=[Depends(require_role("read"))])
+    def studio_state(
+        namespace: str | None = None,
+        limit: int = Query(default=200, ge=0, le=1000),
+    ):
+        return studio_snapshot(app.state.mind, namespace=namespace, limit=limit)
+
+    @app.get("/studio/heatmap", dependencies=[Depends(require_role("read"))])
+    def studio_heatmap(bins: int = Query(default=18, ge=4, le=48)):
+        return field_heatmap(app.state.mind, bins=bins)
+
+    @app.post("/studio/feedback", dependencies=[Depends(require_role("write"))])
+    def studio_feedback(request: FeedbackRequest):
+        accepted = app.state.mind.feedback(
+            request.id,
+            useful=request.useful,
+            strength=request.strength,
+        )
+        if not accepted:
+            raise HTTPException(status_code=404, detail="Memory not found")
+        return {"ok": True}
 
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
