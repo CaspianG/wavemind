@@ -1,0 +1,53 @@
+{
+  "scenario": {
+    "name": "nomiracl_russian_relevant_retrieval",
+    "dataset": "nomiracl-russian-test.relevant",
+    "source_url": "https://huggingface.co/datasets/miracl/nomiracl",
+    "paper_url": "https://aclanthology.org/2024.findings-emnlp.730/",
+    "documents": 5000,
+    "queries": 200,
+    "limit_queries": 200,
+    "limit_corpus": 5000,
+    "split": "test",
+    "top_k": 10,
+    "description": "NoMIRACL Russian relevant-subset retrieval over human-annotated top-k passages. This is a compact multilingual relevance benchmark, not a full-corpus MIRACL run."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "ndcg_at_k": 0.43433154988588774,
+      "recall_at_k": 0.5160595238095238,
+      "mrr_at_k": 0.48935119047619047,
+      "precision_at_1": 0.41,
+      "avg_latency_ms": 10.217472500225995,
+      "p95_latency_ms": 15.528300005826168,
+      "queries": 200
+    },
+    {
+      "engine": "Chroma",
+      "ndcg_at_k": 0.4354722252548013,
+      "recall_at_k": 0.5185595238095239,
+      "mrr_at_k": 0.48957936507936506,
+      "precision_at_1": 0.41,
+      "avg_latency_ms": 2.603124500019476,
+      "p95_latency_ms": 3.437899998971261,
+      "queries": 200
+    },
+    {
+      "engine": "Qdrant",
+      "ndcg_at_k": 0.43433154988588774,
+      "recall_at_k": 0.5160595238095238,
+      "mrr_at_k": 0.48935119047619047,
+      "precision_at_1": 0.41,
+      "avg_latency_ms": 18.859044499477022,
+      "p95_latency_ms": 24.08370000193827,
+      "queries": 200
+    }
+  ]
+}

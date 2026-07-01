@@ -778,6 +778,7 @@ Current read:
 |---|---|---|
 | Public agent-memory evidence | On official LoCoMo `locomo10.json`, WaveMind reaches `evidence_recall@5 0.386` with hash embeddings and `0.547` with sentence-transformers. Fair namespace-filtered Chroma reaches `0.257` / `0.407`; Qdrant reaches `0.263` / `0.409`. | WaveMind retrieves more labeled evidence. Chroma is still the fastest static vector-store baseline. Qdrant local payload filtering is much slower than service-mode Qdrant should be. |
 | Public retrieval sanity check | On BEIR SciFact, WaveMind reaches `nDCG@10 0.354`, `Recall@10 0.482`; Qdrant matches that quality; Chroma reaches `0.350` / `0.467` with identical hash embeddings. | Same-embedding retrieval quality is close. Chroma is fastest at `1.79 ms`; Qdrant local is `17.71 ms`; WaveMind exact path is `117.02 ms`. |
+| Public multilingual retrieval | On NoMIRACL Russian, sampled at 200 queries / 5000 compact candidate passages, WaveMind reaches `nDCG@10 0.434`, `Recall@10 0.516`, matching Qdrant and staying within `0.002` nDCG of Chroma on identical hash embeddings. | Russian same-embedding quality is at parity. Chroma is faster at `2.60 ms`; WaveMind is `10.22 ms`; Qdrant local is `18.86 ms`. |
 | Static agent recall | WaveMind `precision@1` equals Chroma at `0.82`; WaveMind `precision@3` is `0.90` vs Chroma `0.88`. | Competitive quality, but Chroma is faster on the static vector-store path. |
 | Dynamic memory policy | WaveMind reaches `1.00` stale suppression; Chroma static is `0.00`. | This is the strongest current differentiation: hotness, TTL, corrections, and namespaces. |
 | Field memory dynamics | Graph-enabled WaveMind reaches `1.00` `precision@1`, `1.00` stale suppression, and `1.00` concept formation vs static WaveMind at `0.20` / `0.20` / `0.00`. | This is still synthetic, but it is the first regression check for memory-to-memory excitation, conflict inhibition, and decay. |
@@ -797,10 +798,11 @@ Current read:
 | WaveMind capacity curve | How recall and latency change at 200 / 1000 / 5000 memories. | implemented | WaveMind-only today | Keep `precision@1 >= 0.95` at 5000 memories and dynamic latency below 20 ms. |
 | Long-term memory evidence | Evidence retrieval from long histories with profile, preference, correction, TTL, namespace, and filler noise. | implemented | Static vector / Chroma / Qdrant | Keep this as a small regression test while public LoCoMo and LongMemEval runners carry the stronger evidence claims. |
 | BEIR-style open retrieval runner | Public `corpus.jsonl`, `queries.jsonl`, `qrels/*.tsv` datasets with the same metrics for each engine. | implemented | WaveMind / Chroma / Qdrant | Use identical embeddings and report `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, and latency. Current checked-in run: BEIR SciFact. |
+| NoMIRACL Russian retrieval | Russian human-annotated multilingual relevance over compact candidate passages. | implemented | WaveMind / Chroma / Qdrant | Keep same-embedding `nDCG@10` at parity, then rerun with sentence-transformers and full MIRACL Russian when disk/service capacity allows it. |
 | ANN/VectorDBBench-style local curve | Recall/latency tradeoff for candidate indexes on generated vectors. | implemented | NumPy exact / quantized int8 / Annoy / Qdrant local | Use this as the local engineering curve; official VectorDBBench remains future work. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
-| [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | planned | Chroma / Qdrant / FAISS | Reach same-embedding parity on Russian `nDCG@10`. |
+| [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | runner ready | Chroma / Qdrant / FAISS | NoMIRACL Russian compact run is implemented; full-corpus MIRACL Russian remains the next heavier profile. |
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | Vector database insertion/search/filter/cost-performance benchmark. | planned | Chroma / Qdrant / Milvus / Weaviate / Pinecone / FAISS | Use only after WaveMind has a production index path; today it is a memory layer, not a standalone cloud vector DB. |
 | [LoCoMo](https://arxiv.org/abs/2402.17753) | Long conversation memory, temporal consistency, multi-hop recall. Retrieval-only runner is implemented for official `locomo10.json`. | implemented | Static vector / Chroma / Qdrant | Improve answer generation accuracy on top of the stronger sentence-transformers evidence retrieval run. |
 | [LongMemEval](https://arxiv.org/abs/2410.10813) | Long-term assistant memory with updates and abstention. | implemented retrieval, answer runner ready | Static vector / Chroma / Qdrant / Mem0-style memory | Add LLM answer quality and abstention after retrieval. |
@@ -848,6 +850,36 @@ on a real public dataset, but its current exact path is far slower than Chroma.
 Qdrant local preserves the same ranking quality and is much faster than the
 WaveMind NumPy exact path. The engineering target is a FAISS/Annoy candidate
 index with WaveMind's dynamic field policy applied only as a top-k re-ranker.
+
+### NoMIRACL Russian Retrieval
+
+WaveMind includes a compact multilingual retrieval runner for
+[NoMIRACL](https://huggingface.co/datasets/miracl/nomiracl), the negative-aware
+MIRACL relevance dataset. The checked-in run uses Russian `test.relevant`
+queries and the compact Russian candidate corpus. It is not a full-corpus
+MIRACL run; it is a reproducible multilingual relevance benchmark small enough
+to run on a local machine.
+
+```sh
+python benchmarks/nomiracl_russian_benchmark.py --download --dataset benchmarks/data/nomiracl-russian --engines wavemind chroma qdrant --top-k 10 --limit-queries 200 --limit-corpus 5000 --output benchmarks/nomiracl_russian_results.json
+```
+
+Checked-in NoMIRACL Russian result:
+
+200 Russian queries, 5000 compact candidate passages,
+`HashingTextEncoder`, top-k 10. Full machine-readable result:
+`benchmarks/nomiracl_russian_results.json`.
+
+| engine | nDCG@10 | Recall@10 | MRR@10 | precision@1 | avg latency | p95 latency |
+|---|---:|---:|---:|---:|---:|---:|
+| WaveMind | 0.434 | 0.516 | 0.489 | 0.410 | 10.22 ms | 15.53 ms |
+| Chroma | 0.435 | 0.519 | 0.490 | 0.410 | 2.60 ms | 3.44 ms |
+| Qdrant | 0.434 | 0.516 | 0.489 | 0.410 | 18.86 ms | 24.08 ms |
+
+Read this as multilingual same-embedding parity, not as a claim that the hash
+encoder is the best Russian semantic model. The next stronger run should use
+`sentence-transformers` on the same NoMIRACL split, then full MIRACL Russian
+when there is enough disk/service capacity.
 
 ### LoCoMo Evidence Retrieval
 

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1640" viewBox="0 0 1180 1640" role="img" aria-label="WaveMind benchmark summary">
-<rect width="1180" height="1640" fill="#f6f8fb" />
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1720" viewBox="0 0 1180 1720" role="img" aria-label="WaveMind benchmark summary">
+<rect width="1180" height="1720" fill="#f6f8fb" />
 <text x="42.0" y="54.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="30" font-weight="800" fill="#111827">WaveMind Benchmark Summary</text>
 <text x="42.0" y="82.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="400" fill="#556070">Generated from repository JSON results. Planned public benchmarks are not drawn as wins.</text>
 <rect x="40.0" y="120.0" width="520.0" height="245.0" rx="10" fill="#ffffff" stroke="#d7deea" />
@@ -103,7 +103,7 @@
 <text x="63.0" y="723.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085">ms</text>
 <text x="66.0" y="895.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Current fact from JSON: static p@1 is 0.94 at 5000 memories; dynamic policy p@1 is 1.00 through 5000 memories.</text>
 <text x="66.0" y="917.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Target: keep public retrieval quality at Chroma/Qdrant parity while cutting dynamic latency below 20 ms at 5000 memories.</text>
-<rect x="40.0" y="950.0" width="1100.0" height="335.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<rect x="40.0" y="950.0" width="1100.0" height="405.0" rx="10" fill="#ffffff" stroke="#d7deea" />
 <text x="64.0" y="986.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark runs</text>
 <text x="64.0" y="1011.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Official public datasets with identical embeddings per run. These are retrieval/evidence checks, not final answer-quality scores.</text>
 <text x="66.0" y="1028.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">LoCoMo WaveMind evidence recall@5</text>
@@ -150,49 +150,61 @@
 <rect x="755.0" y="1242.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
 <rect x="755.0" y="1242.0" width="132.0" height="12.0" rx="6" fill="#64748b" />
 <text x="1022.0" y="1253.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.52</text>
-<text x="66.0" y="1262.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency: LoCoMo sentence WaveMind 3.44 ms vs Chroma 4.97 ms; LongMemEval full WaveMind 7.27 ms vs Chroma 15.96 ms.</text>
-<rect x="40.0" y="1310.0" width="1100.0" height="115.0" rx="10" fill="#ffffff" stroke="#d7deea" />
-<text x="64.0" y="1346.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">ANN index curve</text>
-<text x="64.0" y="1371.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Generated 128-d vectors, 100 queries, recall@10 against exact cosine neighbors. Latest point: 50000 vectors.</text>
-<text x="66.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NumPy exact recall@10</text>
-<rect x="66.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="66.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#246bfe" />
-<text x="248.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">1.00</text>
-<text x="320.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Quantized int8 recall@10</text>
-<rect x="320.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="320.0" y="1386.0" width="158.8" height="12.0" rx="6" fill="#b35c00" />
-<text x="502.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#b35c00">0.93</text>
-<text x="574.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Annoy recall@10</text>
-<rect x="574.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="574.0" y="1386.0" width="124.1" height="12.0" rx="6" fill="#7c3aed" />
-<text x="756.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.73</text>
-<text x="828.0" y="1378.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Qdrant local recall@10</text>
-<rect x="828.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
-<rect x="828.0" y="1386.0" width="170.0" height="12.0" rx="6" fill="#0a7f5a" />
-<text x="1010.0" y="1397.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">1.00</text>
-<text x="66.0" y="1412.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 6.49 ms; int8 24.92 ms; Annoy 4.92 ms; Qdrant local 43.49 ms.</text>
-<rect x="40.0" y="1450.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
-<text x="64.0" y="1486.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
-<text x="64.0" y="1511.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>
-<rect x="66.0" y="1520.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="82.0" y="1536.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
-<text x="100.0" y="1545.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">BEIR SciFact</text>
-<text x="82.0" y="1567.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">implemented</text>
-<text x="82.0" y="1583.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash retrieval run</text>
-<rect x="336.0" y="1520.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="352.0" y="1536.0" width="10.0" height="10.0" rx="5" fill="#7c3aed" />
-<text x="370.0" y="1545.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LoCoMo</text>
-<text x="352.0" y="1567.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#7c3aed">implemented</text>
-<text x="352.0" y="1583.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash + sentence</text>
-<rect x="606.0" y="1520.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="622.0" y="1536.0" width="10.0" height="10.0" rx="5" fill="#b35c00" />
-<text x="640.0" y="1545.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LongMemEval</text>
-<text x="622.0" y="1567.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#b35c00">full run done</text>
-<text x="622.0" y="1583.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">answer eval next</text>
-<rect x="876.0" y="1520.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
-<rect x="892.0" y="1536.0" width="10.0" height="10.0" rx="5" fill="#0a7f5a" />
-<text x="910.0" y="1545.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">ANN Curve</text>
-<text x="892.0" y="1567.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">implemented</text>
-<text x="892.0" y="1583.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">50k vectors</text>
-<text x="66.0" y="1627.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Also planned: MTEB Retrieval, MIRACL Russian, LMEB, RAGBench, official VectorDBBench, and service-mode Qdrant/FAISS curves.</text>
+<text x="66.0" y="1274.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NoMIRACL RU WaveMind nDCG@10</text>
+<rect x="66.0" y="1282.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="66.0" y="1282.0" width="110.8" height="12.0" rx="6" fill="#246bfe" />
+<text x="333.0" y="1293.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">0.43</text>
+<text x="410.0" y="1274.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NoMIRACL RU Chroma nDCG@10</text>
+<rect x="410.0" y="1282.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="410.0" y="1282.0" width="111.0" height="12.0" rx="6" fill="#64748b" />
+<text x="677.0" y="1293.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#64748b">0.44</text>
+<text x="755.0" y="1274.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NoMIRACL RU Qdrant nDCG@10</text>
+<rect x="755.0" y="1282.0" width="255.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="755.0" y="1282.0" width="110.8" height="12.0" rx="6" fill="#0a7f5a" />
+<text x="1022.0" y="1293.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">0.43</text>
+<text x="66.0" y="1334.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency: NoMIRACL RU WaveMind 10.22 ms vs Chroma 2.60 ms; LongMemEval full WaveMind 7.27 ms vs Chroma 15.96 ms.</text>
+<rect x="40.0" y="1380.0" width="1100.0" height="115.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<text x="64.0" y="1416.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">ANN index curve</text>
+<text x="64.0" y="1441.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Generated 128-d vectors, 100 queries, recall@10 against exact cosine neighbors. Latest point: 50000 vectors.</text>
+<text x="66.0" y="1448.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">NumPy exact recall@10</text>
+<rect x="66.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="66.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#246bfe" />
+<text x="248.0" y="1467.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#246bfe">1.00</text>
+<text x="320.0" y="1448.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Quantized int8 recall@10</text>
+<rect x="320.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="320.0" y="1456.0" width="158.8" height="12.0" rx="6" fill="#b35c00" />
+<text x="502.0" y="1467.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#b35c00">0.93</text>
+<text x="574.0" y="1448.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Annoy recall@10</text>
+<rect x="574.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="574.0" y="1456.0" width="124.1" height="12.0" rx="6" fill="#7c3aed" />
+<text x="756.0" y="1467.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#7c3aed">0.73</text>
+<text x="828.0" y="1448.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033">Qdrant local recall@10</text>
+<rect x="828.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
+<rect x="828.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#0a7f5a" />
+<text x="1010.0" y="1467.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">1.00</text>
+<text x="66.0" y="1482.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 6.49 ms; int8 24.92 ms; Annoy 4.92 ms; Qdrant local 43.49 ms.</text>
+<rect x="40.0" y="1520.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
+<text x="64.0" y="1556.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
+<text x="64.0" y="1581.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>
+<rect x="66.0" y="1590.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="82.0" y="1606.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
+<text x="100.0" y="1615.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">BEIR SciFact</text>
+<text x="82.0" y="1637.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">implemented</text>
+<text x="82.0" y="1653.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">hash retrieval run</text>
+<rect x="336.0" y="1590.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="352.0" y="1606.0" width="10.0" height="10.0" rx="5" fill="#246bfe" />
+<text x="370.0" y="1615.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">NoMIRACL RU</text>
+<text x="352.0" y="1637.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#246bfe">implemented</text>
+<text x="352.0" y="1653.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">200q / 5k docs</text>
+<rect x="606.0" y="1590.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="622.0" y="1606.0" width="10.0" height="10.0" rx="5" fill="#b35c00" />
+<text x="640.0" y="1615.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">LongMemEval</text>
+<text x="622.0" y="1637.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#b35c00">full run done</text>
+<text x="622.0" y="1653.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">answer eval next</text>
+<rect x="876.0" y="1590.0" width="245" height="70" rx="8" fill="#ffffff" stroke="#d7deea" />
+<rect x="892.0" y="1606.0" width="10.0" height="10.0" rx="5" fill="#0a7f5a" />
+<text x="910.0" y="1615.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#111827">ANN Curve</text>
+<text x="892.0" y="1637.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" fill="#0a7f5a">implemented</text>
+<text x="892.0" y="1653.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085">50k vectors</text>
+<text x="66.0" y="1697.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Also planned: MTEB Retrieval, full-corpus MIRACL Russian, LMEB, RAGBench, official VectorDBBench, and service-mode Qdrant/FAISS curves.</text>
 </svg>

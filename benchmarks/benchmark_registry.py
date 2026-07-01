@@ -55,6 +55,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
     long_memory_payload = _load_json(root / "benchmarks" / "long_memory_evidence_results.json")
     open_retrieval_payload = _load_json(root / "benchmarks" / "open_retrieval_scifact_results.json")
+    nomiracl_payload = _load_json(root / "benchmarks" / "nomiracl_russian_results.json")
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
@@ -65,6 +66,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
     open_retrieval_results = _engine_results(open_retrieval_payload)
+    nomiracl_results = _engine_results(nomiracl_payload)
     locomo_results = _engine_results(locomo_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
@@ -263,6 +265,54 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Run WaveMind, Chroma, and Qdrant with identical embeddings and compare retrieval/index behavior on public qrels.",
             "next_step": "Add sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset.",
+        },
+        {
+            "id": "nomiracl_russian_retrieval",
+            "name": "NoMIRACL Russian retrieval",
+            "category": "multilingual-retrieval",
+            "status": "implemented",
+            "source": "benchmarks/nomiracl_russian_benchmark.py",
+            "source_url": "https://huggingface.co/datasets/miracl/nomiracl",
+            "dataset": "NoMIRACL Russian test relevant subset, 200 queries, 5000 compact top-k candidate passages, human-annotated relevance labels.",
+            "competitors": ["Chroma", "Qdrant"],
+            "metrics": ["nDCG@10", "Recall@10", "MRR@10", "precision@1", "avg_latency_ms", "p95_latency_ms"],
+            "current": {
+                "WaveMind": _metric_summary(
+                    nomiracl_results.get("WaveMind"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma": _metric_summary(
+                    nomiracl_results.get("Chroma"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant": _metric_summary(
+                    nomiracl_results.get("Qdrant"),
+                    (
+                        "ndcg_at_k",
+                        "recall_at_k",
+                        "mrr_at_k",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Reach same-embedding Russian nDCG@10 parity with Chroma/Qdrant while moving latency below 5 ms through FAISS/service-mode candidate indexes.",
+            "next_step": "Run sentence-transformers on the same NoMIRACL Russian split and then add the full MIRACL Russian corpus profile when disk/service capacity allows it.",
         },
         {
             "id": "locomo_evidence_retrieval",
@@ -500,13 +550,13 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
         "id": "miracl_ru",
         "name": "MIRACL Russian",
         "category": "multilingual-retrieval",
-        "status": "planned",
+        "status": "runner-ready",
         "source_url": "https://miracl.ai/",
-        "dataset": "Native-speaker judged multilingual retrieval benchmark with Russian included.",
+        "dataset": "Native-speaker judged multilingual retrieval benchmark with Russian included. NoMIRACL Russian compact candidate benchmark is implemented; full-corpus MIRACL remains planned.",
         "competitors": ["Chroma", "Qdrant", "FAISS"],
         "metrics": ["nDCG@10", "Recall@100", "avg_latency_ms"],
         "target": "Prove Russian recall with semantic embeddings; target nDCG@10 parity with same-embedding Chroma/Qdrant.",
-        "next_step": "Add MIRACL ru/dev loader behind an optional benchmark extra because the dataset is too large for the base package.",
+        "next_step": "Extend the NoMIRACL loader to full MIRACL Russian corpus once disk/service capacity is available.",
     },
     {
         "id": "vectordbbench",

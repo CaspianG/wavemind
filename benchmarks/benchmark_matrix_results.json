@@ -271,6 +271,55 @@
       "next_step": "Add sentence-transformers runs for SciFact, then add NFCorpus as the second BEIR dataset."
     },
     {
+      "id": "nomiracl_russian_retrieval",
+      "name": "NoMIRACL Russian retrieval",
+      "category": "multilingual-retrieval",
+      "status": "implemented",
+      "source": "benchmarks/nomiracl_russian_benchmark.py",
+      "source_url": "https://huggingface.co/datasets/miracl/nomiracl",
+      "dataset": "NoMIRACL Russian test relevant subset, 200 queries, 5000 compact top-k candidate passages, human-annotated relevance labels.",
+      "competitors": [
+        "Chroma",
+        "Qdrant"
+      ],
+      "metrics": [
+        "nDCG@10",
+        "Recall@10",
+        "MRR@10",
+        "precision@1",
+        "avg_latency_ms",
+        "p95_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "ndcg_at_k": 0.43433154988588774,
+          "recall_at_k": 0.5160595238095238,
+          "mrr_at_k": 0.48935119047619047,
+          "precision_at_1": 0.41,
+          "avg_latency_ms": 10.217472500225995,
+          "p95_latency_ms": 15.528300005826168
+        },
+        "Chroma": {
+          "ndcg_at_k": 0.4354722252548013,
+          "recall_at_k": 0.5185595238095239,
+          "mrr_at_k": 0.48957936507936506,
+          "precision_at_1": 0.41,
+          "avg_latency_ms": 2.603124500019476,
+          "p95_latency_ms": 3.437899998971261
+        },
+        "Qdrant": {
+          "ndcg_at_k": 0.43433154988588774,
+          "recall_at_k": 0.5160595238095238,
+          "mrr_at_k": 0.48935119047619047,
+          "precision_at_1": 0.41,
+          "avg_latency_ms": 18.859044499477022,
+          "p95_latency_ms": 24.08370000193827
+        }
+      },
+      "target": "Reach same-embedding Russian nDCG@10 parity with Chroma/Qdrant while moving latency below 5 ms through FAISS/service-mode candidate indexes.",
+      "next_step": "Run sentence-transformers on the same NoMIRACL Russian split and then add the full MIRACL Russian corpus profile when disk/service capacity allows it."
+    },
+    {
       "id": "locomo_evidence_retrieval",
       "name": "LoCoMo evidence retrieval runner",
       "category": "long-term-conversation-memory",
@@ -534,9 +583,9 @@
       "id": "miracl_ru",
       "name": "MIRACL Russian",
       "category": "multilingual-retrieval",
-      "status": "planned",
+      "status": "runner-ready",
       "source_url": "https://miracl.ai/",
-      "dataset": "Native-speaker judged multilingual retrieval benchmark with Russian included.",
+      "dataset": "Native-speaker judged multilingual retrieval benchmark with Russian included. NoMIRACL Russian compact candidate benchmark is implemented; full-corpus MIRACL remains planned.",
       "competitors": [
         "Chroma",
         "Qdrant",
@@ -548,7 +597,7 @@
         "avg_latency_ms"
       ],
       "target": "Prove Russian recall with semantic embeddings; target nDCG@10 parity with same-embedding Chroma/Qdrant.",
-      "next_step": "Add MIRACL ru/dev loader behind an optional benchmark extra because the dataset is too large for the base package."
+      "next_step": "Extend the NoMIRACL loader to full MIRACL Russian corpus once disk/service capacity is available."
     },
     {
       "id": "vectordbbench",
