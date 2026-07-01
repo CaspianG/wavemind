@@ -14,6 +14,7 @@ include docs/RELEASE.md
 include docs/PROJECT_BOARD.md
 include docs/DEMO_SCRIPT.md
 include docs/LAUNCH_KIT.md
+include docs/CHROMA_MIGRATION.md
 include docs/RU_LAUNCH_POSTS.md
 include docs/USE_CASES.md
 include docs/assets/benchmark-summary.svg

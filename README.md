@@ -20,6 +20,7 @@ users or projects isolated.
 [Python Example](#python-example) |
 [Where Data Lives](#where-data-lives) |
 [LangChain](#langchain-memory) |
+[Chroma Migration](docs/CHROMA_MIGRATION.md) |
 [Use Cases](docs/USE_CASES.md) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
@@ -487,6 +488,7 @@ That makes it usable in more than LangChain:
 | Corrections/privacy | Use `forget()` or namespace deletion workflows. |
 
 More examples: [`docs/USE_CASES.md`](docs/USE_CASES.md).
+Migrating from a Chroma memory store: [`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
 
 Framework examples in this repository:
 
@@ -1067,6 +1069,9 @@ python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memori
 | Scale target today | Up to 1000 optimal on NumPy, FAISS recommended beyond 5000 | Larger than WaveMind local mode | Production scale |
 
 WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
+
+If you already use Chroma for local memory, see the practical migration guide:
+[`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
 
 ## Known Limitations
 

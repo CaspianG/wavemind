@@ -124,6 +124,8 @@ def test_release_workflow_builds_and_creates_github_release():
 
 def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    chroma_migration = Path("docs/CHROMA_MIGRATION.md").read_text(encoding="utf-8")
 
     assert "include CONTRIBUTING.md" in manifest
     assert "include SECURITY.md" in manifest
@@ -131,7 +133,12 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/ROADMAP.md" in manifest
     assert "include docs/RELEASE.md" in manifest
     assert "include docs/PROJECT_BOARD.md" in manifest
+    assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include examples/*.py" in manifest
     assert "prune benchmarks/data" in manifest
+    assert "docs/CHROMA_MIGRATION.md" in readme
+    assert "Keep Chroma as-is" in chroma_migration
+    assert "WaveMind is not a faster Chroma replacement" in chroma_migration
+    assert "namespace=\"user:42\"" in chroma_migration
