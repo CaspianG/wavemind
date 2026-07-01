@@ -134,7 +134,7 @@ STUDIO_HTML = r"""<!doctype html>
     }
     .stats {
       display: grid;
-      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -149,7 +149,8 @@ STUDIO_HTML = r"""<!doctype html>
       font-size: 22px;
       font-weight: 820;
       color: var(--strong);
-      white-space: nowrap;
+      overflow-wrap: anywhere;
+      line-height: 1.1;
     }
     .stat .label {
       color: var(--muted);
@@ -278,8 +279,11 @@ STUDIO_HTML = r"""<!doctype html>
       header { flex-direction: column; }
       .top-actions { justify-content: flex-start; }
       .grid, .split { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .row, .row.two { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      .stats { grid-template-columns: 1fr; }
     }
   </style>
 </head>
