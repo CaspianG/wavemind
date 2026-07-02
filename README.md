@@ -754,6 +754,7 @@ WaveMind tracks benchmarks in two layers:
 
 Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/BENCHMARK_REPORT.md).
+Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
 
 Visual summary generated from the checked-in JSON results:
 
