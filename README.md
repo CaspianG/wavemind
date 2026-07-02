@@ -81,24 +81,26 @@ Current checked-in real OKX walk-forward result:
 
 | engine | direction@1 | active d1 | signal rate | avg net bps | sized net bps | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.428 | 0.428 | 1.000 | -41.93 | -33.04 | 0.990 | 0.000 | 11.17 ms |
-| WaveMind calibrated | 0.273 | 0.442 | 0.421 | -21.30 | -17.66 | 0.373 | 0.579 | 11.23 ms |
-| WaveMind field-off | 0.404 | 0.440 | 0.869 | -21.81 | -18.69 | 0.593 | 0.000 | 8.32 ms |
-| OHLCV shape kNN | 0.392 | 0.419 | 0.873 | -23.86 | -19.47 | 0.590 | 0.000 | 0.22 ms |
+| WaveMind 4h profile | 0.179 | 0.523 | 0.119 | 7.48 | 5.57 | 0.142 | 0.881 | 3.72 ms |
+| WaveMind field | 0.428 | 0.428 | 1.000 | -41.93 | -33.04 | 0.990 | 0.000 | 9.65 ms |
+| WaveMind calibrated | 0.273 | 0.442 | 0.421 | -21.30 | -17.66 | 0.373 | 0.579 | 9.79 ms |
+| WaveMind field-off | 0.404 | 0.440 | 0.869 | -21.81 | -18.69 | 0.593 | 0.000 | 6.95 ms |
+| OHLCV shape kNN | 0.392 | 0.419 | 0.873 | -23.86 | -19.47 | 0.590 | 0.000 | 0.20 ms |
 | Naive last-regime | 0.426 | 0.467 | 0.854 | 2.10 | 1.84 | 0.566 | 0.000 | 0.00 ms |
 | TA rules | 0.317 | 0.495 | 0.481 | -25.20 | -23.52 | 0.176 | 0.000 | 0.00 ms |
-| Static kNN | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 2.65 ms |
-| Chroma | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.79 ms |
-| Qdrant | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.48 ms |
+| Static kNN | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 2.29 ms |
+| Chroma | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.23 ms |
+| Qdrant | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 3.80 ms |
 
-Interpretation: this is not good enough for a trading claim. Raw WaveMind field
-slightly improves direction@1 over naive last-regime (`0.428` vs `0.426`) but
-over-triggers and loses heavily after fees/slippage. Calibration reduces
-large-move false positives from `0.990` to `0.373`, but it still loses
-(`-17.66` sized net bps). Static vector retrieval, Chroma, and Qdrant are also
-negative. The strongest result in this run is the naive last-regime baseline,
-which is only slightly positive (`1.84` sized net bps). This branch is therefore
-a real-data research harness, not evidence of market edge.
+Interpretation: the first positive real-data profile is now checked in.
+`WaveMind 4h profile` beats every included baseline on this OKX walk-forward
+run after fees and slippage (`5.57` sized net bps vs `1.84` for naive
+last-regime and negative static kNN/Chroma/Qdrant). The caveat is important:
+this is a selective 4h profile, not a universal predictor. It stays flat on
+1h/1d, filters `88.1%` of all windows, and only acts when the wave-memory
+evidence agrees with the current 4h regime. Raw WaveMind field still
+over-triggers and loses heavily after costs, so the research direction is
+profile discovery, stronger regime modeling, and out-of-sample robustness.
 
 ## Research Plan
 
@@ -118,10 +120,11 @@ Near-term execution plan:
 7. Done: initial false-positive suppression with stricter analogue agreement,
    regime filters, and confidence thresholds.
 8. Done: real OKX OHLCV validation with checked-in CSV cache.
-9. Next: improve feature/regime modeling because current real-data results do
-   not beat naive last-regime after costs.
-10. Only after retrieval quality is stable, test signal construction and
-   backtesting.
+9. Done: first positive real-data profile (`WaveMind 4h profile`) that beats
+   the included baselines after costs on checked-in OKX data.
+10. Next: validate robustness on more date ranges, exchanges, assets, and
+    walk-forward folds before treating this as a deployable signal.
+11. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

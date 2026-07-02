@@ -13,7 +13,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "calibrated", "field-off", "shape", "naive", "ta"],
+        engines=["wavemind", "4h-profile", "risk-overlay", "regime-gated", "calibrated", "field-off", "shape", "naive", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
@@ -23,12 +23,22 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         confidence_threshold=0.6,
         min_analogue_agreement=0.5,
         min_expected_edge_bps=12.0,
+        gate_min_support=0.55,
+        gate_min_regime_agreement=0.45,
+        gate_performance_lookback=24,
+        gate_min_historical_edge_bps=-5.0,
+        risk_max_opposition=0.8,
+        risk_min_regime_agreement=0.2,
+        risk_min_historical_edge_bps=-50.0,
     )
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
 
     assert set(result_by_engine) == {
         "WaveMind field",
+        "WaveMind 4h profile",
+        "WaveMind risk-overlay",
+        "WaveMind regime-gated",
         "WaveMind calibrated",
         "WaveMind field-off",
         "OHLCV shape kNN",
@@ -44,6 +54,9 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "avg_position_size" in result_by_engine["WaveMind field"]
     assert "avg_confidence" in result_by_engine["WaveMind calibrated"]
     assert "filtered_rate" in result_by_engine["WaveMind calibrated"]
+    assert "filtered_rate" in result_by_engine["WaveMind regime-gated"]
+    assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
+    assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]
     assert 0.0 <= result_by_engine["WaveMind calibrated"]["filtered_rate"] <= 1.0
     assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
@@ -54,6 +67,13 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["scenario"]["confidence_threshold"] == 0.6
     assert payload["scenario"]["min_analogue_agreement"] == 0.5
     assert payload["scenario"]["min_expected_edge_bps"] == 12.0
+    assert payload["scenario"]["gate_min_support"] == 0.55
+    assert payload["scenario"]["gate_min_regime_agreement"] == 0.45
+    assert payload["scenario"]["gate_performance_lookback"] == 24
+    assert payload["scenario"]["gate_min_historical_edge_bps"] == -5.0
+    assert payload["scenario"]["risk_max_opposition"] == 0.8
+    assert payload["scenario"]["risk_min_regime_agreement"] == 0.2
+    assert payload["scenario"]["risk_min_historical_edge_bps"] == -50.0
     assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
@@ -65,6 +85,45 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
 
     assert "WaveMind Crypto Analogue Explorer" in html_path.read_text(encoding="utf-8")
     assert "MFE bps" in html_path.read_text(encoding="utf-8")
+
+
+def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
+    from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
+    from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
+
+    bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="4h", bars=150, seed=8)
+    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="4h", window=16, horizon=3)
+    market = MarketDataset(symbol="BTC", timeframe="4h", bars=bars, windows=windows)
+
+    solo = run_walk_forward(
+        markets=[market],
+        engines=["wavemind"],
+        train_windows=45,
+        test_windows=12,
+        top_k=3,
+    )
+    mixed = run_walk_forward(
+        markets=[market],
+        engines=["4h-profile", "wavemind"],
+        train_windows=45,
+        test_windows=12,
+        top_k=3,
+    )
+
+    solo_field = next(result for result in solo["results"] if result["engine"] == "WaveMind field")
+    mixed_field = next(result for result in mixed["results"] if result["engine"] == "WaveMind field")
+    stable_keys = [
+        "queries",
+        "direction_accuracy_at_1",
+        "direction_accuracy_at_3",
+        "signal_rate",
+        "avg_net_return_bps",
+        "avg_sized_net_return_bps",
+        "large_move_false_positive_rate",
+    ]
+
+    for key in stable_keys:
+        assert mixed_field[key] == solo_field[key]
 
 
 def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
@@ -86,6 +145,9 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "1h",
             "--engines",
             "wavemind",
+            "4h-profile",
+            "risk-overlay",
+            "regime-gated",
             "calibrated",
             "field-off",
             "shape",
@@ -119,8 +181,11 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["scenario"]["name"] == "crypto_walk_forward"
     assert payload["scenario"]["note"].startswith("Research walk-forward")
     assert payload["results"][0]["engine"] == "WaveMind field"
-    assert payload["results"][1]["engine"] == "WaveMind calibrated"
-    assert payload["results"][2]["engine"] == "WaveMind field-off"
+    assert payload["results"][1]["engine"] == "WaveMind 4h profile"
+    assert payload["results"][2]["engine"] == "WaveMind risk-overlay"
+    assert payload["results"][3]["engine"] == "WaveMind regime-gated"
+    assert payload["results"][4]["engine"] == "WaveMind calibrated"
+    assert payload["results"][5]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 

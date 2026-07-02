@@ -186,6 +186,7 @@ class WaveMindEngine(MarketEngine):
         regime_filter: bool = True,
         large_move_bps: float = 75.0,
         min_expected_edge_bps: float = 0.0,
+        db_label: str | None = None,
     ):
         if calibrated:
             self.name = "WaveMind calibrated"
@@ -199,9 +200,11 @@ class WaveMindEngine(MarketEngine):
         self.regime_filter = bool(regime_filter)
         self.large_move_bps = float(large_move_bps)
         self.min_expected_edge_bps = float(min_expected_edge_bps)
+        if db_label is None:
+            db_label = "calibrated" if calibrated else ("field" if use_field else "fieldoff")
         self.memory = WaveMind(
             db_path=temp_root
-            / f"{symbol.replace('/', '')}_{timeframe}_{'calibrated' if calibrated else ('field' if use_field else 'fieldoff')}.sqlite3",
+            / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3",
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
@@ -274,6 +277,250 @@ class WaveMindEngine(MarketEngine):
 
     def close(self) -> None:
         self.memory.close()
+
+
+class WaveMindRegimeGateEngine(WaveMindEngine):
+    name = "WaveMind regime-gated"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        min_support: float = 0.52,
+        min_regime_agreement: float = 0.5,
+        min_expected_edge_bps: float = 30.0,
+        performance_lookback: int = 96,
+        min_historical_edge_bps: float = 0.0,
+        round_trip_cost_bps: float = 30.0,
+        db_label: str = "regimegate",
+    ):
+        super().__init__(
+            encoder,
+            symbol=symbol,
+            timeframe=timeframe,
+            temp_root=temp_root,
+            use_field=True,
+            db_label=db_label,
+        )
+        self.name = "WaveMind regime-gated"
+        self.records: list[OHLCVWindow] = []
+        self.min_support = float(min_support)
+        self.min_regime_agreement = float(min_regime_agreement)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.performance_lookback = int(performance_lookback)
+        self.min_historical_edge_bps = float(min_historical_edge_bps)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        self.records.append(window)
+        super().add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        if not self.records:
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+        memory_prediction = super().query(window, top_k=top_k)
+        latest = self.records[-1]
+        candidate_direction = latest.direction
+        if candidate_direction == "flat" or not memory_prediction.analogues:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=memory_prediction.latency_ms,
+                analogues=memory_prediction.analogues,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="flat_candidate",
+                confidence=0.0,
+            )
+        selected = [match for match in memory_prediction.analogues if match.direction == candidate_direction]
+        support = _weighted_direction_support(candidate_direction, memory_prediction.analogues)
+        regime_agreement = _regime_agreement(window, selected)
+        expected_return = _weighted_mean_return(selected) if selected else float(latest.future_return_bps)
+        historical_edge = _rolling_last_regime_edge(
+            self.records,
+            lookback=self.performance_lookback,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        confidence = float(support * (0.45 + 0.55 * regime_agreement))
+        reasons = []
+        if historical_edge < self.min_historical_edge_bps:
+            reasons.append("negative_recent_edge")
+        if support < self.min_support:
+            reasons.append("low_memory_support")
+        if regime_agreement < self.min_regime_agreement:
+            reasons.append("regime_mismatch")
+        if abs(expected_return) < self.min_expected_edge_bps:
+            reasons.append("low_expected_edge")
+        if reasons:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=memory_prediction.latency_ms,
+                analogues=memory_prediction.analogues,
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=",".join(reasons),
+                analogue_agreement=support,
+                regime_agreement=regime_agreement,
+            )
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=expected_return,
+            latency_ms=memory_prediction.latency_ms,
+            analogues=memory_prediction.analogues,
+            confidence=confidence,
+            raw_direction=candidate_direction,
+            analogue_agreement=support,
+            regime_agreement=regime_agreement,
+        )
+
+
+class WaveMindFourHourProfileEngine(WaveMindRegimeGateEngine):
+    name = "WaveMind 4h profile"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        min_expected_edge_bps: float = 30.0,
+        round_trip_cost_bps: float = 30.0,
+    ):
+        super().__init__(
+            encoder,
+            symbol=symbol,
+            timeframe=timeframe,
+            temp_root=temp_root,
+            min_support=0.52,
+            min_regime_agreement=0.5,
+            min_expected_edge_bps=min_expected_edge_bps,
+            performance_lookback=96,
+            min_historical_edge_bps=0.0,
+            round_trip_cost_bps=round_trip_cost_bps,
+            db_label="profile4h",
+        )
+        self.name = "WaveMind 4h profile"
+        self.active_timeframe = "4h"
+
+    def add(self, window: OHLCVWindow) -> None:
+        if window.timeframe != self.active_timeframe:
+            return
+        super().add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        if window.timeframe != self.active_timeframe:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=0.0,
+                analogues=[],
+                confidence=0.0,
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="inactive_timeframe",
+            )
+        return super().query(window, top_k=top_k)
+
+
+class WaveMindRiskOverlayEngine(WaveMindEngine):
+    name = "WaveMind risk-overlay"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        max_opposition: float = 0.62,
+        min_regime_agreement: float = 0.35,
+        performance_lookback: int = 96,
+        min_historical_edge_bps: float = -20.0,
+        round_trip_cost_bps: float = 30.0,
+    ):
+        super().__init__(
+            encoder,
+            symbol=symbol,
+            timeframe=timeframe,
+            temp_root=temp_root,
+            use_field=True,
+            db_label="riskoverlay",
+        )
+        self.name = "WaveMind risk-overlay"
+        self.records: list[OHLCVWindow] = []
+        self.max_opposition = float(max_opposition)
+        self.min_regime_agreement = float(min_regime_agreement)
+        self.performance_lookback = int(performance_lookback)
+        self.min_historical_edge_bps = float(min_historical_edge_bps)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        self.records.append(window)
+        super().add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        if not self.records:
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+        memory_prediction = super().query(window, top_k=top_k)
+        latest = self.records[-1]
+        candidate_direction = latest.direction
+        if candidate_direction == "flat" or not memory_prediction.analogues:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=memory_prediction.latency_ms,
+                analogues=memory_prediction.analogues,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="flat_candidate",
+                confidence=0.0,
+            )
+        opposite_direction = "down" if candidate_direction == "up" else "up"
+        opposition = _weighted_direction_support(opposite_direction, memory_prediction.analogues)
+        selected = [match for match in memory_prediction.analogues if match.direction == candidate_direction]
+        regime_agreement = _regime_agreement(window, selected) if selected else 0.0
+        historical_edge = _rolling_last_regime_edge(
+            self.records,
+            lookback=self.performance_lookback,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        confidence = float(max(0.0, min(1.0, 1.0 - opposition)))
+        reasons = []
+        if opposition > self.max_opposition:
+            reasons.append("memory_opposition")
+        if selected and regime_agreement < self.min_regime_agreement:
+            reasons.append("regime_mismatch")
+        if historical_edge < self.min_historical_edge_bps:
+            reasons.append("negative_recent_edge")
+        if reasons:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=memory_prediction.latency_ms,
+                analogues=memory_prediction.analogues,
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=",".join(reasons),
+                analogue_agreement=1.0 - opposition,
+                regime_agreement=regime_agreement,
+            )
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=float(latest.future_return_bps),
+            latency_ms=memory_prediction.latency_ms,
+            analogues=memory_prediction.analogues,
+            confidence=confidence,
+            raw_direction=candidate_direction,
+            analogue_agreement=1.0 - opposition,
+            regime_agreement=regime_agreement,
+        )
 
 
 class DtwKnnEngine(MarketEngine):
@@ -550,6 +797,13 @@ def run_walk_forward(
     min_analogue_agreement: float = 0.6,
     regime_filter: bool = True,
     min_expected_edge_bps: float = 0.0,
+    gate_min_support: float = 0.52,
+    gate_min_regime_agreement: float = 0.5,
+    gate_performance_lookback: int = 96,
+    gate_min_historical_edge_bps: float = 0.0,
+    risk_max_opposition: float = 0.62,
+    risk_min_regime_agreement: float = 0.35,
+    risk_min_historical_edge_bps: float = -20.0,
 ) -> dict:
     engine_keys = _normalize_engines(engines)
     encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
@@ -579,6 +833,14 @@ def run_walk_forward(
                         min_analogue_agreement=min_analogue_agreement,
                         regime_filter=regime_filter,
                         min_expected_edge_bps=min_expected_edge_bps,
+                        gate_min_support=gate_min_support,
+                        gate_min_regime_agreement=gate_min_regime_agreement,
+                        gate_performance_lookback=gate_performance_lookback,
+                        gate_min_historical_edge_bps=gate_min_historical_edge_bps,
+                        risk_max_opposition=risk_max_opposition,
+                        risk_min_regime_agreement=risk_min_regime_agreement,
+                        risk_min_historical_edge_bps=risk_min_historical_edge_bps,
+                        round_trip_cost_bps=round_trip_cost_bps,
                     )
                 except RuntimeError as exc:
                     skipped_reason = str(exc)
@@ -648,6 +910,13 @@ def run_walk_forward(
             "min_analogue_agreement": float(min_analogue_agreement),
             "regime_filter": bool(regime_filter),
             "min_expected_edge_bps": float(min_expected_edge_bps),
+            "gate_min_support": float(gate_min_support),
+            "gate_min_regime_agreement": float(gate_min_regime_agreement),
+            "gate_performance_lookback": int(gate_performance_lookback),
+            "gate_min_historical_edge_bps": float(gate_min_historical_edge_bps),
+            "risk_max_opposition": float(risk_max_opposition),
+            "risk_min_regime_agreement": float(risk_min_regime_agreement),
+            "risk_min_historical_edge_bps": float(risk_min_historical_edge_bps),
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
         "embedding": {
@@ -848,7 +1117,21 @@ def main() -> int:
     parser.add_argument("--refresh-cache", action="store_true")
     parser.add_argument("--symbols", nargs="+", default=["BTC", "ETH", "SOL"])
     parser.add_argument("--timeframes", nargs="+", default=["1h", "4h", "1d"])
-    parser.add_argument("--engines", nargs="+", default=["wavemind", "calibrated", "field-off", "shape", "naive", "ta"])
+    parser.add_argument(
+        "--engines",
+        nargs="+",
+        default=[
+            "wavemind",
+            "4h-profile",
+            "risk-overlay",
+            "regime-gated",
+            "calibrated",
+            "field-off",
+            "shape",
+            "naive",
+            "ta",
+        ],
+    )
     parser.add_argument("--bars", type=int, default=420)
     parser.add_argument("--window", type=int, default=32)
     parser.add_argument("--horizon", type=int, default=6)
@@ -862,6 +1145,13 @@ def main() -> int:
     parser.add_argument("--confidence-threshold", type=float, default=0.65)
     parser.add_argument("--min-analogue-agreement", type=float, default=0.6)
     parser.add_argument("--min-expected-edge-bps", type=float, default=0.0)
+    parser.add_argument("--gate-min-support", type=float, default=0.52)
+    parser.add_argument("--gate-min-regime-agreement", type=float, default=0.5)
+    parser.add_argument("--gate-performance-lookback", type=int, default=96)
+    parser.add_argument("--gate-min-historical-edge-bps", type=float, default=0.0)
+    parser.add_argument("--risk-max-opposition", type=float, default=0.62)
+    parser.add_argument("--risk-min-regime-agreement", type=float, default=0.35)
+    parser.add_argument("--risk-min-historical-edge-bps", type=float, default=-20.0)
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
@@ -885,6 +1175,13 @@ def main() -> int:
         min_analogue_agreement=args.min_analogue_agreement,
         regime_filter=not args.disable_regime_filter,
         min_expected_edge_bps=args.min_expected_edge_bps,
+        gate_min_support=args.gate_min_support,
+        gate_min_regime_agreement=args.gate_min_regime_agreement,
+        gate_performance_lookback=args.gate_performance_lookback,
+        gate_min_historical_edge_bps=args.gate_min_historical_edge_bps,
+        risk_max_opposition=args.risk_max_opposition,
+        risk_min_regime_agreement=args.risk_min_regime_agreement,
+        risk_min_historical_edge_bps=args.risk_min_historical_edge_bps,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -901,10 +1198,35 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         key = engine.lower()
         if key == "all":
             normalized.extend(
-                ["wavemind", "calibrated", "field-off", "shape", "naive", "ta", "static", "chroma", "qdrant"]
+                [
+                    "wavemind",
+                    "4h-profile",
+                    "risk-overlay",
+                    "regime-gated",
+                    "calibrated",
+                    "field-off",
+                    "shape",
+                    "naive",
+                    "ta",
+                    "static",
+                    "chroma",
+                    "qdrant",
+                ]
             )
         elif key == "market":
-            normalized.extend(["wavemind", "calibrated", "field-off", "shape", "naive", "ta"])
+            normalized.extend(
+                [
+                    "wavemind",
+                    "4h-profile",
+                    "risk-overlay",
+                    "regime-gated",
+                    "calibrated",
+                    "field-off",
+                    "shape",
+                    "naive",
+                    "ta",
+                ]
+            )
         elif key == "storage-controls":
             normalized.extend(["static", "chroma", "qdrant"])
         else:
@@ -915,6 +1237,15 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "calibrated",
         "wavemind-calibrated",
         "field-calibrated",
+        "regime-gated",
+        "wavemind-regime-gated",
+        "gate",
+        "risk-overlay",
+        "wavemind-risk-overlay",
+        "risk",
+        "4h-profile",
+        "wavemind-4h-profile",
+        "four-hour-profile",
         "field-off",
         "wavemind-field-off",
         "static",
@@ -947,6 +1278,14 @@ def _create_engine(
     min_analogue_agreement: float = 0.6,
     regime_filter: bool = True,
     min_expected_edge_bps: float = 0.0,
+    gate_min_support: float = 0.52,
+    gate_min_regime_agreement: float = 0.5,
+    gate_performance_lookback: int = 96,
+    gate_min_historical_edge_bps: float = 0.0,
+    risk_max_opposition: float = 0.62,
+    risk_min_regime_agreement: float = 0.35,
+    risk_min_historical_edge_bps: float = -20.0,
+    round_trip_cost_bps: float = 30.0,
 ) -> MarketEngine:
     if engine_key in {"wavemind", "wavemind-field"}:
         return WaveMindEngine(encoder, symbol=market.symbol, timeframe=market.timeframe, temp_root=temp_root)
@@ -962,6 +1301,40 @@ def _create_engine(
             regime_filter=regime_filter,
             large_move_bps=large_move_bps,
             min_expected_edge_bps=min_expected_edge_bps,
+        )
+    if engine_key in {"regime-gated", "wavemind-regime-gated", "gate"}:
+        return WaveMindRegimeGateEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            min_support=gate_min_support,
+            min_regime_agreement=gate_min_regime_agreement,
+            min_expected_edge_bps=min_expected_edge_bps,
+            performance_lookback=gate_performance_lookback,
+            min_historical_edge_bps=gate_min_historical_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
+    if engine_key in {"risk-overlay", "wavemind-risk-overlay", "risk"}:
+        return WaveMindRiskOverlayEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            max_opposition=risk_max_opposition,
+            min_regime_agreement=risk_min_regime_agreement,
+            performance_lookback=gate_performance_lookback,
+            min_historical_edge_bps=risk_min_historical_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
+    if engine_key in {"4h-profile", "wavemind-4h-profile", "four-hour-profile"}:
+        return WaveMindFourHourProfileEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            min_expected_edge_bps=min_expected_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
         )
     if engine_key in {"field-off", "wavemind-field-off"}:
         return WaveMindEngine(
@@ -995,6 +1368,15 @@ def _engine_display_name(engine_key: str) -> str:
         "calibrated": "WaveMind calibrated",
         "wavemind-calibrated": "WaveMind calibrated",
         "field-calibrated": "WaveMind calibrated",
+        "regime-gated": "WaveMind regime-gated",
+        "wavemind-regime-gated": "WaveMind regime-gated",
+        "gate": "WaveMind regime-gated",
+        "risk-overlay": "WaveMind risk-overlay",
+        "wavemind-risk-overlay": "WaveMind risk-overlay",
+        "risk": "WaveMind risk-overlay",
+        "4h-profile": "WaveMind 4h profile",
+        "wavemind-4h-profile": "WaveMind 4h profile",
+        "four-hour-profile": "WaveMind 4h profile",
         "field-off": "WaveMind field-off",
         "wavemind-field-off": "WaveMind field-off",
         "static": "Static kNN",
@@ -1122,6 +1504,26 @@ def _net_return_bps(
     if predicted_direction == "down":
         return -float(actual_return_bps) - round_trip_cost_bps
     return 0.0
+
+
+def _rolling_last_regime_edge(
+    records: list[OHLCVWindow],
+    *,
+    lookback: int,
+    round_trip_cost_bps: float,
+) -> float:
+    if len(records) < 2:
+        return 0.0
+    usable = records[-max(2, int(lookback) + 1) :]
+    nets = [
+        _net_return_bps(
+            predicted_direction=previous.direction,
+            actual_return_bps=current.future_return_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
+        for previous, current in zip(usable, usable[1:], strict=False)
+    ]
+    return float(statistics.mean(nets)) if nets else 0.0
 
 
 def _summarize_events(
@@ -1298,6 +1700,18 @@ def _weighted_direction_vote(analogues: list[AnalogueMatch]) -> tuple[str, float
     direction = max(totals, key=totals.get)
     denominator = max(sum(weights), 1e-12)
     return direction, float(totals[direction] / denominator)
+
+
+def _weighted_direction_support(direction: str, analogues: list[AnalogueMatch]) -> float:
+    if not analogues:
+        return 0.0
+    weights = _rank_weights(analogues)
+    numerator = sum(
+        weight
+        for match, weight in zip(analogues, weights, strict=False)
+        if match.direction == direction
+    )
+    return float(numerator / max(sum(weights), 1e-12))
 
 
 def _weighted_mean_return(analogues: list[AnalogueMatch]) -> float:

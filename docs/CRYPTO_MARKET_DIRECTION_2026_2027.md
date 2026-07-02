@@ -79,17 +79,18 @@ Do not promise:
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, TA rules, and storage controls. |
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
-| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, and minimum expected edge filtering. |
-| Real OHLCV validation | Done, negative | OKX BTC/USDT, ETH/USDT, SOL/USDT across 1h/4h/1d; memory engines do not beat naive after costs. |
-| Signal construction | Not started | Blocked on improving real-data feature/regime quality. |
+| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, minimum expected edge filtering, and domain profile gating. |
+| Real OHLCV validation | First positive profile | OKX BTC/USDT, ETH/USDT, SOL/USDT across 1h/4h/1d; `WaveMind 4h profile` beats included baselines after costs in the checked-in run. |
+| Signal construction | Not started | Blocked on robustness validation across more date ranges, exchanges, assets, and walk-forward folds. |
 
-Current blocker: real OKX OHLCV validation is negative. Raw WaveMind field
-slightly beats naive last-regime on direction@1 (`0.428` vs `0.426`) but loses
-heavily after fees and slippage (`-33.04` sized net bps). Calibration reduces
-large-move false positives from `0.990` to `0.373`, but remains negative
-(`-17.66` sized net bps). The naive last-regime baseline is still the strongest
-checked-in run (`1.84` sized net bps). The next milestone is better
-feature/regime modeling, not signal construction.
+Current blocker: robustness, not the first signal. The checked-in OKX run now
+has a positive domain profile: `WaveMind 4h profile` produces `5.57` sized net
+bps after fees/slippage, beating naive last-regime (`1.84`) and static
+kNN/Chroma/Qdrant (all negative). The caveat is material: the profile only
+acts on 4h windows, filters `88.1%` of all windows, and is not yet validated
+across broader market periods. Raw WaveMind field still over-triggers and loses
+heavily after costs (`-33.04` sized net bps). The next milestone is robustness
+validation, not live execution.
 
 ### 1. Real OHLCV Import
 
