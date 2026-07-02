@@ -32,6 +32,19 @@ from wavemind import WaveMind  # noqa: E402
 from wavemind.encoders import TextVectorEncoder, create_text_encoder  # noqa: E402
 
 
+REGIME_FEATURE_KEYS = (
+    "trend",
+    "recent_trend",
+    "rsi_bucket",
+    "volatility_bucket",
+    "volume_bucket",
+    "close_position_bucket",
+    "drawdown_bucket",
+    "macd_bucket",
+    "bollinger_bucket",
+)
+
+
 @dataclass(frozen=True)
 class MarketDataset:
     symbol: str
@@ -52,6 +65,7 @@ class AnalogueMatch:
     start_time: str
     end_time: str
     text: str
+    regime_signature: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -60,6 +74,12 @@ class Prediction:
     expected_return_bps: float
     latency_ms: float
     analogues: list[AnalogueMatch]
+    confidence: float = 1.0
+    raw_direction: str = ""
+    filtered: bool = False
+    filter_reason: str = ""
+    analogue_agreement: float = 1.0
+    regime_agreement: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -89,6 +109,8 @@ class EventMetric:
     large_move_true_positive: float
     large_move_false_positive: float
     position_size: float
+    confidence: float
+    filtered: float
     net_return_bps: float
     sized_net_return_bps: float
     latency_ms: float
@@ -155,12 +177,26 @@ class WaveMindEngine(MarketEngine):
         timeframe: str,
         temp_root: Path,
         use_field: bool = True,
+        calibrated: bool = False,
+        min_analogue_agreement: float = 0.6,
+        confidence_threshold: float = 0.65,
+        regime_filter: bool = True,
+        large_move_bps: float = 75.0,
     ):
-        self.name = "WaveMind field" if use_field else "WaveMind field-off"
+        if calibrated:
+            self.name = "WaveMind calibrated"
+        else:
+            self.name = "WaveMind field" if use_field else "WaveMind field-off"
         self.namespace = f"crypto:{symbol}:{timeframe}"
         self.temp_root = temp_root
+        self.calibrated = calibrated
+        self.min_analogue_agreement = float(min_analogue_agreement)
+        self.confidence_threshold = float(confidence_threshold)
+        self.regime_filter = bool(regime_filter)
+        self.large_move_bps = float(large_move_bps)
         self.memory = WaveMind(
-            db_path=temp_root / f"{symbol.replace('/', '')}_{timeframe}_{'field' if use_field else 'fieldoff'}.sqlite3",
+            db_path=temp_root
+            / f"{symbol.replace('/', '')}_{timeframe}_{'calibrated' if calibrated else ('field' if use_field else 'fieldoff')}.sqlite3",
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
@@ -203,17 +239,31 @@ class WaveMindEngine(MarketEngine):
                 start_time=str(result.metadata.get("start_time", "")),
                 end_time=str(result.metadata.get("end_time", "")),
                 text=result.text,
+                regime_signature=_regime_signature_from_metadata(result.metadata),
             )
             for result in results
         ]
         if not analogues:
             return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=latency, analogues=[])
+        if self.calibrated:
+            return _calibrated_prediction(
+                query_window=window,
+                analogues=analogues,
+                latency_ms=latency,
+                min_analogue_agreement=self.min_analogue_agreement,
+                confidence_threshold=self.confidence_threshold,
+                regime_filter=self.regime_filter,
+                large_move_bps=self.large_move_bps,
+            )
         top = analogues[0]
         return Prediction(
             direction=top.direction,
             expected_return_bps=top.future_return_bps,
             latency_ms=latency,
             analogues=analogues,
+            confidence=_direction_agreement_from_analogues(top.direction, analogues),
+            raw_direction=top.direction,
+            analogue_agreement=_direction_agreement_from_analogues(top.direction, analogues),
         )
 
     def close(self) -> None:
@@ -490,6 +540,9 @@ def run_walk_forward(
     large_move_bps: float = 75.0,
     position_sizing: str = "fixed",
     analogue_limit: int = 18,
+    confidence_threshold: float = 0.65,
+    min_analogue_agreement: float = 0.6,
+    regime_filter: bool = True,
 ) -> dict:
     engine_keys = _normalize_engines(engines)
     encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
@@ -509,7 +562,16 @@ def run_walk_forward(
                     test_windows=test_windows,
                 )
                 try:
-                    engine = _create_engine(engine_key, encoder, market=market, temp_root=temp_root)
+                    engine = _create_engine(
+                        engine_key,
+                        encoder,
+                        market=market,
+                        temp_root=temp_root,
+                        large_move_bps=large_move_bps,
+                        confidence_threshold=confidence_threshold,
+                        min_analogue_agreement=min_analogue_agreement,
+                        regime_filter=regime_filter,
+                    )
                 except RuntimeError as exc:
                     skipped_reason = str(exc)
                     break
@@ -572,6 +634,9 @@ def run_walk_forward(
             "round_trip_cost_bps": round_trip_cost_bps,
             "large_move_bps": float(large_move_bps),
             "position_sizing": position_sizing,
+            "confidence_threshold": float(confidence_threshold),
+            "min_analogue_agreement": float(min_analogue_agreement),
+            "regime_filter": bool(regime_filter),
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
         "embedding": {
@@ -645,6 +710,7 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
     rows = []
     for sample in payload.get("analogue_samples", []):  # type: ignore[union-attr]
         query = sample["query"]  # type: ignore[index]
+        prediction = sample.get("prediction", {})  # type: ignore[union-attr]
         analogues = sample["analogues"]  # type: ignore[index]
         analogue_rows = "".join(
             "<tr>"
@@ -663,6 +729,10 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
             f"<p class='muted'>Current window: {html.escape(query['start_time'])} -> {html.escape(query['end_time'])}</p>"
             f"<p>Actual next move: <strong>{html.escape(query['direction'])}</strong> "
             f"({float(query['future_return_bps']):.1f} bps)</p>"
+            f"<p>Decision: <strong>{html.escape(str(prediction.get('direction', '')))}</strong> "
+            f"(raw {html.escape(str(prediction.get('raw_direction', '')))}, "
+            f"confidence {float(prediction.get('confidence', 0.0)):.3f}, "
+            f"filtered {html.escape(str(prediction.get('filtered', False)))})</p>"
             "<table><thead><tr><th>Historical window</th><th>Next move</th><th>Return bps</th><th>MFE bps</th><th>MAE bps</th><th>Score</th></tr></thead>"
             f"<tbody>{analogue_rows}</tbody></table>"
             "</section>"
@@ -688,11 +758,17 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
 
 
 def print_table(payload: Mapping[str, object]) -> None:
-    print("| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency | queries |")
-    print("|---|---:|---:|---:|---:|---:|---:|---:|")
+    print(
+        "| engine | direction@1 | direction@3 | avg net bps | sized net bps | "
+        "large FP | filtered | avg latency | queries |"
+    )
+    print("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
     for result in payload["results"]:  # type: ignore[index]
         if result.get("skipped"):  # type: ignore[union-attr]
-            print(f"| {result['engine']} | skipped | skipped | skipped | skipped | skipped | skipped | 0 |")
+            print(
+                f"| {result['engine']} | skipped | skipped | skipped | skipped | "
+                "skipped | skipped | skipped | 0 |"
+            )
             continue
         print(
             f"| {result['engine']} | "
@@ -700,7 +776,8 @@ def print_table(payload: Mapping[str, object]) -> None:
             f"{result['direction_accuracy_at_3']:.3f} | "
             f"{result['avg_net_return_bps']:.2f} | "
             f"{result['avg_sized_net_return_bps']:.2f} | "
-            f"{result['hit_rate_after_costs']:.3f} | "
+            f"{result['large_move_false_positive_rate']:.3f} | "
+            f"{result['filtered_rate']:.3f} | "
             f"{result['avg_latency_ms']:.2f} ms | "
             f"{result['queries']} |"
         )
@@ -713,7 +790,7 @@ def main() -> int:
     parser.add_argument("--exchange")
     parser.add_argument("--symbols", nargs="+", default=["BTC", "ETH", "SOL"])
     parser.add_argument("--timeframes", nargs="+", default=["1h", "4h", "1d"])
-    parser.add_argument("--engines", nargs="+", default=["wavemind", "field-off", "shape", "naive", "ta"])
+    parser.add_argument("--engines", nargs="+", default=["wavemind", "calibrated", "field-off", "shape", "naive", "ta"])
     parser.add_argument("--bars", type=int, default=420)
     parser.add_argument("--window", type=int, default=32)
     parser.add_argument("--horizon", type=int, default=6)
@@ -724,6 +801,9 @@ def main() -> int:
     parser.add_argument("--slippage-bps", type=float, default=5.0)
     parser.add_argument("--large-move-bps", type=float, default=75.0)
     parser.add_argument("--position-sizing", choices=["fixed", "confidence"], default="fixed")
+    parser.add_argument("--confidence-threshold", type=float, default=0.65)
+    parser.add_argument("--min-analogue-agreement", type=float, default=0.6)
+    parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_walk_forward_results.json"))
@@ -742,6 +822,9 @@ def main() -> int:
         slippage_bps=args.slippage_bps,
         large_move_bps=args.large_move_bps,
         position_sizing=args.position_sizing,
+        confidence_threshold=args.confidence_threshold,
+        min_analogue_agreement=args.min_analogue_agreement,
+        regime_filter=not args.disable_regime_filter,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -757,9 +840,11 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
     for engine in engines:
         key = engine.lower()
         if key == "all":
-            normalized.extend(["wavemind", "field-off", "shape", "naive", "ta", "static", "chroma", "qdrant"])
+            normalized.extend(
+                ["wavemind", "calibrated", "field-off", "shape", "naive", "ta", "static", "chroma", "qdrant"]
+            )
         elif key == "market":
-            normalized.extend(["wavemind", "field-off", "shape", "naive", "ta"])
+            normalized.extend(["wavemind", "calibrated", "field-off", "shape", "naive", "ta"])
         elif key == "storage-controls":
             normalized.extend(["static", "chroma", "qdrant"])
         else:
@@ -767,6 +852,9 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
     valid = {
         "wavemind",
         "wavemind-field",
+        "calibrated",
+        "wavemind-calibrated",
+        "field-calibrated",
         "field-off",
         "wavemind-field-off",
         "static",
@@ -794,9 +882,25 @@ def _create_engine(
     *,
     market: MarketDataset,
     temp_root: Path,
+    large_move_bps: float = 75.0,
+    confidence_threshold: float = 0.65,
+    min_analogue_agreement: float = 0.6,
+    regime_filter: bool = True,
 ) -> MarketEngine:
     if engine_key in {"wavemind", "wavemind-field"}:
         return WaveMindEngine(encoder, symbol=market.symbol, timeframe=market.timeframe, temp_root=temp_root)
+    if engine_key in {"calibrated", "wavemind-calibrated", "field-calibrated"}:
+        return WaveMindEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            calibrated=True,
+            min_analogue_agreement=min_analogue_agreement,
+            confidence_threshold=confidence_threshold,
+            regime_filter=regime_filter,
+            large_move_bps=large_move_bps,
+        )
     if engine_key in {"field-off", "wavemind-field-off"}:
         return WaveMindEngine(
             encoder,
@@ -826,6 +930,9 @@ def _engine_display_name(engine_key: str) -> str:
     return {
         "wavemind": "WaveMind field",
         "wavemind-field": "WaveMind field",
+        "calibrated": "WaveMind calibrated",
+        "wavemind-calibrated": "WaveMind calibrated",
+        "field-calibrated": "WaveMind calibrated",
         "field-off": "WaveMind field-off",
         "wavemind-field-off": "WaveMind field-off",
         "static": "Static kNN",
@@ -934,6 +1041,8 @@ def _event_metric(
         large_move_true_positive=1.0 if predicted_large and actual_large else 0.0,
         large_move_false_positive=1.0 if predicted_large and not actual_large else 0.0,
         position_size=position_size,
+        confidence=float(prediction.confidence),
+        filtered=1.0 if prediction.filtered else 0.0,
         net_return_bps=net,
         sized_net_return_bps=net * position_size,
         latency_ms=float(prediction.latency_ms),
@@ -974,6 +1083,8 @@ def _summarize_events(
             "large_move_precision": 0.0,
             "large_move_false_positive_rate": 0.0,
             "avg_position_size": 0.0,
+            "avg_confidence": 0.0,
+            "filtered_rate": 0.0,
             "avg_net_return_bps": 0.0,
             "avg_sized_net_return_bps": 0.0,
             "hit_rate_after_costs": 0.0,
@@ -1001,6 +1112,8 @@ def _summarize_events(
             sum(1.0 for event in events if event.actual_large_move == 0.0),
         ),
         "avg_position_size": statistics.mean(event.position_size for event in events),
+        "avg_confidence": statistics.mean(event.confidence for event in events),
+        "filtered_rate": statistics.mean(event.filtered for event in events),
         "avg_net_return_bps": statistics.mean(event.net_return_bps for event in events),
         "avg_sized_net_return_bps": statistics.mean(event.sized_net_return_bps for event in events),
         "hit_rate_after_costs": statistics.mean(1.0 if event.net_return_bps > 0 else 0.0 for event in events),
@@ -1027,6 +1140,142 @@ def _analogue_from_window(window: OHLCVWindow, text: str, score: float) -> Analo
         start_time=window.start_time,
         end_time=window.end_time,
         text=text,
+        regime_signature=_regime_signature_from_window(window),
+    )
+
+
+def _calibrated_prediction(
+    *,
+    query_window: OHLCVWindow,
+    analogues: list[AnalogueMatch],
+    latency_ms: float,
+    min_analogue_agreement: float,
+    confidence_threshold: float,
+    regime_filter: bool,
+    large_move_bps: float,
+) -> Prediction:
+    direction, direction_agreement = _weighted_direction_vote(analogues)
+    if direction == "flat" or not analogues:
+        return Prediction(
+            direction="flat",
+            expected_return_bps=0.0,
+            latency_ms=latency_ms,
+            analogues=analogues,
+            confidence=direction_agreement,
+            raw_direction=direction,
+            filtered=True,
+            filter_reason="flat_vote",
+            analogue_agreement=direction_agreement,
+        )
+
+    selected = [match for match in analogues if match.direction == direction]
+    expected_return = _weighted_mean_return(selected)
+    regime_agreement = _regime_agreement(query_window, selected) if regime_filter else 1.0
+    move_agreement = _move_agreement(direction, selected, large_move_bps=large_move_bps)
+    confidence = float(direction_agreement * (0.45 + 0.55 * regime_agreement) * move_agreement)
+
+    filter_reasons = []
+    if direction_agreement < min_analogue_agreement:
+        filter_reasons.append("low_analogue_agreement")
+    if confidence < confidence_threshold:
+        filter_reasons.append("low_confidence")
+    if regime_filter and regime_agreement < 0.55:
+        filter_reasons.append("regime_mismatch")
+
+    if filter_reasons:
+        return Prediction(
+            direction="flat",
+            expected_return_bps=0.0,
+            latency_ms=latency_ms,
+            analogues=analogues,
+            confidence=confidence,
+            raw_direction=direction,
+            filtered=True,
+            filter_reason=",".join(filter_reasons),
+            analogue_agreement=direction_agreement,
+            regime_agreement=regime_agreement,
+        )
+
+    return Prediction(
+        direction=direction,
+        expected_return_bps=expected_return,
+        latency_ms=latency_ms,
+        analogues=analogues,
+        confidence=confidence,
+        raw_direction=direction,
+        analogue_agreement=direction_agreement,
+        regime_agreement=regime_agreement,
+    )
+
+
+def _weighted_direction_vote(analogues: list[AnalogueMatch]) -> tuple[str, float]:
+    if not analogues:
+        return "flat", 0.0
+    weights = _rank_weights(analogues)
+    totals: dict[str, float] = {"up": 0.0, "down": 0.0, "flat": 0.0}
+    for match, weight in zip(analogues, weights, strict=False):
+        totals[match.direction] = totals.get(match.direction, 0.0) + weight
+    direction = max(totals, key=totals.get)
+    denominator = max(sum(weights), 1e-12)
+    return direction, float(totals[direction] / denominator)
+
+
+def _weighted_mean_return(analogues: list[AnalogueMatch]) -> float:
+    if not analogues:
+        return 0.0
+    weights = _rank_weights(analogues)
+    denominator = max(sum(weights), 1e-12)
+    return float(sum(match.future_return_bps * weight for match, weight in zip(analogues, weights, strict=False)) / denominator)
+
+
+def _rank_weights(analogues: list[AnalogueMatch]) -> list[float]:
+    return [
+        (1.0 / (rank + 1.0)) * max(0.05, float(match.score))
+        for rank, match in enumerate(analogues)
+    ]
+
+
+def _move_agreement(direction: str, analogues: list[AnalogueMatch], *, large_move_bps: float) -> float:
+    if not analogues:
+        return 0.0
+    if direction == "flat":
+        return 1.0
+    threshold = max(float(large_move_bps), 1e-12)
+    strong = [
+        match
+        for match in analogues
+        if abs(float(match.future_return_bps)) >= threshold and match.direction == direction
+    ]
+    return float(max(0.35, len(strong) / len(analogues)))
+
+
+def _regime_agreement(query_window: OHLCVWindow, analogues: list[AnalogueMatch]) -> float:
+    query_signature = set(_regime_signature_from_window(query_window))
+    if not query_signature or not analogues:
+        return 1.0
+    scores = []
+    for match in analogues:
+        match_signature = set(match.regime_signature)
+        if not match_signature:
+            scores.append(0.0)
+        else:
+            scores.append(len(query_signature & match_signature) / len(query_signature))
+    return float(statistics.mean(scores)) if scores else 0.0
+
+
+def _regime_signature_from_window(window: OHLCVWindow) -> tuple[str, ...]:
+    return tuple(
+        f"{key}={window.features[key]}"
+        for key in REGIME_FEATURE_KEYS
+        if key in window.features
+    )
+
+
+def _regime_signature_from_metadata(metadata: Mapping[str, object]) -> tuple[str, ...]:
+    return tuple(
+        f"{key}={metadata[key]}"
+        for key in REGIME_FEATURE_KEYS
+        if key in metadata and metadata[key] is not None
     )
 
 
@@ -1075,7 +1324,7 @@ def _dtw_distance(left: np.ndarray, right: np.ndarray) -> float:
 
 
 def _window_metadata(window: OHLCVWindow) -> dict[str, str | int | float]:
-    return {
+    metadata: dict[str, str | int | float] = {
         "window_id": window.id,
         "symbol": window.symbol,
         "timeframe": window.timeframe,
@@ -1089,6 +1338,10 @@ def _window_metadata(window: OHLCVWindow) -> dict[str, str | int | float]:
         "future_max_drawdown_bps": float(window.future_max_drawdown_bps),
         "index": int(window.index),
     }
+    for key in REGIME_FEATURE_KEYS:
+        if key in window.features:
+            metadata[key] = str(window.features[key])
+    return metadata
 
 
 def _analogue_sample(engine_name: str, window: OHLCVWindow, prediction: Prediction) -> dict:
@@ -1109,7 +1362,13 @@ def _analogue_sample(engine_name: str, window: OHLCVWindow, prediction: Predicti
         },
         "prediction": {
             "direction": prediction.direction,
+            "raw_direction": prediction.raw_direction,
             "expected_return_bps": float(prediction.expected_return_bps),
+            "confidence": float(prediction.confidence),
+            "filtered": bool(prediction.filtered),
+            "filter_reason": prediction.filter_reason,
+            "analogue_agreement": float(prediction.analogue_agreement),
+            "regime_agreement": float(prediction.regime_agreement),
             "latency_ms": float(prediction.latency_ms),
         },
         "analogues": [asdict(match) for match in prediction.analogues[:5]],
@@ -1134,7 +1393,7 @@ def _position_size(
         return 1.0
     if mode != "confidence":
         raise ValueError(f"Unknown position sizing mode: {mode}")
-    direction_agreement = _direction_agreement(prediction)
+    direction_agreement = min(float(prediction.confidence), _direction_agreement(prediction))
     move_strength = min(1.0, abs(prediction.expected_return_bps) / max(float(large_move_bps), 1e-12))
     return float(max(0.0, min(1.0, 0.35 * move_strength + 0.65 * direction_agreement)))
 
@@ -1142,8 +1401,14 @@ def _position_size(
 def _direction_agreement(prediction: Prediction) -> float:
     if not prediction.analogues:
         return 1.0 if prediction.direction != "flat" else 0.0
-    matching = sum(1 for match in prediction.analogues if match.direction == prediction.direction)
-    return float(matching / len(prediction.analogues))
+    return _direction_agreement_from_analogues(prediction.direction, prediction.analogues)
+
+
+def _direction_agreement_from_analogues(direction: str, analogues: list[AnalogueMatch]) -> float:
+    if not analogues:
+        return 0.0
+    matching = sum(1 for match in analogues if match.direction == direction)
+    return float(matching / len(analogues))
 
 
 if __name__ == "__main__":

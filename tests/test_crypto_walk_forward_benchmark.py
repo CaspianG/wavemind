@@ -13,19 +13,22 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "field-off", "shape", "naive", "ta"],
+        engines=["wavemind", "calibrated", "field-off", "shape", "naive", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
         fee_bps=8,
         slippage_bps=3,
         position_sizing="confidence",
+        confidence_threshold=0.6,
+        min_analogue_agreement=0.5,
     )
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
 
     assert set(result_by_engine) == {
         "WaveMind field",
+        "WaveMind calibrated",
         "WaveMind field-off",
         "OHLCV shape kNN",
         "Naive last-regime",
@@ -38,12 +41,18 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "large_move_precision" in result_by_engine["WaveMind field"]
     assert "large_move_false_positive_rate" in result_by_engine["WaveMind field"]
     assert "avg_position_size" in result_by_engine["WaveMind field"]
+    assert "avg_confidence" in result_by_engine["WaveMind calibrated"]
+    assert "filtered_rate" in result_by_engine["WaveMind calibrated"]
+    assert 0.0 <= result_by_engine["WaveMind calibrated"]["filtered_rate"] <= 1.0
     assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
     assert payload["scenario"]["large_move_bps"] == 75.0
     assert payload["scenario"]["position_sizing"] == "confidence"
+    assert payload["scenario"]["confidence_threshold"] == 0.6
+    assert payload["scenario"]["min_analogue_agreement"] == 0.5
+    assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
     assert "max_adverse_excursion_bps" in payload["analogue_samples"][0]["analogues"][0]
@@ -74,6 +83,7 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "1h",
             "--engines",
             "wavemind",
+            "calibrated",
             "field-off",
             "shape",
             "naive",
@@ -106,7 +116,8 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["scenario"]["name"] == "crypto_walk_forward"
     assert payload["scenario"]["note"].startswith("Research walk-forward")
     assert payload["results"][0]["engine"] == "WaveMind field"
-    assert payload["results"][1]["engine"] == "WaveMind field-off"
+    assert payload["results"][1]["engine"] == "WaveMind calibrated"
+    assert payload["results"][2]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 
@@ -118,10 +129,10 @@ def test_walk_forward_skips_optional_vector_dbs_when_missing(monkeypatch):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=12, horizon=3)
     original_create_engine = bench._create_engine
 
-    def fail_create(engine_key, encoder, *, market, temp_root):
+    def fail_create(engine_key, encoder, *, market, temp_root, **kwargs):
         if engine_key == "chroma":
             raise RuntimeError("chromadb is not installed; install the bench extra")
-        return original_create_engine(engine_key, encoder, market=market, temp_root=temp_root)
+        return original_create_engine(engine_key, encoder, market=market, temp_root=temp_root, **kwargs)
 
     monkeypatch.setattr(bench, "_create_engine", fail_create)
 

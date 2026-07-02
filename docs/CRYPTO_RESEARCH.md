@@ -60,7 +60,10 @@ python benchmarks/crypto_walk_forward_benchmark.py \
   --dataset synthetic \
   --symbols BTC ETH SOL \
   --timeframes 1h 4h 1d \
-  --engines market storage-controls
+  --engines market storage-controls \
+  --position-sizing confidence \
+  --confidence-threshold 0.65 \
+  --min-analogue-agreement 0.6
 ```
 
 What it adds over the first scaffold:
@@ -73,6 +76,8 @@ What it adds over the first scaffold:
 - train/test walk-forward evaluation;
 - explicit fees and slippage;
 - fixed or confidence-weighted position sizing;
+- calibrated false-positive suppression with analogue agreement, regime
+  filters, and confidence thresholds;
 - no look-ahead insertion: a window is added to memory only after its future
   horizon is already known;
 - core ablation: WaveMind field-on vs WaveMind field-off;
@@ -87,31 +92,32 @@ Outputs:
 - `benchmarks/crypto_analogue_explorer.html`
 
 Current synthetic walk-forward result, generated on BTC/ETH/SOL across 1h, 4h,
-and 1d with 540 test windows:
+and 1d with 540 test windows, `--confidence-threshold 0.65`, and
+`--min-analogue-agreement 0.6`:
 
-| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency |
-|---|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.524 | 0.670 | -4.68 | -1.30 | 0.524 | 9.51 ms |
-| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.448 | 6.57 ms |
-| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.276 | 0.20 ms |
-| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.567 | 0.00 ms |
-| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.143 | 0.00 ms |
-| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 2.38 ms |
-| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.55 ms |
-| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.02 ms |
+| engine | direction@1 | direction@3 | avg net bps | sized net bps | large FP | filtered | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind field | 0.522 | 0.670 | -4.82 | -1.44 | 0.987 | 0.000 | 9.09 ms |
+| WaveMind calibrated | 0.426 | 0.670 | 7.96 | 7.39 | 0.545 | 0.433 | 9.58 ms |
+| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.584 | 0.000 | 6.36 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
+| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
+| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
+| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 2.59 ms |
+| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 4.76 ms |
+| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 3.73 ms |
 
-Interpretation: the relevant signal is the ablation. The wave-field version
-beats the field-off version on top-1 direction retrieval (`0.524` vs `0.472`),
-which means the dynamic memory layer is adding measurable retrieval information
-in this synthetic walk-forward setup. It still does not beat the naive
-last-regime baseline on net payoff, so this remains a research harness, not
-evidence of a deployable market edge.
-
-Large-move metrics are now tracked as well. In the current synthetic run,
-WaveMind field has large-move precision `0.570`, but a high false-positive rate
-of `0.987`. Confidence sizing reduces loss magnitude but does not solve the
-problem yet (`-1.30` sized net bps), so the next serious research target is to
-reduce false positives before any signal construction work.
+Interpretation: the relevant signal is the ablation and calibration tradeoff.
+The raw wave-field version beats the field-off version on top-1 direction
+retrieval (`0.522` vs `0.472`), which means the dynamic memory layer is adding
+measurable retrieval information in this synthetic walk-forward setup. It also
+over-triggers large moves. The calibrated variant intentionally returns `flat`
+when analogue agreement, regime agreement, or confidence is weak. That reduces
+large-move false positives from `0.987` to `0.545` and moves sized net bps from
+`-1.44` to `7.39`, but final direction@1 drops to `0.426` because 43.3% of
+queries are filtered. It still does not beat the naive last-regime baseline on
+net payoff, so this remains a research harness, not evidence of a deployable
+market edge.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -126,6 +132,10 @@ The metrics are retrieval/research metrics, not a live trading claim:
   future path excursions;
 - `large_move_precision` and `large_move_false_positive_rate` - whether the
   analogue layer detects large moves without over-triggering;
+- `filtered_rate` - share of windows where calibrated decision logic returned
+  `flat` because evidence was too weak;
+- `avg_confidence` - average confidence after analogue agreement and regime
+  filtering;
 - query latency.
 
 ### CSV import
@@ -192,12 +202,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 
 1. Add real exchange CSV fixtures with reproducible train/test splits.
 2. Add walk-forward runs on BTC/ETH/SOL for 1h, 4h, and 1d from public OHLCV.
-3. Improve confidence sizing and reduce large-move false positives using
-   calibrated confidence, regime
+3. Done: initial false-positive suppression with calibrated confidence, regime
    filters, and stricter analogue agreement.
-4. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+4. Validate calibration on real OHLCV data and tune thresholds by
+   market/timeframe.
+5. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-5. Add signal construction only after retrieval quality is stable.
-6. Publish results separately from the main README to avoid confusing memory
+6. Add signal construction only after retrieval quality is stable.
+7. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

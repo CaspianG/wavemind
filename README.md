@@ -34,8 +34,8 @@ Implemented in this branch:
   richer numeric features, future outcome labels, and no-leakage pattern text.
 - `benchmarks/crypto_walk_forward_benchmark.py` - BTC/ETH/SOL walk-forward
   benchmark with fees, slippage, field-on/field-off ablation,
-  market/time-series baselines, optional storage controls, and analogue explorer
-  output.
+  calibrated false-positive suppression, market/time-series baselines, optional
+  storage controls, and analogue explorer output.
 - `benchmarks/crypto_walk_forward_results.json` - checked-in synthetic
   walk-forward result.
 - `benchmarks/crypto_analogue_explorer.html` - local visual analogue explorer.
@@ -57,7 +57,7 @@ python benchmarks/crypto_pattern_benchmark.py --engines wavemind static --histor
 Walk-forward run:
 
 ```sh
-python benchmarks/crypto_walk_forward_benchmark.py --dataset synthetic --symbols BTC ETH SOL --timeframes 1h 4h 1d --engines market storage-controls
+python benchmarks/crypto_walk_forward_benchmark.py --dataset synthetic --symbols BTC ETH SOL --timeframes 1h 4h 1d --engines market storage-controls --position-sizing confidence --confidence-threshold 0.65 --min-analogue-agreement 0.6
 ```
 
 For the crypto branch, Chroma and Qdrant are not the main competitors. They are
@@ -76,26 +76,27 @@ families. This is a scaffold validation only.
 
 Current checked-in synthetic walk-forward result:
 
-| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency |
-|---|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.524 | 0.670 | -4.68 | -1.30 | 0.524 | 9.51 ms |
-| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.448 | 6.57 ms |
-| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.276 | 0.20 ms |
-| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.567 | 0.00 ms |
-| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.143 | 0.00 ms |
-| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 2.38 ms |
-| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.55 ms |
-| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.02 ms |
+| engine | direction@1 | direction@3 | avg net bps | sized net bps | large FP | filtered | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind field | 0.522 | 0.670 | -4.82 | -1.44 | 0.987 | 0.000 | 9.09 ms |
+| WaveMind calibrated | 0.426 | 0.670 | 7.96 | 7.39 | 0.545 | 0.433 | 9.58 ms |
+| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.584 | 0.000 | 6.36 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
+| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
+| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
+| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 2.59 ms |
+| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 4.76 ms |
+| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 3.73 ms |
 
-Interpretation: the wave-field layer improves top-1 direction retrieval over
-field-off memory (`0.524` vs `0.472`). It still does not beat the naive
-last-regime baseline on net payoff. This branch is a research harness, not a
-deployable trading edge.
-
-Current large-move precision for WaveMind field is `0.570`, but the
-false-positive rate is too high (`0.987`). Confidence sizing reduces the loss
-but does not solve it (`-1.30` sized net bps). Reducing false positives is the
-next research target before any signal construction.
+Interpretation: raw WaveMind field improves top-1 direction retrieval over
+field-off memory (`0.522` vs `0.472`), but it over-triggers large moves. The
+calibrated variant suppresses weak signals using analogue agreement, regime
+matching, and a confidence threshold. It cuts large-move false positives from
+`0.987` to `0.545` and moves sized net bps from `-1.44` to `7.39`, while
+lowering final direction@1 because it intentionally returns `flat` on weak
+evidence. The naive last-regime baseline is still strong on this synthetic
+dataset, so this branch remains a research harness, not a deployable trading
+edge.
 
 ## Research Plan
 
@@ -112,8 +113,11 @@ Near-term execution plan:
 5. Done: compare WaveMind field-on against field-off memory, OHLCV shape matching,
    DTW on small samples, naive regimes, and technical-analysis baselines.
 6. Done: Freqtrade research adapter before any live-trading integration.
-7. Next: reduce large-move false positives with confidence calibration.
-8. Only after retrieval quality is stable, test signal construction and
+7. Done: initial false-positive suppression with stricter analogue agreement,
+   regime filters, and confidence thresholds.
+8. Next: validate calibration on real OHLCV CSV/CCXT data and tune thresholds
+   per market/timeframe.
+9. Only after retrieval quality is stable, test signal construction and
    backtesting.
 
 ## Core Project

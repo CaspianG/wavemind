@@ -79,13 +79,16 @@ Do not promise:
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, TA rules, and storage controls. |
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
-| Signal construction | Not started | Blocked on reducing false positives and proving calibration. |
+| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, and confidence thresholds. |
+| Signal construction | Not started | Blocked on real OHLCV validation and stronger calibration. |
 
 Current blocker: the wave-field layer improves top-1 direction retrieval over
-field-off memory in the synthetic walk-forward run, but large-move false
-positives remain too high. Confidence sizing reduces loss magnitude but does
-not solve calibration. The next research milestone is stricter analogue
-agreement and regime filters before deriving any trading signal.
+field-off memory in the synthetic walk-forward run, but raw large-move false
+positives are too high. The first calibrated variant reduces false positives
+from `0.987` to `0.545` and improves sized net bps from `-1.44` to `7.39`, but
+it does that by filtering 43.3% of queries and lowering final direction@1. The
+next milestone is validating this tradeoff on real OHLCV data before deriving
+any trading signal.
 
 ### 1. Real OHLCV Import
 
