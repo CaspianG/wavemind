@@ -15,8 +15,15 @@ connector. The useful role is narrower:
 - convert OHLCV windows into compact pattern descriptions;
 - store historical patterns with outcome metadata;
 - retrieve similar past regimes for a new market window;
-- compare retrieved outcomes against static vector baselines;
+- compare the wave-field layer against field-off, time-series, and market-rule
+  baselines;
 - later feed retrieved evidence into a proper backtest and risk model.
+
+Chroma and Qdrant are not crypto competitors here. They are storage/retrieval
+controls: useful for checking whether a plain vector substrate changes the
+retrieval result, but not the benchmark that validates the market hypothesis.
+The important comparison is WaveMind field-on vs field-off and against
+time-series or trading-research baselines.
 
 ## First Benchmark
 
@@ -53,7 +60,7 @@ python benchmarks/crypto_walk_forward_benchmark.py \
   --dataset synthetic \
   --symbols BTC ETH SOL \
   --timeframes 1h 4h 1d \
-  --engines wavemind static chroma qdrant naive ta
+  --engines market storage-controls
 ```
 
 What it adds over the first scaffold:
@@ -63,7 +70,10 @@ What it adds over the first scaffold:
 - explicit fees and slippage;
 - no look-ahead insertion: a window is added to memory only after its future
   horizon is already known;
-- baselines: static kNN, Chroma, Qdrant, naive last-regime, and simple TA rules;
+- core ablation: WaveMind field-on vs WaveMind field-off;
+- market/time-series baselines: OHLCV shape kNN, naive last-regime, and simple
+  TA rules;
+- storage controls: static vector kNN, Chroma, and Qdrant;
 - an analogue explorer HTML report.
 
 Outputs:
@@ -76,17 +86,21 @@ and 1d with 540 test windows:
 
 | engine | direction@1 | direction@3 | avg net bps | hit rate | avg latency |
 |---|---:|---:|---:|---:|---:|
-| WaveMind | 0.509 | 0.670 | -9.36 | 0.507 | 5.40 ms |
-| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 1.77 ms |
-| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.63 ms |
-| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.09 ms |
+| WaveMind field | 0.509 | 0.670 | -9.36 | 0.507 | 6.59 ms |
+| WaveMind field-off | 0.435 | 0.704 | -7.11 | 0.411 | 4.88 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | 0.276 | 0.23 ms |
 | Naive last-regime | 0.589 | 0.589 | 27.37 | 0.567 | 0.00 ms |
 | TA rules | 0.191 | 0.191 | -64.06 | 0.143 | 0.00 ms |
+| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 2.00 ms |
+| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.78 ms |
+| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.39 ms |
 
-Interpretation: WaveMind beats static vector retrieval, Chroma, and Qdrant on
-top-1 direction retrieval in this synthetic walk-forward run, but it does not
-beat the naive last-regime baseline on net payoff. That means the current branch
-is a research harness, not evidence of a deployable market edge.
+Interpretation: the relevant signal is the ablation. The wave-field version
+beats the field-off version on top-1 direction retrieval (`0.509` vs `0.435`),
+which means the dynamic memory layer is adding measurable retrieval information
+in this synthetic walk-forward setup. It still does not beat the naive
+last-regime baseline on net payoff, so this remains a research harness, not
+evidence of a deployable market edge.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -113,7 +127,7 @@ python benchmarks/crypto_walk_forward_benchmark.py \
   --csv data/btc_1h.csv \
   --symbols BTC \
   --timeframes 1h \
-  --engines wavemind static naive ta
+  --engines market
 ```
 
 `timestamp` can be ISO-8601, Unix seconds, or Unix milliseconds.
@@ -162,7 +176,8 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 1. Add real exchange CSV fixtures with reproducible train/test splits.
 2. Add walk-forward runs on BTC/ETH/SOL for 1h, 4h, and 1d from public OHLCV.
 3. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
-   volatility filters, Chroma, Qdrant, and pgvector.
+   volatility filters, DTW on smaller samples, matrix-profile style analogues,
+   and ML classifiers.
 4. Add signal construction only after retrieval quality is stable.
 5. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

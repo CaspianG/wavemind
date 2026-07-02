@@ -33,8 +33,9 @@ Implemented in this branch:
 - `benchmarks/crypto_ohlcv.py` - CSV, CCXT, synthetic OHLCV, feature windows,
   and no-leakage pattern text.
 - `benchmarks/crypto_walk_forward_benchmark.py` - BTC/ETH/SOL walk-forward
-  benchmark with fees, slippage, Chroma/Qdrant/static/TA/naive baselines, and
-  analogue explorer output.
+  benchmark with fees, slippage, field-on/field-off ablation,
+  market/time-series baselines, optional storage controls, and analogue explorer
+  output.
 - `benchmarks/crypto_walk_forward_results.json` - checked-in synthetic
   walk-forward result.
 - `benchmarks/crypto_analogue_explorer.html` - local visual analogue explorer.
@@ -56,8 +57,12 @@ python benchmarks/crypto_pattern_benchmark.py --engines wavemind static --histor
 Walk-forward run:
 
 ```sh
-python benchmarks/crypto_walk_forward_benchmark.py --dataset synthetic --symbols BTC ETH SOL --timeframes 1h 4h 1d --engines wavemind static chroma qdrant naive ta
+python benchmarks/crypto_walk_forward_benchmark.py --dataset synthetic --symbols BTC ETH SOL --timeframes 1h 4h 1d --engines market storage-controls
 ```
+
+For the crypto branch, Chroma and Qdrant are not the main competitors. They are
+optional storage controls. The important comparison is whether the wave-field
+layer beats field-off memory and market/time-series baselines.
 
 Current checked-in synthetic result:
 
@@ -73,17 +78,19 @@ Current checked-in synthetic walk-forward result:
 
 | engine | direction@1 | direction@3 | avg net bps | hit rate | avg latency |
 |---|---:|---:|---:|---:|---:|
-| WaveMind | 0.509 | 0.670 | -9.36 | 0.507 | 5.40 ms |
-| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 1.77 ms |
-| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.63 ms |
-| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.09 ms |
+| WaveMind field | 0.509 | 0.670 | -9.36 | 0.507 | 6.59 ms |
+| WaveMind field-off | 0.435 | 0.704 | -7.11 | 0.411 | 4.88 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | 0.276 | 0.23 ms |
 | Naive last-regime | 0.589 | 0.589 | 27.37 | 0.567 | 0.00 ms |
 | TA rules | 0.191 | 0.191 | -64.06 | 0.143 | 0.00 ms |
+| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 2.00 ms |
+| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.78 ms |
+| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.39 ms |
 
-Interpretation: WaveMind beats static vector retrieval, Chroma, and Qdrant on
-top-1 direction retrieval in this synthetic walk-forward run, but it does not
-beat the naive last-regime baseline on net payoff. This branch is a research
-harness, not a deployable trading edge.
+Interpretation: the wave-field layer improves top-1 direction retrieval over
+field-off memory (`0.509` vs `0.435`). It still does not beat the naive
+last-regime baseline on net payoff. This branch is a research harness, not a
+deployable trading edge.
 
 ## Research Plan
 
@@ -96,8 +103,8 @@ Near-term execution plan:
 1. Add real OHLCV CSV and CCXT import.
 2. Add explicit train/test and walk-forward splits.
 3. Add fees, slippage, and position sizing.
-4. Compare WaveMind against static vector retrieval, Chroma, Qdrant, and simple
-   technical-analysis baselines.
+4. Compare WaveMind field-on against field-off memory, OHLCV shape matching,
+   DTW on small samples, naive regimes, and technical-analysis baselines.
 5. Build a Freqtrade research adapter before any live-trading integration.
 6. Only after retrieval quality is stable, test signal construction and
    backtesting.

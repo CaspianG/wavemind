@@ -127,19 +127,28 @@ class StaticKnnEngine(MarketEngine):
 
 
 class WaveMindEngine(MarketEngine):
-    name = "WaveMind"
+    name = "WaveMind field"
 
-    def __init__(self, encoder: TextVectorEncoder, *, symbol: str, timeframe: str, temp_root: Path):
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        use_field: bool = True,
+    ):
+        self.name = "WaveMind field" if use_field else "WaveMind field-off"
         self.namespace = f"crypto:{symbol}:{timeframe}"
         self.temp_root = temp_root
         self.memory = WaveMind(
-            db_path=temp_root / f"{symbol.replace('/', '')}_{timeframe}.sqlite3",
+            db_path=temp_root / f"{symbol.replace('/', '')}_{timeframe}_{'field' if use_field else 'fieldoff'}.sqlite3",
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
-            vector_weight=0.72,
-            field_weight=0.08,
-            priority_weight=0.18,
+            vector_weight=0.72 if use_field else 0.94,
+            field_weight=0.08 if use_field else 0.0,
+            priority_weight=0.18 if use_field else 0.0,
             lexical_weight=0.16,
             rerank_k=32,
             persist_access_on_query=False,
@@ -188,6 +197,86 @@ class WaveMindEngine(MarketEngine):
 
     def close(self) -> None:
         self.memory.close()
+
+
+class DtwKnnEngine(MarketEngine):
+    name = "DTW kNN"
+
+    def __init__(self):
+        self.records: list[OHLCVWindow] = []
+        self.texts: list[str] = []
+        self.series: list[np.ndarray] = []
+
+    def add(self, window: OHLCVWindow) -> None:
+        self.records.append(window)
+        self.texts.append(window_to_text(window, include_outcome=True))
+        self.series.append(_window_dtw_series(window))
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        started = time.perf_counter()
+        if not self.records:
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+        query_series = _window_dtw_series(window)
+        distances = np.asarray([_dtw_distance(query_series, item) for item in self.series], dtype=np.float64)
+        order = np.argsort(distances)[:top_k]
+        latency = (time.perf_counter() - started) * 1000.0
+        analogues = [
+            _analogue_from_window(
+                self.records[int(index)],
+                self.texts[int(index)],
+                score=1.0 / (1.0 + float(distances[int(index)])),
+            )
+            for index in order
+        ]
+        top = analogues[0]
+        return Prediction(
+            direction=top.direction,
+            expected_return_bps=top.future_return_bps,
+            latency_ms=latency,
+            analogues=analogues,
+        )
+
+
+class ShapeKnnEngine(MarketEngine):
+    name = "OHLCV shape kNN"
+
+    def __init__(self):
+        self.records: list[OHLCVWindow] = []
+        self.texts: list[str] = []
+        self.vectors = np.zeros((0, 1), dtype=np.float32)
+
+    def add(self, window: OHLCVWindow) -> None:
+        vector = _window_shape_vector(window)
+        if not self.records:
+            self.vectors = vector.reshape(1, -1)
+        else:
+            self.vectors = np.vstack([self.vectors, vector.reshape(1, -1)])
+        self.records.append(window)
+        self.texts.append(window_to_text(window, include_outcome=True))
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        started = time.perf_counter()
+        if not self.records:
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+        query_vector = _window_shape_vector(window)
+        distances = np.linalg.norm(self.vectors - query_vector.reshape(1, -1), axis=1)
+        order = np.argsort(distances)[:top_k]
+        latency = (time.perf_counter() - started) * 1000.0
+        analogues = [
+            _analogue_from_window(
+                self.records[int(index)],
+                self.texts[int(index)],
+                score=1.0 / (1.0 + float(distances[int(index)])),
+            )
+            for index in order
+        ]
+        top = analogues[0]
+        return Prediction(
+            direction=top.direction,
+            expected_return_bps=top.future_return_bps,
+            latency_ms=latency,
+            analogues=analogues,
+        )
 
 
 class NaiveEngine(MarketEngine):
@@ -594,7 +683,7 @@ def main() -> int:
     parser.add_argument("--exchange")
     parser.add_argument("--symbols", nargs="+", default=["BTC", "ETH", "SOL"])
     parser.add_argument("--timeframes", nargs="+", default=["1h", "4h", "1d"])
-    parser.add_argument("--engines", nargs="+", default=["wavemind", "static", "chroma", "qdrant", "naive", "ta"])
+    parser.add_argument("--engines", nargs="+", default=["wavemind", "field-off", "shape", "naive", "ta"])
     parser.add_argument("--bars", type=int, default=420)
     parser.add_argument("--window", type=int, default=32)
     parser.add_argument("--horizon", type=int, default=6)
@@ -634,10 +723,31 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
     for engine in engines:
         key = engine.lower()
         if key == "all":
-            normalized.extend(["wavemind", "static", "chroma", "qdrant", "naive", "ta"])
+            normalized.extend(["wavemind", "field-off", "shape", "naive", "ta", "static", "chroma", "qdrant"])
+        elif key == "market":
+            normalized.extend(["wavemind", "field-off", "shape", "naive", "ta"])
+        elif key == "storage-controls":
+            normalized.extend(["static", "chroma", "qdrant"])
         else:
             normalized.append(key)
-    valid = {"wavemind", "static", "static-knn", "chroma", "qdrant", "naive", "ta", "ta-rules"}
+    valid = {
+        "wavemind",
+        "wavemind-field",
+        "field-off",
+        "wavemind-field-off",
+        "static",
+        "static-knn",
+        "dtw",
+        "dtw-knn",
+        "shape",
+        "shape-knn",
+        "ohlcv-shape",
+        "chroma",
+        "qdrant",
+        "naive",
+        "ta",
+        "ta-rules",
+    }
     unknown = [engine for engine in normalized if engine not in valid]
     if unknown:
         raise ValueError(f"Unknown engine(s): {', '.join(unknown)}")
@@ -651,10 +761,22 @@ def _create_engine(
     market: MarketDataset,
     temp_root: Path,
 ) -> MarketEngine:
-    if engine_key == "wavemind":
+    if engine_key in {"wavemind", "wavemind-field"}:
         return WaveMindEngine(encoder, symbol=market.symbol, timeframe=market.timeframe, temp_root=temp_root)
+    if engine_key in {"field-off", "wavemind-field-off"}:
+        return WaveMindEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            use_field=False,
+        )
     if engine_key in {"static", "static-knn"}:
         return StaticKnnEngine(encoder)
+    if engine_key in {"dtw", "dtw-knn"}:
+        return DtwKnnEngine()
+    if engine_key in {"shape", "shape-knn", "ohlcv-shape"}:
+        return ShapeKnnEngine()
     if engine_key == "chroma":
         return ChromaEngine(encoder)
     if engine_key == "qdrant":
@@ -668,9 +790,17 @@ def _create_engine(
 
 def _engine_display_name(engine_key: str) -> str:
     return {
-        "wavemind": "WaveMind",
+        "wavemind": "WaveMind field",
+        "wavemind-field": "WaveMind field",
+        "field-off": "WaveMind field-off",
+        "wavemind-field-off": "WaveMind field-off",
         "static": "Static kNN",
         "static-knn": "Static kNN",
+        "dtw": "DTW kNN",
+        "dtw-knn": "DTW kNN",
+        "shape": "OHLCV shape kNN",
+        "shape-knn": "OHLCV shape kNN",
+        "ohlcv-shape": "OHLCV shape kNN",
         "chroma": "Chroma",
         "qdrant": "Qdrant",
         "naive": "Naive last-regime",
@@ -811,6 +941,50 @@ def _analogue_from_window(window: OHLCVWindow, text: str, score: float) -> Analo
         end_time=window.end_time,
         text=text,
     )
+
+
+def _window_dtw_series(window: OHLCVWindow) -> np.ndarray:
+    closes = np.asarray([bar.close for bar in window.bars], dtype=np.float64)
+    volumes = np.asarray([bar.volume for bar in window.bars], dtype=np.float64)
+    returns = np.diff(np.log(np.maximum(closes, 1e-12)), prepend=np.log(max(float(closes[0]), 1e-12))) * 10_000.0
+    volume_ratio = volumes / max(float(np.mean(volumes)), 1e-12)
+    stacked = np.column_stack([returns, volume_ratio])
+    mean = stacked.mean(axis=0, keepdims=True)
+    std = stacked.std(axis=0, keepdims=True)
+    std = np.where(std <= 1e-12, 1.0, std)
+    return ((stacked - mean) / std).astype(np.float32)
+
+
+def _window_shape_vector(window: OHLCVWindow) -> np.ndarray:
+    closes = np.asarray([bar.close for bar in window.bars], dtype=np.float64)
+    highs = np.asarray([bar.high for bar in window.bars], dtype=np.float64)
+    lows = np.asarray([bar.low for bar in window.bars], dtype=np.float64)
+    volumes = np.asarray([bar.volume for bar in window.bars], dtype=np.float64)
+    log_closes = np.log(np.maximum(closes, 1e-12))
+    returns = np.diff(log_closes, prepend=log_closes[0]) * 10_000.0
+    ranges = (highs - lows) / np.maximum(closes, 1e-12) * 10_000.0
+    volume_ratio = volumes / max(float(np.mean(volumes)), 1e-12)
+    stacked = np.column_stack([returns, ranges, volume_ratio])
+    mean = stacked.mean(axis=0, keepdims=True)
+    std = stacked.std(axis=0, keepdims=True)
+    std = np.where(std <= 1e-12, 1.0, std)
+    return ((stacked - mean) / std).reshape(-1).astype(np.float32)
+
+
+def _dtw_distance(left: np.ndarray, right: np.ndarray) -> float:
+    n = left.shape[0]
+    m = right.shape[0]
+    previous = np.full(m + 1, np.inf, dtype=np.float64)
+    current = np.full(m + 1, np.inf, dtype=np.float64)
+    previous[0] = 0.0
+    for i in range(1, n + 1):
+        current[0] = np.inf
+        li = left[i - 1]
+        for j in range(1, m + 1):
+            cost = float(np.linalg.norm(li - right[j - 1]))
+            current[j] = cost + min(previous[j], current[j - 1], previous[j - 1])
+        previous, current = current, previous
+    return float(previous[m] / max(n, m))
 
 
 def _window_metadata(window: OHLCVWindow) -> dict[str, str | int | float]:

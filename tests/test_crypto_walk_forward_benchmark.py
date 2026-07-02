@@ -13,7 +13,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "static", "naive", "ta"],
+        engines=["wavemind", "field-off", "shape", "naive", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
@@ -23,10 +23,16 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
 
-    assert set(result_by_engine) == {"WaveMind", "Static kNN", "Naive last-regime", "TA rules"}
-    assert result_by_engine["WaveMind"]["queries"] == 12
-    assert 0.0 <= result_by_engine["WaveMind"]["direction_accuracy_at_1"] <= 1.0
-    assert "avg_net_return_bps" in result_by_engine["Static kNN"]
+    assert set(result_by_engine) == {
+        "WaveMind field",
+        "WaveMind field-off",
+        "OHLCV shape kNN",
+        "Naive last-regime",
+        "TA rules",
+    }
+    assert result_by_engine["WaveMind field"]["queries"] == 12
+    assert 0.0 <= result_by_engine["WaveMind field"]["direction_accuracy_at_1"] <= 1.0
+    assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
     assert payload["analogue_samples"]
 
@@ -55,7 +61,8 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "1h",
             "--engines",
             "wavemind",
-            "static",
+            "field-off",
+            "shape",
             "naive",
             "ta",
             "--bars",
@@ -85,7 +92,8 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
 
     assert payload["scenario"]["name"] == "crypto_walk_forward"
     assert payload["scenario"]["note"].startswith("Research walk-forward")
-    assert payload["results"][0]["engine"] == "WaveMind"
+    assert payload["results"][0]["engine"] == "WaveMind field"
+    assert payload["results"][1]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 

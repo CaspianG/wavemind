@@ -72,48 +72,37 @@
   },
   "results": [
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 540,
       "direction_accuracy_at_1": 0.5092592592592593,
       "direction_accuracy_at_3": 0.6703703703703704,
       "mean_abs_return_error_bps": 145.1094278503962,
       "avg_net_return_bps": -9.360923207072538,
       "hit_rate_after_costs": 0.5074074074074074,
-      "avg_latency_ms": 5.401441295570867,
-      "p95_latency_ms": 6.981199985602871
+      "avg_latency_ms": 6.585116296924685,
+      "p95_latency_ms": 8.952200005296618
     },
     {
-      "engine": "Static kNN",
+      "engine": "WaveMind field-off",
       "queries": 540,
-      "direction_accuracy_at_1": 0.4537037037037037,
-      "direction_accuracy_at_3": 0.7074074074074074,
-      "mean_abs_return_error_bps": 107.15586097218527,
-      "avg_net_return_bps": -8.508817338209,
-      "hit_rate_after_costs": 0.42777777777777776,
-      "avg_latency_ms": 1.7709259265016213,
-      "p95_latency_ms": 2.3413999879267067
+      "direction_accuracy_at_1": 0.4351851851851852,
+      "direction_accuracy_at_3": 0.7037037037037037,
+      "mean_abs_return_error_bps": 105.99734456990178,
+      "avg_net_return_bps": -7.11155812614542,
+      "hit_rate_after_costs": 0.4111111111111111,
+      "avg_latency_ms": 4.879204629105516,
+      "p95_latency_ms": 6.4252000011038035
     },
     {
-      "engine": "Chroma",
+      "engine": "OHLCV shape kNN",
       "queries": 540,
-      "direction_accuracy_at_1": 0.4537037037037037,
-      "direction_accuracy_at_3": 0.7074074074074074,
-      "mean_abs_return_error_bps": 107.15586097218527,
-      "avg_net_return_bps": -8.508817338209,
-      "hit_rate_after_costs": 0.42777777777777776,
-      "avg_latency_ms": 3.630797963059093,
-      "p95_latency_ms": 5.113999999593943
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 540,
-      "direction_accuracy_at_1": 0.4537037037037037,
-      "direction_accuracy_at_3": 0.7074074074074074,
-      "mean_abs_return_error_bps": 107.15586097218527,
-      "avg_net_return_bps": -8.508817338209,
-      "hit_rate_after_costs": 0.42777777777777776,
-      "avg_latency_ms": 3.0921605557927654,
-      "p95_latency_ms": 4.922599997371435
+      "direction_accuracy_at_1": 0.30185185185185187,
+      "direction_accuracy_at_3": 0.6888888888888889,
+      "mean_abs_return_error_bps": 127.1181181329155,
+      "avg_net_return_bps": -32.744277559399734,
+      "hit_rate_after_costs": 0.2759259259259259,
+      "avg_latency_ms": 0.2308718520065735,
+      "p95_latency_ms": 0.32530000316910446
     },
     {
       "engine": "Naive last-regime",
@@ -123,7 +112,7 @@
       "mean_abs_return_error_bps": 79.47305973417458,
       "avg_net_return_bps": 27.36943929825081,
       "hit_rate_after_costs": 0.5666666666666667,
-      "avg_latency_ms": 0.00025333359156286825,
+      "avg_latency_ms": 0.0002461106136993126,
       "p95_latency_ms": 0.000400003045797348
     },
     {
@@ -134,476 +123,392 @@
       "mean_abs_return_error_bps": 114.4931120604456,
       "avg_net_return_bps": -64.05664947583972,
       "hit_rate_after_costs": 0.1425925925925926,
-      "avg_latency_ms": 0.0009407415442789594,
-      "p95_latency_ms": 0.001300009898841381
+      "avg_latency_ms": 0.0014038889612830072,
+      "p95_latency_ms": 0.0023999891709536314
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 1.9981933335118272,
+      "p95_latency_ms": 2.681600017240271
+    },
+    {
+      "engine": "Chroma",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 3.775102037427671,
+      "p95_latency_ms": 5.0638999964576215
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 3.3870318521857605,
+      "p95_latency_ms": 4.699000011896715
     }
   ],
   "by_market": [
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.38333333333333336,
       "direction_accuracy_at_3": 0.55,
       "mean_abs_return_error_bps": 172.82286338882545,
       "avg_net_return_bps": -32.49489776507866,
       "hit_rate_after_costs": 0.36666666666666664,
-      "avg_latency_ms": 5.475696662809544,
-      "p95_latency_ms": 7.201400003395975,
+      "avg_latency_ms": 6.8718466684610275,
+      "p95_latency_ms": 9.04229999287054,
       "symbol": "BTC",
       "timeframe": "1h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.3333333333333333,
       "direction_accuracy_at_3": 0.48333333333333334,
       "mean_abs_return_error_bps": 181.6119019994525,
       "avg_net_return_bps": -40.32567129252502,
       "hit_rate_after_costs": 0.3333333333333333,
-      "avg_latency_ms": 5.5074566674496355,
-      "p95_latency_ms": 6.791000021621585,
+      "avg_latency_ms": 6.443880002188962,
+      "p95_latency_ms": 8.41549999313429,
       "symbol": "BTC",
       "timeframe": "4h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.4,
       "direction_accuracy_at_3": 0.55,
       "mean_abs_return_error_bps": 179.48959328162286,
       "avg_net_return_bps": -23.30112899729217,
       "hit_rate_after_costs": 0.4,
-      "avg_latency_ms": 5.316135000612121,
-      "p95_latency_ms": 6.935699988389388,
+      "avg_latency_ms": 6.825305001984816,
+      "p95_latency_ms": 9.09109998610802,
       "symbol": "BTC",
       "timeframe": "1d"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.6833333333333333,
       "direction_accuracy_at_3": 0.9,
       "mean_abs_return_error_bps": 118.21133500583426,
       "avg_net_return_bps": 15.117982970137787,
       "hit_rate_after_costs": 0.6833333333333333,
-      "avg_latency_ms": 5.651789999198324,
-      "p95_latency_ms": 7.882000005338341,
+      "avg_latency_ms": 6.358501663877784,
+      "p95_latency_ms": 8.952200005296618,
       "symbol": "ETH",
       "timeframe": "1h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.36666666666666664,
       "direction_accuracy_at_3": 0.55,
       "mean_abs_return_error_bps": 138.12104696613216,
       "avg_net_return_bps": -32.946048555149886,
       "hit_rate_after_costs": 0.36666666666666664,
-      "avg_latency_ms": 5.138491666972793,
-      "p95_latency_ms": 6.709500012220815,
+      "avg_latency_ms": 6.540836664983847,
+      "p95_latency_ms": 9.198199986713007,
       "symbol": "ETH",
       "timeframe": "4h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.6333333333333333,
       "direction_accuracy_at_3": 0.7333333333333333,
       "mean_abs_return_error_bps": 115.53685732405238,
       "avg_net_return_bps": 12.613694001800704,
       "hit_rate_after_costs": 0.6333333333333333,
-      "avg_latency_ms": 5.483905000437517,
-      "p95_latency_ms": 8.136199990985915,
+      "avg_latency_ms": 5.842193334441011,
+      "p95_latency_ms": 8.272100007161498,
       "symbol": "ETH",
       "timeframe": "1d"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.5333333333333333,
       "direction_accuracy_at_3": 0.7166666666666667,
       "mean_abs_return_error_bps": 141.01608815858464,
       "avg_net_return_bps": -3.495989064301383,
       "hit_rate_after_costs": 0.5333333333333333,
-      "avg_latency_ms": 5.4200916648066295,
-      "p95_latency_ms": 7.311999972444028,
+      "avg_latency_ms": 6.581640003908736,
+      "p95_latency_ms": 8.865300012985244,
       "symbol": "SOL",
       "timeframe": "1h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.6166666666666667,
       "direction_accuracy_at_3": 0.7333333333333333,
       "mean_abs_return_error_bps": 135.45902183909098,
       "avg_net_return_bps": 8.689541188403862,
       "hit_rate_after_costs": 0.6166666666666667,
-      "avg_latency_ms": 5.288736665291556,
-      "p95_latency_ms": 6.598200008738786,
+      "avg_latency_ms": 6.832276666924979,
+      "p95_latency_ms": 8.541699993656948,
       "symbol": "SOL",
       "timeframe": "4h"
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "queries": 60,
       "direction_accuracy_at_1": 0.6333333333333333,
       "direction_accuracy_at_3": 0.8166666666666667,
       "mean_abs_return_error_bps": 123.71614268997061,
       "avg_net_return_bps": 11.894208650351926,
       "hit_rate_after_costs": 0.6333333333333333,
-      "avg_latency_ms": 5.330668332559678,
-      "p95_latency_ms": 6.898099993122742,
+      "avg_latency_ms": 6.969566665551004,
+      "p95_latency_ms": 10.396199999377131,
       "symbol": "SOL",
       "timeframe": "1d"
     },
     {
-      "engine": "Static kNN",
+      "engine": "WaveMind field-off",
       "queries": 60,
       "direction_accuracy_at_1": 0.35,
       "direction_accuracy_at_3": 0.65,
-      "mean_abs_return_error_bps": 137.19451069297185,
-      "avg_net_return_bps": -26.680828537859743,
+      "mean_abs_return_error_bps": 130.28715546571203,
+      "avg_net_return_bps": -19.87578061102263,
       "hit_rate_after_costs": 0.31666666666666665,
-      "avg_latency_ms": 2.04000500186036,
-      "p95_latency_ms": 2.7883000147994608,
+      "avg_latency_ms": 5.156386666931212,
+      "p95_latency_ms": 6.603300018468872,
       "symbol": "BTC",
       "timeframe": "1h"
     },
     {
-      "engine": "Static kNN",
+      "engine": "WaveMind field-off",
       "queries": 60,
       "direction_accuracy_at_1": 0.35,
-      "direction_accuracy_at_3": 0.5833333333333334,
-      "mean_abs_return_error_bps": 126.28186425144892,
-      "avg_net_return_bps": -32.769262149341095,
+      "direction_accuracy_at_3": 0.6,
+      "mean_abs_return_error_bps": 128.14182506209832,
+      "avg_net_return_bps": -26.821188194895537,
       "hit_rate_after_costs": 0.3,
-      "avg_latency_ms": 1.813436666270718,
-      "p95_latency_ms": 2.372599992668256,
+      "avg_latency_ms": 5.528143331078657,
+      "p95_latency_ms": 7.314999995287508,
       "symbol": "BTC",
       "timeframe": "4h"
     },
     {
-      "engine": "Static kNN",
+      "engine": "WaveMind field-off",
       "queries": 60,
       "direction_accuracy_at_1": 0.5,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 108.68933196316554,
-      "avg_net_return_bps": 0.020534541827807354,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 100.98112950234223,
+      "avg_net_return_bps": 1.5591418104039383,
       "hit_rate_after_costs": 0.48333333333333334,
-      "avg_latency_ms": 1.7880066681148794,
-      "p95_latency_ms": 2.724799996940419,
+      "avg_latency_ms": 5.042928333568852,
+      "p95_latency_ms": 6.448200001614168,
       "symbol": "BTC",
       "timeframe": "1d"
     },
     {
-      "engine": "Static kNN",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.55,
-      "direction_accuracy_at_3": 0.8333333333333334,
-      "mean_abs_return_error_bps": 110.59535783543852,
-      "avg_net_return_bps": -1.7864977943720972,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 1.6702333339101945,
-      "p95_latency_ms": 1.9952000002376735,
-      "symbol": "ETH",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Static kNN",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.75,
-      "mean_abs_return_error_bps": 101.2751206858359,
-      "avg_net_return_bps": -21.22987685929876,
-      "hit_rate_after_costs": 0.3333333333333333,
-      "avg_latency_ms": 1.703396668987504,
-      "p95_latency_ms": 2.0093999919481575,
-      "symbol": "ETH",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Static kNN",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 97.43454324541902,
-      "avg_net_return_bps": -2.93969597778356,
-      "hit_rate_after_costs": 0.38333333333333336,
-      "avg_latency_ms": 1.6137116671112988,
-      "p95_latency_ms": 2.053400006843731,
-      "symbol": "ETH",
-      "timeframe": "1d"
-    },
-    {
-      "engine": "Static kNN",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4166666666666667,
-      "direction_accuracy_at_3": 0.7166666666666667,
-      "mean_abs_return_error_bps": 99.06271927932646,
-      "avg_net_return_bps": -15.894491684407999,
-      "hit_rate_after_costs": 0.4166666666666667,
-      "avg_latency_ms": 1.7189916650143762,
-      "p95_latency_ms": 2.189499995438382,
-      "symbol": "SOL",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Static kNN",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.5833333333333334,
-      "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 84.52385464060134,
-      "avg_net_return_bps": 14.075974628496526,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 1.9048066678806208,
-      "p95_latency_ms": 2.5166000123135746,
-      "symbol": "SOL",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Static kNN",
+      "engine": "WaveMind field-off",
       "queries": 60,
       "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.85,
+      "mean_abs_return_error_bps": 108.47523907351274,
+      "avg_net_return_bps": 1.8548260408847586,
+      "hit_rate_after_costs": 0.5333333333333333,
+      "avg_latency_ms": 4.80389499910719,
+      "p95_latency_ms": 6.307100004050881,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "WaveMind field-off",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.7,
+      "mean_abs_return_error_bps": 98.36713565454639,
+      "avg_net_return_bps": -18.4473484108163,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 4.712130000310329,
+      "p95_latency_ms": 5.9012999990954995,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "WaveMind field-off",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.36666666666666664,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 99.09630304661243,
+      "avg_net_return_bps": -5.0258136211922,
+      "hit_rate_after_costs": 0.35,
+      "avg_latency_ms": 4.6909366685819505,
+      "p95_latency_ms": 6.464600010076538,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "WaveMind field-off",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.7,
+      "mean_abs_return_error_bps": 98.09764482267458,
+      "avg_net_return_bps": -17.426346107854794,
+      "hit_rate_after_costs": 0.4,
+      "avg_latency_ms": 4.678208330976001,
+      "p95_latency_ms": 9.998800000175834,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "WaveMind field-off",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 89.56373984440545,
+      "avg_net_return_bps": 8.03934228883032,
+      "hit_rate_after_costs": 0.4666666666666667,
+      "avg_latency_ms": 4.489228334083843,
+      "p95_latency_ms": 6.46420000703074,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "WaveMind field-off",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5166666666666667,
       "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 99.34544615545987,
-      "avg_net_return_bps": 10.624787788857914,
+      "mean_abs_return_error_bps": 100.96592865721193,
+      "avg_net_return_bps": 12.139143670353665,
       "hit_rate_after_costs": 0.5166666666666667,
-      "avg_latency_ms": 1.6857449993646394,
-      "p95_latency_ms": 2.014700003201142,
+      "avg_latency_ms": 4.810984997311607,
+      "p95_latency_ms": 6.15749999997206,
       "symbol": "SOL",
       "timeframe": "1d"
     },
     {
-      "engine": "Chroma",
+      "engine": "OHLCV shape kNN",
       "queries": 60,
-      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_1": 0.2833333333333333,
+      "direction_accuracy_at_3": 0.6666666666666666,
+      "mean_abs_return_error_bps": 149.93785412650956,
+      "avg_net_return_bps": -41.699336638581435,
+      "hit_rate_after_costs": 0.26666666666666666,
+      "avg_latency_ms": 0.25246333243558183,
+      "p95_latency_ms": 0.3147000097669661,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "OHLCV shape kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
       "direction_accuracy_at_3": 0.65,
-      "mean_abs_return_error_bps": 137.19451069297185,
-      "avg_net_return_bps": -26.680828537859743,
-      "hit_rate_after_costs": 0.31666666666666665,
-      "avg_latency_ms": 3.746704999745513,
-      "p95_latency_ms": 4.755499976454303,
-      "symbol": "BTC",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.35,
-      "direction_accuracy_at_3": 0.5833333333333334,
-      "mean_abs_return_error_bps": 126.28186425144892,
-      "avg_net_return_bps": -32.769262149341095,
-      "hit_rate_after_costs": 0.3,
-      "avg_latency_ms": 3.8296216662274674,
-      "p95_latency_ms": 5.865500017534941,
-      "symbol": "BTC",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.5,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 108.68933196316554,
-      "avg_net_return_bps": 0.020534541827807354,
-      "hit_rate_after_costs": 0.48333333333333334,
-      "avg_latency_ms": 3.9100816643137173,
-      "p95_latency_ms": 5.7524000003468245,
-      "symbol": "BTC",
-      "timeframe": "1d"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.55,
-      "direction_accuracy_at_3": 0.8333333333333334,
-      "mean_abs_return_error_bps": 110.59535783543852,
-      "avg_net_return_bps": -1.7864977943720972,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 3.576510001827652,
-      "p95_latency_ms": 4.515600012382492,
-      "symbol": "ETH",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.75,
-      "mean_abs_return_error_bps": 101.2751206858359,
-      "avg_net_return_bps": -21.22987685929876,
-      "hit_rate_after_costs": 0.3333333333333333,
-      "avg_latency_ms": 3.279485001015322,
-      "p95_latency_ms": 4.45370000670664,
-      "symbol": "ETH",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 97.43454324541902,
-      "avg_net_return_bps": -2.93969597778356,
-      "hit_rate_after_costs": 0.38333333333333336,
-      "avg_latency_ms": 3.5082049997678646,
-      "p95_latency_ms": 4.681299993535504,
-      "symbol": "ETH",
-      "timeframe": "1d"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4166666666666667,
-      "direction_accuracy_at_3": 0.7166666666666667,
-      "mean_abs_return_error_bps": 99.06271927932646,
-      "avg_net_return_bps": -15.894491684407999,
+      "mean_abs_return_error_bps": 125.53681327050502,
+      "avg_net_return_bps": -13.852556077036462,
       "hit_rate_after_costs": 0.4166666666666667,
-      "avg_latency_ms": 4.311290001108621,
-      "p95_latency_ms": 5.9714000090025365,
-      "symbol": "SOL",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Chroma",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.5833333333333334,
-      "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 84.52385464060134,
-      "avg_net_return_bps": 14.075974628496526,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 3.275556665418359,
-      "p95_latency_ms": 3.926100005628541,
-      "symbol": "SOL",
+      "avg_latency_ms": 0.22120666884196302,
+      "p95_latency_ms": 0.2964000159408897,
+      "symbol": "BTC",
       "timeframe": "4h"
     },
     {
-      "engine": "Chroma",
+      "engine": "OHLCV shape kNN",
       "queries": 60,
-      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_1": 0.3333333333333333,
       "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 99.34544615545987,
-      "avg_net_return_bps": 10.624787788857914,
-      "hit_rate_after_costs": 0.5166666666666667,
-      "avg_latency_ms": 3.2397266681073233,
-      "p95_latency_ms": 5.112300015753135,
-      "symbol": "SOL",
+      "mean_abs_return_error_bps": 124.37931388686117,
+      "avg_net_return_bps": -45.86435770561211,
+      "hit_rate_after_costs": 0.25,
+      "avg_latency_ms": 0.25606999940161285,
+      "p95_latency_ms": 0.39430000470019877,
+      "symbol": "BTC",
       "timeframe": "1d"
     },
     {
-      "engine": "Qdrant",
+      "engine": "OHLCV shape kNN",
       "queries": 60,
-      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_1": 0.3333333333333333,
+      "direction_accuracy_at_3": 0.7333333333333333,
+      "mean_abs_return_error_bps": 166.96570983196136,
+      "avg_net_return_bps": -56.21059578406452,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 0.21317166635223353,
+      "p95_latency_ms": 0.2844999835360795,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "OHLCV shape kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.16666666666666666,
+      "direction_accuracy_at_3": 0.6166666666666667,
+      "mean_abs_return_error_bps": 122.5335028487711,
+      "avg_net_return_bps": -34.94601656220764,
+      "hit_rate_after_costs": 0.11666666666666667,
+      "avg_latency_ms": 0.21479666659918925,
+      "p95_latency_ms": 0.2851999888662249,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "OHLCV shape kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.21666666666666667,
+      "direction_accuracy_at_3": 0.55,
+      "mean_abs_return_error_bps": 122.99076666544373,
+      "avg_net_return_bps": -30.329356622177652,
+      "hit_rate_after_costs": 0.21666666666666667,
+      "avg_latency_ms": 0.21218833523259187,
+      "p95_latency_ms": 0.322199979564175,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "OHLCV shape kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.21666666666666667,
       "direction_accuracy_at_3": 0.65,
-      "mean_abs_return_error_bps": 137.19451069297185,
-      "avg_net_return_bps": -26.680828537859743,
-      "hit_rate_after_costs": 0.31666666666666665,
-      "avg_latency_ms": 3.118835002048096,
-      "p95_latency_ms": 4.33080000220798,
-      "symbol": "BTC",
+      "mean_abs_return_error_bps": 131.5334314316303,
+      "avg_net_return_bps": -52.680430947400694,
+      "hit_rate_after_costs": 0.2,
+      "avg_latency_ms": 0.24958666666255644,
+      "p95_latency_ms": 0.4340999876148999,
+      "symbol": "SOL",
       "timeframe": "1h"
     },
     {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.35,
-      "direction_accuracy_at_3": 0.5833333333333334,
-      "mean_abs_return_error_bps": 126.28186425144892,
-      "avg_net_return_bps": -32.769262149341095,
-      "hit_rate_after_costs": 0.3,
-      "avg_latency_ms": 3.008171667655309,
-      "p95_latency_ms": 3.8939999940339476,
-      "symbol": "BTC",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.5,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 108.68933196316554,
-      "avg_net_return_bps": 0.020534541827807354,
-      "hit_rate_after_costs": 0.48333333333333334,
-      "avg_latency_ms": 2.7216933318413794,
-      "p95_latency_ms": 3.487600013613701,
-      "symbol": "BTC",
-      "timeframe": "1d"
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.55,
-      "direction_accuracy_at_3": 0.8333333333333334,
-      "mean_abs_return_error_bps": 110.59535783543852,
-      "avg_net_return_bps": -1.7864977943720972,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 2.8139716649699644,
-      "p95_latency_ms": 3.853200003504753,
-      "symbol": "ETH",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.75,
-      "mean_abs_return_error_bps": 101.2751206858359,
-      "avg_net_return_bps": -21.22987685929876,
-      "hit_rate_after_costs": 0.3333333333333333,
-      "avg_latency_ms": 3.002299999934621,
-      "p95_latency_ms": 4.043199995066971,
-      "symbol": "ETH",
-      "timeframe": "4h"
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.4,
-      "direction_accuracy_at_3": 0.6333333333333333,
-      "mean_abs_return_error_bps": 97.43454324541902,
-      "avg_net_return_bps": -2.93969597778356,
-      "hit_rate_after_costs": 0.38333333333333336,
-      "avg_latency_ms": 2.9788116677082144,
-      "p95_latency_ms": 4.105400003027171,
-      "symbol": "ETH",
-      "timeframe": "1d"
-    },
-    {
-      "engine": "Qdrant",
+      "engine": "OHLCV shape kNN",
       "queries": 60,
       "direction_accuracy_at_1": 0.4166666666666667,
-      "direction_accuracy_at_3": 0.7166666666666667,
-      "mean_abs_return_error_bps": 99.06271927932646,
-      "avg_net_return_bps": -15.894491684407999,
-      "hit_rate_after_costs": 0.4166666666666667,
-      "avg_latency_ms": 2.765278334360725,
-      "p95_latency_ms": 3.4789000055752695,
-      "symbol": "SOL",
-      "timeframe": "1h"
-    },
-    {
-      "engine": "Qdrant",
-      "queries": 60,
-      "direction_accuracy_at_1": 0.5833333333333334,
-      "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 84.52385464060134,
-      "avg_net_return_bps": 14.075974628496526,
-      "hit_rate_after_costs": 0.55,
-      "avg_latency_ms": 4.4832916668383405,
-      "p95_latency_ms": 6.856199994217604,
+      "direction_accuracy_at_3": 0.6833333333333333,
+      "mean_abs_return_error_bps": 106.70198155070885,
+      "avg_net_return_bps": -6.5077914584424335,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 0.24130000141061222,
+      "p95_latency_ms": 0.41179999243468046,
       "symbol": "SOL",
       "timeframe": "4h"
     },
     {
-      "engine": "Qdrant",
+      "engine": "OHLCV shape kNN",
       "queries": 60,
-      "direction_accuracy_at_1": 0.5333333333333333,
-      "direction_accuracy_at_3": 0.7833333333333333,
-      "mean_abs_return_error_bps": 99.34544615545987,
-      "avg_net_return_bps": 10.624787788857914,
-      "hit_rate_after_costs": 0.5166666666666667,
-      "avg_latency_ms": 2.937091666778239,
-      "p95_latency_ms": 3.9698000182397664,
+      "direction_accuracy_at_1": 0.3333333333333333,
+      "direction_accuracy_at_3": 0.8666666666666667,
+      "mean_abs_return_error_bps": 93.48368958384842,
+      "avg_net_return_bps": -12.608056239074648,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 0.21706333112282059,
+      "p95_latency_ms": 0.2871000033337623,
       "symbol": "SOL",
       "timeframe": "1d"
     },
@@ -615,8 +520,8 @@
       "mean_abs_return_error_bps": 87.22688023226175,
       "avg_net_return_bps": 15.91551704600127,
       "hit_rate_after_costs": 0.4666666666666667,
-      "avg_latency_ms": 0.0004033310688100755,
-      "p95_latency_ms": 0.0006999762263149023,
+      "avg_latency_ms": 0.00040666491258889437,
+      "p95_latency_ms": 0.000700005330145359,
       "symbol": "BTC",
       "timeframe": "1h"
     },
@@ -628,8 +533,8 @@
       "mean_abs_return_error_bps": 89.675471137152,
       "avg_net_return_bps": 16.421414250972322,
       "hit_rate_after_costs": 0.43333333333333335,
-      "avg_latency_ms": 0.00022000119012470046,
-      "p95_latency_ms": 0.000300002284348011,
+      "avg_latency_ms": 0.00021666637621819973,
+      "p95_latency_ms": 0.000400003045797348,
       "symbol": "BTC",
       "timeframe": "4h"
     },
@@ -641,8 +546,8 @@
       "mean_abs_return_error_bps": 94.72892507656172,
       "avg_net_return_bps": 19.684914595962503,
       "hit_rate_after_costs": 0.48333333333333334,
-      "avg_latency_ms": 0.0002266674224908153,
-      "p95_latency_ms": 0.000400003045797348,
+      "avg_latency_ms": 0.00021000062891592583,
+      "p95_latency_ms": 0.000300002284348011,
       "symbol": "BTC",
       "timeframe": "1d"
     },
@@ -654,7 +559,7 @@
       "mean_abs_return_error_bps": 69.70003622780783,
       "avg_net_return_bps": 64.09997601302285,
       "hit_rate_after_costs": 0.7833333333333333,
-      "avg_latency_ms": 0.00022833410184830427,
+      "avg_latency_ms": 0.00020666338969022036,
       "p95_latency_ms": 0.000300002284348011,
       "symbol": "ETH",
       "timeframe": "1h"
@@ -667,8 +572,8 @@
       "mean_abs_return_error_bps": 89.16799217778016,
       "avg_net_return_bps": 12.609484662623759,
       "hit_rate_after_costs": 0.45,
-      "avg_latency_ms": 0.00030500135229279596,
-      "p95_latency_ms": 0.000600004568696022,
+      "avg_latency_ms": 0.0001999990975794693,
+      "p95_latency_ms": 0.000300002284348011,
       "symbol": "ETH",
       "timeframe": "4h"
     },
@@ -680,8 +585,8 @@
       "mean_abs_return_error_bps": 71.17370533539511,
       "avg_net_return_bps": 36.731600616909816,
       "hit_rate_after_costs": 0.6666666666666666,
-      "avg_latency_ms": 0.00021166730827341476,
-      "p95_latency_ms": 0.000300002284348011,
+      "avg_latency_ms": 0.00024999947830413777,
+      "p95_latency_ms": 0.0005999754648655653,
       "symbol": "ETH",
       "timeframe": "1d"
     },
@@ -693,8 +598,8 @@
       "mean_abs_return_error_bps": 66.39806067165456,
       "avg_net_return_bps": 34.29932921726659,
       "hit_rate_after_costs": 0.65,
-      "avg_latency_ms": 0.00019166667091970643,
-      "p95_latency_ms": 0.000300002284348011,
+      "avg_latency_ms": 0.00024999947830413777,
+      "p95_latency_ms": 0.000600004568696022,
       "symbol": "SOL",
       "timeframe": "1h"
     },
@@ -706,8 +611,8 @@
       "mean_abs_return_error_bps": 75.11777665710034,
       "avg_net_return_bps": 13.730234792087536,
       "hit_rate_after_costs": 0.5,
-      "avg_latency_ms": 0.00021000062891592583,
-      "p95_latency_ms": 0.000400003045797348,
+      "avg_latency_ms": 0.00021833451076721153,
+      "p95_latency_ms": 0.000300002284348011,
       "symbol": "SOL",
       "timeframe": "4h"
     },
@@ -719,8 +624,8 @@
       "mean_abs_return_error_bps": 72.06869009185775,
       "avg_net_return_bps": 32.83248248941066,
       "hit_rate_after_costs": 0.6666666666666666,
-      "avg_latency_ms": 0.00028333258039007586,
-      "p95_latency_ms": 0.0004999747034162283,
+      "avg_latency_ms": 0.00025666765092561644,
+      "p95_latency_ms": 0.000400003045797348,
       "symbol": "SOL",
       "timeframe": "1d"
     },
@@ -732,8 +637,8 @@
       "mean_abs_return_error_bps": 118.79607763408927,
       "avg_net_return_bps": -66.92804145508185,
       "hit_rate_after_costs": 0.16666666666666666,
-      "avg_latency_ms": 0.001090001508904,
-      "p95_latency_ms": 0.001500011421740055,
+      "avg_latency_ms": 0.001403334317728877,
+      "p95_latency_ms": 0.0037999998312443495,
       "symbol": "BTC",
       "timeframe": "1h"
     },
@@ -745,8 +650,8 @@
       "mean_abs_return_error_bps": 109.72133329166782,
       "avg_net_return_bps": -62.53063501871261,
       "hit_rate_after_costs": 0.15,
-      "avg_latency_ms": 0.0008416657995743056,
-      "p95_latency_ms": 0.001100008375942707,
+      "avg_latency_ms": 0.0017466697803077598,
+      "p95_latency_ms": 0.0022999884095042944,
       "symbol": "BTC",
       "timeframe": "4h"
     },
@@ -758,8 +663,8 @@
       "mean_abs_return_error_bps": 107.19987124920061,
       "avg_net_return_bps": -47.99032992922994,
       "hit_rate_after_costs": 0.16666666666666666,
-      "avg_latency_ms": 0.0009466656289684275,
-      "p95_latency_ms": 0.001700012944638729,
+      "avg_latency_ms": 0.0017183323507197201,
+      "p95_latency_ms": 0.0024999899324029684,
       "symbol": "BTC",
       "timeframe": "1d"
     },
@@ -771,8 +676,8 @@
       "mean_abs_return_error_bps": 149.86712760796735,
       "avg_net_return_bps": -88.02755040099485,
       "hit_rate_after_costs": 0.11666666666666667,
-      "avg_latency_ms": 0.0008700017739708225,
-      "p95_latency_ms": 0.00100000761449337,
+      "avg_latency_ms": 0.001195002308425804,
+      "p95_latency_ms": 0.001900014467537403,
       "symbol": "ETH",
       "timeframe": "1h"
     },
@@ -784,8 +689,8 @@
       "mean_abs_return_error_bps": 102.75428488500329,
       "avg_net_return_bps": -41.58244694047826,
       "hit_rate_after_costs": 0.15,
-      "avg_latency_ms": 0.0009300012607127428,
-      "p95_latency_ms": 0.001300009898841381,
+      "avg_latency_ms": 0.0011883336507404845,
+      "p95_latency_ms": 0.001800013706088066,
       "symbol": "ETH",
       "timeframe": "4h"
     },
@@ -797,8 +702,8 @@
       "mean_abs_return_error_bps": 114.48039066575487,
       "avg_net_return_bps": -84.89018736471559,
       "hit_rate_after_costs": 0.15,
-      "avg_latency_ms": 0.0009533323463983834,
-      "p95_latency_ms": 0.001300009898841381,
+      "avg_latency_ms": 0.001861664835208406,
+      "p95_latency_ms": 0.0030999945010989904,
       "symbol": "ETH",
       "timeframe": "1d"
     },
@@ -810,8 +715,8 @@
       "mean_abs_return_error_bps": 117.46247792798168,
       "avg_net_return_bps": -70.69652590858504,
       "hit_rate_after_costs": 0.15,
-      "avg_latency_ms": 0.000928334096291413,
-      "p95_latency_ms": 0.0012999807950109243,
+      "avg_latency_ms": 0.0012983301227601867,
+      "p95_latency_ms": 0.0028999929782003164,
       "symbol": "SOL",
       "timeframe": "1h"
     },
@@ -823,8 +728,8 @@
       "mean_abs_return_error_bps": 101.77637108351706,
       "avg_net_return_bps": -57.938163682731336,
       "hit_rate_after_costs": 0.11666666666666667,
-      "avg_latency_ms": 0.000986670299122731,
-      "p95_latency_ms": 0.001400010660290718,
+      "avg_latency_ms": 0.001178331149276346,
+      "p95_latency_ms": 0.002100015990436077,
       "symbol": "SOL",
       "timeframe": "4h"
     },
@@ -836,15 +741,366 @@
       "mean_abs_return_error_bps": 108.3800741988285,
       "avg_net_return_bps": -55.92596458202792,
       "hit_rate_after_costs": 0.11666666666666667,
-      "avg_latency_ms": 0.0009200011845678091,
-      "p95_latency_ms": 0.0011999800335615873,
+      "avg_latency_ms": 0.0010450021363794804,
+      "p95_latency_ms": 0.001400010660290718,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 2.17076500072532,
+      "p95_latency_ms": 2.972900023451075,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 2.18959833534124,
+      "p95_latency_ms": 3.6106999905314296,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 1.9869166639788698,
+      "p95_latency_ms": 2.4905999889597297,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 1.9027816679833147,
+      "p95_latency_ms": 2.5181999953929335,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 1.8145683357336868,
+      "p95_latency_ms": 2.3914000194054097,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 1.8567916665536661,
+      "p95_latency_ms": 2.490399987436831,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 1.9256616646695572,
+      "p95_latency_ms": 2.484199998434633,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 2.1779483320036284,
+      "p95_latency_ms": 2.9233999957796186,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 1.9587083346171614,
+      "p95_latency_ms": 2.8128999983891845,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 3.9898799994261935,
+      "p95_latency_ms": 5.32050000037998,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 3.838688332568078,
+      "p95_latency_ms": 5.054799985373393,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 4.235489999700803,
+      "p95_latency_ms": 9.370599989779294,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 3.6020550008591576,
+      "p95_latency_ms": 4.632600001059473,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 3.654981669872844,
+      "p95_latency_ms": 4.752499982714653,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 3.7457066699668453,
+      "p95_latency_ms": 4.979199991794303,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 3.896595000696834,
+      "p95_latency_ms": 5.41230000089854,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 3.668208331995023,
+      "p95_latency_ms": 6.71610000426881,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 3.34431333176326,
+      "p95_latency_ms": 4.295799997635186,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 3.3559416682692245,
+      "p95_latency_ms": 4.272299993317574,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 3.1874033341106647,
+      "p95_latency_ms": 4.299399995943531,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 2.8347683313768357,
+      "p95_latency_ms": 3.792399977101013,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 3.4595233334888085,
+      "p95_latency_ms": 5.244300002232194,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 3.9210266651934944,
+      "p95_latency_ms": 4.995499999495223,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 4.101181668132388,
+      "p95_latency_ms": 6.010500015690923,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 3.547556668248338,
+      "p95_latency_ms": 4.545100004179403,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 2.9744799986171224,
+      "p95_latency_ms": 3.940900001907721,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 3.1014050022349693,
+      "p95_latency_ms": 4.200800001854077,
       "symbol": "SOL",
       "timeframe": "1d"
     }
   ],
   "analogue_samples": [
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000180",
         "symbol": "BTC",
@@ -858,12 +1114,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -176.79918461341538,
-        "latency_ms": 5.226300010690466
+        "latency_ms": 6.089500006055459
       },
       "analogues": [
         {
           "id": "BTC_1h_000057",
-          "score": 0.7999664313526903,
+          "score": 0.7999686248036181,
           "direction": "down",
           "future_return_bps": -176.79918461341538,
           "start_time": "2024-01-03T09:00:00+00:00",
@@ -872,7 +1128,7 @@
         },
         {
           "id": "BTC_1h_000118",
-          "score": 0.7898966547128315,
+          "score": 0.7898959585305806,
           "direction": "down",
           "future_return_bps": -169.4260635665945,
           "start_time": "2024-01-05T22:00:00+00:00",
@@ -881,7 +1137,7 @@
         },
         {
           "id": "BTC_1h_000155",
-          "score": 0.7854742782532187,
+          "score": 0.7854777257858725,
           "direction": "up",
           "future_return_bps": 135.7138671193714,
           "start_time": "2024-01-07T11:00:00+00:00",
@@ -890,7 +1146,7 @@
         },
         {
           "id": "BTC_1h_000060",
-          "score": 0.7812727141325007,
+          "score": 0.7812749123518,
           "direction": "down",
           "future_return_bps": -152.4155366282487,
           "start_time": "2024-01-03T12:00:00+00:00",
@@ -899,7 +1155,7 @@
         },
         {
           "id": "BTC_1h_000058",
-          "score": 0.7735948271221584,
+          "score": 0.7735963482326931,
           "direction": "down",
           "future_return_bps": -219.37133107138408,
           "start_time": "2024-01-03T10:00:00+00:00",
@@ -909,7 +1165,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000181",
         "symbol": "BTC",
@@ -923,12 +1179,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -169.4260635665945,
-        "latency_ms": 12.237699993420392
+        "latency_ms": 6.338000006508082
       },
       "analogues": [
         {
           "id": "BTC_1h_000118",
-          "score": 0.874610830636497,
+          "score": 0.8746110166029887,
           "direction": "down",
           "future_return_bps": -169.4260635665945,
           "start_time": "2024-01-05T22:00:00+00:00",
@@ -937,7 +1193,7 @@
         },
         {
           "id": "BTC_1h_000117",
-          "score": 0.820900600221422,
+          "score": 0.820902140405443,
           "direction": "down",
           "future_return_bps": -181.34643570607568,
           "start_time": "2024-01-05T21:00:00+00:00",
@@ -946,7 +1202,7 @@
         },
         {
           "id": "BTC_1h_000167",
-          "score": 0.810614755426162,
+          "score": 0.8106171253068384,
           "direction": "down",
           "future_return_bps": -99.88760764643612,
           "start_time": "2024-01-07T23:00:00+00:00",
@@ -955,7 +1211,7 @@
         },
         {
           "id": "BTC_1h_000106",
-          "score": 0.8096631166432338,
+          "score": 0.8096624299977258,
           "direction": "down",
           "future_return_bps": -61.428317169522906,
           "start_time": "2024-01-05T10:00:00+00:00",
@@ -964,7 +1220,7 @@
         },
         {
           "id": "BTC_1h_000126",
-          "score": 0.8073211098463503,
+          "score": 0.8073183012754884,
           "direction": "down",
           "future_return_bps": -156.1052424918863,
           "start_time": "2024-01-06T06:00:00+00:00",
@@ -974,7 +1230,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000182",
         "symbol": "BTC",
@@ -988,12 +1244,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -152.38605194367483,
-        "latency_ms": 6.215100002009422
+        "latency_ms": 6.021899986080825
       },
       "analogues": [
         {
           "id": "BTC_1h_000069",
-          "score": 0.8104954419125882,
+          "score": 0.8104933533658353,
           "direction": "down",
           "future_return_bps": -152.38605194367483,
           "start_time": "2024-01-03T21:00:00+00:00",
@@ -1002,7 +1258,7 @@
         },
         {
           "id": "BTC_1h_000106",
-          "score": 0.8052615838978723,
+          "score": 0.8052612977955773,
           "direction": "down",
           "future_return_bps": -61.428317169522906,
           "start_time": "2024-01-05T10:00:00+00:00",
@@ -1011,7 +1267,7 @@
         },
         {
           "id": "BTC_1h_000072",
-          "score": 0.7929338139215907,
+          "score": 0.7929337662378748,
           "direction": "down",
           "future_return_bps": -94.14340384796272,
           "start_time": "2024-01-04T00:00:00+00:00",
@@ -1020,7 +1276,7 @@
         },
         {
           "id": "BTC_1h_000058",
-          "score": 0.7896840223312377,
+          "score": 0.7896819814682006,
           "direction": "down",
           "future_return_bps": -219.37133107138408,
           "start_time": "2024-01-03T10:00:00+00:00",
@@ -1029,7 +1285,7 @@
         },
         {
           "id": "BTC_1h_000064",
-          "score": 0.7895148553425977,
+          "score": 0.7895123948628613,
           "direction": "flat",
           "future_return_bps": -25.38102828170907,
           "start_time": "2024-01-03T16:00:00+00:00",
@@ -1039,7 +1295,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000183",
         "symbol": "BTC",
@@ -1053,12 +1309,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -152.4155366282487,
-        "latency_ms": 5.100999987917021
+        "latency_ms": 5.606099992292002
       },
       "analogues": [
         {
           "id": "BTC_1h_000060",
-          "score": 0.8212735926360882,
+          "score": 0.8212762247772014,
           "direction": "down",
           "future_return_bps": -152.4155366282487,
           "start_time": "2024-01-03T12:00:00+00:00",
@@ -1067,7 +1323,7 @@
         },
         {
           "id": "BTC_1h_000118",
-          "score": 0.8180583257367302,
+          "score": 0.8180558700253655,
           "direction": "down",
           "future_return_bps": -169.4260635665945,
           "start_time": "2024-01-05T22:00:00+00:00",
@@ -1076,7 +1332,7 @@
         },
         {
           "id": "BTC_1h_000074",
-          "score": 0.8123868770276396,
+          "score": 0.8123892659818022,
           "direction": "down",
           "future_return_bps": -68.66113230790228,
           "start_time": "2024-01-04T02:00:00+00:00",
@@ -1085,7 +1341,7 @@
         },
         {
           "id": "BTC_1h_000124",
-          "score": 0.8067552013403307,
+          "score": 0.8067556114202867,
           "direction": "down",
           "future_return_bps": -137.79658900519132,
           "start_time": "2024-01-06T04:00:00+00:00",
@@ -1094,7 +1350,7 @@
         },
         {
           "id": "BTC_1h_000114",
-          "score": 0.8025297322112113,
+          "score": 0.8025306334334403,
           "direction": "down",
           "future_return_bps": -114.53024846922789,
           "start_time": "2024-01-05T18:00:00+00:00",
@@ -1104,7 +1360,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000184",
         "symbol": "BTC",
@@ -1118,12 +1374,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -175.05352972877364,
-        "latency_ms": 6.4353999914601445
+        "latency_ms": 7.58140001562424
       },
       "analogues": [
         {
           "id": "BTC_1h_000059",
-          "score": 0.8138770156394071,
+          "score": 0.8138796191702908,
           "direction": "down",
           "future_return_bps": -175.05352972877364,
           "start_time": "2024-01-03T11:00:00+00:00",
@@ -1132,7 +1388,7 @@
         },
         {
           "id": "BTC_1h_000097",
-          "score": 0.8116740043603988,
+          "score": 0.8116764028513046,
           "direction": "up",
           "future_return_bps": 30.238685386945185,
           "start_time": "2024-01-05T01:00:00+00:00",
@@ -1141,7 +1397,7 @@
         },
         {
           "id": "BTC_1h_000058",
-          "score": 0.8028241317749023,
+          "score": 0.8028252094268798,
           "direction": "down",
           "future_return_bps": -219.37133107138408,
           "start_time": "2024-01-03T10:00:00+00:00",
@@ -1150,7 +1406,7 @@
         },
         {
           "id": "BTC_1h_000098",
-          "score": 0.7825774125341934,
+          "score": 0.7825797919516129,
           "direction": "flat",
           "future_return_bps": 27.18223580495227,
           "start_time": "2024-01-05T02:00:00+00:00",
@@ -1159,7 +1415,7 @@
         },
         {
           "id": "BTC_1h_000069",
-          "score": 0.7790184182156888,
+          "score": 0.7790201348294583,
           "direction": "down",
           "future_return_bps": -152.38605194367483,
           "start_time": "2024-01-03T21:00:00+00:00",
@@ -1169,7 +1425,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000185",
         "symbol": "BTC",
@@ -1183,12 +1439,12 @@
       "prediction": {
         "direction": "up",
         "expected_return_bps": 210.35751149146796,
-        "latency_ms": 5.297499999869615
+        "latency_ms": 8.841200004098937
       },
       "analogues": [
         {
           "id": "BTC_1h_000043",
-          "score": 0.8108273670408459,
+          "score": 0.8108255121443005,
           "direction": "up",
           "future_return_bps": 210.35751149146796,
           "start_time": "2024-01-02T19:00:00+00:00",
@@ -1197,7 +1453,7 @@
         },
         {
           "id": "BTC_1h_000035",
-          "score": 0.7939111063215467,
+          "score": 0.7939116117689344,
           "direction": "up",
           "future_return_bps": 199.01889612183865,
           "start_time": "2024-01-02T11:00:00+00:00",
@@ -1206,7 +1462,7 @@
         },
         {
           "id": "BTC_1h_000055",
-          "score": 0.7907321579236131,
+          "score": 0.7907329923886399,
           "direction": "down",
           "future_return_bps": -121.35949188926354,
           "start_time": "2024-01-03T07:00:00+00:00",
@@ -1215,7 +1471,7 @@
         },
         {
           "id": "BTC_1h_000036",
-          "score": 0.784541818830702,
+          "score": 0.7845413658354017,
           "direction": "up",
           "future_return_bps": 185.9558576012099,
           "start_time": "2024-01-02T12:00:00+00:00",
@@ -1224,7 +1480,7 @@
         },
         {
           "id": "BTC_1h_000153",
-          "score": 0.7812951386299487,
+          "score": 0.7812955248680469,
           "direction": "up",
           "future_return_bps": 48.9395935154846,
           "start_time": "2024-01-07T09:00:00+00:00",
@@ -1234,7 +1490,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000186",
         "symbol": "BTC",
@@ -1248,12 +1504,12 @@
       "prediction": {
         "direction": "up",
         "expected_return_bps": 185.9558576012099,
-        "latency_ms": 5.076400004327297
+        "latency_ms": 6.836300017312169
       },
       "analogues": [
         {
           "id": "BTC_1h_000036",
-          "score": 0.7901174906200832,
+          "score": 0.7901214722103542,
           "direction": "up",
           "future_return_bps": 185.9558576012099,
           "start_time": "2024-01-02T12:00:00+00:00",
@@ -1262,7 +1518,7 @@
         },
         {
           "id": "BTC_1h_000102",
-          "score": 0.7891790084944967,
+          "score": 0.7891804103957418,
           "direction": "up",
           "future_return_bps": 35.7738481892822,
           "start_time": "2024-01-05T06:00:00+00:00",
@@ -1271,7 +1527,7 @@
         },
         {
           "id": "BTC_1h_000093",
-          "score": 0.7881076790413886,
+          "score": 0.7881097580513985,
           "direction": "flat",
           "future_return_bps": 4.9250938962641655,
           "start_time": "2024-01-04T21:00:00+00:00",
@@ -1280,7 +1536,7 @@
         },
         {
           "id": "BTC_1h_000055",
-          "score": 0.7775796995843458,
+          "score": 0.7775831757272291,
           "direction": "down",
           "future_return_bps": -121.35949188926354,
           "start_time": "2024-01-03T07:00:00+00:00",
@@ -1289,7 +1545,7 @@
         },
         {
           "id": "BTC_1h_000006",
-          "score": 0.7747466733267305,
+          "score": 0.7747500350286958,
           "direction": "up",
           "future_return_bps": 45.04366916345148,
           "start_time": "2024-01-01T06:00:00+00:00",
@@ -1299,7 +1555,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000187",
         "symbol": "BTC",
@@ -1313,12 +1569,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -97.22928748400417,
-        "latency_ms": 5.27889997465536
+        "latency_ms": 8.52520001353696
       },
       "analogues": [
         {
           "id": "BTC_1h_000175",
-          "score": 0.8395330765480654,
+          "score": 0.8395274164909975,
           "direction": "down",
           "future_return_bps": -97.22928748400417,
           "start_time": "2024-01-08T07:00:00+00:00",
@@ -1327,7 +1583,7 @@
         },
         {
           "id": "BTC_1h_000036",
-          "score": 0.7948899069044324,
+          "score": 0.7948897018644544,
           "direction": "up",
           "future_return_bps": 185.9558576012099,
           "start_time": "2024-01-02T12:00:00+00:00",
@@ -1336,7 +1592,7 @@
         },
         {
           "id": "BTC_1h_000149",
-          "score": 0.7944424838981762,
+          "score": 0.7944391269645824,
           "direction": "up",
           "future_return_bps": 108.37476941323976,
           "start_time": "2024-01-07T05:00:00+00:00",
@@ -1345,7 +1601,7 @@
         },
         {
           "id": "BTC_1h_000068",
-          "score": 0.7924960684996198,
+          "score": 0.7924903083067489,
           "direction": "down",
           "future_return_bps": -162.50718585849256,
           "start_time": "2024-01-03T20:00:00+00:00",
@@ -1354,7 +1610,7 @@
         },
         {
           "id": "BTC_1h_000046",
-          "score": 0.7911904028490022,
+          "score": 0.7911888483598665,
           "direction": "up",
           "future_return_bps": 138.80472149323307,
           "start_time": "2024-01-02T22:00:00+00:00",
@@ -1364,7 +1620,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000188",
         "symbol": "BTC",
@@ -1378,12 +1634,12 @@
       "prediction": {
         "direction": "up",
         "expected_return_bps": 151.09660242520917,
-        "latency_ms": 6.506999983685091
+        "latency_ms": 9.455299994442612
       },
       "analogues": [
         {
           "id": "BTC_1h_000156",
-          "score": 0.7894539750994172,
+          "score": 0.7894511093080964,
           "direction": "up",
           "future_return_bps": 151.09660242520917,
           "start_time": "2024-01-07T12:00:00+00:00",
@@ -1392,7 +1648,7 @@
         },
         {
           "id": "BTC_1h_000057",
-          "score": 0.7768707982273851,
+          "score": 0.7768673936100756,
           "direction": "down",
           "future_return_bps": -176.79918461341538,
           "start_time": "2024-01-03T09:00:00+00:00",
@@ -1401,7 +1657,7 @@
         },
         {
           "id": "BTC_1h_000155",
-          "score": 0.7755408431946249,
+          "score": 0.7755419542252034,
           "direction": "up",
           "future_return_bps": 135.7138671193714,
           "start_time": "2024-01-07T11:00:00+00:00",
@@ -1410,7 +1666,7 @@
         },
         {
           "id": "BTC_1h_000042",
-          "score": 0.7748187706205579,
+          "score": 0.7748182365629407,
           "direction": "up",
           "future_return_bps": 223.85413142701927,
           "start_time": "2024-01-02T18:00:00+00:00",
@@ -1419,7 +1675,7 @@
         },
         {
           "id": "BTC_1h_000033",
-          "score": 0.7600899881786769,
+          "score": 0.7600896067089504,
           "direction": "up",
           "future_return_bps": 189.27725558536278,
           "start_time": "2024-01-02T09:00:00+00:00",
@@ -1429,7 +1685,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000189",
         "symbol": "BTC",
@@ -1443,12 +1699,12 @@
       "prediction": {
         "direction": "flat",
         "expected_return_bps": 26.879593420630066,
-        "latency_ms": 4.95000000228174
+        "latency_ms": 7.7594000031240284
       },
       "analogues": [
         {
           "id": "BTC_1h_000099",
-          "score": 0.76420357222899,
+          "score": 0.7642040013824325,
           "direction": "flat",
           "future_return_bps": 26.879593420630066,
           "start_time": "2024-01-05T03:00:00+00:00",
@@ -1457,7 +1713,7 @@
         },
         {
           "id": "BTC_1h_000068",
-          "score": 0.7591959119698753,
+          "score": 0.7591934705636254,
           "direction": "down",
           "future_return_bps": -162.50718585849256,
           "start_time": "2024-01-03T20:00:00+00:00",
@@ -1466,7 +1722,7 @@
         },
         {
           "id": "BTC_1h_000149",
-          "score": 0.7412101860644157,
+          "score": 0.7412087650896843,
           "direction": "up",
           "future_return_bps": 108.37476941323976,
           "start_time": "2024-01-07T05:00:00+00:00",
@@ -1475,7 +1731,7 @@
         },
         {
           "id": "BTC_1h_000093",
-          "score": 0.7363916788659126,
+          "score": 0.7363927279076607,
           "direction": "flat",
           "future_return_bps": 4.9250938962641655,
           "start_time": "2024-01-04T21:00:00+00:00",
@@ -1484,7 +1740,7 @@
         },
         {
           "id": "BTC_1h_000092",
-          "score": 0.7356503220068814,
+          "score": 0.7356495638357998,
           "direction": "flat",
           "future_return_bps": 11.001721074366255,
           "start_time": "2024-01-04T20:00:00+00:00",
@@ -1494,7 +1750,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000190",
         "symbol": "BTC",
@@ -1508,12 +1764,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -169.4260635665945,
-        "latency_ms": 4.804500000318512
+        "latency_ms": 8.406900014961138
       },
       "analogues": [
         {
           "id": "BTC_1h_000118",
-          "score": 0.7691897936195223,
+          "score": 0.7691887398094027,
           "direction": "down",
           "future_return_bps": -169.4260635665945,
           "start_time": "2024-01-05T22:00:00+00:00",
@@ -1522,7 +1778,7 @@
         },
         {
           "id": "BTC_1h_000167",
-          "score": 0.7596411260680823,
+          "score": 0.7596400055007606,
           "direction": "down",
           "future_return_bps": -99.88760764643612,
           "start_time": "2024-01-07T23:00:00+00:00",
@@ -1531,7 +1787,7 @@
         },
         {
           "id": "BTC_1h_000082",
-          "score": 0.7558512254404632,
+          "score": 0.7558502479242889,
           "direction": "down",
           "future_return_bps": -47.14362332744915,
           "start_time": "2024-01-04T10:00:00+00:00",
@@ -1540,7 +1796,7 @@
         },
         {
           "id": "BTC_1h_000069",
-          "score": 0.7487126088344157,
+          "score": 0.7487122464381755,
           "direction": "down",
           "future_return_bps": -152.38605194367483,
           "start_time": "2024-01-03T21:00:00+00:00",
@@ -1549,7 +1805,7 @@
         },
         {
           "id": "BTC_1h_000106",
-          "score": 0.7455426826451259,
+          "score": 0.7455399599049526,
           "direction": "down",
           "future_return_bps": -61.428317169522906,
           "start_time": "2024-01-05T10:00:00+00:00",
@@ -1559,7 +1815,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000191",
         "symbol": "BTC",
@@ -1573,12 +1829,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -133.31168203736254,
-        "latency_ms": 4.953700001351535
+        "latency_ms": 7.823399995686486
       },
       "analogues": [
         {
           "id": "BTC_1h_000123",
-          "score": 0.8084722880357567,
+          "score": 0.808469021701223,
           "direction": "down",
           "future_return_bps": -133.31168203736254,
           "start_time": "2024-01-06T03:00:00+00:00",
@@ -1587,7 +1843,7 @@
         },
         {
           "id": "BTC_1h_000125",
-          "score": 0.8037008747502637,
+          "score": 0.8036971125050856,
           "direction": "down",
           "future_return_bps": -175.26833454216683,
           "start_time": "2024-01-06T05:00:00+00:00",
@@ -1596,7 +1852,7 @@
         },
         {
           "id": "BTC_1h_000117",
-          "score": 0.8005065902709961,
+          "score": 0.8005013545989991,
           "direction": "down",
           "future_return_bps": -181.34643570607568,
           "start_time": "2024-01-05T21:00:00+00:00",
@@ -1605,7 +1861,7 @@
         },
         {
           "id": "BTC_1h_000144",
-          "score": 0.796453766463678,
+          "score": 0.7964513775095154,
           "direction": "up",
           "future_return_bps": 46.89354488869757,
           "start_time": "2024-01-07T00:00:00+00:00",
@@ -1614,7 +1870,7 @@
         },
         {
           "id": "BTC_1h_000126",
-          "score": 0.793523415067908,
+          "score": 0.7935201725752322,
           "direction": "down",
           "future_return_bps": -156.1052424918863,
           "start_time": "2024-01-06T06:00:00+00:00",
@@ -1624,7 +1880,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000192",
         "symbol": "BTC",
@@ -1638,12 +1894,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -169.4260635665945,
-        "latency_ms": 6.5793999820016325
+        "latency_ms": 6.29390001995489
       },
       "analogues": [
         {
           "id": "BTC_1h_000118",
-          "score": 0.827512541761341,
+          "score": 0.8275087699794196,
           "direction": "down",
           "future_return_bps": -169.4260635665945,
           "start_time": "2024-01-05T22:00:00+00:00",
@@ -1652,7 +1908,7 @@
         },
         {
           "id": "BTC_1h_000091",
-          "score": 0.7957269669105143,
+          "score": 0.7957252169181437,
           "direction": "up",
           "future_return_bps": 32.703152894029145,
           "start_time": "2024-01-04T19:00:00+00:00",
@@ -1661,7 +1917,7 @@
         },
         {
           "id": "BTC_1h_000072",
-          "score": 0.7955027100668816,
+          "score": 0.7955003115759758,
           "direction": "down",
           "future_return_bps": -94.14340384796272,
           "start_time": "2024-01-04T00:00:00+00:00",
@@ -1670,7 +1926,7 @@
         },
         {
           "id": "BTC_1h_000125",
-          "score": 0.7896040001529263,
+          "score": 0.7896010866778898,
           "direction": "down",
           "future_return_bps": -175.26833454216683,
           "start_time": "2024-01-06T05:00:00+00:00",
@@ -1679,7 +1935,7 @@
         },
         {
           "id": "BTC_1h_000106",
-          "score": 0.7886250354529124,
+          "score": 0.7886225177527171,
           "direction": "down",
           "future_return_bps": -61.428317169522906,
           "start_time": "2024-01-05T10:00:00+00:00",
@@ -1689,7 +1945,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000193",
         "symbol": "BTC",
@@ -1703,12 +1959,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -137.79658900519132,
-        "latency_ms": 4.832600010558963
+        "latency_ms": 9.219400002621114
       },
       "analogues": [
         {
           "id": "BTC_1h_000124",
-          "score": 0.8338970998770128,
+          "score": 0.8338951829916368,
           "direction": "down",
           "future_return_bps": -137.79658900519132,
           "start_time": "2024-01-06T04:00:00+00:00",
@@ -1717,7 +1973,7 @@
         },
         {
           "id": "BTC_1h_000117",
-          "score": 0.8063269801881577,
+          "score": 0.8063260122087267,
           "direction": "down",
           "future_return_bps": -181.34643570607568,
           "start_time": "2024-01-05T21:00:00+00:00",
@@ -1726,7 +1982,7 @@
         },
         {
           "id": "BTC_1h_000071",
-          "score": 0.7914865062720804,
+          "score": 0.7914863536841898,
           "direction": "down",
           "future_return_bps": -86.7849498872697,
           "start_time": "2024-01-03T23:00:00+00:00",
@@ -1735,7 +1991,7 @@
         },
         {
           "id": "BTC_1h_000125",
-          "score": 0.7837219786304043,
+          "score": 0.7837209725040005,
           "direction": "down",
           "future_return_bps": -175.26833454216683,
           "start_time": "2024-01-06T05:00:00+00:00",
@@ -1744,7 +2000,7 @@
         },
         {
           "id": "BTC_1h_000074",
-          "score": 0.7817588761960356,
+          "score": 0.7817584279691069,
           "direction": "down",
           "future_return_bps": -68.66113230790228,
           "start_time": "2024-01-04T02:00:00+00:00",
@@ -1754,7 +2010,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000194",
         "symbol": "BTC",
@@ -1768,12 +2024,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -181.34643570607568,
-        "latency_ms": 5.2906000055372715
+        "latency_ms": 7.728700002189726
       },
       "analogues": [
         {
           "id": "BTC_1h_000117",
-          "score": 0.808203511428833,
+          "score": 0.8082042982101441,
           "direction": "down",
           "future_return_bps": -181.34643570607568,
           "start_time": "2024-01-05T21:00:00+00:00",
@@ -1782,7 +2038,7 @@
         },
         {
           "id": "BTC_1h_000120",
-          "score": 0.8077133491304186,
+          "score": 0.8077123954561022,
           "direction": "down",
           "future_return_bps": -180.1958828890482,
           "start_time": "2024-01-06T00:00:00+00:00",
@@ -1791,7 +2047,7 @@
         },
         {
           "id": "BTC_1h_000122",
-          "score": 0.8048329975888697,
+          "score": 0.8048330595777002,
           "direction": "down",
           "future_return_bps": -135.17905884788294,
           "start_time": "2024-01-06T02:00:00+00:00",
@@ -1800,7 +2056,7 @@
         },
         {
           "id": "BTC_1h_000119",
-          "score": 0.8043523066539127,
+          "score": 0.8043524306315737,
           "direction": "down",
           "future_return_bps": -165.12704073519126,
           "start_time": "2024-01-05T23:00:00+00:00",
@@ -1809,7 +2065,7 @@
         },
         {
           "id": "BTC_1h_000127",
-          "score": 0.7972666671541001,
+          "score": 0.7972664573457505,
           "direction": "down",
           "future_return_bps": -197.25092444571322,
           "start_time": "2024-01-06T07:00:00+00:00",
@@ -1819,7 +2075,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000195",
         "symbol": "BTC",
@@ -1833,12 +2089,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -105.78626486313914,
-        "latency_ms": 5.354399996576831
+        "latency_ms": 8.24669998837635
       },
       "analogues": [
         {
           "id": "BTC_1h_000168",
-          "score": 0.805097256816702,
+          "score": 0.8050951825750639,
           "direction": "down",
           "future_return_bps": -105.78626486313914,
           "start_time": "2024-01-08T00:00:00+00:00",
@@ -1847,7 +2103,7 @@
         },
         {
           "id": "BTC_1h_000185",
-          "score": 0.8027518282599158,
+          "score": 0.8027498732275671,
           "direction": "down",
           "future_return_bps": -72.08467129209973,
           "start_time": "2024-01-08T17:00:00+00:00",
@@ -1856,7 +2112,7 @@
         },
         {
           "id": "BTC_1h_000156",
-          "score": 0.7944916770876373,
+          "score": 0.7944907520235505,
           "direction": "up",
           "future_return_bps": 151.09660242520917,
           "start_time": "2024-01-07T12:00:00+00:00",
@@ -1865,7 +2121,7 @@
         },
         {
           "id": "BTC_1h_000068",
-          "score": 0.7919450080561655,
+          "score": 0.7919440353083628,
           "direction": "down",
           "future_return_bps": -162.50718585849256,
           "start_time": "2024-01-03T20:00:00+00:00",
@@ -1874,7 +2130,7 @@
         },
         {
           "id": "BTC_1h_000070",
-          "score": 0.7833380599864586,
+          "score": 0.783336343372689,
           "direction": "down",
           "future_return_bps": -146.88543459978277,
           "start_time": "2024-01-03T22:00:00+00:00",
@@ -1884,7 +2140,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000196",
         "symbol": "BTC",
@@ -1898,12 +2154,12 @@
       "prediction": {
         "direction": "up",
         "expected_return_bps": 151.09660242520917,
-        "latency_ms": 5.412800004705787
+        "latency_ms": 8.4985000139568
       },
       "analogues": [
         {
           "id": "BTC_1h_000156",
-          "score": 0.8095547801912751,
+          "score": 0.8095542842806306,
           "direction": "up",
           "future_return_bps": 151.09660242520917,
           "start_time": "2024-01-07T12:00:00+00:00",
@@ -1912,7 +2168,7 @@
         },
         {
           "id": "BTC_1h_000033",
-          "score": 0.7991330963346692,
+          "score": 0.7991301017973157,
           "direction": "up",
           "future_return_bps": 189.27725558536278,
           "start_time": "2024-01-02T09:00:00+00:00",
@@ -1921,7 +2177,7 @@
         },
         {
           "id": "BTC_1h_000159",
-          "score": 0.7906239358192845,
+          "score": 0.7906192055946751,
           "direction": "up",
           "future_return_bps": 119.29016381655222,
           "start_time": "2024-01-07T15:00:00+00:00",
@@ -1930,7 +2186,7 @@
         },
         {
           "id": "BTC_1h_000042",
-          "score": 0.7902732876247829,
+          "score": 0.7902678230709499,
           "direction": "up",
           "future_return_bps": 223.85413142701927,
           "start_time": "2024-01-02T18:00:00+00:00",
@@ -1939,7 +2195,7 @@
         },
         {
           "id": "BTC_1h_000057",
-          "score": 0.7899811503832825,
+          "score": 0.789975485557843,
           "direction": "down",
           "future_return_bps": -176.79918461341538,
           "start_time": "2024-01-03T09:00:00+00:00",
@@ -1949,7 +2205,7 @@
       ]
     },
     {
-      "engine": "WaveMind",
+      "engine": "WaveMind field",
       "query": {
         "id": "BTC_1h_000197",
         "symbol": "BTC",
@@ -1963,12 +2219,12 @@
       "prediction": {
         "direction": "down",
         "expected_return_bps": -162.50718585849256,
-        "latency_ms": 5.635499983327463
+        "latency_ms": 8.883400005288422
       },
       "analogues": [
         {
           "id": "BTC_1h_000068",
-          "score": 0.8509731795530866,
+          "score": 0.8509747912626813,
           "direction": "down",
           "future_return_bps": -162.50718585849256,
           "start_time": "2024-01-03T20:00:00+00:00",
@@ -1977,7 +2233,7 @@
         },
         {
           "id": "BTC_1h_000069",
-          "score": 0.7832894789685575,
+          "score": 0.7832925354947414,
           "direction": "down",
           "future_return_bps": -152.38605194367483,
           "start_time": "2024-01-03T21:00:00+00:00",
@@ -1986,7 +2242,7 @@
         },
         {
           "id": "BTC_1h_000154",
-          "score": 0.7805302986199423,
+          "score": 0.7805387338692709,
           "direction": "up",
           "future_return_bps": 116.94791281258831,
           "start_time": "2024-01-07T10:00:00+00:00",
@@ -1995,7 +2251,7 @@
         },
         {
           "id": "BTC_1h_000059",
-          "score": 0.7790632184939875,
+          "score": 0.7790657934146418,
           "direction": "down",
           "future_return_bps": -175.05352972877364,
           "start_time": "2024-01-03T11:00:00+00:00",
@@ -2004,7 +2260,7 @@
         },
         {
           "id": "BTC_1h_000038",
-          "score": 0.7756356260511609,
+          "score": 0.7756403228971692,
           "direction": "up",
           "future_return_bps": 199.87392016806103,
           "start_time": "2024-01-02T14:00:00+00:00",
