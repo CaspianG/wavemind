@@ -1,0 +1,38 @@
+{
+  "scenario": {
+    "name": "synthetic_crypto_patterns",
+    "asset": "BTCUSDT",
+    "timeframe": "1h",
+    "history_patterns": 250,
+    "queries": 60,
+    "top_k": 5,
+    "note": "Synthetic pattern-retrieval benchmark. This is not a trading signal or profit claim."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "direction_accuracy_at_1": 1.0,
+      "direction_accuracy_at_3": 1.0,
+      "family_accuracy_at_1": 1.0,
+      "mean_abs_return_error_bps": 11.2,
+      "avg_latency_ms": 6.687983334025678,
+      "p95_latency_ms": 10.989199974574149,
+      "queries": 60
+    },
+    {
+      "engine": "Static vector",
+      "direction_accuracy_at_1": 1.0,
+      "direction_accuracy_at_3": 1.0,
+      "family_accuracy_at_1": 1.0,
+      "mean_abs_return_error_bps": 8.733333333333333,
+      "avg_latency_ms": 0.03350833333873501,
+      "p95_latency_ms": 0.09729998419061303,
+      "queries": 60
+    }
+  ]
+}
