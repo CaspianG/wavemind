@@ -126,6 +126,36 @@ def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
         assert mixed_field[key] == solo_field[key]
 
 
+def test_crypto_walk_forward_supports_multiple_isolated_folds(tmp_path):
+    from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
+    from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
+
+    bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="4h", bars=160, seed=12)
+    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="4h", window=16, horizon=3)
+    payload = run_walk_forward(
+        markets=[MarketDataset(symbol="BTC", timeframe="4h", bars=bars, windows=windows)],
+        engines=["4h-profile", "wavemind", "naive"],
+        train_windows=45,
+        test_windows=8,
+        folds=2,
+        fold_stride=12,
+        top_k=3,
+        memory_store="memory",
+    )
+
+    result_by_engine = {result["engine"]: result for result in payload["results"]}
+
+    assert payload["scenario"]["folds"] == 2
+    assert payload["scenario"]["fold_stride"] == 12
+    assert payload["scenario"]["memory_store"] == "memory"
+    assert result_by_engine["WaveMind 4h profile"]["queries"] == 16
+    assert result_by_engine["WaveMind field"]["queries"] == 16
+    assert result_by_engine["Naive last-regime"]["queries"] == 16
+    assert len(payload["by_market"]) == 6
+    assert {item["fold_index"] for item in payload["by_market"]} == {0, 1}
+    assert {item["fold_start"] for item in payload["by_market"]} == {45, 57}
+
+
 def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     output = tmp_path / "walk-forward.json"

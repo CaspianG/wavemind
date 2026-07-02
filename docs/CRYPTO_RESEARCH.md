@@ -127,6 +127,22 @@ selective: it only acts on 4h windows, returns flat on 1h/1d, and filters
 after costs, so this is evidence for a promising 4h regime-memory profile, not
 a general live-trading claim.
 
+Current multi-fold 4h robustness result:
+
+| engine | folds | queries | active d1 | signal rate | sized net bps | large FP | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Static kNN | 3 | 270 | 0.489 | 0.863 | 2.06 | 0.631 | 2.36 ms |
+| WaveMind field-off | 3 | 270 | 0.473 | 0.893 | 1.46 | 0.643 | 7.90 ms |
+| WaveMind 4h profile | 3 | 270 | 0.356 | 0.374 | -20.39 | 0.381 | 11.33 ms |
+| WaveMind field | 3 | 270 | 0.459 | 1.000 | -14.42 | 1.000 | 11.64 ms |
+| Naive last-regime | 3 | 270 | 0.345 | 0.848 | -64.94 | 0.643 | 0.00 ms |
+
+Interpretation: this is not robust yet. The field-off retrieval ablation is
+near the static vector baseline, but the current wave-field market scorer hurts
+this benchmark and the selective 4h profile fails the first multi-fold check.
+The useful next step is redesigning the market field dynamic and validating it
+across more folds, not promoting this as a trading edge.
+
 The metrics are retrieval/research metrics, not a live trading claim:
 
 - `direction_accuracy_at_1` - top analogue predicts the same next-move bucket;
@@ -219,13 +235,16 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    and 1d from public OKX OHLCV.
 3. Done: initial false-positive suppression with calibrated confidence, regime
    filters, and stricter analogue agreement.
-4. Done: first positive checked-in real-data profile (`WaveMind 4h profile`)
-   that beats the included baselines after costs on OKX BTC/ETH/SOL.
-5. Next: validate the 4h profile across more date ranges, exchanges, assets,
-   and walk-forward folds.
-6. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+4. Done: first positive single-fold checked-in real-data profile
+   (`WaveMind 4h profile`) that beats the included baselines after costs on OKX
+   BTC/ETH/SOL.
+5. Done: first multi-fold 4h robustness check. It fails for the current
+   profile, so this is not yet robust.
+6. Next: redesign market-specific field dynamics and validate across more date
+   ranges, exchanges, assets, and walk-forward folds.
+7. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-7. Add signal construction only after retrieval quality is stable.
-8. Publish results separately from the main README to avoid confusing memory
+8. Add signal construction only after retrieval quality is stable.
+9. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

@@ -80,17 +80,16 @@ Do not promise:
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
 | Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, minimum expected edge filtering, and domain profile gating. |
-| Real OHLCV validation | First positive profile | OKX BTC/USDT, ETH/USDT, SOL/USDT across 1h/4h/1d; `WaveMind 4h profile` beats included baselines after costs in the checked-in run. |
-| Signal construction | Not started | Blocked on robustness validation across more date ranges, exchanges, assets, and walk-forward folds. |
+| Real OHLCV validation | Mixed | Single-fold OKX result has a positive `WaveMind 4h profile`, but the first multi-fold 4h robustness check fails. |
+| Signal construction | Not started | Blocked on robust retrieval/field quality across folds. |
 
-Current blocker: robustness, not the first signal. The checked-in OKX run now
-has a positive domain profile: `WaveMind 4h profile` produces `5.57` sized net
-bps after fees/slippage, beating naive last-regime (`1.84`) and static
-kNN/Chroma/Qdrant (all negative). The caveat is material: the profile only
-acts on 4h windows, filters `88.1%` of all windows, and is not yet validated
-across broader market periods. Raw WaveMind field still over-triggers and loses
-heavily after costs (`-33.04` sized net bps). The next milestone is robustness
-validation, not live execution.
+Current blocker: robust edge. The checked-in single-fold OKX run has a positive
+domain profile: `WaveMind 4h profile` produces `5.57` sized net bps after
+fees/slippage. But the first multi-fold 4h robustness check is negative for the
+same profile (`-20.39` sized net bps), while Static kNN is slightly positive
+(`2.06`) and WaveMind field-off is close (`1.46`). Raw field-on scoring hurts
+this benchmark (`-14.42`) by overfiring. The next milestone is redesigning the
+market-specific field dynamic and proving it across folds, not live execution.
 
 ### 1. Real OHLCV Import
 

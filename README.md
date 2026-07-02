@@ -102,6 +102,23 @@ evidence agrees with the current 4h regime. Raw WaveMind field still
 over-triggers and loses heavily after costs, so the research direction is
 profile discovery, stronger regime modeling, and out-of-sample robustness.
 
+Multi-fold 4h robustness check:
+
+| engine | folds | queries | active d1 | signal rate | sized net bps | large FP | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Static kNN | 3 | 270 | 0.489 | 0.863 | 2.06 | 0.631 | 2.36 ms |
+| WaveMind field-off | 3 | 270 | 0.473 | 0.893 | 1.46 | 0.643 | 7.90 ms |
+| WaveMind 4h profile | 3 | 270 | 0.356 | 0.374 | -20.39 | 0.381 | 11.33 ms |
+| WaveMind field | 3 | 270 | 0.459 | 1.000 | -14.42 | 1.000 | 11.64 ms |
+| Naive last-regime | 3 | 270 | 0.345 | 0.848 | -64.94 | 0.643 | 0.00 ms |
+
+Interpretation: this is not a breakout yet. The single-fold 4h profile is
+interesting, but it does not survive the first multi-fold robustness check.
+The current wave-field scoring hurts this market benchmark; field-off retrieval
+is closer to the static vector baseline, while the field-on variant overfires.
+The next research target is a better market-specific field dynamic, not a
+trading claim.
+
 ## Research Plan
 
 The product direction is documented here:
@@ -120,11 +137,13 @@ Near-term execution plan:
 7. Done: initial false-positive suppression with stricter analogue agreement,
    regime filters, and confidence thresholds.
 8. Done: real OKX OHLCV validation with checked-in CSV cache.
-9. Done: first positive real-data profile (`WaveMind 4h profile`) that beats
-   the included baselines after costs on checked-in OKX data.
-10. Next: validate robustness on more date ranges, exchanges, assets, and
-    walk-forward folds before treating this as a deployable signal.
-11. Only after robustness holds, test signal construction and backtesting.
+9. Done: first positive single-fold real-data profile (`WaveMind 4h profile`)
+   that beats the included baselines after costs on checked-in OKX data.
+10. Done: first multi-fold 4h robustness check. It fails for the current
+    profile, so the result is not yet robust.
+11. Next: redesign market-specific field dynamics and validate on more date
+    ranges, exchanges, assets, and walk-forward folds.
+12. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

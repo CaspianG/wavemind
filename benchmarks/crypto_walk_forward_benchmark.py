@@ -187,6 +187,7 @@ class WaveMindEngine(MarketEngine):
         large_move_bps: float = 75.0,
         min_expected_edge_bps: float = 0.0,
         db_label: str | None = None,
+        memory_store: str = "disk",
     ):
         if calibrated:
             self.name = "WaveMind calibrated"
@@ -202,9 +203,11 @@ class WaveMindEngine(MarketEngine):
         self.min_expected_edge_bps = float(min_expected_edge_bps)
         if db_label is None:
             db_label = "calibrated" if calibrated else ("field" if use_field else "fieldoff")
+        if memory_store not in {"disk", "memory"}:
+            raise ValueError("memory_store must be 'disk' or 'memory'")
+        db_path = None if memory_store == "memory" else temp_root / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3"
         self.memory = WaveMind(
-            db_path=temp_root
-            / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3",
+            db_path=db_path,
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
@@ -296,6 +299,7 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
         min_historical_edge_bps: float = 0.0,
         round_trip_cost_bps: float = 30.0,
         db_label: str = "regimegate",
+        memory_store: str = "disk",
     ):
         super().__init__(
             encoder,
@@ -304,6 +308,7 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
             temp_root=temp_root,
             use_field=True,
             db_label=db_label,
+            memory_store=memory_store,
         )
         self.name = "WaveMind regime-gated"
         self.records: list[OHLCVWindow] = []
@@ -339,6 +344,11 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
         support = _weighted_direction_support(candidate_direction, memory_prediction.analogues)
         regime_agreement = _regime_agreement(window, selected)
         expected_return = _weighted_mean_return(selected) if selected else float(latest.future_return_bps)
+        expected_edge = _directional_edge_after_cost_bps(
+            candidate_direction,
+            expected_return,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
         historical_edge = _rolling_last_regime_edge(
             self.records,
             lookback=self.performance_lookback,
@@ -352,7 +362,7 @@ class WaveMindRegimeGateEngine(WaveMindEngine):
             reasons.append("low_memory_support")
         if regime_agreement < self.min_regime_agreement:
             reasons.append("regime_mismatch")
-        if abs(expected_return) < self.min_expected_edge_bps:
+        if expected_edge < self.min_expected_edge_bps:
             reasons.append("low_expected_edge")
         if reasons:
             return Prediction(
@@ -389,21 +399,27 @@ class WaveMindFourHourProfileEngine(WaveMindRegimeGateEngine):
         symbol: str,
         timeframe: str,
         temp_root: Path,
+        min_support: float = 0.52,
+        min_regime_agreement: float = 0.5,
         min_expected_edge_bps: float = 30.0,
+        performance_lookback: int = 96,
+        min_historical_edge_bps: float = 0.0,
         round_trip_cost_bps: float = 30.0,
+        memory_store: str = "disk",
     ):
         super().__init__(
             encoder,
             symbol=symbol,
             timeframe=timeframe,
             temp_root=temp_root,
-            min_support=0.52,
-            min_regime_agreement=0.5,
+            min_support=min_support,
+            min_regime_agreement=min_regime_agreement,
             min_expected_edge_bps=min_expected_edge_bps,
-            performance_lookback=96,
-            min_historical_edge_bps=0.0,
+            performance_lookback=performance_lookback,
+            min_historical_edge_bps=min_historical_edge_bps,
             round_trip_cost_bps=round_trip_cost_bps,
             db_label="profile4h",
+            memory_store=memory_store,
         )
         self.name = "WaveMind 4h profile"
         self.active_timeframe = "4h"
@@ -443,6 +459,7 @@ class WaveMindRiskOverlayEngine(WaveMindEngine):
         performance_lookback: int = 96,
         min_historical_edge_bps: float = -20.0,
         round_trip_cost_bps: float = 30.0,
+        memory_store: str = "disk",
     ):
         super().__init__(
             encoder,
@@ -451,6 +468,7 @@ class WaveMindRiskOverlayEngine(WaveMindEngine):
             temp_root=temp_root,
             use_field=True,
             db_label="riskoverlay",
+            memory_store=memory_store,
         )
         self.name = "WaveMind risk-overlay"
         self.records: list[OHLCVWindow] = []
@@ -786,6 +804,8 @@ def run_walk_forward(
     engines: Iterable[str],
     train_windows: int = 180,
     test_windows: int = 60,
+    folds: int = 1,
+    fold_stride: int | None = None,
     top_k: int = 5,
     encoder_kind: str = "hash",
     fee_bps: float = 10.0,
@@ -804,6 +824,7 @@ def run_walk_forward(
     risk_max_opposition: float = 0.62,
     risk_min_regime_agreement: float = 0.35,
     risk_min_historical_edge_bps: float = -20.0,
+    memory_store: str = "disk",
 ) -> dict:
     engine_keys = _normalize_engines(engines)
     encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
@@ -817,62 +838,91 @@ def run_walk_forward(
             engine_events: list[EventMetric] = []
             skipped_reason: str | None = None
             for market in markets:
-                selected_queries = _select_test_windows(
+                starts = _fold_starts(
                     market.windows,
                     train_windows=train_windows,
                     test_windows=test_windows,
+                    folds=folds,
+                    fold_stride=fold_stride,
                 )
-                try:
-                    engine = _create_engine(
-                        engine_key,
-                        encoder,
-                        market=market,
-                        temp_root=temp_root,
-                        large_move_bps=large_move_bps,
-                        confidence_threshold=confidence_threshold,
-                        min_analogue_agreement=min_analogue_agreement,
-                        regime_filter=regime_filter,
-                        min_expected_edge_bps=min_expected_edge_bps,
-                        gate_min_support=gate_min_support,
-                        gate_min_regime_agreement=gate_min_regime_agreement,
-                        gate_performance_lookback=gate_performance_lookback,
-                        gate_min_historical_edge_bps=gate_min_historical_edge_bps,
-                        risk_max_opposition=risk_max_opposition,
-                        risk_min_regime_agreement=risk_min_regime_agreement,
-                        risk_min_historical_edge_bps=risk_min_historical_edge_bps,
-                        round_trip_cost_bps=round_trip_cost_bps,
+                for fold_index, fold_start in enumerate(starts):
+                    fold_temp_root = (
+                        temp_root
+                        / _safe_path_part(engine_key)
+                        / _safe_path_part(market.symbol)
+                        / _safe_path_part(market.timeframe)
+                        / f"fold{fold_index}"
                     )
-                except RuntimeError as exc:
-                    skipped_reason = str(exc)
-                    break
-                added_ids: set[str] = set()
-                market_events: list[EventMetric] = []
-                try:
-                    for query_window in selected_queries:
-                        _add_mature_history(
-                            engine,
-                            market.windows,
-                            current=query_window,
-                            added_ids=added_ids,
-                        )
-                        prediction = engine.query(query_window, top_k=top_k)
-                        event = _event_metric(
-                            engine_name=engine.name,
-                            window=query_window,
-                            prediction=prediction,
-                            round_trip_cost_bps=round_trip_cost_bps,
+                    fold_temp_root.mkdir(parents=True, exist_ok=True)
+                    selected_queries = _select_test_windows(
+                        market.windows,
+                        train_windows=train_windows,
+                        test_windows=test_windows,
+                        fold_start=fold_start,
+                    )
+                    try:
+                        engine = _create_engine(
+                            engine_key,
+                            encoder,
+                            market=market,
+                            temp_root=fold_temp_root,
                             large_move_bps=large_move_bps,
-                            position_sizing=position_sizing,
+                            confidence_threshold=confidence_threshold,
+                            min_analogue_agreement=min_analogue_agreement,
+                            regime_filter=regime_filter,
+                            min_expected_edge_bps=min_expected_edge_bps,
+                            gate_min_support=gate_min_support,
+                            gate_min_regime_agreement=gate_min_regime_agreement,
+                            gate_performance_lookback=gate_performance_lookback,
+                            gate_min_historical_edge_bps=gate_min_historical_edge_bps,
+                            risk_max_opposition=risk_max_opposition,
+                            risk_min_regime_agreement=risk_min_regime_agreement,
+                            risk_min_historical_edge_bps=risk_min_historical_edge_bps,
+                            round_trip_cost_bps=round_trip_cost_bps,
+                            memory_store=memory_store,
                         )
-                        market_events.append(event)
-                        if len(analogue_samples) < analogue_limit and prediction.analogues:
-                            analogue_samples.append(
-                                _analogue_sample(engine.name, query_window, prediction)
+                    except RuntimeError as exc:
+                        skipped_reason = str(exc)
+                        break
+                    added_ids: set[str] = set()
+                    market_events: list[EventMetric] = []
+                    try:
+                        for query_window in selected_queries:
+                            _add_mature_history(
+                                engine,
+                                market.windows,
+                                current=query_window,
+                                added_ids=added_ids,
                             )
-                    engine_events.extend(market_events)
-                    by_market.append(_summarize_events(engine.name, market_events, market.symbol, market.timeframe))
-                finally:
-                    engine.close()
+                            prediction = engine.query(query_window, top_k=top_k)
+                            event = _event_metric(
+                                engine_name=engine.name,
+                                window=query_window,
+                                prediction=prediction,
+                                round_trip_cost_bps=round_trip_cost_bps,
+                                large_move_bps=large_move_bps,
+                                position_sizing=position_sizing,
+                            )
+                            market_events.append(event)
+                            if len(analogue_samples) < analogue_limit and prediction.analogues:
+                                analogue_samples.append(
+                                    _analogue_sample(engine.name, query_window, prediction)
+                                )
+                        engine_events.extend(market_events)
+                        by_market.append(
+                            _summarize_events(
+                                engine.name,
+                                market_events,
+                                market.symbol,
+                                market.timeframe,
+                                fold_index=fold_index,
+                                fold_start=fold_start,
+                            )
+                        )
+                    finally:
+                        engine.close()
+                if skipped_reason is not None:
+                    break
             if skipped_reason is not None:
                 all_results.append(
                     {
@@ -900,6 +950,8 @@ def run_walk_forward(
             ],
             "train_windows": train_windows,
             "test_windows": test_windows,
+            "folds": int(folds),
+            "fold_stride": int(fold_stride) if fold_stride is not None else None,
             "top_k": top_k,
             "fee_bps": float(fee_bps),
             "slippage_bps": float(slippage_bps),
@@ -917,6 +969,7 @@ def run_walk_forward(
             "risk_max_opposition": float(risk_max_opposition),
             "risk_min_regime_agreement": float(risk_min_regime_agreement),
             "risk_min_historical_edge_bps": float(risk_min_historical_edge_bps),
+            "memory_store": memory_store,
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
         "embedding": {
@@ -1137,6 +1190,8 @@ def main() -> int:
     parser.add_argument("--horizon", type=int, default=6)
     parser.add_argument("--train-windows", type=int, default=180)
     parser.add_argument("--test-windows", type=int, default=60)
+    parser.add_argument("--folds", type=int, default=1)
+    parser.add_argument("--fold-stride", type=int, default=None)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--fee-bps", type=float, default=10.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
@@ -1152,6 +1207,7 @@ def main() -> int:
     parser.add_argument("--risk-max-opposition", type=float, default=0.62)
     parser.add_argument("--risk-min-regime-agreement", type=float, default=0.35)
     parser.add_argument("--risk-min-historical-edge-bps", type=float, default=-20.0)
+    parser.add_argument("--memory-store", choices=["disk", "memory"], default="disk")
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
@@ -1165,6 +1221,8 @@ def main() -> int:
         engines=args.engines,
         train_windows=args.train_windows,
         test_windows=args.test_windows,
+        folds=args.folds,
+        fold_stride=args.fold_stride,
         top_k=args.top_k,
         encoder_kind=args.encoder,
         fee_bps=args.fee_bps,
@@ -1182,6 +1240,7 @@ def main() -> int:
         risk_max_opposition=args.risk_max_opposition,
         risk_min_regime_agreement=args.risk_min_regime_agreement,
         risk_min_historical_edge_bps=args.risk_min_historical_edge_bps,
+        memory_store=args.memory_store,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -1286,9 +1345,16 @@ def _create_engine(
     risk_min_regime_agreement: float = 0.35,
     risk_min_historical_edge_bps: float = -20.0,
     round_trip_cost_bps: float = 30.0,
+    memory_store: str = "disk",
 ) -> MarketEngine:
     if engine_key in {"wavemind", "wavemind-field"}:
-        return WaveMindEngine(encoder, symbol=market.symbol, timeframe=market.timeframe, temp_root=temp_root)
+        return WaveMindEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            memory_store=memory_store,
+        )
     if engine_key in {"calibrated", "wavemind-calibrated", "field-calibrated"}:
         return WaveMindEngine(
             encoder,
@@ -1301,6 +1367,7 @@ def _create_engine(
             regime_filter=regime_filter,
             large_move_bps=large_move_bps,
             min_expected_edge_bps=min_expected_edge_bps,
+            memory_store=memory_store,
         )
     if engine_key in {"regime-gated", "wavemind-regime-gated", "gate"}:
         return WaveMindRegimeGateEngine(
@@ -1314,6 +1381,7 @@ def _create_engine(
             performance_lookback=gate_performance_lookback,
             min_historical_edge_bps=gate_min_historical_edge_bps,
             round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
         )
     if engine_key in {"risk-overlay", "wavemind-risk-overlay", "risk"}:
         return WaveMindRiskOverlayEngine(
@@ -1326,6 +1394,7 @@ def _create_engine(
             performance_lookback=gate_performance_lookback,
             min_historical_edge_bps=risk_min_historical_edge_bps,
             round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
         )
     if engine_key in {"4h-profile", "wavemind-4h-profile", "four-hour-profile"}:
         return WaveMindFourHourProfileEngine(
@@ -1333,8 +1402,13 @@ def _create_engine(
             symbol=market.symbol,
             timeframe=market.timeframe,
             temp_root=temp_root,
+            min_support=gate_min_support,
+            min_regime_agreement=gate_min_regime_agreement,
             min_expected_edge_bps=min_expected_edge_bps,
+            performance_lookback=gate_performance_lookback,
+            min_historical_edge_bps=gate_min_historical_edge_bps,
             round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
         )
     if engine_key in {"field-off", "wavemind-field-off"}:
         return WaveMindEngine(
@@ -1343,6 +1417,7 @@ def _create_engine(
             timeframe=market.timeframe,
             temp_root=temp_root,
             use_field=False,
+            memory_store=memory_store,
         )
     if engine_key in {"static", "static-knn"}:
         return StaticKnnEngine(encoder)
@@ -1399,10 +1474,13 @@ def _select_test_windows(
     *,
     train_windows: int,
     test_windows: int,
+    fold_start: int | None = None,
 ) -> list[OHLCVWindow]:
     if train_windows <= 0 or test_windows <= 0:
         raise ValueError("train_windows and test_windows must be positive")
-    start = train_windows
+    start = train_windows if fold_start is None else int(fold_start)
+    if start < train_windows:
+        raise ValueError("fold_start cannot be smaller than train_windows")
     end = start + test_windows
     if len(windows) < end:
         raise ValueError(
@@ -1410,6 +1488,47 @@ def _select_test_windows(
             "Increase --bars or reduce train/test windows."
         )
     return windows[start:end]
+
+
+def _fold_starts(
+    windows: list[OHLCVWindow],
+    *,
+    train_windows: int,
+    test_windows: int,
+    folds: int,
+    fold_stride: int | None,
+) -> list[int]:
+    if folds <= 0:
+        raise ValueError("folds must be positive")
+    if fold_stride is not None and fold_stride <= 0:
+        raise ValueError("fold_stride must be positive")
+    first = int(train_windows)
+    max_start = len(windows) - int(test_windows)
+    if max_start < first:
+        raise ValueError(
+            f"not enough windows: need at least {first + test_windows}, got {len(windows)}. "
+            "Increase --bars or reduce train/test windows."
+        )
+    if folds == 1:
+        return [first]
+    if fold_stride is not None:
+        starts = [first + index * int(fold_stride) for index in range(int(folds))]
+        starts = [start for start in starts if start <= max_start]
+        if not starts:
+            return [first]
+        return starts
+    span = max_start - first
+    if span <= 0:
+        return [first]
+    starts = [
+        int(round(first + (span * index / max(1, int(folds) - 1))))
+        for index in range(int(folds))
+    ]
+    return sorted(set(min(max_start, max(first, start)) for start in starts))
+
+
+def _safe_path_part(value: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in value).strip("_") or "item"
 
 
 def _add_mature_history(
@@ -1506,6 +1625,19 @@ def _net_return_bps(
     return 0.0
 
 
+def _directional_edge_after_cost_bps(
+    direction: str,
+    expected_return_bps: float,
+    *,
+    round_trip_cost_bps: float,
+) -> float:
+    if direction == "up":
+        return float(expected_return_bps) - float(round_trip_cost_bps)
+    if direction == "down":
+        return -float(expected_return_bps) - float(round_trip_cost_bps)
+    return 0.0
+
+
 def _rolling_last_regime_edge(
     records: list[OHLCVWindow],
     *,
@@ -1531,9 +1663,11 @@ def _summarize_events(
     events: list[EventMetric],
     symbol: str | None = None,
     timeframe: str | None = None,
+    fold_index: int | None = None,
+    fold_start: int | None = None,
 ) -> dict:
     if not events:
-        return {
+        payload = {
             "engine": engine_name,
             "symbol": symbol,
             "timeframe": timeframe,
@@ -1560,6 +1694,11 @@ def _summarize_events(
             "avg_latency_ms": 0.0,
             "p95_latency_ms": 0.0,
         }
+        if fold_index is not None:
+            payload["fold_index"] = int(fold_index)
+        if fold_start is not None:
+            payload["fold_start"] = int(fold_start)
+        return payload
     latencies = sorted(event.latency_ms for event in events)
     p95_index = min(len(latencies) - 1, int(len(latencies) * 0.95))
     signal_events = [event for event in events if event.predicted_direction != "flat"]
@@ -1604,6 +1743,10 @@ def _summarize_events(
         payload["symbol"] = symbol
     if timeframe is not None:
         payload["timeframe"] = timeframe
+    if fold_index is not None:
+        payload["fold_index"] = int(fold_index)
+    if fold_start is not None:
+        payload["fold_start"] = int(fold_start)
     return payload
 
 
