@@ -145,12 +145,15 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/OBSERVABILITY.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
+    assert "include docs/assets/wavemind-demo.gif" in manifest
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest
     assert "recursive-include examples/production-index-profile *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "examples/chroma_migration.py" in readme
+    assert "docs/assets/wavemind-demo.gif" in readme
+    assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
     assert "Keep Chroma as-is" in chroma_migration
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration

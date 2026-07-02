@@ -20,6 +20,7 @@ include docs/RU_LAUNCH_POSTS.md
 include docs/USE_CASES.md
 include docs/assets/benchmark-summary.svg
 include docs/assets/wavemind-social-card.svg
+include docs/assets/wavemind-demo.gif
 include benchmarks/*.py
 include benchmarks/*.json
 include benchmarks/*.md

@@ -16,6 +16,8 @@ users or projects isolated.
 
 <img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-social-card.svg" alt="WaveMind dynamic memory overview" width="820">
 
+<img src="https://raw.githubusercontent.com/CaspianG/wavemind/main/docs/assets/wavemind-demo.gif" alt="WaveMind dynamic memory terminal demo" width="820">
+
 [Quick Start](#quick-start) |
 [CLI](#cli-cheat-sheet) |
 [Studio](#wavemind-studio) |
