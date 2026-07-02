@@ -23,6 +23,23 @@ def test_load_ohlcv_csv_case_insensitive_and_sorted(tmp_path):
     assert bars[0].timestamp < bars[-1].timestamp
 
 
+def test_save_ohlcv_csv_round_trips(tmp_path):
+    from benchmarks.crypto_ohlcv import OHLCVBar, load_ohlcv_csv, save_ohlcv_csv
+
+    csv_path = tmp_path / "cache" / "bars.csv"
+    original = [
+        OHLCVBar(timestamp=2, open=102.0, high=103.0, low=101.0, close=102.5, volume=12.0),
+        OHLCVBar(timestamp=1, open=100.0, high=101.0, low=99.0, close=100.5, volume=10.0),
+    ]
+
+    save_ohlcv_csv(csv_path, original)
+    loaded = load_ohlcv_csv(csv_path)
+
+    assert [bar.timestamp for bar in loaded] == [1, 2]
+    assert [bar.close for bar in loaded] == [100.5, 102.5]
+    assert csv_path.read_text(encoding="utf-8").startswith("timestamp,open,high,low,close,volume")
+
+
 def test_generate_synthetic_ohlcv_and_windows_have_no_query_leakage():
     from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows, window_to_text
 

@@ -26,6 +26,7 @@ from benchmarks.crypto_ohlcv import (  # noqa: E402
     generate_synthetic_ohlcv,
     load_ohlcv_csv,
     make_ohlcv_windows,
+    save_ohlcv_csv,
     window_to_text,
 )
 from wavemind import WaveMind  # noqa: E402
@@ -51,6 +52,8 @@ class MarketDataset:
     timeframe: str
     bars: list[OHLCVBar]
     windows: list[OHLCVWindow]
+    source: str = ""
+    source_path: str = ""
 
 
 @dataclass(frozen=True)
@@ -139,7 +142,7 @@ class StaticKnnEngine(MarketEngine):
         self.vectors = np.zeros((0, encoder.vector_dim), dtype=np.float32)
 
     def add(self, window: OHLCVWindow) -> None:
-        text = window_to_text(window, include_outcome=True)
+        text = window_to_text(window, include_outcome=False)
         vector = self.encoder.encode_vector(text)
         self.records.append(window)
         self.texts.append(text)
@@ -182,6 +185,7 @@ class WaveMindEngine(MarketEngine):
         confidence_threshold: float = 0.65,
         regime_filter: bool = True,
         large_move_bps: float = 75.0,
+        min_expected_edge_bps: float = 0.0,
     ):
         if calibrated:
             self.name = "WaveMind calibrated"
@@ -194,6 +198,7 @@ class WaveMindEngine(MarketEngine):
         self.confidence_threshold = float(confidence_threshold)
         self.regime_filter = bool(regime_filter)
         self.large_move_bps = float(large_move_bps)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
         self.memory = WaveMind(
             db_path=temp_root
             / f"{symbol.replace('/', '')}_{timeframe}_{'calibrated' if calibrated else ('field' if use_field else 'fieldoff')}.sqlite3",
@@ -212,7 +217,7 @@ class WaveMindEngine(MarketEngine):
     def add(self, window: OHLCVWindow) -> None:
         priority = 1.0 + min(4.0, abs(window.future_return_bps) / 45.0)
         self.memory.remember(
-            window_to_text(window, include_outcome=True),
+            window_to_text(window, include_outcome=False),
             namespace=self.namespace,
             tags=("crypto", window.symbol, window.timeframe, window.direction),
             priority=priority,
@@ -254,6 +259,7 @@ class WaveMindEngine(MarketEngine):
                 confidence_threshold=self.confidence_threshold,
                 regime_filter=self.regime_filter,
                 large_move_bps=self.large_move_bps,
+                min_expected_edge_bps=self.min_expected_edge_bps,
             )
         top = analogues[0]
         return Prediction(
@@ -280,7 +286,7 @@ class DtwKnnEngine(MarketEngine):
 
     def add(self, window: OHLCVWindow) -> None:
         self.records.append(window)
-        self.texts.append(window_to_text(window, include_outcome=True))
+        self.texts.append(window_to_text(window, include_outcome=False))
         self.series.append(_window_dtw_series(window))
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
@@ -323,7 +329,7 @@ class ShapeKnnEngine(MarketEngine):
         else:
             self.vectors = np.vstack([self.vectors, vector.reshape(1, -1)])
         self.records.append(window)
-        self.texts.append(window_to_text(window, include_outcome=True))
+        self.texts.append(window_to_text(window, include_outcome=False))
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
@@ -365,7 +371,7 @@ class NaiveEngine(MarketEngine):
             return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
         latest = self.records[-1]
         latency = (time.perf_counter() - started) * 1000.0
-        analogue = _analogue_from_window(latest, window_to_text(latest, include_outcome=True), score=1.0)
+        analogue = _analogue_from_window(latest, window_to_text(latest, include_outcome=False), score=1.0)
         return Prediction(
             direction=latest.direction,
             expected_return_bps=latest.future_return_bps,
@@ -429,7 +435,7 @@ class ChromaEngine(StaticKnnEngine):
         )
 
     def add(self, window: OHLCVWindow) -> None:
-        text = window_to_text(window, include_outcome=True)
+        text = window_to_text(window, include_outcome=False)
         vector = self.encoder.encode_vector(text)
         self.records_by_id[window.id] = (window, text)
         self.collection.add(
@@ -481,7 +487,7 @@ class QdrantEngine(StaticKnnEngine):
         )
 
     def add(self, window: OHLCVWindow) -> None:
-        text = window_to_text(window, include_outcome=True)
+        text = window_to_text(window, include_outcome=False)
         vector = self.encoder.encode_vector(text)
         point_id = self.next_id
         self.next_id += 1
@@ -543,6 +549,7 @@ def run_walk_forward(
     confidence_threshold: float = 0.65,
     min_analogue_agreement: float = 0.6,
     regime_filter: bool = True,
+    min_expected_edge_bps: float = 0.0,
 ) -> dict:
     engine_keys = _normalize_engines(engines)
     encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
@@ -571,6 +578,7 @@ def run_walk_forward(
                         confidence_threshold=confidence_threshold,
                         min_analogue_agreement=min_analogue_agreement,
                         regime_filter=regime_filter,
+                        min_expected_edge_bps=min_expected_edge_bps,
                     )
                 except RuntimeError as exc:
                     skipped_reason = str(exc)
@@ -623,6 +631,8 @@ def run_walk_forward(
                     "timeframe": market.timeframe,
                     "bars": len(market.bars),
                     "windows": len(market.windows),
+                    "source": market.source,
+                    "source_path": market.source_path,
                 }
                 for market in markets
             ],
@@ -637,6 +647,7 @@ def run_walk_forward(
             "confidence_threshold": float(confidence_threshold),
             "min_analogue_agreement": float(min_analogue_agreement),
             "regime_filter": bool(regime_filter),
+            "min_expected_edge_bps": float(min_expected_edge_bps),
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
         "embedding": {
@@ -665,7 +676,15 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
                     horizon=args.horizon,
                     direction_threshold_bps=direction_threshold,
                 )
-                markets.append(MarketDataset(symbol=symbol, timeframe=timeframe, bars=bars, windows=windows))
+                markets.append(
+                    MarketDataset(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        bars=bars,
+                        windows=windows,
+                        source="synthetic",
+                    )
+                )
         return markets
     if args.dataset == "csv":
         if args.csv is None:
@@ -681,18 +700,38 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
             horizon=args.horizon,
             direction_threshold_bps=direction_threshold,
         )
-        return [MarketDataset(symbol=args.symbols[0], timeframe=args.timeframes[0], bars=bars, windows=windows)]
+        return [
+            MarketDataset(
+                symbol=args.symbols[0],
+                timeframe=args.timeframes[0],
+                bars=bars,
+                windows=windows,
+                source="csv",
+                source_path=str(args.csv),
+            )
+        ]
     if args.dataset == "ccxt":
         if args.exchange is None:
             raise ValueError("--exchange is required for --dataset ccxt")
         for symbol in args.symbols:
             for timeframe in args.timeframes:
-                bars = fetch_ohlcv_ccxt(
-                    exchange_id=args.exchange,
-                    symbol=symbol,
-                    timeframe=timeframe,
-                    limit=args.bars,
-                )
+                cache_path = _ccxt_cache_path(args.cache_dir, args.exchange, symbol, timeframe)
+                if cache_path is not None and cache_path.exists() and not args.refresh_cache:
+                    bars = load_ohlcv_csv(cache_path)
+                    source = f"ccxt_cache:{args.exchange}"
+                    source_path = str(cache_path)
+                else:
+                    bars = fetch_ohlcv_ccxt(
+                        exchange_id=args.exchange,
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        limit=args.bars,
+                    )
+                    source = f"ccxt:{args.exchange}"
+                    source_path = ""
+                    if cache_path is not None:
+                        save_ohlcv_csv(cache_path, bars)
+                        source_path = str(cache_path)
                 windows = make_ohlcv_windows(
                     bars,
                     symbol=symbol,
@@ -701,9 +740,26 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
                     horizon=args.horizon,
                     direction_threshold_bps=direction_threshold,
                 )
-                markets.append(MarketDataset(symbol=symbol, timeframe=timeframe, bars=bars, windows=windows))
+                markets.append(
+                    MarketDataset(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        bars=bars,
+                        windows=windows,
+                        source=source,
+                        source_path=source_path,
+                    )
+                )
         return markets
     raise ValueError(f"Unknown dataset: {args.dataset}")
+
+
+def _ccxt_cache_path(cache_dir: Path | None, exchange: str, symbol: str, timeframe: str) -> Path | None:
+    if cache_dir is None:
+        return None
+    safe_symbol = symbol.replace("/", "_").replace(":", "_")
+    safe_timeframe = timeframe.replace("/", "_")
+    return cache_dir / exchange / f"{safe_symbol}_{safe_timeframe}.csv"
 
 
 def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None:
@@ -788,6 +844,8 @@ def main() -> int:
     parser.add_argument("--dataset", choices=["synthetic", "csv", "ccxt"], default="synthetic")
     parser.add_argument("--csv", type=Path)
     parser.add_argument("--exchange")
+    parser.add_argument("--cache-dir", type=Path)
+    parser.add_argument("--refresh-cache", action="store_true")
     parser.add_argument("--symbols", nargs="+", default=["BTC", "ETH", "SOL"])
     parser.add_argument("--timeframes", nargs="+", default=["1h", "4h", "1d"])
     parser.add_argument("--engines", nargs="+", default=["wavemind", "calibrated", "field-off", "shape", "naive", "ta"])
@@ -803,6 +861,7 @@ def main() -> int:
     parser.add_argument("--position-sizing", choices=["fixed", "confidence"], default="fixed")
     parser.add_argument("--confidence-threshold", type=float, default=0.65)
     parser.add_argument("--min-analogue-agreement", type=float, default=0.6)
+    parser.add_argument("--min-expected-edge-bps", type=float, default=0.0)
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
@@ -825,6 +884,7 @@ def main() -> int:
         confidence_threshold=args.confidence_threshold,
         min_analogue_agreement=args.min_analogue_agreement,
         regime_filter=not args.disable_regime_filter,
+        min_expected_edge_bps=args.min_expected_edge_bps,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -886,6 +946,7 @@ def _create_engine(
     confidence_threshold: float = 0.65,
     min_analogue_agreement: float = 0.6,
     regime_filter: bool = True,
+    min_expected_edge_bps: float = 0.0,
 ) -> MarketEngine:
     if engine_key in {"wavemind", "wavemind-field"}:
         return WaveMindEngine(encoder, symbol=market.symbol, timeframe=market.timeframe, temp_root=temp_root)
@@ -900,6 +961,7 @@ def _create_engine(
             confidence_threshold=confidence_threshold,
             regime_filter=regime_filter,
             large_move_bps=large_move_bps,
+            min_expected_edge_bps=min_expected_edge_bps,
         )
     if engine_key in {"field-off", "wavemind-field-off"}:
         return WaveMindEngine(
@@ -1168,6 +1230,7 @@ def _calibrated_prediction(
     confidence_threshold: float,
     regime_filter: bool,
     large_move_bps: float,
+    min_expected_edge_bps: float,
 ) -> Prediction:
     direction, direction_agreement = _weighted_direction_vote(analogues)
     if direction == "flat" or not analogues:
@@ -1196,6 +1259,8 @@ def _calibrated_prediction(
         filter_reasons.append("low_confidence")
     if regime_filter and regime_agreement < 0.55:
         filter_reasons.append("regime_mismatch")
+    if abs(expected_return) < min_expected_edge_bps:
+        filter_reasons.append("low_expected_edge")
 
     if filter_reasons:
         return Prediction(

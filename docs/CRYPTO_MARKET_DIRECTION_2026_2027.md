@@ -72,25 +72,24 @@ Do not promise:
 
 | Plan item | Status | Evidence |
 |---|---|---|
-| Real OHLCV import | Done | CSV and CCXT import in `benchmarks/crypto_ohlcv.py`. |
+| Real OHLCV import | Done | CSV, CCXT import, pagination, and checked-in OKX cache in `benchmarks/data/crypto_ohlcv/okx`. |
 | Pattern featurization | Done | Return, volatility, drawdown, trend slope, MACD-like spread, Bollinger-like position, volume, range compression, MFE/MAE, future vol, and future drawdown labels. |
 | Walk-forward benchmark | Done | `benchmarks/crypto_walk_forward_benchmark.py` uses train/test walk-forward with no look-ahead insertion. |
 | Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in result uses confidence sizing. |
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, TA rules, and storage controls. |
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
-| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, and confidence thresholds. |
-| Signal construction | Not started | Blocked on real OHLCV validation and stronger calibration. |
+| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, and minimum expected edge filtering. |
+| Real OHLCV validation | Done, negative | OKX BTC/USDT, ETH/USDT, SOL/USDT across 1h/4h/1d; memory engines do not beat naive after costs. |
+| Signal construction | Not started | Blocked on improving real-data feature/regime quality. |
 
-Current blocker: the wave-field layer improves top-1 direction retrieval over
-field-off memory in the synthetic walk-forward run, but raw large-move false
-positives are too high. The first calibrated variant reduces false positives
-from `0.987` to `0.545`, improves active-signal direction accuracy from `0.527`
-to `0.608`, and improves sized net bps from `-1.30` to `7.39`. It does that by
-filtering 43.3% of queries and lowering final direction@1. The naive
-last-regime baseline is still stronger on this synthetic dataset, so the next
-milestone is validating this tradeoff on real OHLCV data before deriving any
-trading signal.
+Current blocker: real OKX OHLCV validation is negative. Raw WaveMind field
+slightly beats naive last-regime on direction@1 (`0.428` vs `0.426`) but loses
+heavily after fees and slippage (`-33.04` sized net bps). Calibration reduces
+large-move false positives from `0.990` to `0.373`, but remains negative
+(`-17.66` sized net bps). The naive last-regime baseline is still the strongest
+checked-in run (`1.84` sized net bps). The next milestone is better
+feature/regime modeling, not signal construction.
 
 ### 1. Real OHLCV Import
 

@@ -31,33 +31,36 @@ Implemented in this branch:
   retrieval benchmark scaffold.
 - `benchmarks/crypto_pattern_results.json` - first checked-in synthetic result.
 - `benchmarks/crypto_ohlcv.py` - CSV, CCXT, synthetic OHLCV, feature windows,
-  richer numeric features, future outcome labels, and no-leakage pattern text.
+  CCXT cache, richer numeric features, future outcome labels, and no-leakage
+  pattern text.
 - `benchmarks/crypto_walk_forward_benchmark.py` - BTC/ETH/SOL walk-forward
   benchmark with fees, slippage, field-on/field-off ablation,
   calibrated false-positive suppression, market/time-series baselines, optional
   storage controls, and analogue explorer output.
-- `benchmarks/crypto_walk_forward_results.json` - checked-in synthetic
-  walk-forward result.
-- `benchmarks/crypto_analogue_explorer.html` - local visual analogue explorer.
+- `benchmarks/data/crypto_ohlcv/okx/*.csv` - checked-in real OKX OHLCV fixtures.
+- `benchmarks/crypto_walk_forward_okx_real_results.json` - checked-in real
+  OKX walk-forward result.
+- `benchmarks/crypto_okx_real_analogue_explorer.html` - local visual analogue
+  explorer for the real OKX run.
 - `examples/freqtrade_wavemind_strategy.py` - dry-run first Freqtrade scaffold.
 - `tests/test_crypto_pattern_benchmark.py` - regression tests for the benchmark.
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
 - `tests/test_crypto_walk_forward_benchmark.py` - walk-forward runner tests.
 
-The current benchmarks are synthetic. They validate the research harness, not
-market edge.
+The scaffold benchmark is synthetic. The current walk-forward benchmark uses
+real cached OKX OHLCV. It does not show a deployable market edge yet.
 
 ## Quick Run
 
 ```sh
-pip install -e ".[dev]"
+pip install -e ".[dev,crypto,bench]"
 python benchmarks/crypto_pattern_benchmark.py --engines wavemind static --history 250 --queries 60
 ```
 
-Walk-forward run:
+Real walk-forward run, using checked-in OKX CSV cache:
 
 ```sh
-python benchmarks/crypto_walk_forward_benchmark.py --dataset synthetic --symbols BTC ETH SOL --timeframes 1h 4h 1d --engines market storage-controls --position-sizing confidence --confidence-threshold 0.65 --min-analogue-agreement 0.6
+python benchmarks/crypto_walk_forward_benchmark.py --dataset ccxt --exchange okx --cache-dir benchmarks/data/crypto_ohlcv --symbols BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 4h 1d --engines market storage-controls --bars 720 --train-windows 420 --test-windows 120 --position-sizing confidence --confidence-threshold 0.65 --min-analogue-agreement 0.6 --min-expected-edge-bps 30
 ```
 
 For the crypto branch, Chroma and Qdrant are not the main competitors. They are
@@ -74,29 +77,28 @@ Current checked-in synthetic result:
 Interpretation: both systems recover the deterministic synthetic pattern
 families. This is a scaffold validation only.
 
-Current checked-in synthetic walk-forward result:
+Current checked-in real OKX walk-forward result:
 
 | engine | direction@1 | active d1 | signal rate | avg net bps | sized net bps | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.524 | 0.527 | 0.994 | -4.68 | -1.30 | 0.987 | 0.000 | 8.60 ms |
-| WaveMind calibrated | 0.426 | 0.608 | 0.567 | 7.96 | 7.39 | 0.545 | 0.433 | 8.61 ms |
-| WaveMind field-off | 0.472 | 0.546 | 0.820 | -1.32 | 1.45 | 0.584 | 0.000 | 5.91 ms |
-| OHLCV shape kNN | 0.302 | 0.361 | 0.765 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
-| Naive last-regime | 0.589 | 0.683 | 0.830 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
-| TA rules | 0.191 | 0.196 | 0.728 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
-| Static kNN | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 2.35 ms |
-| Chroma | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 4.52 ms |
-| Qdrant | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 3.59 ms |
+| WaveMind field | 0.428 | 0.428 | 1.000 | -41.93 | -33.04 | 0.990 | 0.000 | 11.17 ms |
+| WaveMind calibrated | 0.273 | 0.442 | 0.421 | -21.30 | -17.66 | 0.373 | 0.579 | 11.23 ms |
+| WaveMind field-off | 0.404 | 0.440 | 0.869 | -21.81 | -18.69 | 0.593 | 0.000 | 8.32 ms |
+| OHLCV shape kNN | 0.392 | 0.419 | 0.873 | -23.86 | -19.47 | 0.590 | 0.000 | 0.22 ms |
+| Naive last-regime | 0.426 | 0.467 | 0.854 | 2.10 | 1.84 | 0.566 | 0.000 | 0.00 ms |
+| TA rules | 0.317 | 0.495 | 0.481 | -25.20 | -23.52 | 0.176 | 0.000 | 0.00 ms |
+| Static kNN | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 2.65 ms |
+| Chroma | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.79 ms |
+| Qdrant | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.48 ms |
 
-Interpretation: raw WaveMind field improves top-1 direction retrieval over
-field-off memory (`0.524` vs `0.472`), but it over-triggers large moves. The
-calibrated variant suppresses weak signals using analogue agreement, regime
-matching, and a confidence threshold. It cuts large-move false positives from
-`0.987` to `0.545`, improves active-signal direction accuracy from `0.527` to
-`0.608`, and moves sized net bps from `-1.30` to `7.39`. The cost is lower
-overall direction@1 because it intentionally returns `flat` on weak evidence.
-The naive last-regime baseline is still stronger on this synthetic dataset, so
-this branch remains a research harness, not a deployable trading edge.
+Interpretation: this is not good enough for a trading claim. Raw WaveMind field
+slightly improves direction@1 over naive last-regime (`0.428` vs `0.426`) but
+over-triggers and loses heavily after fees/slippage. Calibration reduces
+large-move false positives from `0.990` to `0.373`, but it still loses
+(`-17.66` sized net bps). Static vector retrieval, Chroma, and Qdrant are also
+negative. The strongest result in this run is the naive last-regime baseline,
+which is only slightly positive (`1.84` sized net bps). This branch is therefore
+a real-data research harness, not evidence of market edge.
 
 ## Research Plan
 
@@ -115,9 +117,10 @@ Near-term execution plan:
 6. Done: Freqtrade research adapter before any live-trading integration.
 7. Done: initial false-positive suppression with stricter analogue agreement,
    regime filters, and confidence thresholds.
-8. Next: validate calibration on real OHLCV CSV/CCXT data and tune thresholds
-   per market/timeframe.
-9. Only after retrieval quality is stable, test signal construction and
+8. Done: real OKX OHLCV validation with checked-in CSV cache.
+9. Next: improve feature/regime modeling because current real-data results do
+   not beat naive last-regime after costs.
+10. Only after retrieval quality is stable, test signal construction and
    backtesting.
 
 ## Core Project

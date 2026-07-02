@@ -137,6 +137,25 @@ def load_ohlcv_csv(
     return sorted(bars, key=lambda item: item.timestamp)
 
 
+def save_ohlcv_csv(path: str | Path, bars: Iterable[OHLCVBar]) -> None:
+    csv_path = Path(path)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["timestamp", "open", "high", "low", "close", "volume"])
+        writer.writeheader()
+        for bar in sorted(list(bars), key=lambda item: item.timestamp):
+            writer.writerow(
+                {
+                    "timestamp": int(bar.timestamp),
+                    "open": f"{float(bar.open):.12g}",
+                    "high": f"{float(bar.high):.12g}",
+                    "low": f"{float(bar.low):.12g}",
+                    "close": f"{float(bar.close):.12g}",
+                    "volume": f"{float(bar.volume):.12g}",
+                }
+            )
+
+
 def fetch_ohlcv_ccxt(
     *,
     exchange_id: str,
@@ -154,7 +173,42 @@ def fetch_ohlcv_ccxt(
         raise ValueError(f"Unknown CCXT exchange: {exchange_id}")
     exchange_cls = getattr(ccxt, exchange_id)
     exchange = exchange_cls({"enableRateLimit": True})
-    rows = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since, limit=limit, params=dict(params or {}))
+    timeframe_ms = timeframe_to_seconds(timeframe) * 1000
+    if since is None:
+        since_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000) - timeframe_ms * (limit + 5)
+    else:
+        since_ms = int(since)
+        if since_ms < 10_000_000_000:
+            since_ms *= 1000
+    rows: list[list[Any]] = []
+    seen_timestamps: set[int] = set()
+    while len(rows) < limit:
+        remaining = limit - len(rows)
+        batch_limit = min(remaining, 1000)
+        batch = exchange.fetch_ohlcv(
+            symbol,
+            timeframe=timeframe,
+            since=since_ms,
+            limit=batch_limit,
+            params=dict(params or {}),
+        )
+        if not batch:
+            break
+        added = 0
+        for row in batch:
+            timestamp = int(row[0])
+            if timestamp in seen_timestamps:
+                continue
+            rows.append(row)
+            seen_timestamps.add(timestamp)
+            added += 1
+            if len(rows) >= limit:
+                break
+        last_timestamp = int(batch[-1][0])
+        next_since = last_timestamp + timeframe_ms
+        if added == 0 or next_since <= since_ms:
+            break
+        since_ms = next_since
     return [
         OHLCVBar(
             timestamp=int(row[0] // 1000),

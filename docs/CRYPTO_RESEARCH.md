@@ -57,13 +57,19 @@ Runner:
 
 ```sh
 python benchmarks/crypto_walk_forward_benchmark.py \
-  --dataset synthetic \
-  --symbols BTC ETH SOL \
+  --dataset ccxt \
+  --exchange okx \
+  --cache-dir benchmarks/data/crypto_ohlcv \
+  --symbols BTC/USDT ETH/USDT SOL/USDT \
   --timeframes 1h 4h 1d \
   --engines market storage-controls \
+  --bars 720 \
+  --train-windows 420 \
+  --test-windows 120 \
   --position-sizing confidence \
   --confidence-threshold 0.65 \
-  --min-analogue-agreement 0.6
+  --min-analogue-agreement 0.6 \
+  --min-expected-edge-bps 30
 ```
 
 What it adds over the first scaffold:
@@ -90,35 +96,35 @@ Outputs:
 
 - `benchmarks/crypto_walk_forward_results.json`
 - `benchmarks/crypto_analogue_explorer.html`
+- `benchmarks/crypto_walk_forward_okx_real_results.json`
+- `benchmarks/crypto_okx_real_analogue_explorer.html`
+- `benchmarks/data/crypto_ohlcv/okx/*.csv`
 
-Current synthetic walk-forward result, generated on BTC/ETH/SOL across 1h, 4h,
-and 1d with 540 test windows, `--confidence-threshold 0.65`, and
-`--min-analogue-agreement 0.6`:
+Current real-data walk-forward result, generated on cached OKX BTC/USDT,
+ETH/USDT, and SOL/USDT across 1h, 4h, and 1d with 1,080 test windows,
+`--confidence-threshold 0.65`, `--min-analogue-agreement 0.6`, and
+`--min-expected-edge-bps 30`:
 
 | engine | direction@1 | active d1 | signal rate | avg net bps | sized net bps | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.524 | 0.527 | 0.994 | -4.68 | -1.30 | 0.987 | 0.000 | 8.60 ms |
-| WaveMind calibrated | 0.426 | 0.608 | 0.567 | 7.96 | 7.39 | 0.545 | 0.433 | 8.61 ms |
-| WaveMind field-off | 0.472 | 0.546 | 0.820 | -1.32 | 1.45 | 0.584 | 0.000 | 5.91 ms |
-| OHLCV shape kNN | 0.302 | 0.361 | 0.765 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
-| Naive last-regime | 0.589 | 0.683 | 0.830 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
-| TA rules | 0.191 | 0.196 | 0.728 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
-| Static kNN | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 2.35 ms |
-| Chroma | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 4.52 ms |
-| Qdrant | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 3.59 ms |
+| WaveMind field | 0.428 | 0.428 | 1.000 | -41.93 | -33.04 | 0.990 | 0.000 | 11.17 ms |
+| WaveMind calibrated | 0.273 | 0.442 | 0.421 | -21.30 | -17.66 | 0.373 | 0.579 | 11.23 ms |
+| WaveMind field-off | 0.404 | 0.440 | 0.869 | -21.81 | -18.69 | 0.593 | 0.000 | 8.32 ms |
+| OHLCV shape kNN | 0.392 | 0.419 | 0.873 | -23.86 | -19.47 | 0.590 | 0.000 | 0.22 ms |
+| Naive last-regime | 0.426 | 0.467 | 0.854 | 2.10 | 1.84 | 0.566 | 0.000 | 0.00 ms |
+| TA rules | 0.317 | 0.495 | 0.481 | -25.20 | -23.52 | 0.176 | 0.000 | 0.00 ms |
+| Static kNN | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 2.65 ms |
+| Chroma | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.79 ms |
+| Qdrant | 0.409 | 0.447 | 0.863 | -14.07 | -13.40 | 0.607 | 0.000 | 4.48 ms |
 
-Interpretation: the relevant signal is the ablation and calibration tradeoff.
-The raw wave-field version beats the field-off version on top-1 direction
-retrieval (`0.524` vs `0.472`), which means the dynamic memory layer is adding
-measurable retrieval information in this synthetic walk-forward setup. It also
-over-triggers large moves. The calibrated variant intentionally returns `flat`
-when analogue agreement, regime agreement, or confidence is weak. That reduces
-large-move false positives from `0.987` to `0.545` and moves sized net bps from
-`-1.30` to `7.39`. It also improves active-signal direction accuracy from
-`0.527` to `0.608`. Final direction@1 drops to `0.426` because 43.3% of queries
-are filtered. It still does not beat the naive last-regime baseline on net
-payoff, so this remains a research harness, not evidence of a deployable market
-edge.
+Interpretation: this real-data result is not good enough for a trading claim.
+Raw WaveMind field slightly beats naive last-regime on direction@1 (`0.428` vs
+`0.426`) but loses heavily after fees and slippage. Calibration cuts large-move
+false positives from `0.990` to `0.373`, but the calibrated engine is still
+negative (`-17.66` sized net bps). Static vector retrieval, Chroma, and Qdrant
+are also negative. The strongest result in this run is the naive last-regime
+baseline, and even that is only slightly positive (`1.84` sized net bps). This
+is therefore a real-data research harness, not evidence of market edge.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -176,13 +182,16 @@ Example:
 ```sh
 python benchmarks/crypto_walk_forward_benchmark.py \
   --dataset ccxt \
-  --exchange binance \
+  --exchange okx \
+  --cache-dir benchmarks/data/crypto_ohlcv \
   --symbols BTC/USDT ETH/USDT SOL/USDT \
   --timeframes 1h 4h 1d \
   --bars 500
 ```
 
-The CCXT path is for reproducible research pulls, not for live execution.
+The CCXT path is for reproducible research pulls, not for live execution. With
+`--cache-dir`, the first run saves CSV fixtures and later runs reuse them unless
+`--refresh-cache` is passed.
 
 ## Freqtrade Adapter Scaffold
 
@@ -204,12 +213,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 
 ## Roadmap
 
-1. Add real exchange CSV fixtures with reproducible train/test splits.
-2. Add walk-forward runs on BTC/ETH/SOL for 1h, 4h, and 1d from public OHLCV.
+1. Done: add real exchange CSV fixtures with reproducible train/test splits.
+2. Done: add walk-forward runs on BTC/USDT, ETH/USDT, and SOL/USDT for 1h, 4h,
+   and 1d from public OKX OHLCV.
 3. Done: initial false-positive suppression with calibrated confidence, regime
    filters, and stricter analogue agreement.
-4. Validate calibration on real OHLCV data and tune thresholds by
-   market/timeframe.
+4. Next: improve feature/regime modeling because current real-data memory
+   results do not beat naive last-regime after costs.
 5. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
