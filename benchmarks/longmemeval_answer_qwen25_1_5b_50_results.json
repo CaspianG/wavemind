@@ -8,7 +8,12 @@
     "queries": 50,
     "memories": 2436,
     "top_k": 5,
-    "description": "LongMemEval answer-generation evaluation over WaveMind-retrieved evidence."
+    "engines": [
+      "WaveMind",
+      "Chroma static",
+      "Qdrant static"
+    ],
+    "description": "LongMemEval answer-generation evaluation over retrieved compact evidence."
   },
   "embedding": {
     "kind": "hash",
@@ -16,7 +21,46 @@
     "cached": true,
     "vector_dim": 384
   },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "provider": "ollama",
+      "model": "qwen2.5:1.5b",
+      "queries": 50,
+      "exact_match": 0.24,
+      "contains_answer": 0.38,
+      "token_f1": 0.33311619190404795,
+      "evidence_recall_at_k": 0.92,
+      "avg_retrieval_ms": 2.083188000251539,
+      "avg_generation_ms": 2148.4425140015082
+    },
+    {
+      "engine": "Chroma static",
+      "provider": "ollama",
+      "model": "qwen2.5:1.5b",
+      "queries": 50,
+      "exact_match": 0.12,
+      "contains_answer": 0.16,
+      "token_f1": 0.16987761787761788,
+      "evidence_recall_at_k": 0.6,
+      "avg_retrieval_ms": 4.386841998202726,
+      "avg_generation_ms": 1818.4313860000111
+    },
+    {
+      "engine": "Qdrant static",
+      "provider": "ollama",
+      "model": "qwen2.5:1.5b",
+      "queries": 50,
+      "exact_match": 0.12,
+      "contains_answer": 0.16,
+      "token_f1": 0.16987761787761788,
+      "evidence_recall_at_k": 0.6,
+      "avg_retrieval_ms": 55.92094799911138,
+      "avg_generation_ms": 611.2973620009143
+    }
+  ],
   "metrics": {
+    "engine": "WaveMind",
     "provider": "ollama",
     "model": "qwen2.5:1.5b",
     "queries": 50,
@@ -24,8 +68,8 @@
     "contains_answer": 0.38,
     "token_f1": 0.33311619190404795,
     "evidence_recall_at_k": 0.92,
-    "avg_retrieval_ms": 2.2298719992977567,
-    "avg_generation_ms": 1544.9195320013678
+    "avg_retrieval_ms": 2.083188000251539,
+    "avg_generation_ms": 2148.4425140015082
   },
   "examples": [
     {
@@ -93,5 +137,208 @@
         "1e043500::e132259f"
       ]
     }
-  ]
+  ],
+  "examples_by_engine": {
+    "WaveMind": [
+      {
+        "id": "e47becba",
+        "question": "What degree did I graduate with?",
+        "expected": "Business Administration",
+        "prediction": "Business Administration",
+        "evidence_ids": [
+          "e47becba::02bd2b90_3",
+          "e47becba::5dac7cc2_1",
+          "e47becba::f6859b48_2",
+          "e47becba::answer_280352e9",
+          "e47becba::sharegpt_QZMeA7V_17"
+        ]
+      },
+      {
+        "id": "118b2229",
+        "question": "How long is my daily commute to work?",
+        "expected": "45 minutes each way",
+        "prediction": "45 minutes each way.",
+        "evidence_ids": [
+          "118b2229::afe04238_1",
+          "118b2229::answer_40a90d51",
+          "118b2229::db73b7e4_4",
+          "118b2229::5dce60dd",
+          "118b2229::db50c0f6"
+        ]
+      },
+      {
+        "id": "51a45a95",
+        "question": "Where did I redeem a $5 coupon on coffee creamer?",
+        "expected": "Target",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "51a45a95::answer_d61669c7",
+          "51a45a95::8fa64936_1",
+          "51a45a95::5c44d9fe_1",
+          "51a45a95::98c198fb",
+          "51a45a95::217debf7"
+        ]
+      },
+      {
+        "id": "58bf7951",
+        "question": "What play did I attend at the local community theater?",
+        "expected": "The Glass Menagerie",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "58bf7951::answer_355c48bb",
+          "58bf7951::ultrachat_268434",
+          "58bf7951::08469b58",
+          "58bf7951::5b83c26e_1",
+          "58bf7951::1587bd78_1"
+        ]
+      },
+      {
+        "id": "1e043500",
+        "question": "What is the name of the playlist I created on Spotify?",
+        "expected": "Summer Vibes",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "1e043500::answer_3e012175",
+          "1e043500::4d0d7984",
+          "1e043500::01bd9def",
+          "1e043500::7b1d1f43_1",
+          "1e043500::e132259f"
+        ]
+      }
+    ],
+    "Chroma static": [
+      {
+        "id": "e47becba",
+        "question": "What degree did I graduate with?",
+        "expected": "Business Administration",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "e47becba::sharegpt_QZMeA7V_17",
+          "e47becba::7045db85_1",
+          "e47becba::ec6ca9ef",
+          "e47becba::d414cac5_4",
+          "e47becba::0586f435_3"
+        ]
+      },
+      {
+        "id": "118b2229",
+        "question": "How long is my daily commute to work?",
+        "expected": "45 minutes each way",
+        "prediction": "24 hours per day.",
+        "evidence_ids": [
+          "118b2229::ultrachat_387144",
+          "118b2229::febc8622",
+          "118b2229::afe04238_1",
+          "118b2229::sharegpt_dabXXRO_10",
+          "118b2229::ultrachat_116883"
+        ]
+      },
+      {
+        "id": "51a45a95",
+        "question": "Where did I redeem a $5 coupon on coffee creamer?",
+        "expected": "Target",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "51a45a95::8fa64936_1",
+          "51a45a95::answer_d61669c7",
+          "51a45a95::b35610f4_3",
+          "51a45a95::5c44d9fe_1",
+          "51a45a95::3fe98db6_1"
+        ]
+      },
+      {
+        "id": "58bf7951",
+        "question": "What play did I attend at the local community theater?",
+        "expected": "The Glass Menagerie",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "58bf7951::ultrachat_268434",
+          "58bf7951::answer_355c48bb",
+          "58bf7951::08469b58",
+          "58bf7951::5b83c26e_1",
+          "58bf7951::793382f9_2"
+        ]
+      },
+      {
+        "id": "1e043500",
+        "question": "What is the name of the playlist I created on Spotify?",
+        "expected": "Summer Vibes",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "1e043500::4d0d7984",
+          "1e043500::answer_3e012175",
+          "1e043500::7b1d1f43_1",
+          "1e043500::e132259f",
+          "1e043500::ultrachat_271928"
+        ]
+      }
+    ],
+    "Qdrant static": [
+      {
+        "id": "e47becba",
+        "question": "What degree did I graduate with?",
+        "expected": "Business Administration",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "e47becba::sharegpt_QZMeA7V_17",
+          "e47becba::7045db85_1",
+          "e47becba::ec6ca9ef",
+          "e47becba::d414cac5_4",
+          "e47becba::0586f435_3"
+        ]
+      },
+      {
+        "id": "118b2229",
+        "question": "How long is my daily commute to work?",
+        "expected": "45 minutes each way",
+        "prediction": "24 hours per day.",
+        "evidence_ids": [
+          "118b2229::ultrachat_387144",
+          "118b2229::febc8622",
+          "118b2229::afe04238_1",
+          "118b2229::sharegpt_dabXXRO_10",
+          "118b2229::ultrachat_116883"
+        ]
+      },
+      {
+        "id": "51a45a95",
+        "question": "Where did I redeem a $5 coupon on coffee creamer?",
+        "expected": "Target",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "51a45a95::8fa64936_1",
+          "51a45a95::answer_d61669c7",
+          "51a45a95::b35610f4_3",
+          "51a45a95::5c44d9fe_1",
+          "51a45a95::3fe98db6_1"
+        ]
+      },
+      {
+        "id": "58bf7951",
+        "question": "What play did I attend at the local community theater?",
+        "expected": "The Glass Menagerie",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "58bf7951::ultrachat_268434",
+          "58bf7951::answer_355c48bb",
+          "58bf7951::08469b58",
+          "58bf7951::5b83c26e_1",
+          "58bf7951::793382f9_2"
+        ]
+      },
+      {
+        "id": "1e043500",
+        "question": "What is the name of the playlist I created on Spotify?",
+        "expected": "Summer Vibes",
+        "prediction": "I don't know.",
+        "evidence_ids": [
+          "1e043500::4d0d7984",
+          "1e043500::answer_3e012175",
+          "1e043500::7b1d1f43_1",
+          "1e043500::e132259f",
+          "1e043500::ultrachat_271928"
+        ]
+      }
+    ]
+  }
 }

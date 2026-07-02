@@ -12,7 +12,9 @@ import urllib.error
 from urllib.parse import urlparse
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
+
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -37,6 +39,7 @@ _NO_PROXY_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 @dataclass(frozen=True)
 class AnswerMetrics:
+    engine: str
     provider: str
     model: str | None
     queries: int
@@ -211,6 +214,148 @@ def retrieve_wavemind(dataset, encoder, top_k: int) -> tuple[dict[str, list[str]
     return rankings, contexts, latencies
 
 
+def retrieve_static_vector(dataset, encoder, top_k: int) -> tuple[dict[str, list[str]], dict[str, list[str]], list[float]]:
+    memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
+    vectors = {
+        item.id: vector
+        for item, vector in zip(dataset.memories, memory_vectors)
+    }
+    text_by_id = {item.id: item.text for item in dataset.memories}
+    ids_by_namespace: dict[str, list[str]] = {}
+    for item in dataset.memories:
+        ids_by_namespace.setdefault(item.namespace, []).append(item.id)
+    rankings: dict[str, list[str]] = {}
+    contexts: dict[str, list[str]] = {}
+    latencies: list[float] = []
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
+        started = time.perf_counter()
+        scored = [
+            (item_id, float(np.dot(qvec, vectors[item_id])))
+            for item_id in ids_by_namespace.get(query.namespace, [])
+        ]
+        scored.sort(key=lambda item: item[1], reverse=True)
+        selected = [item_id for item_id, _ in scored[:top_k]]
+        latencies.append((time.perf_counter() - started) * 1000.0)
+        rankings[query.id] = selected
+        contexts[query.id] = [text_by_id[item_id] for item_id in selected]
+    return rankings, contexts, latencies
+
+
+def retrieve_chroma_static(dataset, encoder, top_k: int) -> tuple[dict[str, list[str]], dict[str, list[str]], list[float]]:
+    try:
+        import chromadb
+        from chromadb.config import Settings
+    except ImportError as exc:
+        raise RuntimeError('Install Chroma for this benchmark: pip install -e ".[bench]"') from exc
+    client = chromadb.Client(Settings(anonymized_telemetry=False))
+    collection = client.create_collection(
+        name=f"wavemind_answer_{time.time_ns()}",
+        metadata={"hnsw:space": "cosine"},
+        embedding_function=None,
+    )
+    batch_size = 1000
+    for offset in range(0, len(dataset.memories), batch_size):
+        batch = dataset.memories[offset : offset + batch_size]
+        vectors = encoder.encode_vectors(item.text for item in batch)
+        collection.add(
+            ids=[item.id for item in batch],
+            documents=[item.text for item in batch],
+            embeddings=[vector.tolist() for vector in vectors],
+            metadatas=[{"namespace": item.namespace} for item in batch],
+        )
+    rankings: dict[str, list[str]] = {}
+    contexts: dict[str, list[str]] = {}
+    latencies: list[float] = []
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
+        started = time.perf_counter()
+        result = collection.query(
+            query_embeddings=[qvec.tolist()],
+            n_results=top_k,
+            where={"namespace": query.namespace},
+            include=["documents"],
+        )
+        latencies.append((time.perf_counter() - started) * 1000.0)
+        rankings[query.id] = list(result.get("ids", [[]])[0])
+        contexts[query.id] = list(result.get("documents", [[]])[0])
+    return rankings, contexts, latencies
+
+
+def retrieve_qdrant_static(dataset, encoder, top_k: int) -> tuple[dict[str, list[str]], dict[str, list[str]], list[float]]:
+    try:
+        from qdrant_client import QdrantClient
+        from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
+    except ImportError as exc:
+        raise RuntimeError('Install Qdrant client for this benchmark: pip install -e ".[bench]"') from exc
+    client = QdrantClient(":memory:")
+    collection_name = f"wavemind_answer_{time.time_ns()}"
+    client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=VectorParams(size=int(encoder.vector_dim), distance=Distance.COSINE),
+    )
+    text_by_id = {item.id: item.text for item in dataset.memories}
+    memory_vectors = encoder.encode_vectors(item.text for item in dataset.memories)
+    points = [
+        PointStruct(
+            id=index,
+            vector=vector.tolist(),
+            payload={"evidence_id": item.id, "namespace": item.namespace},
+        )
+        for index, (item, vector) in enumerate(zip(dataset.memories, memory_vectors), start=1)
+    ]
+    numeric_to_id = {index: item.id for index, item in enumerate(dataset.memories, start=1)}
+    batch_size = 1000
+    for offset in range(0, len(points), batch_size):
+        client.upsert(collection_name=collection_name, points=points[offset : offset + batch_size])
+    rankings: dict[str, list[str]] = {}
+    contexts: dict[str, list[str]] = {}
+    latencies: list[float] = []
+    query_vectors = encoder.encode_vectors(query.text for query in dataset.queries)
+    for query, qvec in zip(dataset.queries, query_vectors):
+        started = time.perf_counter()
+        query_filter = Filter(
+            must=[FieldCondition(key="namespace", match=MatchValue(value=query.namespace))]
+        )
+        if hasattr(client, "query_points"):
+            hits = list(
+                client.query_points(
+                    collection_name=collection_name,
+                    query=qvec.tolist(),
+                    query_filter=query_filter,
+                    limit=top_k,
+                    with_payload=True,
+                ).points
+            )
+        else:
+            hits = client.search(
+                collection_name=collection_name,
+                query_vector=qvec.tolist(),
+                query_filter=query_filter,
+                limit=top_k,
+                with_payload=True,
+            )
+        latencies.append((time.perf_counter() - started) * 1000.0)
+        ids = [
+            str(getattr(hit, "payload", {}).get("evidence_id") or numeric_to_id.get(int(hit.id), ""))
+            for hit in hits
+        ]
+        rankings[query.id] = ids
+        contexts[query.id] = [text_by_id[item_id] for item_id in ids if item_id in text_by_id]
+    return rankings, contexts, latencies
+
+
+RETRIEVERS = {
+    "wavemind": ("WaveMind", retrieve_wavemind),
+    "static": ("Static vector", retrieve_static_vector),
+    "static-vector": ("Static vector", retrieve_static_vector),
+    "chroma": ("Chroma static", retrieve_chroma_static),
+    "chroma-static": ("Chroma static", retrieve_chroma_static),
+    "qdrant": ("Qdrant static", retrieve_qdrant_static),
+    "qdrant-static": ("Qdrant static", retrieve_qdrant_static),
+}
+
+
 def generate_extractive(question: str, contexts: list[str]) -> str:
     if not contexts:
         return "I don't know."
@@ -274,6 +419,7 @@ def run_benchmark(
     provider: str = "extractive",
     model: str | None = None,
     ollama_url: str = "http://127.0.0.1:11434",
+    engines: Iterable[str] = ("wavemind",),
     encoder_kind: str = "hash",
     granularity: str = "session",
     top_k: int = 5,
@@ -289,7 +435,6 @@ def run_benchmark(
     answers = answer_map(dataset_path, include_abstention=include_abstention)
     base_encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
     encoder = cache_encoder_for_dataset(dataset, base_encoder)
-    rankings, contexts, retrieval_latencies = retrieve_wavemind(dataset, encoder, top_k=top_k)
 
     selected_model = model
     if provider == "ollama":
@@ -302,48 +447,68 @@ def run_benchmark(
                 "Install or select a local model, then rerun with --provider ollama."
             )
 
-    generated: dict[str, str] = {}
-    generation_latencies: list[float] = []
-    exact_values: list[float] = []
-    contains_values: list[float] = []
-    f1_values: list[float] = []
-    evidence_recalls: list[float] = []
-    for query in dataset.queries:
-        expected_answer = answers.get(query.id, "")
-        expected_evidence = set(query.expected_evidence_ids)
-        ranked = rankings.get(query.id, [])[:top_k]
-        evidence_recalls.append(len(set(ranked) & expected_evidence) / max(1, len(expected_evidence)))
-        started = time.perf_counter()
-        if provider == "extractive":
-            answer = generate_extractive(query.text, contexts.get(query.id, []))
-        elif provider == "ollama":
-            answer = generate_ollama(query.text, contexts.get(query.id, []), selected_model or "", ollama_url)
-        else:
-            raise ValueError("provider must be extractive or ollama")
-        generation_latencies.append((time.perf_counter() - started) * 1000.0)
-        generated[query.id] = answer
-        if expected_answer:
-            normalized_prediction = normalize_answer(answer)
-            normalized_expected = normalize_answer(expected_answer)
-            exact_values.append(1.0 if normalized_prediction == normalized_expected else 0.0)
-            contains_values.append(
-                1.0
-                if normalized_expected and normalized_expected in normalized_prediction
-                else 0.0
-            )
-            f1_values.append(token_f1(answer, expected_answer))
+    results: list[dict[str, Any]] = []
+    examples_by_engine: dict[str, list[dict[str, Any]]] = {}
+    for engine in engines:
+        key = engine.lower()
+        if key not in RETRIEVERS:
+            raise ValueError(f"Unknown engine: {engine}")
+        engine_name, retrieve = RETRIEVERS[key]
+        rankings, contexts, retrieval_latencies = retrieve(dataset, encoder, top_k)
+        generated: dict[str, str] = {}
+        generation_latencies: list[float] = []
+        exact_values: list[float] = []
+        contains_values: list[float] = []
+        f1_values: list[float] = []
+        evidence_recalls: list[float] = []
+        for query in dataset.queries:
+            expected_answer = answers.get(query.id, "")
+            expected_evidence = set(query.expected_evidence_ids)
+            ranked = rankings.get(query.id, [])[:top_k]
+            evidence_recalls.append(len(set(ranked) & expected_evidence) / max(1, len(expected_evidence)))
+            started = time.perf_counter()
+            if provider == "extractive":
+                answer = generate_extractive(query.text, contexts.get(query.id, []))
+            elif provider == "ollama":
+                answer = generate_ollama(query.text, contexts.get(query.id, []), selected_model or "", ollama_url)
+            else:
+                raise ValueError("provider must be extractive or ollama")
+            generation_latencies.append((time.perf_counter() - started) * 1000.0)
+            generated[query.id] = answer
+            if expected_answer:
+                normalized_prediction = normalize_answer(answer)
+                normalized_expected = normalize_answer(expected_answer)
+                exact_values.append(1.0 if normalized_prediction == normalized_expected else 0.0)
+                contains_values.append(
+                    1.0
+                    if normalized_expected and normalized_expected in normalized_prediction
+                    else 0.0
+                )
+                f1_values.append(token_f1(answer, expected_answer))
 
-    metrics = AnswerMetrics(
-        provider=provider,
-        model=selected_model,
-        queries=len(dataset.queries),
-        exact_match=statistics.mean(exact_values) if exact_values else 0.0,
-        contains_answer=statistics.mean(contains_values) if contains_values else 0.0,
-        token_f1=statistics.mean(f1_values) if f1_values else 0.0,
-        evidence_recall_at_k=statistics.mean(evidence_recalls) if evidence_recalls else 0.0,
-        avg_retrieval_ms=statistics.mean(retrieval_latencies) if retrieval_latencies else 0.0,
-        avg_generation_ms=statistics.mean(generation_latencies) if generation_latencies else 0.0,
-    )
+        metrics = AnswerMetrics(
+            engine=engine_name,
+            provider=provider,
+            model=selected_model,
+            queries=len(dataset.queries),
+            exact_match=statistics.mean(exact_values) if exact_values else 0.0,
+            contains_answer=statistics.mean(contains_values) if contains_values else 0.0,
+            token_f1=statistics.mean(f1_values) if f1_values else 0.0,
+            evidence_recall_at_k=statistics.mean(evidence_recalls) if evidence_recalls else 0.0,
+            avg_retrieval_ms=statistics.mean(retrieval_latencies) if retrieval_latencies else 0.0,
+            avg_generation_ms=statistics.mean(generation_latencies) if generation_latencies else 0.0,
+        )
+        results.append(asdict(metrics))
+        examples_by_engine[engine_name] = [
+            {
+                "id": query.id,
+                "question": query.text,
+                "expected": answers.get(query.id, ""),
+                "prediction": generated.get(query.id, ""),
+                "evidence_ids": rankings.get(query.id, [])[:top_k],
+            }
+            for query in dataset.queries[:5]
+        ]
     return {
         "scenario": {
             "name": "longmemeval_answer_generation",
@@ -354,7 +519,8 @@ def run_benchmark(
             "queries": len(dataset.queries),
             "memories": len(dataset.memories),
             "top_k": top_k,
-            "description": "LongMemEval answer-generation evaluation over WaveMind-retrieved evidence.",
+            "engines": [result["engine"] for result in results],
+            "description": "LongMemEval answer-generation evaluation over retrieved compact evidence.",
         },
         "embedding": {
             "kind": encoder_kind,
@@ -362,34 +528,29 @@ def run_benchmark(
             "cached": True,
             "vector_dim": getattr(encoder, "vector_dim", None),
         },
-        "metrics": asdict(metrics),
-        "examples": [
-            {
-                "id": query.id,
-                "question": query.text,
-                "expected": answers.get(query.id, ""),
-                "prediction": generated.get(query.id, ""),
-                "evidence_ids": rankings.get(query.id, [])[:top_k],
-            }
-            for query in dataset.queries[:5]
-        ],
+        "results": results,
+        "metrics": results[0] if results else {},
+        "examples": next(iter(examples_by_engine.values()), []),
+        "examples_by_engine": examples_by_engine,
     }
 
 
 def print_table(payload: dict[str, Any]) -> None:
-    metrics = payload["metrics"]
-    print("| provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | retrieval | generation |")
-    print("|---|---|---:|---:|---:|---:|---:|---:|---:|")
-    print(
-        f"| {metrics['provider']} | {metrics.get('model') or '-'} | "
-        f"{metrics['queries']} | "
-        f"{metrics['evidence_recall_at_k']:.3f} | "
-        f"{metrics['exact_match']:.3f} | "
-        f"{metrics['contains_answer']:.3f} | "
-        f"{metrics['token_f1']:.3f} | "
-        f"{metrics['avg_retrieval_ms']:.2f} ms | "
-        f"{metrics['avg_generation_ms']:.2f} ms |"
-    )
+    print("| engine | provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | retrieval | generation |")
+    print("|---|---|---|---:|---:|---:|---:|---:|---:|---:|")
+    for metrics in payload.get("results", [payload["metrics"]]):
+        print(
+            f"| {metrics['engine']} | "
+            f"{metrics['provider']} | "
+            f"{metrics.get('model') or '-'} | "
+            f"{metrics['queries']} | "
+            f"{metrics['evidence_recall_at_k']:.3f} | "
+            f"{metrics['exact_match']:.3f} | "
+            f"{metrics['contains_answer']:.3f} | "
+            f"{metrics['token_f1']:.3f} | "
+            f"{metrics['avg_retrieval_ms']:.2f} ms | "
+            f"{metrics['avg_generation_ms']:.2f} ms |"
+        )
 
 
 def main() -> int:
@@ -398,6 +559,12 @@ def main() -> int:
     parser.add_argument("--provider", choices=["extractive", "ollama"], default="extractive")
     parser.add_argument("--model", default=None)
     parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
+    parser.add_argument(
+        "--engines",
+        nargs="+",
+        choices=["wavemind", "static", "static-vector", "chroma", "chroma-static", "qdrant", "qdrant-static"],
+        default=["wavemind"],
+    )
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--granularity", choices=["session", "turn"], default="session")
     parser.add_argument("--top-k", type=int, default=5)
@@ -411,6 +578,7 @@ def main() -> int:
             provider=args.provider,
             model=args.model,
             ollama_url=args.ollama_url,
+            engines=args.engines,
             encoder_kind=args.encoder,
             granularity=args.granularity,
             top_k=args.top_k,

@@ -48,6 +48,38 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
     }
 
 
+def _answer_result_summaries(
+    payload: dict[str, Any] | None,
+    default_label: str,
+) -> dict[str, dict[str, Any] | None]:
+    if not payload:
+        return {}
+    metrics = payload.get("results") or [payload.get("metrics", {})]
+    summaries: dict[str, dict[str, Any] | None] = {}
+    for result in metrics:
+        if not result:
+            continue
+        engine = str(result.get("engine") or default_label)
+        model = str(result.get("model") or "").strip()
+        if model:
+            label = f"{engine} + {model}"
+        else:
+            label = default_label
+        summaries[label] = _metric_summary(
+            result,
+            (
+                "queries",
+                "evidence_recall_at_k",
+                "exact_match",
+                "contains_answer",
+                "token_f1",
+                "avg_retrieval_ms",
+                "avg_generation_ms",
+            ),
+        )
+    return summaries
+
+
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
@@ -71,11 +103,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
     ann_results = _ann_latest_results(ann_payload)
-    answer_metrics = (answer_payload or {}).get("metrics")
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
-    answer_qwen05_metrics = (answer_qwen05_payload or {}).get("metrics")
-    answer_qwen15_metrics = (answer_qwen15_payload or {}).get("metrics")
+    answer_results = {
+        **_answer_result_summaries(answer_payload, "extractive smoke"),
+        **_answer_result_summaries(answer_qwen05_payload, "qwen2.5:0.5b smoke"),
+        **_answer_result_summaries(answer_qwen15_payload, "qwen2.5:1.5b smoke"),
+    }
 
     return [
         {
@@ -502,49 +536,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "status": "implemented",
             "source": "benchmarks/longmemeval_answer_benchmark.py",
             "source_url": "https://github.com/xiaowu0162/LongMemEval",
-            "dataset": "LongMemEval-S questions answered from WaveMind-retrieved compact evidence. Checked-in local runs use Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
+            "dataset": "LongMemEval-S questions answered from compact retrieved evidence. Checked-in local runs compare WaveMind, Chroma, and Qdrant using Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
             "competitors": ["Ollama local LLM", "Chroma RAG", "Qdrant RAG"],
             "metrics": ["exact_match", "contains_answer", "token_f1", "evidence_recall@k"],
-            "current": {
-                "extractive smoke": _metric_summary(
-                    answer_metrics,
-                    (
-                        "queries",
-                        "evidence_recall_at_k",
-                        "exact_match",
-                        "contains_answer",
-                        "token_f1",
-                        "avg_retrieval_ms",
-                        "avg_generation_ms",
-                    ),
-                ),
-                "WaveMind + qwen2.5:0.5b": _metric_summary(
-                    answer_qwen05_metrics,
-                    (
-                        "queries",
-                        "evidence_recall_at_k",
-                        "exact_match",
-                        "contains_answer",
-                        "token_f1",
-                        "avg_retrieval_ms",
-                        "avg_generation_ms",
-                    ),
-                ),
-                "WaveMind + qwen2.5:1.5b": _metric_summary(
-                    answer_qwen15_metrics,
-                    (
-                        "queries",
-                        "evidence_recall_at_k",
-                        "exact_match",
-                        "contains_answer",
-                        "token_f1",
-                        "avg_retrieval_ms",
-                        "avg_generation_ms",
-                    ),
-                ),
-            },
+            "current": answer_results,
             "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
-            "next_step": "Add Chroma/Qdrant answer-generation baselines and run all 470 non-abstention questions with a stronger local model.",
+            "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add faithfulness/abstention scoring.",
         },
     ]
 

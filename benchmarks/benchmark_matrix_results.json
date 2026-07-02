@@ -513,7 +513,7 @@
       "status": "implemented",
       "source": "benchmarks/longmemeval_answer_benchmark.py",
       "source_url": "https://github.com/xiaowu0162/LongMemEval",
-      "dataset": "LongMemEval-S questions answered from WaveMind-retrieved compact evidence. Checked-in local runs use Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
+      "dataset": "LongMemEval-S questions answered from compact retrieved evidence. Checked-in local runs compare WaveMind, Chroma, and Qdrant using Ollama qwen2.5:0.5b and qwen2.5:1.5b over the first 50 non-abstention questions.",
       "competitors": [
         "Ollama local LLM",
         "Chroma RAG",
@@ -541,8 +541,26 @@
           "exact_match": 0.12,
           "contains_answer": 0.18,
           "token_f1": 0.18308614585546518,
-          "avg_retrieval_ms": 3.086559998919256,
-          "avg_generation_ms": 1286.5445959984208
+          "avg_retrieval_ms": 2.001148000708781,
+          "avg_generation_ms": 1331.836292000371
+        },
+        "Chroma static + qwen2.5:0.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.6,
+          "exact_match": 0.1,
+          "contains_answer": 0.12,
+          "token_f1": 0.12615298986727558,
+          "avg_retrieval_ms": 4.4275459996424615,
+          "avg_generation_ms": 1157.0555100002093
+        },
+        "Qdrant static + qwen2.5:0.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.6,
+          "exact_match": 0.1,
+          "contains_answer": 0.12,
+          "token_f1": 0.12615298986727558,
+          "avg_retrieval_ms": 52.296541999676265,
+          "avg_generation_ms": 835.9314120013732
         },
         "WaveMind + qwen2.5:1.5b": {
           "queries": 50,
@@ -550,12 +568,30 @@
           "exact_match": 0.24,
           "contains_answer": 0.38,
           "token_f1": 0.33311619190404795,
-          "avg_retrieval_ms": 2.2298719992977567,
-          "avg_generation_ms": 1544.9195320013678
+          "avg_retrieval_ms": 2.083188000251539,
+          "avg_generation_ms": 2148.4425140015082
+        },
+        "Chroma static + qwen2.5:1.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.6,
+          "exact_match": 0.12,
+          "contains_answer": 0.16,
+          "token_f1": 0.16987761787761788,
+          "avg_retrieval_ms": 4.386841998202726,
+          "avg_generation_ms": 1818.4313860000111
+        },
+        "Qdrant static + qwen2.5:1.5b": {
+          "queries": 50,
+          "evidence_recall_at_k": 0.6,
+          "exact_match": 0.12,
+          "contains_answer": 0.16,
+          "token_f1": 0.16987761787761788,
+          "avg_retrieval_ms": 55.92094799911138,
+          "avg_generation_ms": 611.2973620009143
         }
       },
       "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
-      "next_step": "Add Chroma/Qdrant answer-generation baselines and run all 470 non-abstention questions with a stronger local model."
+      "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add faithfulness/abstention scoring."
     },
     {
       "id": "beir",

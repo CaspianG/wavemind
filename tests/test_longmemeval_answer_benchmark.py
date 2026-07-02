@@ -102,6 +102,9 @@ def test_longmemeval_answer_cli_extractive_mode(tmp_path):
             str(path),
             "--provider",
             "extractive",
+            "--engines",
+            "wavemind",
+            "static",
             "--limit-queries",
             "1",
             "--top-k",
@@ -121,5 +124,8 @@ def test_longmemeval_answer_cli_extractive_mode(tmp_path):
 
     assert payload["scenario"]["name"] == "longmemeval_answer_generation"
     assert payload["metrics"]["provider"] == "extractive"
+    assert payload["metrics"]["engine"] == "WaveMind"
     assert payload["metrics"]["queries"] == 1
+    assert [result["engine"] for result in payload["results"]] == ["WaveMind", "Static vector"]
     assert payload["examples"][0]["prediction"]
+    assert "Static vector" in payload["examples_by_engine"]
