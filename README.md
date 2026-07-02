@@ -227,7 +227,8 @@ wavemind --db ./state/app_memory.sqlite3 query "answer style" --namespace user:4
 | Research or trading notebook | Store observations with source metadata and TTL for temporary hypotheses |
 
 For migrations from existing local vector memory, start with
-[`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
+[`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md). The guide has a tested
+offline fixture at [`examples/chroma_migration.py`](examples/chroma_migration.py).
 
 ## Minimal Agent Loop
 

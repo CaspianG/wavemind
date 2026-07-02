@@ -150,7 +150,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include examples/production-index-profile *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
+    assert "examples/chroma_migration.py" in readme
     assert "docs/OBSERVABILITY.md" in readme
     assert "Keep Chroma as-is" in chroma_migration
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration
+    assert "examples/chroma_migration.py" in chroma_migration
     assert "namespace=\"user:42\"" in chroma_migration
