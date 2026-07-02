@@ -4,7 +4,7 @@
     "date": "2026-06-19",
     "embedding": "HashingTextEncoder",
     "index": "numpy-exact",
-    "note": "WaveMind-only local runs in the restricted Codex Windows environment. Chroma/FastAPI/pytest were unavailable locally because package installation and outbound sockets were blocked by policy."
+    "note": "WaveMind-only local capacity profile. External engines were omitted from this quick run; use the full benchmark profiles for cross-engine comparisons."
   },
   "static_agent_memory": [
     {
