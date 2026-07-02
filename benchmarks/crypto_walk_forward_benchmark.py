@@ -548,6 +548,60 @@ class WaveMindRiskOverlayEngine(WaveMindEngine):
         )
 
 
+class WaveMindTrendRiskEngine(WaveMindRiskOverlayEngine):
+    name = "WaveMind trend-risk"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        max_opposition: float = 0.62,
+        min_regime_agreement: float = 0.35,
+        performance_lookback: int = 96,
+        min_historical_edge_bps: float = -20.0,
+        round_trip_cost_bps: float = 30.0,
+        memory_store: str = "disk",
+    ):
+        super().__init__(
+            encoder,
+            symbol=symbol,
+            timeframe=timeframe,
+            temp_root=temp_root,
+            max_opposition=max_opposition,
+            min_regime_agreement=min_regime_agreement,
+            performance_lookback=performance_lookback,
+            min_historical_edge_bps=min_historical_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
+        )
+        self.name = "WaveMind trend-risk"
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        prediction = super().query(window, top_k=top_k)
+        if prediction.direction == "flat":
+            return prediction
+        if not _direction_matches_window_trend(prediction.direction, window):
+            reason = "trend_mismatch"
+            if prediction.filter_reason:
+                reason = f"{prediction.filter_reason},{reason}"
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=prediction.latency_ms,
+                analogues=prediction.analogues,
+                confidence=prediction.confidence,
+                raw_direction=prediction.raw_direction or prediction.direction,
+                filtered=True,
+                filter_reason=reason,
+                analogue_agreement=prediction.analogue_agreement,
+                regime_agreement=prediction.regime_agreement,
+            )
+        return prediction
+
+
 class DtwKnnEngine(MarketEngine):
     name = "DTW kNN"
 
@@ -649,6 +703,29 @@ class NaiveEngine(MarketEngine):
             expected_return_bps=latest.future_return_bps,
             latency_ms=latency,
             analogues=[analogue],
+        )
+
+
+class TrendPersistenceEngine(NaiveEngine):
+    name = "Trend persistence"
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        prediction = super().query(window, top_k=top_k)
+        if prediction.direction == "flat":
+            return prediction
+        if _direction_matches_window_trend(prediction.direction, window):
+            return prediction
+        return Prediction(
+            direction="flat",
+            expected_return_bps=0.0,
+            latency_ms=prediction.latency_ms,
+            analogues=prediction.analogues,
+            confidence=prediction.confidence,
+            raw_direction=prediction.direction,
+            filtered=True,
+            filter_reason="trend_mismatch",
+            analogue_agreement=prediction.analogue_agreement,
+            regime_agreement=prediction.regime_agreement,
         )
 
 
@@ -1268,11 +1345,13 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "wavemind",
                     "4h-profile",
                     "risk-overlay",
+                    "trend-risk",
                     "regime-gated",
                     "calibrated",
                     "field-off",
                     "shape",
                     "naive",
+                    "trend-persistence",
                     "ta",
                     "static",
                     "chroma",
@@ -1285,11 +1364,13 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "wavemind",
                     "4h-profile",
                     "risk-overlay",
+                    "trend-risk",
                     "regime-gated",
                     "calibrated",
                     "field-off",
                     "shape",
                     "naive",
+                    "trend-persistence",
                     "ta",
                 ]
             )
@@ -1314,6 +1395,8 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "risk-overlay",
         "wavemind-risk-overlay",
         "risk",
+        "trend-risk",
+        "wavemind-trend-risk",
         "4h-profile",
         "wavemind-4h-profile",
         "four-hour-profile",
@@ -1329,6 +1412,8 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "chroma",
         "qdrant",
         "naive",
+        "trend-persistence",
+        "trend",
         "ta",
         "ta-rules",
     }
@@ -1437,6 +1522,19 @@ def _create_engine(
             round_trip_cost_bps=round_trip_cost_bps,
             memory_store=memory_store,
         )
+    if engine_key in {"trend-risk", "wavemind-trend-risk"}:
+        return WaveMindTrendRiskEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            max_opposition=risk_max_opposition,
+            min_regime_agreement=risk_min_regime_agreement,
+            performance_lookback=gate_performance_lookback,
+            min_historical_edge_bps=risk_min_historical_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
+        )
     if engine_key in {"4h-profile", "wavemind-4h-profile", "four-hour-profile"}:
         return WaveMindFourHourProfileEngine(
             encoder,
@@ -1472,6 +1570,8 @@ def _create_engine(
         return QdrantEngine(encoder)
     if engine_key == "naive":
         return NaiveEngine()
+    if engine_key in {"trend-persistence", "trend"}:
+        return TrendPersistenceEngine()
     if engine_key in {"ta", "ta-rules"}:
         return TaRulesEngine()
     raise ValueError(f"Unknown engine: {engine_key}")
@@ -1495,6 +1595,8 @@ def _engine_display_name(engine_key: str) -> str:
         "risk-overlay": "WaveMind risk-overlay",
         "wavemind-risk-overlay": "WaveMind risk-overlay",
         "risk": "WaveMind risk-overlay",
+        "trend-risk": "WaveMind trend-risk",
+        "wavemind-trend-risk": "WaveMind trend-risk",
         "4h-profile": "WaveMind 4h profile",
         "wavemind-4h-profile": "WaveMind 4h profile",
         "four-hour-profile": "WaveMind 4h profile",
@@ -1510,6 +1612,8 @@ def _engine_display_name(engine_key: str) -> str:
         "chroma": "Chroma",
         "qdrant": "Qdrant",
         "naive": "Naive last-regime",
+        "trend-persistence": "Trend persistence",
+        "trend": "Trend persistence",
         "ta": "TA rules",
         "ta-rules": "TA rules",
     }[engine_key]
@@ -1702,6 +1806,14 @@ def _rolling_last_regime_edge(
         for previous, current in zip(usable, usable[1:], strict=False)
     ]
     return float(statistics.mean(nets)) if nets else 0.0
+
+
+def _direction_matches_window_trend(direction: str, window: OHLCVWindow) -> bool:
+    if direction == "up":
+        return str(window.features.get("trend")) == "up"
+    if direction == "down":
+        return str(window.features.get("trend")) == "down"
+    return False
 
 
 def _summarize_events(

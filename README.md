@@ -42,6 +42,10 @@ Implemented in this branch:
   OKX walk-forward result.
 - `benchmarks/crypto_okx_real_analogue_explorer.html` - local visual analogue
   explorer for the real OKX run.
+- `benchmarks/crypto_walk_forward_okx_4h_trend_risk_results.json` - expanded
+  4h fold benchmark for WaveMind trend-risk vs market baselines.
+- `benchmarks/crypto_okx_4h_trend_risk_analogue_explorer.html` - visual
+  analogue explorer for the trend-risk run.
 - `examples/freqtrade_wavemind_strategy.py` - dry-run first Freqtrade scaffold.
 - `tests/test_crypto_pattern_benchmark.py` - regression tests for the benchmark.
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
@@ -123,15 +127,18 @@ Expanded 4h check, 4 folds x 60 windows:
 
 | engine | queries | active d1 | signal rate | sized net bps | large FP |
 |---|---:|---:|---:|---:|---:|
-| Naive last-regime | 720 | 0.497 | 0.869 | 15.76 | 0.688 |
-| WaveMind risk-overlay | 720 | 0.499 | 0.735 | 10.29 | 0.594 |
-| WaveMind regime-gated | 720 | 0.483 | 0.451 | 4.99 | 0.484 |
-| WaveMind field-off calibrated | 720 | 0.489 | 0.668 | -4.92 | 0.625 |
-| Static kNN | 720 | 0.470 | 0.833 | -8.88 | 0.651 |
+| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 0.365 |
+| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 0.380 |
+| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 0.651 |
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 0.688 |
+| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.651 |
 
-Interpretation: WaveMind risk-overlay is useful against static retrieval in
-this larger 4h check, but it still does not beat the naive last-regime market
-baseline. The bar for calling this a real market edge is therefore not met.
+Interpretation: the strongest current result is `WaveMind trend-risk`, which
+adds WaveMind memory opposition on top of a strong trend-persistence market
+baseline. It slightly improves average fixed-size net return (`25.30` vs
+`25.23` bps) and reduces large false positives (`0.365` vs `0.380`). This is
+real signal-shaping evidence, but not a robust market edge yet: it is positive
+on 6/12 symbol-fold slices, and the worst slice is still `-77.66` bps.
 
 ## Research Plan
 
@@ -156,10 +163,14 @@ Near-term execution plan:
 10. Done: first multi-fold 4h robustness check. It fails for the current
     profile, so the result is not yet robust.
 11. Done: larger 4h check shows WaveMind risk-overlay beats static retrieval
-    but still loses to naive last-regime.
-12. Next: redesign market-specific field dynamics and validate on more date
-    ranges, exchanges, assets, and walk-forward folds.
-13. Only after robustness holds, test signal construction and backtesting.
+    and naive under fixed-size signals, but confidence sizing is not calibrated.
+12. Done: trend-risk profile adds memory opposition to a strong trend baseline;
+    it slightly improves average fixed-size return and lowers false positives,
+    but is only positive on 6/12 symbol-fold slices.
+13. Next: improve downside robustness across bad folds, add drawdown/profit
+    factor metrics, and validate on more date ranges, exchanges, assets, and
+    walk-forward folds.
+14. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

@@ -147,16 +147,19 @@ Expanded 4h check, 4 folds x 60 windows:
 
 | engine | queries | active d1 | signal rate | sized net bps | large FP |
 |---|---:|---:|---:|---:|---:|
-| Naive last-regime | 720 | 0.497 | 0.869 | 15.76 | 0.688 |
-| WaveMind risk-overlay | 720 | 0.499 | 0.735 | 10.29 | 0.594 |
-| WaveMind regime-gated | 720 | 0.483 | 0.451 | 4.99 | 0.484 |
-| WaveMind field-off calibrated | 720 | 0.489 | 0.668 | -4.92 | 0.625 |
-| Static kNN | 720 | 0.470 | 0.833 | -8.88 | 0.651 |
+| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 0.365 |
+| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 0.380 |
+| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 0.651 |
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 0.688 |
+| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.651 |
 
-Interpretation: the risk-overlay path is the most promising current WaveMind
-market direction because it reduces false positives and beats static retrieval
-on this larger 4h check. It still does not beat naive last-regime, so the
-market edge is not proven.
+Interpretation: the trend-risk path is the strongest current WaveMind market
+profile. It adds memory-opposition filtering on top of a strong trend
+persistence baseline, slightly improves average fixed-size net return
+(`25.30` vs `25.23` bps), and lowers large false positives (`0.365` vs
+`0.380`). This is useful signal shaping, not a proven universal edge: the
+profile is positive on 6/12 symbol-fold slices and the worst slice is still
+`-77.66` bps.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -255,13 +258,17 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    BTC/ETH/SOL.
 5. Done: first multi-fold 4h robustness check. It fails for the current
    profile, so this is not yet robust.
-6. Done: larger 4h check shows WaveMind risk-overlay beats static retrieval
-   but still loses to naive last-regime.
-7. Next: redesign market-specific field dynamics and validate across more date
-   ranges, exchanges, assets, and walk-forward folds.
-8. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+6. Done: larger 4h fixed-size check shows WaveMind risk-overlay beats static
+   retrieval and naive last-regime, but the confidence-sized path is still not
+   calibrated.
+7. Done: trend-risk profile adds memory opposition to a strong trend baseline;
+   it slightly improves average fixed-size return and lowers false positives,
+   but remains positive on only 6/12 symbol-fold slices.
+8. Next: improve downside robustness across bad folds and validate across more
+   date ranges, exchanges, assets, and walk-forward folds.
+9. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-9. Add signal construction only after retrieval quality is stable.
-10. Publish results separately from the main README to avoid confusing memory
+10. Add signal construction only after retrieval quality is stable.
+11. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

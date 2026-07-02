@@ -13,7 +13,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "market-field", "4h-profile", "risk-overlay", "regime-gated", "calibrated", "field-off-calibrated", "field-off", "shape", "naive", "ta"],
+        engines=["wavemind", "market-field", "4h-profile", "risk-overlay", "trend-risk", "regime-gated", "calibrated", "field-off-calibrated", "field-off", "shape", "naive", "trend-persistence", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
@@ -39,12 +39,14 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         "WaveMind market-field",
         "WaveMind 4h profile",
         "WaveMind risk-overlay",
+        "WaveMind trend-risk",
         "WaveMind regime-gated",
         "WaveMind calibrated",
         "WaveMind field-off calibrated",
         "WaveMind field-off",
         "OHLCV shape kNN",
         "Naive last-regime",
+        "Trend persistence",
         "TA rules",
     }
     assert result_by_engine["WaveMind field"]["queries"] == 12
@@ -59,7 +61,9 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "filtered_rate" in result_by_engine["WaveMind field-off calibrated"]
     assert "filtered_rate" in result_by_engine["WaveMind regime-gated"]
     assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
+    assert "filtered_rate" in result_by_engine["WaveMind trend-risk"]
     assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]
+    assert "filtered_rate" in result_by_engine["Trend persistence"]
     assert 0.0 <= result_by_engine["WaveMind calibrated"]["filtered_rate"] <= 1.0
     assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
@@ -180,11 +184,13 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "wavemind",
             "4h-profile",
             "risk-overlay",
+            "trend-risk",
             "regime-gated",
             "calibrated",
             "field-off",
             "shape",
             "naive",
+            "trend-persistence",
             "ta",
             "--bars",
             "140",
@@ -216,9 +222,10 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["results"][0]["engine"] == "WaveMind field"
     assert payload["results"][1]["engine"] == "WaveMind 4h profile"
     assert payload["results"][2]["engine"] == "WaveMind risk-overlay"
-    assert payload["results"][3]["engine"] == "WaveMind regime-gated"
-    assert payload["results"][4]["engine"] == "WaveMind calibrated"
-    assert payload["results"][5]["engine"] == "WaveMind field-off"
+    assert payload["results"][3]["engine"] == "WaveMind trend-risk"
+    assert payload["results"][4]["engine"] == "WaveMind regime-gated"
+    assert payload["results"][5]["engine"] == "WaveMind calibrated"
+    assert payload["results"][6]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 

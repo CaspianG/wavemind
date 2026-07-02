@@ -75,12 +75,12 @@ Do not promise:
 | Real OHLCV import | Done | CSV, CCXT import, pagination, and checked-in OKX cache in `benchmarks/data/crypto_ohlcv/okx`. |
 | Pattern featurization | Done | Return, volatility, drawdown, trend slope, MACD-like spread, Bollinger-like position, volume, range compression, MFE/MAE, future vol, and future drawdown labels. |
 | Walk-forward benchmark | Done | `benchmarks/crypto_walk_forward_benchmark.py` uses train/test walk-forward with no look-ahead insertion. |
-| Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in result uses confidence sizing. |
-| Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, TA rules, and storage controls. |
+| Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in results cover both conservative confidence sizing and fixed-size filtered signals. |
+| Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, trend persistence, TA rules, and storage controls. |
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
 | Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, minimum expected edge filtering, and domain profile gating. |
-| Real OHLCV validation | Mixed | Single-fold OKX result has a positive `WaveMind 4h profile`, but the first multi-fold 4h robustness check fails. |
+| Real OHLCV validation | Mixed | Single-fold OKX result is positive, and the expanded 4h `WaveMind trend-risk` profile slightly beats trend persistence on average, but robustness is still weak across folds. |
 | Signal construction | Not started | Blocked on robust retrieval/field quality across folds. |
 
 Current blocker: robust edge. The checked-in single-fold OKX run has a positive
@@ -91,10 +91,13 @@ same profile (`-20.39` sized net bps), while Static kNN is slightly positive
 this benchmark (`-14.42`) by overfiring. The next milestone is redesigning the
 market-specific field dynamic and proving it across folds, not live execution.
 
-Latest expanded 4h check: on 4 folds x 60 windows, WaveMind risk-overlay beats
-static retrieval (`10.29` vs `-8.88` sized net bps) and reduces large false
-positives (`0.594` vs `0.651`), but it still loses to naive last-regime
-(`15.76`). This is useful signal-shaping evidence, not a robust market edge.
+Latest expanded 4h check: on 4 folds x 60 windows with fixed-size signals,
+`WaveMind trend-risk` slightly beats a strong trend-persistence baseline
+(`25.30` vs `25.23` sized net bps) and reduces large false positives (`0.365`
+vs `0.380`). It also beats naive last-regime (`15.36`) and static kNN
+(`-9.75`). This is useful signal-shaping evidence, not a robust market edge:
+the profile is positive on 6/12 symbol-fold slices and the worst slice remains
+negative (`-77.66` bps).
 
 ### 1. Real OHLCV Import
 
