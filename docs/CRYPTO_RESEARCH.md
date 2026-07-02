@@ -143,6 +143,21 @@ this benchmark and the selective 4h profile fails the first multi-fold check.
 The useful next step is redesigning the market field dynamic and validating it
 across more folds, not promoting this as a trading edge.
 
+Expanded 4h check, 4 folds x 60 windows:
+
+| engine | queries | active d1 | signal rate | sized net bps | large FP |
+|---|---:|---:|---:|---:|---:|
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.76 | 0.688 |
+| WaveMind risk-overlay | 720 | 0.499 | 0.735 | 10.29 | 0.594 |
+| WaveMind regime-gated | 720 | 0.483 | 0.451 | 4.99 | 0.484 |
+| WaveMind field-off calibrated | 720 | 0.489 | 0.668 | -4.92 | 0.625 |
+| Static kNN | 720 | 0.470 | 0.833 | -8.88 | 0.651 |
+
+Interpretation: the risk-overlay path is the most promising current WaveMind
+market direction because it reduces false positives and beats static retrieval
+on this larger 4h check. It still does not beat naive last-regime, so the
+market edge is not proven.
+
 The metrics are retrieval/research metrics, not a live trading claim:
 
 - `direction_accuracy_at_1` - top analogue predicts the same next-move bucket;
@@ -240,11 +255,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    BTC/ETH/SOL.
 5. Done: first multi-fold 4h robustness check. It fails for the current
    profile, so this is not yet robust.
-6. Next: redesign market-specific field dynamics and validate across more date
+6. Done: larger 4h check shows WaveMind risk-overlay beats static retrieval
+   but still loses to naive last-regime.
+7. Next: redesign market-specific field dynamics and validate across more date
    ranges, exchanges, assets, and walk-forward folds.
-7. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+8. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-8. Add signal construction only after retrieval quality is stable.
-9. Publish results separately from the main README to avoid confusing memory
+9. Add signal construction only after retrieval quality is stable.
+10. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

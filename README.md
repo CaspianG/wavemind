@@ -119,6 +119,20 @@ is closer to the static vector baseline, while the field-on variant overfires.
 The next research target is a better market-specific field dynamic, not a
 trading claim.
 
+Expanded 4h check, 4 folds x 60 windows:
+
+| engine | queries | active d1 | signal rate | sized net bps | large FP |
+|---|---:|---:|---:|---:|---:|
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.76 | 0.688 |
+| WaveMind risk-overlay | 720 | 0.499 | 0.735 | 10.29 | 0.594 |
+| WaveMind regime-gated | 720 | 0.483 | 0.451 | 4.99 | 0.484 |
+| WaveMind field-off calibrated | 720 | 0.489 | 0.668 | -4.92 | 0.625 |
+| Static kNN | 720 | 0.470 | 0.833 | -8.88 | 0.651 |
+
+Interpretation: WaveMind risk-overlay is useful against static retrieval in
+this larger 4h check, but it still does not beat the naive last-regime market
+baseline. The bar for calling this a real market edge is therefore not met.
+
 ## Research Plan
 
 The product direction is documented here:
@@ -141,9 +155,11 @@ Near-term execution plan:
    that beats the included baselines after costs on checked-in OKX data.
 10. Done: first multi-fold 4h robustness check. It fails for the current
     profile, so the result is not yet robust.
-11. Next: redesign market-specific field dynamics and validate on more date
+11. Done: larger 4h check shows WaveMind risk-overlay beats static retrieval
+    but still loses to naive last-regime.
+12. Next: redesign market-specific field dynamics and validate on more date
     ranges, exchanges, assets, and walk-forward folds.
-12. Only after robustness holds, test signal construction and backtesting.
+13. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

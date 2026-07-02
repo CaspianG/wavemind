@@ -91,6 +91,11 @@ same profile (`-20.39` sized net bps), while Static kNN is slightly positive
 this benchmark (`-14.42`) by overfiring. The next milestone is redesigning the
 market-specific field dynamic and proving it across folds, not live execution.
 
+Latest expanded 4h check: on 4 folds x 60 windows, WaveMind risk-overlay beats
+static retrieval (`10.29` vs `-8.88` sized net bps) and reduces large false
+positives (`0.594` vs `0.651`), but it still loses to naive last-regime
+(`15.76`). This is useful signal-shaping evidence, not a robust market edge.
+
 ### 1. Real OHLCV Import
 
 Implement public-data import before any model work:

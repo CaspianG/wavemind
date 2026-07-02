@@ -13,7 +13,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "4h-profile", "risk-overlay", "regime-gated", "calibrated", "field-off", "shape", "naive", "ta"],
+        engines=["wavemind", "market-field", "4h-profile", "risk-overlay", "regime-gated", "calibrated", "field-off-calibrated", "field-off", "shape", "naive", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
@@ -36,10 +36,12 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
 
     assert set(result_by_engine) == {
         "WaveMind field",
+        "WaveMind market-field",
         "WaveMind 4h profile",
         "WaveMind risk-overlay",
         "WaveMind regime-gated",
         "WaveMind calibrated",
+        "WaveMind field-off calibrated",
         "WaveMind field-off",
         "OHLCV shape kNN",
         "Naive last-regime",
@@ -54,6 +56,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "avg_position_size" in result_by_engine["WaveMind field"]
     assert "avg_confidence" in result_by_engine["WaveMind calibrated"]
     assert "filtered_rate" in result_by_engine["WaveMind calibrated"]
+    assert "filtered_rate" in result_by_engine["WaveMind field-off calibrated"]
     assert "filtered_rate" in result_by_engine["WaveMind regime-gated"]
     assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
     assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]

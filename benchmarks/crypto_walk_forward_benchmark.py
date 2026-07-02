@@ -188,9 +188,13 @@ class WaveMindEngine(MarketEngine):
         min_expected_edge_bps: float = 0.0,
         db_label: str | None = None,
         memory_store: str = "disk",
+        vector_weight: float | None = None,
+        field_weight: float | None = None,
+        priority_weight: float | None = None,
+        lexical_weight: float | None = None,
     ):
         if calibrated:
-            self.name = "WaveMind calibrated"
+            self.name = "WaveMind calibrated" if use_field else "WaveMind field-off calibrated"
         else:
             self.name = "WaveMind field" if use_field else "WaveMind field-off"
         self.namespace = f"crypto:{symbol}:{timeframe}"
@@ -202,7 +206,10 @@ class WaveMindEngine(MarketEngine):
         self.large_move_bps = float(large_move_bps)
         self.min_expected_edge_bps = float(min_expected_edge_bps)
         if db_label is None:
-            db_label = "calibrated" if calibrated else ("field" if use_field else "fieldoff")
+            if calibrated:
+                db_label = "calibrated" if use_field else "fieldoffcalibrated"
+            else:
+                db_label = "field" if use_field else "fieldoff"
         if memory_store not in {"disk", "memory"}:
             raise ValueError("memory_store must be 'disk' or 'memory'")
         db_path = None if memory_store == "memory" else temp_root / f"{symbol.replace('/', '')}_{timeframe}_{db_label}.sqlite3"
@@ -211,10 +218,10 @@ class WaveMindEngine(MarketEngine):
             encoder=encoder,
             index_kind="numpy",
             score_threshold=0.0,
-            vector_weight=0.72 if use_field else 0.94,
-            field_weight=0.08 if use_field else 0.0,
-            priority_weight=0.18 if use_field else 0.0,
-            lexical_weight=0.16,
+            vector_weight=float(vector_weight) if vector_weight is not None else (0.72 if use_field else 0.94),
+            field_weight=float(field_weight) if field_weight is not None else (0.08 if use_field else 0.0),
+            priority_weight=float(priority_weight) if priority_weight is not None else (0.18 if use_field else 0.0),
+            lexical_weight=float(lexical_weight) if lexical_weight is not None else 0.16,
             rerank_k=32,
             persist_access_on_query=False,
             query_feedback_strength=0.0,
@@ -1293,9 +1300,14 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
     valid = {
         "wavemind",
         "wavemind-field",
+        "market-field",
+        "wavemind-market-field",
         "calibrated",
         "wavemind-calibrated",
         "field-calibrated",
+        "field-off-calibrated",
+        "calibrated-field-off",
+        "wavemind-field-off-calibrated",
         "regime-gated",
         "wavemind-regime-gated",
         "gate",
@@ -1355,12 +1367,41 @@ def _create_engine(
             temp_root=temp_root,
             memory_store=memory_store,
         )
+    if engine_key in {"market-field", "wavemind-market-field"}:
+        return WaveMindEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            use_field=True,
+            db_label="marketfield",
+            vector_weight=0.98,
+            field_weight=0.02,
+            priority_weight=0.0,
+            lexical_weight=0.0,
+            memory_store=memory_store,
+        )
     if engine_key in {"calibrated", "wavemind-calibrated", "field-calibrated"}:
         return WaveMindEngine(
             encoder,
             symbol=market.symbol,
             timeframe=market.timeframe,
             temp_root=temp_root,
+            calibrated=True,
+            min_analogue_agreement=min_analogue_agreement,
+            confidence_threshold=confidence_threshold,
+            regime_filter=regime_filter,
+            large_move_bps=large_move_bps,
+            min_expected_edge_bps=min_expected_edge_bps,
+            memory_store=memory_store,
+        )
+    if engine_key in {"field-off-calibrated", "calibrated-field-off", "wavemind-field-off-calibrated"}:
+        return WaveMindEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            use_field=False,
             calibrated=True,
             min_analogue_agreement=min_analogue_agreement,
             confidence_threshold=confidence_threshold,
@@ -1440,9 +1481,14 @@ def _engine_display_name(engine_key: str) -> str:
     return {
         "wavemind": "WaveMind field",
         "wavemind-field": "WaveMind field",
+        "market-field": "WaveMind market-field",
+        "wavemind-market-field": "WaveMind market-field",
         "calibrated": "WaveMind calibrated",
         "wavemind-calibrated": "WaveMind calibrated",
         "field-calibrated": "WaveMind calibrated",
+        "field-off-calibrated": "WaveMind field-off calibrated",
+        "calibrated-field-off": "WaveMind field-off calibrated",
+        "wavemind-field-off-calibrated": "WaveMind field-off calibrated",
         "regime-gated": "WaveMind regime-gated",
         "wavemind-regime-gated": "WaveMind regime-gated",
         "gate": "WaveMind regime-gated",
