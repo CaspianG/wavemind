@@ -369,6 +369,10 @@ Optional pgvector environment variables:
 - `WAVEMIND_PGVECTOR_COLLECTION` - collection key, default `default`.
 - `WAVEMIND_PGVECTOR_CREATE_HNSW=1` - create an HNSW index using
   `vector_cosine_ops` when the installed pgvector version supports it.
+- `WAVEMIND_PGVECTOR_HNSW_M` - optional HNSW graph degree for index creation.
+- `WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION` - optional HNSW build accuracy setting.
+- `WAVEMIND_PGVECTOR_EF_SEARCH` - optional per-query HNSW search depth. Increase
+  it when pgvector is fast but recall is too low.
 
 If `WAVEMIND_PGVECTOR_DSN` is missing, WaveMind raises a clear error instead of
 silently falling back to another index backend.
@@ -1084,9 +1088,9 @@ Checked-in production 50000-vector point:
 
 | engine | recall@10 | avg latency | p95 latency | build |
 |---|---:|---:|---:|---:|
-| WaveMind faiss-persisted | 1.000 | 4.14 ms | 13.43 ms | 703.4 ms |
-| Qdrant service | 1.000 | 4.26 ms | 5.85 ms | 11758.8 ms |
-| WaveMind pgvector | 0.422 | 2.59 ms | 4.11 ms | 165719.2 ms |
+| WaveMind faiss-persisted | 1.000 | 3.52 ms | 7.88 ms | 715.9 ms |
+| Qdrant service | 1.000 | 4.41 ms | 5.93 ms | 12269.8 ms |
+| WaveMind pgvector | 0.811 | 10.95 ms | 15.69 ms | 185048.9 ms |
 
 Read this as an engineering curve, not an official VectorDBBench result. Annoy
 is faster than exact NumPy at 50000 vectors but loses too much recall with the
@@ -1094,11 +1098,12 @@ current settings. The new `quantized` backend compresses vectors and keeps
 `0.934` recall@10 on this run, but the current Python/NumPy kernel is slower
 than exact NumPy; it is a memory-footprint baseline, not a latency win yet.
 FAISS persistence and service-mode Qdrant now both preserve exact recall at
-50000 generated vectors. The checked-in pgvector/HNSW profile is fast but loses
-too much recall, so pgvector is not yet the recommended production index profile
-without tuning. If a required package, service, or environment variable is
-missing, the runner marks that engine as `skipped` instead of silently falling
-back to another backend.
+50000 generated vectors. The checked-in pgvector/HNSW profile uses
+`WAVEMIND_PGVECTOR_EF_SEARCH=400`, which improves recall materially but still
+misses the `0.95` production target and is slower than the other two profiles.
+If a required package, service, or environment variable is missing, the runner
+marks that engine as `skipped` instead of silently falling back to another
+backend.
 
 ### Current Local Runs
 

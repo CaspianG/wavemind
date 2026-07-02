@@ -23,25 +23,25 @@
         {
           "engine": "WaveMind faiss-persisted",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 0.5321007000065947,
-          "p95_latency_ms": 0.8513720000564717,
-          "build_ms": 129.3434620000653,
+          "avg_latency_ms": 0.3410210099980304,
+          "p95_latency_ms": 0.47343999995064223,
+          "build_ms": 147.3115249999637,
           "queries": 100
         },
         {
           "engine": "Qdrant service",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 3.6905911300027583,
-          "p95_latency_ms": 4.620265999960793,
-          "build_ms": 3673.077856999953,
+          "avg_latency_ms": 3.4312566899961894,
+          "p95_latency_ms": 4.781564000040817,
+          "build_ms": 3426.749544000131,
           "queries": 100
         },
         {
           "engine": "WaveMind pgvector",
-          "recall_at_k": 0.715,
-          "avg_latency_ms": 1.4442414400048165,
-          "p95_latency_ms": 2.061331000049904,
-          "build_ms": 24199.851194999952,
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 5.698984560001463,
+          "p95_latency_ms": 6.891976999895633,
+          "build_ms": 23765.425490000096,
           "queries": 100
         }
       ]
@@ -56,25 +56,25 @@
         {
           "engine": "WaveMind faiss-persisted",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 4.136698690002731,
-          "p95_latency_ms": 13.42844700002388,
-          "build_ms": 703.3589389999406,
+          "avg_latency_ms": 3.5238632199934727,
+          "p95_latency_ms": 7.880882999870664,
+          "build_ms": 715.9043760000259,
           "queries": 100
         },
         {
           "engine": "Qdrant service",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 4.260926350003729,
-          "p95_latency_ms": 5.851605999964704,
-          "build_ms": 11758.765509,
+          "avg_latency_ms": 4.413577210011681,
+          "p95_latency_ms": 5.932154999982231,
+          "build_ms": 12269.771776000198,
           "queries": 100
         },
         {
           "engine": "WaveMind pgvector",
-          "recall_at_k": 0.422,
-          "avg_latency_ms": 2.58953402999623,
-          "p95_latency_ms": 4.114049999998315,
-          "build_ms": 165719.2273800001,
+          "recall_at_k": 0.811,
+          "avg_latency_ms": 10.945468529985192,
+          "p95_latency_ms": 15.685024000049452,
+          "build_ms": 185048.9231660001,
           "queries": 100
         }
       ]

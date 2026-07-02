@@ -281,6 +281,22 @@ def test_pgvector_helpers_normalize_vectors_and_validate_identifiers():
         _safe_identifier("bad-name;drop", "table")
 
 
+def test_pgvector_rejects_invalid_hnsw_environment(monkeypatch):
+    class FakeConnection:
+        def execute(self, sql, params=None):
+            raise AssertionError("connection should not be opened")
+
+    fake_psycopg = SimpleNamespace(
+        connect=lambda dsn, autocommit=True: FakeConnection()
+    )
+    monkeypatch.setitem(sys.modules, "psycopg", fake_psycopg)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_DSN", "postgresql://example")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_EF_SEARCH", "0")
+
+    with pytest.raises(ValueError, match="WAVEMIND_PGVECTOR_EF_SEARCH"):
+        create_vector_index("pgvector", vector_dim=3)
+
+
 def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypatch):
     class FakeResult:
         def __init__(self, rows=None):
@@ -333,6 +349,10 @@ def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypat
     monkeypatch.setenv("WAVEMIND_PGVECTOR_DSN", "postgresql://example")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_TABLE", "wm_vectors")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_COLLECTION", "tests")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_CREATE_HNSW", "1")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_HNSW_M", "32")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION", "256")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_EF_SEARCH", "400")
 
     index = create_vector_index("pgvector", vector_dim=3)
     index.add(42, np.array([1.0, 0.0, 0.0], dtype=np.float32))
@@ -347,6 +367,11 @@ def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypat
     assert len(index) == 1
     assert any("CREATE EXTENSION IF NOT EXISTS vector" in sql for sql, _ in fake_connection.calls)
     assert any("memory_id = ANY" in sql for sql, _ in fake_connection.calls)
+    assert any(
+        "USING hnsw" in sql and "WITH (m = 32, ef_construction = 256)" in sql
+        for sql, _ in fake_connection.calls
+    )
+    assert any("SET hnsw.ef_search = 400" in sql for sql, _ in fake_connection.calls)
     index.close()
     index.close()
     assert fake_connection.closed is True

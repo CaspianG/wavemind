@@ -4,7 +4,7 @@ This example runs the ANN/index production profile against real services:
 
 - persisted FAISS inside the Linux benchmark container;
 - Qdrant v1.18.2 in service mode;
-- PostgreSQL with pgvector and HNSW enabled.
+- PostgreSQL with pgvector, HNSW enabled, and explicit `ef_search` tuning.
 
 Run from the repository root:
 

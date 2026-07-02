@@ -16,6 +16,8 @@ def test_production_index_profile_compose_documents_real_services():
     assert "WAVEMIND_FAISS_PATH: /state/production-index-profile.faiss" in compose
     assert "WAVEMIND_QDRANT_URL: http://qdrant:6333" in compose
     assert "WAVEMIND_PGVECTOR_CREATE_HNSW: \"1\"" in compose
+    assert "WAVEMIND_PGVECTOR_EF_SEARCH: \"400\"" in compose
+    assert "WAVEMIND_PGVECTOR_TABLE: wavemind_vectors_search_tuned" in compose
     assert "faiss-persisted" in compose
     assert "qdrant-service" in compose
     assert "pgvector" in compose
@@ -37,8 +39,9 @@ def test_production_index_profile_result_is_checked_in_and_documented():
     engines = {result["engine"]: result for result in latest["results"]}
     assert engines["WaveMind faiss-persisted"]["recall_at_k"] == 1.0
     assert engines["Qdrant service"]["recall_at_k"] == 1.0
+    assert engines["WaveMind pgvector"]["recall_at_k"] > 0.80
     assert engines["WaveMind pgvector"]["recall_at_k"] < 0.95
     assert "Checked-in production 50000-vector point" in readme
     assert "WaveMind faiss-persisted" in readme
     assert "Qdrant service" in readme
-    assert "pgvector/HNSW profile is fast but loses" in readme
+    assert "WAVEMIND_PGVECTOR_EF_SEARCH=400" in readme

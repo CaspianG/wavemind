@@ -38,7 +38,8 @@ services:
       WAVEMIND_QDRANT_URL: http://qdrant:6333
       WAVEMIND_PGVECTOR_DSN: postgresql://wavemind:wavemind@postgres:5432/wavemind
       WAVEMIND_PGVECTOR_CREATE_HNSW: "1"
-      WAVEMIND_PGVECTOR_TABLE: wavemind_vectors
+      WAVEMIND_PGVECTOR_EF_SEARCH: "400"
+      WAVEMIND_PGVECTOR_TABLE: wavemind_vectors_search_tuned
       WAVEMIND_PGVECTOR_COLLECTION: production_index_profile
     volumes:
       - ../../benchmarks:/app/benchmarks

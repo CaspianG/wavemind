@@ -27,6 +27,9 @@ policy matters more than raw vector-database scale:
   deployments where startup rebuild time matters.
 - A Docker-backed production index profile now compares persisted FAISS,
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
+- pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
+  The checked-in profile uses `ef_search=400`, which improves 50000-vector
+  recall but still misses the production recall target.
 - Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
   rebuild operations, and Prometheus-compatible index-health metrics.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
@@ -218,7 +221,7 @@ Enterprise requirements:
 ### Short Term: 1 To 3 Months
 
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
-  tuned pgvector.
+  further-tuned pgvector.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
