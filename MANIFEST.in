@@ -15,6 +15,7 @@ include docs/PROJECT_BOARD.md
 include docs/DEMO_SCRIPT.md
 include docs/LAUNCH_KIT.md
 include docs/CHROMA_MIGRATION.md
+include docs/OBSERVABILITY.md
 include docs/RU_LAUNCH_POSTS.md
 include docs/USE_CASES.md
 include docs/assets/benchmark-summary.svg
@@ -23,4 +24,5 @@ include benchmarks/*.py
 include benchmarks/*.json
 include benchmarks/*.md
 include examples/*.py
+recursive-include examples/observability *
 prune benchmarks/data

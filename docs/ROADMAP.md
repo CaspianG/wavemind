@@ -30,8 +30,10 @@ policy matters more than raw vector-database scale:
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
-- SQLite audit events, a Prometheus-compatible `/metrics` endpoint, and
-  optional OpenTelemetry traces now cover the first observability layer.
+- SQLite audit events, a Prometheus-compatible `/metrics` endpoint,
+  process-local API latency/failure metrics, optional OpenTelemetry traces, and
+  local Prometheus/OTEL Collector alert examples now cover the first
+  observability layer.
 - API key roles and opt-in rate limiting are available for FastAPI deployments.
 - SQLite backup, timestamped retention, restore, and admin-only HTTP backup are
   available as the first durability layer.
@@ -226,8 +228,8 @@ Enterprise requirements:
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
 - Docker image and Helm chart for API/sidecar deployment.
-- Observability: richer Prometheus metrics, trace dashboards, alert examples,
-  and latency histograms.
+- Observability: richer Prometheus metrics, trace dashboards, and durable
+  latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
 - Community benchmark dashboard generated from checked-in result JSON.

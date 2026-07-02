@@ -4,9 +4,10 @@ import logging
 import os
 import time
 from collections import deque
+from contextlib import contextmanager
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, Iterator
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -94,8 +95,46 @@ class InMemoryRateLimiter:
             return True
 
 
+class APIOperationMetrics:
+    def __init__(self, max_samples: int = 512):
+        self.max_samples = max(1, int(max_samples))
+        self._lock = Lock()
+        self._requests: dict[str, int] = {}
+        self._failures: dict[str, int] = {}
+        self._durations: dict[str, deque[float]] = {}
+
+    def record(self, operation: str, duration_ms: float, failed: bool) -> None:
+        key = _metric_key(operation)
+        with self._lock:
+            self._requests[key] = self._requests.get(key, 0) + 1
+            if failed:
+                self._failures[key] = self._failures.get(key, 0) + 1
+            durations = self._durations.setdefault(key, deque(maxlen=self.max_samples))
+            durations.append(float(duration_ms))
+
+    def snapshot(self) -> dict[str, float | int]:
+        payload: dict[str, float | int] = {}
+        with self._lock:
+            operations = set(self._requests) | set(self._failures) | set(self._durations)
+            for operation in sorted(operations):
+                durations = list(self._durations.get(operation, ()))
+                payload[f"api_{operation}_requests_total"] = self._requests.get(operation, 0)
+                payload[f"api_{operation}_failures_total"] = self._failures.get(operation, 0)
+                if durations:
+                    ordered = sorted(durations)
+                    p95_index = min(len(ordered) - 1, int(len(ordered) * 0.95))
+                    payload[f"api_{operation}_avg_latency_ms"] = sum(durations) / len(durations)
+                    payload[f"api_{operation}_p95_latency_ms"] = ordered[p95_index]
+                    payload[f"api_{operation}_max_latency_ms"] = max(durations)
+        return payload
+
+
 def _split_keys(raw: str) -> list[str]:
     return [key.strip() for key in raw.split(",") if key.strip()]
+
+
+def _metric_key(value: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in value.lower()).strip("_")
 
 
 def _rate_limit_key(request: Request) -> str:
@@ -212,7 +251,25 @@ class FeedbackRequest(BaseModel):
     strength: float = Field(default=0.25, ge=0.0, le=10.0)
 
 
-def _metrics_text(stats: dict[str, Any]) -> str:
+@contextmanager
+def _api_operation(app: FastAPI, operation: str) -> Iterator[None]:
+    started = time.perf_counter()
+    failed = False
+    try:
+        yield
+    except Exception:
+        failed = True
+        raise
+    finally:
+        metrics = getattr(app.state, "operation_metrics", None)
+        if metrics is not None:
+            metrics.record(operation, (time.perf_counter() - started) * 1000.0, failed)
+
+
+def _metrics_text(
+    stats: dict[str, Any],
+    operation_metrics: dict[str, float | int] | None = None,
+) -> str:
     metric_names = {
         "active_memories": "wavemind_active_memories",
         "expired_memories": "wavemind_expired_memories",
@@ -241,6 +298,22 @@ def _metrics_text(stats: dict[str, Any]) -> str:
             value = 1 if value else 0
         if isinstance(value, (int, float)):
             lines.append(f"{metric} {value}")
+    if operation_metrics:
+        for key, value in sorted(operation_metrics.items()):
+            if isinstance(value, (int, float)):
+                metric = f"wavemind_{key}"
+                if key.endswith("_requests_total"):
+                    lines.append(f"# HELP {metric} API operation requests since process start.")
+                    lines.append(f"# TYPE {metric} counter")
+                elif key.endswith("_failures_total"):
+                    lines.append(f"# HELP {metric} API operation failures since process start.")
+                    lines.append(f"# TYPE {metric} counter")
+                elif key.endswith("_latency_ms"):
+                    lines.append(
+                        f"# HELP {metric} API operation latency over recent in-process samples."
+                    )
+                    lines.append(f"# TYPE {metric} gauge")
+                lines.append(f"{metric} {float(value):.6g}")
     return "\n".join(lines) + "\n"
 
 
@@ -288,6 +361,9 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.mind = mind or build_default_mind()
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
+    app.state.operation_metrics = APIOperationMetrics(
+        max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
+    )
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
@@ -327,26 +403,28 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
-        id = app.state.mind.remember(
-            request.text,
-            namespace=request.namespace,
-            tags=request.tags,
-            ttl_seconds=request.ttl_seconds,
-            metadata=request.metadata,
-            priority=request.priority,
-        )
+        with _api_operation(app, "remember"):
+            id = app.state.mind.remember(
+                request.text,
+                namespace=request.namespace,
+                tags=request.tags,
+                ttl_seconds=request.ttl_seconds,
+                metadata=request.metadata,
+                priority=request.priority,
+            )
         logger.info("remembered id=%s namespace=%s", id, request.namespace)
         return RememberResponse(id=id)
 
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
-        results = app.state.mind.query(
-            request.text,
-            namespace=request.namespace,
-            top_k=request.top_k,
-            tags=request.tags,
-            min_score=request.min_score,
-        )
+        with _api_operation(app, "query"):
+            results = app.state.mind.query(
+                request.text,
+                namespace=request.namespace,
+                top_k=request.top_k,
+                tags=request.tags,
+                min_score=request.min_score,
+            )
         return QueryResponse(
             results=[
                 QueryResultResponse(
@@ -372,11 +450,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         namespace: str | None = Query(default=None),
     ) -> ForgetResponse:
         payload = request or ForgetRequest(id=id, text=text, namespace=namespace)
-        deleted = app.state.mind.forget(
-            id=payload.id,
-            text=payload.text,
-            namespace=payload.namespace,
-        )
+        with _api_operation(app, "forget"):
+            deleted = app.state.mind.forget(
+                id=payload.id,
+                text=payload.text,
+                namespace=payload.namespace,
+            )
         logger.info("forgot deleted=%s namespace=%s", deleted, payload.namespace)
         return ForgetResponse(deleted=deleted)
 
@@ -390,12 +469,16 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
     def rebuild_index():
-        return app.state.mind.rebuild_index()
+        with _api_operation(app, "index_rebuild"):
+            return app.state.mind.rebuild_index()
 
     @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:
         return PlainTextResponse(
-            _metrics_text(app.state.mind.stats(namespace=namespace)),
+            _metrics_text(
+                app.state.mind.stats(namespace=namespace),
+                app.state.operation_metrics.snapshot(),
+            ),
             media_type="text/plain; version=0.0.4",
         )
 
@@ -430,23 +513,25 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])
     def batch_import(request: ImportRequest) -> ImportResponse:
-        ids = import_path(
-            request.path,
-            app.state.mind,
-            namespace=request.namespace,
-            tags=request.tags,
-            max_chars=request.max_chars,
-            overlap=request.overlap,
-        )
+        with _api_operation(app, "import"):
+            ids = import_path(
+                request.path,
+                app.state.mind,
+                namespace=request.namespace,
+                tags=request.tags,
+                max_chars=request.max_chars,
+                overlap=request.overlap,
+            )
         return ImportResponse(ids=ids)
 
     @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
     def backup(request: BackupRequest) -> BackupResponse:
-        path = app.state.mind.save(
-            request.path,
-            keep_last=request.keep_last,
-            backup_prefix=request.prefix,
-        )
+        with _api_operation(app, "backup"):
+            path = app.state.mind.save(
+                request.path,
+                keep_last=request.keep_last,
+                backup_prefix=request.prefix,
+            )
         return BackupResponse(path=str(path))
 
     return app

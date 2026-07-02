@@ -59,3 +59,45 @@ def test_observability_endpoint_reports_app_status(tmp_path, monkeypatch):
         assert response.json()["fastapi_instrumented"] is False
     finally:
         mind.close()
+
+
+def test_metrics_endpoint_reports_api_operation_latency_and_failures(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_OTEL_ENABLED", raising=False)
+    mind = WaveMind(
+        db_path=tmp_path / "api-metrics.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        with TestClient(create_app(mind=mind), raise_server_exceptions=False) as client:
+            remember = client.post(
+                "/remember",
+                json={"text": "Andrey tests observability metrics", "namespace": "obs"},
+            )
+            assert remember.status_code == 200
+
+            query = client.post(
+                "/query",
+                json={"query": "observability metrics", "namespace": "obs", "top_k": 1},
+            )
+            assert query.status_code == 200
+
+            def fail_save(*args, **kwargs):
+                raise RuntimeError("backup destination unavailable")
+
+            monkeypatch.setattr(mind, "save", fail_save)
+            failed_backup = client.post("/backup", json={"path": str(tmp_path / "backup.sqlite3")})
+            assert failed_backup.status_code == 500
+
+            metrics = client.get("/metrics").text
+
+        assert "wavemind_api_remember_requests_total 1" in metrics
+        assert "wavemind_api_query_requests_total 1" in metrics
+        assert "wavemind_api_query_avg_latency_ms " in metrics
+        assert "wavemind_api_query_p95_latency_ms " in metrics
+        assert "wavemind_api_backup_requests_total 1" in metrics
+        assert "wavemind_api_backup_failures_total 1" in metrics
+    finally:
+        mind.close()

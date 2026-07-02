@@ -475,6 +475,9 @@ Prometheus-compatible text payload without adding a required dependency.
 `/index/rebuild` rebuilds the candidate index from stored active memories and
 logs an `index_rebuild` audit event.
 
+Full observability guide and local Prometheus/OTEL examples:
+[`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
+
 OpenTelemetry traces are optional and off by default:
 
 ```sh

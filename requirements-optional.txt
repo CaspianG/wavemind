@@ -3,3 +3,7 @@ annoy>=1.17
 qdrant-client>=1.9
 # faiss-cpu is not reliably available on native Windows wheels.
 faiss-cpu>=1.8; platform_system != "Windows"
+opentelemetry-api>=1.25
+opentelemetry-sdk>=1.25
+opentelemetry-exporter-otlp>=1.25
+opentelemetry-instrumentation-fastapi>=0.46b0

@@ -46,9 +46,15 @@ def test_indexes_extra_installs_qdrant_client():
 
 def test_otel_and_production_extras_are_available():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    optional_requirements = Path("requirements-optional.txt").read_text(
+        encoding="utf-8"
+    )
 
     assert "otel = [" in pyproject
     assert '"opentelemetry-sdk>=1.25"' in pyproject
+    assert "opentelemetry-sdk>=1.25" in optional_requirements
+    assert "opentelemetry-exporter-otlp>=1.25" in optional_requirements
+    assert "opentelemetry-instrumentation-fastapi>=0.46b0" in optional_requirements
     assert "production = [" in pyproject
     assert '"opentelemetry-instrumentation-fastapi>=0.46b0"' in pyproject
 
@@ -134,11 +140,14 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/RELEASE.md" in manifest
     assert "include docs/PROJECT_BOARD.md" in manifest
     assert "include docs/CHROMA_MIGRATION.md" in manifest
+    assert "include docs/OBSERVABILITY.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include examples/*.py" in manifest
+    assert "recursive-include examples/observability *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
+    assert "docs/OBSERVABILITY.md" in readme
     assert "Keep Chroma as-is" in chroma_migration
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration
     assert "namespace=\"user:42\"" in chroma_migration
