@@ -103,10 +103,12 @@ def test_docker_files_track_runtime_package_version():
 def test_dockerfile_copies_readme_before_editable_install():
     dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
     readme_copy = "COPY README.md pyproject.toml requirements.txt requirements-optional.txt ./"
-    editable_install = "RUN pip install --no-cache-dir -e ."
+    editable_install = "pip install --no-cache-dir -e"
 
     assert readme_copy in dockerfile
     assert dockerfile.index(readme_copy) < dockerfile.index(editable_install)
+    assert "ARG INSTALL_PRODUCTION=false" in dockerfile
+    assert "build-essential" in dockerfile
 
 
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
@@ -145,6 +147,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include benchmarks/*.json" in manifest
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest
+    assert "recursive-include examples/production-index-profile *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/OBSERVABILITY.md" in readme

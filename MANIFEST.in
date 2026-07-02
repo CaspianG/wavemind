@@ -25,4 +25,5 @@ include benchmarks/*.json
 include benchmarks/*.md
 include examples/*.py
 recursive-include examples/observability *
+recursive-include examples/production-index-profile *
 prune benchmarks/data

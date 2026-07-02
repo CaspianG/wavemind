@@ -1062,13 +1062,12 @@ Add `qdrant-service` when `WAVEMIND_QDRANT_URL` points at a running Qdrant
 service. Add `faiss-persisted` when `WAVEMIND_FAISS_PATH` points at the FAISS
 snapshot file to validate persisted-index startup behavior.
 
-Production profile example:
+Reproducible Docker production profile:
 
 ```sh
-export WAVEMIND_FAISS_PATH="./state/ann-curve.faiss"
-export WAVEMIND_QDRANT_URL="http://localhost:6333"
-export WAVEMIND_PGVECTOR_DSN="postgresql://user:password@localhost:5432/wavemind"
-python benchmarks/ann_index_curve_benchmark.py --sizes 10000 50000 --dim 128 --queries 100 --top-k 10 --engines faiss-persisted qdrant-service pgvector --output benchmarks/production_index_profile_results.json
+docker compose -f examples/production-index-profile/docker-compose.yml up -d qdrant postgres
+docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark
+docker compose -f examples/production-index-profile/docker-compose.yml down
 ```
 
 Checked-in 50000-vector point:
@@ -1081,15 +1080,25 @@ Checked-in 50000-vector point:
 | WaveMind faiss | skipped | - | - | - |
 | Qdrant local | 1.000 | 43.49 ms | 59.68 ms | 17525.7 ms |
 
+Checked-in production 50000-vector point:
+
+| engine | recall@10 | avg latency | p95 latency | build |
+|---|---:|---:|---:|---:|
+| WaveMind faiss-persisted | 1.000 | 4.14 ms | 13.43 ms | 703.4 ms |
+| Qdrant service | 1.000 | 4.26 ms | 5.85 ms | 11758.8 ms |
+| WaveMind pgvector | 0.422 | 2.59 ms | 4.11 ms | 165719.2 ms |
+
 Read this as an engineering curve, not an official VectorDBBench result. Annoy
 is faster than exact NumPy at 50000 vectors but loses too much recall with the
 current settings. The new `quantized` backend compresses vectors and keeps
 `0.934` recall@10 on this run, but the current Python/NumPy kernel is slower
 than exact NumPy; it is a memory-footprint baseline, not a latency win yet.
-FAISS persistence, service-mode Qdrant, and pgvector are now explicit benchmark
-profiles. If a required package, service, or environment variable is missing,
-the runner marks that engine as `skipped` instead of silently falling back to
-another backend.
+FAISS persistence and service-mode Qdrant now both preserve exact recall at
+50000 generated vectors. The checked-in pgvector/HNSW profile is fast but loses
+too much recall, so pgvector is not yet the recommended production index profile
+without tuning. If a required package, service, or environment variable is
+missing, the runner marks that engine as `skipped` instead of silently falling
+back to another backend.
 
 ### Current Local Runs
 

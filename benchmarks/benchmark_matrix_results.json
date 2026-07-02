@@ -495,7 +495,7 @@
           "p95_latency_ms": 7.37469999876339,
           "build_ms": 4090.066400000069
         },
-        "WaveMind faiss": {},
+        "WaveMind faiss": null,
         "Qdrant local": {
           "recall_at_k": 1.0,
           "avg_latency_ms": 43.48527499991178,
@@ -504,7 +504,48 @@
         }
       },
       "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
-      "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors."
+      "next_step": "Use the production index profile for service-mode claims; tune quantized search kernels and Annoy/FAISS settings for local-only deployments."
+    },
+    {
+      "id": "production_index_profile",
+      "name": "Production index profile",
+      "category": "index-latency",
+      "status": "implemented",
+      "source": "benchmarks/ann_index_curve_benchmark.py + examples/production-index-profile/docker-compose.yml",
+      "dataset": "Generated normalized 128-d vectors at 10000 and 50000 points. The checked-in profile runs persisted FAISS in Linux, Qdrant v1.18.2 in service mode, and PostgreSQL/pgvector with HNSW enabled. Current table reports the 50000-vector point; full JSON is benchmarks/production_index_profile_results.json.",
+      "competitors": [
+        "Persisted FAISS",
+        "Qdrant service",
+        "PostgreSQL/pgvector"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "WaveMind faiss-persisted": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 4.136698690002731,
+          "p95_latency_ms": 13.42844700002388,
+          "build_ms": 703.3589389999406
+        },
+        "Qdrant service": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 4.260926350003729,
+          "p95_latency_ms": 5.851605999964704,
+          "build_ms": 11758.765509
+        },
+        "WaveMind pgvector": {
+          "recall_at_k": 0.422,
+          "avg_latency_ms": 2.58953402999623,
+          "p95_latency_ms": 4.114049999998315,
+          "build_ms": 165719.2273800001
+        }
+      },
+      "target": "At 50000 vectors, keep recall@10 above 0.95 and query latency below 10 ms on a real service-backed candidate index.",
+      "next_step": "Tune pgvector HNSW/index settings because this run is fast but loses recall; keep Qdrant service and persisted FAISS as production baselines."
     },
     {
       "id": "longmemeval_answer_generation",

@@ -25,6 +25,8 @@ policy matters more than raw vector-database scale:
   candidate-index backends.
 - FAISS can persist a validated index snapshot and id map for single-node
   deployments where startup rebuild time matters.
+- A Docker-backed production index profile now compares persisted FAISS,
+  service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
 - Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
   rebuild operations, and Prometheus-compatible index-health metrics.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
@@ -70,11 +72,12 @@ Priorities:
 - Keep pgvector as an optional candidate-index backend and harden the separate
   Postgres source-of-truth backend for multi-tenant storage.
 - Support external vector services such as Qdrant for larger deployments.
-  The first Qdrant candidate-index backend is available; the remaining work is
-  service-mode latency, rebuild strategy, and operational health checks.
+  The first service-mode Qdrant benchmark is checked in; the remaining work is
+  rebuild strategy, operational health checks, and larger-service latency
+  curves.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
-  first persisted FAISS snapshot path is implemented; production still needs
-  service-mode profiles and deeper latency traces.
+  first persisted FAISS snapshot path and production profile are implemented;
+  production still needs larger profiles and deeper latency traces.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
@@ -214,11 +217,13 @@ Enterprise requirements:
 
 ### Short Term: 1 To 3 Months
 
-- Service-mode benchmark profiles for persisted FAISS, Qdrant, and pgvector.
+- Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
+  tuned pgvector.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
-- Service-mode Qdrant latency baseline.
+- Service-mode Qdrant latency baseline beyond the checked-in 50000-vector
+  profile.
 - Better README examples for non-agent use cases.
 - Harden integration adapters for LangGraph, LlamaIndex, CrewAI, and AutoGen.
 

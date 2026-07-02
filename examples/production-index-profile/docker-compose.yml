@@ -1,0 +1,63 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.18.2
+    ports:
+      - "6333:6333"
+    volumes:
+      - ../../state/qdrant:/qdrant/storage
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: wavemind
+      POSTGRES_PASSWORD: wavemind
+      POSTGRES_DB: wavemind
+    ports:
+      - "15432:5432"
+    volumes:
+      - ../../state/pgvector:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wavemind -d wavemind"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  benchmark:
+    build:
+      context: ../..
+      args:
+        INSTALL_PRODUCTION: "true"
+    image: wavemind-production-index-profile:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    environment:
+      WAVEMIND_FAISS_PATH: /state/production-index-profile.faiss
+      WAVEMIND_QDRANT_URL: http://qdrant:6333
+      WAVEMIND_PGVECTOR_DSN: postgresql://wavemind:wavemind@postgres:5432/wavemind
+      WAVEMIND_PGVECTOR_CREATE_HNSW: "1"
+      WAVEMIND_PGVECTOR_TABLE: wavemind_vectors
+      WAVEMIND_PGVECTOR_COLLECTION: production_index_profile
+    volumes:
+      - ../../benchmarks:/app/benchmarks
+      - ../../state:/state
+    command:
+      - python
+      - benchmarks/ann_index_curve_benchmark.py
+      - --sizes
+      - "10000"
+      - "50000"
+      - --dim
+      - "128"
+      - --queries
+      - "100"
+      - --top-k
+      - "10"
+      - --engines
+      - faiss-persisted
+      - qdrant-service
+      - pgvector
+      - --output
+      - benchmarks/production_index_profile_results.json
