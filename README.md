@@ -25,6 +25,8 @@ market research, trading language, and backtest work out of the main README.
 Implemented in this branch:
 
 - `docs/CRYPTO_RESEARCH.md` - research scope, caveats, and roadmap.
+- `docs/CRYPTO_MARKET_DIRECTION_2026_2027.md` - market-backed direction for
+  building this branch without turning it into a generic trading bot.
 - `benchmarks/crypto_pattern_benchmark.py` - deterministic OHLCV-pattern
   retrieval benchmark scaffold.
 - `benchmarks/crypto_pattern_results.json` - first checked-in synthetic result.
@@ -52,12 +54,19 @@ families. This is a scaffold validation only.
 
 ## Research Plan
 
-1. Add real OHLCV CSV import.
+The product direction is documented here:
+
+[`docs/CRYPTO_MARKET_DIRECTION_2026_2027.md`](docs/CRYPTO_MARKET_DIRECTION_2026_2027.md)
+
+Near-term execution plan:
+
+1. Add real OHLCV CSV and CCXT import.
 2. Add explicit train/test and walk-forward splits.
 3. Add fees, slippage, and position sizing.
 4. Compare WaveMind against static vector retrieval, Chroma, Qdrant, and simple
    technical-analysis baselines.
-5. Only after retrieval quality is stable, test signal construction and
+5. Build a Freqtrade research adapter before any live-trading integration.
+6. Only after retrieval quality is stable, test signal construction and
    backtesting.
 
 ## Core Project
