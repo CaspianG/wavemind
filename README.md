@@ -27,6 +27,7 @@ users or projects isolated.
 [Use Cases](docs/USE_CASES.md) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
+[Research Branches](#research-branches) |
 [Roadmap](#roadmap) |
 [Contributing](#contributing) |
 [Limitations](#known-limitations)
@@ -731,6 +732,18 @@ memory benchmark:
 
 In short: static vector search answers "what is nearest?" Dynamic memory also
 asks "what is still relevant, reinforced, scoped, and allowed to be remembered?"
+
+## Research Branches
+
+The main branch stays focused on the core WaveMind library: dynamic memory,
+storage, indexes, APIs, integrations, and public memory benchmarks.
+
+Experimental domains live in separate branches so they can move quickly without
+overloading the main README:
+
+| Branch | Scope |
+|---|---|
+| [`research/crypto-pattern-memory`](https://github.com/CaspianG/wavemind/tree/research/crypto-pattern-memory) | OHLCV pattern-memory research, historical analogue retrieval, and future backtest experiments. |
 
 ## Benchmark
 
