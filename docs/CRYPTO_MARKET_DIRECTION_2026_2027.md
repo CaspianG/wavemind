@@ -85,10 +85,12 @@ Do not promise:
 Current blocker: the wave-field layer improves top-1 direction retrieval over
 field-off memory in the synthetic walk-forward run, but raw large-move false
 positives are too high. The first calibrated variant reduces false positives
-from `0.987` to `0.545` and improves sized net bps from `-1.44` to `7.39`, but
-it does that by filtering 43.3% of queries and lowering final direction@1. The
-next milestone is validating this tradeoff on real OHLCV data before deriving
-any trading signal.
+from `0.987` to `0.545`, improves active-signal direction accuracy from `0.527`
+to `0.608`, and improves sized net bps from `-1.30` to `7.39`. It does that by
+filtering 43.3% of queries and lowering final direction@1. The naive
+last-regime baseline is still stronger on this synthetic dataset, so the next
+milestone is validating this tradeoff on real OHLCV data before deriving any
+trading signal.
 
 ### 1. Real OHLCV Import
 

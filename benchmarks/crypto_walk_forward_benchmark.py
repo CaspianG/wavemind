@@ -759,7 +759,7 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
 
 def print_table(payload: Mapping[str, object]) -> None:
     print(
-        "| engine | direction@1 | direction@3 | avg net bps | sized net bps | "
+        "| engine | direction@1 | active d1 | signal rate | sized net bps | "
         "large FP | filtered | avg latency | queries |"
     )
     print("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
@@ -773,8 +773,8 @@ def print_table(payload: Mapping[str, object]) -> None:
         print(
             f"| {result['engine']} | "
             f"{result['direction_accuracy_at_1']:.3f} | "
-            f"{result['direction_accuracy_at_3']:.3f} | "
-            f"{result['avg_net_return_bps']:.2f} | "
+            f"{result['active_direction_accuracy']:.3f} | "
+            f"{result['signal_rate']:.3f} | "
             f"{result['avg_sized_net_return_bps']:.2f} | "
             f"{result['large_move_false_positive_rate']:.3f} | "
             f"{result['filtered_rate']:.3f} | "
@@ -1085,6 +1085,10 @@ def _summarize_events(
             "avg_position_size": 0.0,
             "avg_confidence": 0.0,
             "filtered_rate": 0.0,
+            "signal_rate": 0.0,
+            "active_direction_accuracy": 0.0,
+            "active_avg_net_return_bps": 0.0,
+            "active_avg_sized_net_return_bps": 0.0,
             "avg_net_return_bps": 0.0,
             "avg_sized_net_return_bps": 0.0,
             "hit_rate_after_costs": 0.0,
@@ -1094,6 +1098,7 @@ def _summarize_events(
         }
     latencies = sorted(event.latency_ms for event in events)
     p95_index = min(len(latencies) - 1, int(len(latencies) * 0.95))
+    signal_events = [event for event in events if event.predicted_direction != "flat"]
     payload = {
         "engine": engine_name,
         "queries": len(events),
@@ -1114,6 +1119,16 @@ def _summarize_events(
         "avg_position_size": statistics.mean(event.position_size for event in events),
         "avg_confidence": statistics.mean(event.confidence for event in events),
         "filtered_rate": statistics.mean(event.filtered for event in events),
+        "signal_rate": len(signal_events) / len(events),
+        "active_direction_accuracy": (
+            statistics.mean(event.direction_at_1 for event in signal_events) if signal_events else 0.0
+        ),
+        "active_avg_net_return_bps": (
+            statistics.mean(event.net_return_bps for event in signal_events) if signal_events else 0.0
+        ),
+        "active_avg_sized_net_return_bps": (
+            statistics.mean(event.sized_net_return_bps for event in signal_events) if signal_events else 0.0
+        ),
         "avg_net_return_bps": statistics.mean(event.net_return_bps for event in events),
         "avg_sized_net_return_bps": statistics.mean(event.sized_net_return_bps for event in events),
         "hit_rate_after_costs": statistics.mean(1.0 if event.net_return_bps > 0 else 0.0 for event in events),

@@ -95,34 +95,38 @@ Current synthetic walk-forward result, generated on BTC/ETH/SOL across 1h, 4h,
 and 1d with 540 test windows, `--confidence-threshold 0.65`, and
 `--min-analogue-agreement 0.6`:
 
-| engine | direction@1 | direction@3 | avg net bps | sized net bps | large FP | filtered | avg latency |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind field | 0.522 | 0.670 | -4.82 | -1.44 | 0.987 | 0.000 | 9.09 ms |
-| WaveMind calibrated | 0.426 | 0.670 | 7.96 | 7.39 | 0.545 | 0.433 | 9.58 ms |
-| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.584 | 0.000 | 6.36 ms |
-| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
-| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
-| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
-| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 2.59 ms |
-| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 4.76 ms |
-| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.606 | 0.000 | 3.73 ms |
+| engine | direction@1 | active d1 | signal rate | avg net bps | sized net bps | large FP | filtered | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind field | 0.524 | 0.527 | 0.994 | -4.68 | -1.30 | 0.987 | 0.000 | 8.60 ms |
+| WaveMind calibrated | 0.426 | 0.608 | 0.567 | 7.96 | 7.39 | 0.545 | 0.433 | 8.61 ms |
+| WaveMind field-off | 0.472 | 0.546 | 0.820 | -1.32 | 1.45 | 0.584 | 0.000 | 5.91 ms |
+| OHLCV shape kNN | 0.302 | 0.361 | 0.765 | -32.74 | -22.53 | 0.524 | 0.000 | 0.19 ms |
+| Naive last-regime | 0.589 | 0.683 | 0.830 | 27.37 | 26.89 | 0.489 | 0.000 | 0.00 ms |
+| TA rules | 0.191 | 0.196 | 0.728 | -64.06 | -56.38 | 0.082 | 0.000 | 0.00 ms |
+| Static kNN | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 2.35 ms |
+| Chroma | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 4.52 ms |
+| Qdrant | 0.481 | 0.549 | 0.837 | -2.13 | 0.81 | 0.606 | 0.000 | 3.59 ms |
 
 Interpretation: the relevant signal is the ablation and calibration tradeoff.
 The raw wave-field version beats the field-off version on top-1 direction
-retrieval (`0.522` vs `0.472`), which means the dynamic memory layer is adding
+retrieval (`0.524` vs `0.472`), which means the dynamic memory layer is adding
 measurable retrieval information in this synthetic walk-forward setup. It also
 over-triggers large moves. The calibrated variant intentionally returns `flat`
 when analogue agreement, regime agreement, or confidence is weak. That reduces
 large-move false positives from `0.987` to `0.545` and moves sized net bps from
-`-1.44` to `7.39`, but final direction@1 drops to `0.426` because 43.3% of
-queries are filtered. It still does not beat the naive last-regime baseline on
-net payoff, so this remains a research harness, not evidence of a deployable
-market edge.
+`-1.30` to `7.39`. It also improves active-signal direction accuracy from
+`0.527` to `0.608`. Final direction@1 drops to `0.426` because 43.3% of queries
+are filtered. It still does not beat the naive last-regime baseline on net
+payoff, so this remains a research harness, not evidence of a deployable market
+edge.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
 - `direction_accuracy_at_1` - top analogue predicts the same next-move bucket;
 - `direction_accuracy_at_3` - any of top 3 analogues predicts the same bucket;
+- `active_direction_accuracy` - direction accuracy only on non-flat predicted
+  signals;
+- `signal_rate` - share of windows where the engine produced a non-flat signal;
 - `avg_net_return_bps` - a simple long/short/flat research payoff after
   round-trip fee and slippage;
 - `avg_sized_net_return_bps` - the same payoff after the selected position
