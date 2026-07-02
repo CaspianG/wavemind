@@ -68,6 +68,25 @@ Do not promise:
 
 ## What To Build First
 
+## Current Implementation Status
+
+| Plan item | Status | Evidence |
+|---|---|---|
+| Real OHLCV import | Done | CSV and CCXT import in `benchmarks/crypto_ohlcv.py`. |
+| Pattern featurization | Done | Return, volatility, drawdown, trend slope, MACD-like spread, Bollinger-like position, volume, range compression, MFE/MAE, future vol, and future drawdown labels. |
+| Walk-forward benchmark | Done | `benchmarks/crypto_walk_forward_benchmark.py` uses train/test walk-forward with no look-ahead insertion. |
+| Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in result uses confidence sizing. |
+| Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, TA rules, and storage controls. |
+| Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
+| Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
+| Signal construction | Not started | Blocked on reducing false positives and proving calibration. |
+
+Current blocker: the wave-field layer improves top-1 direction retrieval over
+field-off memory in the synthetic walk-forward run, but large-move false
+positives remain too high. Confidence sizing reduces loss magnitude but does
+not solve calibration. The next research milestone is stricter analogue
+agreement and regime filters before deriving any trading signal.
+
 ### 1. Real OHLCV Import
 
 Implement public-data import before any model work:
@@ -266,4 +285,3 @@ The branch becomes useful when this sentence is true:
 
 Until that is true, this branch is research infrastructure, not a trading
 product.
-

@@ -66,8 +66,13 @@ python benchmarks/crypto_walk_forward_benchmark.py \
 What it adds over the first scaffold:
 
 - real OHLCV window representation;
+- explicit numeric pattern features: return, volatility, drawdown, trend slope,
+  MACD-like spread, Bollinger-like position, volume, and range compression;
+- future outcome labels: return, MFE, MAE, future realized volatility, and
+  future max drawdown;
 - train/test walk-forward evaluation;
 - explicit fees and slippage;
+- fixed or confidence-weighted position sizing;
 - no look-ahead insertion: a window is added to memory only after its future
   horizon is already known;
 - core ablation: WaveMind field-on vs WaveMind field-off;
@@ -84,23 +89,29 @@ Outputs:
 Current synthetic walk-forward result, generated on BTC/ETH/SOL across 1h, 4h,
 and 1d with 540 test windows:
 
-| engine | direction@1 | direction@3 | avg net bps | hit rate | avg latency |
-|---|---:|---:|---:|---:|---:|
-| WaveMind field | 0.509 | 0.670 | -9.36 | 0.507 | 6.59 ms |
-| WaveMind field-off | 0.435 | 0.704 | -7.11 | 0.411 | 4.88 ms |
-| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | 0.276 | 0.23 ms |
-| Naive last-regime | 0.589 | 0.589 | 27.37 | 0.567 | 0.00 ms |
-| TA rules | 0.191 | 0.191 | -64.06 | 0.143 | 0.00 ms |
-| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 2.00 ms |
-| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.78 ms |
-| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.39 ms |
+| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency |
+|---|---:|---:|---:|---:|---:|---:|
+| WaveMind field | 0.524 | 0.670 | -4.68 | -1.30 | 0.524 | 9.51 ms |
+| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.448 | 6.57 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.276 | 0.20 ms |
+| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.567 | 0.00 ms |
+| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.143 | 0.00 ms |
+| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 2.38 ms |
+| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.55 ms |
+| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.02 ms |
 
 Interpretation: the relevant signal is the ablation. The wave-field version
-beats the field-off version on top-1 direction retrieval (`0.509` vs `0.435`),
+beats the field-off version on top-1 direction retrieval (`0.524` vs `0.472`),
 which means the dynamic memory layer is adding measurable retrieval information
 in this synthetic walk-forward setup. It still does not beat the naive
 last-regime baseline on net payoff, so this remains a research harness, not
 evidence of a deployable market edge.
+
+Large-move metrics are now tracked as well. In the current synthetic run,
+WaveMind field has large-move precision `0.570`, but a high false-positive rate
+of `0.987`. Confidence sizing reduces loss magnitude but does not solve the
+problem yet (`-1.30` sized net bps), so the next serious research target is to
+reduce false positives before any signal construction work.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -108,7 +119,13 @@ The metrics are retrieval/research metrics, not a live trading claim:
 - `direction_accuracy_at_3` - any of top 3 analogues predicts the same bucket;
 - `avg_net_return_bps` - a simple long/short/flat research payoff after
   round-trip fee and slippage;
+- `avg_sized_net_return_bps` - the same payoff after the selected position
+  sizing mode;
 - `hit_rate_after_costs` - share of windows with positive net payoff;
+- `mean_abs_mfe_error_bps` and `mean_abs_mae_error_bps` - error on retrieved
+  future path excursions;
+- `large_move_precision` and `large_move_false_positive_rate` - whether the
+  analogue layer detects large moves without over-triggering;
 - query latency.
 
 ### CSV import
@@ -175,9 +192,12 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 
 1. Add real exchange CSV fixtures with reproducible train/test splits.
 2. Add walk-forward runs on BTC/ETH/SOL for 1h, 4h, and 1d from public OHLCV.
-3. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+3. Improve confidence sizing and reduce large-move false positives using
+   calibrated confidence, regime
+   filters, and stricter analogue agreement.
+4. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-4. Add signal construction only after retrieval quality is stable.
-5. Publish results separately from the main README to avoid confusing memory
+5. Add signal construction only after retrieval quality is stable.
+6. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

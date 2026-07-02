@@ -19,6 +19,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         top_k=3,
         fee_bps=8,
         slippage_bps=3,
+        position_sizing="confidence",
     )
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
@@ -32,14 +33,26 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     }
     assert result_by_engine["WaveMind field"]["queries"] == 12
     assert 0.0 <= result_by_engine["WaveMind field"]["direction_accuracy_at_1"] <= 1.0
+    assert "mean_abs_mfe_error_bps" in result_by_engine["WaveMind field"]
+    assert "mean_abs_mae_error_bps" in result_by_engine["WaveMind field"]
+    assert "large_move_precision" in result_by_engine["WaveMind field"]
+    assert "large_move_false_positive_rate" in result_by_engine["WaveMind field"]
+    assert "avg_position_size" in result_by_engine["WaveMind field"]
+    assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
+    assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
+    assert payload["scenario"]["large_move_bps"] == 75.0
+    assert payload["scenario"]["position_sizing"] == "confidence"
     assert payload["analogue_samples"]
+    assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
+    assert "max_adverse_excursion_bps" in payload["analogue_samples"][0]["analogues"][0]
 
     html_path = tmp_path / "analogues.html"
     write_analogue_html(payload, html_path)
 
     assert "WaveMind Crypto Analogue Explorer" in html_path.read_text(encoding="utf-8")
+    assert "MFE bps" in html_path.read_text(encoding="utf-8")
 
 
 def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):

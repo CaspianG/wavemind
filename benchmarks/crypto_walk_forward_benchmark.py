@@ -46,6 +46,9 @@ class AnalogueMatch:
     score: float
     direction: str
     future_return_bps: float
+    max_favorable_excursion_bps: float
+    max_adverse_excursion_bps: float
+    future_realized_vol_bps: float
     start_time: str
     end_time: str
     text: str
@@ -68,11 +71,26 @@ class EventMetric:
     actual_direction: str
     predicted_direction: str
     actual_return_bps: float
+    actual_mfe_bps: float
+    actual_mae_bps: float
+    actual_future_vol_bps: float
     predicted_return_bps: float
+    predicted_mfe_bps: float
+    predicted_mae_bps: float
+    predicted_future_vol_bps: float
     direction_at_1: float
     direction_at_3: float
     abs_return_error_bps: float
+    abs_mfe_error_bps: float
+    abs_mae_error_bps: float
+    abs_future_vol_error_bps: float
+    predicted_large_move: float
+    actual_large_move: float
+    large_move_true_positive: float
+    large_move_false_positive: float
+    position_size: float
     net_return_bps: float
+    sized_net_return_bps: float
     latency_ms: float
 
 
@@ -179,6 +197,9 @@ class WaveMindEngine(MarketEngine):
                 score=float(result.score),
                 direction=str(result.metadata.get("direction", "flat")),
                 future_return_bps=float(result.metadata.get("future_return_bps", 0.0)),
+                max_favorable_excursion_bps=float(result.metadata.get("max_favorable_excursion_bps", 0.0)),
+                max_adverse_excursion_bps=float(result.metadata.get("max_adverse_excursion_bps", 0.0)),
+                future_realized_vol_bps=float(result.metadata.get("future_realized_vol_bps", 0.0)),
                 start_time=str(result.metadata.get("start_time", "")),
                 end_time=str(result.metadata.get("end_time", "")),
                 text=result.text,
@@ -466,6 +487,8 @@ def run_walk_forward(
     encoder_kind: str = "hash",
     fee_bps: float = 10.0,
     slippage_bps: float = 5.0,
+    large_move_bps: float = 75.0,
+    position_sizing: str = "fixed",
     analogue_limit: int = 18,
 ) -> dict:
     engine_keys = _normalize_engines(engines)
@@ -506,6 +529,8 @@ def run_walk_forward(
                             window=query_window,
                             prediction=prediction,
                             round_trip_cost_bps=round_trip_cost_bps,
+                            large_move_bps=large_move_bps,
+                            position_sizing=position_sizing,
                         )
                         market_events.append(event)
                         if len(analogue_samples) < analogue_limit and prediction.analogues:
@@ -545,6 +570,8 @@ def run_walk_forward(
             "fee_bps": float(fee_bps),
             "slippage_bps": float(slippage_bps),
             "round_trip_cost_bps": round_trip_cost_bps,
+            "large_move_bps": float(large_move_bps),
+            "position_sizing": position_sizing,
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
         "embedding": {
@@ -624,6 +651,8 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
             f"<td>{html.escape(match['start_time'])}</td>"
             f"<td>{html.escape(match['direction'])}</td>"
             f"<td>{float(match['future_return_bps']):.1f}</td>"
+            f"<td>{float(match.get('max_favorable_excursion_bps', 0.0)):.1f}</td>"
+            f"<td>{float(match.get('max_adverse_excursion_bps', 0.0)):.1f}</td>"
             f"<td>{float(match['score']):.3f}</td>"
             "</tr>"
             for match in analogues
@@ -634,7 +663,7 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
             f"<p class='muted'>Current window: {html.escape(query['start_time'])} -> {html.escape(query['end_time'])}</p>"
             f"<p>Actual next move: <strong>{html.escape(query['direction'])}</strong> "
             f"({float(query['future_return_bps']):.1f} bps)</p>"
-            "<table><thead><tr><th>Historical window</th><th>Next move</th><th>Return bps</th><th>Score</th></tr></thead>"
+            "<table><thead><tr><th>Historical window</th><th>Next move</th><th>Return bps</th><th>MFE bps</th><th>MAE bps</th><th>Score</th></tr></thead>"
             f"<tbody>{analogue_rows}</tbody></table>"
             "</section>"
         )
@@ -659,17 +688,18 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
 
 
 def print_table(payload: Mapping[str, object]) -> None:
-    print("| engine | direction@1 | direction@3 | avg net bps | hit rate | avg latency | queries |")
-    print("|---|---:|---:|---:|---:|---:|---:|")
+    print("| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency | queries |")
+    print("|---|---:|---:|---:|---:|---:|---:|---:|")
     for result in payload["results"]:  # type: ignore[index]
         if result.get("skipped"):  # type: ignore[union-attr]
-            print(f"| {result['engine']} | skipped | skipped | skipped | skipped | skipped | 0 |")
+            print(f"| {result['engine']} | skipped | skipped | skipped | skipped | skipped | skipped | 0 |")
             continue
         print(
             f"| {result['engine']} | "
             f"{result['direction_accuracy_at_1']:.3f} | "
             f"{result['direction_accuracy_at_3']:.3f} | "
             f"{result['avg_net_return_bps']:.2f} | "
+            f"{result['avg_sized_net_return_bps']:.2f} | "
             f"{result['hit_rate_after_costs']:.3f} | "
             f"{result['avg_latency_ms']:.2f} ms | "
             f"{result['queries']} |"
@@ -692,6 +722,8 @@ def main() -> int:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--fee-bps", type=float, default=10.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
+    parser.add_argument("--large-move-bps", type=float, default=75.0)
+    parser.add_argument("--position-sizing", choices=["fixed", "confidence"], default="fixed")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_walk_forward_results.json"))
@@ -708,6 +740,8 @@ def main() -> int:
         encoder_kind=args.encoder,
         fee_bps=args.fee_bps,
         slippage_bps=args.slippage_bps,
+        large_move_bps=args.large_move_bps,
+        position_sizing=args.position_sizing,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -850,6 +884,8 @@ def _event_metric(
     window: OHLCVWindow,
     prediction: Prediction,
     round_trip_cost_bps: float,
+    large_move_bps: float,
+    position_sizing: str,
 ) -> EventMetric:
     direction_at_1 = 1.0 if prediction.direction == window.direction else 0.0
     top3_directions = [match.direction for match in prediction.analogues[:3]]
@@ -861,6 +897,17 @@ def _event_metric(
         actual_return_bps=window.future_return_bps,
         round_trip_cost_bps=round_trip_cost_bps,
     )
+    position_size = _position_size(
+        prediction,
+        large_move_bps=large_move_bps,
+        mode=position_sizing,
+    )
+    top = prediction.analogues[0] if prediction.analogues else None
+    predicted_mfe = float(top.max_favorable_excursion_bps) if top else max(0.0, prediction.expected_return_bps)
+    predicted_mae = float(top.max_adverse_excursion_bps) if top else min(0.0, prediction.expected_return_bps)
+    predicted_vol = float(top.future_realized_vol_bps) if top else abs(prediction.expected_return_bps)
+    predicted_large = abs(float(prediction.expected_return_bps)) >= float(large_move_bps)
+    actual_large = abs(float(window.future_return_bps)) >= float(large_move_bps)
     return EventMetric(
         engine=engine_name,
         symbol=window.symbol,
@@ -869,11 +916,26 @@ def _event_metric(
         actual_direction=window.direction,
         predicted_direction=prediction.direction,
         actual_return_bps=float(window.future_return_bps),
+        actual_mfe_bps=float(window.max_favorable_excursion_bps),
+        actual_mae_bps=float(window.max_adverse_excursion_bps),
+        actual_future_vol_bps=float(window.future_realized_vol_bps),
         predicted_return_bps=float(prediction.expected_return_bps),
+        predicted_mfe_bps=predicted_mfe,
+        predicted_mae_bps=predicted_mae,
+        predicted_future_vol_bps=predicted_vol,
         direction_at_1=direction_at_1,
         direction_at_3=direction_at_3,
         abs_return_error_bps=abs(float(prediction.expected_return_bps) - float(window.future_return_bps)),
+        abs_mfe_error_bps=abs(predicted_mfe - float(window.max_favorable_excursion_bps)),
+        abs_mae_error_bps=abs(predicted_mae - float(window.max_adverse_excursion_bps)),
+        abs_future_vol_error_bps=abs(predicted_vol - float(window.future_realized_vol_bps)),
+        predicted_large_move=1.0 if predicted_large else 0.0,
+        actual_large_move=1.0 if actual_large else 0.0,
+        large_move_true_positive=1.0 if predicted_large and actual_large else 0.0,
+        large_move_false_positive=1.0 if predicted_large and not actual_large else 0.0,
+        position_size=position_size,
         net_return_bps=net,
+        sized_net_return_bps=net * position_size,
         latency_ms=float(prediction.latency_ms),
     )
 
@@ -906,8 +968,16 @@ def _summarize_events(
             "direction_accuracy_at_1": 0.0,
             "direction_accuracy_at_3": 0.0,
             "mean_abs_return_error_bps": math.inf,
+            "mean_abs_mfe_error_bps": math.inf,
+            "mean_abs_mae_error_bps": math.inf,
+            "mean_abs_future_vol_error_bps": math.inf,
+            "large_move_precision": 0.0,
+            "large_move_false_positive_rate": 0.0,
+            "avg_position_size": 0.0,
             "avg_net_return_bps": 0.0,
+            "avg_sized_net_return_bps": 0.0,
             "hit_rate_after_costs": 0.0,
+            "sized_hit_rate_after_costs": 0.0,
             "avg_latency_ms": 0.0,
             "p95_latency_ms": 0.0,
         }
@@ -919,8 +989,22 @@ def _summarize_events(
         "direction_accuracy_at_1": statistics.mean(event.direction_at_1 for event in events),
         "direction_accuracy_at_3": statistics.mean(event.direction_at_3 for event in events),
         "mean_abs_return_error_bps": statistics.mean(event.abs_return_error_bps for event in events),
+        "mean_abs_mfe_error_bps": statistics.mean(event.abs_mfe_error_bps for event in events),
+        "mean_abs_mae_error_bps": statistics.mean(event.abs_mae_error_bps for event in events),
+        "mean_abs_future_vol_error_bps": statistics.mean(event.abs_future_vol_error_bps for event in events),
+        "large_move_precision": _safe_ratio(
+            sum(event.large_move_true_positive for event in events),
+            sum(event.predicted_large_move for event in events),
+        ),
+        "large_move_false_positive_rate": _safe_ratio(
+            sum(event.large_move_false_positive for event in events),
+            sum(1.0 for event in events if event.actual_large_move == 0.0),
+        ),
+        "avg_position_size": statistics.mean(event.position_size for event in events),
         "avg_net_return_bps": statistics.mean(event.net_return_bps for event in events),
+        "avg_sized_net_return_bps": statistics.mean(event.sized_net_return_bps for event in events),
         "hit_rate_after_costs": statistics.mean(1.0 if event.net_return_bps > 0 else 0.0 for event in events),
+        "sized_hit_rate_after_costs": statistics.mean(1.0 if event.sized_net_return_bps > 0 else 0.0 for event in events),
         "avg_latency_ms": statistics.mean(event.latency_ms for event in events),
         "p95_latency_ms": latencies[p95_index],
     }
@@ -937,6 +1021,9 @@ def _analogue_from_window(window: OHLCVWindow, text: str, score: float) -> Analo
         score=float(score),
         direction=window.direction,
         future_return_bps=float(window.future_return_bps),
+        max_favorable_excursion_bps=float(window.max_favorable_excursion_bps),
+        max_adverse_excursion_bps=float(window.max_adverse_excursion_bps),
+        future_realized_vol_bps=float(window.future_realized_vol_bps),
         start_time=window.start_time,
         end_time=window.end_time,
         text=text,
@@ -996,6 +1083,10 @@ def _window_metadata(window: OHLCVWindow) -> dict[str, str | int | float]:
         "end_time": window.end_time,
         "direction": window.direction,
         "future_return_bps": float(window.future_return_bps),
+        "max_favorable_excursion_bps": float(window.max_favorable_excursion_bps),
+        "max_adverse_excursion_bps": float(window.max_adverse_excursion_bps),
+        "future_realized_vol_bps": float(window.future_realized_vol_bps),
+        "future_max_drawdown_bps": float(window.future_max_drawdown_bps),
         "index": int(window.index),
     }
 
@@ -1011,6 +1102,9 @@ def _analogue_sample(engine_name: str, window: OHLCVWindow, prediction: Predicti
             "end_time": window.end_time,
             "direction": window.direction,
             "future_return_bps": float(window.future_return_bps),
+            "max_favorable_excursion_bps": float(window.max_favorable_excursion_bps),
+            "max_adverse_excursion_bps": float(window.max_adverse_excursion_bps),
+            "future_realized_vol_bps": float(window.future_realized_vol_bps),
             "text": window_to_text(window, include_outcome=False),
         },
         "prediction": {
@@ -1020,6 +1114,36 @@ def _analogue_sample(engine_name: str, window: OHLCVWindow, prediction: Predicti
         },
         "analogues": [asdict(match) for match in prediction.analogues[:5]],
     }
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float:
+    if denominator <= 0.0:
+        return 0.0
+    return float(numerator / denominator)
+
+
+def _position_size(
+    prediction: Prediction,
+    *,
+    large_move_bps: float,
+    mode: str,
+) -> float:
+    if prediction.direction == "flat":
+        return 0.0
+    if mode == "fixed":
+        return 1.0
+    if mode != "confidence":
+        raise ValueError(f"Unknown position sizing mode: {mode}")
+    direction_agreement = _direction_agreement(prediction)
+    move_strength = min(1.0, abs(prediction.expected_return_bps) / max(float(large_move_bps), 1e-12))
+    return float(max(0.0, min(1.0, 0.35 * move_strength + 0.65 * direction_agreement)))
+
+
+def _direction_agreement(prediction: Prediction) -> float:
+    if not prediction.analogues:
+        return 1.0 if prediction.direction != "flat" else 0.0
+    matching = sum(1 for match in prediction.analogues if match.direction == prediction.direction)
+    return float(matching / len(prediction.analogues))
 
 
 if __name__ == "__main__":

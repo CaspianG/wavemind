@@ -32,8 +32,17 @@ def test_generate_synthetic_ohlcv_and_windows_have_no_query_leakage():
     assert len(windows) == 61
     assert windows[0].future_end_ts > windows[0].end_ts
     assert {"up", "down", "flat"} & {window.direction for window in windows}
+    assert windows[0].max_favorable_excursion_bps >= windows[0].max_adverse_excursion_bps
+    assert windows[0].future_realized_vol_bps >= 0.0
+    assert windows[0].future_max_drawdown_bps <= 0.0
+    assert "trend_slope_bps" in windows[0].features
+    assert "macd_bps" in windows[0].features
+    assert "bollinger_position" in windows[0].features
+    assert "range_compression" in windows[0].features
     assert "future_return_bps" not in window_to_text(windows[0], include_outcome=False)
+    assert "future_mfe_bps" not in window_to_text(windows[0], include_outcome=False)
     assert "future_return_bps" in window_to_text(windows[0], include_outcome=True)
+    assert "future_mfe_bps" in window_to_text(windows[0], include_outcome=True)
 
 
 def test_make_ohlcv_windows_requires_enough_bars():

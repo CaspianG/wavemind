@@ -31,7 +31,7 @@ Implemented in this branch:
   retrieval benchmark scaffold.
 - `benchmarks/crypto_pattern_results.json` - first checked-in synthetic result.
 - `benchmarks/crypto_ohlcv.py` - CSV, CCXT, synthetic OHLCV, feature windows,
-  and no-leakage pattern text.
+  richer numeric features, future outcome labels, and no-leakage pattern text.
 - `benchmarks/crypto_walk_forward_benchmark.py` - BTC/ETH/SOL walk-forward
   benchmark with fees, slippage, field-on/field-off ablation,
   market/time-series baselines, optional storage controls, and analogue explorer
@@ -76,21 +76,26 @@ families. This is a scaffold validation only.
 
 Current checked-in synthetic walk-forward result:
 
-| engine | direction@1 | direction@3 | avg net bps | hit rate | avg latency |
-|---|---:|---:|---:|---:|---:|
-| WaveMind field | 0.509 | 0.670 | -9.36 | 0.507 | 6.59 ms |
-| WaveMind field-off | 0.435 | 0.704 | -7.11 | 0.411 | 4.88 ms |
-| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | 0.276 | 0.23 ms |
-| Naive last-regime | 0.589 | 0.589 | 27.37 | 0.567 | 0.00 ms |
-| TA rules | 0.191 | 0.191 | -64.06 | 0.143 | 0.00 ms |
-| Static kNN | 0.454 | 0.707 | -8.51 | 0.428 | 2.00 ms |
-| Chroma | 0.454 | 0.707 | -8.51 | 0.428 | 3.78 ms |
-| Qdrant | 0.454 | 0.707 | -8.51 | 0.428 | 3.39 ms |
+| engine | direction@1 | direction@3 | avg net bps | sized net bps | hit rate | avg latency |
+|---|---:|---:|---:|---:|---:|---:|
+| WaveMind field | 0.524 | 0.670 | -4.68 | -1.30 | 0.524 | 9.51 ms |
+| WaveMind field-off | 0.472 | 0.743 | -1.32 | 1.45 | 0.448 | 6.57 ms |
+| OHLCV shape kNN | 0.302 | 0.689 | -32.74 | -22.53 | 0.276 | 0.20 ms |
+| Naive last-regime | 0.589 | 0.589 | 27.37 | 26.89 | 0.567 | 0.00 ms |
+| TA rules | 0.191 | 0.191 | -64.06 | -56.38 | 0.143 | 0.00 ms |
+| Static kNN | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 2.38 ms |
+| Chroma | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.55 ms |
+| Qdrant | 0.481 | 0.741 | -2.13 | 0.81 | 0.459 | 4.02 ms |
 
 Interpretation: the wave-field layer improves top-1 direction retrieval over
-field-off memory (`0.509` vs `0.435`). It still does not beat the naive
+field-off memory (`0.524` vs `0.472`). It still does not beat the naive
 last-regime baseline on net payoff. This branch is a research harness, not a
 deployable trading edge.
+
+Current large-move precision for WaveMind field is `0.570`, but the
+false-positive rate is too high (`0.987`). Confidence sizing reduces the loss
+but does not solve it (`-1.30` sized net bps). Reducing false positives is the
+next research target before any signal construction.
 
 ## Research Plan
 
@@ -100,13 +105,15 @@ The product direction is documented here:
 
 Near-term execution plan:
 
-1. Add real OHLCV CSV and CCXT import.
-2. Add explicit train/test and walk-forward splits.
-3. Add fees, slippage, and position sizing.
-4. Compare WaveMind field-on against field-off memory, OHLCV shape matching,
+1. Done: real OHLCV CSV and CCXT import.
+2. Done: explicit train/test and walk-forward splits.
+3. Done: fees, slippage, and fixed/confidence position sizing.
+4. Done: richer OHLCV features and future outcome labels.
+5. Done: compare WaveMind field-on against field-off memory, OHLCV shape matching,
    DTW on small samples, naive regimes, and technical-analysis baselines.
-5. Build a Freqtrade research adapter before any live-trading integration.
-6. Only after retrieval quality is stable, test signal construction and
+6. Done: Freqtrade research adapter before any live-trading integration.
+7. Next: reduce large-move false positives with confidence calibration.
+8. Only after retrieval quality is stable, test signal construction and
    backtesting.
 
 ## Core Project

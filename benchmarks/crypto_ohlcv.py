@@ -47,6 +47,10 @@ class OHLCVWindow:
     bars: tuple[OHLCVBar, ...]
     features: Mapping[str, float | str]
     future_return_bps: float
+    max_favorable_excursion_bps: float
+    max_adverse_excursion_bps: float
+    future_realized_vol_bps: float
+    future_max_drawdown_bps: float
     direction: str
 
     @property
@@ -245,9 +249,11 @@ def make_ohlcv_windows(
     safe_symbol = symbol.replace("/", "")
     for start in range(0, len(ordered) - window - horizon + 1, stride):
         segment = tuple(ordered[start : start + window])
-        future_bar = ordered[start + window + horizon - 1]
+        future_segment = tuple(ordered[start + window : start + window + horizon])
+        future_bar = future_segment[-1]
         current_close = segment[-1].close
         future_return_bps = _return_bps(current_close, future_bar.close)
+        outcomes = _future_outcomes(current_close, future_segment)
         if future_return_bps > direction_threshold_bps:
             direction = "up"
         elif future_return_bps < -direction_threshold_bps:
@@ -267,6 +273,10 @@ def make_ohlcv_windows(
                 bars=segment,
                 features=features,
                 future_return_bps=float(future_return_bps),
+                max_favorable_excursion_bps=float(outcomes["max_favorable_excursion_bps"]),
+                max_adverse_excursion_bps=float(outcomes["max_adverse_excursion_bps"]),
+                future_realized_vol_bps=float(outcomes["future_realized_vol_bps"]),
+                future_max_drawdown_bps=float(outcomes["future_max_drawdown_bps"]),
                 direction=direction,
             )
         )
@@ -289,6 +299,11 @@ def window_to_text(window: OHLCVWindow, *, include_outcome: bool = False) -> str
         f"recent_return_bps {features['recent_return_bps']:.1f}",
         f"range_bps {features['range_bps']:.1f}",
         f"volatility_bps {features['volatility_bps']:.1f}",
+        f"drawdown_bps {features['drawdown_bps']:.1f}",
+        f"trend_slope_bps {features['trend_slope_bps']:.1f}",
+        f"macd_bps {features['macd_bps']:.1f}",
+        f"bollinger_position {features['bollinger_position']:.2f}",
+        f"range_compression {features['range_compression']:.2f}",
         f"volume_ratio {features['volume_ratio']:.2f}",
         f"rsi {features['rsi']:.1f}",
     ]
@@ -297,6 +312,10 @@ def window_to_text(window: OHLCVWindow, *, include_outcome: bool = False) -> str
             [
                 f"future_direction {window.direction}",
                 f"future_return_bps {window.future_return_bps:.1f}",
+                f"future_mfe_bps {window.max_favorable_excursion_bps:.1f}",
+                f"future_mae_bps {window.max_adverse_excursion_bps:.1f}",
+                f"future_realized_vol_bps {window.future_realized_vol_bps:.1f}",
+                f"future_max_drawdown_bps {window.future_max_drawdown_bps:.1f}",
             ]
         )
     return " | ".join(parts)
@@ -318,11 +337,24 @@ def _window_features(bars: tuple[OHLCVBar, ...]) -> dict[str, float | str]:
     low = float(np.min(lows))
     high = float(np.max(highs))
     close_position = (float(closes[-1]) - low) / max(high - low, 1e-12)
+    drawdown_bps = _max_drawdown_bps(closes)
+    trend_slope_bps = _trend_slope_bps(closes)
+    macd_bps = _macd_bps(closes)
+    bollinger_position = _bollinger_position(closes)
+    recent_high = float(np.max(highs[max(0, len(highs) - 8) :]))
+    recent_low = float(np.min(lows[max(0, len(lows) - 8) :]))
+    recent_range_bps = (recent_high - recent_low) / max(float(closes[-1]), 1e-12) * 10_000.0
+    range_compression = recent_range_bps / max(range_bps, 1e-12)
     return {
         "window_return_bps": float(window_return),
         "recent_return_bps": float(recent_return),
         "range_bps": float(range_bps),
         "volatility_bps": float(volatility_bps),
+        "drawdown_bps": float(drawdown_bps),
+        "trend_slope_bps": float(trend_slope_bps),
+        "macd_bps": float(macd_bps),
+        "bollinger_position": float(bollinger_position),
+        "range_compression": float(range_compression),
         "volume_ratio": float(volume_ratio),
         "rsi": float(rsi),
         "close_position": float(close_position),
@@ -332,11 +364,80 @@ def _window_features(bars: tuple[OHLCVBar, ...]) -> dict[str, float | str]:
         "volatility_bucket": _three_bucket(volatility_bps, low=12.0, high=38.0, labels=("low", "normal", "high")),
         "volume_bucket": _three_bucket(volume_ratio, low=0.85, high=1.25, labels=("quiet", "normal", "expanded")),
         "close_position_bucket": _three_bucket(close_position, low=0.33, high=0.66, labels=("near_low", "middle", "near_high")),
+        "drawdown_bucket": _three_bucket(abs(drawdown_bps), low=60.0, high=180.0, labels=("shallow", "normal", "deep")),
+        "macd_bucket": _direction_bucket(macd_bps, threshold=8.0),
+        "bollinger_bucket": _three_bucket(bollinger_position, low=-0.75, high=0.75, labels=("lower_band", "middle", "upper_band")),
     }
 
 
 def _return_bps(start_price: float, end_price: float) -> float:
     return (float(end_price) / max(float(start_price), 1e-12) - 1.0) * 10_000.0
+
+
+def _future_outcomes(current_close: float, future_bars: tuple[OHLCVBar, ...]) -> dict[str, float]:
+    future_highs = np.asarray([bar.high for bar in future_bars], dtype=np.float64)
+    future_lows = np.asarray([bar.low for bar in future_bars], dtype=np.float64)
+    future_closes = np.asarray([current_close, *[bar.close for bar in future_bars]], dtype=np.float64)
+    max_favorable = _return_bps(current_close, float(np.max(future_highs)))
+    max_adverse = _return_bps(current_close, float(np.min(future_lows)))
+    return {
+        "max_favorable_excursion_bps": float(max_favorable),
+        "max_adverse_excursion_bps": float(max_adverse),
+        "future_realized_vol_bps": _realized_vol_bps(future_closes),
+        "future_max_drawdown_bps": _max_drawdown_bps(future_closes),
+    }
+
+
+def _realized_vol_bps(closes: np.ndarray) -> float:
+    if len(closes) < 2:
+        return 0.0
+    returns = np.diff(closes) / np.maximum(closes[:-1], 1e-12) * 10_000.0
+    return float(np.std(returns)) if len(returns) else 0.0
+
+
+def _max_drawdown_bps(closes: np.ndarray) -> float:
+    if len(closes) < 2:
+        return 0.0
+    running_high = np.maximum.accumulate(closes)
+    drawdowns = closes / np.maximum(running_high, 1e-12) - 1.0
+    return float(np.min(drawdowns) * 10_000.0)
+
+
+def _trend_slope_bps(closes: np.ndarray) -> float:
+    if len(closes) < 2:
+        return 0.0
+    x = np.arange(len(closes), dtype=np.float64)
+    y = np.log(np.maximum(closes, 1e-12))
+    slope = np.polyfit(x, y, deg=1)[0]
+    return float(slope * 10_000.0)
+
+
+def _ema(values: np.ndarray, span: int) -> np.ndarray:
+    if len(values) == 0:
+        return values
+    alpha = 2.0 / (span + 1.0)
+    output = np.empty_like(values, dtype=np.float64)
+    output[0] = values[0]
+    for index in range(1, len(values)):
+        output[index] = alpha * values[index] + (1.0 - alpha) * output[index - 1]
+    return output
+
+
+def _macd_bps(closes: np.ndarray) -> float:
+    if len(closes) < 2:
+        return 0.0
+    fast = _ema(closes, span=min(12, max(2, len(closes) // 3)))
+    slow = _ema(closes, span=min(26, max(3, len(closes) // 2)))
+    return _return_bps(float(slow[-1]), float(fast[-1]))
+
+
+def _bollinger_position(closes: np.ndarray) -> float:
+    lookback = closes[-min(20, len(closes)) :]
+    mean = float(np.mean(lookback))
+    std = float(np.std(lookback))
+    if std <= 1e-12:
+        return 0.0
+    return float((closes[-1] - mean) / (2.0 * std))
 
 
 def _rsi(closes: np.ndarray, period: int = 14) -> float:
