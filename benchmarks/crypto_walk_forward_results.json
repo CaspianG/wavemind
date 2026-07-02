@@ -1,0 +1,2017 @@
+{
+  "scenario": {
+    "name": "crypto_walk_forward",
+    "dataset_markets": [
+      {
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "BTC",
+        "timeframe": "4h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "BTC",
+        "timeframe": "1d",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "ETH",
+        "timeframe": "1h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "ETH",
+        "timeframe": "4h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "ETH",
+        "timeframe": "1d",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "SOL",
+        "timeframe": "1h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "SOL",
+        "timeframe": "4h",
+        "bars": 420,
+        "windows": 383
+      },
+      {
+        "symbol": "SOL",
+        "timeframe": "1d",
+        "bars": 420,
+        "windows": 383
+      }
+    ],
+    "train_windows": 180,
+    "test_windows": 60,
+    "top_k": 5,
+    "fee_bps": 10.0,
+    "slippage_bps": 5.0,
+    "round_trip_cost_bps": 30.0,
+    "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "vector_dim": 384
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.5092592592592593,
+      "direction_accuracy_at_3": 0.6703703703703704,
+      "mean_abs_return_error_bps": 145.1094278503962,
+      "avg_net_return_bps": -9.360923207072538,
+      "hit_rate_after_costs": 0.5074074074074074,
+      "avg_latency_ms": 5.401441295570867,
+      "p95_latency_ms": 6.981199985602871
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 1.7709259265016213,
+      "p95_latency_ms": 2.3413999879267067
+    },
+    {
+      "engine": "Chroma",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 3.630797963059093,
+      "p95_latency_ms": 5.113999999593943
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.4537037037037037,
+      "direction_accuracy_at_3": 0.7074074074074074,
+      "mean_abs_return_error_bps": 107.15586097218527,
+      "avg_net_return_bps": -8.508817338209,
+      "hit_rate_after_costs": 0.42777777777777776,
+      "avg_latency_ms": 3.0921605557927654,
+      "p95_latency_ms": 4.922599997371435
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.5888888888888889,
+      "direction_accuracy_at_3": 0.5888888888888889,
+      "mean_abs_return_error_bps": 79.47305973417458,
+      "avg_net_return_bps": 27.36943929825081,
+      "hit_rate_after_costs": 0.5666666666666667,
+      "avg_latency_ms": 0.00025333359156286825,
+      "p95_latency_ms": 0.000400003045797348
+    },
+    {
+      "engine": "TA rules",
+      "queries": 540,
+      "direction_accuracy_at_1": 0.19074074074074074,
+      "direction_accuracy_at_3": 0.19074074074074074,
+      "mean_abs_return_error_bps": 114.4931120604456,
+      "avg_net_return_bps": -64.05664947583972,
+      "hit_rate_after_costs": 0.1425925925925926,
+      "avg_latency_ms": 0.0009407415442789594,
+      "p95_latency_ms": 0.001300009898841381
+    }
+  ],
+  "by_market": [
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.38333333333333336,
+      "direction_accuracy_at_3": 0.55,
+      "mean_abs_return_error_bps": 172.82286338882545,
+      "avg_net_return_bps": -32.49489776507866,
+      "hit_rate_after_costs": 0.36666666666666664,
+      "avg_latency_ms": 5.475696662809544,
+      "p95_latency_ms": 7.201400003395975,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.3333333333333333,
+      "direction_accuracy_at_3": 0.48333333333333334,
+      "mean_abs_return_error_bps": 181.6119019994525,
+      "avg_net_return_bps": -40.32567129252502,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 5.5074566674496355,
+      "p95_latency_ms": 6.791000021621585,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.55,
+      "mean_abs_return_error_bps": 179.48959328162286,
+      "avg_net_return_bps": -23.30112899729217,
+      "hit_rate_after_costs": 0.4,
+      "avg_latency_ms": 5.316135000612121,
+      "p95_latency_ms": 6.935699988389388,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.6833333333333333,
+      "direction_accuracy_at_3": 0.9,
+      "mean_abs_return_error_bps": 118.21133500583426,
+      "avg_net_return_bps": 15.117982970137787,
+      "hit_rate_after_costs": 0.6833333333333333,
+      "avg_latency_ms": 5.651789999198324,
+      "p95_latency_ms": 7.882000005338341,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.36666666666666664,
+      "direction_accuracy_at_3": 0.55,
+      "mean_abs_return_error_bps": 138.12104696613216,
+      "avg_net_return_bps": -32.946048555149886,
+      "hit_rate_after_costs": 0.36666666666666664,
+      "avg_latency_ms": 5.138491666972793,
+      "p95_latency_ms": 6.709500012220815,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.6333333333333333,
+      "direction_accuracy_at_3": 0.7333333333333333,
+      "mean_abs_return_error_bps": 115.53685732405238,
+      "avg_net_return_bps": 12.613694001800704,
+      "hit_rate_after_costs": 0.6333333333333333,
+      "avg_latency_ms": 5.483905000437517,
+      "p95_latency_ms": 8.136199990985915,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 141.01608815858464,
+      "avg_net_return_bps": -3.495989064301383,
+      "hit_rate_after_costs": 0.5333333333333333,
+      "avg_latency_ms": 5.4200916648066295,
+      "p95_latency_ms": 7.311999972444028,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.6166666666666667,
+      "direction_accuracy_at_3": 0.7333333333333333,
+      "mean_abs_return_error_bps": 135.45902183909098,
+      "avg_net_return_bps": 8.689541188403862,
+      "hit_rate_after_costs": 0.6166666666666667,
+      "avg_latency_ms": 5.288736665291556,
+      "p95_latency_ms": 6.598200008738786,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "WaveMind",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.6333333333333333,
+      "direction_accuracy_at_3": 0.8166666666666667,
+      "mean_abs_return_error_bps": 123.71614268997061,
+      "avg_net_return_bps": 11.894208650351926,
+      "hit_rate_after_costs": 0.6333333333333333,
+      "avg_latency_ms": 5.330668332559678,
+      "p95_latency_ms": 6.898099993122742,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 2.04000500186036,
+      "p95_latency_ms": 2.7883000147994608,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 1.813436666270718,
+      "p95_latency_ms": 2.372599992668256,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 1.7880066681148794,
+      "p95_latency_ms": 2.724799996940419,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 1.6702333339101945,
+      "p95_latency_ms": 1.9952000002376735,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 1.703396668987504,
+      "p95_latency_ms": 2.0093999919481575,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 1.6137116671112988,
+      "p95_latency_ms": 2.053400006843731,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 1.7189916650143762,
+      "p95_latency_ms": 2.189499995438382,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 1.9048066678806208,
+      "p95_latency_ms": 2.5166000123135746,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Static kNN",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 1.6857449993646394,
+      "p95_latency_ms": 2.014700003201142,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 3.746704999745513,
+      "p95_latency_ms": 4.755499976454303,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 3.8296216662274674,
+      "p95_latency_ms": 5.865500017534941,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 3.9100816643137173,
+      "p95_latency_ms": 5.7524000003468245,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 3.576510001827652,
+      "p95_latency_ms": 4.515600012382492,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 3.279485001015322,
+      "p95_latency_ms": 4.45370000670664,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 3.5082049997678646,
+      "p95_latency_ms": 4.681299993535504,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 4.311290001108621,
+      "p95_latency_ms": 5.9714000090025365,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 3.275556665418359,
+      "p95_latency_ms": 3.926100005628541,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Chroma",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 3.2397266681073233,
+      "p95_latency_ms": 5.112300015753135,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 137.19451069297185,
+      "avg_net_return_bps": -26.680828537859743,
+      "hit_rate_after_costs": 0.31666666666666665,
+      "avg_latency_ms": 3.118835002048096,
+      "p95_latency_ms": 4.33080000220798,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.35,
+      "direction_accuracy_at_3": 0.5833333333333334,
+      "mean_abs_return_error_bps": 126.28186425144892,
+      "avg_net_return_bps": -32.769262149341095,
+      "hit_rate_after_costs": 0.3,
+      "avg_latency_ms": 3.008171667655309,
+      "p95_latency_ms": 3.8939999940339476,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 108.68933196316554,
+      "avg_net_return_bps": 0.020534541827807354,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 2.7216933318413794,
+      "p95_latency_ms": 3.487600013613701,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.55,
+      "direction_accuracy_at_3": 0.8333333333333334,
+      "mean_abs_return_error_bps": 110.59535783543852,
+      "avg_net_return_bps": -1.7864977943720972,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 2.8139716649699644,
+      "p95_latency_ms": 3.853200003504753,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.75,
+      "mean_abs_return_error_bps": 101.2751206858359,
+      "avg_net_return_bps": -21.22987685929876,
+      "hit_rate_after_costs": 0.3333333333333333,
+      "avg_latency_ms": 3.002299999934621,
+      "p95_latency_ms": 4.043199995066971,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4,
+      "direction_accuracy_at_3": 0.6333333333333333,
+      "mean_abs_return_error_bps": 97.43454324541902,
+      "avg_net_return_bps": -2.93969597778356,
+      "hit_rate_after_costs": 0.38333333333333336,
+      "avg_latency_ms": 2.9788116677082144,
+      "p95_latency_ms": 4.105400003027171,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4166666666666667,
+      "direction_accuracy_at_3": 0.7166666666666667,
+      "mean_abs_return_error_bps": 99.06271927932646,
+      "avg_net_return_bps": -15.894491684407999,
+      "hit_rate_after_costs": 0.4166666666666667,
+      "avg_latency_ms": 2.765278334360725,
+      "p95_latency_ms": 3.4789000055752695,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5833333333333334,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 84.52385464060134,
+      "avg_net_return_bps": 14.075974628496526,
+      "hit_rate_after_costs": 0.55,
+      "avg_latency_ms": 4.4832916668383405,
+      "p95_latency_ms": 6.856199994217604,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Qdrant",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5333333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 99.34544615545987,
+      "avg_net_return_bps": 10.624787788857914,
+      "hit_rate_after_costs": 0.5166666666666667,
+      "avg_latency_ms": 2.937091666778239,
+      "p95_latency_ms": 3.9698000182397664,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.48333333333333334,
+      "direction_accuracy_at_3": 0.48333333333333334,
+      "mean_abs_return_error_bps": 87.22688023226175,
+      "avg_net_return_bps": 15.91551704600127,
+      "hit_rate_after_costs": 0.4666666666666667,
+      "avg_latency_ms": 0.0004033310688100755,
+      "p95_latency_ms": 0.0006999762263149023,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.4666666666666667,
+      "direction_accuracy_at_3": 0.4666666666666667,
+      "mean_abs_return_error_bps": 89.675471137152,
+      "avg_net_return_bps": 16.421414250972322,
+      "hit_rate_after_costs": 0.43333333333333335,
+      "avg_latency_ms": 0.00022000119012470046,
+      "p95_latency_ms": 0.000300002284348011,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5166666666666667,
+      "direction_accuracy_at_3": 0.5166666666666667,
+      "mean_abs_return_error_bps": 94.72892507656172,
+      "avg_net_return_bps": 19.684914595962503,
+      "hit_rate_after_costs": 0.48333333333333334,
+      "avg_latency_ms": 0.0002266674224908153,
+      "p95_latency_ms": 0.000400003045797348,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.7833333333333333,
+      "direction_accuracy_at_3": 0.7833333333333333,
+      "mean_abs_return_error_bps": 69.70003622780783,
+      "avg_net_return_bps": 64.09997601302285,
+      "hit_rate_after_costs": 0.7833333333333333,
+      "avg_latency_ms": 0.00022833410184830427,
+      "p95_latency_ms": 0.000300002284348011,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5166666666666667,
+      "direction_accuracy_at_3": 0.5166666666666667,
+      "mean_abs_return_error_bps": 89.16799217778016,
+      "avg_net_return_bps": 12.609484662623759,
+      "hit_rate_after_costs": 0.45,
+      "avg_latency_ms": 0.00030500135229279596,
+      "p95_latency_ms": 0.000600004568696022,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.6666666666666666,
+      "direction_accuracy_at_3": 0.6666666666666666,
+      "mean_abs_return_error_bps": 71.17370533539511,
+      "avg_net_return_bps": 36.731600616909816,
+      "hit_rate_after_costs": 0.6666666666666666,
+      "avg_latency_ms": 0.00021166730827341476,
+      "p95_latency_ms": 0.000300002284348011,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.65,
+      "direction_accuracy_at_3": 0.65,
+      "mean_abs_return_error_bps": 66.39806067165456,
+      "avg_net_return_bps": 34.29932921726659,
+      "hit_rate_after_costs": 0.65,
+      "avg_latency_ms": 0.00019166667091970643,
+      "p95_latency_ms": 0.000300002284348011,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.5166666666666667,
+      "direction_accuracy_at_3": 0.5166666666666667,
+      "mean_abs_return_error_bps": 75.11777665710034,
+      "avg_net_return_bps": 13.730234792087536,
+      "hit_rate_after_costs": 0.5,
+      "avg_latency_ms": 0.00021000062891592583,
+      "p95_latency_ms": 0.000400003045797348,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "Naive last-regime",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.7,
+      "direction_accuracy_at_3": 0.7,
+      "mean_abs_return_error_bps": 72.06869009185775,
+      "avg_net_return_bps": 32.83248248941066,
+      "hit_rate_after_costs": 0.6666666666666666,
+      "avg_latency_ms": 0.00028333258039007586,
+      "p95_latency_ms": 0.0004999747034162283,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.26666666666666666,
+      "direction_accuracy_at_3": 0.26666666666666666,
+      "mean_abs_return_error_bps": 118.79607763408927,
+      "avg_net_return_bps": -66.92804145508185,
+      "hit_rate_after_costs": 0.16666666666666666,
+      "avg_latency_ms": 0.001090001508904,
+      "p95_latency_ms": 0.001500011421740055,
+      "symbol": "BTC",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.21666666666666667,
+      "direction_accuracy_at_3": 0.21666666666666667,
+      "mean_abs_return_error_bps": 109.72133329166782,
+      "avg_net_return_bps": -62.53063501871261,
+      "hit_rate_after_costs": 0.15,
+      "avg_latency_ms": 0.0008416657995743056,
+      "p95_latency_ms": 0.001100008375942707,
+      "symbol": "BTC",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.26666666666666666,
+      "direction_accuracy_at_3": 0.26666666666666666,
+      "mean_abs_return_error_bps": 107.19987124920061,
+      "avg_net_return_bps": -47.99032992922994,
+      "hit_rate_after_costs": 0.16666666666666666,
+      "avg_latency_ms": 0.0009466656289684275,
+      "p95_latency_ms": 0.001700012944638729,
+      "symbol": "BTC",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.11666666666666667,
+      "direction_accuracy_at_3": 0.11666666666666667,
+      "mean_abs_return_error_bps": 149.86712760796735,
+      "avg_net_return_bps": -88.02755040099485,
+      "hit_rate_after_costs": 0.11666666666666667,
+      "avg_latency_ms": 0.0008700017739708225,
+      "p95_latency_ms": 0.00100000761449337,
+      "symbol": "ETH",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.18333333333333332,
+      "direction_accuracy_at_3": 0.18333333333333332,
+      "mean_abs_return_error_bps": 102.75428488500329,
+      "avg_net_return_bps": -41.58244694047826,
+      "hit_rate_after_costs": 0.15,
+      "avg_latency_ms": 0.0009300012607127428,
+      "p95_latency_ms": 0.001300009898841381,
+      "symbol": "ETH",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.15,
+      "direction_accuracy_at_3": 0.15,
+      "mean_abs_return_error_bps": 114.48039066575487,
+      "avg_net_return_bps": -84.89018736471559,
+      "hit_rate_after_costs": 0.15,
+      "avg_latency_ms": 0.0009533323463983834,
+      "p95_latency_ms": 0.001300009898841381,
+      "symbol": "ETH",
+      "timeframe": "1d"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.18333333333333332,
+      "direction_accuracy_at_3": 0.18333333333333332,
+      "mean_abs_return_error_bps": 117.46247792798168,
+      "avg_net_return_bps": -70.69652590858504,
+      "hit_rate_after_costs": 0.15,
+      "avg_latency_ms": 0.000928334096291413,
+      "p95_latency_ms": 0.0012999807950109243,
+      "symbol": "SOL",
+      "timeframe": "1h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.18333333333333332,
+      "direction_accuracy_at_3": 0.18333333333333332,
+      "mean_abs_return_error_bps": 101.77637108351706,
+      "avg_net_return_bps": -57.938163682731336,
+      "hit_rate_after_costs": 0.11666666666666667,
+      "avg_latency_ms": 0.000986670299122731,
+      "p95_latency_ms": 0.001400010660290718,
+      "symbol": "SOL",
+      "timeframe": "4h"
+    },
+    {
+      "engine": "TA rules",
+      "queries": 60,
+      "direction_accuracy_at_1": 0.15,
+      "direction_accuracy_at_3": 0.15,
+      "mean_abs_return_error_bps": 108.3800741988285,
+      "avg_net_return_bps": -55.92596458202792,
+      "hit_rate_after_costs": 0.11666666666666667,
+      "avg_latency_ms": 0.0009200011845678091,
+      "p95_latency_ms": 0.0011999800335615873,
+      "symbol": "SOL",
+      "timeframe": "1d"
+    }
+  ],
+  "analogue_samples": [
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000180",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T12:00:00+00:00",
+        "end_time": "2024-01-09T19:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 33.69378948221424,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps 50.2 | recent_return_bps -62.6 | range_bps 339.8 | volatility_bps 26.4 | volume_ratio 1.07 | rsi 15.6"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -176.79918461341538,
+        "latency_ms": 5.226300010690466
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000057",
+          "score": 0.7999664313526903,
+          "direction": "down",
+          "future_return_bps": -176.79918461341538,
+          "start_time": "2024-01-03T09:00:00+00:00",
+          "end_time": "2024-01-04T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 667.3 | recent_return_bps -6.5 | range_bps 727.6 | volatility_bps 22.3 | volume_ratio 1.07 | rsi 90.1 | future_direction down | future_return_bps -176.8"
+        },
+        {
+          "id": "BTC_1h_000118",
+          "score": 0.7898966547128315,
+          "direction": "down",
+          "future_return_bps": -169.4260635665945,
+          "start_time": "2024-01-05T22:00:00+00:00",
+          "end_time": "2024-01-07T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -179.8 | recent_return_bps -109.4 | range_bps 286.1 | volatility_bps 20.7 | volume_ratio 1.15 | rsi 15.5 | future_direction down | future_return_bps -169.4"
+        },
+        {
+          "id": "BTC_1h_000155",
+          "score": 0.7854742782532187,
+          "direction": "up",
+          "future_return_bps": 135.7138671193714,
+          "start_time": "2024-01-07T11:00:00+00:00",
+          "end_time": "2024-01-08T18:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -191.4 | recent_return_bps 55.6 | range_bps 418.6 | volatility_bps 25.6 | volume_ratio 1.06 | rsi 69.4 | future_direction up | future_return_bps 135.7"
+        },
+        {
+          "id": "BTC_1h_000060",
+          "score": 0.7812727141325007,
+          "direction": "down",
+          "future_return_bps": -152.4155366282487,
+          "start_time": "2024-01-03T12:00:00+00:00",
+          "end_time": "2024-01-04T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 591.2 | recent_return_bps -73.8 | range_bps 692.8 | volatility_bps 25.6 | volume_ratio 0.92 | rsi 63.7 | future_direction down | future_return_bps -152.4"
+        },
+        {
+          "id": "BTC_1h_000058",
+          "score": 0.7735948271221584,
+          "direction": "down",
+          "future_return_bps": -219.37133107138408,
+          "start_time": "2024-01-03T10:00:00+00:00",
+          "end_time": "2024-01-04T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 674.7 | recent_return_bps 13.0 | range_bps 691.4 | volatility_bps 22.2 | volume_ratio 1.01 | rsi 88.2 | future_direction down | future_return_bps -219.4"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000181",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T13:00:00+00:00",
+        "end_time": "2024-01-09T20:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 71.0470952777409,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -37.1 | recent_return_bps -95.9 | range_bps 334.4 | volatility_bps 25.5 | volume_ratio 1.03 | rsi 15.7"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -169.4260635665945,
+        "latency_ms": 12.237699993420392
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000118",
+          "score": 0.874610830636497,
+          "direction": "down",
+          "future_return_bps": -169.4260635665945,
+          "start_time": "2024-01-05T22:00:00+00:00",
+          "end_time": "2024-01-07T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -179.8 | recent_return_bps -109.4 | range_bps 286.1 | volatility_bps 20.7 | volume_ratio 1.15 | rsi 15.5 | future_direction down | future_return_bps -169.4"
+        },
+        {
+          "id": "BTC_1h_000117",
+          "score": 0.820900600221422,
+          "direction": "down",
+          "future_return_bps": -181.34643570607568,
+          "start_time": "2024-01-05T21:00:00+00:00",
+          "end_time": "2024-01-07T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -134.5 | recent_return_bps -65.7 | range_bps 230.8 | volatility_bps 19.1 | volume_ratio 1.04 | rsi 20.5 | future_direction down | future_return_bps -181.3"
+        },
+        {
+          "id": "BTC_1h_000167",
+          "score": 0.810614755426162,
+          "direction": "down",
+          "future_return_bps": -99.88760764643612,
+          "start_time": "2024-01-07T23:00:00+00:00",
+          "end_time": "2024-01-09T06:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 154.7 | recent_return_bps -37.4 | range_bps 379.6 | volatility_bps 26.1 | volume_ratio 1.03 | rsi 66.9 | future_direction down | future_return_bps -99.9"
+        },
+        {
+          "id": "BTC_1h_000106",
+          "score": 0.8096631166432338,
+          "direction": "down",
+          "future_return_bps": -61.428317169522906,
+          "start_time": "2024-01-05T10:00:00+00:00",
+          "end_time": "2024-01-06T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -77.7 | recent_return_bps -3.7 | range_bps 165.1 | volatility_bps 15.1 | volume_ratio 1.25 | rsi 47.2 | future_direction down | future_return_bps -61.4"
+        },
+        {
+          "id": "BTC_1h_000126",
+          "score": 0.8073211098463503,
+          "direction": "down",
+          "future_return_bps": -156.1052424918863,
+          "start_time": "2024-01-06T06:00:00+00:00",
+          "end_time": "2024-01-07T13:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -374.3 | recent_return_bps -143.6 | range_bps 509.7 | volatility_bps 22.0 | volume_ratio 0.91 | rsi 1.5 | future_direction down | future_return_bps -156.1"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000182",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T14:00:00+00:00",
+        "end_time": "2024-01-09T21:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 42.241208327107316,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps 14.1 | recent_return_bps -31.7 | range_bps 332.0 | volatility_bps 26.4 | volume_ratio 1.25 | rsi 28.2"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -152.38605194367483,
+        "latency_ms": 6.215100002009422
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000069",
+          "score": 0.8104954419125882,
+          "direction": "down",
+          "future_return_bps": -152.38605194367483,
+          "start_time": "2024-01-03T21:00:00+00:00",
+          "end_time": "2024-01-05T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 179.4 | recent_return_bps -9.8 | range_bps 492.2 | volatility_bps 31.1 | volume_ratio 1.09 | rsi 11.3 | future_direction down | future_return_bps -152.4"
+        },
+        {
+          "id": "BTC_1h_000106",
+          "score": 0.8052615838978723,
+          "direction": "down",
+          "future_return_bps": -61.428317169522906,
+          "start_time": "2024-01-05T10:00:00+00:00",
+          "end_time": "2024-01-06T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -77.7 | recent_return_bps -3.7 | range_bps 165.1 | volatility_bps 15.1 | volume_ratio 1.25 | rsi 47.2 | future_direction down | future_return_bps -61.4"
+        },
+        {
+          "id": "BTC_1h_000072",
+          "score": 0.7929338139215907,
+          "direction": "down",
+          "future_return_bps": -94.14340384796272,
+          "start_time": "2024-01-04T00:00:00+00:00",
+          "end_time": "2024-01-05T07:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -4.6 | recent_return_bps -108.2 | range_bps 409.4 | volatility_bps 30.7 | volume_ratio 0.89 | rsi 7.6 | future_direction down | future_return_bps -94.1"
+        },
+        {
+          "id": "BTC_1h_000058",
+          "score": 0.7896840223312377,
+          "direction": "down",
+          "future_return_bps": -219.37133107138408,
+          "start_time": "2024-01-03T10:00:00+00:00",
+          "end_time": "2024-01-04T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 674.7 | recent_return_bps 13.0 | range_bps 691.4 | volatility_bps 22.2 | volume_ratio 1.01 | rsi 88.2 | future_direction down | future_return_bps -219.4"
+        },
+        {
+          "id": "BTC_1h_000064",
+          "score": 0.7895148553425977,
+          "direction": "flat",
+          "future_return_bps": -25.38102828170907,
+          "start_time": "2024-01-03T16:00:00+00:00",
+          "end_time": "2024-01-04T23:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 306.9 | recent_return_bps -179.1 | range_bps 614.9 | volatility_bps 31.7 | volume_ratio 1.21 | rsi 14.2 | future_direction flat | future_return_bps -25.4"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000183",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T15:00:00+00:00",
+        "end_time": "2024-01-09T22:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 59.82532340028213,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -48.8 | recent_return_bps -40.6 | range_bps 332.8 | volatility_bps 25.8 | volume_ratio 1.03 | rsi 27.4"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -152.4155366282487,
+        "latency_ms": 5.100999987917021
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000060",
+          "score": 0.8212735926360882,
+          "direction": "down",
+          "future_return_bps": -152.4155366282487,
+          "start_time": "2024-01-03T12:00:00+00:00",
+          "end_time": "2024-01-04T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 591.2 | recent_return_bps -73.8 | range_bps 692.8 | volatility_bps 25.6 | volume_ratio 0.92 | rsi 63.7 | future_direction down | future_return_bps -152.4"
+        },
+        {
+          "id": "BTC_1h_000118",
+          "score": 0.8180583257367302,
+          "direction": "down",
+          "future_return_bps": -169.4260635665945,
+          "start_time": "2024-01-05T22:00:00+00:00",
+          "end_time": "2024-01-07T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -179.8 | recent_return_bps -109.4 | range_bps 286.1 | volatility_bps 20.7 | volume_ratio 1.15 | rsi 15.5 | future_direction down | future_return_bps -169.4"
+        },
+        {
+          "id": "BTC_1h_000074",
+          "score": 0.8123868770276396,
+          "direction": "down",
+          "future_return_bps": -68.66113230790228,
+          "start_time": "2024-01-04T02:00:00+00:00",
+          "end_time": "2024-01-05T09:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -84.9 | recent_return_bps -124.8 | range_bps 444.7 | volatility_bps 30.8 | volume_ratio 0.92 | rsi 8.1 | future_direction down | future_return_bps -68.7"
+        },
+        {
+          "id": "BTC_1h_000124",
+          "score": 0.8067552013403307,
+          "direction": "down",
+          "future_return_bps": -137.79658900519132,
+          "start_time": "2024-01-06T04:00:00+00:00",
+          "end_time": "2024-01-07T11:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -343.3 | recent_return_bps -166.8 | range_bps 442.0 | volatility_bps 21.6 | volume_ratio 1.12 | rsi 1.0 | future_direction down | future_return_bps -137.8"
+        },
+        {
+          "id": "BTC_1h_000114",
+          "score": 0.8025297322112113,
+          "direction": "down",
+          "future_return_bps": -114.53024846922789,
+          "start_time": "2024-01-05T18:00:00+00:00",
+          "end_time": "2024-01-07T01:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -130.4 | recent_return_bps -105.0 | range_bps 191.8 | volatility_bps 18.8 | volume_ratio 1.07 | rsi 33.5 | future_direction down | future_return_bps -114.5"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000184",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T16:00:00+00:00",
+        "end_time": "2024-01-09T23:00:00+00:00",
+        "direction": "flat",
+        "future_return_bps": -25.45395931104366,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -18.4 | recent_return_bps 18.2 | range_bps 331.2 | volatility_bps 27.1 | volume_ratio 1.19 | rsi 43.4"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -175.05352972877364,
+        "latency_ms": 6.4353999914601445
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000059",
+          "score": 0.8138770156394071,
+          "direction": "down",
+          "future_return_bps": -175.05352972877364,
+          "start_time": "2024-01-03T11:00:00+00:00",
+          "end_time": "2024-01-04T18:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 617.8 | recent_return_bps -43.4 | range_bps 694.2 | volatility_bps 24.7 | volume_ratio 1.19 | rsi 74.2 | future_direction down | future_return_bps -175.1"
+        },
+        {
+          "id": "BTC_1h_000097",
+          "score": 0.8116740043603988,
+          "direction": "up",
+          "future_return_bps": 30.238685386945185,
+          "start_time": "2024-01-05T01:00:00+00:00",
+          "end_time": "2024-01-06T08:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -232.2 | recent_return_bps 0.1 | range_bps 355.6 | volatility_bps 18.5 | volume_ratio 1.13 | rsi 41.4 | future_direction up | future_return_bps 30.2"
+        },
+        {
+          "id": "BTC_1h_000058",
+          "score": 0.8028241317749023,
+          "direction": "down",
+          "future_return_bps": -219.37133107138408,
+          "start_time": "2024-01-03T10:00:00+00:00",
+          "end_time": "2024-01-04T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 674.7 | recent_return_bps 13.0 | range_bps 691.4 | volatility_bps 22.2 | volume_ratio 1.01 | rsi 88.2 | future_direction down | future_return_bps -219.4"
+        },
+        {
+          "id": "BTC_1h_000098",
+          "score": 0.7825774125341934,
+          "direction": "flat",
+          "future_return_bps": 27.18223580495227,
+          "start_time": "2024-01-05T02:00:00+00:00",
+          "end_time": "2024-01-06T09:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -232.8 | recent_return_bps 20.6 | range_bps 355.2 | volatility_bps 18.5 | volume_ratio 1.19 | rsi 46.8 | future_direction flat | future_return_bps 27.2"
+        },
+        {
+          "id": "BTC_1h_000069",
+          "score": 0.7790184182156888,
+          "direction": "down",
+          "future_return_bps": -152.38605194367483,
+          "start_time": "2024-01-03T21:00:00+00:00",
+          "end_time": "2024-01-05T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 179.4 | recent_return_bps -9.8 | range_bps 492.2 | volatility_bps 31.1 | volume_ratio 1.09 | rsi 11.3 | future_direction down | future_return_bps -152.4"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000185",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T17:00:00+00:00",
+        "end_time": "2024-01-10T00:00:00+00:00",
+        "direction": "down",
+        "future_return_bps": -72.08467129209973,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 7.0 | recent_return_bps 50.6 | range_bps 330.5 | volatility_bps 27.4 | volume_ratio 0.99 | rsi 46.4"
+      },
+      "prediction": {
+        "direction": "up",
+        "expected_return_bps": 210.35751149146796,
+        "latency_ms": 5.297499999869615
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000043",
+          "score": 0.8108273670408459,
+          "direction": "up",
+          "future_return_bps": 210.35751149146796,
+          "start_time": "2024-01-02T19:00:00+00:00",
+          "end_time": "2024-01-04T02:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 507.7 | recent_return_bps 138.4 | range_bps 537.0 | volatility_bps 20.4 | volume_ratio 0.91 | rsi 96.4 | future_direction up | future_return_bps 210.4"
+        },
+        {
+          "id": "BTC_1h_000035",
+          "score": 0.7939111063215467,
+          "direction": "up",
+          "future_return_bps": 199.01889612183865,
+          "start_time": "2024-01-02T11:00:00+00:00",
+          "end_time": "2024-01-03T18:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 284.9 | recent_return_bps 113.4 | range_bps 340.6 | volatility_bps 19.6 | volume_ratio 0.93 | rsi 89.4 | future_direction up | future_return_bps 199.0"
+        },
+        {
+          "id": "BTC_1h_000055",
+          "score": 0.7907321579236131,
+          "direction": "down",
+          "future_return_bps": -121.35949188926354,
+          "start_time": "2024-01-03T07:00:00+00:00",
+          "end_time": "2024-01-04T14:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 735.0 | recent_return_bps 20.8 | range_bps 745.7 | volatility_bps 21.0 | volume_ratio 0.89 | rsi 95.6 | future_direction down | future_return_bps -121.4"
+        },
+        {
+          "id": "BTC_1h_000036",
+          "score": 0.784541818830702,
+          "direction": "up",
+          "future_return_bps": 185.9558576012099,
+          "start_time": "2024-01-02T12:00:00+00:00",
+          "end_time": "2024-01-03T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 309.6 | recent_return_bps 121.0 | range_bps 386.0 | volatility_bps 20.3 | volume_ratio 0.99 | rsi 90.5 | future_direction up | future_return_bps 186.0"
+        },
+        {
+          "id": "BTC_1h_000153",
+          "score": 0.7812951386299487,
+          "direction": "up",
+          "future_return_bps": 48.9395935154846,
+          "start_time": "2024-01-07T09:00:00+00:00",
+          "end_time": "2024-01-08T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -276.0 | recent_return_bps 95.4 | range_bps 506.7 | volatility_bps 26.4 | volume_ratio 0.93 | rsi 59.2 | future_direction up | future_return_bps 48.9"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000186",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T18:00:00+00:00",
+        "end_time": "2024-01-10T01:00:00+00:00",
+        "direction": "down",
+        "future_return_bps": -39.40974771362238,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -24.0 | recent_return_bps 68.8 | range_bps 331.0 | volatility_bps 27.5 | volume_ratio 1.06 | rsi 45.0"
+      },
+      "prediction": {
+        "direction": "up",
+        "expected_return_bps": 185.9558576012099,
+        "latency_ms": 5.076400004327297
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000036",
+          "score": 0.7901174906200832,
+          "direction": "up",
+          "future_return_bps": 185.9558576012099,
+          "start_time": "2024-01-02T12:00:00+00:00",
+          "end_time": "2024-01-03T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 309.6 | recent_return_bps 121.0 | range_bps 386.0 | volatility_bps 20.3 | volume_ratio 0.99 | rsi 90.5 | future_direction up | future_return_bps 186.0"
+        },
+        {
+          "id": "BTC_1h_000102",
+          "score": 0.7891790084944967,
+          "direction": "up",
+          "future_return_bps": 35.7738481892822,
+          "start_time": "2024-01-05T06:00:00+00:00",
+          "end_time": "2024-01-06T13:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -143.0 | recent_return_bps 0.8 | range_bps 297.7 | volatility_bps 14.6 | volume_ratio 1.02 | rsi 60.3 | future_direction up | future_return_bps 35.8"
+        },
+        {
+          "id": "BTC_1h_000093",
+          "score": 0.7881076790413886,
+          "direction": "flat",
+          "future_return_bps": 4.9250938962641655,
+          "start_time": "2024-01-04T21:00:00+00:00",
+          "end_time": "2024-01-06T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -324.7 | recent_return_bps 20.1 | range_bps 424.7 | volatility_bps 19.8 | volume_ratio 0.91 | rsi 42.0 | future_direction flat | future_return_bps 4.9"
+        },
+        {
+          "id": "BTC_1h_000055",
+          "score": 0.7775796995843458,
+          "direction": "down",
+          "future_return_bps": -121.35949188926354,
+          "start_time": "2024-01-03T07:00:00+00:00",
+          "end_time": "2024-01-04T14:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 735.0 | recent_return_bps 20.8 | range_bps 745.7 | volatility_bps 21.0 | volume_ratio 0.89 | rsi 95.6 | future_direction down | future_return_bps -121.4"
+        },
+        {
+          "id": "BTC_1h_000006",
+          "score": 0.7747466733267305,
+          "direction": "up",
+          "future_return_bps": 45.04366916345148,
+          "start_time": "2024-01-01T06:00:00+00:00",
+          "end_time": "2024-01-02T13:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 350.3 | recent_return_bps -7.0 | range_bps 449.4 | volatility_bps 20.2 | volume_ratio 1.11 | rsi 62.8 | future_direction up | future_return_bps 45.0"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000187",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T19:00:00+00:00",
+        "end_time": "2024-01-10T02:00:00+00:00",
+        "direction": "flat",
+        "future_return_bps": -25.09495080449731,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -3.8 | recent_return_bps 31.2 | range_bps 331.0 | volatility_bps 27.3 | volume_ratio 0.92 | rsi 47.5"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -97.22928748400417,
+        "latency_ms": 5.27889997465536
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000175",
+          "score": 0.8395330765480654,
+          "direction": "down",
+          "future_return_bps": -97.22928748400417,
+          "start_time": "2024-01-08T07:00:00+00:00",
+          "end_time": "2024-01-09T14:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 107.9 | recent_return_bps -5.3 | range_bps 361.7 | volatility_bps 26.8 | volume_ratio 0.89 | rsi 27.3 | future_direction down | future_return_bps -97.2"
+        },
+        {
+          "id": "BTC_1h_000036",
+          "score": 0.7948899069044324,
+          "direction": "up",
+          "future_return_bps": 185.9558576012099,
+          "start_time": "2024-01-02T12:00:00+00:00",
+          "end_time": "2024-01-03T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 309.6 | recent_return_bps 121.0 | range_bps 386.0 | volatility_bps 20.3 | volume_ratio 0.99 | rsi 90.5 | future_direction up | future_return_bps 186.0"
+        },
+        {
+          "id": "BTC_1h_000149",
+          "score": 0.7944424838981762,
+          "direction": "up",
+          "future_return_bps": 108.37476941323976,
+          "start_time": "2024-01-07T05:00:00+00:00",
+          "end_time": "2024-01-08T12:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket quiet | close_position near_low | window_return_bps -460.9 | recent_return_bps -5.6 | range_bps 636.3 | volatility_bps 22.2 | volume_ratio 0.71 | rsi 38.8 | future_direction up | future_return_bps 108.4"
+        },
+        {
+          "id": "BTC_1h_000068",
+          "score": 0.7924960684996198,
+          "direction": "down",
+          "future_return_bps": -162.50718585849256,
+          "start_time": "2024-01-03T20:00:00+00:00",
+          "end_time": "2024-01-05T03:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 231.9 | recent_return_bps -8.9 | range_bps 530.2 | volatility_bps 30.0 | volume_ratio 1.13 | rsi 15.3 | future_direction down | future_return_bps -162.5"
+        },
+        {
+          "id": "BTC_1h_000046",
+          "score": 0.7911904028490022,
+          "direction": "up",
+          "future_return_bps": 138.80472149323307,
+          "start_time": "2024-01-02T22:00:00+00:00",
+          "end_time": "2024-01-04T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 604.5 | recent_return_bps 174.3 | range_bps 665.9 | volatility_bps 22.3 | volume_ratio 0.99 | rsi 97.0 | future_direction up | future_return_bps 138.8"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000188",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T20:00:00+00:00",
+        "end_time": "2024-01-10T03:00:00+00:00",
+        "direction": "flat",
+        "future_return_bps": -27.17377927969555,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -21.6 | recent_return_bps 67.6 | range_bps 330.6 | volatility_bps 26.9 | volume_ratio 1.05 | rsi 53.5"
+      },
+      "prediction": {
+        "direction": "up",
+        "expected_return_bps": 151.09660242520917,
+        "latency_ms": 6.506999983685091
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000156",
+          "score": 0.7894539750994172,
+          "direction": "up",
+          "future_return_bps": 151.09660242520917,
+          "start_time": "2024-01-07T12:00:00+00:00",
+          "end_time": "2024-01-08T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -210.7 | recent_return_bps 49.1 | range_bps 407.5 | volatility_bps 25.6 | volume_ratio 0.88 | rsi 72.6 | future_direction up | future_return_bps 151.1"
+        },
+        {
+          "id": "BTC_1h_000057",
+          "score": 0.7768707982273851,
+          "direction": "down",
+          "future_return_bps": -176.79918461341538,
+          "start_time": "2024-01-03T09:00:00+00:00",
+          "end_time": "2024-01-04T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 667.3 | recent_return_bps -6.5 | range_bps 727.6 | volatility_bps 22.3 | volume_ratio 1.07 | rsi 90.1 | future_direction down | future_return_bps -176.8"
+        },
+        {
+          "id": "BTC_1h_000155",
+          "score": 0.7755408431946249,
+          "direction": "up",
+          "future_return_bps": 135.7138671193714,
+          "start_time": "2024-01-07T11:00:00+00:00",
+          "end_time": "2024-01-08T18:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -191.4 | recent_return_bps 55.6 | range_bps 418.6 | volatility_bps 25.6 | volume_ratio 1.06 | rsi 69.4 | future_direction up | future_return_bps 135.7"
+        },
+        {
+          "id": "BTC_1h_000042",
+          "score": 0.7748187706205579,
+          "direction": "up",
+          "future_return_bps": 223.85413142701927,
+          "start_time": "2024-01-02T18:00:00+00:00",
+          "end_time": "2024-01-04T01:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 469.0 | recent_return_bps 140.2 | range_bps 537.6 | volatility_bps 21.6 | volume_ratio 0.93 | rsi 96.3 | future_direction up | future_return_bps 223.9"
+        },
+        {
+          "id": "BTC_1h_000033",
+          "score": 0.7600899881786769,
+          "direction": "up",
+          "future_return_bps": 189.27725558536278,
+          "start_time": "2024-01-02T09:00:00+00:00",
+          "end_time": "2024-01-03T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 294.6 | recent_return_bps 117.1 | range_bps 319.1 | volatility_bps 19.0 | volume_ratio 1.06 | rsi 94.6 | future_direction up | future_return_bps 189.3"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000189",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T21:00:00+00:00",
+        "end_time": "2024-01-10T04:00:00+00:00",
+        "direction": "flat",
+        "future_return_bps": 3.5679662100607246,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -23.7 | recent_return_bps 10.8 | range_bps 330.9 | volatility_bps 26.9 | volume_ratio 1.04 | rsi 45.6"
+      },
+      "prediction": {
+        "direction": "flat",
+        "expected_return_bps": 26.879593420630066,
+        "latency_ms": 4.95000000228174
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000099",
+          "score": 0.76420357222899,
+          "direction": "flat",
+          "future_return_bps": 26.879593420630066,
+          "start_time": "2024-01-05T03:00:00+00:00",
+          "end_time": "2024-01-06T10:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -260.3 | recent_return_bps -6.0 | range_bps 355.8 | volatility_bps 18.2 | volume_ratio 0.90 | rsi 47.1 | future_direction flat | future_return_bps 26.9"
+        },
+        {
+          "id": "BTC_1h_000068",
+          "score": 0.7591959119698753,
+          "direction": "down",
+          "future_return_bps": -162.50718585849256,
+          "start_time": "2024-01-03T20:00:00+00:00",
+          "end_time": "2024-01-05T03:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 231.9 | recent_return_bps -8.9 | range_bps 530.2 | volatility_bps 30.0 | volume_ratio 1.13 | rsi 15.3 | future_direction down | future_return_bps -162.5"
+        },
+        {
+          "id": "BTC_1h_000149",
+          "score": 0.7412101860644157,
+          "direction": "up",
+          "future_return_bps": 108.37476941323976,
+          "start_time": "2024-01-07T05:00:00+00:00",
+          "end_time": "2024-01-08T12:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket quiet | close_position near_low | window_return_bps -460.9 | recent_return_bps -5.6 | range_bps 636.3 | volatility_bps 22.2 | volume_ratio 0.71 | rsi 38.8 | future_direction up | future_return_bps 108.4"
+        },
+        {
+          "id": "BTC_1h_000093",
+          "score": 0.7363916788659126,
+          "direction": "flat",
+          "future_return_bps": 4.9250938962641655,
+          "start_time": "2024-01-04T21:00:00+00:00",
+          "end_time": "2024-01-06T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -324.7 | recent_return_bps 20.1 | range_bps 424.7 | volatility_bps 19.8 | volume_ratio 0.91 | rsi 42.0 | future_direction flat | future_return_bps 4.9"
+        },
+        {
+          "id": "BTC_1h_000092",
+          "score": 0.7356503220068814,
+          "direction": "flat",
+          "future_return_bps": 11.001721074366255,
+          "start_time": "2024-01-04T20:00:00+00:00",
+          "end_time": "2024-01-06T03:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket expanded | close_position near_low | window_return_bps -334.9 | recent_return_bps 6.6 | range_bps 496.1 | volatility_bps 19.9 | volume_ratio 1.31 | rsi 36.9 | future_direction flat | future_return_bps 11.0"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000190",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T22:00:00+00:00",
+        "end_time": "2024-01-10T05:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 68.54745029048593,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket expanded | close_position near_low | window_return_bps -92.3 | recent_return_bps -47.4 | range_bps 332.1 | volatility_bps 26.9 | volume_ratio 1.26 | rsi 40.4"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -169.4260635665945,
+        "latency_ms": 4.804500000318512
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000118",
+          "score": 0.7691897936195223,
+          "direction": "down",
+          "future_return_bps": -169.4260635665945,
+          "start_time": "2024-01-05T22:00:00+00:00",
+          "end_time": "2024-01-07T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -179.8 | recent_return_bps -109.4 | range_bps 286.1 | volatility_bps 20.7 | volume_ratio 1.15 | rsi 15.5 | future_direction down | future_return_bps -169.4"
+        },
+        {
+          "id": "BTC_1h_000167",
+          "score": 0.7596411260680823,
+          "direction": "down",
+          "future_return_bps": -99.88760764643612,
+          "start_time": "2024-01-07T23:00:00+00:00",
+          "end_time": "2024-01-09T06:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 154.7 | recent_return_bps -37.4 | range_bps 379.6 | volatility_bps 26.1 | volume_ratio 1.03 | rsi 66.9 | future_direction down | future_return_bps -99.9"
+        },
+        {
+          "id": "BTC_1h_000082",
+          "score": 0.7558512254404632,
+          "direction": "down",
+          "future_return_bps": -47.14362332744915,
+          "start_time": "2024-01-04T10:00:00+00:00",
+          "end_time": "2024-01-05T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -422.5 | recent_return_bps -40.1 | range_bps 508.4 | volatility_bps 20.6 | volume_ratio 0.93 | rsi 4.8 | future_direction down | future_return_bps -47.1"
+        },
+        {
+          "id": "BTC_1h_000069",
+          "score": 0.7487126088344157,
+          "direction": "down",
+          "future_return_bps": -152.38605194367483,
+          "start_time": "2024-01-03T21:00:00+00:00",
+          "end_time": "2024-01-05T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 179.4 | recent_return_bps -9.8 | range_bps 492.2 | volatility_bps 31.1 | volume_ratio 1.09 | rsi 11.3 | future_direction down | future_return_bps -152.4"
+        },
+        {
+          "id": "BTC_1h_000106",
+          "score": 0.7455426826451259,
+          "direction": "down",
+          "future_return_bps": -61.428317169522906,
+          "start_time": "2024-01-05T10:00:00+00:00",
+          "end_time": "2024-01-06T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -77.7 | recent_return_bps -3.7 | range_bps 165.1 | volatility_bps 15.1 | volume_ratio 1.25 | rsi 47.2 | future_direction down | future_return_bps -61.4"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000191",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-08T23:00:00+00:00",
+        "end_time": "2024-01-10T06:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 125.11790010292678,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -180.0 | recent_return_bps -55.3 | range_bps 332.9 | volatility_bps 24.1 | volume_ratio 1.24 | rsi 40.5"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -133.31168203736254,
+        "latency_ms": 4.953700001351535
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000123",
+          "score": 0.8084722880357567,
+          "direction": "down",
+          "future_return_bps": -133.31168203736254,
+          "start_time": "2024-01-06T03:00:00+00:00",
+          "end_time": "2024-01-07T10:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -316.1 | recent_return_bps -132.2 | range_bps 419.9 | volatility_bps 21.0 | volume_ratio 0.94 | rsi 1.0 | future_direction down | future_return_bps -133.3"
+        },
+        {
+          "id": "BTC_1h_000125",
+          "score": 0.8037008747502637,
+          "direction": "down",
+          "future_return_bps": -175.26833454216683,
+          "start_time": "2024-01-06T05:00:00+00:00",
+          "end_time": "2024-01-07T12:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -352.2 | recent_return_bps -138.0 | range_bps 451.9 | volatility_bps 21.3 | volume_ratio 0.96 | rsi 1.7 | future_direction down | future_return_bps -175.3"
+        },
+        {
+          "id": "BTC_1h_000117",
+          "score": 0.8005065902709961,
+          "direction": "down",
+          "future_return_bps": -181.34643570607568,
+          "start_time": "2024-01-05T21:00:00+00:00",
+          "end_time": "2024-01-07T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -134.5 | recent_return_bps -65.7 | range_bps 230.8 | volatility_bps 19.1 | volume_ratio 1.04 | rsi 20.5 | future_direction down | future_return_bps -181.3"
+        },
+        {
+          "id": "BTC_1h_000144",
+          "score": 0.796453766463678,
+          "direction": "up",
+          "future_return_bps": 46.89354488869757,
+          "start_time": "2024-01-07T00:00:00+00:00",
+          "end_time": "2024-01-08T07:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -560.0 | recent_return_bps -34.2 | range_bps 708.1 | volatility_bps 20.9 | volume_ratio 0.90 | rsi 24.3 | future_direction up | future_return_bps 46.9"
+        },
+        {
+          "id": "BTC_1h_000126",
+          "score": 0.793523415067908,
+          "direction": "down",
+          "future_return_bps": -156.1052424918863,
+          "start_time": "2024-01-06T06:00:00+00:00",
+          "end_time": "2024-01-07T13:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -374.3 | recent_return_bps -143.6 | range_bps 509.7 | volatility_bps 22.0 | volume_ratio 0.91 | rsi 1.5 | future_direction down | future_return_bps -156.1"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000192",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T00:00:00+00:00",
+        "end_time": "2024-01-10T07:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 125.31334012047645,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -196.4 | recent_return_bps -41.7 | range_bps 332.3 | volatility_bps 23.4 | volume_ratio 1.22 | rsi 45.7"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -169.4260635665945,
+        "latency_ms": 6.5793999820016325
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000118",
+          "score": 0.827512541761341,
+          "direction": "down",
+          "future_return_bps": -169.4260635665945,
+          "start_time": "2024-01-05T22:00:00+00:00",
+          "end_time": "2024-01-07T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -179.8 | recent_return_bps -109.4 | range_bps 286.1 | volatility_bps 20.7 | volume_ratio 1.15 | rsi 15.5 | future_direction down | future_return_bps -169.4"
+        },
+        {
+          "id": "BTC_1h_000091",
+          "score": 0.7957269669105143,
+          "direction": "up",
+          "future_return_bps": 32.703152894029145,
+          "start_time": "2024-01-04T19:00:00+00:00",
+          "end_time": "2024-01-06T02:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -412.4 | recent_return_bps -29.7 | range_bps 527.5 | volatility_bps 19.3 | volume_ratio 1.03 | rsi 19.4 | future_direction up | future_return_bps 32.7"
+        },
+        {
+          "id": "BTC_1h_000072",
+          "score": 0.7955027100668816,
+          "direction": "down",
+          "future_return_bps": -94.14340384796272,
+          "start_time": "2024-01-04T00:00:00+00:00",
+          "end_time": "2024-01-05T07:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -4.6 | recent_return_bps -108.2 | range_bps 409.4 | volatility_bps 30.7 | volume_ratio 0.89 | rsi 7.6 | future_direction down | future_return_bps -94.1"
+        },
+        {
+          "id": "BTC_1h_000125",
+          "score": 0.7896040001529263,
+          "direction": "down",
+          "future_return_bps": -175.26833454216683,
+          "start_time": "2024-01-06T05:00:00+00:00",
+          "end_time": "2024-01-07T12:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -352.2 | recent_return_bps -138.0 | range_bps 451.9 | volatility_bps 21.3 | volume_ratio 0.96 | rsi 1.7 | future_direction down | future_return_bps -175.3"
+        },
+        {
+          "id": "BTC_1h_000106",
+          "score": 0.7886250354529124,
+          "direction": "down",
+          "future_return_bps": -61.428317169522906,
+          "start_time": "2024-01-05T10:00:00+00:00",
+          "end_time": "2024-01-06T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend flat | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -77.7 | recent_return_bps -3.7 | range_bps 165.1 | volatility_bps 15.1 | volume_ratio 1.25 | rsi 47.2 | future_direction down | future_return_bps -61.4"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000193",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T01:00:00+00:00",
+        "end_time": "2024-01-10T08:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 107.97547372790817,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -177.3 | recent_return_bps -36.1 | range_bps 331.8 | volatility_bps 23.8 | volume_ratio 0.90 | rsi 50.1"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -137.79658900519132,
+        "latency_ms": 4.832600010558963
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000124",
+          "score": 0.8338970998770128,
+          "direction": "down",
+          "future_return_bps": -137.79658900519132,
+          "start_time": "2024-01-06T04:00:00+00:00",
+          "end_time": "2024-01-07T11:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -343.3 | recent_return_bps -166.8 | range_bps 442.0 | volatility_bps 21.6 | volume_ratio 1.12 | rsi 1.0 | future_direction down | future_return_bps -137.8"
+        },
+        {
+          "id": "BTC_1h_000117",
+          "score": 0.8063269801881577,
+          "direction": "down",
+          "future_return_bps": -181.34643570607568,
+          "start_time": "2024-01-05T21:00:00+00:00",
+          "end_time": "2024-01-07T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -134.5 | recent_return_bps -65.7 | range_bps 230.8 | volatility_bps 19.1 | volume_ratio 1.04 | rsi 20.5 | future_direction down | future_return_bps -181.3"
+        },
+        {
+          "id": "BTC_1h_000071",
+          "score": 0.7914865062720804,
+          "direction": "down",
+          "future_return_bps": -86.7849498872697,
+          "start_time": "2024-01-03T23:00:00+00:00",
+          "end_time": "2024-01-05T06:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket expanded | close_position near_low | window_return_bps 21.0 | recent_return_bps -89.8 | range_bps 409.1 | volatility_bps 30.8 | volume_ratio 1.34 | rsi 9.3 | future_direction down | future_return_bps -86.8"
+        },
+        {
+          "id": "BTC_1h_000125",
+          "score": 0.7837219786304043,
+          "direction": "down",
+          "future_return_bps": -175.26833454216683,
+          "start_time": "2024-01-06T05:00:00+00:00",
+          "end_time": "2024-01-07T12:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -352.2 | recent_return_bps -138.0 | range_bps 451.9 | volatility_bps 21.3 | volume_ratio 0.96 | rsi 1.7 | future_direction down | future_return_bps -175.3"
+        },
+        {
+          "id": "BTC_1h_000074",
+          "score": 0.7817588761960356,
+          "direction": "down",
+          "future_return_bps": -68.66113230790228,
+          "start_time": "2024-01-04T02:00:00+00:00",
+          "end_time": "2024-01-05T09:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -84.9 | recent_return_bps -124.8 | range_bps 444.7 | volatility_bps 30.8 | volume_ratio 0.92 | rsi 8.1 | future_direction down | future_return_bps -68.7"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000194",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T02:00:00+00:00",
+        "end_time": "2024-01-10T09:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 129.0618211312977,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -197.0 | recent_return_bps -19.5 | range_bps 331.5 | volatility_bps 23.1 | volume_ratio 0.88 | rsi 53.2"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -181.34643570607568,
+        "latency_ms": 5.2906000055372715
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000117",
+          "score": 0.808203511428833,
+          "direction": "down",
+          "future_return_bps": -181.34643570607568,
+          "start_time": "2024-01-05T21:00:00+00:00",
+          "end_time": "2024-01-07T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -134.5 | recent_return_bps -65.7 | range_bps 230.8 | volatility_bps 19.1 | volume_ratio 1.04 | rsi 20.5 | future_direction down | future_return_bps -181.3"
+        },
+        {
+          "id": "BTC_1h_000120",
+          "score": 0.8077133491304186,
+          "direction": "down",
+          "future_return_bps": -180.1958828890482,
+          "start_time": "2024-01-06T00:00:00+00:00",
+          "end_time": "2024-01-07T07:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -190.5 | recent_return_bps -117.7 | range_bps 313.9 | volatility_bps 20.8 | volume_ratio 0.93 | rsi 16.5 | future_direction down | future_return_bps -180.2"
+        },
+        {
+          "id": "BTC_1h_000122",
+          "score": 0.8048329975888697,
+          "direction": "down",
+          "future_return_bps": -135.17905884788294,
+          "start_time": "2024-01-06T02:00:00+00:00",
+          "end_time": "2024-01-07T09:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -247.5 | recent_return_bps -143.9 | range_bps 382.7 | volatility_bps 21.7 | volume_ratio 0.91 | rsi 1.0 | future_direction down | future_return_bps -135.2"
+        },
+        {
+          "id": "BTC_1h_000119",
+          "score": 0.8043523066539127,
+          "direction": "down",
+          "future_return_bps": -165.12704073519126,
+          "start_time": "2024-01-05T23:00:00+00:00",
+          "end_time": "2024-01-07T06:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position near_low | window_return_bps -159.8 | recent_return_bps -87.2 | range_bps 286.2 | volatility_bps 20.5 | volume_ratio 0.85 | rsi 16.2 | future_direction down | future_return_bps -165.1"
+        },
+        {
+          "id": "BTC_1h_000127",
+          "score": 0.7972666671541001,
+          "direction": "down",
+          "future_return_bps": -197.25092444571322,
+          "start_time": "2024-01-06T07:00:00+00:00",
+          "end_time": "2024-01-07T14:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket quiet | close_position near_low | window_return_bps -360.5 | recent_return_bps -102.8 | range_bps 509.0 | volatility_bps 22.4 | volume_ratio 0.76 | rsi 5.4 | future_direction down | future_return_bps -197.3"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000195",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T03:00:00+00:00",
+        "end_time": "2024-01-10T10:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 84.2126703720747,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -163.5 | recent_return_bps 39.9 | range_bps 320.4 | volatility_bps 23.7 | volume_ratio 1.11 | rsi 63.0"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -105.78626486313914,
+        "latency_ms": 5.354399996576831
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000168",
+          "score": 0.805097256816702,
+          "direction": "down",
+          "future_return_bps": -105.78626486313914,
+          "start_time": "2024-01-08T00:00:00+00:00",
+          "end_time": "2024-01-09T07:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 134.2 | recent_return_bps -86.3 | range_bps 380.4 | volatility_bps 26.5 | volume_ratio 0.96 | rsi 63.4 | future_direction down | future_return_bps -105.8"
+        },
+        {
+          "id": "BTC_1h_000185",
+          "score": 0.8027518282599158,
+          "direction": "down",
+          "future_return_bps": -72.08467129209973,
+          "start_time": "2024-01-08T17:00:00+00:00",
+          "end_time": "2024-01-10T00:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend flat | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 7.0 | recent_return_bps 50.6 | range_bps 330.5 | volatility_bps 27.4 | volume_ratio 0.99 | rsi 46.4 | future_direction down | future_return_bps -72.1"
+        },
+        {
+          "id": "BTC_1h_000156",
+          "score": 0.7944916770876373,
+          "direction": "up",
+          "future_return_bps": 151.09660242520917,
+          "start_time": "2024-01-07T12:00:00+00:00",
+          "end_time": "2024-01-08T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -210.7 | recent_return_bps 49.1 | range_bps 407.5 | volatility_bps 25.6 | volume_ratio 0.88 | rsi 72.6 | future_direction up | future_return_bps 151.1"
+        },
+        {
+          "id": "BTC_1h_000068",
+          "score": 0.7919450080561655,
+          "direction": "down",
+          "future_return_bps": -162.50718585849256,
+          "start_time": "2024-01-03T20:00:00+00:00",
+          "end_time": "2024-01-05T03:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 231.9 | recent_return_bps -8.9 | range_bps 530.2 | volatility_bps 30.0 | volume_ratio 1.13 | rsi 15.3 | future_direction down | future_return_bps -162.5"
+        },
+        {
+          "id": "BTC_1h_000070",
+          "score": 0.7833380599864586,
+          "direction": "down",
+          "future_return_bps": -146.88543459978277,
+          "start_time": "2024-01-03T22:00:00+00:00",
+          "end_time": "2024-01-05T05:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 89.8 | recent_return_bps -29.5 | range_bps 489.3 | volatility_bps 28.7 | volume_ratio 0.99 | rsi 10.5 | future_direction down | future_return_bps -146.9"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000196",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T04:00:00+00:00",
+        "end_time": "2024-01-10T11:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 96.13310246349815,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket neutral | volatility_bucket normal | volume_bucket expanded | close_position middle | window_return_bps -142.0 | recent_return_bps 93.6 | range_bps 319.5 | volatility_bps 24.3 | volume_ratio 1.38 | rsi 61.6"
+      },
+      "prediction": {
+        "direction": "up",
+        "expected_return_bps": 151.09660242520917,
+        "latency_ms": 5.412800004705787
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000156",
+          "score": 0.8095547801912751,
+          "direction": "up",
+          "future_return_bps": 151.09660242520917,
+          "start_time": "2024-01-07T12:00:00+00:00",
+          "end_time": "2024-01-08T19:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -210.7 | recent_return_bps 49.1 | range_bps 407.5 | volatility_bps 25.6 | volume_ratio 0.88 | rsi 72.6 | future_direction up | future_return_bps 151.1"
+        },
+        {
+          "id": "BTC_1h_000033",
+          "score": 0.7991330963346692,
+          "direction": "up",
+          "future_return_bps": 189.27725558536278,
+          "start_time": "2024-01-02T09:00:00+00:00",
+          "end_time": "2024-01-03T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 294.6 | recent_return_bps 117.1 | range_bps 319.1 | volatility_bps 19.0 | volume_ratio 1.06 | rsi 94.6 | future_direction up | future_return_bps 189.3"
+        },
+        {
+          "id": "BTC_1h_000159",
+          "score": 0.7906239358192845,
+          "direction": "up",
+          "future_return_bps": 119.29016381655222,
+          "start_time": "2024-01-07T15:00:00+00:00",
+          "end_time": "2024-01-08T22:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -94.5 | recent_return_bps 52.3 | range_bps 382.9 | volatility_bps 25.6 | volume_ratio 1.15 | rsi 77.9 | future_direction up | future_return_bps 119.3"
+        },
+        {
+          "id": "BTC_1h_000042",
+          "score": 0.7902732876247829,
+          "direction": "up",
+          "future_return_bps": 223.85413142701927,
+          "start_time": "2024-01-02T18:00:00+00:00",
+          "end_time": "2024-01-04T01:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 469.0 | recent_return_bps 140.2 | range_bps 537.6 | volatility_bps 21.6 | volume_ratio 0.93 | rsi 96.3 | future_direction up | future_return_bps 223.9"
+        },
+        {
+          "id": "BTC_1h_000057",
+          "score": 0.7899811503832825,
+          "direction": "down",
+          "future_return_bps": -176.79918461341538,
+          "start_time": "2024-01-03T09:00:00+00:00",
+          "end_time": "2024-01-04T16:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 667.3 | recent_return_bps -6.5 | range_bps 727.6 | volatility_bps 22.3 | volume_ratio 1.07 | rsi 90.1 | future_direction down | future_return_bps -176.8"
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind",
+      "query": {
+        "id": "BTC_1h_000197",
+        "symbol": "BTC",
+        "timeframe": "1h",
+        "start_time": "2024-01-09T05:00:00+00:00",
+        "end_time": "2024-01-10T12:00:00+00:00",
+        "direction": "up",
+        "future_return_bps": 136.96825405367986,
+        "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps -85.2 | recent_return_bps 108.9 | range_bps 317.0 | volatility_bps 24.8 | volume_ratio 1.10 | rsi 70.9"
+      },
+      "prediction": {
+        "direction": "down",
+        "expected_return_bps": -162.50718585849256,
+        "latency_ms": 5.635499983327463
+      },
+      "analogues": [
+        {
+          "id": "BTC_1h_000068",
+          "score": 0.8509731795530866,
+          "direction": "down",
+          "future_return_bps": -162.50718585849256,
+          "start_time": "2024-01-03T20:00:00+00:00",
+          "end_time": "2024-01-05T03:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 231.9 | recent_return_bps -8.9 | range_bps 530.2 | volatility_bps 30.0 | volume_ratio 1.13 | rsi 15.3 | future_direction down | future_return_bps -162.5"
+        },
+        {
+          "id": "BTC_1h_000069",
+          "score": 0.7832894789685575,
+          "direction": "down",
+          "future_return_bps": -152.38605194367483,
+          "start_time": "2024-01-03T21:00:00+00:00",
+          "end_time": "2024-01-05T04:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend flat | rsi_bucket oversold | volatility_bucket normal | volume_bucket normal | close_position middle | window_return_bps 179.4 | recent_return_bps -9.8 | range_bps 492.2 | volatility_bps 31.1 | volume_ratio 1.09 | rsi 11.3 | future_direction down | future_return_bps -152.4"
+        },
+        {
+          "id": "BTC_1h_000154",
+          "score": 0.7805302986199423,
+          "direction": "up",
+          "future_return_bps": 116.94791281258831,
+          "start_time": "2024-01-07T10:00:00+00:00",
+          "end_time": "2024-01-08T17:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend down | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket quiet | close_position middle | window_return_bps -242.2 | recent_return_bps 94.1 | range_bps 476.1 | volatility_bps 25.9 | volume_ratio 0.62 | rsi 65.7 | future_direction up | future_return_bps 116.9"
+        },
+        {
+          "id": "BTC_1h_000059",
+          "score": 0.7790632184939875,
+          "direction": "down",
+          "future_return_bps": -175.05352972877364,
+          "start_time": "2024-01-03T11:00:00+00:00",
+          "end_time": "2024-01-04T18:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend down | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 617.8 | recent_return_bps -43.4 | range_bps 694.2 | volatility_bps 24.7 | volume_ratio 1.19 | rsi 74.2 | future_direction down | future_return_bps -175.1"
+        },
+        {
+          "id": "BTC_1h_000038",
+          "score": 0.7756356260511609,
+          "direction": "up",
+          "future_return_bps": 199.87392016806103,
+          "start_time": "2024-01-02T14:00:00+00:00",
+          "end_time": "2024-01-03T21:00:00+00:00",
+          "text": "asset crypto | symbol BTC | timeframe 1h | trend up | recent_trend up | rsi_bucket overbought | volatility_bucket normal | volume_bucket normal | close_position near_high | window_return_bps 380.2 | recent_return_bps 115.3 | range_bps 449.0 | volatility_bps 18.9 | volume_ratio 0.86 | rsi 95.3 | future_direction up | future_return_bps 199.9"
+        }
+      ]
+    }
+  ]
+}

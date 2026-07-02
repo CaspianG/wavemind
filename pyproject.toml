@@ -42,6 +42,10 @@ bench = [
   "chromadb>=1.0",
   "qdrant-client>=1.9",
 ]
+crypto = [
+  "ccxt>=4",
+  "pandas>=2",
+]
 langchain = [
   "langchain-classic>=1.0",
 ]

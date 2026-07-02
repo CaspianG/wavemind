@@ -21,6 +21,7 @@ include docs/assets/benchmark-summary.svg
 include docs/assets/wavemind-social-card.svg
 include benchmarks/*.py
 include benchmarks/*.json
+include benchmarks/*.html
 include benchmarks/*.md
 include examples/*.py
 prune benchmarks/data

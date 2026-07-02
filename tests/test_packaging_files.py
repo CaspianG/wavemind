@@ -136,6 +136,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
+    assert "include benchmarks/*.html" in manifest
     assert "include examples/*.py" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
