@@ -75,6 +75,7 @@ Do not promise:
 | Real OHLCV import | Done | CSV, CCXT import, pagination, and checked-in OKX cache in `benchmarks/data/crypto_ohlcv/okx`. |
 | Pattern featurization | Done | Return, volatility, drawdown, trend slope, MACD-like spread, Bollinger-like position, volume, range compression, MFE/MAE, future vol, and future drawdown labels. |
 | Explainable relationship mining | Done | `benchmarks/crypto_relationship_miner.py` finds single-feature and pairwise regime/outcome links with support, lift, direction rates, and large-move rates. |
+| Relationship validation | Done | `benchmarks/crypto_relationship_validation.py` mines links on train windows and checks sign preservation on future windows. |
 | Walk-forward benchmark | Done | `benchmarks/crypto_walk_forward_benchmark.py` uses train/test walk-forward with no look-ahead insertion. |
 | Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in results cover both conservative confidence sizing and fixed-size filtered signals. |
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, trend persistence, TA rules, and storage controls. |
@@ -105,6 +106,14 @@ miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`
 (`+61.79` bps lift, 516 samples) and `bollinger_bucket=upper_band &
 drawdown_bucket=deep` (`-90.69` bps lift, 257 samples). These are research
 relationships to validate in walk-forward tests, not standalone trading rules.
+
+Relationship-validation evidence: with 4 future folds, 74 mined relationships
+met test-support thresholds; 62.2% preserved their expected sign, with `+18.32`
+bps average signed test lift. The strongest recurring negative regimes are
+`close_position_bucket=near_high & rsi_bucket=overbought` and `macd_bucket=up &
+rsi_bucket=overbought`. This is useful evidence that the pattern layer can find
+surviving relationships, but the failure set remains large enough that more
+filtering is required before any trading use.
 
 ### 1. Real OHLCV Import
 

@@ -214,6 +214,49 @@ Current OKX BTC/ETH/SOL 4h examples:
 | `bollinger_bucket=upper_band & drawdown_bucket=deep` | 257 | -90.69 | -101.13 | 0.739 |
 | `macd_bucket=up & rsi_bucket=overbought` | 365 | -75.34 | -85.78 | 0.762 |
 
+### Relationship Validation
+
+The validation runner mines relationships on train windows and checks whether
+the same relationships preserve direction on future test windows:
+
+```sh
+python benchmarks/crypto_relationship_validation.py \
+  --dataset ccxt \
+  --exchange okx \
+  --cache-dir benchmarks/data/crypto_ohlcv \
+  --symbols BTC/USDT ETH/USDT SOL/USDT \
+  --timeframes 4h \
+  --train-windows 420 \
+  --test-windows 60 \
+  --folds 4 \
+  --min-support 30 \
+  --min-test-support 10 \
+  --output benchmarks/crypto_relationship_validation_okx_4h_results.json \
+  --report benchmarks/crypto_relationship_validation_okx_4h_report.md
+```
+
+Current OKX 4h validation:
+
+| metric | value |
+|---|---:|
+| validated relationships | 74 |
+| sign preservation rate | 0.622 |
+| avg signed test lift | 18.32 bps |
+| median signed test lift | 15.29 bps |
+
+Top aggregated out-of-sample relationships:
+
+| relationship | expected | occurrences | sign preserved | avg signed test lift |
+|---|---|---:|---:|---:|
+| `close_position_bucket=near_high & rsi_bucket=overbought` | negative | 3 | 1.000 | 138.81 |
+| `macd_bucket=up & rsi_bucket=overbought` | negative | 3 | 1.000 | 133.12 |
+| `rsi_bucket=neutral & trend=up` | positive | 2 | 1.000 | 62.31 |
+| `bollinger_bucket=middle & rsi_bucket=neutral` | positive | 4 | 0.750 | 29.68 |
+
+Interpretation: the relationship layer is useful for hypothesis discovery and
+some links survive future windows, but it still needs robustness filtering.
+The result is research evidence, not a deployable trading system.
+
 ### CSV import
 
 CSV input expects these columns, case-insensitive:
@@ -297,11 +340,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    but remains positive on only 6/12 symbol-fold slices.
 8. Done: relationship miner finds explainable regime/outcome links on real OKX
    4h data and writes JSON/Markdown reports.
-9. Next: improve downside robustness across bad folds and validate across more
+9. Done: train/test relationship validator checks which mined links survive
+   future windows.
+10. Next: improve downside robustness across bad folds and validate across more
    date ranges, exchanges, assets, and walk-forward folds.
-10. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+11. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-11. Add signal construction only after retrieval quality is stable.
-12. Publish results separately from the main README to avoid confusing memory
+12. Add signal construction only after retrieval quality is stable.
+13. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

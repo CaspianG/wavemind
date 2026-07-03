@@ -52,6 +52,12 @@ Implemented in this branch:
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
   report with positive, negative, and large-move regimes.
+- `benchmarks/crypto_relationship_validation.py` - train/test validator for
+  mined relationships.
+- `benchmarks/crypto_relationship_validation_okx_4h_results.json` - checked-in
+  out-of-sample validation result for OKX 4h relationships.
+- `benchmarks/crypto_relationship_validation_okx_4h_report.md` - readable
+  validation report.
 - `examples/freqtrade_wavemind_strategy.py` - dry-run first Freqtrade scaffold.
 - `tests/test_crypto_pattern_benchmark.py` - regression tests for the benchmark.
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
@@ -165,6 +171,29 @@ This is the direction for making the branch useful beyond a single strategy:
 discover relationships, explain them, then test whether they survive
 walk-forward evaluation.
 
+Out-of-sample validation now mines relationships on past windows and tests them
+on future windows. Current OKX BTC/ETH/SOL 4h validation:
+
+| metric | value |
+|---|---:|
+| validated relationships | 74 |
+| sign preservation rate | 0.622 |
+| avg signed test lift | 18.32 bps |
+| median signed test lift | 15.29 bps |
+
+Top aggregated validated relationships:
+
+| relationship | expected | occurrences | sign preserved | avg signed test lift |
+|---|---|---:|---:|---:|
+| `close_position_bucket=near_high & rsi_bucket=overbought` | negative | 3 | 1.000 | 138.81 |
+| `macd_bucket=up & rsi_bucket=overbought` | negative | 3 | 1.000 | 133.12 |
+| `rsi_bucket=neutral & trend=up` | positive | 2 | 1.000 | 62.31 |
+| `bollinger_bucket=middle & rsi_bucket=neutral` | positive | 4 | 0.750 | 29.68 |
+
+Interpretation: this is better than raw in-sample mining, but not enough for a
+trading claim. About 62% of mined relationships preserved their sign on future
+windows; the rest are unstable and should be filtered out or studied further.
+
 ## Research Plan
 
 The product direction is documented here:
@@ -194,10 +223,12 @@ Near-term execution plan:
     but is only positive on 6/12 symbol-fold slices.
 13. Done: relationship miner finds explainable regime/outcome links on real
     OKX 4h data and writes JSON/Markdown reports.
-14. Next: improve downside robustness across bad folds, add drawdown/profit
+14. Done: train/test relationship validator shows which mined links survive
+    future windows and which fail.
+15. Next: improve downside robustness across bad folds, add drawdown/profit
     factor metrics, and validate on more date ranges, exchanges, assets, and
     walk-forward folds.
-15. Only after robustness holds, test signal construction and backtesting.
+16. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 
