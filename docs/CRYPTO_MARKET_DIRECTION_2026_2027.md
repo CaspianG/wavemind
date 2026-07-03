@@ -108,6 +108,16 @@ cross-asset check over XRP/DOGE/ADA/LINK/AVAX, adaptive-field reaches `44.75`
 sized net bps vs `21.41` for trend persistence, improves profit factor to
 `2.962` vs `1.321`, and cuts worst-slice loss from `-118.79` to `-23.45` bps.
 
+Latest timeframe-aware check: applying the same adaptive-field profile across
+1h, 4h, and 1d BTC/ETH/SOL is not robust (`-1.33` sized net bps, profit factor
+`0.954`, worst slice `-106.89`). The first robust policy is to route only the
+validated 4h profile and abstain on unvalidated timeframes. That
+`WaveMind timeframe policy` reaches `12.65` sized net bps across the combined
+1h/4h/1d run, profit factor `2.937`, max drawdown `5305.3` bps, and worst slice
+`-19.75`. This is a risk-control improvement, not final universal alpha: 1h
+needs a microstructure-specific field and 1d needs a separate trend-memory
+dynamic.
+
 Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
 miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`
 (`+61.79` bps lift, 516 samples) and `bollinger_bucket=upper_band &

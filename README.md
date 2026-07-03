@@ -54,6 +54,10 @@ Implemented in this branch:
   checked-in XRP/DOGE/ADA/LINK/AVAX adaptive-field 4h cross-asset result.
 - `benchmarks/crypto_okx_4h_more_assets_analogue_explorer.html` - visual
   analogue explorer for the additional 5-asset run.
+- `benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json` -
+  checked-in BTC/ETH/SOL 1h/4h/1d timeframe-aware policy result.
+- `benchmarks/crypto_okx_timeframe_policy_analogue_explorer.html` - visual
+  analogue explorer for the timeframe-aware policy run.
 - `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
@@ -169,6 +173,24 @@ additional five-asset check it improves net return (`44.75` vs `21.41` bps)
 and cuts worst-slice loss from `-118.79` to `-23.45` bps. This is real
 signal-shaping evidence, but not a live-trading claim: the next milestone is
 raising the positive slice rate across more assets, exchanges, and timeframes.
+
+Timeframe-aware BTC/ETH/SOL check, 1h/4h/1d, 4 folds x 60 windows per market:
+
+| engine | queries | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind timeframe policy | 2160 | 0.087 | 12.65 | 2.937 | 5305.3 | 5/36 | -19.75 | 0.056 |
+| WaveMind adaptive-field | 2160 | 0.173 | -1.33 | 0.954 | 15183.8 | 8/36 | -106.89 | 0.091 |
+| Trend persistence | 2160 | 0.555 | 11.12 | 1.122 | 19833.8 | 17/36 | -205.85 | 0.334 |
+| Naive last-regime | 2160 | 0.863 | 4.09 | 1.030 | 30630.3 | 11/36 | -189.63 | 0.589 |
+
+Interpretation: the first production-style rule is timeframe awareness. The
+current field profile is validated on 4h, but not on 1h or 1d. The
+`WaveMind timeframe policy` therefore trades the 4h adaptive-field profile and
+abstains on unsupported timeframes. This turns the combined 1h/4h/1d run from
+negative adaptive-field performance (`-1.33` bps) into a positive,
+lower-drawdown policy (`12.65` bps), while cutting worst-slice loss from
+`-106.89` to `-19.75` bps. It is still not universal alpha: the next research
+work is separate 1h microstructure memory and 1d trend-memory dynamics.
 
 ## Relationship Mining
 

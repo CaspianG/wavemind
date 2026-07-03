@@ -800,6 +800,84 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         return prediction
 
 
+class WaveMindTimeframePolicyEngine(MarketEngine):
+    name = "WaveMind timeframe policy"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        adaptive_min_support: int = 24,
+        adaptive_min_test_support: int = 8,
+        adaptive_validation_holdout: float = 0.35,
+        adaptive_min_confidence: float = 0.52,
+        adaptive_min_expected_edge_bps: float = 70.0,
+        adaptive_max_opposition: float = 0.62,
+        adaptive_trend_alignment: bool = True,
+        adaptive_performance_lookback: int = 8,
+        adaptive_min_recent_edge_bps: float = 20.0,
+        round_trip_cost_bps: float = 30.0,
+        memory_store: str = "disk",
+    ):
+        self.timeframe = timeframe
+        self.child: MarketEngine | None = None
+        if timeframe == "4h":
+            self.child = WaveMindAdaptiveFieldEngine(
+                encoder,
+                symbol=symbol,
+                timeframe=timeframe,
+                temp_root=temp_root,
+                min_support=adaptive_min_support,
+                min_test_support=adaptive_min_test_support,
+                validation_holdout=adaptive_validation_holdout,
+                min_confidence=adaptive_min_confidence,
+                min_expected_edge_bps=adaptive_min_expected_edge_bps,
+                max_opposition=adaptive_max_opposition,
+                require_trend_alignment=adaptive_trend_alignment,
+                performance_lookback=adaptive_performance_lookback,
+                min_recent_edge_bps=adaptive_min_recent_edge_bps,
+                round_trip_cost_bps=round_trip_cost_bps,
+                memory_store=memory_store,
+            )
+
+    def add(self, window: OHLCVWindow) -> None:
+        if self.child is not None:
+            self.child.add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        if self.child is not None:
+            prediction = self.child.query(window, top_k=top_k)
+            return Prediction(
+                direction=prediction.direction,
+                expected_return_bps=prediction.expected_return_bps,
+                latency_ms=prediction.latency_ms,
+                analogues=prediction.analogues,
+                confidence=prediction.confidence,
+                raw_direction=prediction.raw_direction,
+                filtered=prediction.filtered,
+                filter_reason=prediction.filter_reason,
+                analogue_agreement=prediction.analogue_agreement,
+                regime_agreement=prediction.regime_agreement,
+            )
+        return Prediction(
+            direction="flat",
+            expected_return_bps=0.0,
+            latency_ms=0.0,
+            analogues=[],
+            confidence=0.0,
+            raw_direction="flat",
+            filtered=True,
+            filter_reason=f"unsupported_timeframe:{self.timeframe}",
+        )
+
+    def close(self) -> None:
+        if self.child is not None:
+            self.child.close()
+
+
 class DtwKnnEngine(MarketEngine):
     name = "DTW kNN"
 
@@ -1595,6 +1673,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
                     "calibrated",
@@ -1615,6 +1694,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
                     "calibrated",
@@ -1648,6 +1728,8 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "risk",
         "trend-risk",
         "wavemind-trend-risk",
+        "timeframe-policy",
+        "wavemind-timeframe-policy",
         "adaptive-field",
         "wavemind-adaptive-field",
         "validated-field",
@@ -1816,6 +1898,24 @@ def _create_engine(
             round_trip_cost_bps=round_trip_cost_bps,
             memory_store=memory_store,
         )
+    if engine_key in {"timeframe-policy", "wavemind-timeframe-policy"}:
+        return WaveMindTimeframePolicyEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            adaptive_min_support=adaptive_min_support,
+            adaptive_min_test_support=adaptive_min_test_support,
+            adaptive_validation_holdout=adaptive_validation_holdout,
+            adaptive_min_confidence=adaptive_min_confidence,
+            adaptive_min_expected_edge_bps=adaptive_min_expected_edge_bps,
+            adaptive_max_opposition=adaptive_max_opposition,
+            adaptive_trend_alignment=adaptive_trend_alignment,
+            adaptive_performance_lookback=adaptive_performance_lookback,
+            adaptive_min_recent_edge_bps=adaptive_min_recent_edge_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
+        )
     if engine_key in {"4h-profile", "wavemind-4h-profile", "four-hour-profile"}:
         return WaveMindFourHourProfileEngine(
             encoder,
@@ -1878,6 +1978,8 @@ def _engine_display_name(engine_key: str) -> str:
         "risk": "WaveMind risk-overlay",
         "trend-risk": "WaveMind trend-risk",
         "wavemind-trend-risk": "WaveMind trend-risk",
+        "timeframe-policy": "WaveMind timeframe policy",
+        "wavemind-timeframe-policy": "WaveMind timeframe policy",
         "adaptive-field": "WaveMind adaptive-field",
         "wavemind-adaptive-field": "WaveMind adaptive-field",
         "validated-field": "WaveMind adaptive-field",

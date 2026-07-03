@@ -174,6 +174,23 @@ vs `21.41` bps) and cuts worst-slice loss from `-118.79` to `-23.45` bps. It
 is still not a live-trading claim: the next milestone is raising the positive
 slice rate across more assets, exchanges, and timeframes.
 
+Timeframe-aware BTC/ETH/SOL check, 1h/4h/1d, 4 folds x 60 windows per market:
+
+| engine | queries | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind timeframe policy | 2160 | 0.087 | 12.65 | 2.937 | 5305.3 | 5/36 | -19.75 | 0.056 |
+| WaveMind adaptive-field | 2160 | 0.173 | -1.33 | 0.954 | 15183.8 | 8/36 | -106.89 | 0.091 |
+| Trend persistence | 2160 | 0.555 | 11.12 | 1.122 | 19833.8 | 17/36 | -205.85 | 0.334 |
+| Naive last-regime | 2160 | 0.863 | 4.09 | 1.030 | 30630.3 | 11/36 | -189.63 | 0.589 |
+
+Interpretation: timeframe-aware policy is the first robustness layer. The
+current adaptive field is validated on 4h, but the same profile loses edge on
+1h and 1d. The policy therefore routes 4h through adaptive-field and returns
+`flat` on unsupported timeframes. This is intentionally conservative: it
+improves the combined multi-timeframe run by refusing weak regimes rather than
+pretending one field dynamic fits every candle size. The next research step is
+separate 1h microstructure memory and 1d trend-memory dynamics.
+
 The metrics are retrieval/research metrics, not a live trading claim:
 
 - `direction_accuracy_at_1` - top analogue predicts the same next-move bucket;
