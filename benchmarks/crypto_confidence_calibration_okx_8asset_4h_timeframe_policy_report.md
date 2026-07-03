@@ -5,15 +5,15 @@ It is a research diagnostic, not a trading signal.
 
 ## WaveMind timeframe policy
 
-- signal events: 108
-- raw Brier if treated as probability: 0.236
-- raw expected calibration error: 0.223
-- monotonic Brier: 0.224
-- monotonic expected calibration error: 0.168
+- signal events: 204
+- raw Brier if treated as probability: 0.256
+- raw expected calibration error: 0.266
+- monotonic Brier: 0.343
+- monotonic expected calibration error: 0.361
 - monotonic out-of-sample: true
-- base-rate probability: 0.750
-- base-rate Brier: 0.214
-- base-rate expected calibration error: 0.070
+- base-rate probability: 0.740
+- base-rate Brier: 0.259
+- base-rate expected calibration error: 0.298
 - probability ready: false
 - probability kind: none
 
@@ -21,24 +21,23 @@ It is a research diagnostic, not a trading signal.
 
 | slice | eligible slices | min hit rate | max hit rate | max abs error | stable |
 |---|---:|---:|---:|---:|---|
-| fold | 4 | 0.609 | 0.833 | 0.141 | true |
-| symbol | 3 | 0.690 | 0.794 | 0.060 | true |
-| timeframe | 2 | 0.690 | 0.772 | 0.060 | true |
-| symbol_timeframe | 4 | 0.680 | 0.833 | 0.083 | false |
+| fold | 3 | 0.154 | 0.851 | 0.586 | false |
+| symbol | 7 | 0.679 | 0.833 | 0.093 | false |
+| timeframe | 1 | 0.740 | 0.740 | 0.000 | true |
+| symbol_timeframe | 8 | 0.579 | 0.833 | 0.161 | false |
 
 ### Raw Evidence Buckets
 
 | evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
 |---|---:|---:|---:|---:|---:|
 | 0.0-0.2 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
-| 0.2-0.4 | 1 | 0.350 | 1.000 | 0.650 | 93.49 |
-| 0.4-0.6 | 27 | 0.536 | 0.704 | 0.167 | 216.51 |
-| 0.6-0.8 | 20 | 0.691 | 0.900 | 0.209 | 223.07 |
-| 0.8-1.0 | 60 | 0.963 | 0.717 | 0.246 | 134.29 |
+| 0.2-0.4 | 8 | 0.350 | 0.875 | 0.525 | 668.00 |
+| 0.4-0.6 | 55 | 0.541 | 0.764 | 0.222 | 259.33 |
+| 0.6-0.8 | 16 | 0.708 | 1.000 | 0.292 | 405.19 |
+| 0.8-1.0 | 125 | 0.953 | 0.688 | 0.265 | 179.83 |
 
 ### Monotonic Calibration Blocks
 
 | evidence range | train count | avg evidence | calibrated probability |
 |---|---:|---:|---:|
-| 0.2-0.6 | 28 | 0.530 | 0.714 |
-| 0.6-1.0 | 80 | 0.895 | 0.762 |
+| 0.2-1.0 | 204 | 0.799 | 0.740 |

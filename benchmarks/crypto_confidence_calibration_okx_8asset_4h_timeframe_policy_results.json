@@ -4,35 +4,11 @@
     "dataset_markets": [
       {
         "symbol": "BTC/USDT",
-        "timeframe": "1h",
-        "bars": 720,
-        "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1h.csv"
-      },
-      {
-        "symbol": "BTC/USDT",
         "timeframe": "4h",
         "bars": 720,
         "windows": 683,
         "source": "ccxt_cache:okx",
         "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_4h.csv"
-      },
-      {
-        "symbol": "BTC/USDT",
-        "timeframe": "1d",
-        "bars": 720,
-        "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1d.csv"
-      },
-      {
-        "symbol": "ETH/USDT",
-        "timeframe": "1h",
-        "bars": 720,
-        "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1h.csv"
       },
       {
         "symbol": "ETH/USDT",
@@ -43,22 +19,6 @@
         "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_4h.csv"
       },
       {
-        "symbol": "ETH/USDT",
-        "timeframe": "1d",
-        "bars": 720,
-        "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1d.csv"
-      },
-      {
-        "symbol": "SOL/USDT",
-        "timeframe": "1h",
-        "bars": 720,
-        "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1h.csv"
-      },
-      {
         "symbol": "SOL/USDT",
         "timeframe": "4h",
         "bars": 720,
@@ -67,12 +27,44 @@
         "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_4h.csv"
       },
       {
-        "symbol": "SOL/USDT",
-        "timeframe": "1d",
+        "symbol": "XRP/USDT",
+        "timeframe": "4h",
         "bars": 720,
         "windows": 683,
         "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1d.csv"
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\XRP_USDT_4h.csv"
+      },
+      {
+        "symbol": "DOGE/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\DOGE_USDT_4h.csv"
+      },
+      {
+        "symbol": "ADA/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ADA_USDT_4h.csv"
+      },
+      {
+        "symbol": "LINK/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\LINK_USDT_4h.csv"
+      },
+      {
+        "symbol": "AVAX/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\AVAX_USDT_4h.csv"
       }
     ],
     "train_windows": 420,
@@ -111,9 +103,9 @@
   "calibration": [
     {
       "engine": "WaveMind timeframe policy",
-      "signal_events": 108,
-      "brier_score_if_treated_as_probability": 0.23577547617608113,
-      "expected_calibration_error": 0.2234790433815242,
+      "signal_events": 204,
+      "brier_score_if_treated_as_probability": 0.2560177117517424,
+      "expected_calibration_error": 0.26566490484161454,
       "probability_ready": false,
       "probability_kind": "none",
       "note": "Raw evidence strength is not probability. Base-rate probability is allowed only as a group-level active-signal probability.",
@@ -138,12 +130,12 @@
             0.2,
             0.4
           ],
-          "count": 1,
+          "count": 8,
           "avg_score": 0.35,
-          "direction_hit_rate": 1.0,
-          "calibration_error": 0.65,
-          "avg_net_return_bps": 93.48938482485083,
-          "avg_sized_net_return_bps": 93.48938482485083,
+          "direction_hit_rate": 0.875,
+          "calibration_error": 0.525,
+          "avg_net_return_bps": 667.9982377434744,
+          "avg_sized_net_return_bps": 667.9982377434744,
           "avg_evidence_strength": 0.35
         },
         {
@@ -152,13 +144,13 @@
             0.4,
             0.6
           ],
-          "count": 27,
-          "avg_score": 0.5362163824078295,
-          "direction_hit_rate": 0.7037037037037037,
-          "calibration_error": 0.16748732129587418,
-          "avg_net_return_bps": 216.5120425895878,
-          "avg_sized_net_return_bps": 216.5120425895878,
-          "avg_evidence_strength": 0.5362163824078295
+          "count": 55,
+          "avg_score": 0.5414980481022502,
+          "direction_hit_rate": 0.7636363636363637,
+          "calibration_error": 0.22213831553411345,
+          "avg_net_return_bps": 259.32881150616436,
+          "avg_sized_net_return_bps": 259.32881150616436,
+          "avg_evidence_strength": 0.5414980481022502
         },
         {
           "bin": 3,
@@ -166,13 +158,13 @@
             0.6,
             0.8
           ],
-          "count": 20,
-          "avg_score": 0.6912096970736384,
-          "direction_hit_rate": 0.9,
-          "calibration_error": 0.20879030292636158,
-          "avg_net_return_bps": 223.0725381218165,
-          "avg_sized_net_return_bps": 223.0725381218165,
-          "avg_evidence_strength": 0.6912096970736384
+          "count": 16,
+          "avg_score": 0.7079050899165328,
+          "direction_hit_rate": 1.0,
+          "calibration_error": 0.2920949100834672,
+          "avg_net_return_bps": 405.19048644828246,
+          "avg_sized_net_return_bps": 405.19048644828246,
+          "avg_evidence_strength": 0.7079050899165328
         },
         {
           "bin": 4,
@@ -180,62 +172,53 @@
             0.8,
             1.0
           ],
-          "count": 60,
-          "avg_score": 0.963129549194813,
-          "direction_hit_rate": 0.7166666666666667,
-          "calibration_error": 0.2464628825281463,
-          "avg_net_return_bps": 134.2867728965281,
-          "avg_sized_net_return_bps": 134.2867728965281,
-          "avg_evidence_strength": 0.963129549194813
+          "count": 125,
+          "avg_score": 0.9528361173758211,
+          "direction_hit_rate": 0.688,
+          "calibration_error": 0.26483611737582113,
+          "avg_net_return_bps": 179.8266679103921,
+          "avg_sized_net_return_bps": 179.8266679103921,
+          "avg_evidence_strength": 0.9528361173758211
         }
       ],
       "monotonic_calibration": {
         "method": "bucketed_isotonic_pav",
         "out_of_sample": true,
-        "events": 108,
-        "brier_score": 0.22417153246764523,
-        "expected_calibration_error": 0.16781955709375634,
-        "min_block_count": 28,
+        "events": 204,
+        "brier_score": 0.34267546320182096,
+        "expected_calibration_error": 0.3612540095993645,
+        "min_block_count": 204,
         "blocks": [
           {
             "range": [
               0.2,
-              0.6
-            ],
-            "count": 28,
-            "avg_evidence_strength": 0.5295657973218356,
-            "calibrated_probability": 0.7142857142857143
-          },
-          {
-            "range": [
-              0.6,
               1.0
             ],
-            "count": 80,
-            "avg_evidence_strength": 0.8951495861645193,
-            "calibrated_probability": 0.7625
+            "count": 204,
+            "avg_evidence_strength": 0.7990852390013036,
+            "calibrated_probability": 0.7401960784313726
           }
         ],
         "folds": [
           {
             "fold_index": 0,
-            "train_events": 97,
-            "test_events": 11,
+            "train_events": 191,
+            "test_events": 13,
             "blocks": [
               {
                 "range": [
-                  0.4,
+                  0.2,
                   1.0
                 ],
-                "count": 97,
-                "avg_evidence_strength": 0.8270333797081258,
-                "calibrated_probability": 0.7628865979381443
+                "count": 191,
+                "avg_evidence_strength": 0.8119366916771329,
+                "calibrated_probability": 0.7801047120418848
               }
             ],
             "metrics": {
-              "events": 11,
-              "brier_score": 0.24741301848327038,
-              "expected_calibration_error": 0.12652296157450793,
+              "events": 13,
+              "brier_score": 0.522377296506295,
+              "expected_calibration_error": 0.626258558195731,
               "buckets": [
                 {
                   "bin": 0,
@@ -282,12 +265,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 11,
-                  "avg_score": 0.7628865979381443,
-                  "direction_hit_rate": 0.6363636363636364,
-                  "calibration_error": 0.12652296157450793,
-                  "avg_net_return_bps": 56.09716573116458,
-                  "avg_sized_net_return_bps": 56.09716573116458
+                  "count": 13,
+                  "avg_score": 0.7801047120418848,
+                  "direction_hit_rate": 0.15384615384615385,
+                  "calibration_error": 0.626258558195731,
+                  "avg_net_return_bps": -89.81214902075124,
+                  "avg_sized_net_return_bps": -89.81214902075124
                 },
                 {
                   "bin": 4,
@@ -307,32 +290,32 @@
           },
           {
             "fold_index": 1,
-            "train_events": 42,
-            "test_events": 66,
+            "train_events": 70,
+            "test_events": 134,
             "blocks": [
               {
                 "range": [
-                  0.2,
+                  0.4,
                   0.6
                 ],
-                "count": 8,
-                "avg_evidence_strength": 0.5079422548247778,
-                "calibrated_probability": 0.5
+                "count": 11,
+                "avg_evidence_strength": 0.5254124956141343,
+                "calibrated_probability": 0.18181818181818182
               },
               {
                 "range": [
                   0.6,
                   1.0
                 ],
-                "count": 34,
-                "avg_evidence_strength": 0.9049167920825274,
-                "calibrated_probability": 0.6470588235294118
+                "count": 59,
+                "avg_evidence_strength": 0.9604138327679312,
+                "calibrated_probability": 0.5932203389830508
               }
             ],
             "metrics": {
-              "events": 66,
-              "brier_score": 0.19377162629757785,
-              "expected_calibration_error": 0.23083778966131907,
+              "events": 134,
+              "brier_score": 0.35815838908689923,
+              "expected_calibration_error": 0.4171745279764506,
               "buckets": [
                 {
                   "bin": 0,
@@ -340,12 +323,12 @@
                     0.0,
                     0.2
                   ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
+                  "count": 52,
+                  "avg_score": 0.18181818181818182,
+                  "direction_hit_rate": 0.9038461538461539,
+                  "calibration_error": 0.7220279720279721,
+                  "avg_net_return_bps": 387.69564055835156,
+                  "avg_sized_net_return_bps": 387.69564055835156
                 },
                 {
                   "bin": 1,
@@ -366,12 +349,12 @@
                     0.4,
                     0.6
                   ],
-                  "count": 20,
-                  "avg_score": 0.5,
-                  "direction_hit_rate": 0.8,
-                  "calibration_error": 0.30000000000000004,
-                  "avg_net_return_bps": 266.85554915966355,
-                  "avg_sized_net_return_bps": 266.85554915966355
+                  "count": 82,
+                  "avg_score": 0.5932203389830508,
+                  "direction_hit_rate": 0.8170731707317073,
+                  "calibration_error": 0.22385283174865644,
+                  "avg_net_return_bps": 331.7412956851882,
+                  "avg_sized_net_return_bps": 331.7412956851882
                 },
                 {
                   "bin": 3,
@@ -379,12 +362,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 46,
-                  "avg_score": 0.6470588235294118,
-                  "direction_hit_rate": 0.8478260869565217,
-                  "calibration_error": 0.20076726342710993,
-                  "avg_net_return_bps": 258.7898858370459,
-                  "avg_sized_net_return_bps": 258.7898858370459
+                  "count": 0,
+                  "avg_score": 0.0,
+                  "direction_hit_rate": 0.0,
+                  "calibration_error": 0.0,
+                  "avg_net_return_bps": 0.0,
+                  "avg_sized_net_return_bps": 0.0
                 },
                 {
                   "bin": 4,
@@ -404,32 +387,23 @@
           },
           {
             "fold_index": 2,
-            "train_events": 100,
-            "test_events": 8,
+            "train_events": 200,
+            "test_events": 4,
             "blocks": [
               {
                 "range": [
                   0.2,
-                  0.6
-                ],
-                "count": 28,
-                "avg_evidence_strength": 0.5295657973218356,
-                "calibrated_probability": 0.7142857142857143
-              },
-              {
-                "range": [
-                  0.6,
                   1.0
                 ],
-                "count": 72,
-                "avg_evidence_strength": 0.9002340140636387,
-                "calibrated_probability": 0.7777777777777778
+                "count": 200,
+                "avg_evidence_strength": 0.7962589094932535,
+                "calibrated_probability": 0.745
               }
             ],
             "metrics": {
-              "events": 8,
-              "brier_score": 0.2577160493827161,
-              "expected_calibration_error": 0.1527777777777778,
+              "events": 4,
+              "brier_score": 0.310025,
+              "expected_calibration_error": 0.245,
               "buckets": [
                 {
                   "bin": 0,
@@ -476,12 +450,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 8,
-                  "avg_score": 0.7777777777777778,
-                  "direction_hit_rate": 0.625,
-                  "calibration_error": 0.1527777777777778,
-                  "avg_net_return_bps": 43.608783682647946,
-                  "avg_sized_net_return_bps": 43.608783682647946
+                  "count": 4,
+                  "avg_score": 0.745,
+                  "direction_hit_rate": 0.5,
+                  "calibration_error": 0.245,
+                  "avg_net_return_bps": -123.81665314991656,
+                  "avg_sized_net_return_bps": -123.81665314991656
                 },
                 {
                   "bin": 4,
@@ -501,32 +475,32 @@
           },
           {
             "fold_index": 3,
-            "train_events": 85,
-            "test_events": 23,
+            "train_events": 151,
+            "test_events": 53,
             "blocks": [
               {
                 "range": [
                   0.2,
                   0.6
                 ],
-                "count": 27,
-                "avg_evidence_strength": 0.5316123870522255,
-                "calibrated_probability": 0.7037037037037037
+                "count": 62,
+                "avg_evidence_strength": 0.5178723350164911,
+                "calibrated_probability": 0.7741935483870968
               },
               {
                 "range": [
                   0.6,
                   1.0
                 ],
-                "count": 58,
-                "avg_evidence_strength": 0.866694052852121,
-                "calibrated_probability": 0.8275862068965517
+                "count": 89,
+                "avg_evidence_strength": 0.9006341337497618,
+                "calibrated_probability": 0.7865168539325843
               }
             ],
             "metrics": {
-              "events": 23,
-              "brier_score": 0.2886228944559932,
-              "expected_calibration_error": 0.239269254261758,
+              "events": 53,
+              "brier_score": 0.2619163302065121,
+              "expected_calibration_error": 0.16364282929965057,
               "buckets": [
                 {
                   "bin": 0,
@@ -573,12 +547,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 1,
-                  "avg_score": 0.7037037037037037,
-                  "direction_hit_rate": 1.0,
-                  "calibration_error": 0.2962962962962963,
-                  "avg_net_return_bps": 499.57359009628726,
-                  "avg_sized_net_return_bps": 499.57359009628726
+                  "count": 53,
+                  "avg_score": 0.7862843387336128,
+                  "direction_hit_rate": 0.6226415094339622,
+                  "calibration_error": 0.16364282929965057,
+                  "avg_net_return_bps": 54.11918493222807,
+                  "avg_sized_net_return_bps": 54.11918493222807
                 },
                 {
                   "bin": 4,
@@ -586,12 +560,12 @@
                     0.8,
                     1.0
                   ],
-                  "count": 22,
-                  "avg_score": 0.8275862068965517,
-                  "direction_hit_rate": 0.5909090909090909,
-                  "calibration_error": 0.23667711598746077,
-                  "avg_net_return_bps": -11.31757924208758,
-                  "avg_sized_net_return_bps": -11.31757924208758
+                  "count": 0,
+                  "avg_score": 0.0,
+                  "direction_hit_rate": 0.0,
+                  "calibration_error": 0.0,
+                  "avg_net_return_bps": 0.0,
+                  "avg_sized_net_return_bps": 0.0
                 }
               ]
             }
@@ -604,12 +578,12 @@
               0.0,
               0.2
             ],
-            "count": 0,
-            "avg_score": 0.0,
-            "direction_hit_rate": 0.0,
-            "calibration_error": 0.0,
-            "avg_net_return_bps": 0.0,
-            "avg_sized_net_return_bps": 0.0
+            "count": 52,
+            "avg_score": 0.18181818181818182,
+            "direction_hit_rate": 0.9038461538461539,
+            "calibration_error": 0.7220279720279721,
+            "avg_net_return_bps": 387.69564055835156,
+            "avg_sized_net_return_bps": 387.69564055835156
           },
           {
             "bin": 1,
@@ -630,12 +604,12 @@
               0.4,
               0.6
             ],
-            "count": 20,
-            "avg_score": 0.5,
-            "direction_hit_rate": 0.8,
-            "calibration_error": 0.30000000000000004,
-            "avg_net_return_bps": 266.85554915966355,
-            "avg_sized_net_return_bps": 266.85554915966355
+            "count": 82,
+            "avg_score": 0.5932203389830508,
+            "direction_hit_rate": 0.8170731707317073,
+            "calibration_error": 0.22385283174865644,
+            "avg_net_return_bps": 331.7412956851882,
+            "avg_sized_net_return_bps": 331.7412956851882
           },
           {
             "bin": 3,
@@ -643,12 +617,12 @@
               0.6,
               0.8
             ],
-            "count": 66,
-            "avg_score": 0.683066430084825,
-            "direction_hit_rate": 0.7878787878787878,
-            "calibration_error": 0.10481235779396281,
-            "avg_net_return_bps": 202.57344592582413,
-            "avg_sized_net_return_bps": 202.57344592582413
+            "count": 70,
+            "avg_score": 0.7827775887060855,
+            "direction_hit_rate": 0.5285714285714286,
+            "calibration_error": 0.2542061601346569,
+            "avg_net_return_bps": 17.22131787912365,
+            "avg_sized_net_return_bps": 17.22131787912365
           },
           {
             "bin": 4,
@@ -656,54 +630,54 @@
               0.8,
               1.0
             ],
-            "count": 22,
-            "avg_score": 0.8275862068965517,
-            "direction_hit_rate": 0.5909090909090909,
-            "calibration_error": 0.23667711598746077,
-            "avg_net_return_bps": -11.31757924208758,
-            "avg_sized_net_return_bps": -11.31757924208758
+            "count": 0,
+            "avg_score": 0.0,
+            "direction_hit_rate": 0.0,
+            "calibration_error": 0.0,
+            "avg_net_return_bps": 0.0,
+            "avg_sized_net_return_bps": 0.0
           }
         ]
       },
       "base_rate_calibration": {
         "method": "crossfold_signal_base_rate",
         "out_of_sample": true,
-        "events": 108,
-        "base_rate_probability": 0.75,
-        "brier_score": 0.21443774161221624,
-        "expected_calibration_error": 0.0698304888965896,
+        "events": 204,
+        "base_rate_probability": 0.7401960784313726,
+        "brier_score": 0.25855045497334367,
+        "expected_calibration_error": 0.29759808025009526,
         "folds": [
           {
             "fold_index": 0,
-            "train_events": 97,
-            "test_events": 11,
-            "base_rate_probability": 0.7628865979381443,
-            "test_hit_rate": 0.6363636363636364,
-            "abs_error": 0.12652296157450793
+            "train_events": 191,
+            "test_events": 13,
+            "base_rate_probability": 0.7801047120418848,
+            "test_hit_rate": 0.15384615384615385,
+            "abs_error": 0.626258558195731
           },
           {
             "fold_index": 1,
-            "train_events": 42,
-            "test_events": 66,
-            "base_rate_probability": 0.6190476190476191,
-            "test_hit_rate": 0.8333333333333334,
-            "abs_error": 0.2142857142857143
+            "train_events": 70,
+            "test_events": 134,
+            "base_rate_probability": 0.5285714285714286,
+            "test_hit_rate": 0.8507462686567164,
+            "abs_error": 0.32217484008528785
           },
           {
             "fold_index": 2,
-            "train_events": 100,
-            "test_events": 8,
-            "base_rate_probability": 0.76,
-            "test_hit_rate": 0.625,
-            "abs_error": 0.135
+            "train_events": 200,
+            "test_events": 4,
+            "base_rate_probability": 0.745,
+            "test_hit_rate": 0.5,
+            "abs_error": 0.245
           },
           {
             "fold_index": 3,
-            "train_events": 85,
-            "test_events": 23,
-            "base_rate_probability": 0.788235294117647,
-            "test_hit_rate": 0.6086956521739131,
-            "abs_error": 0.17953964194373395
+            "train_events": 151,
+            "test_events": 53,
+            "base_rate_probability": 0.7814569536423841,
+            "test_hit_rate": 0.6226415094339622,
+            "abs_error": 0.15881544420842186
           }
         ],
         "buckets": [
@@ -739,12 +713,12 @@
               0.4,
               0.6
             ],
-            "count": 0,
-            "avg_score": 0.0,
-            "direction_hit_rate": 0.0,
-            "calibration_error": 0.0,
-            "avg_net_return_bps": 0.0,
-            "avg_sized_net_return_bps": 0.0
+            "count": 134,
+            "avg_score": 0.5285714285714286,
+            "direction_hit_rate": 0.8507462686567164,
+            "calibration_error": 0.32217484008528785,
+            "avg_net_return_bps": 353.4549220538785,
+            "avg_sized_net_return_bps": 353.4549220538785
           },
           {
             "bin": 3,
@@ -752,12 +726,12 @@
               0.6,
               0.8
             ],
-            "count": 108,
-            "avg_score": 0.6801695111034104,
-            "direction_hit_rate": 0.75,
-            "calibration_error": 0.0698304888965896,
-            "avg_net_return_bps": 170.90714510159017,
-            "avg_sized_net_return_bps": 170.90714510159017
+            "count": 70,
+            "avg_score": 0.7791225685655837,
+            "direction_hit_rate": 0.5285714285714286,
+            "calibration_error": 0.2505511399941551,
+            "avg_net_return_bps": 17.22131787912365,
+            "avg_sized_net_return_bps": 17.22131787912365
           },
           {
             "bin": 4,
@@ -783,52 +757,52 @@
           ],
           "min_events": 8,
           "total_slices": 4,
-          "eligible_slices": 4,
-          "positive_net_slices": 4,
-          "min_hit_rate": 0.6086956521739131,
-          "max_hit_rate": 0.8333333333333334,
-          "max_abs_error_from_reference": 0.14130434782608692,
-          "stable": true,
+          "eligible_slices": 3,
+          "positive_net_slices": 2,
+          "min_hit_rate": 0.15384615384615385,
+          "max_hit_rate": 0.8507462686567164,
+          "max_abs_error_from_reference": 0.5863499245852187,
+          "stable": false,
           "slices": [
             {
               "key": [
                 "0"
               ],
-              "count": 11,
+              "count": 13,
               "eligible": true,
-              "hit_rate": 0.6363636363636364,
-              "abs_error_from_reference": 0.11363636363636365,
-              "avg_net_return_bps": 56.09716573116458
+              "hit_rate": 0.15384615384615385,
+              "abs_error_from_reference": 0.5863499245852187,
+              "avg_net_return_bps": -89.81214902075124
             },
             {
               "key": [
                 "1"
               ],
-              "count": 66,
+              "count": 134,
               "eligible": true,
-              "hit_rate": 0.8333333333333334,
-              "abs_error_from_reference": 0.08333333333333337,
-              "avg_net_return_bps": 261.23402623783915
+              "hit_rate": 0.8507462686567164,
+              "abs_error_from_reference": 0.11055019022534385,
+              "avg_net_return_bps": 353.4549220538785
             },
             {
               "key": [
                 "2"
               ],
-              "count": 8,
-              "eligible": true,
-              "hit_rate": 0.625,
-              "abs_error_from_reference": 0.125,
-              "avg_net_return_bps": 43.608783682647946
+              "count": 4,
+              "eligible": false,
+              "hit_rate": 0.5,
+              "abs_error_from_reference": 0.24019607843137258,
+              "avg_net_return_bps": -123.81665314991656
             },
             {
               "key": [
                 "3"
               ],
-              "count": 23,
+              "count": 53,
               "eligible": true,
-              "hit_rate": 0.6086956521739131,
-              "abs_error_from_reference": 0.14130434782608692,
-              "avg_net_return_bps": 10.895080294363499
+              "hit_rate": 0.6226415094339622,
+              "abs_error_from_reference": 0.11755456899741035,
+              "avg_net_return_bps": 54.11918493222807
             }
           ]
         },
@@ -837,43 +811,93 @@
             "symbol"
           ],
           "min_events": 20,
-          "total_slices": 3,
-          "eligible_slices": 3,
-          "positive_net_slices": 3,
-          "min_hit_rate": 0.6896551724137931,
-          "max_hit_rate": 0.7941176470588235,
-          "max_abs_error_from_reference": 0.06034482758620685,
-          "stable": true,
+          "total_slices": 8,
+          "eligible_slices": 7,
+          "positive_net_slices": 7,
+          "min_hit_rate": 0.6785714285714286,
+          "max_hit_rate": 0.8333333333333334,
+          "max_abs_error_from_reference": 0.09313725490196079,
+          "stable": false,
           "slices": [
+            {
+              "key": [
+                "ADA/USDT"
+              ],
+              "count": 33,
+              "eligible": true,
+              "hit_rate": 0.7878787878787878,
+              "abs_error_from_reference": 0.04768270944741526,
+              "avg_net_return_bps": 489.47118577869577
+            },
+            {
+              "key": [
+                "AVAX/USDT"
+              ],
+              "count": 21,
+              "eligible": true,
+              "hit_rate": 0.7619047619047619,
+              "abs_error_from_reference": 0.02170868347338928,
+              "avg_net_return_bps": 305.526913444338
+            },
             {
               "key": [
                 "BTC/USDT"
               ],
-              "count": 29,
+              "count": 25,
               "eligible": true,
-              "hit_rate": 0.6896551724137931,
-              "abs_error_from_reference": 0.06034482758620685,
-              "avg_net_return_bps": 130.57638225532457
+              "hit_rate": 0.68,
+              "abs_error_from_reference": 0.060196078431372535,
+              "avg_net_return_bps": 140.48886169453425
+            },
+            {
+              "key": [
+                "DOGE/USDT"
+              ],
+              "count": 24,
+              "eligible": true,
+              "hit_rate": 0.75,
+              "abs_error_from_reference": 0.009803921568627416,
+              "avg_net_return_bps": 168.27504725896742
             },
             {
               "key": [
                 "ETH/USDT"
               ],
-              "count": 45,
+              "count": 24,
               "eligible": true,
-              "hit_rate": 0.7555555555555555,
-              "abs_error_from_reference": 0.005555555555555536,
-              "avg_net_return_bps": 151.8268410612305
+              "hit_rate": 0.7916666666666666,
+              "abs_error_from_reference": 0.051470588235294046,
+              "avg_net_return_bps": 233.66836701467767
+            },
+            {
+              "key": [
+                "LINK/USDT"
+              ],
+              "count": 19,
+              "eligible": false,
+              "hit_rate": 0.5789473684210527,
+              "abs_error_from_reference": 0.16124871001031993,
+              "avg_net_return_bps": 130.27472398982835
             },
             {
               "key": [
                 "SOL/USDT"
               ],
-              "count": 34,
+              "count": 30,
               "eligible": true,
-              "hit_rate": 0.7941176470588235,
-              "abs_error_from_reference": 0.044117647058823484,
-              "avg_net_return_bps": 230.56025699446917
+              "hit_rate": 0.8333333333333334,
+              "abs_error_from_reference": 0.09313725490196079,
+              "avg_net_return_bps": 254.10345004791296
+            },
+            {
+              "key": [
+                "XRP/USDT"
+              ],
+              "count": 28,
+              "eligible": true,
+              "hit_rate": 0.6785714285714286,
+              "abs_error_from_reference": 0.06162464985994398,
+              "avg_net_return_bps": 97.95181255554796
             }
           ]
         },
@@ -882,33 +906,23 @@
             "timeframe"
           ],
           "min_events": 20,
-          "total_slices": 2,
-          "eligible_slices": 2,
-          "positive_net_slices": 2,
-          "min_hit_rate": 0.6896551724137931,
-          "max_hit_rate": 0.7721518987341772,
-          "max_abs_error_from_reference": 0.06034482758620685,
+          "total_slices": 1,
+          "eligible_slices": 1,
+          "positive_net_slices": 1,
+          "min_hit_rate": 0.7401960784313726,
+          "max_hit_rate": 0.7401960784313726,
+          "max_abs_error_from_reference": 0.0,
           "stable": true,
           "slices": [
             {
               "key": [
-                "1h"
-              ],
-              "count": 29,
-              "eligible": true,
-              "hit_rate": 0.6896551724137931,
-              "abs_error_from_reference": 0.06034482758620685,
-              "avg_net_return_bps": 59.124338579956145
-            },
-            {
-              "key": [
                 "4h"
               ],
-              "count": 79,
+              "count": 204,
               "eligible": true,
-              "hit_rate": 0.7721518987341772,
-              "abs_error_from_reference": 0.022151898734177222,
-              "avg_net_return_bps": 211.941339900671
+              "hit_rate": 0.7401960784313726,
+              "abs_error_from_reference": 0.0,
+              "avg_net_return_bps": 238.08064611156064
             }
           ]
         },
@@ -918,24 +932,35 @@
             "timeframe"
           ],
           "min_events": 12,
-          "total_slices": 6,
-          "eligible_slices": 4,
-          "positive_net_slices": 4,
-          "min_hit_rate": 0.68,
+          "total_slices": 8,
+          "eligible_slices": 8,
+          "positive_net_slices": 8,
+          "min_hit_rate": 0.5789473684210527,
           "max_hit_rate": 0.8333333333333334,
-          "max_abs_error_from_reference": 0.08333333333333337,
+          "max_abs_error_from_reference": 0.16124871001031993,
           "stable": false,
           "slices": [
             {
               "key": [
-                "BTC/USDT",
-                "1h"
+                "ADA/USDT",
+                "4h"
               ],
-              "count": 4,
-              "eligible": false,
-              "hit_rate": 0.75,
-              "abs_error_from_reference": 0.0,
-              "avg_net_return_bps": 68.6233857602642
+              "count": 33,
+              "eligible": true,
+              "hit_rate": 0.7878787878787878,
+              "abs_error_from_reference": 0.04768270944741526,
+              "avg_net_return_bps": 489.47118577869577
+            },
+            {
+              "key": [
+                "AVAX/USDT",
+                "4h"
+              ],
+              "count": 21,
+              "eligible": true,
+              "hit_rate": 0.7619047619047619,
+              "abs_error_from_reference": 0.02170868347338928,
+              "avg_net_return_bps": 305.526913444338
             },
             {
               "key": [
@@ -945,19 +970,19 @@
               "count": 25,
               "eligible": true,
               "hit_rate": 0.68,
-              "abs_error_from_reference": 0.06999999999999995,
+              "abs_error_from_reference": 0.060196078431372535,
               "avg_net_return_bps": 140.48886169453425
             },
             {
               "key": [
-                "ETH/USDT",
-                "1h"
+                "DOGE/USDT",
+                "4h"
               ],
-              "count": 21,
+              "count": 24,
               "eligible": true,
-              "hit_rate": 0.7142857142857143,
-              "abs_error_from_reference": 0.0357142857142857,
-              "avg_net_return_bps": 58.29366854300516
+              "hit_rate": 0.75,
+              "abs_error_from_reference": 0.009803921568627416,
+              "avg_net_return_bps": 168.27504725896742
             },
             {
               "key": [
@@ -967,19 +992,19 @@
               "count": 24,
               "eligible": true,
               "hit_rate": 0.7916666666666666,
-              "abs_error_from_reference": 0.04166666666666663,
+              "abs_error_from_reference": 0.051470588235294046,
               "avg_net_return_bps": 233.66836701467767
             },
             {
               "key": [
-                "SOL/USDT",
-                "1h"
+                "LINK/USDT",
+                "4h"
               ],
-              "count": 4,
-              "eligible": false,
-              "hit_rate": 0.5,
-              "abs_error_from_reference": 0.25,
-              "avg_net_return_bps": 53.98630909364074
+              "count": 19,
+              "eligible": true,
+              "hit_rate": 0.5789473684210527,
+              "abs_error_from_reference": 0.16124871001031993,
+              "avg_net_return_bps": 130.27472398982835
             },
             {
               "key": [
@@ -989,8 +1014,19 @@
               "count": 30,
               "eligible": true,
               "hit_rate": 0.8333333333333334,
-              "abs_error_from_reference": 0.08333333333333337,
+              "abs_error_from_reference": 0.09313725490196079,
               "avg_net_return_bps": 254.10345004791296
+            },
+            {
+              "key": [
+                "XRP/USDT",
+                "4h"
+              ],
+              "count": 28,
+              "eligible": true,
+              "hit_rate": 0.6785714285714286,
+              "abs_error_from_reference": 0.06162464985994398,
+              "avg_net_return_bps": 97.95181255554796
             }
           ]
         }

@@ -73,24 +73,38 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.validation["active_direction_accuracy"] == 0.6
     assert result.calibration_bucket is not None
     assert result.calibration_bucket["direction_hit_rate"] == 0.65
+    assert result.calibrated_probability is None
+    assert result.probability_kind == "none"
 
 
 def test_calibration_bucket_for_evidence_finds_matching_range():
-    from benchmarks.crypto_current_forecast import calibration_bucket_for_evidence
+    from benchmarks.crypto_current_forecast import calibration_bucket_for_evidence, calibrated_probability_for_evidence
+
+    profile = {
+        "calibration": [
+            {
+                "engine": "WaveMind timeframe policy",
+                "probability_ready": True,
+                "probability_kind": "base_rate",
+                "base_rate_calibration": {"probability_ready": True, "base_rate_probability": 0.61},
+                "monotonic_calibration": {
+                    "blocks": [{"range": [0.5, 1.0], "calibrated_probability": 0.68}]
+                },
+                "buckets": [
+                    {"range": [0.0, 0.5], "count": 3, "direction_hit_rate": 0.33},
+                    {"range": [0.5, 1.0], "count": 7, "direction_hit_rate": 0.71},
+                ],
+            }
+        ]
+    }
 
     bucket = calibration_bucket_for_evidence(
-        {
-            "calibration": [
-                {
-                    "engine": "WaveMind timeframe policy",
-                    "probability_ready": False,
-                    "buckets": [
-                        {"range": [0.0, 0.5], "count": 3, "direction_hit_rate": 0.33},
-                        {"range": [0.5, 1.0], "count": 7, "direction_hit_rate": 0.71},
-                    ],
-                }
-            ]
-        },
+        profile,
+        engine_name="WaveMind timeframe policy",
+        evidence_strength=0.62,
+    )
+    probability, kind = calibrated_probability_for_evidence(
+        profile,
         engine_name="WaveMind timeframe policy",
         evidence_strength=0.62,
     )
@@ -98,6 +112,36 @@ def test_calibration_bucket_for_evidence_finds_matching_range():
     assert bucket is not None
     assert bucket["range"] == [0.5, 1.0]
     assert bucket["direction_hit_rate"] == 0.71
+    assert bucket["base_rate_probability"] == 0.61
+    assert bucket["monotonic_calibrated_probability"] == 0.68
+    assert probability == 0.61
+    assert kind == "base_rate"
+
+
+def test_calibrated_probability_prefers_ready_monotonic_blocks():
+    from benchmarks.crypto_current_forecast import calibrated_probability_for_evidence
+
+    probability, kind = calibrated_probability_for_evidence(
+        {
+            "calibration": [
+                {
+                    "engine": "WaveMind timeframe policy",
+                    "probability_kind": "monotonic",
+                    "monotonic_calibration": {
+                        "blocks": [
+                            {"range": [0.0, 0.5], "calibrated_probability": 0.54},
+                            {"range": [0.5, 1.0], "calibrated_probability": 0.67},
+                        ]
+                    },
+                }
+            ]
+        },
+        engine_name="WaveMind timeframe policy",
+        evidence_strength=0.72,
+    )
+
+    assert probability == 0.67
+    assert kind == "monotonic"
 
 
 def test_fetch_latest_completed_bars_uses_since_slack(monkeypatch):
@@ -153,6 +197,8 @@ def test_render_markdown_contains_price_target():
                 confidence=0.73,
                 evidence_strength=0.73,
                 calibration_bucket={"direction_hit_rate": 0.62},
+                calibrated_probability=0.62,
+                probability_kind="base_rate",
                 filtered=False,
                 filter_reason="",
                 analogue_agreement=0.8,
@@ -166,6 +212,7 @@ def test_render_markdown_contains_price_target():
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
     assert "0.620" in markdown
+    assert "base_rate" in markdown
     assert "BTC/USDT" in markdown
     assert "101200" in markdown
     assert "1.20%" in markdown
@@ -207,5 +254,7 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["confidence_is_probability"] is False
     assert "not a calibrated probability" in payload["results"][0]["confidence_note"]
     assert payload["results"][0]["evidence_strength"] == payload["results"][0]["confidence"]
+    assert payload["results"][0]["probability_kind"] == "none"
+    assert payload["results"][0]["calibrated_probability"] is None
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
     assert not bars_path.exists()

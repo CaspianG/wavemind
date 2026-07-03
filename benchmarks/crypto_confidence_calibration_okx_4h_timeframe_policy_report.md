@@ -5,15 +5,15 @@ It is a research diagnostic, not a trading signal.
 
 ## WaveMind timeframe policy
 
-- signal events: 108
-- raw Brier if treated as probability: 0.236
-- raw expected calibration error: 0.223
-- monotonic Brier: 0.224
-- monotonic expected calibration error: 0.168
+- signal events: 79
+- raw Brier if treated as probability: 0.230
+- raw expected calibration error: 0.244
+- monotonic Brier: 0.301
+- monotonic expected calibration error: 0.380
 - monotonic out-of-sample: true
-- base-rate probability: 0.750
-- base-rate Brier: 0.214
-- base-rate expected calibration error: 0.070
+- base-rate probability: 0.772
+- base-rate Brier: 0.281
+- base-rate expected calibration error: 0.368
 - probability ready: false
 - probability kind: none
 
@@ -21,24 +21,23 @@ It is a research diagnostic, not a trading signal.
 
 | slice | eligible slices | min hit rate | max hit rate | max abs error | stable |
 |---|---:|---:|---:|---:|---|
-| fold | 4 | 0.609 | 0.833 | 0.141 | true |
-| symbol | 3 | 0.690 | 0.794 | 0.060 | true |
-| timeframe | 2 | 0.690 | 0.772 | 0.060 | true |
-| symbol_timeframe | 4 | 0.680 | 0.833 | 0.083 | false |
+| fold | 2 | 0.533 | 0.891 | 0.239 | false |
+| symbol | 3 | 0.680 | 0.833 | 0.092 | true |
+| timeframe | 1 | 0.772 | 0.772 | 0.000 | true |
+| symbol_timeframe | 3 | 0.680 | 0.833 | 0.092 | true |
 
 ### Raw Evidence Buckets
 
 | evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
 |---|---:|---:|---:|---:|---:|
 | 0.0-0.2 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
-| 0.2-0.4 | 1 | 0.350 | 1.000 | 0.650 | 93.49 |
-| 0.4-0.6 | 27 | 0.536 | 0.704 | 0.167 | 216.51 |
-| 0.6-0.8 | 20 | 0.691 | 0.900 | 0.209 | 223.07 |
-| 0.8-1.0 | 60 | 0.963 | 0.717 | 0.246 | 134.29 |
+| 0.2-0.4 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
+| 0.4-0.6 | 22 | 0.538 | 0.773 | 0.235 | 277.40 |
+| 0.6-0.8 | 12 | 0.725 | 1.000 | 0.275 | 298.01 |
+| 0.8-1.0 | 45 | 0.951 | 0.711 | 0.240 | 156.99 |
 
 ### Monotonic Calibration Blocks
 
 | evidence range | train count | avg evidence | calibrated probability |
 |---|---:|---:|---:|
-| 0.2-0.6 | 28 | 0.530 | 0.714 |
-| 0.6-1.0 | 80 | 0.895 | 0.762 |
+| 0.4-1.0 | 79 | 0.802 | 0.772 |

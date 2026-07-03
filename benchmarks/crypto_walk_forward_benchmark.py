@@ -664,7 +664,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                     actual_return_bps=window.future_return_bps,
                     round_trip_cost_bps=self.round_trip_cost_bps,
                 )
-            )
+        )
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
@@ -773,6 +773,8 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
             round_trip_cost_bps=self.round_trip_cost_bps,
         )
         reasons = []
+        if edge < self.min_expected_edge_bps:
+            reasons.append("low_expected_edge")
         if reasons:
             return Prediction(
                 direction="flat",
@@ -813,6 +815,8 @@ class WaveMindMicrostructureEngine(MarketEngine):
         opposition_edge_bps: float = 50.0,
         boost_confidence: float = 0.50,
         min_expected_edge_bps: float = 20.0,
+        performance_lookback: int = 8,
+        min_recent_edge_bps: float = 20.0,
         round_trip_cost_bps: float = 30.0,
     ):
         self.ta = TaRulesEngine()
@@ -828,6 +832,8 @@ class WaveMindMicrostructureEngine(MarketEngine):
         self.opposition_edge_bps = float(opposition_edge_bps)
         self.boost_confidence = float(boost_confidence)
         self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.performance_lookback = int(performance_lookback)
+        self.min_recent_edge_bps = float(min_recent_edge_bps)
         self.round_trip_cost_bps = float(round_trip_cost_bps)
 
     def add(self, window: OHLCVWindow) -> None:
@@ -848,6 +854,20 @@ class WaveMindMicrostructureEngine(MarketEngine):
         self.ta.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        started = time.perf_counter()
+        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
+        min_samples = min(max(4, self.performance_lookback // 3), self.performance_lookback)
+        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=max(0.0, min(1.0, 0.5 + recent_edge / 200.0)),
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="negative_microstructure_recent_edge",
+            )
         base = self.ta.query(window, top_k=top_k)
         candidate_direction = base.direction
         if candidate_direction == "flat":
@@ -950,6 +970,8 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                 min_support=adaptive_min_support,
                 min_test_support=adaptive_min_test_support,
                 validation_holdout=adaptive_validation_holdout,
+                performance_lookback=adaptive_performance_lookback,
+                min_recent_edge_bps=adaptive_min_recent_edge_bps,
                 round_trip_cost_bps=round_trip_cost_bps,
             )
         elif timeframe == "4h":
@@ -978,6 +1000,30 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         if self.child is not None:
             prediction = self.child.query(window, top_k=top_k)
+            policy_reasons = []
+            if prediction.direction != "flat":
+                if prediction.direction != "down":
+                    policy_reasons.append("policy_requires_down_signal")
+                if str(window.features.get("volume_bucket", "")) == "normal":
+                    policy_reasons.append("policy_requires_abnormal_volume")
+                if (
+                    str(window.features.get("volume_bucket", "")) == "quiet"
+                    and str(window.features.get("drawdown_bucket", "")) == "deep"
+                ):
+                    policy_reasons.append("policy_blocks_quiet_deep_drawdown")
+            if policy_reasons:
+                return Prediction(
+                    direction="flat",
+                    expected_return_bps=0.0,
+                    latency_ms=prediction.latency_ms,
+                    analogues=prediction.analogues,
+                    confidence=prediction.confidence,
+                    raw_direction=prediction.direction,
+                    filtered=True,
+                    filter_reason=",".join(policy_reasons),
+                    analogue_agreement=prediction.analogue_agreement,
+                    regime_agreement=prediction.regime_agreement,
+                )
             return Prediction(
                 direction=prediction.direction,
                 expected_return_bps=prediction.expected_return_bps,
@@ -1418,7 +1464,11 @@ def run_walk_forward(
                                 )
                         engine_events.extend(market_events)
                         if include_event_metrics:
-                            event_metrics.extend(asdict(event) for event in market_events)
+                            for event in market_events:
+                                event_payload = asdict(event)
+                                event_payload["fold_index"] = int(fold_index)
+                                event_payload["fold_start"] = int(fold_start)
+                                event_metrics.append(event_payload)
                         by_market.append(
                             _summarize_events(
                                 engine.name,

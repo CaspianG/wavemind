@@ -5,15 +5,15 @@ It is a research diagnostic, not a trading signal.
 
 ## WaveMind timeframe policy
 
-- signal events: 108
-- raw Brier if treated as probability: 0.236
-- raw expected calibration error: 0.223
-- monotonic Brier: 0.224
-- monotonic expected calibration error: 0.168
+- signal events: 281
+- raw Brier if treated as probability: 0.290
+- raw expected calibration error: 0.292
+- monotonic Brier: 0.236
+- monotonic expected calibration error: 0.089
 - monotonic out-of-sample: true
-- base-rate probability: 0.750
-- base-rate Brier: 0.214
-- base-rate expected calibration error: 0.070
+- base-rate probability: 0.705
+- base-rate Brier: 0.225
+- base-rate expected calibration error: 0.043
 - probability ready: false
 - probability kind: none
 
@@ -21,24 +21,23 @@ It is a research diagnostic, not a trading signal.
 
 | slice | eligible slices | min hit rate | max hit rate | max abs error | stable |
 |---|---:|---:|---:|---:|---|
-| fold | 4 | 0.609 | 0.833 | 0.141 | true |
-| symbol | 3 | 0.690 | 0.794 | 0.060 | true |
-| timeframe | 2 | 0.690 | 0.772 | 0.060 | true |
-| symbol_timeframe | 4 | 0.680 | 0.833 | 0.083 | false |
+| fold | 4 | 0.577 | 0.780 | 0.128 | true |
+| symbol | 8 | 0.600 | 0.794 | 0.105 | true |
+| timeframe | 2 | 0.610 | 0.740 | 0.094 | true |
+| symbol_timeframe | 10 | 0.579 | 0.833 | 0.129 | false |
 
 ### Raw Evidence Buckets
 
 | evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
 |---|---:|---:|---:|---:|---:|
 | 0.0-0.2 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
-| 0.2-0.4 | 1 | 0.350 | 1.000 | 0.650 | 93.49 |
-| 0.4-0.6 | 27 | 0.536 | 0.704 | 0.167 | 216.51 |
-| 0.6-0.8 | 20 | 0.691 | 0.900 | 0.209 | 223.07 |
-| 0.8-1.0 | 60 | 0.963 | 0.717 | 0.246 | 134.29 |
+| 0.2-0.4 | 9 | 0.350 | 0.889 | 0.539 | 604.16 |
+| 0.4-0.6 | 68 | 0.539 | 0.750 | 0.211 | 215.27 |
+| 0.6-0.8 | 30 | 0.676 | 0.900 | 0.224 | 258.76 |
+| 0.8-1.0 | 174 | 0.966 | 0.644 | 0.322 | 131.42 |
 
 ### Monotonic Calibration Blocks
 
 | evidence range | train count | avg evidence | calibrated probability |
 |---|---:|---:|---:|
-| 0.2-0.6 | 28 | 0.530 | 0.714 |
-| 0.6-1.0 | 80 | 0.895 | 0.762 |
+| 0.2-1.0 | 281 | 0.812 | 0.705 |

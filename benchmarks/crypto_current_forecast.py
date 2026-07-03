@@ -63,6 +63,8 @@ class ForecastResult:
     confidence_is_probability: bool = False
     confidence_note: str = CONFIDENCE_NOTE
     calibration_bucket: Mapping[str, Any] | None = None
+    calibrated_probability: float | None = None
+    probability_kind: str = "none"
 
 
 def completed_bars(rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None) -> list[OHLCVBar]:
@@ -183,6 +185,11 @@ def forecast_from_bars(
         finally:
             engine.close()
     expected_price = float(query.bars[-1].close) * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
+    calibrated_probability, probability_kind = calibrated_probability_for_evidence(
+        calibration_profile,
+        engine_name=engine.name,
+        evidence_strength=float(prediction.confidence),
+    )
     return ForecastResult(
         symbol=symbol,
         exchange=exchange,
@@ -212,6 +219,8 @@ def forecast_from_bars(
             engine_name=engine.name,
             evidence_strength=float(prediction.confidence),
         ),
+        calibrated_probability=calibrated_probability,
+        probability_kind=probability_kind,
     )
 
 
@@ -257,6 +266,9 @@ def calibration_bucket_for_evidence(
     for engine in profile.get("calibration", []):
         if engine.get("engine") != engine_name:
             continue
+        base_rate = engine.get("base_rate_calibration", {})
+        monotonic = engine.get("monotonic_calibration", {})
+        monotonic_block = _monotonic_block_for_evidence(monotonic, evidence_strength=evidence_strength)
         for bucket in engine.get("buckets", []):
             low, high = bucket.get("range", [0.0, 1.0])
             evidence = float(evidence_strength)
@@ -271,9 +283,62 @@ def calibration_bucket_for_evidence(
                     "calibration_error": float(bucket.get("calibration_error", 0.0)),
                     "avg_net_return_bps": float(bucket.get("avg_net_return_bps", 0.0)),
                     "probability_ready": bool(engine.get("probability_ready", False)),
+                    "probability_kind": str(engine.get("probability_kind", "none")),
+                    "base_rate_probability": float(base_rate.get("base_rate_probability", 0.0)) if base_rate else 0.0,
+                    "base_rate_probability_ready": bool(base_rate.get("probability_ready", False)) if base_rate else False,
+                    "monotonic_calibrated_probability": (
+                        float(monotonic_block.get("calibrated_probability", 0.0)) if monotonic_block else 0.0
+                    ),
                 }
         return None
     return None
+
+
+def _monotonic_block_for_evidence(
+    monotonic_profile: Mapping[str, Any] | None,
+    *,
+    evidence_strength: float,
+) -> dict[str, Any] | None:
+    if not monotonic_profile:
+        return None
+    blocks = list(monotonic_profile.get("blocks", []))
+    if not blocks:
+        return None
+    evidence = float(evidence_strength)
+    for block in blocks:
+        low, high = block.get("range", [0.0, 1.0])
+        if float(low) <= evidence < float(high) or (math.isclose(evidence, 1.0) and float(high) >= 1.0):
+            return dict(block)
+    if evidence < float(blocks[0].get("range", [0.0, 1.0])[0]):
+        return dict(blocks[0])
+    return dict(blocks[-1])
+
+
+def calibrated_probability_for_evidence(
+    profile: Mapping[str, Any] | None,
+    *,
+    engine_name: str,
+    evidence_strength: float,
+) -> tuple[float | None, str]:
+    if not profile:
+        return None, "none"
+    for engine in profile.get("calibration", []):
+        if engine.get("engine") != engine_name:
+            continue
+        probability_kind = str(engine.get("probability_kind", "none"))
+        if probability_kind == "monotonic":
+            block = _monotonic_block_for_evidence(
+                engine.get("monotonic_calibration", {}),
+                evidence_strength=evidence_strength,
+            )
+            if block:
+                return float(block.get("calibrated_probability", 0.0)), "monotonic"
+        if probability_kind == "base_rate":
+            base_rate = engine.get("base_rate_calibration", {})
+            if base_rate.get("probability_ready"):
+                return float(base_rate.get("base_rate_probability", 0.0)), "base_rate"
+        return None, "none"
+    return None, "none"
 
 
 def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
@@ -295,6 +360,8 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "confidence": result.confidence,
         "confidence_is_probability": result.confidence_is_probability,
         "confidence_note": result.confidence_note,
+        "calibrated_probability": result.calibrated_probability,
+        "probability_kind": result.probability_kind,
         "filtered": result.filtered,
         "filter_reason": result.filter_reason,
         "analogue_agreement": result.analogue_agreement,
@@ -312,19 +379,18 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
         "",
-        "| symbol | horizon | data end UTC | direction | last close | expected return | expected price | evidence strength | bucket hit rate | filter |",
-        "|---|---:|---|---:|---:|---:|---:|---:|---:|---|",
+        "| symbol | horizon | data end UTC | direction | last close | expected return | expected price | evidence strength | calibrated probability | probability kind | filter |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
-        bucket_hit = ""
-        if result.calibration_bucket:
-            bucket_hit = f"{float(result.calibration_bucket.get('direction_hit_rate', 0.0)):.3f}"
+        probability_text = "" if result.calibrated_probability is None else f"{result.calibrated_probability:.3f}"
         lines.append(
             "| "
             f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | {result.direction} | "
             f"{result.last_close:.6g} | {result.expected_return_pct:.2f}% | "
-            f"{result.expected_price:.6g} | {result.evidence_strength:.3f} | {bucket_hit} | {filter_text} |"
+            f"{result.expected_price:.6g} | {result.evidence_strength:.3f} | {probability_text} | "
+            f"{result.probability_kind} | {filter_text} |"
         )
     lines.append("")
     validation = dict(results[0].validation) if results else {}
@@ -347,7 +413,7 @@ def render_markdown(results: list[ForecastResult]) -> str:
             )
             lines.append("")
     lines.append("Validation profile is embedded in the JSON output for each row.")
-    lines.append("Calibration bucket hit rate is historical and not guaranteed future probability.")
+    lines.append("Calibrated probability is profile-level and still not financial advice.")
     lines.append("")
     return "\n".join(lines)
 

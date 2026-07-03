@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-03T18:58:19.230502+00:00",
+  "generated_utc": "2026-07-03T20:49:22.091742+00:00",
   "closed_candles_only": true,
   "results": [
     {
@@ -20,6 +20,8 @@
       "confidence": 0.0,
       "confidence_is_probability": false,
       "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
+      "calibrated_probability": null,
+      "probability_kind": "none",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -27,15 +29,15 @@
       "latency_ms": 0.0,
       "validation": {
         "queries": 2160,
-        "active_direction_accuracy": 0.6060606060606061,
-        "signal_rate": 0.16805555555555557,
-        "avg_sized_net_return_bps": 14.972402953958946,
-        "sized_profit_factor": 2.354394910567266,
-        "sized_max_drawdown_bps": 5305.267438772396,
-        "positive_market_slices": 13,
+        "active_direction_accuracy": 0.75,
+        "signal_rate": 0.05,
+        "avg_sized_net_return_bps": 8.545357255079509,
+        "sized_profit_factor": 5.844944372527682,
+        "sized_max_drawdown_bps": 936.0842136594438,
+        "positive_market_slices": 11,
         "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -51.178114462804984,
-        "large_move_false_positive_rate": 0.10627177700348432
+        "worst_market_slice_sized_net_bps": -3.3283032148433778,
+        "large_move_false_positive_rate": 0.03832752613240418
       },
       "calibration_bucket": {}
     },
@@ -57,6 +59,8 @@
       "confidence": 0.0,
       "confidence_is_probability": false,
       "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
+      "calibrated_probability": null,
+      "probability_kind": "none",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -64,15 +68,15 @@
       "latency_ms": 0.0,
       "validation": {
         "queries": 2160,
-        "active_direction_accuracy": 0.6060606060606061,
-        "signal_rate": 0.16805555555555557,
-        "avg_sized_net_return_bps": 14.972402953958946,
-        "sized_profit_factor": 2.354394910567266,
-        "sized_max_drawdown_bps": 5305.267438772396,
-        "positive_market_slices": 13,
+        "active_direction_accuracy": 0.75,
+        "signal_rate": 0.05,
+        "avg_sized_net_return_bps": 8.545357255079509,
+        "sized_profit_factor": 5.844944372527682,
+        "sized_max_drawdown_bps": 936.0842136594438,
+        "positive_market_slices": 11,
         "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -51.178114462804984,
-        "large_move_false_positive_rate": 0.10627177700348432
+        "worst_market_slice_sized_net_bps": -3.3283032148433778,
+        "large_move_false_positive_rate": 0.03832752613240418
       },
       "calibration_bucket": {}
     },
@@ -94,6 +98,8 @@
       "confidence": 0.0,
       "confidence_is_probability": false,
       "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
+      "calibrated_probability": null,
+      "probability_kind": "none",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -101,15 +107,15 @@
       "latency_ms": 0.0,
       "validation": {
         "queries": 2160,
-        "active_direction_accuracy": 0.6060606060606061,
-        "signal_rate": 0.16805555555555557,
-        "avg_sized_net_return_bps": 14.972402953958946,
-        "sized_profit_factor": 2.354394910567266,
-        "sized_max_drawdown_bps": 5305.267438772396,
-        "positive_market_slices": 13,
+        "active_direction_accuracy": 0.75,
+        "signal_rate": 0.05,
+        "avg_sized_net_return_bps": 8.545357255079509,
+        "sized_profit_factor": 5.844944372527682,
+        "sized_max_drawdown_bps": 936.0842136594438,
+        "positive_market_slices": 11,
         "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -51.178114462804984,
-        "large_move_false_positive_rate": 0.10627177700348432
+        "worst_market_slice_sized_net_bps": -3.3283032148433778,
+        "large_move_false_positive_rate": 0.03832752613240418
       },
       "calibration_bucket": {}
     }

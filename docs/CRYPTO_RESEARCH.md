@@ -74,9 +74,10 @@ It does not mean:
 - calibrated win rate for this specific coin tomorrow.
 
 The current 24h policy is promising but not production-grade. Its checked
-validation profile has active direction accuracy `0.606`, signal rate `0.168`,
-and positive market slices `13/36`. That is better than random on the active
-subset, but it is not enough to claim a reliable live forecast.
+validation profile has active direction accuracy `0.750`, signal rate `0.050`,
+profit factor `5.845`, and positive market slices `11/36`. That is a stronger
+active subset than before, but still not enough to claim a reliable live
+forecast or calibrated probability.
 
 Required next step:
 
@@ -88,20 +89,22 @@ Required next step:
 4. Expose a real probability only for buckets that remain stable across
    symbols, folds, date ranges, and exchanges.
 
-Current checked OKX calibration result for the timeframe policy:
+Current checked OKX calibration result for the strict timeframe policy:
 
 | evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
 |---|---:|---:|---:|---:|---:|
-| 0.2-0.4 | 13 | 0.350 | 0.462 | 0.112 | 35.18 |
-| 0.4-0.6 | 78 | 0.535 | 0.718 | 0.183 | 185.03 |
-| 0.6-0.8 | 60 | 0.671 | 0.717 | 0.045 | 141.52 |
-| 0.8-1.0 | 212 | 0.968 | 0.542 | 0.426 | 42.26 |
+| 0.2-0.4 | 1 | 0.350 | 1.000 | 0.650 | 93.49 |
+| 0.4-0.6 | 27 | 0.536 | 0.704 | 0.167 | 216.51 |
+| 0.6-0.8 | 20 | 0.691 | 0.900 | 0.209 | 223.07 |
+| 0.8-1.0 | 60 | 0.963 | 0.717 | 0.246 | 134.29 |
 
-Summary: signal events `363`, Brier score if treated as probability `0.347`,
-expected calibration error `0.299`, probability ready `false`. The score is
-not monotonic yet: mid-strength evidence worked better than high-strength
-evidence. That is exactly why the forecast output now reports both raw
-`evidence_strength` and historical bucket hit rate.
+Summary: signal events `108`, active hit rate `0.750`, Brier score if raw
+evidence is treated as probability `0.236`, raw expected calibration error
+`0.223`, base-rate probability `0.750`, and base-rate expected calibration
+error `0.070`. Probability remains disabled because the combined
+symbol/timeframe support check is still false. The score is useful as a
+research signal, but the current forecast output still reports
+`probability_kind=none` unless all stability checks pass.
 
 ## First Benchmark
 
@@ -270,21 +273,20 @@ drawdown (`3250.2` vs `3780.2`) versus raw TA. On the additional five-asset
 check it keeps the improvement (`6.44` vs `3.11` bps) and cuts worst-slice loss
 from `-51.68` to `-25.45` bps.
 
-Timeframe-aware BTC/ETH/SOL check, 1h/4h/1d, 4 folds x 60 windows per market:
+Timeframe-aware BTC/ETH/SOL check after the strict downside/volume policy,
+1h/4h/1d, 4 folds x 60 windows per market:
 
-| engine | queries | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.168 | 14.97 | 2.354 | 5305.3 | 13/36 | -51.18 | 0.106 |
-| WaveMind adaptive-field | 2160 | 0.173 | -1.33 | 0.954 | 15183.8 | 8/36 | -106.89 | 0.091 |
-| Trend persistence | 2160 | 0.555 | 11.12 | 1.122 | 19833.8 | 17/36 | -205.85 | 0.334 |
-| Naive last-regime | 2160 | 0.863 | 4.09 | 1.030 | 30630.3 | 11/36 | -189.63 | 0.589 |
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind timeframe policy | 2160 | 0.750 | 0.050 | 8.55 | 5.845 | 936.1 | 11/36 | -3.33 | 0.038 | 1.44 ms |
 
-Interpretation: timeframe-aware policy is the first robustness layer. The
-current policy routes 1h through `WaveMind microstructure`, 4h through
-adaptive-field, and 1d to `flat`. This is intentionally conservative: the
-system uses a timeframe only after that timeframe has its own validated policy.
-The next research step is a separate 1d trend-memory dynamic; raw weekly
-adaptive-field and direct field-signal tests are still negative.
+Interpretation: timeframe-aware policy is now a strict regime filter. The
+current policy routes 1h through microstructure, 4h through adaptive-field,
+blocks unvalidated 1d forecasts, and then only allows downside signals with
+abnormal volume confirmation. This is intentionally conservative: the system
+uses a timeframe only after that timeframe has its own validated policy and
+returns `flat` otherwise. The next research steps are per-symbol/timeframe
+support and a separate 1d trend-memory dynamic.
 
 ## Current Forecast Runner
 
@@ -310,13 +312,16 @@ What it does:
 - writes current price, expected return, expected price, evidence strength,
   filter reason, and the validation profile into JSON/Markdown.
 
-Checked-in OKX 24h snapshot generated on `2026-07-03T18:59:04Z`:
+Checked-in OKX 24h snapshot generated on `2026-07-03T20:50:09Z`:
 
-| symbol | data end UTC | direction | last close | expected return | expected price | evidence strength | bucket hit rate |
-|---|---|---|---:|---:|---:|---:|---:|
-| BTC/USDT | 2026-07-03T12:00:00Z | up | 61929.8 | 0.52% | 62254.5 | 0.551 | 0.718 |
-| ETH/USDT | 2026-07-03T12:00:00Z | up | 1731.3 | 2.01% | 1766.09 | 0.477 | 0.718 |
-| SOL/USDT | 2026-07-03T12:00:00Z | up | 81.22 | 0.67% | 81.7674 | 0.749 | 0.717 |
+| symbol | data end UTC | direction | last close | expected return | expected price | evidence strength | probability kind | filter |
+|---|---|---|---:|---:|---:|---:|---|---|
+| BTC/USDT | 2026-07-03T16:00:00Z | flat | 62209.2 | 0.00% | 62209.2 | 0.546 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
+| ETH/USDT | 2026-07-03T16:00:00Z | flat | 1745.41 | 0.00% | 1745.41 | 0.519 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
+| SOL/USDT | 2026-07-03T16:00:00Z | flat | 82.51 | 0.00% | 82.51 | 0.787 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
+
+The 24h snapshot is an abstention, not a bullish or bearish call. The current
+market did not pass the validated downside/volume regime.
 
 The 7d runner currently returns `flat` on BTC/ETH/SOL with
 `unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
@@ -513,17 +518,21 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     adaptive-field, and unvalidated 1d to abstention.
 12. Done: current forecast runner generates 24h research snapshots from
     completed live candles and embeds the validation profile.
-13. Done: evidence-strength calibration diagnostic reports buckets, Brier
-    score, expected calibration error, and `probability_ready=false`.
-14. Next: make evidence strength monotonic and stable enough to expose a real
-    calibrated probability.
-15. Next: build and validate a separate 1d / weekly trend-memory dynamic before
+13. Done: evidence-strength calibration diagnostic reports raw buckets,
+    cross-fold monotonic calibration, active-signal base-rate calibration, and
+    fold/symbol/timeframe stability checks.
+14. Done: strict downside/volume timeframe policy improves active direction
+    accuracy to `0.750`, lowers signal rate to `0.050`, and reduces large false
+    positives to `0.038` on the checked BTC/ETH/SOL OKX run.
+15. Next: increase per-symbol/timeframe support so calibrated probability can
+    be enabled without hiding weak slices.
+16. Next: build and validate a separate 1d / weekly trend-memory dynamic before
     enabling 7d forecasts.
-16. Next: improve downside robustness across bad folds and validate across more
+17. Next: improve downside robustness across bad folds and validate across more
     date ranges, exchanges, assets, and walk-forward folds.
-17. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+18. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-18. Add signal construction only after retrieval quality is stable.
-19. Publish results separately from the main README to avoid confusing memory
+19. Add signal construction only after retrieval quality is stable.
+20. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.
