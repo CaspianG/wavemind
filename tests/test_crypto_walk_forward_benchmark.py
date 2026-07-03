@@ -13,7 +13,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=3)
     payload = run_walk_forward(
         markets=[MarketDataset(symbol="BTC", timeframe="1h", bars=bars, windows=windows)],
-        engines=["wavemind", "market-field", "4h-profile", "risk-overlay", "trend-risk", "regime-gated", "calibrated", "field-off-calibrated", "field-off", "shape", "naive", "trend-persistence", "ta"],
+        engines=["wavemind", "market-field", "4h-profile", "risk-overlay", "trend-risk", "adaptive-field", "regime-gated", "calibrated", "field-off-calibrated", "field-off", "shape", "naive", "trend-persistence", "ta"],
         train_windows=40,
         test_windows=12,
         top_k=3,
@@ -40,6 +40,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         "WaveMind 4h profile",
         "WaveMind risk-overlay",
         "WaveMind trend-risk",
+        "WaveMind adaptive-field",
         "WaveMind regime-gated",
         "WaveMind calibrated",
         "WaveMind field-off calibrated",
@@ -62,6 +63,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "filtered_rate" in result_by_engine["WaveMind regime-gated"]
     assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
     assert "filtered_rate" in result_by_engine["WaveMind trend-risk"]
+    assert "filtered_rate" in result_by_engine["WaveMind adaptive-field"]
     assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]
     assert "filtered_rate" in result_by_engine["Trend persistence"]
     assert 0.0 <= result_by_engine["WaveMind calibrated"]["filtered_rate"] <= 1.0
@@ -81,6 +83,13 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["scenario"]["risk_max_opposition"] == 0.8
     assert payload["scenario"]["risk_min_regime_agreement"] == 0.2
     assert payload["scenario"]["risk_min_historical_edge_bps"] == -50.0
+    assert payload["scenario"]["adaptive_min_support"] == 24
+    assert payload["scenario"]["adaptive_min_test_support"] == 8
+    assert payload["scenario"]["adaptive_validation_holdout"] == 0.35
+    assert payload["scenario"]["adaptive_min_confidence"] == 0.52
+    assert payload["scenario"]["adaptive_min_expected_edge_bps"] == 70.0
+    assert payload["scenario"]["adaptive_max_opposition"] == 0.62
+    assert payload["scenario"]["adaptive_trend_alignment"] is True
     assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
@@ -185,6 +194,7 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "4h-profile",
             "risk-overlay",
             "trend-risk",
+            "adaptive-field",
             "regime-gated",
             "calibrated",
             "field-off",
@@ -223,9 +233,10 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["results"][1]["engine"] == "WaveMind 4h profile"
     assert payload["results"][2]["engine"] == "WaveMind risk-overlay"
     assert payload["results"][3]["engine"] == "WaveMind trend-risk"
-    assert payload["results"][4]["engine"] == "WaveMind regime-gated"
-    assert payload["results"][5]["engine"] == "WaveMind calibrated"
-    assert payload["results"][6]["engine"] == "WaveMind field-off"
+    assert payload["results"][4]["engine"] == "WaveMind adaptive-field"
+    assert payload["results"][5]["engine"] == "WaveMind regime-gated"
+    assert payload["results"][6]["engine"] == "WaveMind calibrated"
+    assert payload["results"][7]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 
@@ -253,6 +264,46 @@ def test_walk_forward_skips_optional_vector_dbs_when_missing(monkeypatch):
 
     assert payload["results"][0]["skipped"] is True
     assert "chromadb is not installed" in payload["results"][0]["skip_reason"]
+
+
+def test_adaptive_relationship_field_uses_past_holdout_signal():
+    from benchmarks.crypto_ohlcv import OHLCVWindow
+    from benchmarks.crypto_walk_forward_benchmark import _adaptive_relationship_field_signal_from_index
+
+    query = OHLCVWindow(
+        id="query",
+        symbol="BTC",
+        timeframe="4h",
+        index=20,
+        start_ts=20,
+        end_ts=21,
+        future_end_ts=22,
+        bars=(),
+        features={"trend": "up", "rsi_bucket": "neutral"},
+        future_return_bps=0.0,
+        max_favorable_excursion_bps=0.0,
+        max_adverse_excursion_bps=0.0,
+        future_realized_vol_bps=0.0,
+        future_max_drawdown_bps=0.0,
+        direction="flat",
+    )
+    returns = [-20.0] * 20
+    relationship = ("rsi_bucket=neutral", "trend=up")
+    history = {relationship: [(index, 140.0) for index in range(20)]}
+
+    signal = _adaptive_relationship_field_signal_from_index(
+        returns,
+        history,
+        query,
+        min_support=6,
+        min_test_support=4,
+        validation_holdout=0.35,
+        round_trip_cost_bps=30.0,
+    )
+
+    assert signal["direction"] == "up"
+    assert signal["edge_bps"] > 0.0
+    assert signal["confidence"] > 0.0
 
 
 def test_load_markets_from_ccxt_cache_without_network(tmp_path, monkeypatch):

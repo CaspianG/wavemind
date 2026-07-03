@@ -81,7 +81,7 @@ Do not promise:
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, trend persistence, TA rules, and storage controls. |
 | Evidence UI | Initial version | `benchmarks/crypto_analogue_explorer.html` shows current windows and historical analogues. |
 | Freqtrade adapter | Initial version | `examples/freqtrade_wavemind_strategy.py` is dry-run/backtest first. |
-| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, minimum expected edge filtering, and domain profile gating. |
+| Calibration / false-positive suppression | Initial version | `WaveMind calibrated` uses analogue agreement, regime filters, confidence thresholds, minimum expected edge filtering, domain profile gating, and an adaptive relationship-field overlay. |
 | Real OHLCV validation | Mixed | Single-fold OKX result is positive, and the expanded 4h `WaveMind trend-risk` profile slightly beats trend persistence on average, but robustness is still weak across folds. |
 | Signal construction | Not started | Blocked on robust retrieval/field quality across folds. |
 
@@ -94,12 +94,15 @@ this benchmark (`-14.42`) by overfiring. The next milestone is redesigning the
 market-specific field dynamic and proving it across folds, not live execution.
 
 Latest expanded 4h check: on 4 folds x 60 windows with fixed-size signals,
-`WaveMind trend-risk` slightly beats a strong trend-persistence baseline
-(`25.30` vs `25.23` sized net bps) and reduces large false positives (`0.365`
-vs `0.380`). It also beats naive last-regime (`15.36`) and static kNN
-(`-9.75`). This is useful signal-shaping evidence, not a robust market edge:
-the profile is positive on 6/12 symbol-fold slices and the worst slice remains
-negative (`-77.66` bps).
+`WaveMind adaptive-field` is the strongest current average profile. It uses
+past train/holdout relationship memory as a dynamic veto over a trend-aligned
+mature-regime candidate. The result is `26.10` sized net bps vs `25.23` for
+trend persistence and `25.30` for the earlier `WaveMind trend-risk` profile,
+while large false positives fall to `0.333` vs `0.380` for trend persistence.
+It also beats naive last-regime (`15.36`) and static kNN (`-9.75`). This is
+useful signal-shaping evidence, not a robust market edge: the profile is
+positive on 5/12 symbol-fold slices and the worst slice remains negative
+(`-70.62` bps).
 
 Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
 miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`

@@ -147,19 +147,22 @@ Expanded 4h check, 4 folds x 60 windows:
 
 | engine | queries | active d1 | signal rate | sized net bps | large FP |
 |---|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 720 | 0.551 | 0.507 | 26.10 | 0.333 |
 | WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 0.365 |
 | Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 0.380 |
 | WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 0.651 |
 | Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 0.688 |
 | Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.651 |
 
-Interpretation: the trend-risk path is the strongest current WaveMind market
-profile. It adds memory-opposition filtering on top of a strong trend
-persistence baseline, slightly improves average fixed-size net return
-(`25.30` vs `25.23` bps), and lowers large false positives (`0.365` vs
-`0.380`). This is useful signal shaping, not a proven universal edge: the
-profile is positive on 6/12 symbol-fold slices and the worst slice is still
-`-77.66` bps.
+Interpretation: `WaveMind adaptive-field` is now the strongest average profile
+in the checked-in 4h run. It uses the relationship field as a dynamic overlay:
+the last mature regime proposes a trend-aligned candidate, and the field only
+vetoes it when past train/holdout relationships show a strong opposite edge.
+This improves fixed-size net return (`26.10` vs `25.23` bps for trend
+persistence), improves active direction accuracy (`0.551` vs `0.538`), and
+reduces large false positives (`0.333` vs `0.380`). This is still not a robust
+market edge: it is positive on 5/12 symbol-fold slices, although the worst
+slice improves from `-77.66` bps to `-70.62` bps.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -342,11 +345,15 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    4h data and writes JSON/Markdown reports.
 9. Done: train/test relationship validator checks which mined links survive
    future windows.
-10. Next: improve downside robustness across bad folds and validate across more
+10. Done: adaptive relationship-field overlay uses past train/holdout
+    relationship memory as a dynamic veto; it improves the checked-in average
+    4h result and reduces false positives, but is still positive on only 5/12
+    symbol-fold slices.
+11. Next: improve downside robustness across bad folds and validate across more
    date ranges, exchanges, assets, and walk-forward folds.
-11. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+12. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-12. Add signal construction only after retrieval quality is stable.
-13. Publish results separately from the main README to avoid confusing memory
+13. Add signal construction only after retrieval quality is stable.
+14. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

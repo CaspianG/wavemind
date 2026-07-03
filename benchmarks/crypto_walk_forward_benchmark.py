@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import itertools
 import json
 import math
 import statistics
@@ -602,6 +603,173 @@ class WaveMindTrendRiskEngine(WaveMindRiskOverlayEngine):
         return prediction
 
 
+class WaveMindAdaptiveFieldEngine(WaveMindEngine):
+    name = "WaveMind adaptive-field"
+
+    def __init__(
+        self,
+        encoder: TextVectorEncoder,
+        *,
+        symbol: str,
+        timeframe: str,
+        temp_root: Path,
+        min_support: int = 24,
+        min_test_support: int = 8,
+        validation_holdout: float = 0.35,
+        min_confidence: float = 0.52,
+        min_expected_edge_bps: float = 70.0,
+        max_opposition: float = 0.62,
+        require_trend_alignment: bool = True,
+        round_trip_cost_bps: float = 30.0,
+        memory_store: str = "disk",
+    ):
+        super().__init__(
+            encoder,
+            symbol=symbol,
+            timeframe=timeframe,
+            temp_root=temp_root,
+            use_field=True,
+            db_label="adaptivefield",
+            vector_weight=0.92,
+            field_weight=0.04,
+            priority_weight=0.04,
+            lexical_weight=0.0,
+            memory_store=memory_store,
+        )
+        self.name = "WaveMind adaptive-field"
+        self.records: list[OHLCVWindow] = []
+        self.return_history: list[float] = []
+        self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+        self.min_support = int(min_support)
+        self.min_test_support = int(min_test_support)
+        self.validation_holdout = float(validation_holdout)
+        self.min_confidence = float(min_confidence)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.max_opposition = float(max_opposition)
+        self.require_trend_alignment = bool(require_trend_alignment)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        index = len(self.records)
+        self.records.append(window)
+        self.return_history.append(float(window.future_return_bps))
+        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
+            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        super().add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        started = time.perf_counter()
+        if len(self.records) < self.min_support:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=0.0,
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="insufficient_field_history",
+            )
+        field_signal = _adaptive_relationship_field_signal_from_index(
+            self.return_history,
+            self.relationship_history,
+            window,
+            min_support=self.min_support,
+            min_test_support=self.min_test_support,
+            validation_holdout=self.validation_holdout,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        latest = self.records[-1]
+        candidate_direction = latest.direction
+        if candidate_direction == "flat":
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=float(field_signal["confidence"]),
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="flat_candidate",
+                analogue_agreement=0.0,
+                regime_agreement=float(field_signal["stability"]),
+            )
+        if self.require_trend_alignment and not _direction_matches_window_trend(candidate_direction, window):
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=float(field_signal["confidence"]),
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="adaptive_trend_mismatch",
+                analogue_agreement=0.0,
+                regime_agreement=float(field_signal["stability"]),
+            )
+
+        field_direction = str(field_signal["direction"])
+        field_confidence = float(field_signal["confidence"])
+        field_edge = float(field_signal["edge_bps"])
+        opposite_direction = "down" if candidate_direction == "up" else "up"
+        if (
+            field_direction == opposite_direction
+            and field_confidence >= self.min_confidence
+            and field_edge >= self.min_expected_edge_bps
+        ):
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=field_confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="adaptive_field_opposition",
+                analogue_agreement=0.0,
+                regime_agreement=float(field_signal["stability"]),
+            )
+
+        field_return = float(field_signal["expected_return_bps"])
+        if field_direction == candidate_direction and field_confidence >= self.min_confidence:
+            expected_return = 0.62 * field_return + 0.38 * float(latest.future_return_bps)
+            confidence = field_confidence
+            support = field_confidence
+        else:
+            expected_return = float(latest.future_return_bps)
+            confidence = max(0.35, min(0.58, 0.35 + 0.23 * field_confidence))
+            support = confidence
+        edge = _directional_edge_after_cost_bps(
+            candidate_direction,
+            expected_return,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        reasons = []
+        if reasons:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=",".join(reasons),
+                analogue_agreement=support,
+                regime_agreement=float(field_signal["stability"]),
+            )
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=expected_return,
+            latency_ms=(time.perf_counter() - started) * 1000.0,
+            analogues=[],
+            confidence=confidence,
+            raw_direction=candidate_direction,
+            analogue_agreement=support,
+            regime_agreement=float(field_signal["stability"]),
+        )
+
+
 class DtwKnnEngine(MarketEngine):
     name = "DTW kNN"
 
@@ -908,6 +1076,13 @@ def run_walk_forward(
     risk_max_opposition: float = 0.62,
     risk_min_regime_agreement: float = 0.35,
     risk_min_historical_edge_bps: float = -20.0,
+    adaptive_min_support: int = 24,
+    adaptive_min_test_support: int = 8,
+    adaptive_validation_holdout: float = 0.35,
+    adaptive_min_confidence: float = 0.52,
+    adaptive_min_expected_edge_bps: float = 70.0,
+    adaptive_max_opposition: float = 0.62,
+    adaptive_trend_alignment: bool = True,
     memory_store: str = "disk",
 ) -> dict:
     engine_keys = _normalize_engines(engines)
@@ -962,6 +1137,13 @@ def run_walk_forward(
                             risk_max_opposition=risk_max_opposition,
                             risk_min_regime_agreement=risk_min_regime_agreement,
                             risk_min_historical_edge_bps=risk_min_historical_edge_bps,
+                            adaptive_min_support=adaptive_min_support,
+                            adaptive_min_test_support=adaptive_min_test_support,
+                            adaptive_validation_holdout=adaptive_validation_holdout,
+                            adaptive_min_confidence=adaptive_min_confidence,
+                            adaptive_min_expected_edge_bps=adaptive_min_expected_edge_bps,
+                            adaptive_max_opposition=adaptive_max_opposition,
+                            adaptive_trend_alignment=adaptive_trend_alignment,
                             round_trip_cost_bps=round_trip_cost_bps,
                             memory_store=memory_store,
                         )
@@ -1053,6 +1235,13 @@ def run_walk_forward(
             "risk_max_opposition": float(risk_max_opposition),
             "risk_min_regime_agreement": float(risk_min_regime_agreement),
             "risk_min_historical_edge_bps": float(risk_min_historical_edge_bps),
+            "adaptive_min_support": int(adaptive_min_support),
+            "adaptive_min_test_support": int(adaptive_min_test_support),
+            "adaptive_validation_holdout": float(adaptive_validation_holdout),
+            "adaptive_min_confidence": float(adaptive_min_confidence),
+            "adaptive_min_expected_edge_bps": float(adaptive_min_expected_edge_bps),
+            "adaptive_max_opposition": float(adaptive_max_opposition),
+            "adaptive_trend_alignment": bool(adaptive_trend_alignment),
             "memory_store": memory_store,
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
@@ -1291,6 +1480,13 @@ def main() -> int:
     parser.add_argument("--risk-max-opposition", type=float, default=0.62)
     parser.add_argument("--risk-min-regime-agreement", type=float, default=0.35)
     parser.add_argument("--risk-min-historical-edge-bps", type=float, default=-20.0)
+    parser.add_argument("--adaptive-min-support", type=int, default=24)
+    parser.add_argument("--adaptive-min-test-support", type=int, default=8)
+    parser.add_argument("--adaptive-validation-holdout", type=float, default=0.35)
+    parser.add_argument("--adaptive-min-confidence", type=float, default=0.52)
+    parser.add_argument("--adaptive-min-expected-edge-bps", type=float, default=70.0)
+    parser.add_argument("--adaptive-max-opposition", type=float, default=0.62)
+    parser.add_argument("--disable-adaptive-trend-alignment", action="store_true")
     parser.add_argument("--memory-store", choices=["disk", "memory"], default="disk")
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
@@ -1324,6 +1520,13 @@ def main() -> int:
         risk_max_opposition=args.risk_max_opposition,
         risk_min_regime_agreement=args.risk_min_regime_agreement,
         risk_min_historical_edge_bps=args.risk_min_historical_edge_bps,
+        adaptive_min_support=args.adaptive_min_support,
+        adaptive_min_test_support=args.adaptive_min_test_support,
+        adaptive_validation_holdout=args.adaptive_validation_holdout,
+        adaptive_min_confidence=args.adaptive_min_confidence,
+        adaptive_min_expected_edge_bps=args.adaptive_min_expected_edge_bps,
+        adaptive_max_opposition=args.adaptive_max_opposition,
+        adaptive_trend_alignment=not args.disable_adaptive_trend_alignment,
         memory_store=args.memory_store,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -1346,6 +1549,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "adaptive-field",
                     "regime-gated",
                     "calibrated",
                     "field-off",
@@ -1365,6 +1569,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "adaptive-field",
                     "regime-gated",
                     "calibrated",
                     "field-off",
@@ -1397,6 +1602,9 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "risk",
         "trend-risk",
         "wavemind-trend-risk",
+        "adaptive-field",
+        "wavemind-adaptive-field",
+        "validated-field",
         "4h-profile",
         "wavemind-4h-profile",
         "four-hour-profile",
@@ -1441,6 +1649,13 @@ def _create_engine(
     risk_max_opposition: float = 0.62,
     risk_min_regime_agreement: float = 0.35,
     risk_min_historical_edge_bps: float = -20.0,
+    adaptive_min_support: int = 24,
+    adaptive_min_test_support: int = 8,
+    adaptive_validation_holdout: float = 0.35,
+    adaptive_min_confidence: float = 0.52,
+    adaptive_min_expected_edge_bps: float = 70.0,
+    adaptive_max_opposition: float = 0.62,
+    adaptive_trend_alignment: bool = True,
     round_trip_cost_bps: float = 30.0,
     memory_store: str = "disk",
 ) -> MarketEngine:
@@ -1535,6 +1750,22 @@ def _create_engine(
             round_trip_cost_bps=round_trip_cost_bps,
             memory_store=memory_store,
         )
+    if engine_key in {"adaptive-field", "wavemind-adaptive-field", "validated-field"}:
+        return WaveMindAdaptiveFieldEngine(
+            encoder,
+            symbol=market.symbol,
+            timeframe=market.timeframe,
+            temp_root=temp_root,
+            min_support=adaptive_min_support,
+            min_test_support=adaptive_min_test_support,
+            validation_holdout=adaptive_validation_holdout,
+            min_confidence=adaptive_min_confidence,
+            min_expected_edge_bps=adaptive_min_expected_edge_bps,
+            max_opposition=adaptive_max_opposition,
+            require_trend_alignment=adaptive_trend_alignment,
+            round_trip_cost_bps=round_trip_cost_bps,
+            memory_store=memory_store,
+        )
     if engine_key in {"4h-profile", "wavemind-4h-profile", "four-hour-profile"}:
         return WaveMindFourHourProfileEngine(
             encoder,
@@ -1597,6 +1828,9 @@ def _engine_display_name(engine_key: str) -> str:
         "risk": "WaveMind risk-overlay",
         "trend-risk": "WaveMind trend-risk",
         "wavemind-trend-risk": "WaveMind trend-risk",
+        "adaptive-field": "WaveMind adaptive-field",
+        "wavemind-adaptive-field": "WaveMind adaptive-field",
+        "validated-field": "WaveMind adaptive-field",
         "4h-profile": "WaveMind 4h profile",
         "wavemind-4h-profile": "WaveMind 4h profile",
         "four-hour-profile": "WaveMind 4h profile",
@@ -1814,6 +2048,205 @@ def _direction_matches_window_trend(direction: str, window: OHLCVWindow) -> bool
     if direction == "down":
         return str(window.features.get("trend")) == "down"
     return False
+
+
+def _adaptive_relationship_field_signal(
+    records: list[OHLCVWindow],
+    window: OHLCVWindow,
+    *,
+    min_support: int,
+    min_test_support: int,
+    validation_holdout: float,
+    round_trip_cost_bps: float,
+) -> dict[str, float | int | str]:
+    return_history = [float(record.future_return_bps) for record in records]
+    relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+    for index, record in enumerate(records):
+        for relationship in _relationship_candidates(_regime_signature_from_window(record)):
+            relationship_history.setdefault(relationship, []).append((index, float(record.future_return_bps)))
+    return _adaptive_relationship_field_signal_from_index(
+        return_history,
+        relationship_history,
+        window,
+        min_support=min_support,
+        min_test_support=min_test_support,
+        validation_holdout=validation_holdout,
+        round_trip_cost_bps=round_trip_cost_bps,
+    )
+
+
+def _adaptive_relationship_field_signal_from_index(
+    return_history: list[float],
+    relationship_history: Mapping[tuple[str, ...], list[tuple[int, float]]],
+    window: OHLCVWindow,
+    *,
+    min_support: int,
+    min_test_support: int,
+    validation_holdout: float,
+    round_trip_cost_bps: float,
+) -> dict[str, float | int | str]:
+    tokens = tuple(sorted(set(_regime_signature_from_window(window))))
+    if not tokens:
+        return _flat_adaptive_signal("empty_regime_signature")
+    candidates = _relationship_candidates(tokens)
+    split = _adaptive_split_index_from_length(
+        len(return_history),
+        validation_holdout=validation_holdout,
+        min_test_support=min_test_support,
+    )
+    train_returns = [(index, value) for index, value in enumerate(return_history[:split])]
+    holdout_returns = [(index, value) for index, value in enumerate(return_history[split:], start=split)]
+    if len(train_returns) < min_support or len(holdout_returns) < min_test_support:
+        return _flat_adaptive_signal("insufficient_validation_history")
+
+    train_global = _recency_weighted_mean_indexed(train_returns, max_index=split - 1)
+    holdout_global = _recency_weighted_mean_indexed(holdout_returns, max_index=len(return_history) - 1)
+    scored = []
+    for candidate in candidates:
+        candidate_history = relationship_history.get(candidate, [])
+        train_group = [item for item in candidate_history if item[0] < split]
+        holdout_group = [item for item in candidate_history if item[0] >= split]
+        if len(train_group) < min_support or len(holdout_group) < min_test_support:
+            continue
+        train_avg = _recency_weighted_mean_indexed(train_group, max_index=split - 1)
+        holdout_avg = _recency_weighted_mean_indexed(holdout_group, max_index=len(return_history) - 1)
+        train_lift = train_avg - train_global
+        holdout_lift = holdout_avg - holdout_global
+        if abs(train_lift) < 1e-9:
+            continue
+        expected_lift_sign = 1.0 if train_lift > 0.0 else -1.0
+        signed_holdout_lift = holdout_lift * expected_lift_sign
+        if signed_holdout_lift <= 0.0:
+            continue
+        expected_return = 0.35 * train_avg + 0.65 * holdout_avg
+        direction = "up" if expected_return > 0.0 else "down" if expected_return < 0.0 else "flat"
+        edge = _directional_edge_after_cost_bps(
+            direction,
+            expected_return,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
+        if direction == "flat" or edge <= 0.0:
+            continue
+        stability = max(0.0, min(1.0, signed_holdout_lift / max(abs(train_lift), 1.0)))
+        support = len(train_group) + len(holdout_group)
+        specificity = 1.0 + 0.22 * (len(candidate) - 1)
+        support_gain = math.log1p(support)
+        score = edge * support_gain * specificity * (0.55 + 0.45 * stability)
+        scored.append(
+            {
+                "direction": direction,
+                "score": float(score),
+                "expected_return_bps": float(expected_return),
+                "edge_bps": float(edge),
+                "stability": float(stability),
+                "support": int(support),
+                "features": " & ".join(candidate),
+            }
+        )
+    if not scored:
+        return _flat_adaptive_signal("no_validated_relationship")
+
+    totals = {
+        "up": sum(float(item["score"]) for item in scored if item["direction"] == "up"),
+        "down": sum(float(item["score"]) for item in scored if item["direction"] == "down"),
+    }
+    direction = "up" if totals["up"] >= totals["down"] else "down"
+    selected = [item for item in scored if item["direction"] == direction]
+    total_score = max(sum(float(item["score"]) for item in selected), 1e-12)
+    expected_return = sum(float(item["expected_return_bps"]) * float(item["score"]) for item in selected) / total_score
+    total_all = max(totals["up"] + totals["down"], 1e-12)
+    dominance = totals[direction] / total_all
+    total_support = sum(int(item["support"]) for item in selected)
+    support_factor = min(1.0, total_support / max(float(min_support * 5), 1.0))
+    stability = sum(float(item["stability"]) * float(item["score"]) for item in selected) / total_score
+    edge = _directional_edge_after_cost_bps(
+        direction,
+        expected_return,
+        round_trip_cost_bps=round_trip_cost_bps,
+    )
+    edge_factor = min(1.0, max(0.0, edge / max(float(round_trip_cost_bps) * 2.0, 1.0)))
+    confidence = float(max(0.0, min(1.0, dominance * (0.25 + 0.30 * support_factor + 0.30 * stability + 0.15 * edge_factor))))
+    return {
+        "direction": direction,
+        "expected_return_bps": float(expected_return),
+        "edge_bps": float(edge),
+        "confidence": confidence,
+        "stability": float(stability),
+        "support": int(total_support),
+        "relationships": int(len(selected)),
+        "reason": "",
+    }
+
+
+def _relationship_candidates(tokens: Iterable[str]) -> list[tuple[str, ...]]:
+    unique = tuple(sorted(set(tokens)))
+    candidates = [(token,) for token in unique]
+    candidates.extend(tuple(sorted(pair)) for pair in itertools.combinations(unique, 2))
+    return candidates
+
+
+def _flat_adaptive_signal(reason: str) -> dict[str, float | int | str]:
+    return {
+        "direction": "flat",
+        "expected_return_bps": 0.0,
+        "edge_bps": 0.0,
+        "confidence": 0.0,
+        "stability": 0.0,
+        "support": 0,
+        "relationships": 0,
+        "reason": reason,
+    }
+
+
+def _adaptive_split_index(
+    records: list[OHLCVWindow],
+    *,
+    validation_holdout: float,
+    min_test_support: int,
+) -> int:
+    return _adaptive_split_index_from_length(
+        len(records),
+        validation_holdout=validation_holdout,
+        min_test_support=min_test_support,
+    )
+
+
+def _adaptive_split_index_from_length(
+    length: int,
+    *,
+    validation_holdout: float,
+    min_test_support: int,
+) -> int:
+    holdout = max(int(round(length * max(0.05, min(0.80, validation_holdout)))), int(min_test_support))
+    holdout = min(max(holdout, int(min_test_support)), max(1, length - 1))
+    return length - holdout
+
+
+def _record_matches_tokens(window: OHLCVWindow, tokens: tuple[str, ...]) -> bool:
+    signature = set(_regime_signature_from_window(window))
+    return all(token in signature for token in tokens)
+
+
+def _recency_weighted_mean_return(records: list[OHLCVWindow]) -> float:
+    if not records:
+        return 0.0
+    half_life = max(6.0, len(records) / 3.0)
+    weights = [math.exp(-float(len(records) - index - 1) / half_life) for index, _ in enumerate(records)]
+    denominator = max(sum(weights), 1e-12)
+    return float(
+        sum(float(record.future_return_bps) * weight for record, weight in zip(records, weights, strict=False))
+        / denominator
+    )
+
+
+def _recency_weighted_mean_indexed(records: list[tuple[int, float]], *, max_index: int) -> float:
+    if not records:
+        return 0.0
+    span = max(1, max_index - min(index for index, _ in records) + 1)
+    half_life = max(6.0, span / 3.0)
+    weights = [math.exp(-float(max_index - index) / half_life) for index, _ in records]
+    denominator = max(sum(weights), 1e-12)
+    return float(sum(value * weight for (_, value), weight in zip(records, weights, strict=False)) / denominator)
 
 
 def _summarize_events(
