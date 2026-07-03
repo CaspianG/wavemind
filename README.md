@@ -227,7 +227,7 @@ wavemind --db ./state/app_memory.sqlite3 query "answer style" --namespace user:4
 | Node, Go, Ruby, PHP, or no-code app | `wavemind serve` and the HTTP API |
 | Personal knowledge base | Store notes by project namespace and query locally |
 | Support or CRM workflow | Customer issues, resolutions, preferences, corrections, TTL, and namespace isolation. See [`examples/customer_support_memory.py`](examples/customer_support_memory.py). |
-| Research or trading notebook | Store observations with source metadata and TTL for temporary hypotheses |
+| Research or analyst notebook | Findings, hypotheses, decisions, source metadata, TTL, and project isolation. See [`examples/research_notebook_memory.py`](examples/research_notebook_memory.py). |
 
 For migrations from existing local vector memory, start with
 [`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md). The guide has a tested
@@ -285,6 +285,15 @@ python examples/customer_support_memory.py
 
 That demo stores customer preferences, billing tickets, stale CRM data,
 temporary discount codes, and separate customer namespaces.
+
+To see source-aware research memory:
+
+```sh
+python examples/research_notebook_memory.py
+```
+
+That demo stores analyst findings, temporary hypotheses, decisions, source
+metadata, and isolated project namespaces.
 
 ## How The Memory Field Works
 

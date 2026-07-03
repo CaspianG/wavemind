@@ -127,6 +127,16 @@ Problem:
 Research work changes over time. Some hypotheses expire, some findings become
 core, and source metadata matters.
 
+Runnable demo:
+
+```sh
+python examples/research_notebook_memory.py
+```
+
+The demo is offline and keyless. It shows confirmed findings with source
+metadata, temporary hypotheses expiring, decisions and action items sharing one
+project namespace, and unrelated projects staying isolated.
+
 Pattern:
 
 ```python

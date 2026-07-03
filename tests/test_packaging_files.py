@@ -157,6 +157,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "docs/BENCHMARK_BRIEF.md" in readme
     assert "examples/chroma_migration.py" in readme
     assert "examples/customer_support_memory.py" in readme
+    assert "examples/research_notebook_memory.py" in readme
     assert "docs/assets/wavemind-demo.gif" in readme
     assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
@@ -166,5 +167,6 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "namespace=\"user:42\"" in chroma_migration
     assert "docs/BENCHMARK_BRIEF.md" in launch_kit
     assert "examples/customer_support_memory.py" in launch_kit
+    assert "examples/research_notebook_memory.py" in launch_kit
     assert "checked-in JSON artifacts" in benchmark_brief
     assert "Static vector search is still faster" in benchmark_brief

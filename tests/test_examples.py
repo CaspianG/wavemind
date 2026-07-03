@@ -86,6 +86,14 @@ def load_customer_support_example():
     return module
 
 
+def load_research_notebook_example():
+    path = Path("examples/research_notebook_memory.py")
+    spec = importlib.util.spec_from_file_location("research_notebook_memory", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_agent_example_uses_environment_key_not_hardcoded_secret():
     text = Path("examples/agent_with_memory.py").read_text(encoding="utf-8")
 
@@ -173,6 +181,53 @@ def test_customer_support_memory_example_enforces_crm_memory_policy(tmp_path):
         assert "Globex" in results["globex_hits"][0].text
         assert all("Globex" not in hit.text for hit in results["acme_cross_check"])
         assert results["stats"]["active_memories"] == 5
+        assert results["stats"]["index_healthy"] is True
+    finally:
+        memory.close()
+
+
+def test_research_notebook_memory_example_prints_vertical_use_case():
+    env = os.environ.copy()
+    project_root = Path(__file__).resolve().parents[1]
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "examples/research_notebook_memory.py"],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "WaveMind research notebook memory demo" in result.stdout
+    assert "[ok] confirmed finding is recalled with source metadata" in result.stdout
+    assert "[ok] expired hypothesis is not recalled" in result.stdout
+    assert "[ok] project namespaces keep analyst notes isolated" in result.stdout
+    assert "benchmark-2026-07-03" in result.stdout
+
+
+def test_research_notebook_memory_example_enforces_analyst_memory_policy(tmp_path):
+    module = load_research_notebook_example()
+    memory = module.build_memory(tmp_path / "research.sqlite3")
+    try:
+        results = module.run_research_checks(memory)
+
+        assert results["purged"] == 1
+        assert "p95 latency improved" in results["finding_hits"][0].text
+        assert results["finding_hits"][0].metadata["source"] == "benchmark-2026-07-03"
+        assert all(
+            "nightly index rebuilds" not in hit.text
+            for hit in results["expired_hypothesis_hits"]
+        )
+        assert results["pricing_hits"][0].namespace == module.PRICING_NAMESPACE
+        assert "pricing conversion lift" in results["pricing_hits"][0].text
+        assert all(
+            "pricing conversion" not in hit.text
+            for hit in results["latency_cross_check"]
+        )
+        assert results["stats"]["active_memories"] == 4
         assert results["stats"]["index_healthy"] is True
     finally:
         memory.close()
