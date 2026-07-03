@@ -620,6 +620,8 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         min_expected_edge_bps: float = 70.0,
         max_opposition: float = 0.62,
         require_trend_alignment: bool = True,
+        performance_lookback: int = 24,
+        min_recent_edge_bps: float = 0.0,
         round_trip_cost_bps: float = 30.0,
         memory_store: str = "disk",
     ):
@@ -640,6 +642,8 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         self.records: list[OHLCVWindow] = []
         self.return_history: list[float] = []
         self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+        self.pending_predictions: dict[str, str] = {}
+        self.realized_signal_nets: list[float] = []
         self.min_support = int(min_support)
         self.min_test_support = int(min_test_support)
         self.validation_holdout = float(validation_holdout)
@@ -647,9 +651,20 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         self.min_expected_edge_bps = float(min_expected_edge_bps)
         self.max_opposition = float(max_opposition)
         self.require_trend_alignment = bool(require_trend_alignment)
+        self.performance_lookback = int(performance_lookback)
+        self.min_recent_edge_bps = float(min_recent_edge_bps)
         self.round_trip_cost_bps = float(round_trip_cost_bps)
 
     def add(self, window: OHLCVWindow) -> None:
+        predicted_direction = self.pending_predictions.pop(window.id, None)
+        if predicted_direction is not None:
+            self.realized_signal_nets.append(
+                _net_return_bps(
+                    predicted_direction=predicted_direction,
+                    actual_return_bps=window.future_return_bps,
+                    round_trip_cost_bps=self.round_trip_cost_bps,
+                )
+            )
         index = len(self.records)
         self.records.append(window)
         self.return_history.append(float(window.future_return_bps))
@@ -669,6 +684,19 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                 raw_direction="flat",
                 filtered=True,
                 filter_reason="insufficient_field_history",
+            )
+        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
+        min_samples = min(max(4, self.performance_lookback // 3), self.performance_lookback)
+        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=max(0.0, min(1.0, 0.5 + recent_edge / 200.0)),
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="negative_adaptive_recent_edge",
             )
         field_signal = _adaptive_relationship_field_signal_from_index(
             self.return_history,
@@ -758,7 +786,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
                 analogue_agreement=support,
                 regime_agreement=float(field_signal["stability"]),
             )
-        return Prediction(
+        prediction = Prediction(
             direction=candidate_direction,
             expected_return_bps=expected_return,
             latency_ms=(time.perf_counter() - started) * 1000.0,
@@ -768,6 +796,8 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
             analogue_agreement=support,
             regime_agreement=float(field_signal["stability"]),
         )
+        self.pending_predictions[window.id] = prediction.direction
+        return prediction
 
 
 class DtwKnnEngine(MarketEngine):
@@ -1083,6 +1113,8 @@ def run_walk_forward(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
+    adaptive_performance_lookback: int = 24,
+    adaptive_min_recent_edge_bps: float = 0.0,
     memory_store: str = "disk",
 ) -> dict:
     engine_keys = _normalize_engines(engines)
@@ -1144,6 +1176,8 @@ def run_walk_forward(
                             adaptive_min_expected_edge_bps=adaptive_min_expected_edge_bps,
                             adaptive_max_opposition=adaptive_max_opposition,
                             adaptive_trend_alignment=adaptive_trend_alignment,
+                            adaptive_performance_lookback=adaptive_performance_lookback,
+                            adaptive_min_recent_edge_bps=adaptive_min_recent_edge_bps,
                             round_trip_cost_bps=round_trip_cost_bps,
                             memory_store=memory_store,
                         )
@@ -1242,6 +1276,8 @@ def run_walk_forward(
             "adaptive_min_expected_edge_bps": float(adaptive_min_expected_edge_bps),
             "adaptive_max_opposition": float(adaptive_max_opposition),
             "adaptive_trend_alignment": bool(adaptive_trend_alignment),
+            "adaptive_performance_lookback": int(adaptive_performance_lookback),
+            "adaptive_min_recent_edge_bps": float(adaptive_min_recent_edge_bps),
             "memory_store": memory_store,
             "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim.",
         },
@@ -1411,14 +1447,14 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
 def print_table(payload: Mapping[str, object]) -> None:
     print(
         "| engine | direction@1 | active d1 | signal rate | sized net bps | "
-        "large FP | filtered | avg latency | queries |"
+        "profit factor | max DD bps | large FP | filtered | avg latency | queries |"
     )
-    print("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+    print("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for result in payload["results"]:  # type: ignore[index]
         if result.get("skipped"):  # type: ignore[union-attr]
             print(
                 f"| {result['engine']} | skipped | skipped | skipped | skipped | "
-                "skipped | skipped | skipped | 0 |"
+                "skipped | skipped | skipped | skipped | skipped | 0 |"
             )
             continue
         print(
@@ -1427,6 +1463,8 @@ def print_table(payload: Mapping[str, object]) -> None:
             f"{result['active_direction_accuracy']:.3f} | "
             f"{result['signal_rate']:.3f} | "
             f"{result['avg_sized_net_return_bps']:.2f} | "
+            f"{result['sized_profit_factor']:.3f} | "
+            f"{result['sized_max_drawdown_bps']:.1f} | "
             f"{result['large_move_false_positive_rate']:.3f} | "
             f"{result['filtered_rate']:.3f} | "
             f"{result['avg_latency_ms']:.2f} ms | "
@@ -1487,6 +1525,8 @@ def main() -> int:
     parser.add_argument("--adaptive-min-expected-edge-bps", type=float, default=70.0)
     parser.add_argument("--adaptive-max-opposition", type=float, default=0.62)
     parser.add_argument("--disable-adaptive-trend-alignment", action="store_true")
+    parser.add_argument("--adaptive-performance-lookback", type=int, default=24)
+    parser.add_argument("--adaptive-min-recent-edge-bps", type=float, default=0.0)
     parser.add_argument("--memory-store", choices=["disk", "memory"], default="disk")
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
@@ -1527,6 +1567,8 @@ def main() -> int:
         adaptive_min_expected_edge_bps=args.adaptive_min_expected_edge_bps,
         adaptive_max_opposition=args.adaptive_max_opposition,
         adaptive_trend_alignment=not args.disable_adaptive_trend_alignment,
+        adaptive_performance_lookback=args.adaptive_performance_lookback,
+        adaptive_min_recent_edge_bps=args.adaptive_min_recent_edge_bps,
         memory_store=args.memory_store,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -1656,6 +1698,8 @@ def _create_engine(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
+    adaptive_performance_lookback: int = 24,
+    adaptive_min_recent_edge_bps: float = 0.0,
     round_trip_cost_bps: float = 30.0,
     memory_store: str = "disk",
 ) -> MarketEngine:
@@ -1763,6 +1807,8 @@ def _create_engine(
             min_expected_edge_bps=adaptive_min_expected_edge_bps,
             max_opposition=adaptive_max_opposition,
             require_trend_alignment=adaptive_trend_alignment,
+            performance_lookback=adaptive_performance_lookback,
+            min_recent_edge_bps=adaptive_min_recent_edge_bps,
             round_trip_cost_bps=round_trip_cost_bps,
             memory_store=memory_store,
         )
@@ -2280,6 +2326,10 @@ def _summarize_events(
             "active_avg_sized_net_return_bps": 0.0,
             "avg_net_return_bps": 0.0,
             "avg_sized_net_return_bps": 0.0,
+            "profit_factor": 0.0,
+            "sized_profit_factor": 0.0,
+            "max_drawdown_bps": 0.0,
+            "sized_max_drawdown_bps": 0.0,
             "hit_rate_after_costs": 0.0,
             "sized_hit_rate_after_costs": 0.0,
             "avg_latency_ms": 0.0,
@@ -2325,6 +2375,10 @@ def _summarize_events(
         ),
         "avg_net_return_bps": statistics.mean(event.net_return_bps for event in events),
         "avg_sized_net_return_bps": statistics.mean(event.sized_net_return_bps for event in events),
+        "profit_factor": _profit_factor(event.net_return_bps for event in events),
+        "sized_profit_factor": _profit_factor(event.sized_net_return_bps for event in events),
+        "max_drawdown_bps": _max_drawdown_bps(event.net_return_bps for event in events),
+        "sized_max_drawdown_bps": _max_drawdown_bps(event.sized_net_return_bps for event in events),
         "hit_rate_after_costs": statistics.mean(1.0 if event.net_return_bps > 0 else 0.0 for event in events),
         "sized_hit_rate_after_costs": statistics.mean(1.0 if event.sized_net_return_bps > 0 else 0.0 for event in events),
         "avg_latency_ms": statistics.mean(event.latency_ms for event in events),
@@ -2607,6 +2661,32 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
     if denominator <= 0.0:
         return 0.0
     return float(numerator / denominator)
+
+
+def _recent_mean(values: list[float], *, lookback: int) -> float:
+    if not values:
+        return 0.0
+    return float(statistics.mean(values[-max(1, int(lookback)) :]))
+
+
+def _profit_factor(values: Iterable[float]) -> float:
+    items = list(values)
+    gross_profit = sum(value for value in items if value > 0.0)
+    gross_loss = abs(sum(value for value in items if value < 0.0))
+    if gross_loss <= 1e-12:
+        return math.inf if gross_profit > 0.0 else 0.0
+    return float(gross_profit / gross_loss)
+
+
+def _max_drawdown_bps(values: Iterable[float]) -> float:
+    equity = 0.0
+    peak = 0.0
+    max_drawdown = 0.0
+    for value in values:
+        equity += float(value)
+        peak = max(peak, equity)
+        max_drawdown = max(max_drawdown, peak - equity)
+    return float(max_drawdown)
 
 
 def _position_size(

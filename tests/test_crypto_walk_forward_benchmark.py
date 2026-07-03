@@ -68,6 +68,8 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "filtered_rate" in result_by_engine["Trend persistence"]
     assert 0.0 <= result_by_engine["WaveMind calibrated"]["filtered_rate"] <= 1.0
     assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
+    assert "sized_profit_factor" in result_by_engine["WaveMind adaptive-field"]
+    assert "sized_max_drawdown_bps" in result_by_engine["WaveMind adaptive-field"]
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
@@ -90,6 +92,8 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["scenario"]["adaptive_min_expected_edge_bps"] == 70.0
     assert payload["scenario"]["adaptive_max_opposition"] == 0.62
     assert payload["scenario"]["adaptive_trend_alignment"] is True
+    assert payload["scenario"]["adaptive_performance_lookback"] == 24
+    assert payload["scenario"]["adaptive_min_recent_edge_bps"] == 0.0
     assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]

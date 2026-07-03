@@ -137,23 +137,24 @@ trading claim.
 
 Expanded 4h check, 4 folds x 60 windows:
 
-| engine | queries | active d1 | signal rate | sized net bps | large FP |
-|---|---:|---:|---:|---:|---:|
-| WaveMind adaptive-field | 720 | 0.551 | 0.507 | 26.10 | 0.333 |
-| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 0.365 |
-| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 0.380 |
-| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 0.651 |
-| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 0.688 |
-| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.651 |
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 720 | 0.577 | 0.325 | 31.85 | 2.130 | 5305.3 | 0.208 |
+| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 0.365 |
+| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 0.380 |
+| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 0.651 |
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 1.174 | 11769.1 | 0.688 |
+| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.898 | 12777.0 | 0.651 |
 
-Interpretation: the strongest current average result is `WaveMind
-adaptive-field`. It uses the relationship field as a dynamic overlay on top of
-a trend-aligned mature-regime candidate: only a strong opposite relationship
-edge can veto the signal. It improves average fixed-size net return (`26.10`
-vs `25.23` bps for trend persistence) and reduces large false positives
-(`0.333` vs `0.380`). This is real signal-shaping evidence, but not a robust
-market edge yet: it is positive on 5/12 symbol-fold slices, and the worst slice
-is still negative (`-70.62` bps).
+Interpretation: the strongest current result is `WaveMind adaptive-field`.
+It uses the relationship field as a dynamic overlay on top of a trend-aligned
+mature-regime candidate, then adds self-feedback from its own matured signals.
+It improves average fixed-size net return (`31.85` vs `25.23` bps for trend
+persistence), profit factor (`2.130` vs `1.462`), max drawdown (`5305.3` vs
+`9318.8` bps), and large false positives (`0.208` vs `0.380`). This is real
+signal-shaping evidence, but not a live-trading claim: it is positive on 4/12
+symbol-fold slices, while the worst slice improves sharply from `-77.66` bps
+to `-20.79` bps.
 
 ## Relationship Mining
 
@@ -230,8 +231,8 @@ Near-term execution plan:
     future windows and which fail.
 15. Done: adaptive relationship-field overlay uses past train/holdout
     relationship memory as a dynamic veto over trend-aligned candidates; it
-    improves average checked-in 4h return and lowers false positives, but is
-    still positive on only 5/12 symbol-fold slices.
+    improves average checked-in 4h return, profit factor, drawdown, and false
+    positives, but is still positive on only 4/12 symbol-fold slices.
 16. Next: improve downside robustness across bad folds, add drawdown/profit
     factor metrics, and validate on more date ranges, exchanges, assets, and
     walk-forward folds.
