@@ -62,6 +62,14 @@ Implemented in this branch:
   checked-in BTC/ETH/SOL 1h/4h/1d timeframe-aware policy result.
 - `benchmarks/crypto_okx_timeframe_policy_analogue_explorer.html` - visual
   analogue explorer for the timeframe-aware policy run.
+- `benchmarks/crypto_current_forecast.py` - current-market research forecast
+  runner that uses completed candles only and embeds the validation profile.
+- `benchmarks/crypto_current_forecast_24h.json` and
+  `benchmarks/crypto_current_forecast_24h.md` - checked-in 24h forecast
+  snapshot for BTC/ETH/SOL.
+- `benchmarks/crypto_current_forecast_7d.json` and
+  `benchmarks/crypto_current_forecast_7d.md` - checked-in 7d abstention
+  snapshot while 1d policy remains unvalidated.
 - `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
@@ -76,6 +84,7 @@ Implemented in this branch:
 - `tests/test_crypto_pattern_benchmark.py` - regression tests for the benchmark.
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
 - `tests/test_crypto_walk_forward_benchmark.py` - walk-forward runner tests.
+- `tests/test_crypto_current_forecast.py` - current forecast pipeline tests.
 
 The scaffold benchmark is synthetic. The current walk-forward benchmark uses
 real cached OKX OHLCV. It does not show a deployable market edge yet.
@@ -91,6 +100,12 @@ Real walk-forward run, using checked-in OKX CSV cache:
 
 ```sh
 python benchmarks/crypto_walk_forward_benchmark.py --dataset ccxt --exchange okx --cache-dir benchmarks/data/crypto_ohlcv --symbols BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 4h 1d --engines market storage-controls --bars 720 --train-windows 420 --test-windows 120 --position-sizing confidence --confidence-threshold 0.65 --min-analogue-agreement 0.6 --min-expected-edge-bps 30
+```
+
+Current research forecast snapshot, using live OKX candles:
+
+```sh
+python benchmarks/crypto_current_forecast.py --exchange okx --symbols BTC/USDT ETH/USDT SOL/USDT --horizon 24h --bars 720 --output benchmarks/crypto_current_forecast_24h.json --report benchmarks/crypto_current_forecast_24h.md
 ```
 
 For the crypto branch, Chroma and Qdrant are not the main competitors. They are
@@ -211,6 +226,39 @@ This turns the combined 1h/4h/1d run from negative adaptive-field performance
 trend persistence and naive last-regime. It is still not universal alpha:
 the unresolved gap is a validated 1d / weekly trend-memory dynamic.
 
+## Current Forecast Snapshot
+
+The branch now includes a current-market research forecast runner. It uses the
+same `WaveMind timeframe policy` engine as the checked-in walk-forward
+benchmark, trains on the latest completed candles, queries the latest completed
+window, and writes both JSON and Markdown. The JSON output embeds the
+validation profile used to judge whether the engine is credible enough for that
+horizon.
+
+The checked-in 24h snapshot was generated from OKX on
+`2026-07-03T18:32:05Z` using data through the completed
+`2026-07-03T12:00:00Z` 4h candle:
+
+| symbol | horizon | direction | last close | expected return | expected price | confidence |
+|---|---:|---|---:|---:|---:|---:|
+| BTC/USDT | 24h | up | 61929.8 | 0.52% | 62254.5 | 0.551 |
+| ETH/USDT | 24h | up | 1731.3 | 2.01% | 1766.09 | 0.477 |
+| SOL/USDT | 24h | up | 81.22 | 0.67% | 81.7674 | 0.749 |
+
+The checked-in 7d snapshot returns `flat` for BTC/ETH/SOL because the current
+policy routes unvalidated `1d` forecasts to abstention:
+
+| symbol | horizon | direction | reason |
+|---|---:|---|---|
+| BTC/USDT | 7d | flat | unsupported_timeframe:1d |
+| ETH/USDT | 7d | flat | unsupported_timeframe:1d |
+| SOL/USDT | 7d | flat | unsupported_timeframe:1d |
+
+This is still research output, not financial advice. The 24h path is the first
+supported current-forecast path because it maps to the validated 4h policy; the
+weekly path intentionally refuses to forecast until a separate daily/weekly
+policy passes walk-forward validation.
+
 ## Relationship Mining
 
 WaveMind Crypto now includes an explainable regime miner. It does not claim a
@@ -289,10 +337,15 @@ Near-term execution plan:
     improves average checked-in 4h return, profit factor, drawdown, and false
     positives, adds slice-robustness metrics, and validates on an additional
     5-asset OKX 4h cross-check.
-16. Next: improve downside robustness across bad folds, add drawdown/profit
-    factor metrics, and validate on more date ranges, exchanges, assets, and
-    walk-forward folds.
-17. Only after robustness holds, test signal construction and backtesting.
+16. Done: timeframe-aware policy routes 1h to microstructure, 4h to
+    adaptive-field, and unvalidated 1d to abstention.
+17. Done: current forecast runner generates 24h research snapshots from
+    completed live candles and embeds the validation profile.
+18. Next: build and validate a separate 1d / weekly trend-memory dynamic before
+    enabling 7d forecasts.
+19. Next: improve downside robustness across bad folds and validate on more
+    date ranges, exchanges, assets, and walk-forward folds.
+20. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

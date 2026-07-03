@@ -208,6 +208,43 @@ system uses a timeframe only after that timeframe has its own validated policy.
 The next research step is a separate 1d trend-memory dynamic; raw weekly
 adaptive-field and direct field-signal tests are still negative.
 
+## Current Forecast Runner
+
+Runner:
+
+```sh
+python benchmarks/crypto_current_forecast.py \
+  --exchange okx \
+  --symbols BTC/USDT ETH/USDT SOL/USDT \
+  --horizon 24h \
+  --bars 720 \
+  --output benchmarks/crypto_current_forecast_24h.json \
+  --report benchmarks/crypto_current_forecast_24h.md
+```
+
+What it does:
+
+- fetches recent OHLCV with CCXT pagination;
+- discards incomplete candles;
+- trains the same `WaveMind timeframe policy` engine used in the walk-forward
+  benchmark;
+- queries the latest completed market window;
+- writes current price, expected return, expected price, confidence, filter
+  reason, and the validation profile into JSON/Markdown.
+
+Checked-in OKX 24h snapshot generated on `2026-07-03T18:32:05Z`:
+
+| symbol | data end UTC | direction | last close | expected return | expected price | confidence |
+|---|---|---|---:|---:|---:|---:|
+| BTC/USDT | 2026-07-03T12:00:00Z | up | 61929.8 | 0.52% | 62254.5 | 0.551 |
+| ETH/USDT | 2026-07-03T12:00:00Z | up | 1731.3 | 2.01% | 1766.09 | 0.477 |
+| SOL/USDT | 2026-07-03T12:00:00Z | up | 81.22 | 0.67% | 81.7674 | 0.749 |
+
+The 7d runner currently returns `flat` on BTC/ETH/SOL with
+`unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
+daily/weekly horizons until a separate 1d profile passes walk-forward
+validation.
+
 The metrics are retrieval/research metrics, not a live trading claim:
 
 - `direction_accuracy_at_1` - top analogue predicts the same next-move bucket;
@@ -394,11 +431,17 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     4h result, profit factor, drawdown, false positives, and worst-slice loss;
     the benchmark now reports slice-robustness metrics and includes an
     additional 5-asset OKX 4h cross-check.
-11. Next: improve downside robustness across bad folds and validate across more
-   date ranges, exchanges, assets, and walk-forward folds.
-12. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
-   volatility filters, DTW on smaller samples, matrix-profile style analogues,
-   and ML classifiers.
-13. Add signal construction only after retrieval quality is stable.
-14. Publish results separately from the main README to avoid confusing memory
-   benchmarks with market-performance claims.
+11. Done: timeframe-aware policy routes 1h to microstructure, 4h to
+    adaptive-field, and unvalidated 1d to abstention.
+12. Done: current forecast runner generates 24h research snapshots from
+    completed live candles and embeds the validation profile.
+13. Next: build and validate a separate 1d / weekly trend-memory dynamic before
+    enabling 7d forecasts.
+14. Next: improve downside robustness across bad folds and validate across more
+    date ranges, exchanges, assets, and walk-forward folds.
+15. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+    volatility filters, DTW on smaller samples, matrix-profile style analogues,
+    and ML classifiers.
+16. Add signal construction only after retrieval quality is stable.
+17. Publish results separately from the main README to avoid confusing memory
+    benchmarks with market-performance claims.
