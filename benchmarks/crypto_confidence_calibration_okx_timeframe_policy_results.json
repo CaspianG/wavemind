@@ -1,0 +1,188 @@
+{
+  "scenario": {
+    "name": "crypto_walk_forward",
+    "dataset_markets": [
+      {
+        "symbol": "BTC/USDT",
+        "timeframe": "1h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1h.csv"
+      },
+      {
+        "symbol": "BTC/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_4h.csv"
+      },
+      {
+        "symbol": "BTC/USDT",
+        "timeframe": "1d",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1d.csv"
+      },
+      {
+        "symbol": "ETH/USDT",
+        "timeframe": "1h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1h.csv"
+      },
+      {
+        "symbol": "ETH/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_4h.csv"
+      },
+      {
+        "symbol": "ETH/USDT",
+        "timeframe": "1d",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1d.csv"
+      },
+      {
+        "symbol": "SOL/USDT",
+        "timeframe": "1h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1h.csv"
+      },
+      {
+        "symbol": "SOL/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_4h.csv"
+      },
+      {
+        "symbol": "SOL/USDT",
+        "timeframe": "1d",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1d.csv"
+      }
+    ],
+    "train_windows": 420,
+    "test_windows": 60,
+    "folds": 4,
+    "fold_stride": null,
+    "top_k": 5,
+    "fee_bps": 10.0,
+    "slippage_bps": 5.0,
+    "round_trip_cost_bps": 30.0,
+    "large_move_bps": 75.0,
+    "position_sizing": "fixed",
+    "confidence_threshold": 0.65,
+    "min_analogue_agreement": 0.6,
+    "regime_filter": true,
+    "min_expected_edge_bps": 0.0,
+    "gate_min_support": 0.52,
+    "gate_min_regime_agreement": 0.5,
+    "gate_performance_lookback": 96,
+    "gate_min_historical_edge_bps": 0.0,
+    "risk_max_opposition": 0.62,
+    "risk_min_regime_agreement": 0.35,
+    "risk_min_historical_edge_bps": -20.0,
+    "adaptive_min_support": 24,
+    "adaptive_min_test_support": 8,
+    "adaptive_validation_holdout": 0.35,
+    "adaptive_min_confidence": 0.52,
+    "adaptive_min_expected_edge_bps": 70.0,
+    "adaptive_max_opposition": 0.62,
+    "adaptive_trend_alignment": true,
+    "adaptive_performance_lookback": 8,
+    "adaptive_min_recent_edge_bps": 20.0,
+    "memory_store": "memory",
+    "note": "Research walk-forward retrieval benchmark. This is not financial advice or a profit claim."
+  },
+  "calibration": [
+    {
+      "engine": "WaveMind timeframe policy",
+      "signal_events": 363,
+      "brier_score_if_treated_as_probability": 0.34730943523506547,
+      "expected_calibration_error": 0.299416914824659,
+      "probability_ready": false,
+      "note": "Evidence strength is tested here as if it were a probability; probability_ready=false means do not use it as probability.",
+      "buckets": [
+        {
+          "bin": 0,
+          "range": [
+            0.0,
+            0.2
+          ],
+          "count": 0,
+          "avg_evidence_strength": 0.0,
+          "direction_hit_rate": 0.0,
+          "calibration_error": 0.0,
+          "avg_net_return_bps": 0.0,
+          "avg_sized_net_return_bps": 0.0
+        },
+        {
+          "bin": 1,
+          "range": [
+            0.2,
+            0.4
+          ],
+          "count": 13,
+          "avg_evidence_strength": 0.35,
+          "direction_hit_rate": 0.46153846153846156,
+          "calibration_error": 0.11153846153846159,
+          "avg_net_return_bps": 35.18470385524128,
+          "avg_sized_net_return_bps": 35.18470385524128
+        },
+        {
+          "bin": 2,
+          "range": [
+            0.4,
+            0.6
+          ],
+          "count": 78,
+          "avg_evidence_strength": 0.53480337651633,
+          "direction_hit_rate": 0.717948717948718,
+          "calibration_error": 0.18314534143238792,
+          "avg_net_return_bps": 185.02972762854384,
+          "avg_sized_net_return_bps": 185.02972762854384
+        },
+        {
+          "bin": 3,
+          "range": [
+            0.6,
+            0.8
+          ],
+          "count": 60,
+          "avg_evidence_strength": 0.6711889062227577,
+          "direction_hit_rate": 0.7166666666666667,
+          "calibration_error": 0.04547776044390894,
+          "avg_net_return_bps": 141.51816107585503,
+          "avg_sized_net_return_bps": 141.51816107585503
+        },
+        {
+          "bin": 4,
+          "range": [
+            0.8,
+            1.0
+          ],
+          "count": 212,
+          "avg_evidence_strength": 0.9680393293537284,
+          "direction_hit_rate": 0.5424528301886793,
+          "calibration_error": 0.4255864991650491,
+          "avg_net_return_bps": 42.26217363611069,
+          "avg_sized_net_return_bps": 42.26217363611069
+        }
+      ]
+    }
+  ]
+}

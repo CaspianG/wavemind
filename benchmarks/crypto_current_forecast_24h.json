@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-03T18:32:05.271303+00:00",
+  "generated_utc": "2026-07-03T18:59:04.858526+00:00",
   "closed_candles_only": true,
   "results": [
     {
@@ -16,12 +16,15 @@
       "expected_return_bps": 52.42927728757118,
       "expected_return_pct": 0.5242927728757119,
       "expected_price": 62254.493465656386,
+      "evidence_strength": 0.5508034596849385,
       "confidence": 0.5508034596849385,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": false,
       "filter_reason": "",
       "analogue_agreement": 0.5508034596849385,
       "regime_agreement": 1.0,
-      "latency_ms": 14.748600020539016,
+      "latency_ms": 11.47799997124821,
       "validation": {
         "queries": 2160,
         "active_direction_accuracy": 0.6060606060606061,
@@ -33,6 +36,18 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
+      },
+      "calibration_bucket": {
+        "range": [
+          0.4,
+          0.6
+        ],
+        "count": 78,
+        "avg_evidence_strength": 0.53480337651633,
+        "direction_hit_rate": 0.717948717948718,
+        "calibration_error": 0.18314534143238792,
+        "avg_net_return_bps": 185.02972762854384,
+        "probability_ready": false
       }
     },
     {
@@ -49,12 +64,15 @@
       "expected_return_bps": 200.91916097101148,
       "expected_return_pct": 2.009191609710115,
       "expected_price": 1766.085134338911,
+      "evidence_strength": 0.47650684161371415,
       "confidence": 0.47650684161371415,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": false,
       "filter_reason": "",
       "analogue_agreement": 0.47650684161371415,
       "regime_agreement": 0.9229538290089165,
-      "latency_ms": 10.141100035980344,
+      "latency_ms": 10.597500018775463,
       "validation": {
         "queries": 2160,
         "active_direction_accuracy": 0.6060606060606061,
@@ -66,6 +84,18 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
+      },
+      "calibration_bucket": {
+        "range": [
+          0.4,
+          0.6
+        ],
+        "count": 78,
+        "avg_evidence_strength": 0.53480337651633,
+        "direction_hit_rate": 0.717948717948718,
+        "calibration_error": 0.18314534143238792,
+        "avg_net_return_bps": 185.02972762854384,
+        "probability_ready": false
       }
     },
     {
@@ -82,12 +112,15 @@
       "expected_return_bps": 67.39934535454137,
       "expected_return_pct": 0.6739934535454136,
       "expected_price": 81.76741748296959,
+      "evidence_strength": 0.7485937743094702,
       "confidence": 0.7485937743094702,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": false,
       "filter_reason": "",
       "analogue_agreement": 0.7485937743094702,
       "regime_agreement": 1.0,
-      "latency_ms": 20.117499982006848,
+      "latency_ms": 14.517300005536526,
       "validation": {
         "queries": 2160,
         "active_direction_accuracy": 0.6060606060606061,
@@ -99,6 +132,18 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
+      },
+      "calibration_bucket": {
+        "range": [
+          0.6,
+          0.8
+        ],
+        "count": 60,
+        "avg_evidence_strength": 0.6711889062227577,
+        "direction_hit_rate": 0.7166666666666667,
+        "calibration_error": 0.04547776044390894,
+        "avg_net_return_bps": 141.51816107585503,
+        "probability_ready": false
       }
     }
   ]

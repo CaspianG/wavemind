@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-03T18:31:15.517018+00:00",
+  "generated_utc": "2026-07-03T18:58:19.230502+00:00",
   "closed_candles_only": true,
   "results": [
     {
@@ -16,7 +16,10 @@
       "expected_return_bps": 0.0,
       "expected_return_pct": 0.0,
       "expected_price": 61559.1,
+      "evidence_strength": 0.0,
       "confidence": 0.0,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -33,7 +36,8 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
-      }
+      },
+      "calibration_bucket": {}
     },
     {
       "symbol": "ETH/USDT",
@@ -49,7 +53,10 @@
       "expected_return_bps": 0.0,
       "expected_return_pct": 0.0,
       "expected_price": 1700.7,
+      "evidence_strength": 0.0,
       "confidence": 0.0,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -66,7 +73,8 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
-      }
+      },
+      "calibration_bucket": {}
     },
     {
       "symbol": "SOL/USDT",
@@ -82,7 +90,10 @@
       "expected_return_bps": 0.0,
       "expected_return_pct": 0.0,
       "expected_price": 80.73,
+      "evidence_strength": 0.0,
       "confidence": 0.0,
+      "confidence_is_probability": false,
+      "confidence_note": "evidence strength from analogue/regime agreement; not a calibrated probability",
       "filtered": true,
       "filter_reason": "unsupported_timeframe:1d",
       "analogue_agreement": 1.0,
@@ -99,7 +110,8 @@
         "market_slices": 36,
         "worst_market_slice_sized_net_bps": -51.178114462804984,
         "large_move_false_positive_rate": 0.10627177700348432
-      }
+      },
+      "calibration_bucket": {}
     }
   ]
 }

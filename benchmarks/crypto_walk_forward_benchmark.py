@@ -1322,6 +1322,7 @@ def run_walk_forward(
     adaptive_performance_lookback: int = 8,
     adaptive_min_recent_edge_bps: float = 20.0,
     memory_store: str = "disk",
+    include_event_metrics: bool = False,
 ) -> dict:
     engine_keys = _normalize_engines(engines)
     encoder = create_text_encoder(kind=encoder_kind, vector_dim=384)
@@ -1329,6 +1330,7 @@ def run_walk_forward(
     all_results = []
     by_market = []
     analogue_samples = []
+    event_metrics = []
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_root = Path(temp_dir)
         for engine_key in engine_keys:
@@ -1415,6 +1417,8 @@ def run_walk_forward(
                                     _analogue_sample(engine.name, query_window, prediction)
                                 )
                         engine_events.extend(market_events)
+                        if include_event_metrics:
+                            event_metrics.extend(asdict(event) for event in market_events)
                         by_market.append(
                             _summarize_events(
                                 engine.name,
@@ -1442,7 +1446,7 @@ def run_walk_forward(
 
     _attach_slice_robustness(all_results, by_market)
 
-    return {
+    payload = {
         "scenario": {
             "name": "crypto_walk_forward",
             "dataset_markets": [
@@ -1498,6 +1502,9 @@ def run_walk_forward(
         "by_market": by_market,
         "analogue_samples": analogue_samples,
     }
+    if include_event_metrics:
+        payload["event_metrics"] = event_metrics
+    return payload
 
 
 def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -33,6 +34,8 @@ HORIZON_PRESETS = {
     "7d": {"timeframe": "1d", "horizon": 7, "engine": "timeframe-policy"},
 }
 
+CONFIDENCE_NOTE = "evidence strength from analogue/regime agreement; not a calibrated probability"
+
 
 @dataclass(frozen=True)
 class ForecastResult:
@@ -56,6 +59,10 @@ class ForecastResult:
     regime_agreement: float
     latency_ms: float
     validation: Mapping[str, Any]
+    evidence_strength: float = 0.0
+    confidence_is_probability: bool = False
+    confidence_note: str = CONFIDENCE_NOTE
+    calibration_bucket: Mapping[str, Any] | None = None
 
 
 def completed_bars(rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None) -> list[OHLCVBar]:
@@ -144,6 +151,7 @@ def forecast_from_bars(
     fee_bps: float = 10.0,
     slippage_bps: float = 5.0,
     validation: Mapping[str, Any] | None = None,
+    calibration_profile: Mapping[str, Any] | None = None,
 ) -> ForecastResult:
     ordered = sorted(list(bars), key=lambda item: item.timestamp)
     direction_threshold = max(15.0, 2.0 * (float(fee_bps) + float(slippage_bps)))
@@ -196,6 +204,14 @@ def forecast_from_bars(
         regime_agreement=float(prediction.regime_agreement),
         latency_ms=float(prediction.latency_ms),
         validation=dict(validation or {}),
+        evidence_strength=float(prediction.confidence),
+        confidence_is_probability=False,
+        confidence_note=CONFIDENCE_NOTE,
+        calibration_bucket=calibration_bucket_for_evidence(
+            calibration_profile,
+            engine_name=engine.name,
+            evidence_strength=float(prediction.confidence),
+        ),
     )
 
 
@@ -221,6 +237,45 @@ def validation_by_engine(path: str | Path | None, *, engine_name: str) -> dict[s
     return {}
 
 
+def load_calibration_profile(path: str | Path | None) -> dict[str, Any]:
+    if path is None:
+        return {}
+    calibration_path = Path(path)
+    if not calibration_path.exists():
+        return {}
+    return json.loads(calibration_path.read_text(encoding="utf-8"))
+
+
+def calibration_bucket_for_evidence(
+    profile: Mapping[str, Any] | None,
+    *,
+    engine_name: str,
+    evidence_strength: float,
+) -> dict[str, Any] | None:
+    if not profile:
+        return None
+    for engine in profile.get("calibration", []):
+        if engine.get("engine") != engine_name:
+            continue
+        for bucket in engine.get("buckets", []):
+            low, high = bucket.get("range", [0.0, 1.0])
+            evidence = float(evidence_strength)
+            if float(low) <= evidence < float(high) or (math.isclose(evidence, 1.0) and float(high) >= 1.0):
+                if int(bucket.get("count", 0)) <= 0:
+                    return None
+                return {
+                    "range": [float(low), float(high)],
+                    "count": int(bucket.get("count", 0)),
+                    "avg_evidence_strength": float(bucket.get("avg_evidence_strength", 0.0)),
+                    "direction_hit_rate": float(bucket.get("direction_hit_rate", 0.0)),
+                    "calibration_error": float(bucket.get("calibration_error", 0.0)),
+                    "avg_net_return_bps": float(bucket.get("avg_net_return_bps", 0.0)),
+                    "probability_ready": bool(engine.get("probability_ready", False)),
+                }
+        return None
+    return None
+
+
 def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
     return {
         "symbol": result.symbol,
@@ -236,13 +291,17 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "expected_return_bps": result.expected_return_bps,
         "expected_return_pct": result.expected_return_pct,
         "expected_price": result.expected_price,
+        "evidence_strength": result.evidence_strength,
         "confidence": result.confidence,
+        "confidence_is_probability": result.confidence_is_probability,
+        "confidence_note": result.confidence_note,
         "filtered": result.filtered,
         "filter_reason": result.filter_reason,
         "analogue_agreement": result.analogue_agreement,
         "regime_agreement": result.regime_agreement,
         "latency_ms": result.latency_ms,
         "validation": dict(result.validation),
+        "calibration_bucket": dict(result.calibration_bucket or {}),
     }
 
 
@@ -251,20 +310,44 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "# WaveMind Crypto Current Forecast",
         "",
         "Research forecast from completed candles only. Not financial advice.",
+        "Evidence strength is analogue/regime agreement, not a calibrated probability.",
         "",
-        "| symbol | horizon | data end UTC | direction | last close | expected return | expected price | confidence | filter |",
-        "|---|---:|---|---:|---:|---:|---:|---:|---|",
+        "| symbol | horizon | data end UTC | direction | last close | expected return | expected price | evidence strength | bucket hit rate | filter |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
+        bucket_hit = ""
+        if result.calibration_bucket:
+            bucket_hit = f"{float(result.calibration_bucket.get('direction_hit_rate', 0.0)):.3f}"
         lines.append(
             "| "
             f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | {result.direction} | "
             f"{result.last_close:.6g} | {result.expected_return_pct:.2f}% | "
-            f"{result.expected_price:.6g} | {result.confidence:.3f} | {filter_text} |"
+            f"{result.expected_price:.6g} | {result.evidence_strength:.3f} | {bucket_hit} | {filter_text} |"
         )
     lines.append("")
+    validation = dict(results[0].validation) if results else {}
+    if validation:
+        active_accuracy = validation.get("active_direction_accuracy")
+        signal_rate = validation.get("signal_rate")
+        positive_slices = validation.get("positive_market_slices")
+        market_slices = validation.get("market_slices")
+        if active_accuracy is not None and signal_rate is not None:
+            lines.append(
+                "Validation profile: "
+                f"historical active direction accuracy {float(active_accuracy):.3f}, "
+                f"signal rate {float(signal_rate):.3f}"
+                + (
+                    f", positive market slices {positive_slices}/{market_slices}"
+                    if positive_slices is not None and market_slices is not None
+                    else ""
+                )
+                + "."
+            )
+            lines.append("")
     lines.append("Validation profile is embedded in the JSON output for each row.")
+    lines.append("Calibration bucket hit rate is historical and not guaranteed future probability.")
     lines.append("")
     return "\n".join(lines)
 
@@ -280,12 +363,14 @@ def main() -> int:
     parser.add_argument("--fee-bps", type=float, default=10.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
     parser.add_argument("--profile-json", type=Path, default=Path("benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json"))
+    parser.add_argument("--calibration-json", type=Path, default=Path("benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json"))
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_current_forecast.json"))
     parser.add_argument("--report", type=Path, default=Path("benchmarks/crypto_current_forecast.md"))
     args = parser.parse_args()
 
     preset = HORIZON_PRESETS[args.horizon]
     validation = validation_by_engine(args.profile_json, engine_name="WaveMind timeframe policy")
+    calibration_profile = load_calibration_profile(args.calibration_json)
     results = []
     for symbol in args.symbols:
         bars = fetch_latest_completed_bars(
@@ -308,6 +393,7 @@ def main() -> int:
                 fee_bps=args.fee_bps,
                 slippage_bps=args.slippage_bps,
                 validation=validation,
+                calibration_profile=calibration_profile,
             )
         )
 

@@ -25,6 +25,84 @@ retrieval result, but not the benchmark that validates the market hypothesis.
 The important comparison is WaveMind field-on vs field-off and against
 time-series or trading-research baselines.
 
+## Plain-English Model
+
+The crypto branch treats the market as a memory problem, not as a price oracle.
+
+For every symbol and timeframe it builds rolling OHLCV windows. Each window is
+converted into a small description of the current regime: trend, recent trend,
+RSI bucket, volatility bucket, drawdown bucket, MACD-like spread, Bollinger-like
+position, volume bucket, and range compression. Historical windows are stored
+with their future outcome, but the future outcome is not included in the query
+text.
+
+When the current market is queried, the system looks for historical windows
+that looked similar. The wave-field layer then acts as a policy overlay:
+
+- similar memories propose historical analogues;
+- validated regime relationships can reinforce or veto the proposal;
+- recently bad mature signals can suppress new signals;
+- unsupported timeframes return `flat` instead of forcing a prediction.
+
+The resulting price target is a research estimate:
+
+```text
+latest close * (1 + expected_return_bps / 10000)
+```
+
+The system is useful only if the same process survives walk-forward validation.
+If a profile does not survive future folds, it should be treated as a failed
+hypothesis, even if a single current forecast looks plausible.
+
+## Confidence And Calibration
+
+The current forecast runner reports `evidence_strength`, not true confidence.
+This is deliberate. The old word "confidence" was too easy to misread as
+"probability that the forecast is correct".
+
+Current `evidence_strength` means:
+
+- analogue agreement: do retrieved historical windows point in the same
+  direction?
+- regime agreement: do current features match regimes that previously worked?
+- filter result: did the timeframe policy allow the signal or return `flat`?
+
+It does not mean:
+
+- probability of profit;
+- probability that price reaches the target;
+- calibrated win rate for this specific coin tomorrow.
+
+The current 24h policy is promising but not production-grade. Its checked
+validation profile has active direction accuracy `0.606`, signal rate `0.168`,
+and positive market slices `13/36`. That is better than random on the active
+subset, but it is not enough to claim a reliable live forecast.
+
+Required next step:
+
+1. Bucket historical predictions by evidence strength.
+2. Measure realized direction hit rate, net return, drawdown, and false
+   positives per bucket.
+3. Report calibration metrics such as Brier score and expected calibration
+   error.
+4. Expose a real probability only for buckets that remain stable across
+   symbols, folds, date ranges, and exchanges.
+
+Current checked OKX calibration result for the timeframe policy:
+
+| evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
+|---|---:|---:|---:|---:|---:|
+| 0.2-0.4 | 13 | 0.350 | 0.462 | 0.112 | 35.18 |
+| 0.4-0.6 | 78 | 0.535 | 0.718 | 0.183 | 185.03 |
+| 0.6-0.8 | 60 | 0.671 | 0.717 | 0.045 | 141.52 |
+| 0.8-1.0 | 212 | 0.968 | 0.542 | 0.426 | 42.26 |
+
+Summary: signal events `363`, Brier score if treated as probability `0.347`,
+expected calibration error `0.299`, probability ready `false`. The score is
+not monotonic yet: mid-strength evidence worked better than high-strength
+evidence. That is exactly why the forecast output now reports both raw
+`evidence_strength` and historical bucket hit rate.
+
 ## First Benchmark
 
 Runner:
@@ -229,16 +307,16 @@ What it does:
 - trains the same `WaveMind timeframe policy` engine used in the walk-forward
   benchmark;
 - queries the latest completed market window;
-- writes current price, expected return, expected price, confidence, filter
-  reason, and the validation profile into JSON/Markdown.
+- writes current price, expected return, expected price, evidence strength,
+  filter reason, and the validation profile into JSON/Markdown.
 
-Checked-in OKX 24h snapshot generated on `2026-07-03T18:32:05Z`:
+Checked-in OKX 24h snapshot generated on `2026-07-03T18:59:04Z`:
 
-| symbol | data end UTC | direction | last close | expected return | expected price | confidence |
-|---|---|---|---:|---:|---:|---:|
-| BTC/USDT | 2026-07-03T12:00:00Z | up | 61929.8 | 0.52% | 62254.5 | 0.551 |
-| ETH/USDT | 2026-07-03T12:00:00Z | up | 1731.3 | 2.01% | 1766.09 | 0.477 |
-| SOL/USDT | 2026-07-03T12:00:00Z | up | 81.22 | 0.67% | 81.7674 | 0.749 |
+| symbol | data end UTC | direction | last close | expected return | expected price | evidence strength | bucket hit rate |
+|---|---|---|---:|---:|---:|---:|---:|
+| BTC/USDT | 2026-07-03T12:00:00Z | up | 61929.8 | 0.52% | 62254.5 | 0.551 | 0.718 |
+| ETH/USDT | 2026-07-03T12:00:00Z | up | 1731.3 | 2.01% | 1766.09 | 0.477 | 0.718 |
+| SOL/USDT | 2026-07-03T12:00:00Z | up | 81.22 | 0.67% | 81.7674 | 0.749 | 0.717 |
 
 The 7d runner currently returns `flat` on BTC/ETH/SOL with
 `unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
@@ -435,13 +513,17 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     adaptive-field, and unvalidated 1d to abstention.
 12. Done: current forecast runner generates 24h research snapshots from
     completed live candles and embeds the validation profile.
-13. Next: build and validate a separate 1d / weekly trend-memory dynamic before
+13. Done: evidence-strength calibration diagnostic reports buckets, Brier
+    score, expected calibration error, and `probability_ready=false`.
+14. Next: make evidence strength monotonic and stable enough to expose a real
+    calibrated probability.
+15. Next: build and validate a separate 1d / weekly trend-memory dynamic before
     enabling 7d forecasts.
-14. Next: improve downside robustness across bad folds and validate across more
+16. Next: improve downside robustness across bad folds and validate across more
     date ranges, exchanges, assets, and walk-forward folds.
-15. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+17. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-16. Add signal construction only after retrieval quality is stable.
-17. Publish results separately from the main README to avoid confusing memory
+18. Add signal construction only after retrieval quality is stable.
+19. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

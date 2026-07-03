@@ -40,6 +40,24 @@ def test_forecast_from_bars_computes_expected_price():
         window=16,
         top_k=3,
         validation={"queries": 10, "active_direction_accuracy": 0.6},
+        calibration_profile={
+            "calibration": [
+                {
+                    "engine": "WaveMind timeframe policy",
+                    "probability_ready": False,
+                    "buckets": [
+                        {
+                            "range": [0.0, 1.0],
+                            "count": 20,
+                            "avg_evidence_strength": 0.5,
+                            "direction_hit_rate": 0.65,
+                            "calibration_error": 0.15,
+                            "avg_net_return_bps": 12.0,
+                        }
+                    ],
+                }
+            ]
+        },
     )
 
     expected_price = result.last_close * (1.0 + result.expected_return_bps / 10_000.0)
@@ -49,8 +67,37 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.horizon_bars == 6
     assert result.direction in {"up", "down", "flat"}
     assert math.isclose(result.expected_price, expected_price)
+    assert math.isclose(result.evidence_strength, result.confidence)
+    assert result.confidence_is_probability is False
     assert datetime.fromisoformat(result.forecast_until_utc) > datetime.fromisoformat(result.data_end_utc)
     assert result.validation["active_direction_accuracy"] == 0.6
+    assert result.calibration_bucket is not None
+    assert result.calibration_bucket["direction_hit_rate"] == 0.65
+
+
+def test_calibration_bucket_for_evidence_finds_matching_range():
+    from benchmarks.crypto_current_forecast import calibration_bucket_for_evidence
+
+    bucket = calibration_bucket_for_evidence(
+        {
+            "calibration": [
+                {
+                    "engine": "WaveMind timeframe policy",
+                    "probability_ready": False,
+                    "buckets": [
+                        {"range": [0.0, 0.5], "count": 3, "direction_hit_rate": 0.33},
+                        {"range": [0.5, 1.0], "count": 7, "direction_hit_rate": 0.71},
+                    ],
+                }
+            ]
+        },
+        engine_name="WaveMind timeframe policy",
+        evidence_strength=0.62,
+    )
+
+    assert bucket is not None
+    assert bucket["range"] == [0.5, 1.0]
+    assert bucket["direction_hit_rate"] == 0.71
 
 
 def test_fetch_latest_completed_bars_uses_since_slack(monkeypatch):
@@ -104,6 +151,8 @@ def test_render_markdown_contains_price_target():
                 expected_return_pct=1.2,
                 expected_price=101_200.0,
                 confidence=0.73,
+                evidence_strength=0.73,
+                calibration_bucket={"direction_hit_rate": 0.62},
                 filtered=False,
                 filter_reason="",
                 analogue_agreement=0.8,
@@ -115,6 +164,8 @@ def test_render_markdown_contains_price_target():
     )
 
     assert "Research forecast from completed candles only" in markdown
+    assert "Evidence strength is analogue/regime agreement" in markdown
+    assert "0.620" in markdown
     assert "BTC/USDT" in markdown
     assert "101200" in markdown
     assert "1.20%" in markdown
@@ -153,5 +204,8 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["results"][0]["symbol"] == "ETH/USDT"
     assert payload["results"][0]["engine"] == "WaveMind timeframe policy"
+    assert payload["results"][0]["confidence_is_probability"] is False
+    assert "not a calibrated probability" in payload["results"][0]["confidence_note"]
+    assert payload["results"][0]["evidence_strength"] == payload["results"][0]["confidence"]
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
     assert not bars_path.exists()

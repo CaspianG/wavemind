@@ -70,6 +70,10 @@ Implemented in this branch:
 - `benchmarks/crypto_current_forecast_7d.json` and
   `benchmarks/crypto_current_forecast_7d.md` - checked-in 7d abstention
   snapshot while 1d policy remains unvalidated.
+- `benchmarks/crypto_confidence_calibration.py` - evidence-strength calibration
+  diagnostic over walk-forward event metrics.
+- `benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json`
+  and `.md` - checked-in calibration report for the timeframe policy.
 - `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
@@ -85,9 +89,65 @@ Implemented in this branch:
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
 - `tests/test_crypto_walk_forward_benchmark.py` - walk-forward runner tests.
 - `tests/test_crypto_current_forecast.py` - current forecast pipeline tests.
+- `tests/test_crypto_confidence_calibration.py` - evidence calibration tests.
 
 The scaffold benchmark is synthetic. The current walk-forward benchmark uses
 real cached OKX OHLCV. It does not show a deployable market edge yet.
+
+## How It Works In Plain English
+
+WaveMind Crypto turns market history into a memory of comparable situations:
+
+1. It splits OHLCV candles into rolling windows.
+2. Each window becomes a compact market description: trend, RSI bucket,
+   volatility, drawdown, MACD-like spread, Bollinger-like position, volume, and
+   range compression.
+3. Past windows are stored with their known future outcome: what happened after
+   that pattern, including return, favorable excursion, adverse excursion, and
+   drawdown.
+4. For the current market, WaveMind retrieves similar historical windows.
+5. The wave-field layer does not magically predict price by itself. It changes
+   memory priority: validated regimes can reinforce a signal, conflicting
+   relationships can suppress it, and unsupported timeframes return `flat`.
+6. The forecast is the expected return implied by the retrieved analogues after
+   the timeframe policy and filters are applied.
+
+In short: it asks, "when the market looked like this before, what usually
+happened next, and do the validated memory relationships agree or disagree?"
+
+## What The Current Forecast Means
+
+The `24h` runner is the first supported current-forecast path because it maps
+to the validated 4h policy. The `7d` path intentionally abstains until a
+separate 1d / weekly policy is validated.
+
+The output field `evidence_strength` is not a probability of being right. It is
+an internal agreement score from analogue and regime matching. A value around
+`0.47-0.55` means the evidence is weak to moderate; it should not be treated as
+a standalone trading signal. The checked-in validation profile is the more
+important number: the current timeframe policy has historical active direction
+accuracy of `0.606`, signal rate of `0.168`, and positive market slices
+`13/36` on the checked OKX run.
+
+The first calibration diagnostic is now checked in: it buckets forecasts by
+evidence strength, measures realized hit rate and return in each bucket, and
+reports Brier/ECE-style calibration metrics. The next required research step is
+to make the score monotonic and stable across symbols, folds, and date ranges
+before exposing it as a probability.
+
+Current calibration result for the checked OKX timeframe policy:
+
+| metric | value |
+|---|---:|
+| signal events | 363 |
+| Brier if evidence is treated as probability | 0.347 |
+| expected calibration error | 0.299 |
+| probability ready | false |
+
+The useful finding is that evidence is not monotonic yet. The `0.4-0.6` and
+`0.6-0.8` buckets had historical hit rates around `0.718`, but the `0.8-1.0`
+bucket was overconfident with hit rate `0.542`. So the score is useful as a
+diagnostic, but not yet as a true probability.
 
 ## Quick Run
 
@@ -236,14 +296,14 @@ validation profile used to judge whether the engine is credible enough for that
 horizon.
 
 The checked-in 24h snapshot was generated from OKX on
-`2026-07-03T18:32:05Z` using data through the completed
+`2026-07-03T18:59:04Z` using data through the completed
 `2026-07-03T12:00:00Z` 4h candle:
 
-| symbol | horizon | direction | last close | expected return | expected price | confidence |
-|---|---:|---|---:|---:|---:|---:|
-| BTC/USDT | 24h | up | 61929.8 | 0.52% | 62254.5 | 0.551 |
-| ETH/USDT | 24h | up | 1731.3 | 2.01% | 1766.09 | 0.477 |
-| SOL/USDT | 24h | up | 81.22 | 0.67% | 81.7674 | 0.749 |
+| symbol | horizon | direction | last close | expected return | expected price | evidence strength | bucket hit rate |
+|---|---:|---|---:|---:|---:|---:|---:|
+| BTC/USDT | 24h | up | 61929.8 | 0.52% | 62254.5 | 0.551 | 0.718 |
+| ETH/USDT | 24h | up | 1731.3 | 2.01% | 1766.09 | 0.477 | 0.718 |
+| SOL/USDT | 24h | up | 81.22 | 0.67% | 81.7674 | 0.749 | 0.717 |
 
 The checked-in 7d snapshot returns `flat` for BTC/ETH/SOL because the current
 policy routes unvalidated `1d` forecasts to abstention:
@@ -341,11 +401,15 @@ Near-term execution plan:
     adaptive-field, and unvalidated 1d to abstention.
 17. Done: current forecast runner generates 24h research snapshots from
     completed live candles and embeds the validation profile.
-18. Next: build and validate a separate 1d / weekly trend-memory dynamic before
+18. Done: evidence-strength calibration diagnostic reports buckets, Brier
+    score, expected calibration error, and `probability_ready=false`.
+19. Next: make evidence strength monotonic and stable enough to expose a real
+    calibrated probability.
+20. Next: build and validate a separate 1d / weekly trend-memory dynamic before
     enabling 7d forecasts.
-19. Next: improve downside robustness across bad folds and validate on more
+21. Next: improve downside robustness across bad folds and validate on more
     date ranges, exchanges, assets, and walk-forward folds.
-20. Only after robustness holds, test signal construction and backtesting.
+22. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 
