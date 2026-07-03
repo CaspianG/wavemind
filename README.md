@@ -54,6 +54,10 @@ Implemented in this branch:
   checked-in XRP/DOGE/ADA/LINK/AVAX adaptive-field 4h cross-asset result.
 - `benchmarks/crypto_okx_4h_more_assets_analogue_explorer.html` - visual
   analogue explorer for the additional 5-asset run.
+- `benchmarks/crypto_walk_forward_okx_1h_microstructure_results.json` -
+  checked-in BTC/ETH/SOL 1h microstructure overlay result.
+- `benchmarks/crypto_walk_forward_okx_1h_microstructure_more_assets_results.json`
+  - checked-in XRP/DOGE/ADA/LINK/AVAX 1h microstructure cross-asset result.
 - `benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json` -
   checked-in BTC/ETH/SOL 1h/4h/1d timeframe-aware policy result.
 - `benchmarks/crypto_okx_timeframe_policy_analogue_explorer.html` - visual
@@ -174,23 +178,38 @@ and cuts worst-slice loss from `-118.79` to `-23.45` bps. This is real
 signal-shaping evidence, but not a live-trading claim: the next milestone is
 raising the positive slice rate across more assets, exchanges, and timeframes.
 
+1h microstructure check, 4 folds x 60 windows:
+
+| dataset | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTC/ETH/SOL | WaveMind microstructure | 720 | 0.574 | 0.244 | 6.98 | 1.514 | 3250.2 | 8/12 | -51.18 | 0.086 |
+| BTC/ETH/SOL | TA rules | 720 | 0.525 | 0.410 | 6.41 | 1.285 | 3780.2 | 7/12 | -51.95 | 0.098 |
+| XRP/DOGE/ADA/LINK/AVAX | WaveMind microstructure | 1200 | 0.543 | 0.263 | 6.44 | 1.418 | 2740.8 | 12/20 | -25.45 | 0.125 |
+| XRP/DOGE/ADA/LINK/AVAX | TA rules | 1200 | 0.490 | 0.410 | 3.11 | 1.121 | 4932.2 | 10/20 | -51.68 | 0.117 |
+
+Interpretation: the 1h layer is now separate from the 4h layer. It starts with
+a simple microstructure candidate from TA rules, then uses the WaveMind
+relationship field to veto regimes with validated opposition and to require
+positive expected edge after fees/slippage. The result is lower signal rate,
+higher active direction accuracy, higher profit factor, and lower drawdown
+than raw TA on both checked asset groups.
+
 Timeframe-aware BTC/ETH/SOL check, 1h/4h/1d, 4 folds x 60 windows per market:
 
 | engine | queries | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.087 | 12.65 | 2.937 | 5305.3 | 5/36 | -19.75 | 0.056 |
+| WaveMind timeframe policy | 2160 | 0.168 | 14.97 | 2.354 | 5305.3 | 13/36 | -51.18 | 0.106 |
 | WaveMind adaptive-field | 2160 | 0.173 | -1.33 | 0.954 | 15183.8 | 8/36 | -106.89 | 0.091 |
 | Trend persistence | 2160 | 0.555 | 11.12 | 1.122 | 19833.8 | 17/36 | -205.85 | 0.334 |
 | Naive last-regime | 2160 | 0.863 | 4.09 | 1.030 | 30630.3 | 11/36 | -189.63 | 0.589 |
 
 Interpretation: the first production-style rule is timeframe awareness. The
-current field profile is validated on 4h, but not on 1h or 1d. The
-`WaveMind timeframe policy` therefore trades the 4h adaptive-field profile and
-abstains on unsupported timeframes. This turns the combined 1h/4h/1d run from
-negative adaptive-field performance (`-1.33` bps) into a positive,
-lower-drawdown policy (`12.65` bps), while cutting worst-slice loss from
-`-106.89` to `-19.75` bps. It is still not universal alpha: the next research
-work is separate 1h microstructure memory and 1d trend-memory dynamics.
+current policy routes 1h through `WaveMind microstructure`, 4h through
+`WaveMind adaptive-field`, and 1d to `flat` until a weekly profile is validated.
+This turns the combined 1h/4h/1d run from negative adaptive-field performance
+(`-1.33` bps) into a positive policy (`14.97` bps), with lower drawdown than
+trend persistence and naive last-regime. It is still not universal alpha:
+the unresolved gap is a validated 1d / weekly trend-memory dynamic.
 
 ## Relationship Mining
 

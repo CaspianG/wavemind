@@ -174,22 +174,39 @@ vs `21.41` bps) and cuts worst-slice loss from `-118.79` to `-23.45` bps. It
 is still not a live-trading claim: the next milestone is raising the positive
 slice rate across more assets, exchanges, and timeframes.
 
+1h microstructure check, 4 folds x 60 windows:
+
+| dataset | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTC/ETH/SOL | WaveMind microstructure | 720 | 0.574 | 0.244 | 6.98 | 1.514 | 3250.2 | 8/12 | -51.18 | 0.086 |
+| BTC/ETH/SOL | TA rules | 720 | 0.525 | 0.410 | 6.41 | 1.285 | 3780.2 | 7/12 | -51.95 | 0.098 |
+| XRP/DOGE/ADA/LINK/AVAX | WaveMind microstructure | 1200 | 0.543 | 0.263 | 6.44 | 1.418 | 2740.8 | 12/20 | -25.45 | 0.125 |
+| XRP/DOGE/ADA/LINK/AVAX | TA rules | 1200 | 0.490 | 0.410 | 3.11 | 1.121 | 4932.2 | 10/20 | -51.68 | 0.117 |
+
+Interpretation: the 1h policy is not the 4h adaptive-field profile reused at a
+smaller candle size. It is a separate microstructure overlay: TA rules propose
+short-horizon candidates, then the WaveMind relationship field vetoes validated
+opposition and requires positive expected edge after fees/slippage. On the
+checked BTC/ETH/SOL run it improves profit factor (`1.514` vs `1.285`) and
+drawdown (`3250.2` vs `3780.2`) versus raw TA. On the additional five-asset
+check it keeps the improvement (`6.44` vs `3.11` bps) and cuts worst-slice loss
+from `-51.68` to `-25.45` bps.
+
 Timeframe-aware BTC/ETH/SOL check, 1h/4h/1d, 4 folds x 60 windows per market:
 
 | engine | queries | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.087 | 12.65 | 2.937 | 5305.3 | 5/36 | -19.75 | 0.056 |
+| WaveMind timeframe policy | 2160 | 0.168 | 14.97 | 2.354 | 5305.3 | 13/36 | -51.18 | 0.106 |
 | WaveMind adaptive-field | 2160 | 0.173 | -1.33 | 0.954 | 15183.8 | 8/36 | -106.89 | 0.091 |
 | Trend persistence | 2160 | 0.555 | 11.12 | 1.122 | 19833.8 | 17/36 | -205.85 | 0.334 |
 | Naive last-regime | 2160 | 0.863 | 4.09 | 1.030 | 30630.3 | 11/36 | -189.63 | 0.589 |
 
 Interpretation: timeframe-aware policy is the first robustness layer. The
-current adaptive field is validated on 4h, but the same profile loses edge on
-1h and 1d. The policy therefore routes 4h through adaptive-field and returns
-`flat` on unsupported timeframes. This is intentionally conservative: it
-improves the combined multi-timeframe run by refusing weak regimes rather than
-pretending one field dynamic fits every candle size. The next research step is
-separate 1h microstructure memory and 1d trend-memory dynamics.
+current policy routes 1h through `WaveMind microstructure`, 4h through
+adaptive-field, and 1d to `flat`. This is intentionally conservative: the
+system uses a timeframe only after that timeframe has its own validated policy.
+The next research step is a separate 1d trend-memory dynamic; raw weekly
+adaptive-field and direct field-signal tests are still negative.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 

@@ -800,6 +800,127 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         return prediction
 
 
+class WaveMindMicrostructureEngine(MarketEngine):
+    name = "WaveMind microstructure"
+
+    def __init__(
+        self,
+        *,
+        min_support: int = 24,
+        min_test_support: int = 8,
+        validation_holdout: float = 0.35,
+        opposition_confidence: float = 0.45,
+        opposition_edge_bps: float = 50.0,
+        boost_confidence: float = 0.50,
+        min_expected_edge_bps: float = 20.0,
+        round_trip_cost_bps: float = 30.0,
+    ):
+        self.ta = TaRulesEngine()
+        self.records: list[OHLCVWindow] = []
+        self.return_history: list[float] = []
+        self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+        self.pending_predictions: dict[str, str] = {}
+        self.realized_signal_nets: list[float] = []
+        self.min_support = int(min_support)
+        self.min_test_support = int(min_test_support)
+        self.validation_holdout = float(validation_holdout)
+        self.opposition_confidence = float(opposition_confidence)
+        self.opposition_edge_bps = float(opposition_edge_bps)
+        self.boost_confidence = float(boost_confidence)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        predicted_direction = self.pending_predictions.pop(window.id, None)
+        if predicted_direction is not None:
+            self.realized_signal_nets.append(
+                _net_return_bps(
+                    predicted_direction=predicted_direction,
+                    actual_return_bps=window.future_return_bps,
+                    round_trip_cost_bps=self.round_trip_cost_bps,
+                )
+            )
+        index = len(self.records)
+        self.records.append(window)
+        self.return_history.append(float(window.future_return_bps))
+        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
+            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        self.ta.add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        base = self.ta.query(window, top_k=top_k)
+        candidate_direction = base.direction
+        if candidate_direction == "flat":
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=base.latency_ms,
+                analogues=base.analogues,
+                confidence=base.confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="flat_candidate",
+            )
+        field_signal = _adaptive_relationship_field_signal_from_index(
+            self.return_history,
+            self.relationship_history,
+            window,
+            min_support=self.min_support,
+            min_test_support=self.min_test_support,
+            validation_holdout=self.validation_holdout,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        field_direction = str(field_signal["direction"])
+        field_confidence = float(field_signal["confidence"])
+        field_edge = float(field_signal["edge_bps"])
+        field_stability = float(field_signal["stability"])
+        opposite_direction = "down" if candidate_direction == "up" else "up"
+        reasons = []
+        if (
+            field_direction == opposite_direction
+            and field_confidence >= self.opposition_confidence
+            and field_edge >= self.opposition_edge_bps
+        ):
+            reasons.append("field_opposition")
+        if field_direction == candidate_direction and field_confidence >= self.boost_confidence:
+            expected_return = 0.60 * float(field_signal["expected_return_bps"]) + 0.40 * base.expected_return_bps
+            confidence = max(float(base.confidence), field_confidence)
+        else:
+            expected_return = base.expected_return_bps
+            confidence = max(0.35, min(0.70, 0.35 + 0.35 * field_confidence))
+        edge = _directional_edge_after_cost_bps(
+            candidate_direction,
+            expected_return,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        if edge < self.min_expected_edge_bps:
+            reasons.append("low_expected_edge")
+        if reasons:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=base.latency_ms,
+                analogues=base.analogues,
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=",".join(reasons),
+                analogue_agreement=field_confidence,
+                regime_agreement=field_stability,
+            )
+        self.pending_predictions[window.id] = candidate_direction
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=expected_return,
+            latency_ms=base.latency_ms,
+            analogues=base.analogues,
+            confidence=confidence,
+            raw_direction=candidate_direction,
+            analogue_agreement=field_confidence,
+            regime_agreement=field_stability,
+        )
+
+
 class WaveMindTimeframePolicyEngine(MarketEngine):
     name = "WaveMind timeframe policy"
 
@@ -824,7 +945,14 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
     ):
         self.timeframe = timeframe
         self.child: MarketEngine | None = None
-        if timeframe == "4h":
+        if timeframe == "1h":
+            self.child = WaveMindMicrostructureEngine(
+                min_support=adaptive_min_support,
+                min_test_support=adaptive_min_test_support,
+                validation_holdout=adaptive_validation_holdout,
+                round_trip_cost_bps=round_trip_cost_bps,
+            )
+        elif timeframe == "4h":
             self.child = WaveMindAdaptiveFieldEngine(
                 encoder,
                 symbol=symbol,
@@ -1673,6 +1801,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "microstructure",
                     "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
@@ -1694,6 +1823,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "4h-profile",
                     "risk-overlay",
                     "trend-risk",
+                    "microstructure",
                     "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
@@ -1728,6 +1858,8 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "risk",
         "trend-risk",
         "wavemind-trend-risk",
+        "microstructure",
+        "wavemind-microstructure",
         "timeframe-policy",
         "wavemind-timeframe-policy",
         "adaptive-field",
@@ -1898,6 +2030,13 @@ def _create_engine(
             round_trip_cost_bps=round_trip_cost_bps,
             memory_store=memory_store,
         )
+    if engine_key in {"microstructure", "wavemind-microstructure"}:
+        return WaveMindMicrostructureEngine(
+            min_support=adaptive_min_support,
+            min_test_support=adaptive_min_test_support,
+            validation_holdout=adaptive_validation_holdout,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
     if engine_key in {"timeframe-policy", "wavemind-timeframe-policy"}:
         return WaveMindTimeframePolicyEngine(
             encoder,
@@ -1978,6 +2117,8 @@ def _engine_display_name(engine_key: str) -> str:
         "risk": "WaveMind risk-overlay",
         "trend-risk": "WaveMind trend-risk",
         "wavemind-trend-risk": "WaveMind trend-risk",
+        "microstructure": "WaveMind microstructure",
+        "wavemind-microstructure": "WaveMind microstructure",
         "timeframe-policy": "WaveMind timeframe policy",
         "wavemind-timeframe-policy": "WaveMind timeframe policy",
         "adaptive-field": "WaveMind adaptive-field",

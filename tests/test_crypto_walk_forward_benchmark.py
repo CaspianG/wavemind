@@ -19,6 +19,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
             "4h-profile",
             "risk-overlay",
             "trend-risk",
+            "microstructure",
             "timeframe-policy",
             "adaptive-field",
             "regime-gated",
@@ -56,6 +57,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         "WaveMind 4h profile",
         "WaveMind risk-overlay",
         "WaveMind trend-risk",
+        "WaveMind microstructure",
         "WaveMind timeframe policy",
         "WaveMind adaptive-field",
         "WaveMind regime-gated",
@@ -80,6 +82,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "filtered_rate" in result_by_engine["WaveMind regime-gated"]
     assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
     assert "filtered_rate" in result_by_engine["WaveMind trend-risk"]
+    assert "filtered_rate" in result_by_engine["WaveMind microstructure"]
     assert "filtered_rate" in result_by_engine["WaveMind timeframe policy"]
     assert "filtered_rate" in result_by_engine["WaveMind adaptive-field"]
     assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]
@@ -91,8 +94,8 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "positive_market_slices" in result_by_engine["WaveMind adaptive-field"]
     assert "slice_positive_rate" in result_by_engine["WaveMind adaptive-field"]
     assert "worst_market_slice_sized_net_bps" in result_by_engine["WaveMind adaptive-field"]
-    assert result_by_engine["WaveMind timeframe policy"]["signal_rate"] == 0.0
-    assert result_by_engine["WaveMind timeframe policy"]["filtered_rate"] == 1.0
+    assert 0.0 <= result_by_engine["WaveMind microstructure"]["signal_rate"] <= 1.0
+    assert 0.0 <= result_by_engine["WaveMind timeframe policy"]["signal_rate"] <= 1.0
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
@@ -169,6 +172,28 @@ def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
         assert mixed_field[key] == solo_field[key]
 
 
+def test_timeframe_policy_abstains_on_unvalidated_daily_timeframe(tmp_path):
+    from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
+    from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
+
+    bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="1d", bars=150, seed=14)
+    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1d", window=16, horizon=3)
+    payload = run_walk_forward(
+        markets=[MarketDataset(symbol="BTC", timeframe="1d", bars=bars, windows=windows)],
+        engines=["timeframe-policy"],
+        train_windows=45,
+        test_windows=12,
+        top_k=3,
+        memory_store="memory",
+    )
+
+    result = payload["results"][0]
+
+    assert result["engine"] == "WaveMind timeframe policy"
+    assert result["signal_rate"] == 0.0
+    assert result["filtered_rate"] == 1.0
+
+
 def test_crypto_walk_forward_supports_multiple_isolated_folds(tmp_path):
     from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
     from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
@@ -223,6 +248,7 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "4h-profile",
             "risk-overlay",
             "trend-risk",
+            "microstructure",
             "timeframe-policy",
             "adaptive-field",
             "regime-gated",
@@ -263,11 +289,12 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["results"][1]["engine"] == "WaveMind 4h profile"
     assert payload["results"][2]["engine"] == "WaveMind risk-overlay"
     assert payload["results"][3]["engine"] == "WaveMind trend-risk"
-    assert payload["results"][4]["engine"] == "WaveMind timeframe policy"
-    assert payload["results"][5]["engine"] == "WaveMind adaptive-field"
-    assert payload["results"][6]["engine"] == "WaveMind regime-gated"
-    assert payload["results"][7]["engine"] == "WaveMind calibrated"
-    assert payload["results"][8]["engine"] == "WaveMind field-off"
+    assert payload["results"][4]["engine"] == "WaveMind microstructure"
+    assert payload["results"][5]["engine"] == "WaveMind timeframe policy"
+    assert payload["results"][6]["engine"] == "WaveMind adaptive-field"
+    assert payload["results"][7]["engine"] == "WaveMind regime-gated"
+    assert payload["results"][8]["engine"] == "WaveMind calibrated"
+    assert payload["results"][9]["engine"] == "WaveMind field-off"
     assert html_output.exists()
 
 
