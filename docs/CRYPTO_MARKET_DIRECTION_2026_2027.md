@@ -74,6 +74,7 @@ Do not promise:
 |---|---|---|
 | Real OHLCV import | Done | CSV, CCXT import, pagination, and checked-in OKX cache in `benchmarks/data/crypto_ohlcv/okx`. |
 | Pattern featurization | Done | Return, volatility, drawdown, trend slope, MACD-like spread, Bollinger-like position, volume, range compression, MFE/MAE, future vol, and future drawdown labels. |
+| Explainable relationship mining | Done | `benchmarks/crypto_relationship_miner.py` finds single-feature and pairwise regime/outcome links with support, lift, direction rates, and large-move rates. |
 | Walk-forward benchmark | Done | `benchmarks/crypto_walk_forward_benchmark.py` uses train/test walk-forward with no look-ahead insertion. |
 | Fees, slippage, and sizing | Done | Runner exposes `--fee-bps`, `--slippage-bps`, and `--position-sizing fixed|confidence`; checked-in results cover both conservative confidence sizing and fixed-size filtered signals. |
 | Baselines | Done | WaveMind field-on/off, OHLCV shape kNN, naive last-regime, trend persistence, TA rules, and storage controls. |
@@ -98,6 +99,12 @@ vs `0.380`). It also beats naive last-regime (`15.36`) and static kNN
 (`-9.75`). This is useful signal-shaping evidence, not a robust market edge:
 the profile is positive on 6/12 symbol-fold slices and the worst slice remains
 negative (`-77.66` bps).
+
+Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
+miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`
+(`+61.79` bps lift, 516 samples) and `bollinger_bucket=upper_band &
+drawdown_bucket=deep` (`-90.69` bps lift, 257 samples). These are research
+relationships to validate in walk-forward tests, not standalone trading rules.
 
 ### 1. Real OHLCV Import
 

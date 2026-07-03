@@ -1,0 +1,744 @@
+{
+  "scenario": {
+    "name": "crypto_relationship_miner",
+    "markets": [
+      {
+        "symbol": "BTC/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_4h.csv"
+      },
+      {
+        "symbol": "ETH/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_4h.csv"
+      },
+      {
+        "symbol": "SOL/USDT",
+        "timeframe": "4h",
+        "bars": 720,
+        "windows": 683,
+        "source": "ccxt_cache:okx",
+        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_4h.csv"
+      }
+    ],
+    "feature_keys": [
+      "trend",
+      "recent_trend",
+      "rsi_bucket",
+      "volatility_bucket",
+      "volume_bucket",
+      "close_position_bucket",
+      "drawdown_bucket",
+      "macd_bucket",
+      "bollinger_bucket"
+    ],
+    "min_support": 30,
+    "pairwise": true,
+    "large_move_bps": 75.0,
+    "note": "Relationship mining over historical OHLCV windows. This is research evidence, not a trading claim."
+  },
+  "global": {
+    "windows": 2049,
+    "avg_future_return_bps": -10.441178541456065,
+    "median_future_return_bps": 0.1826400620985602,
+    "up_rate": 0.4363103953147877,
+    "down_rate": 0.44021473889702295,
+    "flat_rate": 0.12347486578818936,
+    "large_move_rate": 0.7130307467057101,
+    "avg_mfe_bps": 201.31404392918859,
+    "avg_mae_bps": -213.52640629896564
+  },
+  "top_positive": [
+    {
+      "relationship": "rsi_bucket=neutral & trend=up",
+      "features": [
+        "rsi_bucket=neutral",
+        "trend=up"
+      ],
+      "support": 516,
+      "support_rate": 0.2518301610541728,
+      "avg_future_return_bps": 51.3469106488648,
+      "median_future_return_bps": 37.06069461332562,
+      "lift_vs_global_bps": 61.78808919032086,
+      "abs_lift_score": 1403.5555814958593,
+      "up_rate": 0.5155038759689923,
+      "down_rate": 0.3798449612403101,
+      "flat_rate": 0.10465116279069768,
+      "large_move_rate": 0.7267441860465116,
+      "avg_mfe_bps": 246.98320463981366,
+      "avg_mae_bps": -170.33208759520576
+    },
+    {
+      "relationship": "bollinger_bucket=middle & rsi_bucket=neutral",
+      "features": [
+        "bollinger_bucket=middle",
+        "rsi_bucket=neutral"
+      ],
+      "support": 1021,
+      "support_rate": 0.49829184968277207,
+      "avg_future_return_bps": 31.03120053660183,
+      "median_future_return_bps": 24.830393487109692,
+      "lift_vs_global_bps": 41.4723790780579,
+      "abs_lift_score": 1325.1706867978976,
+      "up_rate": 0.49069539666993145,
+      "down_rate": 0.3819784524975514,
+      "flat_rate": 0.12732615083251714,
+      "large_move_rate": 0.703232125367287,
+      "avg_mfe_bps": 216.10193416798037,
+      "avg_mae_bps": -184.61605099718307
+    },
+    {
+      "relationship": "close_position_bucket=middle & trend=up",
+      "features": [
+        "close_position_bucket=middle",
+        "trend=up"
+      ],
+      "support": 287,
+      "support_rate": 0.14006832601268912,
+      "avg_future_return_bps": 61.22302694036539,
+      "median_future_return_bps": 48.252324349769005,
+      "lift_vs_global_bps": 71.66420548182145,
+      "abs_lift_score": 1214.0686330215392,
+      "up_rate": 0.5435540069686411,
+      "down_rate": 0.34843205574912894,
+      "flat_rate": 0.10801393728222997,
+      "large_move_rate": 0.7282229965156795,
+      "avg_mfe_bps": 239.49098310586643,
+      "avg_mae_bps": -155.49146549011834
+    },
+    {
+      "relationship": "macd_bucket=up & rsi_bucket=neutral",
+      "features": [
+        "macd_bucket=up",
+        "rsi_bucket=neutral"
+      ],
+      "support": 467,
+      "support_rate": 0.22791605661298195,
+      "avg_future_return_bps": 42.50114967937536,
+      "median_future_return_bps": 24.830393487109692,
+      "lift_vs_global_bps": 52.94232822083143,
+      "abs_lift_score": 1144.0933899142708,
+      "up_rate": 0.4925053533190578,
+      "down_rate": 0.41113490364025695,
+      "flat_rate": 0.09635974304068523,
+      "large_move_rate": 0.7644539614561028,
+      "avg_mfe_bps": 249.75526918493298,
+      "avg_mae_bps": -189.09591479441184
+    },
+    {
+      "relationship": "rsi_bucket=neutral",
+      "features": [
+        "rsi_bucket=neutral"
+      ],
+      "support": 1185,
+      "support_rate": 0.5783308931185944,
+      "avg_future_return_bps": 21.32581678771034,
+      "median_future_return_bps": 15.74421702797757,
+      "lift_vs_global_bps": 31.766995329166406,
+      "abs_lift_score": 1093.5416136609924,
+      "up_rate": 0.4666666666666667,
+      "down_rate": 0.4084388185654008,
+      "flat_rate": 0.1248945147679325,
+      "large_move_rate": 0.7088607594936709,
+      "avg_mfe_bps": 213.15335861183613,
+      "avg_mae_bps": -189.6191820828396
+    },
+    {
+      "relationship": "rsi_bucket=neutral & volatility_bucket=high",
+      "features": [
+        "rsi_bucket=neutral",
+        "volatility_bucket=high"
+      ],
+      "support": 1185,
+      "support_rate": 0.5783308931185944,
+      "avg_future_return_bps": 21.32581678771034,
+      "median_future_return_bps": 15.74421702797757,
+      "lift_vs_global_bps": 31.766995329166406,
+      "abs_lift_score": 1093.5416136609924,
+      "up_rate": 0.4666666666666667,
+      "down_rate": 0.4084388185654008,
+      "flat_rate": 0.1248945147679325,
+      "large_move_rate": 0.7088607594936709,
+      "avg_mfe_bps": 213.15335861183613,
+      "avg_mae_bps": -189.6191820828396
+    },
+    {
+      "relationship": "bollinger_bucket=middle & trend=up",
+      "features": [
+        "bollinger_bucket=middle",
+        "trend=up"
+      ],
+      "support": 653,
+      "support_rate": 0.3186920448999512,
+      "avg_future_return_bps": 31.21173260055773,
+      "median_future_return_bps": 37.97076574612035,
+      "lift_vs_global_bps": 41.65291114201379,
+      "abs_lift_score": 1064.392854782827,
+      "up_rate": 0.5237366003062787,
+      "down_rate": 0.37519142419601836,
+      "flat_rate": 0.10107197549770292,
+      "large_move_rate": 0.7197549770290965,
+      "avg_mfe_bps": 228.08603692916063,
+      "avg_mae_bps": -177.26623989660754
+    },
+    {
+      "relationship": "drawdown_bucket=deep & rsi_bucket=neutral",
+      "features": [
+        "drawdown_bucket=deep",
+        "rsi_bucket=neutral"
+      ],
+      "support": 1175,
+      "support_rate": 0.5734504636408004,
+      "avg_future_return_bps": 20.29964618038302,
+      "median_future_return_bps": 15.504667351509127,
+      "lift_vs_global_bps": 30.740824721839086,
+      "abs_lift_score": 1053.7423821219913,
+      "up_rate": 0.465531914893617,
+      "down_rate": 0.4085106382978723,
+      "flat_rate": 0.12595744680851065,
+      "large_move_rate": 0.7072340425531914,
+      "avg_mfe_bps": 212.6565016117311,
+      "avg_mae_bps": -189.94184239497326
+    },
+    {
+      "relationship": "close_position_bucket=near_low & rsi_bucket=neutral",
+      "features": [
+        "close_position_bucket=near_low",
+        "rsi_bucket=neutral"
+      ],
+      "support": 328,
+      "support_rate": 0.1600780868716447,
+      "avg_future_return_bps": 39.810338752815625,
+      "median_future_return_bps": 38.132615674323354,
+      "lift_vs_global_bps": 50.25151729427169,
+      "abs_lift_score": 910.0936857508066,
+      "up_rate": 0.524390243902439,
+      "down_rate": 0.3597560975609756,
+      "flat_rate": 0.11585365853658537,
+      "large_move_rate": 0.7286585365853658,
+      "avg_mfe_bps": 200.04813930553325,
+      "avg_mae_bps": -183.17954597008213
+    },
+    {
+      "relationship": "rsi_bucket=neutral & volume_bucket=quiet",
+      "features": [
+        "rsi_bucket=neutral",
+        "volume_bucket=quiet"
+      ],
+      "support": 671,
+      "support_rate": 0.32747681795998046,
+      "avg_future_return_bps": 23.856419731529652,
+      "median_future_return_bps": 16.768146020313957,
+      "lift_vs_global_bps": 34.29759827298572,
+      "abs_lift_score": 888.4335883649496,
+      "up_rate": 0.47093889716840537,
+      "down_rate": 0.40536512667660207,
+      "flat_rate": 0.12369597615499255,
+      "large_move_rate": 0.7078986587183308,
+      "avg_mfe_bps": 210.12963402989405,
+      "avg_mae_bps": -186.053813833657
+    },
+    {
+      "relationship": "close_position_bucket=near_low & volume_bucket=quiet",
+      "features": [
+        "close_position_bucket=near_low",
+        "volume_bucket=quiet"
+      ],
+      "support": 394,
+      "support_rate": 0.1922889214250854,
+      "avg_future_return_bps": 34.24734814168521,
+      "median_future_return_bps": 44.44849839223553,
+      "lift_vs_global_bps": 44.688526683141276,
+      "abs_lift_score": 887.0419270481373,
+      "up_rate": 0.5355329949238579,
+      "down_rate": 0.3426395939086294,
+      "flat_rate": 0.1218274111675127,
+      "large_move_rate": 0.733502538071066,
+      "avg_mfe_bps": 210.04653674124222,
+      "avg_mae_bps": -208.13864453511
+    },
+    {
+      "relationship": "trend=up & volume_bucket=quiet",
+      "features": [
+        "trend=up",
+        "volume_bucket=quiet"
+      ],
+      "support": 478,
+      "support_rate": 0.2332845290385554,
+      "avg_future_return_bps": 28.861061725961523,
+      "median_future_return_bps": 35.625328220966196,
+      "lift_vs_global_bps": 39.30224026741759,
+      "abs_lift_score": 859.2731760261565,
+      "up_rate": 0.5167364016736402,
+      "down_rate": 0.3786610878661088,
+      "flat_rate": 0.10460251046025104,
+      "large_move_rate": 0.7196652719665272,
+      "avg_mfe_bps": 221.38881582404508,
+      "avg_mae_bps": -175.2765102503263
+    }
+  ],
+  "top_negative": [
+    {
+      "relationship": "bollinger_bucket=upper_band & drawdown_bucket=deep",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "drawdown_bucket=deep"
+      ],
+      "support": 257,
+      "support_rate": 0.12542703757930698,
+      "avg_future_return_bps": -101.13461977992382,
+      "median_future_return_bps": -117.16593594391256,
+      "lift_vs_global_bps": -90.69344123846776,
+      "abs_lift_score": 1453.9264675025966,
+      "up_rate": 0.23346303501945526,
+      "down_rate": 0.6459143968871596,
+      "flat_rate": 0.12062256809338522,
+      "large_move_rate": 0.7392996108949417,
+      "avg_mfe_bps": 176.66122353312042,
+      "avg_mae_bps": -238.5078829743456
+    },
+    {
+      "relationship": "macd_bucket=up & rsi_bucket=overbought",
+      "features": [
+        "macd_bucket=up",
+        "rsi_bucket=overbought"
+      ],
+      "support": 365,
+      "support_rate": 0.17813567593948268,
+      "avg_future_return_bps": -85.7830075383663,
+      "median_future_return_bps": -91.16003814576223,
+      "lift_vs_global_bps": -75.34182899691024,
+      "abs_lift_score": 1439.4036219069608,
+      "up_rate": 0.3287671232876712,
+      "down_rate": 0.5780821917808219,
+      "flat_rate": 0.09315068493150686,
+      "large_move_rate": 0.7616438356164383,
+      "avg_mfe_bps": 175.57149810843646,
+      "avg_mae_bps": -232.97635524047024
+    },
+    {
+      "relationship": "drawdown_bucket=deep & rsi_bucket=overbought",
+      "features": [
+        "drawdown_bucket=deep",
+        "rsi_bucket=overbought"
+      ],
+      "support": 401,
+      "support_rate": 0.19570522205954125,
+      "avg_future_return_bps": -82.11409205163912,
+      "median_future_return_bps": -67.63285024154686,
+      "lift_vs_global_bps": -71.67291351018305,
+      "abs_lift_score": 1435.2489745498203,
+      "up_rate": 0.314214463840399,
+      "down_rate": 0.5610972568578554,
+      "flat_rate": 0.12468827930174564,
+      "large_move_rate": 0.71571072319202,
+      "avg_mfe_bps": 171.60211368523326,
+      "avg_mae_bps": -226.5313344585747
+    },
+    {
+      "relationship": "rsi_bucket=overbought",
+      "features": [
+        "rsi_bucket=overbought"
+      ],
+      "support": 412,
+      "support_rate": 0.2010736944851147,
+      "avg_future_return_bps": -79.37807703623294,
+      "median_future_return_bps": -68.88924353801285,
+      "lift_vs_global_bps": -68.93689849477687,
+      "abs_lift_score": 1399.2662153145188,
+      "up_rate": 0.3155339805825243,
+      "down_rate": 0.5631067961165048,
+      "flat_rate": 0.12135922330097088,
+      "large_move_rate": 0.7160194174757282,
+      "avg_mfe_bps": 172.400843356135,
+      "avg_mae_bps": -224.2343063586299
+    },
+    {
+      "relationship": "rsi_bucket=overbought & volatility_bucket=high",
+      "features": [
+        "rsi_bucket=overbought",
+        "volatility_bucket=high"
+      ],
+      "support": 412,
+      "support_rate": 0.2010736944851147,
+      "avg_future_return_bps": -79.37807703623294,
+      "median_future_return_bps": -68.88924353801285,
+      "lift_vs_global_bps": -68.93689849477687,
+      "abs_lift_score": 1399.2662153145188,
+      "up_rate": 0.3155339805825243,
+      "down_rate": 0.5631067961165048,
+      "flat_rate": 0.12135922330097088,
+      "large_move_rate": 0.7160194174757282,
+      "avg_mfe_bps": 172.400843356135,
+      "avg_mae_bps": -224.2343063586299
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band & macd_bucket=up",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "macd_bucket=up"
+      ],
+      "support": 236,
+      "support_rate": 0.11517813567593949,
+      "avg_future_return_bps": -100.2561658830727,
+      "median_future_return_bps": -126.01191121089983,
+      "lift_vs_global_bps": -89.81498734161663,
+      "abs_lift_score": 1379.7640162278628,
+      "up_rate": 0.24152542372881355,
+      "down_rate": 0.6567796610169492,
+      "flat_rate": 0.1016949152542373,
+      "large_move_rate": 0.7627118644067796,
+      "avg_mfe_bps": 176.85062498207276,
+      "avg_mae_bps": -241.8050714905054
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band & recent_trend=up",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "recent_trend=up"
+      ],
+      "support": 264,
+      "support_rate": 0.12884333821376281,
+      "avg_future_return_bps": -94.88131500831192,
+      "median_future_return_bps": -105.1919591976247,
+      "lift_vs_global_bps": -84.44013646685585,
+      "abs_lift_score": 1371.9898230988767,
+      "up_rate": 0.24242424242424243,
+      "down_rate": 0.6401515151515151,
+      "flat_rate": 0.11742424242424243,
+      "large_move_rate": 0.7348484848484849,
+      "avg_mfe_bps": 179.6095837363315,
+      "avg_mae_bps": -235.193343935699
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band",
+      "features": [
+        "bollinger_bucket=upper_band"
+      ],
+      "support": 267,
+      "support_rate": 0.13030746705710103,
+      "avg_future_return_bps": -94.33581875957032,
+      "median_future_return_bps": -105.32217544423128,
+      "lift_vs_global_bps": -83.89464021811425,
+      "abs_lift_score": 1370.8497166014458,
+      "up_rate": 0.24344569288389514,
+      "down_rate": 0.6404494382022472,
+      "flat_rate": 0.11610486891385768,
+      "large_move_rate": 0.7378277153558053,
+      "avg_mfe_bps": 179.57433250583543,
+      "avg_mae_bps": -235.0607307007248
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band & volatility_bucket=high",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "volatility_bucket=high"
+      ],
+      "support": 267,
+      "support_rate": 0.13030746705710103,
+      "avg_future_return_bps": -94.33581875957032,
+      "median_future_return_bps": -105.32217544423128,
+      "lift_vs_global_bps": -83.89464021811425,
+      "abs_lift_score": 1370.8497166014458,
+      "up_rate": 0.24344569288389514,
+      "down_rate": 0.6404494382022472,
+      "flat_rate": 0.11610486891385768,
+      "large_move_rate": 0.7378277153558053,
+      "avg_mfe_bps": 179.57433250583543,
+      "avg_mae_bps": -235.0607307007248
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band & rsi_bucket=overbought",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "rsi_bucket=overbought"
+      ],
+      "support": 191,
+      "support_rate": 0.09321620302586628,
+      "avg_future_return_bps": -100.22622128401117,
+      "median_future_return_bps": -112.70270781690516,
+      "lift_vs_global_bps": -89.7850427425551,
+      "abs_lift_score": 1240.8539780949036,
+      "up_rate": 0.2513089005235602,
+      "down_rate": 0.643979057591623,
+      "flat_rate": 0.10471204188481675,
+      "large_move_rate": 0.7591623036649214,
+      "avg_mfe_bps": 174.61680834856452,
+      "avg_mae_bps": -242.50552904689988
+    },
+    {
+      "relationship": "close_position_bucket=near_high & rsi_bucket=overbought",
+      "features": [
+        "close_position_bucket=near_high",
+        "rsi_bucket=overbought"
+      ],
+      "support": 310,
+      "support_rate": 0.15129331381161543,
+      "avg_future_return_bps": -80.69734266266937,
+      "median_future_return_bps": -75.42567145407742,
+      "lift_vs_global_bps": -70.2561641212133,
+      "abs_lift_score": 1236.9874150848611,
+      "up_rate": 0.33225806451612905,
+      "down_rate": 0.5741935483870968,
+      "flat_rate": 0.0935483870967742,
+      "large_move_rate": 0.7548387096774194,
+      "avg_mfe_bps": 178.03974553377194,
+      "avg_mae_bps": -230.48696062980704
+    },
+    {
+      "relationship": "rsi_bucket=oversold & volume_bucket=expanded",
+      "features": [
+        "rsi_bucket=oversold",
+        "volume_bucket=expanded"
+      ],
+      "support": 142,
+      "support_rate": 0.06930209858467545,
+      "avg_future_return_bps": -111.48652898017457,
+      "median_future_return_bps": -58.77295852446007,
+      "lift_vs_global_bps": -101.0453504387185,
+      "abs_lift_score": 1204.0943169163481,
+      "up_rate": 0.323943661971831,
+      "down_rate": 0.5422535211267606,
+      "flat_rate": 0.13380281690140844,
+      "large_move_rate": 0.7183098591549296,
+      "avg_mfe_bps": 179.72019992780335,
+      "avg_mae_bps": -337.6073470664535
+    }
+  ],
+  "top_large_move": [
+    {
+      "relationship": "recent_trend=down & trend=flat",
+      "features": [
+        "recent_trend=down",
+        "trend=flat"
+      ],
+      "support": 33,
+      "support_rate": 0.016105417276720352,
+      "avg_future_return_bps": 34.44791630732709,
+      "median_future_return_bps": 81.89178553419607,
+      "lift_vs_global_bps": 44.88909484878316,
+      "abs_lift_score": 257.8682175052224,
+      "up_rate": 0.5151515151515151,
+      "down_rate": 0.3939393939393939,
+      "flat_rate": 0.09090909090909091,
+      "large_move_rate": 0.8787878787878788,
+      "avg_mfe_bps": 198.2486341925224,
+      "avg_mae_bps": -187.4333297047456
+    },
+    {
+      "relationship": "close_position_bucket=middle & macd_bucket=up",
+      "features": [
+        "close_position_bucket=middle",
+        "macd_bucket=up"
+      ],
+      "support": 271,
+      "support_rate": 0.13225963884821865,
+      "avg_future_return_bps": 26.349539262848342,
+      "median_future_return_bps": 17.692185851632125,
+      "lift_vs_global_bps": 36.79071780430441,
+      "abs_lift_score": 605.6516526739324,
+      "up_rate": 0.47232472324723246,
+      "down_rate": 0.44649446494464945,
+      "flat_rate": 0.08118081180811808,
+      "large_move_rate": 0.8265682656826568,
+      "avg_mfe_bps": 239.74323544057108,
+      "avg_mae_bps": -198.85459962244616
+    },
+    {
+      "relationship": "bollinger_bucket=upper_band & volume_bucket=expanded",
+      "features": [
+        "bollinger_bucket=upper_band",
+        "volume_bucket=expanded"
+      ],
+      "support": 141,
+      "support_rate": 0.06881405563689605,
+      "avg_future_return_bps": -87.14372993904821,
+      "median_future_return_bps": -112.70270781690516,
+      "lift_vs_global_bps": -76.70255139759215,
+      "abs_lift_score": 910.7923342436173,
+      "up_rate": 0.2907801418439716,
+      "down_rate": 0.6312056737588653,
+      "flat_rate": 0.07801418439716312,
+      "large_move_rate": 0.8014184397163121,
+      "avg_mfe_bps": 184.2809045547657,
+      "avg_mae_bps": -241.2805273760429
+    },
+    {
+      "relationship": "bollinger_bucket=lower_band & rsi_bucket=neutral",
+      "features": [
+        "bollinger_bucket=lower_band",
+        "rsi_bucket=neutral"
+      ],
+      "support": 88,
+      "support_rate": 0.042947779404587605,
+      "avg_future_return_bps": -4.17394898721108,
+      "median_future_return_bps": -64.34422513406923,
+      "lift_vs_global_bps": 6.2672295542449845,
+      "abs_lift_score": 58.791824543323685,
+      "up_rate": 0.3977272727272727,
+      "down_rate": 0.5227272727272727,
+      "flat_rate": 0.07954545454545454,
+      "large_move_rate": 0.7954545454545454,
+      "avg_mfe_bps": 197.1831680117683,
+      "avg_mae_bps": -224.58049603301524
+    },
+    {
+      "relationship": "macd_bucket=up & trend=down",
+      "features": [
+        "macd_bucket=up",
+        "trend=down"
+      ],
+      "support": 145,
+      "support_rate": 0.07076622742801367,
+      "avg_future_return_bps": -57.05862193052484,
+      "median_future_return_bps": -94.76251530371127,
+      "lift_vs_global_bps": -46.61744338906878,
+      "abs_lift_score": 561.3483535909673,
+      "up_rate": 0.3103448275862069,
+      "down_rate": 0.5793103448275863,
+      "flat_rate": 0.1103448275862069,
+      "large_move_rate": 0.7931034482758621,
+      "avg_mfe_bps": 178.8764609243329,
+      "avg_mae_bps": -245.07105892646248
+    },
+    {
+      "relationship": "macd_bucket=up & recent_trend=down",
+      "features": [
+        "macd_bucket=up",
+        "recent_trend=down"
+      ],
+      "support": 269,
+      "support_rate": 0.13128355295265984,
+      "avg_future_return_bps": 23.205965149064948,
+      "median_future_return_bps": 0.6307708019193115,
+      "lift_vs_global_bps": 33.64714369052101,
+      "abs_lift_score": 551.8541881010988,
+      "up_rate": 0.46096654275092935,
+      "down_rate": 0.44981412639405205,
+      "flat_rate": 0.08921933085501858,
+      "large_move_rate": 0.7881040892193308,
+      "avg_mfe_bps": 236.63672963021486,
+      "avg_mae_bps": -199.5953988031333
+    },
+    {
+      "relationship": "bollinger_bucket=lower_band & volume_bucket=quiet",
+      "features": [
+        "bollinger_bucket=lower_band",
+        "volume_bucket=quiet"
+      ],
+      "support": 103,
+      "support_rate": 0.050268423621278674,
+      "avg_future_return_bps": 25.48263658356493,
+      "median_future_return_bps": 47.5172249940603,
+      "lift_vs_global_bps": 35.923815125020994,
+      "abs_lift_score": 364.58690430825783,
+      "up_rate": 0.5145631067961165,
+      "down_rate": 0.36893203883495146,
+      "flat_rate": 0.11650485436893204,
+      "large_move_rate": 0.7864077669902912,
+      "avg_mfe_bps": 214.38950737278336,
+      "avg_mae_bps": -225.34689878954603
+    },
+    {
+      "relationship": "macd_bucket=up & volume_bucket=quiet",
+      "features": [
+        "macd_bucket=up",
+        "volume_bucket=quiet"
+      ],
+      "support": 422,
+      "support_rate": 0.20595412396290874,
+      "avg_future_return_bps": 6.040895396918155,
+      "median_future_return_bps": -3.1088779940047218,
+      "lift_vs_global_bps": 16.48207393837422,
+      "abs_lift_score": 338.58528803365726,
+      "up_rate": 0.4549763033175355,
+      "down_rate": 0.44786729857819907,
+      "flat_rate": 0.0971563981042654,
+      "large_move_rate": 0.7796208530805687,
+      "avg_mfe_bps": 227.2345073537864,
+      "avg_mae_bps": -200.92769920042414
+    },
+    {
+      "relationship": "recent_trend=up & volume_bucket=expanded",
+      "features": [
+        "recent_trend=up",
+        "volume_bucket=expanded"
+      ],
+      "support": 272,
+      "support_rate": 0.13274768179599805,
+      "avg_future_return_bps": -38.080399576617275,
+      "median_future_return_bps": -37.54651195861713,
+      "lift_vs_global_bps": -27.63922103516121,
+      "abs_lift_score": 455.83771095105266,
+      "up_rate": 0.39338235294117646,
+      "down_rate": 0.5110294117647058,
+      "flat_rate": 0.09558823529411764,
+      "large_move_rate": 0.7757352941176471,
+      "avg_mfe_bps": 199.2949608492108,
+      "avg_mae_bps": -219.228619367635
+    },
+    {
+      "relationship": "macd_bucket=up & volume_bucket=expanded",
+      "features": [
+        "macd_bucket=up",
+        "volume_bucket=expanded"
+      ],
+      "support": 247,
+      "support_rate": 0.12054660810151294,
+      "avg_future_return_bps": -40.41900521972566,
+      "median_future_return_bps": -49.996745003580976,
+      "lift_vs_global_bps": -29.977826678269597,
+      "abs_lift_score": 471.13852826003944,
+      "up_rate": 0.3967611336032389,
+      "down_rate": 0.5263157894736842,
+      "flat_rate": 0.07692307692307693,
+      "large_move_rate": 0.7732793522267206,
+      "avg_mfe_bps": 203.23571317192346,
+      "avg_mae_bps": -226.6221656469172
+    },
+    {
+      "relationship": "close_position_bucket=near_high & volume_bucket=expanded",
+      "features": [
+        "close_position_bucket=near_high",
+        "volume_bucket=expanded"
+      ],
+      "support": 189,
+      "support_rate": 0.09224011713030747,
+      "avg_future_return_bps": -47.76930405000809,
+      "median_future_return_bps": -50.72033821039601,
+      "lift_vs_global_bps": -37.32812550855202,
+      "abs_lift_score": 513.1768820812548,
+      "up_rate": 0.3862433862433862,
+      "down_rate": 0.5396825396825397,
+      "flat_rate": 0.07407407407407407,
+      "large_move_rate": 0.7724867724867724,
+      "avg_mfe_bps": 197.97855779911916,
+      "avg_mae_bps": -227.55669808328815
+    },
+    {
+      "relationship": "recent_trend=down & volume_bucket=quiet",
+      "features": [
+        "recent_trend=down",
+        "volume_bucket=quiet"
+      ],
+      "support": 496,
+      "support_rate": 0.24206930209858468,
+      "avg_future_return_bps": 15.571356781156744,
+      "median_future_return_bps": 24.458170852329488,
+      "lift_vs_global_bps": 26.01253532261281,
+      "abs_lift_score": 579.3266686244029,
+      "up_rate": 0.48588709677419356,
+      "down_rate": 0.4092741935483871,
+      "flat_rate": 0.10483870967741936,
+      "large_move_rate": 0.7701612903225806,
+      "avg_mfe_bps": 214.05873520889,
+      "avg_mae_bps": -214.24627911012476
+    }
+  ]
+}

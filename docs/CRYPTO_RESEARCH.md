@@ -183,6 +183,37 @@ The metrics are retrieval/research metrics, not a live trading claim:
   filtering;
 - query latency.
 
+## Relationship Mining
+
+The branch now has a separate explainable pattern-discovery layer:
+
+```sh
+python benchmarks/crypto_relationship_miner.py \
+  --dataset ccxt \
+  --exchange okx \
+  --cache-dir benchmarks/data/crypto_ohlcv \
+  --symbols BTC/USDT ETH/USDT SOL/USDT \
+  --timeframes 4h \
+  --min-support 30 \
+  --output benchmarks/crypto_relationships_okx_4h_results.json \
+  --report benchmarks/crypto_relationships_okx_4h_report.md
+```
+
+It mines single-feature and pairwise relationships over historical OHLCV
+windows, then reports support, lift vs global average, future return, direction
+rates, and large-move rate. This is not a signal by itself; it is a way to make
+the memory layer inspectable before turning any pattern into a walk-forward
+strategy.
+
+Current OKX BTC/ETH/SOL 4h examples:
+
+| relationship | support | lift bps | avg return bps | large move |
+|---|---:|---:|---:|---:|
+| `rsi_bucket=neutral & trend=up` | 516 | 61.79 | 51.35 | 0.727 |
+| `close_position_bucket=middle & trend=up` | 287 | 71.66 | 61.22 | 0.728 |
+| `bollinger_bucket=upper_band & drawdown_bucket=deep` | 257 | -90.69 | -101.13 | 0.739 |
+| `macd_bucket=up & rsi_bucket=overbought` | 365 | -75.34 | -85.78 | 0.762 |
+
 ### CSV import
 
 CSV input expects these columns, case-insensitive:
@@ -264,11 +295,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 7. Done: trend-risk profile adds memory opposition to a strong trend baseline;
    it slightly improves average fixed-size return and lowers false positives,
    but remains positive on only 6/12 symbol-fold slices.
-8. Next: improve downside robustness across bad folds and validate across more
+8. Done: relationship miner finds explainable regime/outcome links on real OKX
+   4h data and writes JSON/Markdown reports.
+9. Next: improve downside robustness across bad folds and validate across more
    date ranges, exchanges, assets, and walk-forward folds.
-9. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+10. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
    volatility filters, DTW on smaller samples, matrix-profile style analogues,
    and ML classifiers.
-10. Add signal construction only after retrieval quality is stable.
-11. Publish results separately from the main README to avoid confusing memory
+11. Add signal construction only after retrieval quality is stable.
+12. Publish results separately from the main README to avoid confusing memory
    benchmarks with market-performance claims.

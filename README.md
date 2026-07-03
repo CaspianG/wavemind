@@ -37,6 +37,8 @@ Implemented in this branch:
   benchmark with fees, slippage, field-on/field-off ablation,
   calibrated false-positive suppression, market/time-series baselines, optional
   storage controls, and analogue explorer output.
+- `benchmarks/crypto_relationship_miner.py` - explainable regime relationship
+  miner for finding feature/outcome links in historical OHLCV windows.
 - `benchmarks/data/crypto_ohlcv/okx/*.csv` - checked-in real OKX OHLCV fixtures.
 - `benchmarks/crypto_walk_forward_okx_real_results.json` - checked-in real
   OKX walk-forward result.
@@ -46,6 +48,10 @@ Implemented in this branch:
   4h fold benchmark for WaveMind trend-risk vs market baselines.
 - `benchmarks/crypto_okx_4h_trend_risk_analogue_explorer.html` - visual
   analogue explorer for the trend-risk run.
+- `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
+  relationship-mining result.
+- `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
+  report with positive, negative, and large-move regimes.
 - `examples/freqtrade_wavemind_strategy.py` - dry-run first Freqtrade scaffold.
 - `tests/test_crypto_pattern_benchmark.py` - regression tests for the benchmark.
 - `tests/test_crypto_ohlcv.py` - importer/windowing tests.
@@ -140,6 +146,25 @@ baseline. It slightly improves average fixed-size net return (`25.30` vs
 real signal-shaping evidence, but not a robust market edge yet: it is positive
 on 6/12 symbol-fold slices, and the worst slice is still `-77.66` bps.
 
+## Relationship Mining
+
+WaveMind Crypto now includes an explainable regime miner. It does not claim a
+trade by itself; it finds historical feature/outcome relationships that can be
+validated in later walk-forward tests.
+
+Checked-in OKX BTC/ETH/SOL 4h relationship result:
+
+| relationship | support | lift bps | avg return bps | large move |
+|---|---:|---:|---:|---:|
+| `rsi_bucket=neutral & trend=up` | 516 | 61.79 | 51.35 | 0.727 |
+| `close_position_bucket=middle & trend=up` | 287 | 71.66 | 61.22 | 0.728 |
+| `bollinger_bucket=upper_band & drawdown_bucket=deep` | 257 | -90.69 | -101.13 | 0.739 |
+| `macd_bucket=up & rsi_bucket=overbought` | 365 | -75.34 | -85.78 | 0.762 |
+
+This is the direction for making the branch useful beyond a single strategy:
+discover relationships, explain them, then test whether they survive
+walk-forward evaluation.
+
 ## Research Plan
 
 The product direction is documented here:
@@ -167,10 +192,12 @@ Near-term execution plan:
 12. Done: trend-risk profile adds memory opposition to a strong trend baseline;
     it slightly improves average fixed-size return and lowers false positives,
     but is only positive on 6/12 symbol-fold slices.
-13. Next: improve downside robustness across bad folds, add drawdown/profit
+13. Done: relationship miner finds explainable regime/outcome links on real
+    OKX 4h data and writes JSON/Markdown reports.
+14. Next: improve downside robustness across bad folds, add drawdown/profit
     factor metrics, and validate on more date ranges, exchanges, assets, and
     walk-forward folds.
-14. Only after robustness holds, test signal construction and backtesting.
+15. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 
