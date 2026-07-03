@@ -82,6 +82,17 @@ Problem:
 Support bots need to remember a customer's preferences, previous issues, and
 resolved problems without leaking data between accounts.
 
+Runnable demo:
+
+```sh
+python examples/customer_support_memory.py
+```
+
+The demo is offline and keyless. It shows four behaviors support teams usually
+have to implement by hand: corrected CRM data outranking stale data, temporary
+discount codes expiring, customer namespaces preventing cross-account leakage,
+and audit-friendly state in SQLite.
+
 Pattern:
 
 ```python

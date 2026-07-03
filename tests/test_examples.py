@@ -78,6 +78,14 @@ def load_example():
     return module
 
 
+def load_customer_support_example():
+    path = Path("examples/customer_support_memory.py")
+    spec = importlib.util.spec_from_file_location("customer_support_memory", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_agent_example_uses_environment_key_not_hardcoded_secret():
     text = Path("examples/agent_with_memory.py").read_text(encoding="utf-8")
 
@@ -127,6 +135,47 @@ def test_dynamic_memory_demo_prints_core_differentiators():
     assert "[ok] namespace isolation keeps Maria separate from Andrey" in result.stdout
     assert "[ok] expired temporary memory is not recalled" in result.stdout
     assert "[ok] numpy-exact healthy=True expected=3 vectors=3" in result.stdout
+
+
+def test_customer_support_memory_example_prints_vertical_use_case():
+    env = os.environ.copy()
+    project_root = Path(__file__).resolve().parents[1]
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "examples/customer_support_memory.py"],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    assert "WaveMind customer support memory demo" in result.stdout
+    assert "[ok] corrected account plan outranks stale CRM data" in result.stdout
+    assert "[ok] expired discount code is not recalled" in result.stdout
+    assert "[ok] customer namespaces prevent cross-account leakage" in result.stdout
+    assert "INV-2042" in result.stdout
+
+
+def test_customer_support_memory_example_enforces_crm_memory_policy(tmp_path):
+    module = load_customer_support_example()
+    memory = module.build_memory(tmp_path / "support.sqlite3")
+    try:
+        results = module.run_customer_support_checks(memory)
+
+        assert results["purged"] == 1
+        assert "Enterprise" in results["plan_hits"][0].text
+        assert all("SAVE20" not in hit.text for hit in results["discount_hits"])
+        assert results["discount_hits"] == []
+        assert results["globex_hits"][0].namespace == module.GLOBEX_NAMESPACE
+        assert "Globex" in results["globex_hits"][0].text
+        assert all("Globex" not in hit.text for hit in results["acme_cross_check"])
+        assert results["stats"]["active_memories"] == 5
+        assert results["stats"]["index_healthy"] is True
+    finally:
+        memory.close()
 
 
 def test_agent_example_help_runs_from_checkout():

@@ -65,7 +65,8 @@ question first-class.
 - Prometheus-compatible metrics and optional OpenTelemetry traces.
 - Benchmarks checked into the repository with commands and JSON results.
 - Public benchmark post draft: `docs/BENCHMARK_BRIEF.md`.
-- Offline demos: `examples/demo.py` and `examples/dynamic_memory_demo.py`.
+- Offline demos: `examples/demo.py`, `examples/dynamic_memory_demo.py`, and
+  `examples/customer_support_memory.py`.
 - Use-case gallery: `docs/USE_CASES.md`.
 
 ## GitHub Page Checklist

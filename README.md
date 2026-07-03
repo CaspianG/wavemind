@@ -226,7 +226,7 @@ wavemind --db ./state/app_memory.sqlite3 query "answer style" --namespace user:4
 | CrewAI or AutoGen loop | The adapters in `wavemind.integrations` |
 | Node, Go, Ruby, PHP, or no-code app | `wavemind serve` and the HTTP API |
 | Personal knowledge base | Store notes by project namespace and query locally |
-| Support or CRM workflow | Store customer issues, resolutions, preferences, and corrections |
+| Support or CRM workflow | Customer issues, resolutions, preferences, corrections, TTL, and namespace isolation. See [`examples/customer_support_memory.py`](examples/customer_support_memory.py). |
 | Research or trading notebook | Store observations with source metadata and TTL for temporary hypotheses |
 
 For migrations from existing local vector memory, start with
@@ -276,6 +276,15 @@ python examples/dynamic_memory_demo.py
 
 That demo shows corrected facts outranking stale facts, temporary memory
 expiring, namespace isolation, and index-health reporting.
+
+To see the same behavior in a practical support/CRM workflow:
+
+```sh
+python examples/customer_support_memory.py
+```
+
+That demo stores customer preferences, billing tickets, stale CRM data,
+temporary discount codes, and separate customer namespaces.
 
 ## How The Memory Field Works
 
