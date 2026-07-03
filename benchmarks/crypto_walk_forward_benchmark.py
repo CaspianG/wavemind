@@ -80,6 +80,8 @@ class Prediction:
     analogues: list[AnalogueMatch]
     confidence: float = 1.0
     raw_direction: str = ""
+    candidate_direction: str = ""
+    candidate_expected_return_bps: float = 0.0
     filtered: bool = False
     filter_reason: str = ""
     analogue_agreement: float = 1.0
@@ -964,6 +966,7 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
         memory_store: str = "disk",
     ):
         self.timeframe = timeframe
+        self.ta = TaRulesEngine()
         self.child: MarketEngine | None = None
         if timeframe == "1h":
             self.child = WaveMindMicrostructureEngine(
@@ -1000,37 +1003,43 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         if self.child is not None:
             prediction = self.child.query(window, top_k=top_k)
-            policy_reasons = []
-            if prediction.direction != "flat":
-                if prediction.direction != "down":
-                    policy_reasons.append("policy_requires_down_signal")
-                if str(window.features.get("volume_bucket", "")) == "normal":
-                    policy_reasons.append("policy_requires_abnormal_volume")
-                if (
-                    str(window.features.get("volume_bucket", "")) == "quiet"
-                    and str(window.features.get("drawdown_bucket", "")) == "deep"
-                ):
-                    policy_reasons.append("policy_blocks_quiet_deep_drawdown")
-            if policy_reasons:
+            ta_prediction = self.ta.query(window, top_k=top_k)
+            if (
+                prediction.direction in {"up", "down"}
+                and ta_prediction.direction in {"up", "down"}
+                and prediction.direction != ta_prediction.direction
+            ):
                 return Prediction(
                     direction="flat",
                     expected_return_bps=0.0,
-                    latency_ms=prediction.latency_ms,
+                    latency_ms=prediction.latency_ms + ta_prediction.latency_ms,
                     analogues=prediction.analogues,
                     confidence=prediction.confidence,
-                    raw_direction=prediction.direction,
+                    raw_direction=prediction.raw_direction or prediction.direction,
+                    candidate_direction=prediction.direction,
+                    candidate_expected_return_bps=prediction.expected_return_bps,
                     filtered=True,
-                    filter_reason=",".join(policy_reasons),
+                    filter_reason="ta_conflict",
                     analogue_agreement=prediction.analogue_agreement,
                     regime_agreement=prediction.regime_agreement,
                 )
             return Prediction(
                 direction=prediction.direction,
                 expected_return_bps=prediction.expected_return_bps,
-                latency_ms=prediction.latency_ms,
+                latency_ms=prediction.latency_ms + ta_prediction.latency_ms,
                 analogues=prediction.analogues,
                 confidence=prediction.confidence,
                 raw_direction=prediction.raw_direction,
+                candidate_direction=(
+                    prediction.candidate_direction
+                    or prediction.raw_direction
+                    or prediction.direction
+                ),
+                candidate_expected_return_bps=(
+                    prediction.candidate_expected_return_bps
+                    if prediction.candidate_expected_return_bps
+                    else prediction.expected_return_bps
+                ),
                 filtered=prediction.filtered,
                 filter_reason=prediction.filter_reason,
                 analogue_agreement=prediction.analogue_agreement,
@@ -1613,9 +1622,21 @@ def load_markets_from_args(args: argparse.Namespace) -> list[MarketDataset]:
             for timeframe in args.timeframes:
                 cache_path = _ccxt_cache_path(args.cache_dir, args.exchange, symbol, timeframe)
                 if cache_path is not None and cache_path.exists() and not args.refresh_cache:
-                    bars = load_ohlcv_csv(cache_path)
-                    source = f"ccxt_cache:{args.exchange}"
-                    source_path = str(cache_path)
+                    cached_bars = load_ohlcv_csv(cache_path)
+                    if len(cached_bars) >= args.bars:
+                        bars = cached_bars[-args.bars :]
+                        source = f"ccxt_cache:{args.exchange}"
+                        source_path = str(cache_path)
+                    else:
+                        bars = fetch_ohlcv_ccxt(
+                            exchange_id=args.exchange,
+                            symbol=symbol,
+                            timeframe=timeframe,
+                            limit=args.bars,
+                        )
+                        source = f"ccxt:{args.exchange}"
+                        save_ohlcv_csv(cache_path, bars)
+                        source_path = str(cache_path)
                 else:
                     bars = fetch_ohlcv_ccxt(
                         exchange_id=args.exchange,

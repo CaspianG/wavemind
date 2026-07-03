@@ -403,3 +403,85 @@ def test_load_markets_from_ccxt_cache_without_network(tmp_path, monkeypatch):
     assert markets[0].source == "ccxt_cache:okx"
     assert markets[0].source_path.endswith("BTC_USDT_1h.csv")
     assert len(markets[0].windows) > 0
+
+
+def test_load_markets_from_ccxt_cache_honors_bars_limit(tmp_path, monkeypatch):
+    from argparse import Namespace
+    from benchmarks.crypto_ohlcv import OHLCVBar, save_ohlcv_csv
+    from benchmarks import crypto_walk_forward_benchmark as bench
+
+    cache_dir = tmp_path / "ccxt-cache"
+    cache_path = cache_dir / "okx" / "BTC_USDT_1h.csv"
+    bars = [
+        OHLCVBar(
+            timestamp=1_700_000_000 + index * 3600,
+            open=100 + index,
+            high=101 + index,
+            low=99 + index,
+            close=100.5 + index,
+            volume=10 + index,
+        )
+        for index in range(70)
+    ]
+    save_ohlcv_csv(cache_path, bars)
+
+    def fail_fetch(**kwargs):
+        raise AssertionError("network fetch should not be called when cache is long enough")
+
+    monkeypatch.setattr(bench, "fetch_ohlcv_ccxt", fail_fetch)
+
+    markets = bench.load_markets_from_args(
+        Namespace(
+            dataset="ccxt",
+            csv=None,
+            exchange="okx",
+            cache_dir=cache_dir,
+            refresh_cache=False,
+            symbols=["BTC/USDT"],
+            timeframes=["1h"],
+            bars=50,
+            window=16,
+            horizon=3,
+            fee_bps=5,
+            slippage_bps=2,
+        )
+    )
+
+    assert len(markets) == 1
+    assert len(markets[0].bars) == 50
+    assert markets[0].bars[0].timestamp == bars[-50].timestamp
+    assert markets[0].bars[-1].timestamp == bars[-1].timestamp
+
+
+def test_timeframe_policy_vetoes_ta_conflict():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=120.0,
+                latency_ms=1.5,
+                analogues=[],
+                confidence=0.7,
+                raw_direction="up",
+                analogue_agreement=0.7,
+                regime_agreement=0.6,
+            )
+
+    class TaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="down", expected_return_bps=-80.0, latency_ms=0.1, analogues=[])
+
+    engine = object.__new__(WaveMindTimeframePolicyEngine)
+    engine.timeframe = "4h"
+    engine.child = ChildEngine()
+    engine.ta = TaEngine()
+
+    prediction = engine.query(object(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filtered is True
+    assert prediction.filter_reason == "ta_conflict"
+    assert prediction.candidate_direction == "up"
+    assert prediction.candidate_expected_return_bps == 120.0

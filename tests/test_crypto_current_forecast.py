@@ -66,7 +66,11 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.horizon_label == "24h"
     assert result.horizon_bars == 6
     assert result.direction in {"up", "down", "flat"}
+    assert result.decision in {"signal", "abstain"}
+    assert result.candidate_direction in {"up", "down", "flat"}
     assert math.isclose(result.expected_price, expected_price)
+    candidate_expected_price = result.last_close * (1.0 + result.candidate_expected_return_bps / 10_000.0)
+    assert math.isclose(result.candidate_expected_price, candidate_expected_price)
     assert math.isclose(result.evidence_strength, result.confidence)
     assert result.confidence_is_probability is False
     assert datetime.fromisoformat(result.forecast_until_utc) > datetime.fromisoformat(result.data_end_utc)
@@ -126,6 +130,7 @@ def test_calibrated_probability_prefers_ready_monotonic_blocks():
             "calibration": [
                 {
                     "engine": "WaveMind timeframe policy",
+                    "probability_ready": True,
                     "probability_kind": "monotonic",
                     "monotonic_calibration": {
                         "blocks": [
@@ -191,9 +196,14 @@ def test_render_markdown_contains_price_target():
                 forecast_until_utc="2026-07-04T12:00:00+00:00",
                 last_close=100_000.0,
                 direction="up",
+                decision="signal",
+                candidate_direction="up",
                 expected_return_bps=120.0,
                 expected_return_pct=1.2,
                 expected_price=101_200.0,
+                candidate_expected_return_bps=120.0,
+                candidate_expected_return_pct=1.2,
+                candidate_expected_price=101_200.0,
                 confidence=0.73,
                 evidence_strength=0.73,
                 calibration_bucket={"direction_hit_rate": 0.62},
@@ -211,6 +221,8 @@ def test_render_markdown_contains_price_target():
 
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
+    assert "abstain" in markdown
+    assert "candidate direction" in markdown
     assert "0.620" in markdown
     assert "base_rate" in markdown
     assert "BTC/USDT" in markdown
@@ -251,6 +263,8 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["results"][0]["symbol"] == "ETH/USDT"
     assert payload["results"][0]["engine"] == "WaveMind timeframe policy"
+    assert payload["results"][0]["decision"] in {"signal", "abstain"}
+    assert payload["results"][0]["candidate_direction"] in {"up", "down", "flat"}
     assert payload["results"][0]["confidence_is_probability"] is False
     assert "not a calibrated probability" in payload["results"][0]["confidence_note"]
     assert payload["results"][0]["evidence_strength"] == payload["results"][0]["confidence"]

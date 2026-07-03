@@ -49,9 +49,14 @@ class ForecastResult:
     forecast_until_utc: str
     last_close: float
     direction: str
+    decision: str
+    candidate_direction: str
     expected_return_bps: float
     expected_return_pct: float
     expected_price: float
+    candidate_expected_return_bps: float
+    candidate_expected_return_pct: float
+    candidate_expected_price: float
     confidence: float
     filtered: bool
     filter_reason: str
@@ -184,12 +189,24 @@ def forecast_from_bars(
             prediction = engine.query(query, top_k=top_k)
         finally:
             engine.close()
-    expected_price = float(query.bars[-1].close) * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
-    calibrated_probability, probability_kind = calibrated_probability_for_evidence(
-        calibration_profile,
-        engine_name=engine.name,
-        evidence_strength=float(prediction.confidence),
+    last_close = float(query.bars[-1].close)
+    decision = "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
+    candidate_direction = prediction.candidate_direction or prediction.raw_direction or prediction.direction
+    candidate_expected_return_bps = (
+        float(prediction.candidate_expected_return_bps)
+        if prediction.candidate_expected_return_bps
+        else float(prediction.expected_return_bps)
     )
+    expected_price = last_close * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
+    candidate_expected_price = last_close * (1.0 + candidate_expected_return_bps / 10_000.0)
+    if decision == "signal":
+        calibrated_probability, probability_kind = calibrated_probability_for_evidence(
+            calibration_profile,
+            engine_name=engine.name,
+            evidence_strength=float(prediction.confidence),
+        )
+    else:
+        calibrated_probability, probability_kind = None, "none"
     return ForecastResult(
         symbol=symbol,
         exchange=exchange,
@@ -199,11 +216,16 @@ def forecast_from_bars(
         engine=engine.name,
         data_end_utc=query.end_time,
         forecast_until_utc=datetime.fromtimestamp(query.future_end_ts, tz=timezone.utc).isoformat(),
-        last_close=float(query.bars[-1].close),
+        last_close=last_close,
         direction=prediction.direction,
+        decision=decision,
+        candidate_direction=candidate_direction,
         expected_return_bps=float(prediction.expected_return_bps),
         expected_return_pct=float(prediction.expected_return_bps) / 100.0,
         expected_price=float(expected_price),
+        candidate_expected_return_bps=candidate_expected_return_bps,
+        candidate_expected_return_pct=candidate_expected_return_bps / 100.0,
+        candidate_expected_price=float(candidate_expected_price),
         confidence=float(prediction.confidence),
         filtered=bool(prediction.filtered),
         filter_reason=prediction.filter_reason,
@@ -325,6 +347,8 @@ def calibrated_probability_for_evidence(
     for engine in profile.get("calibration", []):
         if engine.get("engine") != engine_name:
             continue
+        if not bool(engine.get("probability_ready", False)):
+            return None, "none"
         probability_kind = str(engine.get("probability_kind", "none"))
         if probability_kind == "monotonic":
             block = _monotonic_block_for_evidence(
@@ -353,9 +377,14 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "forecast_until_utc": result.forecast_until_utc,
         "last_close": result.last_close,
         "direction": result.direction,
+        "decision": result.decision,
+        "candidate_direction": result.candidate_direction,
         "expected_return_bps": result.expected_return_bps,
         "expected_return_pct": result.expected_return_pct,
         "expected_price": result.expected_price,
+        "candidate_expected_return_bps": result.candidate_expected_return_bps,
+        "candidate_expected_return_pct": result.candidate_expected_return_pct,
+        "candidate_expected_price": result.candidate_expected_price,
         "evidence_strength": result.evidence_strength,
         "confidence": result.confidence,
         "confidence_is_probability": result.confidence_is_probability,
@@ -378,18 +407,21 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "",
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
+        "`abstain` means WaveMind found no validated trade-quality signal; it does not mean the next price will be unchanged.",
         "",
-        "| symbol | horizon | data end UTC | direction | last close | expected return | expected price | evidence strength | calibrated probability | probability kind | filter |",
-        "|---|---:|---|---:|---:|---:|---:|---:|---:|---|---|",
+        "| symbol | horizon | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |",
+        "|---|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
         probability_text = "" if result.calibrated_probability is None else f"{result.calibrated_probability:.3f}"
         lines.append(
             "| "
-            f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | {result.direction} | "
-            f"{result.last_close:.6g} | {result.expected_return_pct:.2f}% | "
-            f"{result.expected_price:.6g} | {result.evidence_strength:.3f} | {probability_text} | "
+            f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | {result.decision} | "
+            f"{result.direction} | {result.candidate_direction} | {result.last_close:.6g} | "
+            f"{result.expected_return_pct:.2f}% | {result.candidate_expected_return_pct:.2f}% | "
+            f"{result.expected_price:.6g} | {result.candidate_expected_price:.6g} | "
+            f"{result.evidence_strength:.3f} | {probability_text} | "
             f"{result.probability_kind} | {filter_text} |"
         )
     lines.append("")

@@ -397,11 +397,13 @@ def calibration_by_engine(events: Iterable[Mapping[str, Any]], *, bins: int = 5)
         )
         base_rate["probability_ready"] = base_rate_ready
         enough_samples = len(engine_events) >= 100 and monotonic["min_block_count"] >= 30
+        stable_slices = all(bool(item.get("stable", False)) for item in stability.values())
         monotonic_ready = bool(
             enough_samples
             and monotonic["out_of_sample"]
             and monotonic["expected_calibration_error"] <= 0.08
             and monotonic["brier_score"] <= raw_metrics["brier_score"]
+            and stable_slices
         )
         probability_ready = bool(monotonic_ready or base_rate_ready)
         results.append(

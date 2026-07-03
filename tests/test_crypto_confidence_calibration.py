@@ -84,6 +84,36 @@ def test_calibration_by_engine_requires_stable_slices_for_probability():
     assert result["stability"]["timeframe"]["stable"] is True
 
 
+def test_calibration_rejects_probability_when_folds_are_unstable():
+    from benchmarks.crypto_confidence_calibration import calibration_by_engine
+
+    events = []
+    fold_hits = {0: 36, 1: 4, 2: 20, 3: 20}
+    for fold_index, hits in fold_hits.items():
+        for index in range(40):
+            hit = 1.0 if index < hits else 0.0
+            events.append(
+                {
+                    "engine": "WaveMind timeframe policy",
+                    "symbol": "BTC/USDT" if index % 2 == 0 else "ETH/USDT",
+                    "timeframe": "4h",
+                    "fold_index": fold_index,
+                    "predicted_direction": "down",
+                    "confidence": 0.5,
+                    "direction_at_1": hit,
+                    "net_return_bps": 40.0 if hit else -40.0,
+                    "sized_net_return_bps": 40.0 if hit else -40.0,
+                }
+            )
+
+    result = calibration_by_engine(events, bins=5)[0]
+
+    assert result["signal_events"] == 160
+    assert result["stability"]["fold"]["stable"] is False
+    assert result["probability_ready"] is False
+    assert result["probability_kind"] == "none"
+
+
 def test_walk_forward_can_emit_event_metrics():
     from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
     from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward

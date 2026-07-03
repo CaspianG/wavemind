@@ -42,7 +42,7 @@ that looked similar. The wave-field layer then acts as a policy overlay:
 - similar memories propose historical analogues;
 - validated regime relationships can reinforce or veto the proposal;
 - recently bad mature signals can suppress new signals;
-- unsupported timeframes return `flat` instead of forcing a prediction.
+- unsupported timeframes abstain instead of forcing a prediction.
 
 The resulting price target is a research estimate:
 
@@ -74,10 +74,10 @@ It does not mean:
 - calibrated win rate for this specific coin tomorrow.
 
 The current 24h policy is promising but not production-grade. Its checked
-validation profile has active direction accuracy `0.750`, signal rate `0.050`,
-profit factor `5.845`, and positive market slices `11/36`. That is a stronger
-active subset than before, but still not enough to claim a reliable live
-forecast or calibrated probability.
+validation profile has active direction accuracy `0.512`, signal rate `0.075`,
+profit factor `1.350`, and positive market slices `16/36`. That is better
+false-positive and drawdown control than the broad baselines, but still not
+enough to claim a reliable live forecast or calibrated probability.
 
 Required next step:
 
@@ -89,21 +89,21 @@ Required next step:
 4. Expose a real probability only for buckets that remain stable across
    symbols, folds, date ranges, and exchanges.
 
-Current checked OKX calibration result for the strict timeframe policy:
+Current checked OKX calibration result for the timeframe policy:
 
 | evidence range | count | avg evidence | hit rate | calibration error | avg net bps |
 |---|---:|---:|---:|---:|---:|
-| 0.2-0.4 | 1 | 0.350 | 1.000 | 0.650 | 93.49 |
-| 0.4-0.6 | 27 | 0.536 | 0.704 | 0.167 | 216.51 |
-| 0.6-0.8 | 20 | 0.691 | 0.900 | 0.209 | 223.07 |
-| 0.8-1.0 | 60 | 0.963 | 0.717 | 0.246 | 134.29 |
+| 0.2-0.4 | 6 | 0.350 | 0.167 | 0.183 | -66.96 |
+| 0.4-0.6 | 44 | 0.545 | 0.545 | 0.000 | 69.62 |
+| 0.6-0.8 | 35 | 0.658 | 0.486 | 0.173 | -10.01 |
+| 0.8-1.0 | 77 | 0.982 | 0.532 | 0.449 | 18.70 |
 
-Summary: signal events `108`, active hit rate `0.750`, Brier score if raw
-evidence is treated as probability `0.236`, raw expected calibration error
-`0.223`, base-rate probability `0.750`, and base-rate expected calibration
-error `0.070`. Probability remains disabled because the combined
-symbol/timeframe support check is still false. The score is useful as a
-research signal, but the current forecast output still reports
+Summary: signal events `162`, active hit rate `0.512`, Brier score if raw
+evidence is treated as probability `0.345`, raw expected calibration error
+`0.258`, base-rate probability `0.512`, and base-rate expected calibration
+error `0.009`. Probability remains disabled because fold, symbol, timeframe,
+and symbol/timeframe stability checks are still false. The score is useful as
+a research signal, but the current forecast output still reports
 `probability_kind=none` unless all stability checks pass.
 
 ## First Benchmark
@@ -273,20 +273,20 @@ drawdown (`3250.2` vs `3780.2`) versus raw TA. On the additional five-asset
 check it keeps the improvement (`6.44` vs `3.11` bps) and cuts worst-slice loss
 from `-51.68` to `-25.45` bps.
 
-Timeframe-aware BTC/ETH/SOL check after the strict downside/volume policy,
+Timeframe-aware BTC/ETH/SOL check after TA conflict veto,
 1h/4h/1d, 4 folds x 60 windows per market:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.750 | 0.050 | 8.55 | 5.845 | 936.1 | 11/36 | -3.33 | 0.038 | 1.44 ms |
+| WaveMind timeframe policy | 2160 | 0.512 | 0.075 | 1.74 | 1.350 | 2196.2 | 16/36 | -27.67 | 0.054 | 1.14 ms |
 
-Interpretation: timeframe-aware policy is now a strict regime filter. The
-current policy routes 1h through microstructure, 4h through adaptive-field,
-blocks unvalidated 1d forecasts, and then only allows downside signals with
-abnormal volume confirmation. This is intentionally conservative: the system
-uses a timeframe only after that timeframe has its own validated policy and
-returns `flat` otherwise. The next research steps are per-symbol/timeframe
-support and a separate 1d trend-memory dynamic.
+Interpretation: timeframe-aware policy is now a conservative research filter.
+The current policy routes 1h through microstructure, 4h through adaptive-field,
+blocks unvalidated 1d forecasts, and vetoes WaveMind signals when the TA
+baseline points in the opposite direction. This is intentionally conservative:
+the system uses a timeframe only after that timeframe has its own validated
+policy and abstains otherwise. The next research steps are stronger
+per-symbol/timeframe support and a separate 1d trend-memory dynamic.
 
 ## Current Forecast Runner
 
@@ -312,18 +312,19 @@ What it does:
 - writes current price, expected return, expected price, evidence strength,
   filter reason, and the validation profile into JSON/Markdown.
 
-Checked-in OKX 24h snapshot generated on `2026-07-03T20:50:09Z`:
+Checked-in OKX 24h snapshot generated from completed 4h candles through
+`2026-07-03T16:00:00Z`:
 
-| symbol | data end UTC | direction | last close | expected return | expected price | evidence strength | probability kind | filter |
-|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 2026-07-03T16:00:00Z | flat | 62209.2 | 0.00% | 62209.2 | 0.546 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
-| ETH/USDT | 2026-07-03T16:00:00Z | flat | 1745.41 | 0.00% | 1745.41 | 0.519 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
-| SOL/USDT | 2026-07-03T16:00:00Z | flat | 82.51 | 0.00% | 82.51 | 0.787 | none | policy_requires_down_signal, policy_blocks_quiet_deep_drawdown |
+| symbol | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
+|---|---|---|---|---|---:|---:|---:|---:|---|---|
+| BTC/USDT | 2026-07-03T16:00:00Z | abstain | flat | up | 62209.2 | 0.00% | 1.18% | 0.546 | none | ta_conflict |
+| ETH/USDT | 2026-07-03T16:00:00Z | abstain | flat | up | 1745.41 | 0.00% | 2.67% | 0.519 | none | ta_conflict |
+| SOL/USDT | 2026-07-03T16:00:00Z | abstain | flat | up | 82.51 | 0.00% | 1.29% | 0.787 | none | ta_conflict |
 
 The 24h snapshot is an abstention, not a bullish or bearish call. The current
-market did not pass the validated downside/volume regime.
+market produced an upward candidate, but the TA conflict veto blocked it.
 
-The 7d runner currently returns `flat` on BTC/ETH/SOL with
+The 7d runner currently returns `abstain` on BTC/ETH/SOL with
 `unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
 daily/weekly horizons until a separate 1d profile passes walk-forward
 validation.
@@ -521,9 +522,10 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 13. Done: evidence-strength calibration diagnostic reports raw buckets,
     cross-fold monotonic calibration, active-signal base-rate calibration, and
     fold/symbol/timeframe stability checks.
-14. Done: strict downside/volume timeframe policy improves active direction
-    accuracy to `0.750`, lowers signal rate to `0.050`, and reduces large false
-    positives to `0.038` on the checked BTC/ETH/SOL OKX run.
+14. Done: TA conflict veto supersedes the earlier strict downside/volume
+    filter. The current checked BTC/ETH/SOL OKX run has active direction
+    accuracy `0.512`, signal rate `0.075`, profit factor `1.350`, and large
+    false positives `0.054`.
 15. Next: increase per-symbol/timeframe support so calibrated probability can
     be enabled without hiding weak slices.
 16. Next: build and validate a separate 1d / weekly trend-memory dynamic before
