@@ -620,7 +620,7 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         min_expected_edge_bps: float = 70.0,
         max_opposition: float = 0.62,
         require_trend_alignment: bool = True,
-        performance_lookback: int = 24,
+        performance_lookback: int = 12,
         min_recent_edge_bps: float = 0.0,
         round_trip_cost_bps: float = 30.0,
         memory_store: str = "disk",
@@ -1113,7 +1113,7 @@ def run_walk_forward(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
-    adaptive_performance_lookback: int = 24,
+    adaptive_performance_lookback: int = 12,
     adaptive_min_recent_edge_bps: float = 0.0,
     memory_store: str = "disk",
 ) -> dict:
@@ -1525,7 +1525,7 @@ def main() -> int:
     parser.add_argument("--adaptive-min-expected-edge-bps", type=float, default=70.0)
     parser.add_argument("--adaptive-max-opposition", type=float, default=0.62)
     parser.add_argument("--disable-adaptive-trend-alignment", action="store_true")
-    parser.add_argument("--adaptive-performance-lookback", type=int, default=24)
+    parser.add_argument("--adaptive-performance-lookback", type=int, default=12)
     parser.add_argument("--adaptive-min-recent-edge-bps", type=float, default=0.0)
     parser.add_argument("--memory-store", choices=["disk", "memory"], default="disk")
     parser.add_argument("--disable-regime-filter", action="store_true")
@@ -1698,7 +1698,7 @@ def _create_engine(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
-    adaptive_performance_lookback: int = 24,
+    adaptive_performance_lookback: int = 12,
     adaptive_min_recent_edge_bps: float = 0.0,
     round_trip_cost_bps: float = 30.0,
     memory_store: str = "disk",

@@ -97,14 +97,14 @@ Latest expanded 4h check: on 4 folds x 60 windows with fixed-size signals,
 `WaveMind adaptive-field` is the strongest current profile. It uses past
 train/holdout relationship memory as a dynamic veto over a trend-aligned
 mature-regime candidate, then adds self-feedback from its own matured signals.
-The result is `31.85` sized net bps vs `25.23` for trend persistence and
+The result is `36.99` sized net bps vs `25.23` for trend persistence and
 `25.30` for the earlier `WaveMind trend-risk` profile. Profit factor improves
-to `2.130` vs `1.462`, max drawdown falls to `5305.3` bps vs `9318.8`, and
-large false positives fall to `0.208` vs `0.380` for trend persistence. It also
+to `2.763` vs `1.462`, max drawdown falls to `5305.3` bps vs `9318.8`, and
+large false positives fall to `0.182` vs `0.380` for trend persistence. It also
 beats naive last-regime (`15.36`) and static kNN (`-9.75`). This is useful
 signal-shaping evidence, not a live-trading claim: the profile is positive on
-4/12 symbol-fold slices, while the worst slice improves sharply from `-77.66`
-bps to `-20.79` bps.
+5/12 symbol-fold slices, while the worst slice improves sharply from `-77.66`
+bps to `-19.75` bps.
 
 Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
 miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`

@@ -92,7 +92,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["scenario"]["adaptive_min_expected_edge_bps"] == 70.0
     assert payload["scenario"]["adaptive_max_opposition"] == 0.62
     assert payload["scenario"]["adaptive_trend_alignment"] is True
-    assert payload["scenario"]["adaptive_performance_lookback"] == 24
+    assert payload["scenario"]["adaptive_performance_lookback"] == 12
     assert payload["scenario"]["adaptive_min_recent_edge_bps"] == 0.0
     assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]

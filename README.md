@@ -139,7 +139,7 @@ Expanded 4h check, 4 folds x 60 windows:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | large FP |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind adaptive-field | 720 | 0.577 | 0.325 | 31.85 | 2.130 | 5305.3 | 0.208 |
+| WaveMind adaptive-field | 720 | 0.565 | 0.278 | 36.99 | 2.763 | 5305.3 | 0.182 |
 | WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 0.365 |
 | Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 0.380 |
 | WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 0.651 |
@@ -149,12 +149,12 @@ Expanded 4h check, 4 folds x 60 windows:
 Interpretation: the strongest current result is `WaveMind adaptive-field`.
 It uses the relationship field as a dynamic overlay on top of a trend-aligned
 mature-regime candidate, then adds self-feedback from its own matured signals.
-It improves average fixed-size net return (`31.85` vs `25.23` bps for trend
-persistence), profit factor (`2.130` vs `1.462`), max drawdown (`5305.3` vs
-`9318.8` bps), and large false positives (`0.208` vs `0.380`). This is real
-signal-shaping evidence, but not a live-trading claim: it is positive on 4/12
+It improves average fixed-size net return (`36.99` vs `25.23` bps for trend
+persistence), profit factor (`2.763` vs `1.462`), max drawdown (`5305.3` vs
+`9318.8` bps), and large false positives (`0.182` vs `0.380`). This is real
+signal-shaping evidence, but not a live-trading claim: it is positive on 5/12
 symbol-fold slices, while the worst slice improves sharply from `-77.66` bps
-to `-20.79` bps.
+to `-19.75` bps.
 
 ## Relationship Mining
 
@@ -232,7 +232,7 @@ Near-term execution plan:
 15. Done: adaptive relationship-field overlay uses past train/holdout
     relationship memory as a dynamic veto over trend-aligned candidates; it
     improves average checked-in 4h return, profit factor, drawdown, and false
-    positives, but is still positive on only 4/12 symbol-fold slices.
+    positives, but is still positive on only 5/12 symbol-fold slices.
 16. Next: improve downside robustness across bad folds, add drawdown/profit
     factor metrics, and validate on more date ranges, exchanges, assets, and
     walk-forward folds.
