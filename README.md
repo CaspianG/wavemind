@@ -29,6 +29,7 @@ users or projects isolated.
 [Use Cases](docs/USE_CASES.md) |
 [HTTP API](#http-api) |
 [Benchmarks](#benchmark) |
+[Benchmark Brief](docs/BENCHMARK_BRIEF.md) |
 [Research Branches](#research-branches) |
 [Roadmap](#roadmap) |
 [Contributing](#contributing) |

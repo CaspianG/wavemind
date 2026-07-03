@@ -134,6 +134,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
     readme = Path("README.md").read_text(encoding="utf-8")
     chroma_migration = Path("docs/CHROMA_MIGRATION.md").read_text(encoding="utf-8")
+    launch_kit = Path("docs/LAUNCH_KIT.md").read_text(encoding="utf-8")
+    benchmark_brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
 
     assert "include CONTRIBUTING.md" in manifest
     assert "include SECURITY.md" in manifest
@@ -141,6 +143,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/ROADMAP.md" in manifest
     assert "include docs/RELEASE.md" in manifest
     assert "include docs/PROJECT_BOARD.md" in manifest
+    assert "include docs/BENCHMARK_BRIEF.md" in manifest
     assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/OBSERVABILITY.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
@@ -151,6 +154,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include examples/production-index-profile *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
+    assert "docs/BENCHMARK_BRIEF.md" in readme
     assert "examples/chroma_migration.py" in readme
     assert "docs/assets/wavemind-demo.gif" in readme
     assert Path("docs/assets/wavemind-demo.gif").exists()
@@ -159,3 +163,6 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration
     assert "examples/chroma_migration.py" in chroma_migration
     assert "namespace=\"user:42\"" in chroma_migration
+    assert "docs/BENCHMARK_BRIEF.md" in launch_kit
+    assert "checked-in JSON artifacts" in benchmark_brief
+    assert "Static vector search is still faster" in benchmark_brief
