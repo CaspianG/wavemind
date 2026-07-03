@@ -48,6 +48,12 @@ Implemented in this branch:
   4h fold benchmark for WaveMind trend-risk vs market baselines.
 - `benchmarks/crypto_okx_4h_trend_risk_analogue_explorer.html` - visual
   analogue explorer for the trend-risk run.
+- `benchmarks/crypto_walk_forward_okx_4h_adaptive_field_results.json` -
+  checked-in BTC/ETH/SOL adaptive-field 4h result with slice robustness.
+- `benchmarks/crypto_walk_forward_okx_4h_more_assets_results.json` -
+  checked-in XRP/DOGE/ADA/LINK/AVAX adaptive-field 4h cross-asset result.
+- `benchmarks/crypto_okx_4h_more_assets_analogue_explorer.html` - visual
+  analogue explorer for the additional 5-asset run.
 - `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
@@ -135,26 +141,34 @@ is closer to the static vector baseline, while the field-on variant overfires.
 The next research target is a better market-specific field dynamic, not a
 trading claim.
 
-Expanded 4h check, 4 folds x 60 windows:
+Expanded BTC/ETH/SOL 4h check, 4 folds x 60 windows:
 
-| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | large FP |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind adaptive-field | 720 | 0.565 | 0.278 | 36.99 | 2.763 | 5305.3 | 0.182 |
-| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 0.365 |
-| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 0.380 |
-| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 0.651 |
-| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 1.174 | 11769.1 | 0.688 |
-| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.898 | 12777.0 | 0.651 |
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 720 | 0.636 | 0.260 | 37.94 | 2.937 | 5305.3 | 5/12 | -19.75 | 0.167 |
+| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 6/12 | -77.66 | 0.365 |
+| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 6/12 | -77.66 | 0.380 |
+| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 4/12 | -78.82 | 0.651 |
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 1.174 | 11769.1 | 3/12 | -78.82 | 0.688 |
+| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.898 | 12777.0 | 5/12 | -87.45 | 0.651 |
+
+Additional OKX 4h cross-asset check on XRP/DOGE/ADA/LINK/AVAX:
+
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 1200 | 0.640 | 0.287 | 44.75 | 2.962 | 3643.4 | 10/20 | -23.45 | 0.177 |
+| Trend persistence | 1200 | 0.500 | 0.587 | 21.41 | 1.321 | 13888.9 | 8/20 | -118.79 | 0.535 |
 
 Interpretation: the strongest current result is `WaveMind adaptive-field`.
 It uses the relationship field as a dynamic overlay on top of a trend-aligned
 mature-regime candidate, then adds self-feedback from its own matured signals.
-It improves average fixed-size net return (`36.99` vs `25.23` bps for trend
-persistence), profit factor (`2.763` vs `1.462`), max drawdown (`5305.3` vs
-`9318.8` bps), and large false positives (`0.182` vs `0.380`). This is real
-signal-shaping evidence, but not a live-trading claim: it is positive on 5/12
-symbol-fold slices, while the worst slice improves sharply from `-77.66` bps
-to `-19.75` bps.
+It improves average fixed-size net return (`37.94` vs `25.23` bps for trend
+persistence), profit factor (`2.937` vs `1.462`), max drawdown (`5305.3` vs
+`9318.8` bps), and large false positives (`0.167` vs `0.380`). On the
+additional five-asset check it improves net return (`44.75` vs `21.41` bps)
+and cuts worst-slice loss from `-118.79` to `-23.45` bps. This is real
+signal-shaping evidence, but not a live-trading claim: the next milestone is
+raising the positive slice rate across more assets, exchanges, and timeframes.
 
 ## Relationship Mining
 
@@ -232,7 +246,8 @@ Near-term execution plan:
 15. Done: adaptive relationship-field overlay uses past train/holdout
     relationship memory as a dynamic veto over trend-aligned candidates; it
     improves average checked-in 4h return, profit factor, drawdown, and false
-    positives, but is still positive on only 5/12 symbol-fold slices.
+    positives, adds slice-robustness metrics, and validates on an additional
+    5-asset OKX 4h cross-check.
 16. Next: improve downside robustness across bad folds, add drawdown/profit
     factor metrics, and validate on more date ranges, exchanges, assets, and
     walk-forward folds.

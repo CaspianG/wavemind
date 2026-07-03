@@ -143,28 +143,36 @@ this benchmark and the selective 4h profile fails the first multi-fold check.
 The useful next step is redesigning the market field dynamic and validating it
 across more folds, not promoting this as a trading edge.
 
-Expanded 4h check, 4 folds x 60 windows:
+Expanded BTC/ETH/SOL 4h check, 4 folds x 60 windows:
 
-| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | large FP |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind adaptive-field | 720 | 0.565 | 0.278 | 36.99 | 2.763 | 5305.3 | 0.182 |
-| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 0.365 |
-| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 0.380 |
-| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 0.651 |
-| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 1.174 | 11769.1 | 0.688 |
-| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.898 | 12777.0 | 0.651 |
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 720 | 0.636 | 0.260 | 37.94 | 2.937 | 5305.3 | 5/12 | -19.75 | 0.167 |
+| WaveMind trend-risk | 720 | 0.541 | 0.554 | 25.30 | 1.472 | 9096.9 | 6/12 | -77.66 | 0.365 |
+| Trend persistence | 720 | 0.538 | 0.568 | 25.23 | 1.462 | 9318.8 | 6/12 | -77.66 | 0.380 |
+| WaveMind risk-overlay | 720 | 0.501 | 0.843 | 17.40 | 1.205 | 9911.2 | 4/12 | -78.82 | 0.651 |
+| Naive last-regime | 720 | 0.497 | 0.869 | 15.36 | 1.174 | 11769.1 | 3/12 | -78.82 | 0.688 |
+| Static kNN | 720 | 0.470 | 0.833 | -9.75 | 0.898 | 12777.0 | 5/12 | -87.45 | 0.651 |
+
+Additional OKX 4h cross-asset check on XRP/DOGE/ADA/LINK/AVAX:
+
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind adaptive-field | 1200 | 0.640 | 0.287 | 44.75 | 2.962 | 3643.4 | 10/20 | -23.45 | 0.177 |
+| Trend persistence | 1200 | 0.500 | 0.587 | 21.41 | 1.321 | 13888.9 | 8/20 | -118.79 | 0.535 |
 
 Interpretation: `WaveMind adaptive-field` is now the strongest profile in the
 checked-in 4h run. It uses the relationship field as a dynamic overlay: the
 last mature regime proposes a trend-aligned candidate, the field vetoes only
 strong opposite train/holdout relationships, and self-feedback pauses the
 profile when its own recently matured signals turn negative. This improves
-fixed-size net return (`36.99` vs `25.23` bps for trend persistence), profit
-factor (`2.763` vs `1.462`), max drawdown (`5305.3` vs `9318.8` bps), active
-direction accuracy (`0.565` vs `0.538`), and large false positives (`0.182` vs
-`0.380`). It is still not a live-trading claim: it is positive on 5/12
-symbol-fold slices, but the worst slice improves sharply from `-77.66` bps to
-`-19.75` bps.
+fixed-size net return (`37.94` vs `25.23` bps for trend persistence), profit
+factor (`2.937` vs `1.462`), max drawdown (`5305.3` vs `9318.8` bps), active
+direction accuracy (`0.636` vs `0.538`), and large false positives (`0.167` vs
+`0.380`). On the additional five-asset check it improves net return (`44.75`
+vs `21.41` bps) and cuts worst-slice loss from `-118.79` to `-23.45` bps. It
+is still not a live-trading claim: the next milestone is raising the positive
+slice rate across more assets, exchanges, and timeframes.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -349,8 +357,9 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
    future windows.
 10. Done: adaptive relationship-field overlay uses past train/holdout
     relationship memory as a dynamic veto; it improves the checked-in average
-    4h result, profit factor, drawdown, and false positives, but is still
-    positive on only 5/12 symbol-fold slices.
+    4h result, profit factor, drawdown, false positives, and worst-slice loss;
+    the benchmark now reports slice-robustness metrics and includes an
+    additional 5-asset OKX 4h cross-check.
 11. Next: improve downside robustness across bad folds and validate across more
    date ranges, exchanges, assets, and walk-forward folds.
 12. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,

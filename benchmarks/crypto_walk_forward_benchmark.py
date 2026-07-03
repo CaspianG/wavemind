@@ -620,8 +620,8 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         min_expected_edge_bps: float = 70.0,
         max_opposition: float = 0.62,
         require_trend_alignment: bool = True,
-        performance_lookback: int = 12,
-        min_recent_edge_bps: float = 0.0,
+        performance_lookback: int = 8,
+        min_recent_edge_bps: float = 20.0,
         round_trip_cost_bps: float = 30.0,
         memory_store: str = "disk",
     ):
@@ -1113,8 +1113,8 @@ def run_walk_forward(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
-    adaptive_performance_lookback: int = 12,
-    adaptive_min_recent_edge_bps: float = 0.0,
+    adaptive_performance_lookback: int = 8,
+    adaptive_min_recent_edge_bps: float = 20.0,
     memory_store: str = "disk",
 ) -> dict:
     engine_keys = _normalize_engines(engines)
@@ -1233,6 +1233,8 @@ def run_walk_forward(
                 )
             else:
                 all_results.append(_summarize_events(_engine_display_name(engine_key), engine_events))
+
+    _attach_slice_robustness(all_results, by_market)
 
     return {
         "scenario": {
@@ -1447,14 +1449,14 @@ def write_analogue_html(payload: Mapping[str, object], path: str | Path) -> None
 def print_table(payload: Mapping[str, object]) -> None:
     print(
         "| engine | direction@1 | active d1 | signal rate | sized net bps | "
-        "profit factor | max DD bps | large FP | filtered | avg latency | queries |"
+        "profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency | queries |"
     )
-    print("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    print("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for result in payload["results"]:  # type: ignore[index]
         if result.get("skipped"):  # type: ignore[union-attr]
             print(
                 f"| {result['engine']} | skipped | skipped | skipped | skipped | "
-                "skipped | skipped | skipped | skipped | skipped | 0 |"
+                "skipped | skipped | skipped | skipped | skipped | skipped | skipped | 0 |"
             )
             continue
         print(
@@ -1465,6 +1467,8 @@ def print_table(payload: Mapping[str, object]) -> None:
             f"{result['avg_sized_net_return_bps']:.2f} | "
             f"{result['sized_profit_factor']:.3f} | "
             f"{result['sized_max_drawdown_bps']:.1f} | "
+            f"{result.get('positive_market_slices', 0)}/{result.get('market_slices', 0)} | "
+            f"{result.get('worst_market_slice_sized_net_bps', 0.0):.2f} | "
             f"{result['large_move_false_positive_rate']:.3f} | "
             f"{result['filtered_rate']:.3f} | "
             f"{result['avg_latency_ms']:.2f} ms | "
@@ -1525,8 +1529,8 @@ def main() -> int:
     parser.add_argument("--adaptive-min-expected-edge-bps", type=float, default=70.0)
     parser.add_argument("--adaptive-max-opposition", type=float, default=0.62)
     parser.add_argument("--disable-adaptive-trend-alignment", action="store_true")
-    parser.add_argument("--adaptive-performance-lookback", type=int, default=12)
-    parser.add_argument("--adaptive-min-recent-edge-bps", type=float, default=0.0)
+    parser.add_argument("--adaptive-performance-lookback", type=int, default=8)
+    parser.add_argument("--adaptive-min-recent-edge-bps", type=float, default=20.0)
     parser.add_argument("--memory-store", choices=["disk", "memory"], default="disk")
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
@@ -1698,8 +1702,8 @@ def _create_engine(
     adaptive_min_expected_edge_bps: float = 70.0,
     adaptive_max_opposition: float = 0.62,
     adaptive_trend_alignment: bool = True,
-    adaptive_performance_lookback: int = 12,
-    adaptive_min_recent_edge_bps: float = 0.0,
+    adaptive_performance_lookback: int = 8,
+    adaptive_min_recent_edge_bps: float = 20.0,
     round_trip_cost_bps: float = 30.0,
     memory_store: str = "disk",
 ) -> MarketEngine:
@@ -2393,6 +2397,34 @@ def _summarize_events(
     if fold_start is not None:
         payload["fold_start"] = int(fold_start)
     return payload
+
+
+def _attach_slice_robustness(results: list[dict], by_market: list[dict]) -> None:
+    by_engine: dict[str, list[dict]] = {}
+    for item in by_market:
+        if item.get("symbol") is None or item.get("timeframe") is None:
+            continue
+        if int(item.get("queries", 0)) <= 0:
+            continue
+        by_engine.setdefault(str(item["engine"]), []).append(item)
+    for result in results:
+        if result.get("skipped"):
+            continue
+        slices = by_engine.get(str(result.get("engine", "")), [])
+        if not slices:
+            result["market_slices"] = 0
+            result["positive_market_slices"] = 0
+            result["slice_positive_rate"] = 0.0
+            result["worst_market_slice_sized_net_bps"] = 0.0
+            result["median_market_slice_sized_net_bps"] = 0.0
+            continue
+        slice_returns = [float(item["avg_sized_net_return_bps"]) for item in slices]
+        positive = sum(1 for value in slice_returns if value > 0.0)
+        result["market_slices"] = len(slice_returns)
+        result["positive_market_slices"] = int(positive)
+        result["slice_positive_rate"] = float(positive / len(slice_returns))
+        result["worst_market_slice_sized_net_bps"] = float(min(slice_returns))
+        result["median_market_slice_sized_net_bps"] = float(statistics.median(slice_returns))
 
 
 def _analogue_from_window(window: OHLCVWindow, text: str, score: float) -> AnalogueMatch:

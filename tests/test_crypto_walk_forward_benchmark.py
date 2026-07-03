@@ -70,6 +70,9 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "avg_sized_net_return_bps" in result_by_engine["WaveMind field"]
     assert "sized_profit_factor" in result_by_engine["WaveMind adaptive-field"]
     assert "sized_max_drawdown_bps" in result_by_engine["WaveMind adaptive-field"]
+    assert "positive_market_slices" in result_by_engine["WaveMind adaptive-field"]
+    assert "slice_positive_rate" in result_by_engine["WaveMind adaptive-field"]
+    assert "worst_market_slice_sized_net_bps" in result_by_engine["WaveMind adaptive-field"]
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
     assert payload["scenario"]["round_trip_cost_bps"] == 22.0
@@ -92,8 +95,8 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert payload["scenario"]["adaptive_min_expected_edge_bps"] == 70.0
     assert payload["scenario"]["adaptive_max_opposition"] == 0.62
     assert payload["scenario"]["adaptive_trend_alignment"] is True
-    assert payload["scenario"]["adaptive_performance_lookback"] == 12
-    assert payload["scenario"]["adaptive_min_recent_edge_bps"] == 0.0
+    assert payload["scenario"]["adaptive_performance_lookback"] == 8
+    assert payload["scenario"]["adaptive_min_recent_edge_bps"] == 20.0
     assert payload["scenario"]["regime_filter"] is True
     assert payload["analogue_samples"]
     assert "max_favorable_excursion_bps" in payload["analogue_samples"][0]["query"]
@@ -171,6 +174,8 @@ def test_crypto_walk_forward_supports_multiple_isolated_folds(tmp_path):
     assert result_by_engine["WaveMind 4h profile"]["queries"] == 16
     assert result_by_engine["WaveMind field"]["queries"] == 16
     assert result_by_engine["Naive last-regime"]["queries"] == 16
+    assert result_by_engine["WaveMind field"]["market_slices"] == 2
+    assert 0 <= result_by_engine["WaveMind field"]["positive_market_slices"] <= 2
     assert len(payload["by_market"]) == 6
     assert {item["fold_index"] for item in payload["by_market"]} == {0, 1}
     assert {item["fold_start"] for item in payload["by_market"]} == {45, 57}
