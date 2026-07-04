@@ -641,8 +641,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.18,
           "token_f1": 0.18308614585546518,
-          "avg_retrieval_ms": 2.001148000708781,
-          "avg_generation_ms": 1331.836292000371
+          "avg_retrieval_ms": 2.9792159993667156,
+          "avg_generation_ms": 1428.1996439944487
         },
         "Chroma static + qwen2.5:0.5b": {
           "queries": 50,
@@ -650,8 +650,8 @@
           "exact_match": 0.1,
           "contains_answer": 0.12,
           "token_f1": 0.12615298986727558,
-          "avg_retrieval_ms": 4.4275459996424615,
-          "avg_generation_ms": 1157.0555100002093
+          "avg_retrieval_ms": 4.1023979999590665,
+          "avg_generation_ms": 1234.6932660019957
         },
         "Qdrant static + qwen2.5:0.5b": {
           "queries": 50,
@@ -659,8 +659,8 @@
           "exact_match": 0.1,
           "contains_answer": 0.12,
           "token_f1": 0.12615298986727558,
-          "avg_retrieval_ms": 52.296541999676265,
-          "avg_generation_ms": 835.9314120013732
+          "avg_retrieval_ms": 63.80351200001314,
+          "avg_generation_ms": 893.4776440006681
         },
         "WaveMind + qwen2.5:1.5b": {
           "queries": 50,
@@ -668,8 +668,8 @@
           "exact_match": 0.24,
           "contains_answer": 0.38,
           "token_f1": 0.33311619190404795,
-          "avg_retrieval_ms": 2.083188000251539,
-          "avg_generation_ms": 2148.4425140015082
+          "avg_retrieval_ms": 2.000100004952401,
+          "avg_generation_ms": 2153.0035440041684
         },
         "Chroma static + qwen2.5:1.5b": {
           "queries": 50,
@@ -677,8 +677,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 4.386841998202726,
-          "avg_generation_ms": 1818.4313860000111
+          "avg_retrieval_ms": 7.05064800567925,
+          "avg_generation_ms": 2082.3815600026865
         },
         "Qdrant static + qwen2.5:1.5b": {
           "queries": 50,
@@ -686,8 +686,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 55.92094799911138,
-          "avg_generation_ms": 611.2973620009143
+          "avg_retrieval_ms": 100.19960600417107,
+          "avg_generation_ms": 758.1143879971933
         }
       },
       "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",

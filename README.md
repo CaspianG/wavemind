@@ -1126,12 +1126,12 @@ same `HashingTextEncoder`, same local Ollama model, top-k 5. Full machine-readab
 
 | system | questions | evidence recall@5 | exact match | contains answer | token F1 | avg retrieval | avg generation |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind + Ollama `qwen2.5:0.5b` | 50 | 0.920 | 0.120 | 0.180 | 0.183 | 3.09 ms | 1286.54 ms |
-| Chroma static + Ollama `qwen2.5:0.5b` | 50 | 0.600 | 0.100 | 0.120 | 0.126 | 4.43 ms | 1157.06 ms |
-| Qdrant static + Ollama `qwen2.5:0.5b` | 50 | 0.600 | 0.100 | 0.120 | 0.126 | 52.30 ms | 835.93 ms |
-| WaveMind + Ollama `qwen2.5:1.5b` | 50 | 0.920 | 0.240 | 0.380 | 0.333 | 2.08 ms | 2148.44 ms |
-| Chroma static + Ollama `qwen2.5:1.5b` | 50 | 0.600 | 0.120 | 0.160 | 0.170 | 4.39 ms | 1818.43 ms |
-| Qdrant static + Ollama `qwen2.5:1.5b` | 50 | 0.600 | 0.120 | 0.160 | 0.170 | 55.92 ms | 611.30 ms |
+| WaveMind + Ollama `qwen2.5:0.5b` | 50 | 0.920 | 0.120 | 0.180 | 0.183 | 2.98 ms | 1428.20 ms |
+| Chroma static + Ollama `qwen2.5:0.5b` | 50 | 0.600 | 0.100 | 0.120 | 0.126 | 4.10 ms | 1234.69 ms |
+| Qdrant static + Ollama `qwen2.5:0.5b` | 50 | 0.600 | 0.100 | 0.120 | 0.126 | 63.80 ms | 893.48 ms |
+| WaveMind + Ollama `qwen2.5:1.5b` | 50 | 0.920 | 0.240 | 0.380 | 0.333 | 2.00 ms | 2153.00 ms |
+| Chroma static + Ollama `qwen2.5:1.5b` | 50 | 0.600 | 0.120 | 0.160 | 0.170 | 7.05 ms | 2082.38 ms |
+| Qdrant static + Ollama `qwen2.5:1.5b` | 50 | 0.600 | 0.120 | 0.160 | 0.170 | 100.20 ms | 758.11 ms |
 
 There is also an extractive smoke run that does not require a model:
 `benchmarks/longmemeval_answer_extractive_20_results.json`. It is only a runner
