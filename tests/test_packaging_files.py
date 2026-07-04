@@ -164,6 +164,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
     assert "wavemind scale-plan --target-memories 50000" in readme
+    assert "--fail-on action_required" in readme
+    assert "GET /scale-plan" in roadmap
+    assert "/scale-plan?target_memories=50000" in readme
     assert "scale-plan" in roadmap
     assert "scale-plan" in use_cases
     assert "Keep Chroma as-is" in chroma_migration

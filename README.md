@@ -429,6 +429,12 @@ For JSON output in CI or deployment checks:
 wavemind --db ./state/wavemind.sqlite3 scale-plan --target-memories 50000 --json
 ```
 
+To fail a deployment preflight when the plan needs action:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 scale-plan --target-memories 50000 --fail-on action_required --json
+```
+
 If you only want a plan for a future size without loading optional index
 packages:
 
@@ -445,6 +451,12 @@ The scale plan reports:
 | `recommended_index` | The candidate-index class to use before growth. |
 | `warnings` | Why the current path may fail at the target size. |
 | `actions` | Concrete setup, benchmark, rebuild, and index-health steps. |
+
+The same scale preflight is available over HTTP:
+
+```sh
+curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
+```
 
 Rule of thumb:
 
@@ -530,6 +542,7 @@ curl http://127.0.0.1:8000/audit?namespace=demo
 curl http://127.0.0.1:8000/metrics
 curl http://127.0.0.1:8000/observability
 curl http://127.0.0.1:8000/index/health
+curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
 curl -X POST http://127.0.0.1:8000/index/rebuild
 curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
 ```

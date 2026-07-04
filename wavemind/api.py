@@ -245,6 +245,20 @@ class ObservabilityResponse(BaseModel):
     reason: str | None = None
 
 
+class ScalePlanResponse(BaseModel):
+    current_memories: int
+    target_memories: int
+    index: str
+    vector_dim: int
+    namespace: str | None
+    latency_target_ms: float
+    tier: str
+    status: str
+    recommended_index: str
+    warnings: list[str]
+    actions: list[str]
+
+
 class FeedbackRequest(BaseModel):
     id: int
     useful: bool = True
@@ -466,6 +480,19 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.get("/index/health", dependencies=[Depends(require_role("read"))])
     def index_health():
         return app.state.mind.index_health()
+
+    @app.get("/scale-plan", response_model=ScalePlanResponse, dependencies=[Depends(require_role("read"))])
+    def scale_plan(
+        namespace: str | None = None,
+        target_memories: int | None = Query(default=None, ge=0),
+        latency_target_ms: float = Query(default=20.0, gt=0),
+    ) -> ScalePlanResponse:
+        plan = app.state.mind.scale_plan(
+            target_memories=target_memories,
+            namespace=namespace,
+            latency_target_ms=latency_target_ms,
+        )
+        return ScalePlanResponse(**plan.as_dict())
 
     @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
     def rebuild_index():

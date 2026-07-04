@@ -56,6 +56,18 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert health.json()["healthy"] is True
             assert health.json()["expected_count"] == 1
 
+            scale_plan = client.get(
+                "/scale-plan",
+                params={"namespace": "pets", "target_memories": 50000},
+            )
+            assert scale_plan.status_code == 200
+            scale_payload = scale_plan.json()
+            assert scale_payload["current_memories"] == 1
+            assert scale_payload["target_memories"] == 50000
+            assert scale_payload["namespace"] == "pets"
+            assert scale_payload["tier"] == "large-local"
+            assert scale_payload["recommended_index"] == "faiss-persisted or qdrant"
+
             backup_dir = tmp_path / "api-backups"
             backup = client.post(
                 "/backup",

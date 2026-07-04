@@ -8,7 +8,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
-from .scale import ScalePlan, build_scale_plan
+from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import (
     AuditEvent,
@@ -44,4 +44,5 @@ __all__ = [
     "build_scale_plan",
     "create_memory_store",
     "create_text_encoder",
+    "scale_status_meets_or_exceeds",
 ]

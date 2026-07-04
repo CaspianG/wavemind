@@ -9,7 +9,7 @@ from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .core import WaveMind
 from .encoders import create_text_encoder
-from .scale import build_scale_plan
+from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
 from .storage import SQLiteMemoryStore
 
@@ -103,6 +103,11 @@ def build_parser() -> argparse.ArgumentParser:
     scale_plan.add_argument("--current-memories", type=int)
     scale_plan.add_argument("--target-memories", type=int)
     scale_plan.add_argument("--latency-target-ms", type=float, default=20.0)
+    scale_plan.add_argument(
+        "--fail-on",
+        choices=["watch", "action_required", "architecture_required"],
+        help="Exit non-zero when scale status reaches this threshold",
+    )
     scale_plan.add_argument("--json", action="store_true")
 
     audit = sub.add_parser("audit", help="Show audit log events")
@@ -314,21 +319,28 @@ def main(argv: list[str] | None = None) -> int:
         vector_dim = 768 if args.encoder == "sentence" else 384
         index_name = args.index
         mind = None
-        if current_memories is None:
-            mind = make_mind(args)
-            stats = mind.stats(namespace=args.namespace)
-            current_memories = int(stats["active_memories"])
-            vector_dim = int(stats["vector_dim"])
-            index_name = str(stats["index"])
         try:
-            plan = build_scale_plan(
-                current_memories=current_memories,
-                target_memories=args.target_memories,
-                index=index_name,
-                vector_dim=vector_dim,
-                namespace=args.namespace,
-                latency_target_ms=args.latency_target_ms,
-            ).as_dict()
+            if current_memories is None:
+                mind = make_mind(args)
+                plan_obj = mind.scale_plan(
+                    target_memories=args.target_memories,
+                    namespace=args.namespace,
+                    latency_target_ms=args.latency_target_ms,
+                )
+            else:
+                plan_obj = build_scale_plan(
+                    current_memories=current_memories,
+                    target_memories=args.target_memories,
+                    index=index_name,
+                    vector_dim=vector_dim,
+                    namespace=args.namespace,
+                    latency_target_ms=args.latency_target_ms,
+                )
+            plan = plan_obj.as_dict()
+            failed_threshold = (
+                args.fail_on is not None
+                and scale_status_meets_or_exceeds(plan_obj.status, args.fail_on)
+            )
         finally:
             if mind is not None:
                 mind.close()
@@ -336,7 +348,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(plan, ensure_ascii=False, indent=2))
         else:
             print_scale_plan(plan)
-        return 0
+        return 3 if failed_threshold else 0
 
     mind = make_mind(args)
     if args.command == "remember":

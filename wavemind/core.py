@@ -19,6 +19,7 @@ from .encoders import (
 from .field_graph import MemoryFieldGraph
 from .indexes import create_vector_index
 from .observability import trace_span
+from .scale import ScalePlan, build_scale_plan
 from .storage import AuditEvent, MemoryRecord, create_memory_store
 
 
@@ -670,6 +671,22 @@ class WaveMind:
                 }
             )
         return payload
+
+    def scale_plan(
+        self,
+        target_memories: int | None = None,
+        namespace: str | None = None,
+        latency_target_ms: float = 20.0,
+    ) -> ScalePlan:
+        stats = self.stats(namespace=namespace)
+        return build_scale_plan(
+            current_memories=int(stats["active_memories"]),
+            target_memories=target_memories,
+            index=str(stats["index"]),
+            vector_dim=int(stats["vector_dim"]),
+            namespace=namespace,
+            latency_target_ms=latency_target_ms,
+        )
 
     def audit_events(
         self,

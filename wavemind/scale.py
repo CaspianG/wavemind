@@ -7,6 +7,12 @@ LOCAL_OPTIMAL_LIMIT = 1_000
 LOCAL_WATCH_LIMIT = 5_000
 SINGLE_NODE_ANN_LIMIT = 50_000
 SERVICE_INDEX_LIMIT = 1_000_000
+STATUS_LEVELS = {
+    "ok": 0,
+    "watch": 1,
+    "action_required": 2,
+    "architecture_required": 3,
+}
 
 
 @dataclass(frozen=True)
@@ -29,6 +35,15 @@ class ScalePlan:
 
 def normalize_index_name(index: str | None) -> str:
     return (index or "numpy").lower().replace("_", "-")
+
+
+def scale_status_meets_or_exceeds(status: str, threshold: str) -> bool:
+    if threshold not in STATUS_LEVELS:
+        raise ValueError(
+            "threshold must be one of: "
+            + ", ".join(sorted(STATUS_LEVELS, key=STATUS_LEVELS.get))
+        )
+    return STATUS_LEVELS.get(status, 0) >= STATUS_LEVELS[threshold]
 
 
 def build_scale_plan(
