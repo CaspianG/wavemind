@@ -1,7 +1,24 @@
 from fastapi.testclient import TestClient
+import numpy as np
 
 from wavemind import HashingTextEncoder, WaveMind, __version__
 from wavemind.api import create_app
+
+
+class ConsolidationEncoder:
+    vector_dim = 4
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        lowered = text.lower()
+        if "pasta" in lowered:
+            return self._unit([0.0, 1.0, 0.0, 0.0])
+        if "compiler" in lowered:
+            return self._unit([0.95, 0.05, 0.0, 0.0])
+        return self._unit([1.0, 0.0, 0.0, 0.0])
+
+    def _unit(self, values: list[float]) -> np.ndarray:
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
 def test_fastapi_remember_query_forget_and_stats(tmp_path):
@@ -99,6 +116,93 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
 
             empty = client.post("/query", json={"text": "cat", "namespace": "pets"})
             assert empty.json()["results"] == []
+    finally:
+        mind.close()
+
+
+def test_fastapi_consolidate_creates_durable_concept_memory(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-consolidate.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=ConsolidationEncoder(),
+        graph_weight=1.0,
+        graph_steps=2,
+        graph_expand_k=10,
+        rerank_k=10,
+        score_threshold=0.0,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            first = client.post(
+                "/remember",
+                json={
+                    "text": "User likes Rust systems programming",
+                    "namespace": "agent",
+                    "tags": ["systems"],
+                },
+            )
+            second = client.post(
+                "/remember",
+                json={
+                    "text": "User studies compiler systems internals",
+                    "namespace": "agent",
+                    "tags": ["systems"],
+                },
+            )
+            client.post(
+                "/remember",
+                json={
+                    "text": "User cooks pasta on weekends",
+                    "namespace": "agent",
+                    "tags": ["cooking"],
+                },
+            )
+
+            response = client.post(
+                "/consolidate",
+                json={
+                    "namespace": "agent",
+                    "seed_text": "Rust compiler systems",
+                    "min_energy": 0.01,
+                },
+            )
+
+            assert response.status_code == 200
+            concepts = response.json()["concepts"]
+            assert len(concepts) == 1
+            concept = concepts[0]
+            assert concept["namespace"] == "agent"
+            assert concept["text"].startswith("Consolidated memory:")
+            assert concept["metadata"]["source"] == "wavemind_consolidation"
+            assert set(concept["metadata"]["memory_ids"]) == {
+                first.json()["id"],
+                second.json()["id"],
+            }
+
+            query = client.post(
+                "/query",
+                json={
+                    "text": "systems programming",
+                    "namespace": "agent",
+                    "tags": ["concept"],
+                    "top_k": 1,
+                },
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["id"] == concept["id"]
+
+            duplicate = client.post(
+                "/consolidate",
+                json={
+                    "namespace": "agent",
+                    "seed_text": "Rust compiler systems",
+                    "min_energy": 0.01,
+                },
+            )
+            assert duplicate.status_code == 200
+            assert duplicate.json()["concepts"] == []
     finally:
         mind.close()
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import time
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
@@ -717,9 +719,174 @@ class WaveMind:
             if set(concept["memory_ids"]).issubset(allowed_ids)
         ]
 
+    def consolidate_concepts(
+        self,
+        namespace: str | None = None,
+        seed_text: str | None = None,
+        min_energy: float = 0.05,
+        min_size: int = 2,
+        max_concepts: int = 3,
+        priority: float = 6.0,
+    ) -> list[dict[str, object]]:
+        """Create durable concept memories from active graph clusters.
+
+        This is intentionally extractive and local: no LLM call is used. The
+        method turns a co-activated cluster into a new memory with explicit
+        provenance so users can inspect which memories caused consolidation.
+        """
+        if seed_text is not None:
+            self._seed_graph(seed_text=seed_text, namespace=namespace)
+        self._ensure_graph()
+        existing_signatures = {
+            str(record.metadata.get("concept_signature"))
+            for record in self._records_by_id.values()
+            if record.metadata.get("source") == "wavemind_consolidation"
+            and record.metadata.get("concept_signature")
+        }
+        existing_source_keys = {
+            (
+                record.namespace,
+                tuple(sorted(int(id) for id in record.metadata.get("memory_ids", []))),
+            )
+            for record in self._records_by_id.values()
+            if record.metadata.get("source") == "wavemind_consolidation"
+            and isinstance(record.metadata.get("memory_ids"), list)
+        }
+        created: list[dict[str, object]] = []
+        for concept in self.concept_candidates(
+            namespace=namespace,
+            min_energy=min_energy,
+            min_size=min_size,
+        ):
+            if len(created) >= max(0, int(max_concepts)):
+                break
+            memory_ids = tuple(sorted(int(id) for id in concept.get("memory_ids", [])))
+            source_records = [
+                self._records_by_id[id]
+                for id in memory_ids
+                if id in self._records_by_id
+                and self._records_by_id[id].metadata.get("source") != "wavemind_consolidation"
+            ]
+            if len(source_records) < min_size:
+                continue
+            source_namespaces = {record.namespace for record in source_records}
+            if namespace is not None and source_namespaces != {namespace}:
+                continue
+            if len(source_namespaces) != 1:
+                continue
+            concept_namespace = next(iter(source_namespaces))
+            source_ids = tuple(
+                sorted(int(record.id) for record in source_records if record.id is not None)
+            )
+            if (concept_namespace, source_ids) in existing_source_keys:
+                continue
+            label = self._concept_label(source_records)
+            signature = self._concept_signature(concept_namespace, label, source_ids)
+            if signature in existing_signatures:
+                continue
+            text = self._concept_text(label, source_records)
+            tags = self._concept_tags(label, source_records)
+            metadata = {
+                "source": "wavemind_consolidation",
+                "concept_signature": signature,
+                "concept_label": label,
+                "memory_ids": list(source_ids),
+                "energy": float(concept.get("energy", 0.0)),
+                "size": len(source_records),
+            }
+            concept_id = self.remember(
+                text,
+                namespace=concept_namespace,
+                tags=tags,
+                metadata=metadata,
+                priority=priority,
+            )
+            self.store.log_audit_event(
+                "consolidate_concept",
+                namespace=concept_namespace,
+                memory_id=concept_id,
+                metadata={
+                    "concept_label": label,
+                    "source_memory_ids": list(source_ids),
+                    "concept_signature": signature,
+                },
+            )
+            existing_signatures.add(signature)
+            existing_source_keys.add((concept_namespace, source_ids))
+            created.append(
+                {
+                    "id": concept_id,
+                    "text": text,
+                    "namespace": concept_namespace,
+                    "tags": list(tags),
+                    "metadata": metadata,
+                }
+            )
+        return created
+
     @property
     def memory(self) -> list[tuple[str, np.ndarray]]:
         return [(record.text, record.pattern) for record in self._records_by_id.values()]
+
+    def _seed_graph(self, seed_text: str, namespace: str | None = None) -> None:
+        namespaces = [namespace] if namespace is not None else sorted(self._namespace_ids)
+        if not namespaces:
+            return
+        query_vector = self.encoder.encode_vector(seed_text)
+        self._ensure_graph()
+        for item_namespace in namespaces:
+            allowed_ids = self._allowed_ids(namespace=item_namespace, tags=None)
+            if not allowed_ids:
+                continue
+            candidates = self.index.search(
+                query_vector,
+                top_k=max(1, self.rerank_k),
+                allowed_ids=allowed_ids,
+            )
+            if not candidates:
+                continue
+            self.graph.propagate(
+                {candidate.id: max(0.0, candidate.score) for candidate in candidates},
+                allowed_ids=allowed_ids,
+                steps=max(1, self.graph_steps),
+            )
+
+    def _concept_signature(
+        self,
+        namespace: str,
+        label: str,
+        memory_ids: tuple[int, ...],
+    ) -> str:
+        payload = f"{namespace}|{label}|{','.join(str(id) for id in memory_ids)}"
+        return hashlib.sha1(payload.encode("utf-8")).hexdigest()
+
+    def _concept_label(self, records: list[MemoryRecord]) -> str:
+        tag_counts = Counter(tag for record in records for tag in record.tags if tag != "concept")
+        if tag_counts:
+            return " ".join(tag for tag, _ in tag_counts.most_common(3))
+        token_counts = Counter(
+            token
+            for record in records
+            for token in self._tokens(record.text)
+        )
+        return " ".join(token for token, _ in token_counts.most_common(3)) or "memory cluster"
+
+    def _concept_tags(
+        self,
+        label: str,
+        records: list[MemoryRecord],
+    ) -> tuple[str, ...]:
+        tags = ["concept"]
+        common_tags = Counter(tag for record in records for tag in record.tags if tag != "concept")
+        tags.extend(tag for tag, _ in common_tags.most_common(4))
+        for token in self._tokens(label):
+            if token not in tags:
+                tags.append(token)
+        return tuple(tags[:8])
+
+    def _concept_text(self, label: str, records: list[MemoryRecord]) -> str:
+        evidence = "; ".join(record.text for record in records[:3])
+        return f"Consolidated memory: {label}. Evidence: {evidence}."
 
     def _build_cache(self, records: Iterable[MemoryRecord]) -> None:
         self._records_by_id.clear()

@@ -8,6 +8,8 @@ def test_field_memory_benchmark_reports_dynamic_metrics(tmp_path):
     assert result["wave_graph"]["precision@1"] > result["wave_static"]["precision@1"]
     assert result["wave_graph"]["stale_suppression"] > result["wave_static"]["stale_suppression"]
     assert result["wave_graph"]["concept_formation"] == 1.0
+    assert result["wave_graph"]["concept_consolidation"] == 1.0
+    assert result["wave_static"]["concept_consolidation"] == 0.0
     assert result["wave_graph"]["avg_latency_ms"] >= 0.0
 
 

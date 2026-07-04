@@ -8,7 +8,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 |---|---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | precision@1 | WaveMind: 0.82 / 2.249 ms | Chroma: 0.82 / 0.933 ms | Quality tie; WaveMind slower |
 | Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 25.3 ms | Chroma static: 0.571 / 1.752 ms | WaveMind leads on quality |
-| Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.819 ms | - | WaveMind-only check |
+| Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 1.807 ms | - | WaveMind-only check |
 | WaveMind capacity curve | capacity | precision@1 | WaveMind dynamic capacity: 1 / 48.4 ms | - | WaveMind-only check |
 | Long-term memory evidence | long-term-agent-memory | evidence recall@k | WaveMind: 1 / 6.103 ms | Static vector: 1 / 0.648 ms | Quality tie; WaveMind slower |
 | BEIR-style open retrieval runner | retrieval | precision@1 | WaveMind: 0.24 / 117.0 ms | Chroma: 0.243 / 1.794 ms | Baseline leads on quality |

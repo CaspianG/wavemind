@@ -98,6 +98,15 @@ def build_parser() -> argparse.ArgumentParser:
     rebuild_index = sub.add_parser("rebuild-index", help="Rebuild vector index from stored memories")
     rebuild_index.add_argument("--json", action="store_true")
 
+    consolidate = sub.add_parser("consolidate", help="Create concept memories from active field clusters")
+    consolidate.add_argument("--namespace")
+    consolidate.add_argument("--seed")
+    consolidate.add_argument("--min-energy", type=float, default=0.05)
+    consolidate.add_argument("--min-size", type=int, default=2)
+    consolidate.add_argument("--max-concepts", type=int, default=3)
+    consolidate.add_argument("--priority", type=float, default=6.0)
+    consolidate.add_argument("--json", action="store_true")
+
     scale_plan = sub.add_parser("scale-plan", help="Show scale readiness and index recommendations")
     scale_plan.add_argument("--namespace")
     scale_plan.add_argument("--current-memories", type=int)
@@ -405,6 +414,24 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(health, ensure_ascii=False, indent=2))
         else:
             print_stats(health)
+        return 0
+
+    if args.command == "consolidate":
+        concepts = mind.consolidate_concepts(
+            namespace=args.namespace,
+            seed_text=args.seed,
+            min_energy=args.min_energy,
+            min_size=args.min_size,
+            max_concepts=args.max_concepts,
+            priority=args.priority,
+        )
+        if args.json:
+            print(json.dumps({"concepts": concepts}, ensure_ascii=False, indent=2))
+        else:
+            if not concepts:
+                print("created=0")
+            for concept in concepts:
+                print(f"created id={concept['id']} namespace={concept['namespace']} {concept['text']}")
         return 0
 
     if args.command == "audit":

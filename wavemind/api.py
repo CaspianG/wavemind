@@ -259,6 +259,19 @@ class ScalePlanResponse(BaseModel):
     actions: list[str]
 
 
+class ConsolidateRequest(BaseModel):
+    namespace: str | None = None
+    seed_text: str | None = None
+    min_energy: float = Field(default=0.05, ge=0.0)
+    min_size: int = Field(default=2, ge=2)
+    max_concepts: int = Field(default=3, ge=0, le=100)
+    priority: float = Field(default=6.0, ge=0.0)
+
+
+class ConsolidateResponse(BaseModel):
+    concepts: list[dict[str, Any]]
+
+
 class FeedbackRequest(BaseModel):
     id: int
     useful: bool = True
@@ -498,6 +511,19 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     def rebuild_index():
         with _api_operation(app, "index_rebuild"):
             return app.state.mind.rebuild_index()
+
+    @app.post("/consolidate", response_model=ConsolidateResponse, dependencies=[Depends(require_role("write"))])
+    def consolidate(request: ConsolidateRequest) -> ConsolidateResponse:
+        with _api_operation(app, "consolidate"):
+            concepts = app.state.mind.consolidate_concepts(
+                namespace=request.namespace,
+                seed_text=request.seed_text,
+                min_energy=request.min_energy,
+                min_size=request.min_size,
+                max_concepts=request.max_concepts,
+                priority=request.priority,
+            )
+        return ConsolidateResponse(concepts=concepts)
 
     @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:

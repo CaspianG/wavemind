@@ -92,6 +92,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
+    production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
     agent_results = _engine_results(agent_payload)
@@ -103,6 +104,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
     ann_results = _ann_latest_results(ann_payload)
+    production_index_results = _ann_latest_results(production_index_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
@@ -169,6 +171,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "precision@3",
                 "stale_suppression",
                 "concept_formation",
+                "concept_consolidation",
                 "decay_ratio",
                 "avg_latency_ms",
             ],
@@ -180,6 +183,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "precision@3",
                         "stale_suppression",
                         "concept_formation",
+                        "concept_consolidation",
                         "decay_ratio",
                         "avg_latency_ms",
                     ),
@@ -191,12 +195,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "precision@3",
                         "stale_suppression",
                         "concept_formation",
+                        "concept_consolidation",
                         "decay_ratio",
                         "avg_latency_ms",
                     ),
                 ),
             },
-            "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+            "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
             "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets.",
         },
         {
@@ -528,6 +533,19 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "current": ann_results,
             "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
             "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors.",
+        },
+        {
+            "id": "production_index_profile",
+            "name": "Production index profile",
+            "category": "index-latency",
+            "status": "implemented",
+            "source": "benchmarks/production_index_profile_results.json",
+            "dataset": "Docker-backed 50000-vector profile comparing persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW.",
+            "competitors": ["Qdrant service", "pgvector HNSW"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
+            "current": production_index_results,
+            "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
+            "next_step": "Add 100000 and 1000000-vector profiles, plus persistence/rebuild validation after process restart.",
         },
         {
             "id": "longmemeval_answer_generation",

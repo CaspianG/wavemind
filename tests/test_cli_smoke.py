@@ -131,6 +131,60 @@ def test_cli_benchmark_seeds_all_synthetic_cases(tmp_path):
     assert report["recall_at_k"] == 1.0
 
 
+def test_cli_consolidate_creates_concept_memory(tmp_path):
+    db_path = tmp_path / "concepts.sqlite3"
+
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "User likes Rust systems programming",
+        "--namespace",
+        "agent",
+        "--tag",
+        "systems",
+    )
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "User studies compiler systems internals",
+        "--namespace",
+        "agent",
+        "--tag",
+        "systems",
+    )
+
+    consolidated = run_cli(
+        "--db",
+        str(db_path),
+        "consolidate",
+        "--namespace",
+        "agent",
+        "--seed",
+        "Rust compiler systems",
+        "--min-energy",
+        "0.01",
+        "--json",
+    )
+    payload = json.loads(consolidated.stdout)
+
+    assert len(payload["concepts"]) == 1
+    assert payload["concepts"][0]["metadata"]["source"] == "wavemind_consolidation"
+
+    concept_query = run_cli(
+        "--db",
+        str(db_path),
+        "query",
+        "systems programming",
+        "--namespace",
+        "agent",
+        "--tag",
+        "concept",
+    )
+    assert "Consolidated memory:" in concept_query.stdout
+
+
 def test_cli_default_database_is_created_in_working_directory(tmp_path):
     result = run_cli("remember", "portable default database memory", cwd=tmp_path)
 

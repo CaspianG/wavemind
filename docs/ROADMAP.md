@@ -38,6 +38,9 @@ policy matters more than raw vector-database scale:
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
+- Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
+  `wavemind consolidate`, and `POST /consolidate`: active graph clusters can
+  become durable concept memories with source-memory provenance.
 - SQLite audit events, a Prometheus-compatible `/metrics` endpoint,
   process-local API latency/failure metrics, optional OpenTelemetry traces, and
   local Prometheus/OTEL Collector alert examples now cover the first
@@ -133,7 +136,9 @@ state" toward a stronger field model:
 - memory-to-memory excitation for related facts;
 - inhibition for newer facts that correct or conflict with stale facts;
 - decay curves that can be measured and tuned;
-- consolidation that can form higher-level memory nodes;
+- consolidation that can form higher-level memory nodes. The first version is
+  implemented as extractive, auditable concept memories without an LLM call;
+  the next step is scheduled/background consolidation and better merge policy;
 - graph export/import and inspection tools;
 - optional integrations with graph databases for enterprise knowledge graphs.
 

@@ -84,6 +84,7 @@
         "precision@3",
         "stale_suppression",
         "concept_formation",
+        "concept_consolidation",
         "decay_ratio",
         "avg_latency_ms"
       ],
@@ -93,19 +94,21 @@
           "precision@3": 1.0,
           "stale_suppression": 1.0,
           "concept_formation": 1.0,
+          "concept_consolidation": 1.0,
           "decay_ratio": 0.81,
-          "avg_latency_ms": 0.8194
+          "avg_latency_ms": 1.8071
         },
         "WaveMind static": {
           "precision@1": 0.2,
           "precision@3": 1.0,
           "stale_suppression": 0.2,
           "concept_formation": 0.0,
+          "concept_consolidation": 0.0,
           "decay_ratio": 0.0,
-          "avg_latency_ms": 0.4269
+          "avg_latency_ms": 0.4785
         }
       },
-      "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+      "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
       "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets."
     },
     {
@@ -495,7 +498,7 @@
           "p95_latency_ms": 7.37469999876339,
           "build_ms": 4090.066400000069
         },
-        "WaveMind faiss": null,
+        "WaveMind faiss": {},
         "Qdrant local": {
           "recall_at_k": 1.0,
           "avg_latency_ms": 43.48527499991178,
@@ -504,19 +507,18 @@
         }
       },
       "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
-      "next_step": "Use the production index profile for service-mode claims; tune quantized search kernels and Annoy/FAISS settings for local-only deployments."
+      "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors."
     },
     {
       "id": "production_index_profile",
       "name": "Production index profile",
       "category": "index-latency",
       "status": "implemented",
-      "source": "benchmarks/ann_index_curve_benchmark.py + examples/production-index-profile/docker-compose.yml",
-      "dataset": "Generated normalized 128-d vectors at 10000 and 50000 points. The checked-in profile runs persisted FAISS in Linux, Qdrant v1.18.2 in service mode, and PostgreSQL/pgvector with HNSW enabled plus WAVEMIND_PGVECTOR_EF_SEARCH=400. Current table reports the 50000-vector point; full JSON is benchmarks/production_index_profile_results.json.",
+      "source": "benchmarks/production_index_profile_results.json",
+      "dataset": "Docker-backed 50000-vector profile comparing persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW.",
       "competitors": [
-        "Persisted FAISS",
         "Qdrant service",
-        "PostgreSQL/pgvector"
+        "pgvector HNSW"
       ],
       "metrics": [
         "recall@10",
@@ -544,8 +546,8 @@
           "build_ms": 185048.9231660001
         }
       },
-      "target": "At 50000 vectors, keep recall@10 above 0.95 and query latency below 10 ms on a real service-backed candidate index.",
-      "next_step": "Continue pgvector tuning because ef_search=400 improves recall but still misses the 0.95 target and exceeds the 10 ms latency target; keep Qdrant service and persisted FAISS as production baselines."
+      "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
+      "next_step": "Add 100000 and 1000000-vector profiles, plus persistence/rebuild validation after process restart."
     },
     {
       "id": "longmemeval_answer_generation",

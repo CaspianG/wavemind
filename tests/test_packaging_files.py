@@ -167,8 +167,13 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "--fail-on action_required" in readme
     assert "GET /scale-plan" in roadmap
     assert "/scale-plan?target_memories=50000" in readme
+    assert "wavemind consolidate" in readme
+    assert "POST /consolidate" in readme
+    assert "consolidate_concepts" in readme
     assert "scale-plan" in roadmap
+    assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases
+    assert "consolidate_concepts" in use_cases
     assert "Keep Chroma as-is" in chroma_migration
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration
     assert "examples/chroma_migration.py" in chroma_migration

@@ -161,6 +161,8 @@ Why WaveMind:
 - temporary hypotheses can expire;
 - confirmed findings can get higher priority;
 - source metadata stays attached to recall results.
+- recurring clusters can be consolidated into auditable concept memories:
+  `memory.consolidate_concepts(namespace="project:latency", seed_text="latency index rebuild")`.
 
 ## 5. Trading Or Market-Research Agent
 

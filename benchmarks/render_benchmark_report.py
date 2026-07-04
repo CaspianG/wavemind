@@ -38,6 +38,7 @@ METRIC_LABELS = {
     "stale_suppression": "stale suppression",
     "suppression_rate": "stale suppression",
     "concept_formation": "concept formation",
+    "concept_consolidation": "concept consolidation",
     "decay_ratio": "decay ratio",
     "context_budget_saved": "context saved",
     "avg_latency_ms": "avg latency",

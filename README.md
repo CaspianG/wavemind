@@ -113,6 +113,7 @@ Start here if you only want to use WaveMind from the terminal:
 | Show first-run help | `wavemind quickstart` |
 | Store a memory | `wavemind remember "Andrey prefers short answers" --namespace user:42` |
 | Search memory | `wavemind query "answer style" --namespace user:42` |
+| Consolidate active patterns | `wavemind consolidate --namespace user:42 --seed "Rust compiler systems"` |
 | Open local dashboard | `wavemind studio` |
 | See stored state | `wavemind stats --namespace user:42` |
 | Delete a namespace | `wavemind forget --namespace user:42` |
@@ -308,6 +309,8 @@ flowchart LR
     R --> P["app, search UI, prompt, API, or tool"]
     P --> F["recall feedback updates hotness / priority"]
     F --> D
+    F --> C["consolidate active clusters"]
+    C --> D
 ```
 
 The wave field is the dynamic layer around stored memories. It is not a
@@ -323,11 +326,18 @@ memories should still matter.
 | TTL | This fact is temporary. | Drops out after expiry. |
 | namespace and tags | This belongs to one user/project/type. | Prevents cross-user or cross-topic leakage. |
 | graph dynamics | Related memories can excite or inhibit each other. | Helps clusters and corrections behave like memory, not a flat list. |
+| consolidation | Active clusters can become durable concept memories. | Turns repeated patterns into inspectable higher-level memories with provenance. |
 
 Technically, the current `MemoryFieldGraph` is a discrete graph over stored
 memories, not a continuous mathematical physics field. That honesty matters:
 WaveMind is useful today as a dynamic memory engine, while the research path is
 to make the field dynamics more explicit, measurable, and scalable.
+
+Self-organization is now part of the core surface. `consolidate_concepts()`,
+`wavemind consolidate`, and `POST /consolidate` can turn an active graph cluster
+into a new stored memory such as `Consolidated memory: systems...` without an
+LLM call. The generated memory keeps the source memory ids in metadata, so it is
+auditable instead of being a hidden summary.
 
 ## Optional Embeddings
 
@@ -544,11 +554,12 @@ curl http://127.0.0.1:8000/observability
 curl http://127.0.0.1:8000/index/health
 curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
 curl -X POST http://127.0.0.1:8000/index/rebuild
+curl -X POST http://127.0.0.1:8000/consolidate -H "Content-Type: application/json" -d '{"namespace":"demo","seed_text":"Rust compiler systems","min_energy":0.01}'
 curl -X POST http://127.0.0.1:8000/backup -H "Content-Type: application/json" -d '{"path":"./backups","keep_last":7}'
 ```
 
 `/audit` returns mutation events such as `remember`, `forget`, `backup`, and
-`purge_expired`. Query audit is opt-in with `WAVEMIND_AUDIT_QUERIES=1` because
+`consolidate_concept`. Query audit is opt-in with `WAVEMIND_AUDIT_QUERIES=1` because
 writing an audit row for every query changes latency. `/metrics` returns a
 Prometheus-compatible text payload without adding a required dependency.
 `/index/health` reports source-of-truth versus candidate-index consistency.
@@ -884,7 +895,7 @@ Current read:
 | Public multilingual retrieval | On NoMIRACL Russian, sampled at 200 queries / 5000 compact candidate passages, WaveMind reaches `nDCG@10 0.434`, `Recall@10 0.516`, matching Qdrant and staying within `0.002` nDCG of Chroma on identical hash embeddings. | Russian same-embedding quality is at parity. Chroma is faster at `2.60 ms`; WaveMind is `10.22 ms`; Qdrant local is `18.86 ms`. |
 | Static agent recall | WaveMind `precision@1` equals Chroma at `0.82`; WaveMind `precision@3` is `0.90` vs Chroma `0.88`. | Competitive quality, but Chroma is faster on the static vector-store path. |
 | Dynamic memory policy | WaveMind reaches `1.00` stale suppression; Chroma static is `0.00`. | This is the strongest current differentiation: hotness, TTL, corrections, and namespaces. |
-| Field memory dynamics | Graph-enabled WaveMind reaches `1.00` `precision@1`, `1.00` stale suppression, and `1.00` concept formation vs static WaveMind at `0.20` / `0.20` / `0.00`. | This is still synthetic, but it is the first regression check for memory-to-memory excitation, conflict inhibition, and decay. |
+| Field memory dynamics | Graph-enabled WaveMind reaches `1.00` `precision@1`, `1.00` stale suppression, `1.00` concept formation, and `1.00` durable concept consolidation vs static WaveMind at `0.20` / `0.20` / `0.00` / `0.00`. | This is still synthetic, but it is now a regression check for memory-to-memory excitation, conflict inhibition, decay, and self-organization into auditable concept memories. |
 | Long-term evidence | WaveMind reaches `1.00` evidence recall@5, `1.00` precision@1, and `1.00` stale suppression on the synthetic long-memory evidence benchmark. | This is the first proof-shaped benchmark for agent memory: it measures whether stale/corrected/expired/cross-user facts stay out of retrieved evidence. |
 | Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
 | LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
@@ -897,12 +908,13 @@ Current read:
 |---|---|---|---|---|
 | Agent user-memory retrieval | Natural-language recall over 200 user facts. | implemented | Chroma | Match Chroma `precision@1`, beat `precision@3`, stay under 5 ms at 200 memories. |
 | Dynamic memory policy | Hot memory, TTL, corrections, stale suppression, namespace isolation. | implemented | Chroma static | Keep `precision@1` and stale suppression at 1.00, cut avg latency below 10 ms at 1000 memories. |
-| Field memory graph dynamics | Related memories excite each other, newer conflicting memories suppress stale facts, graph energy decays, and active clusters expose concept candidates. | implemented | WaveMind static | Keep `precision@1`, stale suppression, and concept formation at 1.00 while moving from synthetic checks to LoCoMo/LongMemEval evidence. |
+| Field memory graph dynamics | Related memories excite each other, newer conflicting memories suppress stale facts, graph energy decays, and active clusters can become durable concept memories. | implemented | WaveMind static | Keep `precision@1`, stale suppression, concept formation, and concept consolidation at 1.00 while moving from synthetic checks to LoCoMo/LongMemEval evidence. |
 | WaveMind capacity curve | How recall and latency change at 200 / 1000 / 5000 memories. | implemented | WaveMind-only today | Keep `precision@1 >= 0.95` at 5000 memories and dynamic latency below 20 ms. |
 | Long-term memory evidence | Evidence retrieval from long histories with profile, preference, correction, TTL, namespace, and filler noise. | implemented | Static vector / Chroma / Qdrant | Keep this as a small regression test while public LoCoMo and LongMemEval runners carry the stronger evidence claims. |
 | BEIR-style open retrieval runner | Public `corpus.jsonl`, `queries.jsonl`, `qrels/*.tsv` datasets with the same metrics for each engine. | implemented | WaveMind / Chroma / Qdrant | Use identical embeddings and report `nDCG@k`, `Recall@k`, `MRR@k`, `precision@1`, and latency. Current checked-in run: BEIR SciFact. |
 | NoMIRACL Russian retrieval | Russian human-annotated multilingual relevance over compact candidate passages. | implemented | WaveMind / Chroma / Qdrant | Keep same-embedding `nDCG@10` at parity, then rerun with sentence-transformers and full MIRACL Russian when disk/service capacity allows it. |
 | ANN/VectorDBBench-style local curve | Recall/latency tradeoff for candidate indexes on generated vectors. | implemented | NumPy exact / quantized int8 / Annoy / Qdrant local | Use this as the local engineering curve; official VectorDBBench remains future work. |
+| Production index profile | Docker-backed 50000-vector profile for persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW. | implemented | FAISS / Qdrant service / pgvector | Keep service-mode candidate generation above `0.95` recall@10 and below 10 ms average query latency at 50000 vectors. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
 | [MIRACL Russian](https://miracl.ai/) | Multilingual retrieval with Russian relevance judgments. | runner ready | Chroma / Qdrant / FAISS | NoMIRACL Russian compact run is implemented; full-corpus MIRACL Russian remains the next heavier profile. |
@@ -1188,13 +1200,13 @@ Field memory dynamics benchmark:
 13 memories, 5 conflicting-fact queries, deterministic local encoder.
 This benchmark isolates the `MemoryFieldGraph`: related memories can spread
 activation, newer conflicting memories inhibit stale facts, graph energy decays,
-and active clusters can surface concept candidates.
+and active clusters can surface and persist concept memories.
 Full machine-readable result: `benchmarks/field_memory_dynamics_results.json`.
 
-| engine | precision@1 | precision@3 | stale suppression | concept formation | decay ratio | avg latency |
-|---|---:|---:|---:|---:|---:|---:|
-| WaveMind graph | 1.00 | 1.00 | 1.00 | 1.00 | 0.81 | 0.82 ms |
-| WaveMind static | 0.20 | 1.00 | 0.20 | 0.00 | 0.00 | 0.43 ms |
+| engine | precision@1 | precision@3 | stale suppression | concept formation | concept consolidation | decay ratio | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind graph | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.81 | 1.81 ms |
+| WaveMind static | 0.20 | 1.00 | 0.20 | 0.00 | 0.00 | 0.00 | 0.48 ms |
 
 Run locally from a cloned repository:
 
