@@ -967,6 +967,11 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
     ):
         self.timeframe = timeframe
         self.ta = TaRulesEngine()
+        self.records: list[OHLCVWindow] = []
+        self.pending_predictions: dict[str, str] = {}
+        self.realized_signal_nets: list[float] = []
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+        self.apply_policy_veto = True
         self.child: MarketEngine | None = None
         if timeframe == "1h":
             self.child = WaveMindMicrostructureEngine(
@@ -997,15 +1002,26 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
             )
 
     def add(self, window: OHLCVWindow) -> None:
+        predicted_direction = self.pending_predictions.pop(window.id, None)
+        if predicted_direction is not None:
+            self.realized_signal_nets.append(
+                _net_return_bps(
+                    predicted_direction=predicted_direction,
+                    actual_return_bps=window.future_return_bps,
+                    round_trip_cost_bps=self.round_trip_cost_bps,
+                )
+            )
+        self.records.append(window)
         if self.child is not None:
             self.child.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         if self.child is not None:
             prediction = self.child.query(window, top_k=top_k)
-            ta_prediction = self.ta.query(window, top_k=top_k)
+            ta_prediction = self.ta.query(window, top_k=top_k) if self.apply_policy_veto else None
             if (
-                prediction.direction in {"up", "down"}
+                ta_prediction is not None
+                and prediction.direction in {"up", "down"}
                 and ta_prediction.direction in {"up", "down"}
                 and prediction.direction != ta_prediction.direction
             ):
@@ -1023,10 +1039,99 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     analogue_agreement=prediction.analogue_agreement,
                     regime_agreement=prediction.regime_agreement,
                 )
+            if self.timeframe == "4h" and self.apply_policy_veto and prediction.direction in {"up", "down"}:
+                reliability = _local_regime_reliability(
+                    self.records,
+                    window,
+                    direction=prediction.direction,
+                    round_trip_cost_bps=self.round_trip_cost_bps,
+                )
+                if reliability["support"] >= 24 and (
+                    reliability["avg_net_bps"] < -20.0
+                    or (
+                        reliability["hit_rate"] < 0.35
+                        and reliability["avg_net_bps"] < -5.0
+                    )
+                    or (
+                        prediction.confidence < 0.60
+                        and reliability["hit_rate"] < 0.45
+                    )
+                ):
+                    return Prediction(
+                        direction="flat",
+                        expected_return_bps=0.0,
+                        latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
+                        analogues=prediction.analogues,
+                        confidence=min(prediction.confidence, max(0.0, reliability["hit_rate"])),
+                        raw_direction=prediction.raw_direction or prediction.direction,
+                        candidate_direction=prediction.direction,
+                        candidate_expected_return_bps=prediction.expected_return_bps,
+                        filtered=True,
+                        filter_reason=(
+                            "local_regime_negative:"
+                            f"support={int(reliability['support'])},"
+                            f"hit={reliability['hit_rate']:.3f},"
+                            f"net={reliability['avg_net_bps']:.2f}"
+                        ),
+                        analogue_agreement=prediction.analogue_agreement,
+                        regime_agreement=prediction.regime_agreement,
+                    )
+            if self.apply_policy_veto and prediction.direction in {"up", "down"}:
+                guard_reason = ""
+                features = window.features
+                if prediction.confidence < 0.40:
+                    guard_reason = "low_policy_confidence"
+                elif prediction.direction == "down" and 0.60 <= prediction.confidence < 0.999:
+                    guard_reason = "short_squeeze_guard"
+                elif 0.60 <= prediction.confidence < 0.999:
+                    guard_reason = "unstable_mid_confidence"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "down"
+                    and str(features.get("trend")) == "up"
+                ):
+                    guard_reason = "one_hour_short_squeeze_guard"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "up"
+                    and prediction.confidence < 0.999
+                    and str(features.get("trend")) == "down"
+                    and str(features.get("rsi_bucket")) == "oversold"
+                ):
+                    guard_reason = "one_hour_falling_knife_guard"
+                recent_edge = _recent_mean(self.realized_signal_nets, lookback=8)
+                if len(self.realized_signal_nets) >= 4 and recent_edge < -10.0:
+                    defensive_allowed = (
+                        self.timeframe == "1h"
+                        and prediction.direction == "up"
+                        and prediction.confidence >= 0.999
+                    )
+                    if not defensive_allowed:
+                        guard_reason = f"negative_policy_recent_edge:{recent_edge:.2f}"
+                elif len(self.realized_signal_nets) >= 4 and recent_edge < 5.0:
+                    if 0.60 <= prediction.confidence < 0.999:
+                        guard_reason = f"weak_policy_recent_edge:{recent_edge:.2f}"
+                if guard_reason:
+                    return Prediction(
+                        direction="flat",
+                        expected_return_bps=0.0,
+                        latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
+                        analogues=prediction.analogues,
+                        confidence=prediction.confidence,
+                        raw_direction=prediction.raw_direction or prediction.direction,
+                        candidate_direction=prediction.direction,
+                        candidate_expected_return_bps=prediction.expected_return_bps,
+                        filtered=True,
+                        filter_reason=guard_reason,
+                        analogue_agreement=prediction.analogue_agreement,
+                        regime_agreement=prediction.regime_agreement,
+                    )
+            if prediction.direction in {"up", "down"}:
+                self.pending_predictions[window.id] = prediction.direction
             return Prediction(
                 direction=prediction.direction,
                 expected_return_bps=prediction.expected_return_bps,
-                latency_ms=prediction.latency_ms + ta_prediction.latency_ms,
+                latency_ms=prediction.latency_ms + (ta_prediction.latency_ms if ta_prediction else 0.0),
                 analogues=prediction.analogues,
                 confidence=prediction.confidence,
                 raw_direction=prediction.raw_direction,
@@ -2554,6 +2659,52 @@ def _relationship_candidates(tokens: Iterable[str]) -> list[tuple[str, ...]]:
     candidates = [(token,) for token in unique]
     candidates.extend(tuple(sorted(pair)) for pair in itertools.combinations(unique, 2))
     return candidates
+
+
+def _local_regime_reliability(
+    records: list[OHLCVWindow],
+    window: OHLCVWindow,
+    *,
+    direction: str,
+    round_trip_cost_bps: float,
+    min_overlap: int = 2,
+    lookback: int = 160,
+) -> dict[str, float]:
+    if direction not in {"up", "down"} or not records:
+        return {"support": 0.0, "hit_rate": 0.0, "avg_net_bps": 0.0}
+    query_tokens = set(_regime_signature_from_window(window))
+    candidates: list[tuple[int, float, float]] = []
+    recent_records = records[-max(1, int(lookback)) :]
+    for index, record in enumerate(recent_records):
+        overlap = len(query_tokens.intersection(_regime_signature_from_window(record)))
+        if overlap < min_overlap:
+            continue
+        net = _net_return_bps(
+            predicted_direction=direction,
+            actual_return_bps=record.future_return_bps,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
+        candidates.append((index, float(overlap), float(net)))
+    if not candidates:
+        return {"support": 0.0, "hit_rate": 0.0, "avg_net_bps": 0.0}
+    span = max(1, len(recent_records))
+    weighted_net = 0.0
+    weighted_hits = 0.0
+    total_weight = 0.0
+    half_life = max(8.0, span / 3.0)
+    for index, overlap, net in candidates:
+        recency_weight = math.exp(-float(span - index - 1) / half_life)
+        overlap_weight = 1.0 + 0.18 * max(0.0, overlap - float(min_overlap))
+        weight = recency_weight * overlap_weight
+        weighted_net += net * weight
+        weighted_hits += (1.0 if net > 0.0 else 0.0) * weight
+        total_weight += weight
+    denominator = max(total_weight, 1e-12)
+    return {
+        "support": float(len(candidates)),
+        "hit_rate": float(weighted_hits / denominator),
+        "avg_net_bps": float(weighted_net / denominator),
+    }
 
 
 def _flat_adaptive_signal(reason: str) -> dict[str, float | int | str]:

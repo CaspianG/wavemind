@@ -60,6 +60,8 @@ Implemented in this branch:
   - checked-in XRP/DOGE/ADA/LINK/AVAX 1h microstructure cross-asset result.
 - `benchmarks/crypto_walk_forward_okx_timeframe_policy_results.json` -
   checked-in BTC/ETH/SOL 1h/4h/1d timeframe-aware policy result.
+- `benchmarks/crypto_walk_forward_okx_timeframe_policy_2000_results.json` -
+  longer BTC/ETH/SOL 1h/4h 2000-bar robustness check.
 - `benchmarks/crypto_okx_timeframe_policy_analogue_explorer.html` - visual
   analogue explorer for the timeframe-aware policy run.
 - `benchmarks/crypto_current_forecast.py` - current-market research forecast
@@ -74,6 +76,8 @@ Implemented in this branch:
   diagnostic over walk-forward event metrics.
 - `benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json`
   and `.md` - checked-in calibration report for the timeframe policy.
+- `benchmarks/crypto_confidence_calibration_okx_timeframe_policy_2000_results.json`
+  and `.md` - longer 2000-bar calibration diagnostic for the timeframe policy.
 - `benchmarks/crypto_confidence_calibration_okx_alt_timeframe_policy_results.json`
   and `.md` - calibration report for the additional XRP/DOGE/ADA/LINK/AVAX
   OKX check.
@@ -136,10 +140,10 @@ The output field `evidence_strength` is not a probability of being right. It is
 an internal agreement score from analogue and regime matching. The checked-in
 timeframe policy routes 1h through the microstructure field, 4h through the
 adaptive field, blocks unvalidated 1d forecasts, and uses a simple TA conflict
-veto to avoid trades where the market baseline points the other way. The
-checked validation profile is the important number: historical active
-direction accuracy `0.512`, signal rate `0.075`, profit factor `1.350`, and
-positive market slices `16/36` on the BTC/ETH/SOL OKX run.
+veto plus regime-specific squeeze/falling-knife guards. The checked validation
+profile is the important number: historical active direction accuracy `0.679`,
+signal rate `0.026`, profit factor `10.489`, and positive market slices
+`12/36` on the BTC/ETH/SOL OKX run.
 
 The calibration diagnostic is now checked in: it buckets forecasts by evidence
 strength, measures realized hit rate and return in each bucket, runs
@@ -152,21 +156,20 @@ Current calibration result for the checked OKX timeframe policy:
 
 | metric | value |
 |---|---:|
-| signal events | 162 |
-| active direction hit rate | 0.512 |
-| Brier if evidence is treated as probability | 0.345 |
-| raw expected calibration error | 0.258 |
-| base-rate probability | 0.512 |
-| base-rate expected calibration error | 0.009 |
+| signal events | 56 |
+| active direction hit rate | 0.679 |
+| Brier if evidence is treated as probability | 0.272 |
+| raw expected calibration error | 0.216 |
+| base-rate probability | 0.679 |
+| base-rate expected calibration error | 0.182 |
 | fold / symbol / timeframe stable | false / false / false |
 | symbol-timeframe stable | false |
 | probability ready | false |
 
 The useful finding is not a finished probability model yet. The policy is now
-better at reducing false positives and drawdown than the broad baselines, but
-the active-signal base rate is only slightly above random and stability still
-fails across folds, symbols, and symbol/timeframe pairs. Probability remains
-disabled until those stability checks pass.
+much better at reducing false positives and drawdown than the broad baselines,
+but stability still fails across folds, symbols, and symbol/timeframe pairs.
+Probability remains disabled until those stability checks pass.
 
 ## Quick Run
 
@@ -205,13 +208,23 @@ Current checked-in real OKX timeframe-policy result:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.512 | 0.075 | 1.74 | 1.350 | 2196.2 | 16/36 | -27.67 | 0.054 | 0.925 | 1.14 ms |
+| WaveMind timeframe policy | 2160 | 0.679 | 0.026 | 3.05 | 10.489 | 139.4 | 12/36 | -1.23 | 0.018 | 0.974 | 3.17 ms |
+
+Longer 2000-bar robustness profile on BTC/ETH/SOL, 1h/4h only:
+
+| engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind timeframe policy | 3600 | 0.613 | 0.009 | 0.18 | 1.465 | 868.4 | 8/30 | -3.67 | 0.000 | 0.991 | 4.47 ms |
+| Naive last-regime | 3600 | 0.437 | 0.818 | -15.00 | 0.822 | 57620.9 | 9/30 | -137.51 | 0.517 | 0.000 | 0.00 ms |
+| TA rules | 3600 | 0.466 | 0.443 | -7.44 | 0.833 | 35406.1 | 8/30 | -53.37 | 0.175 | 0.000 | 0.00 ms |
 
 Interpretation: this is a selective research policy, not a general predictor.
 It allows only a small active subset, abstains on unsupported regimes, and has
 lower false-positive and drawdown behavior than the broad baselines in this
-checked profile. The unresolved work is stronger active accuracy, calibration,
-and per-symbol/timeframe support, not adding more forced forecasts.
+checked profile. The 2000-bar profile is now positive after fees/slippage, but
+the edge is small and very selective; the unresolved work is higher support,
+calibration, and per-symbol/timeframe robustness, not adding more forced
+forecasts.
 
 Multi-fold 4h robustness check:
 
@@ -275,19 +288,19 @@ positive expected edge after fees/slippage. The result is lower signal rate,
 higher active direction accuracy, higher profit factor, and lower drawdown
 than raw TA on both checked asset groups.
 
-Timeframe-aware BTC/ETH/SOL check after TA conflict veto,
+Timeframe-aware BTC/ETH/SOL check after TA conflict veto, local reliability,
+mid-confidence suppression, and 1h squeeze/falling-knife guards,
 1h/4h/1d, 4 folds x 60 windows per market:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.512 | 0.075 | 1.74 | 1.350 | 2196.2 | 16/36 | -27.67 | 0.054 | 1.14 ms |
+| WaveMind timeframe policy | 2160 | 0.679 | 0.026 | 3.05 | 10.489 | 139.4 | 12/36 | -1.23 | 0.018 | 3.17 ms |
 
 Interpretation: the policy routes 1h through microstructure, 4h through
 adaptive-field, blocks unvalidated 1d forecasts, and vetoes active WaveMind
-signals when the TA baseline points in the opposite direction. This keeps the
-signal rate low (`7.5%`) and reduces large false positives to `0.054`, but the
-edge is still modest. It is a real research improvement over the previous broad
-policy, not universal alpha.
+signals when the TA baseline or local regime evidence is unsafe. This keeps the
+signal rate very low (`2.6%`) and reduces large false positives to `0.018`, but
+the edge is still selective research evidence, not universal alpha.
 
 ## Current Forecast Snapshot
 
@@ -298,15 +311,14 @@ window, and writes both JSON and Markdown. The JSON output embeds the
 validation profile used to judge whether the engine is credible enough for that
 horizon.
 
-The checked-in 24h snapshot was generated from OKX on
-`2026-07-03T20:50:09Z` using data through the completed
-`2026-07-03T16:00:00Z` 4h candle:
+The checked-in 24h snapshot uses data through the completed
+`2026-07-04T08:00:00+00:00` 4h candle:
 
 | symbol | horizon | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
 |---|---:|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 24h | abstain | flat | up | 62209.2 | 0.00% | 1.18% | 0.546 | none | ta_conflict |
-| ETH/USDT | 24h | abstain | flat | up | 1745.41 | 0.00% | 2.67% | 0.519 | none | ta_conflict |
-| SOL/USDT | 24h | abstain | flat | up | 82.51 | 0.00% | 1.29% | 0.787 | none | ta_conflict |
+| BTC/USDT | 24h | abstain | flat | up | 62493.7 | 0.00% | 0.00% | 0.851 | none | low_expected_edge |
+| ETH/USDT | 24h | abstain | flat | up | 1758.04 | 0.00% | 0.00% | 0.992 | none | low_expected_edge |
+| SOL/USDT | 24h | abstain | flat | up | 81.83 | 0.00% | 0.00% | 1.000 | none | low_expected_edge |
 
 The checked-in 7d snapshot returns `flat` for BTC/ETH/SOL because the current
 policy routes unvalidated `1d` forecasts to abstention:
@@ -319,7 +331,8 @@ policy routes unvalidated `1d` forecasts to abstention:
 
 This is still research output, not financial advice. The current snapshot is
 an abstention, not a bullish or bearish call: WaveMind found an upward
-candidate, but the TA conflict veto blocked it as not trade-quality evidence.
+candidate, but expected edge after costs was too low for trade-quality
+evidence.
 The weekly path intentionally refuses to forecast until a separate daily/weekly
 policy passes walk-forward validation.
 
@@ -408,10 +421,12 @@ Near-term execution plan:
 18. Done: evidence-strength calibration diagnostic reports raw buckets,
     cross-fold monotonic calibration, active-signal base-rate calibration, and
     fold/symbol/timeframe stability checks.
-19. Done: TA conflict veto supersedes the earlier strict downside/volume
-    filter. The current checked BTC/ETH/SOL OKX run has active direction
-    accuracy `0.512`, signal rate `0.075`, profit factor `1.350`, and large
-    false positives `0.054`.
+19. Done: TA conflict veto, local reliability checks, mid-confidence
+    suppression, and 1h squeeze/falling-knife guards supersede the earlier
+    strict downside/volume filter. The current checked BTC/ETH/SOL OKX run has
+    active direction accuracy `0.679`, signal rate `0.026`, profit factor
+    `10.489`, and large false positives `0.018`; the longer 2000-bar
+    robustness profile is now slightly positive after fees/slippage.
 20. Next: increase per-symbol/timeframe support so calibrated probability can
     be enabled without hiding weak slices.
 21. Next: build and validate a separate 1d / weekly trend-memory dynamic before

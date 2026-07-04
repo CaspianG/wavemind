@@ -477,6 +477,11 @@ def test_timeframe_policy_vetoes_ta_conflict():
     engine.timeframe = "4h"
     engine.child = ChildEngine()
     engine.ta = TaEngine()
+    engine.apply_policy_veto = True
+    engine.records = []
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = []
+    engine.round_trip_cost_bps = 30.0
 
     prediction = engine.query(object(), top_k=3)
 
@@ -485,3 +490,77 @@ def test_timeframe_policy_vetoes_ta_conflict():
     assert prediction.filter_reason == "ta_conflict"
     assert prediction.candidate_direction == "up"
     assert prediction.candidate_expected_return_bps == 120.0
+
+
+def test_timeframe_policy_vetoes_unstable_one_hour_setups():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def __init__(self, prediction):
+            self.prediction = prediction
+
+        def query(self, window, *, top_k):
+            return self.prediction
+
+    class FlatTaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+
+    class Window:
+        def __init__(self, features):
+            self.features = features
+
+    def make_engine(prediction):
+        engine = object.__new__(WaveMindTimeframePolicyEngine)
+        engine.timeframe = "1h"
+        engine.child = ChildEngine(prediction)
+        engine.ta = FlatTaEngine()
+        engine.apply_policy_veto = True
+        engine.records = []
+        engine.pending_predictions = {}
+        engine.realized_signal_nets = []
+        engine.round_trip_cost_bps = 30.0
+        return engine
+
+    falling_knife = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=0.55,
+            raw_direction="up",
+        )
+    ).query(Window({"trend": "down", "rsi_bucket": "oversold"}), top_k=3)
+
+    squeeze_short = make_engine(
+        Prediction(
+            direction="down",
+            expected_return_bps=-120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="down",
+        )
+    ).query(Window({"trend": "up", "rsi_bucket": "overbought"}), top_k=3)
+
+    unstable_mid = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=0.70,
+            raw_direction="up",
+        )
+    ).query(Window({"trend": "up", "rsi_bucket": "neutral"}), top_k=3)
+
+    assert falling_knife.direction == "flat"
+    assert falling_knife.filter_reason == "one_hour_falling_knife_guard"
+    assert falling_knife.candidate_direction == "up"
+    assert squeeze_short.direction == "flat"
+    assert squeeze_short.filter_reason == "one_hour_short_squeeze_guard"
+    assert squeeze_short.candidate_direction == "down"
+    assert unstable_mid.direction == "flat"
+    assert unstable_mid.filter_reason == "unstable_mid_confidence"
+    assert unstable_mid.candidate_direction == "up"
