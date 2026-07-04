@@ -91,6 +91,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
+    longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
@@ -103,6 +104,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_results = _engine_results(locomo_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
+    longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
     production_index_results = _ann_latest_results(production_index_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
@@ -519,6 +521,71 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep full LongMemEval-S evidence recall above static vector-store baselines while staying below 20 ms retrieval latency.",
             "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation.",
+        },
+        {
+            "id": "longmemeval_evidence_50_smoke",
+            "name": "LongMemEval evidence 50-query smoke",
+            "category": "long-term-agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/longmemeval_evidence_50_results.json",
+            "source_url": "https://github.com/xiaowu0162/LongMemEval",
+            "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+            "competitors": ["Static vector", "Chroma static", "Qdrant static"],
+            "metrics": [
+                "evidence_recall@k",
+                "precision@1",
+                "MRR@k",
+                "context_budget_saved",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind": _metric_summary(
+                    longmemeval_50_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma static": _metric_summary(
+                    longmemeval_50_results.get("Chroma static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Static vector": _metric_summary(
+                    longmemeval_50_results.get("Static vector"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant static": _metric_summary(
+                    longmemeval_50_results.get("Qdrant static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Keep this smoke profile above Chroma/Qdrant evidence recall while using it as the fast regression check before full LongMemEval reruns.",
+            "next_step": "Speed up full LongMemEval reruns by reusing per-question candidate indexes or adding a streaming runner mode.",
         },
         {
             "id": "ann_index_curve",

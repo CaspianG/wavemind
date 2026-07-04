@@ -461,6 +461,63 @@
       "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation."
     },
     {
+      "id": "longmemeval_evidence_50_smoke",
+      "name": "LongMemEval evidence 50-query smoke",
+      "category": "long-term-agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/longmemeval_evidence_50_results.json",
+      "source_url": "https://github.com/xiaowu0162/LongMemEval",
+      "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+      "competitors": [
+        "Static vector",
+        "Chroma static",
+        "Qdrant static"
+      ],
+      "metrics": [
+        "evidence_recall@k",
+        "precision@1",
+        "MRR@k",
+        "context_budget_saved",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "evidence_recall_at_k": 0.92,
+          "precision_at_1": 0.76,
+          "mrr_at_k": 0.8266666666666667,
+          "context_budget_saved": 0.8687520008056814,
+          "avg_latency_ms": 15.271843997761607,
+          "p95_latency_ms": 42.931800009682775
+        },
+        "Chroma static": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 13.30225400510244,
+          "p95_latency_ms": 26.026900042779744
+        },
+        "Static vector": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 0.3373400052078068,
+          "p95_latency_ms": 2.1440000273287296
+        },
+        "Qdrant static": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 180.1915079995524,
+          "p95_latency_ms": 296.727099979762
+        }
+      },
+      "target": "Keep this smoke profile above Chroma/Qdrant evidence recall while using it as the fast regression check before full LongMemEval reruns.",
+      "next_step": "Speed up full LongMemEval reruns by reusing per-question candidate indexes or adding a streaming runner mode."
+    },
+    {
       "id": "ann_index_curve",
       "name": "ANN index latency curve",
       "category": "index-latency",
@@ -575,8 +632,8 @@
           "exact_match": 0.0,
           "contains_answer": 0.05,
           "token_f1": 0.018367529146058867,
-          "avg_retrieval_ms": 1.299194999592146,
-          "avg_generation_ms": 0.04707000043708831
+          "avg_retrieval_ms": 3.79294001031667,
+          "avg_generation_ms": 0.7694199972320348
         },
         "WaveMind + qwen2.5:0.5b": {
           "queries": 50,
