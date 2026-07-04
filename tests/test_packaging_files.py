@@ -133,6 +133,8 @@ def test_release_workflow_builds_and_creates_github_release():
 def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
     readme = Path("README.md").read_text(encoding="utf-8")
+    roadmap = Path("docs/ROADMAP.md").read_text(encoding="utf-8")
+    use_cases = Path("docs/USE_CASES.md").read_text(encoding="utf-8")
     chroma_migration = Path("docs/CHROMA_MIGRATION.md").read_text(encoding="utf-8")
     launch_kit = Path("docs/LAUNCH_KIT.md").read_text(encoding="utf-8")
     benchmark_brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
@@ -161,6 +163,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "docs/assets/wavemind-demo.gif" in readme
     assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
+    assert "wavemind scale-plan --target-memories 50000" in readme
+    assert "scale-plan" in roadmap
+    assert "scale-plan" in use_cases
     assert "Keep Chroma as-is" in chroma_migration
     assert "WaveMind is not a faster Chroma replacement" in chroma_migration
     assert "examples/chroma_migration.py" in chroma_migration

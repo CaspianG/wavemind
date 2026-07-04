@@ -9,6 +9,7 @@ from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .core import WaveMind
 from .encoders import create_text_encoder
+from .scale import build_scale_plan
 from .importers import import_path
 from .storage import SQLiteMemoryStore
 
@@ -97,6 +98,13 @@ def build_parser() -> argparse.ArgumentParser:
     rebuild_index = sub.add_parser("rebuild-index", help="Rebuild vector index from stored memories")
     rebuild_index.add_argument("--json", action="store_true")
 
+    scale_plan = sub.add_parser("scale-plan", help="Show scale readiness and index recommendations")
+    scale_plan.add_argument("--namespace")
+    scale_plan.add_argument("--current-memories", type=int)
+    scale_plan.add_argument("--target-memories", type=int)
+    scale_plan.add_argument("--latency-target-ms", type=float, default=20.0)
+    scale_plan.add_argument("--json", action="store_true")
+
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
     audit.add_argument("--action")
@@ -159,6 +167,26 @@ def make_mind(args) -> WaveMind:
 def print_stats(stats: dict) -> None:
     for key, value in stats.items():
         print(f"{key}: {value}")
+
+
+def print_scale_plan(plan: dict[str, object]) -> None:
+    print(f"tier: {plan['tier']}")
+    print(f"status: {plan['status']}")
+    print(f"current_memories: {plan['current_memories']}")
+    print(f"target_memories: {plan['target_memories']}")
+    print(f"index: {plan['index']}")
+    print(f"recommended_index: {plan['recommended_index']}")
+    print(f"latency_target_ms: {plan['latency_target_ms']}")
+    warnings = plan.get("warnings") or []
+    actions = plan.get("actions") or []
+    if warnings:
+        print("warnings:")
+        for item in warnings:
+            print(f"- {item}")
+    if actions:
+        print("actions:")
+        for item in actions:
+            print(f"- {item}")
 
 
 def print_quickstart() -> None:
@@ -279,6 +307,35 @@ def main(argv: list[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(f"restored: {path}")
+        return 0
+
+    if args.command == "scale-plan":
+        current_memories = args.current_memories
+        vector_dim = 768 if args.encoder == "sentence" else 384
+        index_name = args.index
+        mind = None
+        if current_memories is None:
+            mind = make_mind(args)
+            stats = mind.stats(namespace=args.namespace)
+            current_memories = int(stats["active_memories"])
+            vector_dim = int(stats["vector_dim"])
+            index_name = str(stats["index"])
+        try:
+            plan = build_scale_plan(
+                current_memories=current_memories,
+                target_memories=args.target_memories,
+                index=index_name,
+                vector_dim=vector_dim,
+                namespace=args.namespace,
+                latency_target_ms=args.latency_target_ms,
+            ).as_dict()
+        finally:
+            if mind is not None:
+                mind.close()
+        if args.json:
+            print(json.dumps(plan, ensure_ascii=False, indent=2))
+        else:
+            print_scale_plan(plan)
         return 0
 
     mind = make_mind(args)

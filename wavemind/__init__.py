@@ -8,6 +8,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
+from .scale import ScalePlan, build_scale_plan
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import (
     AuditEvent,
@@ -35,10 +36,12 @@ __all__ = [
     "SentenceTransformerTextEncoder",
     "ShardedWaveMind",
     "SQLiteMemoryStore",
+    "ScalePlan",
     "TextEncoder",
     "WaveField",
     "WaveMind",
     "__version__",
+    "build_scale_plan",
     "create_memory_store",
     "create_text_encoder",
 ]

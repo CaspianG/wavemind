@@ -291,5 +291,6 @@ Before using WaveMind in a production service:
 - set API keys if serving HTTP;
 - set rate limits for shared deployments;
 - configure backups;
+- run `wavemind scale-plan --target-memories <N>` before large imports;
 - check `/index/health`;
 - keep benchmark claims tied to your real workload.

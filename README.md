@@ -415,6 +415,47 @@ production latency and durability should be measured against a real Qdrant
 service. If `WAVEMIND_QDRANT_URL` is missing, WaveMind raises a clear error
 instead of silently falling back to another backend.
 
+## Scale Readiness
+
+WaveMind now includes an explicit scale preflight:
+
+```sh
+wavemind scale-plan --target-memories 50000
+```
+
+For JSON output in CI or deployment checks:
+
+```sh
+wavemind --db ./state/wavemind.sqlite3 scale-plan --target-memories 50000 --json
+```
+
+If you only want a plan for a future size without loading optional index
+packages:
+
+```sh
+wavemind --index faiss scale-plan --current-memories 10000 --target-memories 50000 --json
+```
+
+The scale plan reports:
+
+| field | meaning |
+|---|---|
+| `tier` | `small`, `medium`, `large-local`, `production-service`, or `million-plus`. |
+| `status` | `ok`, `watch`, `action_required`, or `architecture_required`. |
+| `recommended_index` | The candidate-index class to use before growth. |
+| `warnings` | Why the current path may fail at the target size. |
+| `actions` | Concrete setup, benchmark, rebuild, and index-health steps. |
+
+Rule of thumb:
+
+| target memories | recommended path |
+|---:|---|
+| up to 1000 | SQLite + NumPy exact index. |
+| 1000 to 5000 | NumPy can work, but benchmark real queries. |
+| 5000 to 50000 | Persisted FAISS for local single-node, or Qdrant service. |
+| 50000 to 1M | Service-backed candidate index, namespace sharding, measured p95/p99. |
+| above 1M | External vector database plus WaveMind as the memory-policy layer. |
+
 ## Storage Backends
 
 SQLite is the default source of truth. For multi-tenant production deployments,
@@ -1281,6 +1322,7 @@ If you already use Chroma for local memory, see the practical migration guide:
 - Optimal capacity on the current NumPy exact index is up to 1000 records.
 - At 5000 records, one-word `precision@1` is currently 0.72 with the hash encoder; many misses are ambiguous queries where another sentence containing the same word ranks first.
 - For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; the `quantized` backend reaches `0.934` recall@10 but is slower than NumPy on the current kernel. Use FAISS or a production vector service before claiming large-scale ANN quality.
+- Run `wavemind scale-plan --target-memories <N>` before growing a deployment. It is a guardrail, not a benchmark replacement: it tells you when NumPy is no longer the right candidate index and which checks to run next.
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files. Benchmark runners cache embeddings so retrieval latency is measured separately from model encoding latency.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
 - The BEIR SciFact run uses the hash encoder to isolate index/retrieval behavior. It is not a semantic embedding leaderboard result.

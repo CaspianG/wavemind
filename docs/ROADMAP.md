@@ -32,6 +32,9 @@ policy matters more than raw vector-database scale:
   recall but still misses the production recall target.
 - Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
   rebuild operations, and Prometheus-compatible index-health metrics.
+- `wavemind scale-plan` is available as a deployment guardrail: it maps current
+  and target memory counts to a scale tier, status, recommended index, warnings,
+  and concrete actions.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
@@ -110,6 +113,8 @@ memory policy also needs to become cheaper:
 - compress or quantize embeddings where quality allows it;
 - benchmark p50, p95, p99 latency separately for candidate search, reranking,
   SQLite writes, and feedback updates.
+- run `wavemind scale-plan --target-memories <N>` before import or deployment
+  growth so the index choice is explicit instead of accidental.
 
 Potential infrastructure:
 
