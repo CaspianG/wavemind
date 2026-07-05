@@ -234,15 +234,15 @@ def test_render_markdown_contains_price_target():
 
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
-    assert "directional forecast" in markdown
-    assert "abstain" in markdown
-    assert "candidate direction" in markdown
+    assert "market forecast" in markdown
+    assert "trade validation" in markdown
+    assert "policy candidate" in markdown
     assert "0.620" in markdown
     assert "base_rate" in markdown
     assert "BTC/USDT" in markdown
     assert "101400" in markdown
     assert "101200" in markdown
-    assert "1.20%" in markdown
+    assert "1.40%" in markdown
 
 
 def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
@@ -279,6 +279,9 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["symbol"] == "ETH/USDT"
     assert payload["results"][0]["engine"] == "WaveMind timeframe policy"
     assert payload["results"][0]["decision"] in {"signal", "abstain"}
+    assert payload["results"][0]["trade_decision"] in {"trade", "no_trade"}
+    assert payload["results"][0]["market_forecast_direction"] in {"up", "down"}
+    assert payload["results"][0]["market_forecast_target_price"] > 0.0
     assert payload["results"][0]["candidate_direction"] in {"up", "down", "flat"}
     assert payload["results"][0]["confidence_is_probability"] is False
     assert "not a calibrated probability" in payload["results"][0]["confidence_note"]

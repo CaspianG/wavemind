@@ -74,8 +74,8 @@ Implemented in this branch:
   `benchmarks/crypto_current_forecast_24h.md` - checked-in 24h forecast
   snapshot for BTC/ETH/SOL.
 - `benchmarks/crypto_current_forecast_7d.json` and
-  `benchmarks/crypto_current_forecast_7d.md` - checked-in 7d abstention
-  snapshot while 1d policy remains unvalidated.
+  `benchmarks/crypto_current_forecast_7d.md` - checked-in 7d target-price
+  estimate with `no_trade` validation while 1d policy remains unvalidated.
 - `benchmarks/crypto_confidence_calibration.py` - evidence-strength calibration
   diagnostic over walk-forward event metrics.
 - `benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json`
@@ -126,8 +126,8 @@ WaveMind Crypto turns market history into a memory of comparable situations:
 4. For the current market, WaveMind retrieves similar historical windows.
 5. The wave-field layer does not magically predict price by itself. It changes
    memory priority: validated regimes can reinforce a signal, conflicting
-   relationships can suppress it, and unsupported timeframes abstain instead
-   of forcing a prediction.
+   relationships can suppress it, and unsupported trade regimes are marked
+   `no_trade` instead of being promoted to a validated signal.
 6. The forecast is the expected return implied by the retrieved analogues after
    the timeframe policy and filters are applied.
 
@@ -136,9 +136,10 @@ happened next, and do the validated memory relationships agree or disagree?"
 
 ## What The Current Forecast Means
 
-The `24h` runner is the first supported current-forecast path because it maps
-to the validated 4h policy. The `7d` path intentionally abstains until a
-separate 1d / weekly policy is validated.
+The current forecast runner always returns a market direction and target price.
+Trade validation is separate: the system can forecast the next close while still
+marking the setup `no_trade` when the policy does not have enough validated
+evidence to treat it as a trade-quality signal.
 
 The output field `evidence_strength` is not a probability of being right. It is
 an internal agreement score from analogue and regime matching. The checked-in
@@ -234,7 +235,7 @@ Expanded 8-asset stress profile on BTC/ETH/SOL/ADA/AVAX/DOGE/LINK/XRP,
 | 2000 bars | 7680 | 0.750 | 0.007 | 0.65 | 6.919 | 288.7 | 17/64 | -2.41 | 0.002 | 0.993 | 1.21 ms |
 
 Interpretation: this is a selective research policy, not a general predictor.
-It allows only a small active subset, abstains on unsupported regimes, and has
+It allows only a small active subset, marks unsupported regimes as `no_trade`, and has
 lower false-positive and drawdown behavior than the broad baselines in these
 checked profiles. The latest event-level diagnostics exposed unstable 1h
 falling-knife reversals and late-breakout exhaustion traps; the policy now
@@ -331,6 +332,42 @@ reversals and late-breakout exhaustion traps. This keeps the signal rate very
 low and reduces large false positives, but the edge is still selective research
 evidence, not universal alpha.
 
+## Price Target Benchmark
+
+Direction alone is not enough for the crypto research branch. The checked-in
+price-target benchmark asks a stricter question: given the current completed
+OHLCV window, what future close price should the market reach after the target
+horizon?
+
+Runner:
+
+```sh
+python benchmarks/crypto_price_target_benchmark.py \
+  --dataset cached \
+  --exchange okx \
+  --symbols BTC/USDT ETH/USDT SOL/USDT ADA/USDT XRP/USDT DOGE/USDT LINK/USDT AVAX/USDT \
+  --timeframes 1h 4h 1d
+```
+
+Checked-in result: 8 OKX assets, 1h/4h/1d timeframes, 4 walk-forward folds per
+symbol/timeframe, 8640 historical target-price predictions per engine. The 1h
+and 4h runs target roughly 24h ahead; the 1d run targets 7d ahead.
+
+| engine | queries | direction hit | MAE return | RMSE return | MAPE | within 50 bps | worst slice hit | worst slice MAPE |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind calibrated target | 8640 | 0.531 | 390.9 bps | 573.8 bps | 4.05% | 0.117 | 0.222 | 10.89% |
+| WaveMind price target | 8640 | 0.480 | 394.5 bps | 579.9 bps | 4.09% | 0.113 | 0.211 | 10.71% |
+| Momentum baseline | 8640 | 0.497 | 398.7 bps | 581.2 bps | 4.11% | 0.116 | 0.244 | 10.35% |
+| Regime mean baseline | 8640 | 0.495 | 400.1 bps | 579.6 bps | 4.13% | 0.113 | 0.133 | 10.63% |
+| Historical mean baseline | 8640 | 0.474 | 396.6 bps | 581.1 bps | 4.13% | 0.107 | 0.133 | 10.65% |
+| Naive last-outcome baseline | 8640 | 0.492 | 531.5 bps | 783.1 bps | 5.44% | 0.091 | 0.256 | 15.90% |
+
+Interpretation: the calibrated WaveMind target is currently best on aggregate
+MAE/MAPE and direction hit, and it beats naive-last clearly. The result is not
+yet a production trading edge: worst slices remain weak, especially around
+daily/weekly targets and some altcoin periods. That weakness is now visible in
+the benchmark instead of hidden behind a single current forecast.
+
 ## Current Forecast Snapshot
 
 The branch now includes a current-market research forecast runner. It uses the
@@ -339,32 +376,34 @@ benchmark, trains on the latest completed candles, queries the latest completed
 window, and writes both JSON and Markdown. The JSON output embeds the
 validation profile used to judge whether the engine is credible enough for that
 horizon.
-The forecast has two layers: `directional forecast` is always forced to `up` or
-`down` because markets do not stay exactly flat; `decision` is the safety layer
-and may still be `abstain` when there is no validated trade-quality signal.
+The forecast has two layers: `market forecast` is always forced to `up` or
+`down` with a target price because a future close is never exactly flat;
+`trade validation` is the safety layer and may still be `no_trade` when there
+is no validated trade-quality signal.
 
 The checked-in 24h snapshot uses data through the completed
 `2026-07-05T08:00:00+00:00` 4h candle:
 
-| symbol | horizon | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | evidence strength | filter |
-|---|---:|---|---:|---:|---|---|---|---:|---:|---|
-| BTC/USDT | 24h | up | 0.20% | 62781.1 | abstain | flat | flat | 62656.2 | 0.630 | flat_candidate |
-| ETH/USDT | 24h | down | -0.53% | 1751 | abstain | flat | flat | 1760.32 | 0.939 | flat_candidate |
-| SOL/USDT | 24h | up | 1.19% | 81.5183 | abstain | flat | down | 80.56 | 1.000 | adaptive_trend_mismatch |
+| symbol | horizon | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason |
+|---|---:|---|---:|---:|---|---:|---:|---|
+| BTC/USDT | 24h | up | 0.20% | 62781.1 | no_trade | 62656.2 | 0.630 | flat_candidate |
+| ETH/USDT | 24h | down | -0.53% | 1751 | no_trade | 1760.32 | 0.939 | flat_candidate |
+| SOL/USDT | 24h | up | 1.19% | 81.5183 | no_trade | 80.56 | 1.000 | adaptive_trend_mismatch |
 
 The checked-in 7d snapshot also returns forced directional estimates, but the
-trade-quality policy still abstains because the 1d profile is not validated:
+trade-quality policy still returns `no_trade` because the 1d profile is not validated:
 
-| symbol | horizon | directional forecast | directional return | directional price | decision | reason |
+| symbol | horizon | market forecast | expected move | target price | trade validation | reason |
 |---|---:|---|---:|---:|---|---|
-| BTC/USDT | 7d | up | 0.31% | 63334 | abstain | unsupported_timeframe:1d |
-| ETH/USDT | 7d | up | 1.36% | 1804.83 | abstain | unsupported_timeframe:1d |
-| SOL/USDT | 7d | down | -1.55% | 80.5292 | abstain | unsupported_timeframe:1d |
+| BTC/USDT | 7d | up | 0.31% | 63334 | no_trade | unsupported_timeframe:1d |
+| ETH/USDT | 7d | up | 1.36% | 1804.83 | no_trade | unsupported_timeframe:1d |
+| SOL/USDT | 7d | down | -1.55% | 80.5292 | no_trade | unsupported_timeframe:1d |
 
 This is still research output, not financial advice. The current snapshot is
-an abstention at the trade-signal layer, not a claim that price will stay flat.
-The weekly path intentionally refuses to forecast until a separate daily/weekly
-policy passes walk-forward validation.
+a `no_trade` result at the trade-signal layer, not a claim that price will stay
+flat. The weekly path can estimate a target price, but it refuses to call that
+estimate trade-quality until a separate daily/weekly policy passes walk-forward
+validation.
 
 ## Relationship Mining
 
@@ -445,7 +484,7 @@ Near-term execution plan:
     positives, adds slice-robustness metrics, and validates on an additional
     5-asset OKX 4h cross-check.
 16. Done: timeframe-aware policy routes 1h to microstructure, 4h to
-    adaptive-field, and unvalidated 1d to abstention.
+    adaptive-field, and unvalidated 1d to `no_trade`.
 17. Done: current forecast runner generates 24h research snapshots from
     completed live candles and embeds the validation profile.
 18. Done: evidence-strength calibration diagnostic reports raw buckets,

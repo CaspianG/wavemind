@@ -42,7 +42,8 @@ that looked similar. The wave-field layer then acts as a policy overlay:
 - similar memories propose historical analogues;
 - validated regime relationships can reinforce or veto the proposal;
 - recently bad mature signals can suppress new signals;
-- unsupported timeframes abstain instead of forcing a prediction.
+- unsupported trade regimes are marked `no_trade` instead of being promoted to
+  a validated signal.
 
 The resulting price target is a research estimate:
 
@@ -53,6 +54,52 @@ latest close * (1 + expected_return_bps / 10000)
 The system is useful only if the same process survives walk-forward validation.
 If a profile does not survive future folds, it should be treated as a failed
 hypothesis, even if a single current forecast looks plausible.
+
+## Price Targets
+
+The branch now has a dedicated target-price benchmark:
+
+```sh
+python benchmarks/crypto_price_target_benchmark.py \
+  --dataset cached \
+  --exchange okx \
+  --symbols BTC/USDT ETH/USDT SOL/USDT ADA/USDT XRP/USDT DOGE/USDT LINK/USDT AVAX/USDT \
+  --timeframes 1h 4h 1d \
+  --output benchmarks/crypto_price_target_results.json \
+  --report benchmarks/crypto_price_target_report.md
+```
+
+This benchmark does not ask only "up or down". For every historical query it
+computes:
+
+```text
+predicted_price = last_close * (1 + predicted_return_bps / 10000)
+actual_price    = last_close * (1 + actual_future_return_bps / 10000)
+```
+
+Then it reports target-price error across symbols, timeframes, and
+walk-forward folds. The benchmark uses only matured historical windows for each
+query, so future outcomes are never available to the predictor.
+
+Checked-in OKX result: 8 assets, 1h/4h/1d, 4 folds per symbol/timeframe, 8640
+target-price predictions per engine.
+
+| engine | queries | direction hit | MAE return | RMSE return | MAPE | within 50 bps | worst slice hit | worst slice MAPE |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind calibrated target | 8640 | 0.531 | 390.9 bps | 573.8 bps | 4.05% | 0.117 | 0.222 | 10.89% |
+| WaveMind price target | 8640 | 0.480 | 394.5 bps | 579.9 bps | 4.09% | 0.113 | 0.211 | 10.71% |
+| Momentum baseline | 8640 | 0.497 | 398.7 bps | 581.2 bps | 4.11% | 0.116 | 0.244 | 10.35% |
+| Regime mean baseline | 8640 | 0.495 | 400.1 bps | 579.6 bps | 4.13% | 0.113 | 0.133 | 10.63% |
+| Historical mean baseline | 8640 | 0.474 | 396.6 bps | 581.1 bps | 4.13% | 0.107 | 0.133 | 10.65% |
+| Naive last-outcome baseline | 8640 | 0.492 | 531.5 bps | 783.1 bps | 5.44% | 0.091 | 0.256 | 15.90% |
+
+The calibrated WaveMind target is the best aggregate result in this run, but
+the branch is not yet robust enough to claim that it works on every coin and
+every date range. The useful outcome of this benchmark is that failures are now
+measured explicitly: worst-slice hit rate, worst-slice MAPE, per-symbol
+breakdowns, and a bounded event-level sample are stored in
+`benchmarks/crypto_price_target_results.json`. Use `--events-output` when a
+full compact JSONL dump of every event-level prediction is needed locally.
 
 ## Confidence And Calibration
 
@@ -308,7 +355,7 @@ traps, and pauses a market slice after live policy drawdown exceeds the
 circuit-breaker threshold.
 This is intentionally
 conservative: the system uses a timeframe only after that timeframe has its own
-validated policy and abstains otherwise. The longer 2000-bar checks are now
+validated policy and returns `no_trade` otherwise. The longer 2000-bar checks are now
 positive after fees/slippage with much lower drawdown than the broad baselines,
 but the signal rate is tiny; the next research steps are higher support,
 per-symbol/timeframe robustness, calibrated probability, and a separate 1d
@@ -335,32 +382,32 @@ What it does:
 - trains the same `WaveMind timeframe policy` engine used in the walk-forward
   benchmark;
 - queries the latest completed market window;
-- writes a forced up/down directional forecast, the safety-layer decision,
+- writes a forced up/down market forecast, the safety-layer trade decision,
   current price, expected return, expected price, evidence strength, filter
   reason, and the validation profile into JSON/Markdown.
 
 The forecast has two layers:
 
-- `directional forecast` is always `up` or `down` because markets do not stay
-  exactly flat;
-- `decision` is the safety layer and may remain `abstain` when the policy does
-  not find a validated trade-quality signal.
+- `market forecast` is always `up` or `down` with a target price because a
+  future close is never exactly flat;
+- `trade validation` is the safety layer and may remain `no_trade` when the
+  policy does not find a validated trade-quality signal.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
 `2026-07-05T08:00:00+00:00`:
 
-| symbol | data end UTC | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | evidence strength | filter |
-|---|---|---|---:|---:|---|---|---|---:|---:|---|
-| BTC/USDT | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | abstain | flat | flat | 62656.2 | 0.630 | flat_candidate |
-| ETH/USDT | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | abstain | flat | flat | 1760.32 | 0.939 | flat_candidate |
-| SOL/USDT | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | abstain | flat | down | 80.56 | 1.000 | adaptive_trend_mismatch |
+| symbol | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason |
+|---|---|---|---:|---:|---|---:|---:|---|
+| BTC/USDT | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | no_trade | 62656.2 | 0.630 | flat_candidate |
+| ETH/USDT | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | no_trade | 1760.32 | 0.939 | flat_candidate |
+| SOL/USDT | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | no_trade | 80.56 | 1.000 | adaptive_trend_mismatch |
 
 The 24h snapshot has a forced directional estimate, but it is still an
-abstention at the trade-signal layer. The current market did not produce a
+`no_trade` result at the trade-signal layer. The current market did not produce a
 validated trade-quality signal.
 
 The 7d runner currently produces forced directional estimates but returns
-`abstain` on BTC/ETH/SOL with `unsupported_timeframe:1d`. That is intentional.
+`no_trade` on BTC/ETH/SOL with `unsupported_timeframe:1d`. That is intentional.
 The policy refuses to produce trade-quality daily/weekly signals until a
 separate 1d profile passes walk-forward validation.
 
@@ -551,7 +598,7 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     the benchmark now reports slice-robustness metrics and includes an
     additional 5-asset OKX 4h cross-check.
 11. Done: timeframe-aware policy routes 1h to microstructure, 4h to
-    adaptive-field, and unvalidated 1d to abstention.
+    adaptive-field, and unvalidated 1d to `no_trade`.
 12. Done: current forecast runner generates 24h research snapshots from
     completed live candles and embeds the validation profile.
 13. Done: evidence-strength calibration diagnostic reports raw buckets,

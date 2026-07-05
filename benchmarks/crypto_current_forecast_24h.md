@@ -2,14 +2,14 @@
 
 Research forecast from completed candles only. Not financial advice.
 Evidence strength is analogue/regime agreement, not a calibrated probability.
-`directional forecast` is forced to up/down because markets do not stay exactly flat.
-`decision=abstain` means WaveMind found no validated trade-quality signal; it does not mean the next price will be unchanged.
+The market forecast is always up/down with a target price because a future close is never exactly flat.
+`trade validation` is separate: `trade` means the policy found a validated signal; `no_trade` means a forecast exists but the signal did not pass the trade-quality gate.
 
-| symbol | horizon | data end UTC | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |
-|---|---:|---|---|---:|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
-| BTC/USDT | 24h | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | abstain | flat | flat | 62656.2 | 0.00% | 0.00% | 62656.2 | 62656.2 | 0.630 |  | none | flat_candidate |
-| ETH/USDT | 24h | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | abstain | flat | flat | 1760.32 | 0.00% | 0.00% | 1760.32 | 1760.32 | 0.939 |  | none | flat_candidate |
-| SOL/USDT | 24h | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | abstain | flat | down | 80.56 | 0.00% | 0.00% | 80.56 | 80.56 | 1.000 |  | none | adaptive_trend_mismatch |
+| symbol | horizon | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason | policy signal | policy candidate | policy target | calibrated probability | probability kind |
+|---|---:|---|---|---:|---:|---|---:|---:|---|---|---|---:|---:|---|
+| BTC/USDT | 24h | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | no_trade | 62656.2 | 0.630 | flat_candidate | flat | flat | 62656.2 |  | none |
+| ETH/USDT | 24h | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | no_trade | 1760.32 | 0.939 | flat_candidate | flat | flat | 1760.32 |  | none |
+| SOL/USDT | 24h | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | no_trade | 80.56 | 1.000 | adaptive_trend_mismatch | flat | down | 80.56 |  | none |
 
 Validation profile: historical active direction accuracy 0.586, signal rate 0.018, positive market slices 7/27.
 

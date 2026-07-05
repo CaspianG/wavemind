@@ -167,7 +167,7 @@ def forced_directional_forecast(
     *,
     horizon: int,
 ) -> DirectionalForecast:
-    """Return an always-up/down research direction without overriding safety abstention."""
+    """Return an always-up/down research direction without overriding trade validation."""
     signature = set(_regime_signature_from_window(query))
     scored: list[tuple[float, OHLCVWindow]] = []
     if signature:
@@ -180,7 +180,7 @@ def forced_directional_forecast(
             score = float(overlap) + 0.35 * recency
             scored.append((score, window))
     scored.sort(key=lambda item: item[0], reverse=True)
-    selected = [window for _, window in scored[:64]]
+    selected = scored[:64]
     analogue_return = _weighted_future_return(selected) if selected else 0.0
     momentum_return = _momentum_directional_return(query, horizon=horizon)
     if len(selected) >= 16:
@@ -197,7 +197,7 @@ def forced_directional_forecast(
         method = f"{method}_last_bar_tiebreak"
     direction = "up" if expected_return >= 0.0 else "down"
     note = (
-        "forced up/down research estimate; safety decision may still abstain "
+        "forced up/down research estimate; trade validation may still be no_trade "
         "when the trade-quality policy does not pass validation"
     )
     return DirectionalForecast(
@@ -209,12 +209,15 @@ def forced_directional_forecast(
     )
 
 
-def _weighted_future_return(windows: list[OHLCVWindow]) -> float:
-    if not windows:
+def _weighted_future_return(scored_windows: list[tuple[float, OHLCVWindow]]) -> float:
+    if not scored_windows:
         return 0.0
-    weights = [math.exp(-float(index) / max(6.0, len(windows) / 3.0)) for index, _ in enumerate(windows)]
+    weights = [math.exp(-float(index) / max(6.0, len(scored_windows) / 3.0)) for index, _ in enumerate(scored_windows)]
     denominator = max(sum(weights), 1e-12)
-    return float(sum(float(window.future_return_bps) * weight for window, weight in zip(windows, weights, strict=False)) / denominator)
+    return float(
+        sum(float(window.future_return_bps) * weight for (_, window), weight in zip(scored_windows, weights, strict=False))
+        / denominator
+    )
 
 
 def _momentum_directional_return(query: OHLCVWindow, *, horizon: int) -> float:
@@ -481,6 +484,7 @@ def calibrated_probability_for_evidence(
 
 
 def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
+    trade_decision = "trade" if result.decision == "signal" else "no_trade"
     return {
         "symbol": result.symbol,
         "exchange": result.exchange,
@@ -491,6 +495,11 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "data_end_utc": result.data_end_utc,
         "forecast_until_utc": result.forecast_until_utc,
         "last_close": result.last_close,
+        "market_forecast_direction": result.directional_direction,
+        "market_forecast_return_bps": result.directional_expected_return_bps,
+        "market_forecast_return_pct": result.directional_expected_return_pct,
+        "market_forecast_target_price": result.directional_expected_price,
+        "trade_decision": trade_decision,
         "direction": result.direction,
         "decision": result.decision,
         "candidate_direction": result.candidate_direction,
@@ -529,25 +538,24 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "",
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
-        "`directional forecast` is forced to up/down because markets do not stay exactly flat.",
-        "`decision=abstain` means WaveMind found no validated trade-quality signal; it does not mean the next price will be unchanged.",
+        "The market forecast is always up/down with a target price because a future close is never exactly flat.",
+        "`trade validation` is separate: `trade` means the policy found a validated signal; `no_trade` means a forecast exists but the signal did not pass the trade-quality gate.",
         "",
-        "| symbol | horizon | data end UTC | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |",
-        "|---|---:|---|---|---:|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+        "| symbol | horizon | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason | policy signal | policy candidate | policy target | calibrated probability | probability kind |",
+        "|---|---:|---|---|---:|---:|---|---:|---:|---|---|---|---:|---:|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
         probability_text = "" if result.calibrated_probability is None else f"{result.calibrated_probability:.3f}"
+        trade_decision = "trade" if result.decision == "signal" else "no_trade"
         lines.append(
             "| "
             f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | "
             f"{result.directional_direction} | {result.directional_expected_return_pct:.2f}% | "
-            f"{result.directional_expected_price:.6g} | {result.decision} | "
-            f"{result.direction} | {result.candidate_direction} | {result.last_close:.6g} | "
-            f"{result.expected_return_pct:.2f}% | {result.candidate_expected_return_pct:.2f}% | "
-            f"{result.expected_price:.6g} | {result.candidate_expected_price:.6g} | "
-            f"{result.evidence_strength:.3f} | {probability_text} | "
-            f"{result.probability_kind} | {filter_text} |"
+            f"{result.directional_expected_price:.6g} | {trade_decision} | "
+            f"{result.last_close:.6g} | {result.evidence_strength:.3f} | {filter_text} | "
+            f"{result.direction} | {result.candidate_direction} | {result.expected_price:.6g} | "
+            f"{probability_text} | {result.probability_kind} |"
         )
     lines.append("")
     validation = dict(results[0].validation) if results else {}
