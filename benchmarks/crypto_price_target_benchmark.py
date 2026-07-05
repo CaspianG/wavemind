@@ -344,6 +344,8 @@ def _predict_return(
         return _force_nonzero(value, fallback=components.get("wave", _last_actual_return(history))), support, method
     if engine_key == "wavemind-robust-target":
         return _robust_target_return(history, query, horizon=horizon, calibration=calibration)
+    if engine_key == "wavemind-market-field-target":
+        return _market_field_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-learned-target":
         features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
         robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
@@ -422,6 +424,19 @@ def _robust_target_return(
         method = f"{forecast.method}+robust_calibration"
     support = max(int(forecast.support), len(matches))
     return _force_nonzero(value, fallback=calibrated_wave), support, method
+
+
+def _market_field_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    value, suffix = _market_field_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    return value, support, f"timeframe_market_field_v1:{suffix}"
 
 
 TARGET_MODEL_FEATURES = (
@@ -653,6 +668,22 @@ def _robust_value_from_features(features: dict[str, float], timeframe: str) -> t
         )
         return _force_nonzero(value, fallback=calibrated_wave), "robust_1d_volatility_guard"
     return _force_nonzero(calibrated_wave, fallback=raw_wave), "robust_calibration"
+
+
+def _market_field_value_from_features(features: dict[str, float], timeframe: str) -> tuple[float, str]:
+    raw_wave = float(features.get("raw_wave", 0.0))
+    calibrated_wave = float(features.get("calibrated_wave", raw_wave))
+    momentum = float(features.get("momentum", calibrated_wave))
+    regime = float(features.get("regime", calibrated_wave))
+    historical = float(features.get("historical", calibrated_wave))
+    if timeframe == "1h":
+        return _force_nonzero(-regime, fallback=-momentum), "intraday_regime_reversion"
+    if timeframe == "4h":
+        return _force_nonzero(-momentum, fallback=-raw_wave), "swing_momentum_reversion"
+    if timeframe == "1d":
+        return _force_nonzero(-historical, fallback=calibrated_wave), "daily_historical_reversion"
+    robust, suffix = _robust_value_from_features(features, timeframe)
+    return robust, f"robust_fallback:{suffix}"
 
 
 def _robust_1h_target_value(
@@ -1081,6 +1112,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-target": "wavemind-target",
         "wavemind-ensemble": "wavemind-ensemble",
         "ensemble": "wavemind-ensemble",
+        "wavemind-market-field": "wavemind-market-field-target",
+        "wavemind-market-field-target": "wavemind-market-field-target",
+        "market-field": "wavemind-market-field-target",
+        "market-field-target": "wavemind-market-field-target",
         "wavemind-robust": "wavemind-robust-target",
         "wavemind-robust-target": "wavemind-robust-target",
         "robust": "wavemind-robust-target",
@@ -1108,6 +1143,7 @@ def _engine_name(key: str) -> str:
     return {
         "wavemind-target": "WaveMind price target",
         "wavemind-ensemble": "WaveMind ensemble target",
+        "wavemind-market-field-target": "WaveMind market-field target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
         "wavemind-calibrated": "WaveMind calibrated target",
@@ -1142,6 +1178,7 @@ def parse_args() -> argparse.Namespace:
         "--engines",
         nargs="+",
         default=[
+            "wavemind-market-field-target",
             "wavemind-robust-target",
             "wavemind-calibrated",
             "wavemind-target",

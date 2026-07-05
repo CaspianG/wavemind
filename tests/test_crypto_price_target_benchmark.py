@@ -8,6 +8,7 @@ from pathlib import Path
 
 from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
 from benchmarks.crypto_price_target_benchmark import (
+    _market_field_value_from_features,
     _robust_1h_target_value,
     _robust_1d_target_value,
     load_markets,
@@ -39,6 +40,7 @@ def test_price_target_benchmark_scores_future_price():
             }
         ],
         engines=[
+            "wavemind-market-field-target",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -55,11 +57,13 @@ def test_price_target_benchmark_scores_future_price():
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
     assert payload["scenario"]["target"] == "predict future close price, not only up/down direction"
+    assert result_by_engine["WaveMind market-field target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["queries"] == 24
     assert result_by_engine["WaveMind ensemble target"]["queries"] == 24
     assert result_by_engine["WaveMind calibrated target"]["queries"] == 24
     assert result_by_engine["WaveMind price target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind market-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
     assert result_by_engine["WaveMind calibrated target"]["mean_abs_return_error_bps"] >= 0.0
@@ -176,6 +180,27 @@ def test_robust_1h_target_uses_combo_sign_only_on_rsi_extremes():
     assert abs(calm) == abs(extreme)
 
 
+def test_market_field_value_uses_timeframe_specific_reversion():
+    features = {
+        "raw_wave": 80.0,
+        "calibrated_wave": 60.0,
+        "momentum": 50.0,
+        "regime": 40.0,
+        "historical": 30.0,
+    }
+
+    one_hour, one_hour_note = _market_field_value_from_features(features, "1h")
+    four_hour, four_hour_note = _market_field_value_from_features(features, "4h")
+    one_day, one_day_note = _market_field_value_from_features(features, "1d")
+
+    assert one_hour == -40.0
+    assert four_hour == -50.0
+    assert one_day == -30.0
+    assert "intraday_regime_reversion" in one_hour_note
+    assert "swing_momentum_reversion" in four_hour_note
+    assert "daily_historical_reversion" in one_day_note
+
+
 def test_price_target_markdown_and_cli(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     output = tmp_path / "price-target.json"
@@ -194,6 +219,7 @@ def test_price_target_markdown_and_cli(tmp_path):
             "--timeframes",
             "4h",
             "--engines",
+            "wavemind-market-field-target",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -228,7 +254,7 @@ def test_price_target_markdown_and_cli(tmp_path):
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     markdown = report.read_text(encoding="utf-8")
-    assert payload["results"][0]["engine"] == "WaveMind robust target"
+    assert payload["results"][0]["engine"] == "WaveMind market-field target"
     assert payload["event_metrics_total"] >= len(payload["event_metrics"])
     assert "event_metrics_truncated" in payload
     assert "WaveMind Crypto Price Target Benchmark" in markdown

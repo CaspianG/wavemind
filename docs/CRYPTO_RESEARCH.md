@@ -65,6 +65,8 @@ python benchmarks/crypto_price_target_benchmark.py \
   --exchange okx \
   --symbols BTC/USDT ETH/USDT SOL/USDT ADA/USDT XRP/USDT DOGE/USDT LINK/USDT AVAX/USDT \
   --timeframes 1h 4h 1d \
+  --engines wavemind-market-field-target wavemind-robust-target \
+  --bars 2000 \
   --output benchmarks/crypto_price_target_results.json \
   --report benchmarks/crypto_price_target_report.md
 ```
@@ -81,36 +83,63 @@ Then it reports target-price error across symbols, timeframes, and
 walk-forward folds. The benchmark uses only matured historical windows for each
 query, so future outcomes are never available to the predictor.
 
-Checked-in OKX result: 8 assets, 1h/4h/1d, 4 folds per symbol/timeframe, 8640
-target-price predictions per engine.
+Checked-in OKX stress result: 8 assets, 2000 bars per market, 1h/4h/1d, 4
+folds per symbol/timeframe, 8640 target-price predictions per engine.
 
 | engine | queries | direction hit | MAE return | RMSE return | MAPE | within 50 bps | worst slice hit | worst slice MAPE |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind robust target | 8640 | 0.543 | 382.0 bps | 562.3 bps | 3.95% | 0.120 | 0.356 | 10.39% |
-| WaveMind calibrated target | 8640 | 0.531 | 390.9 bps | 573.8 bps | 4.05% | 0.117 | 0.222 | 10.89% |
-| WaveMind price target | 8640 | 0.480 | 394.5 bps | 579.9 bps | 4.09% | 0.113 | 0.211 | 10.71% |
-| Momentum baseline | 8640 | 0.497 | 398.7 bps | 581.2 bps | 4.11% | 0.116 | 0.244 | 10.35% |
-| Regime mean baseline | 8640 | 0.495 | 400.1 bps | 579.6 bps | 4.13% | 0.113 | 0.133 | 10.63% |
-| Historical mean baseline | 8640 | 0.474 | 396.6 bps | 581.1 bps | 4.13% | 0.107 | 0.133 | 10.65% |
-| Naive last-outcome baseline | 8640 | 0.492 | 531.5 bps | 783.1 bps | 5.44% | 0.091 | 0.256 | 15.90% |
+| WaveMind market-field target | 8640 | 0.562 | 367.4 bps | 553.9 bps | 3.80% | 0.128 | 0.178 | 10.21% |
+| WaveMind robust target | 8640 | 0.502 | 373.7 bps | 560.9 bps | 3.88% | 0.128 | 0.267 | 10.32% |
 
-The robust WaveMind target is the best aggregate result in this run and improves
-the weakest direction-hit slice from 0.222 to 0.356 versus the calibrated target.
-It is deliberately timeframe-aware:
+The market-field target is the best aggregate result in this run. It is
+deliberately timeframe-aware:
 
-- `1h`: momentum-direction guardrail with WaveMind-derived magnitude, reducing
-  short-horizon sign failures.
-- `4h`: raw field plus historical drift and calibrated field, reducing target
-  error without leaning on the noisy short-term momentum baseline.
-- `1d`: calibrated field plus regime and momentum guards, reducing weekly
-  altcoin false positives.
+- `1h`: regime reversion, because the short-horizon analogue field is often
+  mean-reverting in the checked OKX history.
+- `4h`: momentum reversion, which improved aggregate swing direction hit.
+- `1d`: historical reversion, which improved the daily aggregate profile.
 
-The branch is still not robust enough to claim that it works on every coin and
-every date range. The useful outcome of this benchmark is that failures are now
-measured explicitly: worst-slice hit rate, worst-slice MAPE, per-symbol
-breakdowns, and a bounded event-level sample are stored in
+This is progress, not a production trading claim. Aggregate direction hit
+improved from 0.502 to 0.562 and target MAPE improved from 3.88% to 3.80%, but
+worst-slice direction hit worsened. The next research target is worst-slice
+robustness: raising weak symbol/timeframe/fold slices without losing the
+aggregate edge.
+
+Failures are now measured explicitly: worst-slice hit rate, worst-slice MAPE,
+per-symbol breakdowns, and a bounded event-level sample are stored in
 `benchmarks/crypto_price_target_results.json`. Use `--events-output` when a
 full compact JSONL dump of every event-level prediction is needed locally.
+
+## Signal Quality Benchmark
+
+The signal-quality benchmark separates the always-on target-price forecast from
+trade-quality research signals:
+
+```sh
+python benchmarks/crypto_signal_quality_benchmark.py \
+  --dataset cached \
+  --exchange okx \
+  --symbols BTC/USDT ETH/USDT SOL/USDT ADA/USDT XRP/USDT DOGE/USDT LINK/USDT AVAX/USDT \
+  --timeframes 1h 4h 1d \
+  --bars 2000
+```
+
+Checked-in OKX result:
+
+| tier | selected | coverage | direction hit | MAE return | MAPE |
+|---|---:|---:|---:|---:|---:|
+| all_forecasts | 8640 | 1.000 | 0.562 | 367.4 bps | 3.80% |
+| broad_trade_quality | 4224 | 0.489 | 0.576 | 261.3 bps | 2.64% |
+| strong_trade_quality | 3231 | 0.374 | 0.578 | 246.0 bps | 2.46% |
+| high_conviction | 2540 | 0.294 | 0.578 | 245.6 bps | 2.45% |
+| consensus_edge | 328 | 0.038 | 0.738 | 228.9 bps | 2.25% |
+| strict_consensus_edge | 216 | 0.025 | 0.750 | 213.1 bps | 2.11% |
+
+The consensus edge is the strongest current result: all policy components agree
+inside a calm-volatility regime, producing 75% historical direction hit on 216
+walk-forward events. Coverage is low, so this is a research signal-quality
+breakthrough, not a standalone trading system. The next task is to expand
+coverage while preserving hit-rate and improving worst-slice behavior.
 
 ## Confidence And Calibration
 
@@ -626,16 +655,19 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     8-asset 2000-bar stress profile is `0.65` sized bps/query, active
     direction accuracy `0.750`, profit factor `6.919`, and max drawdown
     `288.7`.
-15. Next: increase per-symbol/timeframe support so calibrated probability can
-    be enabled without hiding weak slices.
-16. Next: build and validate a separate 1d / weekly trend-memory dynamic before
-    enabling 7d forecasts.
-17. Next: improve upside support without losing the new downside robustness,
-    then validate across more date ranges, exchanges, assets, and walk-forward
-    folds.
-18. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+15. Done: market-field target benchmark on 8 OKX assets, 2000 bars, 1h/4h/1d.
+    It improves aggregate target direction from `0.502` to `0.562` and MAPE
+    from `3.88%` to `3.80%`, but worsens worst-slice hit rate.
+16. Done: signal-quality benchmark separates always-on target forecasts from
+    trade-quality research tiers. The strict calm-consensus tier reaches
+    `0.750` direction hit on 216 walk-forward events at `0.025` coverage.
+17. Next: expand consensus-edge coverage without dropping below 0.70 direction
+    hit, and fix the weak symbol/timeframe/fold slices.
+18. Next: validate the market-field target on more exchanges, date ranges,
+    assets, and walk-forward folds before any live-trading claim.
+19. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-19. Add signal construction only after retrieval quality is stable.
-20. Publish results separately from the main README to avoid confusing memory
+20. Add signal construction only after retrieval quality is stable.
+21. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.
