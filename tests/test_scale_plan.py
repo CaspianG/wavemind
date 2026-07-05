@@ -4,7 +4,9 @@ from pathlib import Path
 import subprocess
 import sys
 
-from wavemind import HashingTextEncoder, WaveMind
+import pytest
+
+from wavemind import HashingTextEncoder, ProductionSLOTarget, WaveMind, evaluate_production_slo
 from wavemind.scale import build_scale_plan, scale_status_meets_or_exceeds
 
 
@@ -92,6 +94,46 @@ def test_scale_plan_warns_when_numpy_is_used_past_local_watch_limit():
 def test_scale_status_threshold_helper_supports_deploy_gates():
     assert scale_status_meets_or_exceeds("action_required", "watch") is True
     assert scale_status_meets_or_exceeds("watch", "action_required") is False
+
+
+def test_production_slo_api_estimates_autoscaling_capacity():
+    target = ProductionSLOTarget(
+        target_recall_at_k=0.95,
+        target_p99_ms=100.0,
+        target_qps=100.0,
+        replicas=3,
+        autoscaling_max_replicas=24,
+        capacity_headroom=0.70,
+    )
+
+    passing = evaluate_production_slo(
+        engine="Qdrant service",
+        recall_at_k=1.0,
+        avg_latency_ms=10.0,
+        p99_latency_ms=25.0,
+        target=target,
+    )
+
+    assert passing.status == "pass"
+    assert passing.required_replicas == 2
+    assert passing.autoscaled_capacity_qps > 1000
+    assert passing.blocking_reasons == ()
+    assert passing.as_dict()["status"] == "pass"
+
+    failing = evaluate_production_slo(
+        engine="Qdrant service",
+        recall_at_k=0.984,
+        avg_latency_ms=116.80,
+        p99_latency_ms=209.28,
+        target=target,
+    )
+
+    assert failing.status == "fail"
+    assert failing.required_replicas == 17
+    assert failing.blocking_reasons == ("p99_above_target",)
+
+    with pytest.raises(ValueError, match="autoscaling_max_replicas"):
+        ProductionSLOTarget(replicas=4, autoscaling_max_replicas=3)
 
 
 def test_scale_plan_requires_service_architecture_for_million_plus_memory():

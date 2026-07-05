@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.ann_index_curve_benchmark import run_benchmark as run_ann_curve
+from wavemind.scale import ProductionSLOTarget, evaluate_production_slo
 
 
 def _module_available(name: str) -> bool:
@@ -80,6 +81,12 @@ def run_production_load(
     engines: Iterable[str],
     noise: float,
     output_path: Path | None = None,
+    target_recall: float = 0.95,
+    target_p99_ms: float = 100.0,
+    target_qps: float = 100.0,
+    replicas: int = 3,
+    autoscaling_max_replicas: int = 24,
+    capacity_headroom: float = 0.70,
 ) -> dict[str, Any]:
     size_list = [int(size) for size in sizes]
     payload = run_ann_curve(
@@ -105,7 +112,85 @@ def run_production_load(
         "default_target_sizes": [100000, 1000000],
     }
     payload["preflight"] = preflight(output_path=output_path)
+    add_slo_evaluation(
+        payload,
+        target_recall=target_recall,
+        target_p99_ms=target_p99_ms,
+        target_qps=target_qps,
+        replicas=replicas,
+        autoscaling_max_replicas=autoscaling_max_replicas,
+        capacity_headroom=capacity_headroom,
+    )
     return payload
+
+
+def add_slo_evaluation(
+    payload: dict[str, Any],
+    *,
+    target_recall: float,
+    target_p99_ms: float,
+    target_qps: float,
+    replicas: int,
+    autoscaling_max_replicas: int,
+    capacity_headroom: float,
+) -> dict[str, Any]:
+    if target_recall <= 0 or target_recall > 1:
+        raise ValueError("target_recall must be in (0, 1]")
+    if target_p99_ms <= 0:
+        raise ValueError("target_p99_ms must be positive")
+    if target_qps <= 0:
+        raise ValueError("target_qps must be positive")
+    if replicas <= 0:
+        raise ValueError("replicas must be positive")
+    if autoscaling_max_replicas < replicas:
+        raise ValueError("autoscaling_max_replicas must be >= replicas")
+    if capacity_headroom <= 0 or capacity_headroom > 1:
+        raise ValueError("capacity_headroom must be in (0, 1]")
+
+    target = ProductionSLOTarget(
+        target_recall_at_k=target_recall,
+        target_p99_ms=target_p99_ms,
+        target_qps=target_qps,
+        replicas=replicas,
+        autoscaling_max_replicas=autoscaling_max_replicas,
+        capacity_headroom=capacity_headroom,
+    )
+    payload["scenario"]["slo_targets"] = target.as_dict()
+    for size_result in payload.get("results", []):
+        slo_rows = []
+        for result in size_result.get("results", []):
+            evaluation = evaluate_slo_result(
+                result,
+                target=target,
+            )
+            result["slo_status"] = evaluation["status"]
+            result["slo_required_replicas"] = evaluation.get("required_replicas")
+            result["slo_autoscaled_qps"] = evaluation.get("autoscaled_capacity_qps")
+            slo_rows.append(evaluation)
+        size_result["slo"] = slo_rows
+    return payload
+
+
+def evaluate_slo_result(
+    result: dict[str, Any],
+    *,
+    target: ProductionSLOTarget,
+) -> dict[str, Any]:
+    if result.get("skipped"):
+        return {
+            "engine": result.get("engine", "unknown"),
+            "status": "skipped",
+            "reason": result.get("reason", "engine skipped"),
+        }
+
+    return evaluate_production_slo(
+        engine=str(result.get("engine", "unknown")),
+        recall_at_k=float(result.get("recall_at_k", 0.0)),
+        avg_latency_ms=float(result.get("avg_latency_ms", 0.0)),
+        p99_latency_ms=result.get("p99_latency_ms"),
+        p95_latency_ms=result.get("p95_latency_ms"),
+        target=target,
+    ).as_dict()
 
 
 def print_table(payload: dict[str, Any]) -> None:
@@ -127,6 +212,22 @@ def print_table(payload: dict[str, Any]) -> None:
                 f"{result['p99_latency_ms']:.2f} ms | "
                 f"{result['build_ms']:.1f} ms |"
             )
+    if payload["scenario"].get("slo_targets"):
+        print("\n| vectors | engine | SLO | required replicas | autoscaled capacity | blockers |")
+        print("|---:|---|---|---:|---:|---|")
+        for size_result in payload["results"]:
+            for row in size_result.get("slo", []):
+                if row["status"] == "skipped":
+                    print(
+                        f"| {size_result['vectors']} | {row['engine']} | skipped | - | - | {row.get('reason', '')} |"
+                    )
+                    continue
+                blockers = ", ".join(row["blocking_reasons"]) or "-"
+                print(
+                    f"| {size_result['vectors']} | {row['engine']} | {row['status']} | "
+                    f"{row['required_replicas']} | "
+                    f"{row['autoscaled_capacity_qps']:.1f} qps | {blockers} |"
+                )
 
 
 def main() -> int:
@@ -137,6 +238,12 @@ def main() -> int:
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--noise", type=float, default=0.08)
+    parser.add_argument("--target-recall", type=float, default=0.95)
+    parser.add_argument("--target-p99-ms", type=float, default=100.0)
+    parser.add_argument("--target-qps", type=float, default=100.0)
+    parser.add_argument("--replicas", type=int, default=3)
+    parser.add_argument("--autoscaling-max-replicas", type=int, default=24)
+    parser.add_argument("--capacity-headroom", type=float, default=0.70)
     parser.add_argument(
         "--engines",
         nargs="+",
@@ -155,6 +262,12 @@ def main() -> int:
         engines=args.engines,
         noise=args.noise,
         output_path=args.output,
+        target_recall=args.target_recall,
+        target_p99_ms=args.target_p99_ms,
+        target_qps=args.target_qps,
+        replicas=args.replicas,
+        autoscaling_max_replicas=args.autoscaling_max_replicas,
+        capacity_headroom=args.capacity_headroom,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

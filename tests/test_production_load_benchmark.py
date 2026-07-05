@@ -29,10 +29,74 @@ def test_production_load_runner_reports_preflight_and_skips_unconfigured_service
     results = {result["engine"]: result for result in payload["results"][0]["results"]}
     assert results["WaveMind faiss-persisted"]["skipped"] is True
     assert "WAVEMIND_FAISS_PATH" in results["WaveMind faiss-persisted"]["reason"]
+    assert results["WaveMind faiss-persisted"]["slo_status"] == "skipped"
     assert results["Qdrant service"]["skipped"] is True
     assert "WAVEMIND_QDRANT_URL" in results["Qdrant service"]["reason"]
+    assert results["Qdrant service"]["slo_status"] == "skipped"
     assert results["WaveMind pgvector"]["skipped"] is True
     assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector"]["reason"]
+    assert results["WaveMind pgvector"]["slo_status"] == "skipped"
+    assert payload["results"][0]["slo"][0]["status"] == "skipped"
+
+
+def test_production_load_slo_gate_classifies_pass_scale_and_fail():
+    from benchmarks.production_load_benchmark import evaluate_slo_result
+    from wavemind import ProductionSLOTarget
+
+    target = ProductionSLOTarget(
+        target_recall_at_k=0.95,
+        target_p99_ms=100.0,
+        target_qps=100.0,
+        replicas=3,
+        autoscaling_max_replicas=24,
+        capacity_headroom=0.70,
+    )
+    passing = evaluate_slo_result(
+        {
+            "engine": "fast",
+            "recall_at_k": 0.99,
+            "avg_latency_ms": 10.0,
+            "p99_latency_ms": 40.0,
+        },
+        target=target,
+    )
+    assert passing["status"] == "pass"
+    assert passing["required_replicas"] == 2
+
+    scale_required = evaluate_slo_result(
+        {
+            "engine": "capacity-bound",
+            "recall_at_k": 0.99,
+            "avg_latency_ms": 50.0,
+            "p99_latency_ms": 80.0,
+        },
+        target=target,
+    )
+    assert scale_required["status"] == "scale_required"
+    assert scale_required["required_replicas"] > 3
+
+    failing = evaluate_slo_result(
+        {
+            "engine": "not-production-ready",
+            "recall_at_k": 0.90,
+            "avg_latency_ms": 120.0,
+            "p99_latency_ms": 240.0,
+        },
+        target=ProductionSLOTarget(
+            target_recall_at_k=0.95,
+            target_p99_ms=100.0,
+            target_qps=100.0,
+            replicas=3,
+            autoscaling_max_replicas=10,
+            capacity_headroom=0.70,
+        ),
+    )
+    assert failing["status"] == "fail"
+    assert failing["blocking_reasons"] == (
+        "recall_below_target",
+        "p99_above_target",
+        "autoscaling_capacity_below_target_qps",
+    )
 
 
 def test_production_load_cli_writes_json(tmp_path):
@@ -68,6 +132,12 @@ def test_production_load_cli_writes_json(tmp_path):
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["scenario"]["name"] == "production_load_profile"
+    assert payload["scenario"]["slo_targets"]["target_qps"] == 100.0
     assert payload["results"][0]["vectors"] == 32
     assert payload["results"][0]["results"][0]["engine"] == "WaveMind quantized"
-
+    assert payload["results"][0]["results"][0]["slo_status"] in {
+        "pass",
+        "scale_required",
+        "fail",
+    }
+    assert payload["results"][0]["slo"][0]["engine"] == "WaveMind quantized"

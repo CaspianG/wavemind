@@ -16,7 +16,15 @@
     "default_target_sizes": [
       100000,
       1000000
-    ]
+    ],
+    "slo_targets": {
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7
+    }
   },
   "results": [
     {
@@ -32,7 +40,31 @@
           "avg_latency_ms": 45.80613199970685,
           "p95_latency_ms": 65.17819996224716,
           "build_ms": 563945.4993000254,
-          "queries": 50
+          "queries": 50,
+          "slo_status": "fail",
+          "slo_required_replicas": 7,
+          "slo_autoscaled_qps": 366.76312245940164
+        }
+      ],
+      "slo": [
+        {
+          "engine": "Qdrant service",
+          "status": "fail",
+          "target_recall_at_k": 0.95,
+          "target_p99_ms": 100.0,
+          "target_qps": 100.0,
+          "recall_at_k": 0.506,
+          "p99_latency_ms": 65.17819996224716,
+          "avg_latency_ms": 45.80613199970685,
+          "per_replica_qps_at_headroom": 15.281796769141735,
+          "current_replicas": 3,
+          "current_capacity_qps": 45.845390307425205,
+          "required_replicas": 7,
+          "autoscaling_max_replicas": 24,
+          "autoscaled_capacity_qps": 366.76312245940164,
+          "blocking_reasons": [
+            "recall_below_target"
+          ]
         }
       ]
     }

@@ -34,6 +34,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "LongMemEval answer generation" in leaderboard
     assert "Production index profile" in leaderboard
     assert "Qdrant service" in leaderboard
+    assert "production SLO pass: Qdrant service" in leaderboard
+    assert "production SLO miss" in leaderboard
     assert "token F1" in leaderboard
     assert "extractive smoke: 0.024" not in leaderboard
     assert "WaveMind dynamic capacity" in leaderboard

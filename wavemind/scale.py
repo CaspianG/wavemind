@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import math
 
 
 LOCAL_OPTIMAL_LIMIT = 1_000
@@ -31,6 +32,114 @@ class ScalePlan:
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ProductionSLOTarget:
+    target_recall_at_k: float = 0.95
+    target_p99_ms: float = 100.0
+    target_qps: float = 100.0
+    replicas: int = 3
+    autoscaling_max_replicas: int = 24
+    capacity_headroom: float = 0.70
+
+    def __post_init__(self) -> None:
+        if self.target_recall_at_k <= 0 or self.target_recall_at_k > 1:
+            raise ValueError("target_recall_at_k must be in (0, 1]")
+        if self.target_p99_ms <= 0:
+            raise ValueError("target_p99_ms must be positive")
+        if self.target_qps <= 0:
+            raise ValueError("target_qps must be positive")
+        if self.replicas <= 0:
+            raise ValueError("replicas must be positive")
+        if self.autoscaling_max_replicas < self.replicas:
+            raise ValueError("autoscaling_max_replicas must be >= replicas")
+        if self.capacity_headroom <= 0 or self.capacity_headroom > 1:
+            raise ValueError("capacity_headroom must be in (0, 1]")
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ProductionSLOResult:
+    engine: str
+    status: str
+    target_recall_at_k: float
+    target_p99_ms: float
+    target_qps: float
+    recall_at_k: float
+    p99_latency_ms: float
+    avg_latency_ms: float
+    per_replica_qps_at_headroom: float
+    current_replicas: int
+    current_capacity_qps: float
+    required_replicas: int
+    autoscaling_max_replicas: int
+    autoscaled_capacity_qps: float
+    blocking_reasons: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+def evaluate_production_slo(
+    *,
+    engine: str,
+    recall_at_k: float,
+    avg_latency_ms: float,
+    p99_latency_ms: float | None = None,
+    p95_latency_ms: float | None = None,
+    target: ProductionSLOTarget | None = None,
+) -> ProductionSLOResult:
+    target = target or ProductionSLOTarget()
+    avg_latency = max(float(avg_latency_ms), 0.001)
+    p99_latency = float(
+        p99_latency_ms
+        if p99_latency_ms is not None
+        else p95_latency_ms
+        if p95_latency_ms is not None
+        else avg_latency
+    )
+    recall = float(recall_at_k)
+
+    per_replica_qps = (1000.0 / avg_latency) * target.capacity_headroom
+    current_capacity_qps = per_replica_qps * target.replicas
+    autoscaled_capacity_qps = per_replica_qps * target.autoscaling_max_replicas
+    required_replicas = max(1, math.ceil(target.target_qps / per_replica_qps))
+
+    blocking_reasons: list[str] = []
+    if recall < target.target_recall_at_k:
+        blocking_reasons.append("recall_below_target")
+    if p99_latency > target.target_p99_ms:
+        blocking_reasons.append("p99_above_target")
+    if required_replicas > target.autoscaling_max_replicas:
+        blocking_reasons.append("autoscaling_capacity_below_target_qps")
+
+    if blocking_reasons:
+        status = "fail"
+    elif required_replicas > target.replicas:
+        status = "scale_required"
+    else:
+        status = "pass"
+
+    return ProductionSLOResult(
+        engine=engine,
+        status=status,
+        target_recall_at_k=target.target_recall_at_k,
+        target_p99_ms=target.target_p99_ms,
+        target_qps=target.target_qps,
+        recall_at_k=recall,
+        p99_latency_ms=p99_latency,
+        avg_latency_ms=avg_latency,
+        per_replica_qps_at_headroom=per_replica_qps,
+        current_replicas=target.replicas,
+        current_capacity_qps=current_capacity_qps,
+        required_replicas=required_replicas,
+        autoscaling_max_replicas=target.autoscaling_max_replicas,
+        autoscaled_capacity_qps=autoscaled_capacity_qps,
+        blocking_reasons=tuple(blocking_reasons),
+    )
 
 
 def normalize_index_name(index: str | None) -> str:

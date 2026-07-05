@@ -66,7 +66,14 @@ from .replication import (
     ReplicationError,
     WriteQuorumError,
 )
-from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
+from .scale import (
+    ProductionSLOResult,
+    ProductionSLOTarget,
+    ScalePlan,
+    build_scale_plan,
+    evaluate_production_slo,
+    scale_status_meets_or_exceeds,
+)
 from .sharding import (
     DistributedForgetResult,
     DistributedReadQuorumError,
@@ -87,7 +94,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.5"
+__version__ = "2.4.6"
 
 __all__ = [
     "FieldProjector",
@@ -123,6 +130,8 @@ __all__ = [
     "ObjectStoreUploadReport",
     "NamespacePlacement",
     "QueryResult",
+    "ProductionSLOResult",
+    "ProductionSLOTarget",
     "ReadQuorumError",
     "RedisHotMemoryCache",
     "ReplicatedObjectStoreDrillReport",
@@ -159,6 +168,7 @@ __all__ = [
     "create_text_encoder",
     "custom_resource_definition",
     "event_payload",
+    "evaluate_production_slo",
     "image_payload",
     "kubernetes_resource_path",
     "operator_bundle",

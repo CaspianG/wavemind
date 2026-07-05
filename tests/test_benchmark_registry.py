@@ -29,8 +29,12 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["ann_index_curve"]["status"] == "implemented"
     assert entries["production_load_profile_100k"]["status"] == "implemented"
     assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["recall_at_k"] >= 0.9
+    assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["slo_status"] == "pass"
+    assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["slo_required_replicas"] >= 1
     assert entries["production_load_profile_1m"]["status"] == "implemented"
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["recall_at_k"] > 0
+    assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["slo_status"] == "fail"
+    assert entries["production_load_qdrant_1m_ef_sweep"]["current"]["hnsw_ef=2048"]["slo_status"] == "fail"
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"

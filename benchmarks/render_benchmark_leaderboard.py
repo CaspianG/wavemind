@@ -161,6 +161,32 @@ def row_status(
     return "Quality tie"
 
 
+def slo_readout(current: dict[str, Any]) -> str | None:
+    rows: list[tuple[str, dict[str, Any]]] = []
+    for engine, metrics in current.items():
+        representative = representative_metrics(metrics)
+        if representative and representative.get("slo_status"):
+            rows.append((engine, representative))
+    if not rows:
+        return None
+    priority = {"pass": 0, "scale_required": 1, "fail": 2, "skipped": 3}
+    engine, metrics = min(
+        rows,
+        key=lambda item: (
+            priority.get(str(item[1].get("slo_status")), 99),
+            int(item[1].get("slo_required_replicas") or 1_000_000),
+        ),
+    )
+    status = str(metrics.get("slo_status"))
+    if status == "pass":
+        return f"production SLO pass: {display_engine_name(engine)}"
+    if status == "scale_required":
+        return f"production SLO needs scale: {display_engine_name(engine)}"
+    if status == "fail":
+        return "production SLO miss"
+    return "production SLO not measured"
+
+
 def leaderboard_row(entry: dict[str, Any]) -> str | None:
     current = entry.get("current")
     if not isinstance(current, dict) or not current:
@@ -179,9 +205,12 @@ def leaderboard_row(entry: dict[str, Any]) -> str | None:
     baseline_text = "-"
     if baseline is not None:
         baseline_text = f"{display_engine_name(baseline[0])}: {fmt(baseline[1].get(metric))} / {latency_text(baseline[1])}"
+    readout = row_status(wave, baseline, metric)
+    if slo := slo_readout(current):
+        readout = f"{readout}; {slo}"
     return (
         f"| {name} | {entry['category']} | {metric_label(metric)} | "
-        f"{wave_text} | {baseline_text} | {row_status(wave, baseline, metric)} |"
+        f"{wave_text} | {baseline_text} | {readout} |"
     )
 
 
@@ -208,6 +237,7 @@ def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
             "",
             "- `WaveMind leads on quality` means the best checked-in WaveMind row beats the best checked-in non-WaveMind baseline on that benchmark's primary quality metric.",
             "- `Quality tie; WaveMind slower` is still a real limitation. It means retrieval quality matched the baseline, but the current memory layer adds latency.",
+            "- `production SLO pass/miss` uses the checked-in SLO gate: recall target, p99 target, requested QPS, current replicas, autoscaling max replicas, and capacity headroom.",
             "- `WaveMind-only check` is a regression or capacity check, not a competitor claim.",
             "- Planned public benchmarks stay in `benchmarks/BENCHMARK_REPORT.md` until a real result JSON is checked in.",
             "",
