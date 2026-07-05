@@ -64,6 +64,7 @@ def run_cluster_profile(
     primary_loads = list(plan.primary_load.values())
     losses = [plan.simulate_node_loss(node.id) for node in nodes]
     min_availability = min(float(loss["availability_ratio"]) for loss in losses)
+    quorum = plan.quorum_report()
     return {
         "engine": "WaveMind cluster planner",
         "simulated_memories": simulated_memories,
@@ -77,6 +78,9 @@ def run_cluster_profile(
         "max_primary_load": max(primary_loads) if primary_loads else 0,
         "min_primary_load": min(primary_loads) if primary_loads else 0,
         "node_loss_min_availability": min_availability,
+        "zone_loss_min_availability": quorum["zone_loss_min_availability"],
+        "read_quorum": quorum["read_quorum"],
+        "write_quorum": quorum["write_quorum"],
         "kubernetes_manifest_kind": plan.kubernetes_manifest()["kind"],
     }
 
@@ -220,8 +224,8 @@ def run_benchmark(
             "replication_factor": replication_factor,
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
-                "hot-cache behavior, and structured payload retrieval. This is "
-                "not a 10M-vector database load test."
+                "node/zone loss simulation, hot-cache behavior, and structured "
+                "payload retrieval. This is not a 10M-vector database load test."
             ),
         },
         "results": results,
@@ -254,6 +258,8 @@ def main() -> int:
     for result in payload["results"]:
         if result["engine"] == "WaveMind cluster planner":
             print(f"| cluster | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")
+            zone_loss = result["zone_loss_min_availability"]
+            print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
         else:

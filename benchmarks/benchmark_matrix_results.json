@@ -625,14 +625,16 @@
         "recall@10",
         "avg_latency_ms",
         "p95_latency_ms",
+        "p99_latency_ms",
         "build_ms"
       ],
       "current": {
         "Qdrant service": {
           "recall_at_k": 1.0,
-          "avg_latency_ms": 10.75583399971947,
-          "p95_latency_ms": 18.775899952743202,
-          "build_ms": 39873.22780000977
+          "avg_latency_ms": 10.275224001379684,
+          "p95_latency_ms": 18.97340000141412,
+          "p99_latency_ms": 21.25629998045042,
+          "build_ms": 27439.262800035067
         },
         "WaveMind pgvector": {
           "recall_at_k": 0.736,
@@ -645,7 +647,7 @@
           "reason": "Set WAVEMIND_FAISS_PATH to use the persisted FAISS backend"
         }
       },
-      "target": "Reach recall@10 >= 0.95 and avg latency < 20 ms on at least one production service backend at 100000 memories.",
+      "target": "Reach recall@10 >= 0.95 and p99 latency < 100 ms on at least one production service backend at 100000 memories.",
       "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container."
     },
     {
@@ -653,8 +655,8 @@
       "name": "Production load profile 1M",
       "category": "production-scale",
       "status": "implemented",
-      "source": "benchmarks/production_load_qdrant_1m_results.json",
-      "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with 50 queries.",
+      "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
       "competitors": [
         "Qdrant service"
       ],
@@ -662,18 +664,76 @@
         "recall@10",
         "avg_latency_ms",
         "p95_latency_ms",
+        "p99_latency_ms",
         "build_ms"
       ],
       "current": {
         "Qdrant service": {
-          "recall_at_k": 0.506,
-          "avg_latency_ms": 45.80613199970685,
-          "p95_latency_ms": 65.17819996224716,
-          "build_ms": 563945.4993000254
+          "recall_at_k": 0.984,
+          "avg_latency_ms": 116.80030399700627,
+          "p95_latency_ms": 153.84380001341924,
+          "p99_latency_ms": 209.27749999100342,
+          "build_ms": 450674.6019999846
         }
       },
-      "target": "Tune service settings until recall@10 >= 0.95 with p95 latency below 100 ms at 1M vectors.",
-      "next_step": "Run Qdrant with tuned HNSW/search params, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk."
+      "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
+      "next_step": "Tune Qdrant indexing/search params further, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk."
+    },
+    {
+      "id": "production_load_qdrant_1m_ef_sweep",
+      "name": "Qdrant 1M HNSW ef sweep",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_qdrant_1m_ef_sweep_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; one Qdrant service collection queried with multiple hnsw_ef settings.",
+      "competitors": [
+        "Qdrant service"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms"
+      ],
+      "current": {
+        "hnsw_ef=512": {
+          "recall_at_k": 0.7533333333333333,
+          "avg_latency_ms": 47.16066332766786,
+          "p95_latency_ms": 68.49600002169609,
+          "p99_latency_ms": 68.51829995866865,
+          "max_latency_ms": 68.51829995866865
+        },
+        "hnsw_ef=768": {
+          "recall_at_k": 0.85,
+          "avg_latency_ms": 44.041876665626965,
+          "p95_latency_ms": 69.07949998276308,
+          "p99_latency_ms": 69.75289998808876,
+          "max_latency_ms": 69.75289998808876
+        },
+        "hnsw_ef=1024": {
+          "recall_at_k": 0.8833333333333333,
+          "avg_latency_ms": 62.91633000170501,
+          "p95_latency_ms": 81.1338999774307,
+          "p99_latency_ms": 85.5405000038445,
+          "max_latency_ms": 85.5405000038445
+        },
+        "hnsw_ef=1536": {
+          "recall_at_k": 0.9366666666666666,
+          "avg_latency_ms": 65.5569299919686,
+          "p95_latency_ms": 111.21890001231804,
+          "p99_latency_ms": 119.66809997102246,
+          "max_latency_ms": 119.66809997102246
+        },
+        "hnsw_ef=2048": {
+          "recall_at_k": 0.9766666666666667,
+          "avg_latency_ms": 64.75662334123626,
+          "p95_latency_ms": 91.18230000603944,
+          "p99_latency_ms": 103.77270000753924,
+          "max_latency_ms": 103.77270000753924
+        }
+      },
+      "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
+      "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable production SLO."
     },
     {
       "id": "scale_readiness",
@@ -701,20 +761,23 @@
           "nodes": 4,
           "replication_factor": 2,
           "node_loss_min_availability": 1.0,
-          "placement_ms": 109.29749999195337
+          "zone_loss_min_availability": 1.0,
+          "read_quorum": 1,
+          "write_quorum": 2,
+          "placement_ms": 115.80999998841435
         },
         "WaveMind hot cache": {
           "queries": 2000,
           "capacity": 512,
           "hit_rate": 0.92,
           "evictions": 0,
-          "p99_lookup_ms": 0.009100011084228754
+          "p99_lookup_ms": 0.003500026650726795
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.7908999978099018,
-          "p99_latency_ms": 1.2743999832309783
+          "avg_latency_ms": 0.8370749856112525,
+          "p99_latency_ms": 1.0724000167101622
         }
       },
       "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",

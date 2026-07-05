@@ -12,6 +12,7 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
+from .jobs import MemoryMaintenanceWorker
 from .storage import SQLiteMemoryStore
 
 
@@ -136,6 +137,13 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--action")
     audit.add_argument("--limit", type=int, default=20)
     audit.add_argument("--json", action="store_true")
+
+    maintenance = sub.add_parser("maintenance", help="Run one deterministic maintenance job")
+    maintenance.add_argument("--namespace")
+    maintenance.add_argument("--consolidate-steps", type=int, default=0)
+    maintenance.add_argument("--consolidate-concepts", action="store_true")
+    maintenance.add_argument("--no-rebuild-index", action="store_true")
+    maintenance.add_argument("--json", action="store_true")
 
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
@@ -508,6 +516,20 @@ def main(argv: list[str] | None = None) -> int:
                     f"namespace={namespace} "
                     f"memory_id={memory_id}"
                 )
+        return 0
+
+    if args.command == "maintenance":
+        report = MemoryMaintenanceWorker(mind).run_once(
+            namespace=args.namespace,
+            consolidate_steps=args.consolidate_steps,
+            consolidate_concepts=args.consolidate_concepts,
+            rebuild_unhealthy_index=not args.no_rebuild_index,
+        )
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_stats(payload)
         return 0
 
     if args.command == "import":

@@ -245,13 +245,21 @@ Static vector search is still faster. That is written honestly in the README.
 
 100k Qdrant service:
 recall@10 1.000
-avg 10.76 ms
+avg 10.28 ms
+p99 21.26 ms
 
-1M Qdrant service:
-recall@10 0.506
-avg 45.81 ms
+1M Qdrant service tuned:
+recall@10 0.984
+avg 116.80 ms
+p99 209.28 ms
 
-100k is promising. 1M needs tuning before serious production claims.
+1M Qdrant EF sweep:
+recall@10 0.977
+avg 64.76 ms
+p99 103.77 ms
+
+100k is production-ready on the tested machine. 1M recall is strong, but p99
+still needs tuning before a stable sub-100 ms claim.
 
 7. Quick start:
 

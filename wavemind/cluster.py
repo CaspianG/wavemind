@@ -87,6 +87,60 @@ class ClusterPlan:
             "availability_ratio": availability_ratio,
         }
 
+    def simulate_zone_loss(self, zone: str) -> dict[str, object]:
+        node_ids = {node.id for node in self.nodes if node.zone == zone}
+        if not node_ids:
+            raise ValueError(f"Unknown cluster zone: {zone}")
+        affected = [
+            placement.namespace
+            for placement in self.placements
+            if any(node_id in node_ids for node_id in placement.replicas)
+        ]
+        unavailable = [
+            placement.namespace
+            for placement in self.placements
+            if any(node_id in node_ids for node_id in placement.replicas)
+            and not any(replica not in node_ids for replica in placement.replicas)
+        ]
+        total = len(self.placements)
+        available_after_loss = total - len(unavailable)
+        availability_ratio = 1.0 if total == 0 else available_after_loss / total
+        return {
+            "lost_zone": zone,
+            "lost_nodes": sorted(node_ids),
+            "affected_namespaces": len(affected),
+            "unavailable_namespaces": len(unavailable),
+            "available_namespaces": available_after_loss,
+            "availability_ratio": availability_ratio,
+        }
+
+    def quorum_report(self) -> dict[str, object]:
+        zones = sorted({node.zone for node in self.nodes if node.zone})
+        write_quorum = self.replication_factor // 2 + 1
+        read_quorum = 1
+        node_losses = [self.simulate_node_loss(node.id) for node in self.nodes]
+        zone_losses = [self.simulate_zone_loss(zone) for zone in zones]
+        min_node_availability = (
+            min(float(loss["availability_ratio"]) for loss in node_losses)
+            if node_losses
+            else 1.0
+        )
+        min_zone_availability = (
+            min(float(loss["availability_ratio"]) for loss in zone_losses)
+            if zone_losses
+            else None
+        )
+        return {
+            "replication_factor": self.replication_factor,
+            "read_quorum": read_quorum,
+            "write_quorum": write_quorum,
+            "node_loss_min_availability": min_node_availability,
+            "zone_loss_min_availability": min_zone_availability,
+            "zones": zones,
+            "node_loss": node_losses,
+            "zone_loss": zone_losses,
+        }
+
     def kubernetes_manifest(
         self,
         image: str = "wavemind:latest",
@@ -137,6 +191,7 @@ class ClusterPlan:
             "placements": [placement.as_dict() for placement in self.placements],
             "node_load": self.node_load,
             "primary_load": self.primary_load,
+            "quorum": self.quorum_report(),
             "warnings": list(self.warnings),
         }
 
@@ -162,10 +217,13 @@ def build_cluster_plan(
         for namespace in namespaces
     )
     warnings: list[str] = []
+    zones = {node.zone for node in node_list if node.zone}
     if replication_factor == 1:
         warnings.append("replication_factor=1 does not survive node loss")
     if len(node_list) < 3:
         warnings.append("Use at least three nodes before calling this production HA")
+    if zones and replication_factor > len(zones):
+        warnings.append("replication_factor exceeds available zones; zone loss can remove multiple replicas")
 
     return ClusterPlan(
         nodes=node_list,
@@ -195,12 +253,28 @@ def _place_namespace(
 ) -> NamespacePlacement:
     scores = sorted(
         (
-            (_rendezvous_score(namespace, node) * node.weight, node.id)
+            (_rendezvous_score(namespace, node) * node.weight, node.id, node.zone or "")
             for node in nodes
         ),
         reverse=True,
     )
-    replicas = tuple(node_id for _, node_id in scores[:replication_factor])
+    selected: list[str] = []
+    selected_zones: set[str] = set()
+    for _, node_id, zone in scores:
+        if len(selected) >= replication_factor:
+            break
+        zone_key = zone or node_id
+        if zone_key in selected_zones:
+            continue
+        selected.append(node_id)
+        selected_zones.add(zone_key)
+    if len(selected) < replication_factor:
+        for _, node_id, _zone in scores:
+            if len(selected) >= replication_factor:
+                break
+            if node_id not in selected:
+                selected.append(node_id)
+    replicas = tuple(selected)
     digest = hashlib.sha256(namespace.encode("utf-8")).hexdigest()[:16]
     return NamespacePlacement(
         namespace=namespace,

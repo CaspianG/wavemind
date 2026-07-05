@@ -131,6 +131,33 @@ def test_cli_benchmark_seeds_all_synthetic_cases(tmp_path):
     assert report["recall_at_k"] == 1.0
 
 
+def test_cli_maintenance_runs_one_job(tmp_path):
+    db_path = tmp_path / "maintenance.sqlite3"
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "temporary memory",
+        "--namespace",
+        "ops",
+        "--ttl-seconds",
+        "-1",
+    )
+
+    result = run_cli(
+        "--db",
+        str(db_path),
+        "maintenance",
+        "--namespace",
+        "ops",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["expired_purged"] == 1
+    assert payload["index_rebuilt"] in {True, False}
+
+
 def test_cli_consolidate_creates_concept_memory(tmp_path):
     db_path = tmp_path / "concepts.sqlite3"
 

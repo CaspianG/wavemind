@@ -51,7 +51,28 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
             continue
         summaries[engine] = _metric_summary(
             result,
-            ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "build_ms"),
+            ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"),
+        ) or {}
+    return summaries
+
+
+def _qdrant_ef_sweep_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not payload:
+        return {}
+    summaries: dict[str, dict[str, Any]] = {}
+    for result in payload.get("results", []):
+        ef = result.get("hnsw_ef")
+        if ef is None:
+            continue
+        summaries[f"hnsw_ef={ef}"] = _metric_summary(
+            result,
+            (
+                "recall_at_k",
+                "avg_latency_ms",
+                "p95_latency_ms",
+                "p99_latency_ms",
+                "max_latency_ms",
+            ),
         ) or {}
     return summaries
 
@@ -104,6 +125,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
     production_load_payload = _load_json(root / "benchmarks" / "production_load_results.json")
     production_load_1m_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_results.json")
+    production_load_100k_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_100k_tuned_results.json")
+    production_load_1m_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_tuned_results.json")
+    production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
@@ -121,6 +145,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_index_results = _ann_latest_results(production_index_payload)
     production_load_results = _ann_latest_results(production_load_payload)
     production_load_1m_results = _ann_latest_results(production_load_1m_payload)
+    production_load_100k_tuned_results = _ann_latest_results(production_load_100k_tuned_payload)
+    production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
+    production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
     scale_readiness_results = _engine_results(scale_readiness_payload)
     memory_competitor_results = _engine_results(memory_competitor_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
@@ -638,9 +665,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "source": "benchmarks/production_load_benchmark.py",
             "dataset": "100000 generated normalized 128-d vectors; recall@10 measured against exact cosine neighbors.",
             "competitors": ["Qdrant service", "pgvector HNSW", "FAISS persisted"],
-            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
-            "current": production_load_results,
-            "target": "Reach recall@10 >= 0.95 and avg latency < 20 ms on at least one production service backend at 100000 memories.",
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"],
+            "current": {**production_load_results, **production_load_100k_tuned_results},
+            "target": "Reach recall@10 >= 0.95 and p99 latency < 100 ms on at least one production service backend at 100000 memories.",
             "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container.",
         },
         {
@@ -648,13 +675,26 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "name": "Production load profile 1M",
             "category": "production-scale",
             "status": "implemented",
-            "source": "benchmarks/production_load_qdrant_1m_results.json",
-            "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with 50 queries.",
+            "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
             "competitors": ["Qdrant service"],
-            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
-            "current": production_load_1m_results,
-            "target": "Tune service settings until recall@10 >= 0.95 with p95 latency below 100 ms at 1M vectors.",
-            "next_step": "Run Qdrant with tuned HNSW/search params, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk.",
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"],
+            "current": {**production_load_1m_results, **production_load_1m_tuned_results},
+            "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
+            "next_step": "Tune Qdrant indexing/search params further, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk.",
+        },
+        {
+            "id": "production_load_qdrant_1m_ef_sweep",
+            "name": "Qdrant 1M HNSW ef sweep",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_qdrant_1m_ef_sweep_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; one Qdrant service collection queried with multiple hnsw_ef settings.",
+            "competitors": ["Qdrant service"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms"],
+            "current": production_load_1m_ef_sweep_results,
+            "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
+            "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable production SLO.",
         },
         {
             "id": "scale_readiness",
@@ -679,6 +719,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "nodes",
                         "replication_factor",
                         "node_loss_min_availability",
+                        "zone_loss_min_availability",
+                        "read_quorum",
+                        "write_quorum",
                         "placement_ms",
                     ),
                 ),

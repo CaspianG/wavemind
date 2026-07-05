@@ -27,10 +27,10 @@ policy matters more than raw vector-database scale:
   deployments where startup rebuild time matters.
 - A Docker-backed production index profile now compares persisted FAISS,
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
-- A service-backed production load profile now includes 100000-vector Qdrant
-  and pgvector runs plus a 1M-vector Qdrant-only run. Qdrant is strong at 100k,
-  but the first 1M run drops to `recall@10 0.506`, so large-N tuning remains an
-  active blocker.
+- A service-backed production load profile now includes tuned 100000-vector and
+  1M-vector Qdrant runs. Qdrant reaches `recall@10 1.000`, p99 `21.26 ms` at
+  100k, and tuned 1M recall reaches `0.984`; the remaining blocker is stable
+  sub-100 ms p99 at 1M.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
   recall but still misses the production recall target.
@@ -42,7 +42,8 @@ policy matters more than raw vector-database scale:
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
-  single-node-loss simulation, and a Kubernetes StatefulSet manifest skeleton.
+  node/zone-loss simulation, read/write quorum reporting, and a Kubernetes
+  StatefulSet manifest skeleton.
 - `HotMemoryCache`, `query_with_cache()`, and `MemoryMaintenanceWorker` provide
   the first worker/cache primitives for hot namespaces, TTL purge, field
   consolidation, concept consolidation, and index-health repair loops.

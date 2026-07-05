@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import time
+import json
+import hashlib
 from collections import OrderedDict
 from dataclasses import asdict, dataclass
 from typing import Any, Iterable
@@ -125,9 +127,164 @@ class HotMemoryCache:
         )
 
 
+class RedisHotMemoryCache:
+    """Redis-backed cache for hot namespace/query pairs.
+
+    The class accepts an existing Redis-like client so production deployments can
+    reuse their connection pool while tests can pass a small fake client.
+    """
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        prefix: str = "wavemind:hot",
+        ttl_seconds: float = 60.0,
+    ):
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        self.client = client
+        self.prefix = prefix.rstrip(":")
+        self.ttl_seconds = float(ttl_seconds)
+        self._hits = 0
+        self._misses = 0
+        self._evictions = 0
+
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        *,
+        prefix: str = "wavemind:hot",
+        ttl_seconds: float = 60.0,
+    ) -> "RedisHotMemoryCache":
+        try:
+            import redis
+        except ImportError as exc:
+            raise RuntimeError(
+                'Install Redis support with: pip install "wavemind[redis]"'
+            ) from exc
+        return cls(
+            redis.Redis.from_url(url, decode_responses=True),
+            prefix=prefix,
+            ttl_seconds=ttl_seconds,
+        )
+
+    def get(
+        self,
+        namespace: str,
+        query: str,
+        *,
+        top_k: int,
+        tags: Iterable[str] | None = None,
+        min_score: float | None = None,
+    ) -> list[QueryResult] | None:
+        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        raw = self.client.get(key)
+        if raw is None:
+            self._misses += 1
+            return None
+        self._hits += 1
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        payload = json.loads(str(raw))
+        return [
+            QueryResult(
+                id=int(item["id"]),
+                text=str(item["text"]),
+                score=float(item["score"]),
+                vector_score=float(item["vector_score"]),
+                field_score=float(item["field_score"]),
+                graph_score=float(item.get("graph_score", 0.0)),
+                namespace=str(item["namespace"]),
+                tags=tuple(item.get("tags") or ()),
+                metadata=dict(item.get("metadata") or {}),
+            )
+            for item in payload
+        ]
+
+    def put(
+        self,
+        namespace: str,
+        query: str,
+        value: list[QueryResult],
+        *,
+        top_k: int,
+        tags: Iterable[str] | None = None,
+        min_score: float | None = None,
+    ) -> None:
+        key = self._key(namespace, query, top_k=top_k, tags=tags, min_score=min_score)
+        payload = [
+            {
+                "id": item.id,
+                "text": item.text,
+                "score": item.score,
+                "vector_score": item.vector_score,
+                "field_score": item.field_score,
+                "graph_score": item.graph_score,
+                "namespace": item.namespace,
+                "tags": list(item.tags),
+                "metadata": item.metadata,
+            }
+            for item in value
+        ]
+        self.client.set(
+            key,
+            json.dumps(payload, ensure_ascii=False, default=str),
+            ex=max(1, int(round(self.ttl_seconds))),
+        )
+
+    def invalidate_namespace(self, namespace: str) -> int:
+        pattern = f"{self.prefix}:{namespace}:*"
+        keys = list(self.client.scan_iter(match=pattern))
+        if keys:
+            self.client.delete(*keys)
+        return len(keys)
+
+    def clear(self) -> None:
+        keys = list(self.client.scan_iter(match=f"{self.prefix}:*"))
+        if keys:
+            self.client.delete(*keys)
+
+    def stats(self) -> CacheStats:
+        size = 0
+        try:
+            size = sum(1 for _ in self.client.scan_iter(match=f"{self.prefix}:*"))
+        except Exception:
+            size = 0
+        return CacheStats(
+            hits=self._hits,
+            misses=self._misses,
+            evictions=self._evictions,
+            size=size,
+            capacity=0,
+        )
+
+    def _key(
+        self,
+        namespace: str,
+        query: str,
+        *,
+        top_k: int,
+        tags: Iterable[str] | None,
+        min_score: float | None,
+    ) -> str:
+        tail = HotMemoryCache._key(
+            namespace,
+            query,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
+        digest = hashlib.sha256(
+            json.dumps(tail, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+        return f"{self.prefix}:{namespace}:{digest}"
+
+
 def query_with_cache(
     memory: Any,
-    cache: HotMemoryCache,
+    cache: HotMemoryCache | RedisHotMemoryCache,
     text: str,
     *,
     namespace: str = "default",

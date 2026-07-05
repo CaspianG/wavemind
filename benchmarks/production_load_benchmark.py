@@ -60,6 +60,8 @@ def preflight(output_path: Path | None = None) -> dict[str, Any]:
             "WAVEMIND_PGVECTOR_DSN": bool(os.environ.get("WAVEMIND_PGVECTOR_DSN")),
             "WAVEMIND_PGVECTOR_CREATE_HNSW": os.environ.get("WAVEMIND_PGVECTOR_CREATE_HNSW"),
             "WAVEMIND_PGVECTOR_EF_SEARCH": os.environ.get("WAVEMIND_PGVECTOR_EF_SEARCH"),
+            "WAVEMIND_QDRANT_HNSW_EF": os.environ.get("WAVEMIND_QDRANT_HNSW_EF"),
+            "WAVEMIND_QDRANT_EXACT": os.environ.get("WAVEMIND_QDRANT_EXACT"),
         },
         "disk": {
             "root": disk_root,
@@ -108,13 +110,13 @@ def run_production_load(
 
 def print_table(payload: dict[str, Any]) -> None:
     top_k = payload["scenario"]["top_k"]
-    print(f"| vectors | engine | recall@{top_k} | avg latency | p95 latency | build |")
-    print("|---:|---|---:|---:|---:|---:|")
+    print(f"| vectors | engine | recall@{top_k} | avg latency | p95 latency | p99 latency | build |")
+    print("|---:|---|---:|---:|---:|---:|---:|")
     for size_result in payload["results"]:
         for result in size_result["results"]:
             if result.get("skipped"):
                 print(
-                    f"| {size_result['vectors']} | {result['engine']} | skipped | - | - | - |"
+                    f"| {size_result['vectors']} | {result['engine']} | skipped | - | - | - | - |"
                 )
                 continue
             print(
@@ -122,6 +124,7 @@ def print_table(payload: dict[str, Any]) -> None:
                 f"{result['recall_at_k']:.3f} | "
                 f"{result['avg_latency_ms']:.2f} ms | "
                 f"{result['p95_latency_ms']:.2f} ms | "
+                f"{result['p99_latency_ms']:.2f} ms | "
                 f"{result['build_ms']:.1f} ms |"
             )
 

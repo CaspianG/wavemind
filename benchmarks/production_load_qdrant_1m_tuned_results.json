@@ -1,0 +1,75 @@
+{
+  "scenario": {
+    "name": "production_load_profile",
+    "description": "Service-backed large-N candidate-index load profile. The intended production path is SQLite/Postgres as source of truth plus persisted FAISS, Qdrant service, or pgvector HNSW for candidate generation. Skipped engines are reported explicitly when optional services or dependencies are not configured.",
+    "sizes": [
+      1000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 50,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "load_sizes": [
+      1000000
+    ],
+    "default_target_sizes": [
+      100000,
+      1000000
+    ]
+  },
+  "results": [
+    {
+      "vectors": 1000000,
+      "vector_dim": 128,
+      "queries": 50,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 0.984,
+          "avg_latency_ms": 116.80030399700627,
+          "p50_latency_ms": 116.27829997451045,
+          "p95_latency_ms": 153.84380001341924,
+          "p99_latency_ms": 209.27749999100342,
+          "max_latency_ms": 209.27749999100342,
+          "build_ms": 450674.6019999846,
+          "queries": 50,
+          "search_params": {
+            "hnsw_ef": 2048,
+            "exact": false
+          }
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": false,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": "2048",
+      "WAVEMIND_QDRANT_EXACT": "0"
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 7.93,
+      "total_gb": 231.85
+    }
+  }
+}

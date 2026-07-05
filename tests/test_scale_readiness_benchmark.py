@@ -13,6 +13,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     results = {result["engine"]: result for result in payload["results"]}
 
     assert results["WaveMind cluster planner"]["node_loss_min_availability"] == 1.0
+    assert results["WaveMind cluster planner"]["zone_loss_min_availability"] == 1.0
+    assert results["WaveMind cluster planner"]["write_quorum"] == 2
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
     assert payload["scenario"]["simulated_memories"] == 100_000

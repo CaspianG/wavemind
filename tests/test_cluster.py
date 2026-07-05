@@ -56,6 +56,31 @@ def test_cluster_plan_survives_single_node_loss_with_replication():
     assert loss["unavailable_namespaces"] == 0
 
 
+def test_cluster_plan_prefers_distinct_zones_and_reports_quorum():
+    nodes = [
+        ClusterNode(id="node-a", address="10.0.0.1:8000", zone="zone-a"),
+        ClusterNode(id="node-b", address="10.0.0.2:8000", zone="zone-b"),
+        ClusterNode(id="node-c", address="10.0.0.3:8000", zone="zone-c"),
+        ClusterNode(id="node-d", address="10.0.0.4:8000", zone="zone-a"),
+    ]
+    plan = build_cluster_plan(
+        namespaces=[f"tenant:{index}" for index in range(128)],
+        nodes=nodes,
+        replication_factor=3,
+    )
+    zones_by_id = {node.id: node.zone for node in nodes}
+
+    assert all(
+        len({zones_by_id[node_id] for node_id in placement.replicas}) == 3
+        for placement in plan.placements
+    )
+    quorum = plan.quorum_report()
+    assert quorum["write_quorum"] == 2
+    assert quorum["read_quorum"] == 1
+    assert quorum["node_loss_min_availability"] == 1.0
+    assert quorum["zone_loss_min_availability"] == 1.0
+
+
 def test_cluster_plan_rejects_impossible_replication():
     with pytest.raises(ValueError, match="replication_factor"):
         build_cluster_plan(

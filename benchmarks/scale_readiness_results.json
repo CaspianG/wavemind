@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,13 +14,16 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 109.29749999195337,
-      "max_replica_load": 2079,
-      "min_replica_load": 1998,
-      "replica_load_stdev": 30.224162519414826,
+      "placement_ms": 115.80999998841435,
+      "max_replica_load": 2413,
+      "min_replica_load": 1728,
+      "replica_load_stdev": 316.54462560593254,
       "max_primary_load": 1051,
       "min_primary_load": 994,
       "node_loss_min_availability": 1.0,
+      "zone_loss_min_availability": 1.0,
+      "read_quorum": 1,
+      "write_quorum": 2,
       "kubernetes_manifest_kind": "StatefulSet"
     },
     {
@@ -29,8 +32,8 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.002615449542645365,
-      "p99_lookup_ms": 0.009100011084228754
+      "avg_lookup_ms": 0.0015844501904211938,
+      "p99_lookup_ms": 0.003500026650726795
     },
     {
       "engine": "WaveMind structured payloads",
@@ -42,8 +45,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.7908999978099018,
-      "p99_latency_ms": 1.2743999832309783
+      "avg_latency_ms": 0.8370749856112525,
+      "p99_latency_ms": 1.0724000167101622
     }
   ]
 }

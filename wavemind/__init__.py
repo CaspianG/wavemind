@@ -9,7 +9,7 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
-from .jobs import HotMemoryCache, MemoryMaintenanceWorker, query_with_cache
+from .jobs import HotMemoryCache, MemoryMaintenanceWorker, RedisHotMemoryCache, query_with_cache
 from .multimodal import (
     MemoryPayload,
     audio_payload,
@@ -28,7 +28,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 
 __all__ = [
     "FieldProjector",
@@ -45,6 +45,7 @@ __all__ = [
     "NamespaceShardRouter",
     "NamespacePlacement",
     "QueryResult",
+    "RedisHotMemoryCache",
     "PgVectorIndex",
     "PostgresMemoryStore",
     "QdrantVectorIndex",

@@ -1,0 +1,79 @@
+{
+  "scenario": {
+    "name": "qdrant_1m_hnsw_ef_sweep",
+    "vectors": 1000000,
+    "vector_dim": 128,
+    "queries": 30,
+    "top_k": 10,
+    "noise": 0.08,
+    "build_ms": 451912.429900025,
+    "total_ms": 467028.85869995225
+  },
+  "results": [
+    {
+      "engine": "Qdrant service",
+      "vectors": 1000000,
+      "queries": 30,
+      "top_k": 10,
+      "hnsw_ef": 512,
+      "recall_at_k": 0.7533333333333333,
+      "avg_latency_ms": 47.16066332766786,
+      "p50_latency_ms": 46.69164997176267,
+      "p95_latency_ms": 68.49600002169609,
+      "p99_latency_ms": 68.51829995866865,
+      "max_latency_ms": 68.51829995866865
+    },
+    {
+      "engine": "Qdrant service",
+      "vectors": 1000000,
+      "queries": 30,
+      "top_k": 10,
+      "hnsw_ef": 768,
+      "recall_at_k": 0.85,
+      "avg_latency_ms": 44.041876665626965,
+      "p50_latency_ms": 41.37050002464093,
+      "p95_latency_ms": 69.07949998276308,
+      "p99_latency_ms": 69.75289998808876,
+      "max_latency_ms": 69.75289998808876
+    },
+    {
+      "engine": "Qdrant service",
+      "vectors": 1000000,
+      "queries": 30,
+      "top_k": 10,
+      "hnsw_ef": 1024,
+      "recall_at_k": 0.8833333333333333,
+      "avg_latency_ms": 62.91633000170501,
+      "p50_latency_ms": 66.18324996088631,
+      "p95_latency_ms": 81.1338999774307,
+      "p99_latency_ms": 85.5405000038445,
+      "max_latency_ms": 85.5405000038445
+    },
+    {
+      "engine": "Qdrant service",
+      "vectors": 1000000,
+      "queries": 30,
+      "top_k": 10,
+      "hnsw_ef": 1536,
+      "recall_at_k": 0.9366666666666666,
+      "avg_latency_ms": 65.5569299919686,
+      "p50_latency_ms": 59.95724999229424,
+      "p95_latency_ms": 111.21890001231804,
+      "p99_latency_ms": 119.66809997102246,
+      "max_latency_ms": 119.66809997102246
+    },
+    {
+      "engine": "Qdrant service",
+      "vectors": 1000000,
+      "queries": 30,
+      "top_k": 10,
+      "hnsw_ef": 2048,
+      "recall_at_k": 0.9766666666666667,
+      "avg_latency_ms": 64.75662334123626,
+      "p50_latency_ms": 58.22360000456683,
+      "p95_latency_ms": 91.18230000603944,
+      "p99_latency_ms": 103.77270000753924,
+      "max_latency_ms": 103.77270000753924
+    }
+  ]
+}
