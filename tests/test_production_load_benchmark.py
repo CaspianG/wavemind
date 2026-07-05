@@ -25,11 +25,13 @@ def test_production_load_runner_reports_preflight_and_skips_unconfigured_service
 
     assert payload["scenario"]["name"] == "production_load_profile"
     assert payload["scenario"]["default_target_sizes"] == [100000, 1000000]
+    assert payload["scenario"]["cost_model"]["replica_hourly_cost_usd"] == 0.25
     assert "preflight" in payload
     results = {result["engine"]: result for result in payload["results"][0]["results"]}
     assert results["WaveMind faiss-persisted"]["skipped"] is True
     assert "WAVEMIND_FAISS_PATH" in results["WaveMind faiss-persisted"]["reason"]
     assert results["WaveMind faiss-persisted"]["slo_status"] == "skipped"
+    assert results["WaveMind faiss-persisted"]["cost_status"] == "skipped"
     assert results["Qdrant service"]["skipped"] is True
     assert "WAVEMIND_QDRANT_URL" in results["Qdrant service"]["reason"]
     assert results["Qdrant service"]["slo_status"] == "skipped"
@@ -37,11 +39,12 @@ def test_production_load_runner_reports_preflight_and_skips_unconfigured_service
     assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector"]["reason"]
     assert results["WaveMind pgvector"]["slo_status"] == "skipped"
     assert payload["results"][0]["slo"][0]["status"] == "skipped"
+    assert payload["results"][0]["cost"][0]["cost_status"] == "skipped"
 
 
 def test_production_load_slo_gate_classifies_pass_scale_and_fail():
-    from benchmarks.production_load_benchmark import evaluate_slo_result
-    from wavemind import ProductionSLOTarget
+    from benchmarks.production_load_benchmark import evaluate_cost_result, evaluate_slo_result
+    from wavemind import ProductionCostTarget, ProductionSLOTarget
 
     target = ProductionSLOTarget(
         target_recall_at_k=0.95,
@@ -62,6 +65,14 @@ def test_production_load_slo_gate_classifies_pass_scale_and_fail():
     )
     assert passing["status"] == "pass"
     assert passing["required_replicas"] == 2
+    passing_cost = evaluate_cost_result(
+        passing,
+        memory_count=100_000,
+        vector_dim=128,
+        target=ProductionCostTarget(replica_hourly_cost_usd=0.25),
+    )
+    assert passing_cost["cost_status"] == "valid_slo"
+    assert passing_cost["compute_cost_per_1m_queries_usd"] > 0
 
     scale_required = evaluate_slo_result(
         {
@@ -92,6 +103,13 @@ def test_production_load_slo_gate_classifies_pass_scale_and_fail():
         ),
     )
     assert failing["status"] == "fail"
+    failing_cost = evaluate_cost_result(
+        failing,
+        memory_count=1_000_000,
+        vector_dim=128,
+        target=ProductionCostTarget(replica_hourly_cost_usd=0.25),
+    )
+    assert failing_cost["cost_status"] == "invalid_slo"
     assert failing["blocking_reasons"] == (
         "recall_below_target",
         "p99_above_target",
@@ -133,6 +151,7 @@ def test_production_load_cli_writes_json(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["scenario"]["name"] == "production_load_profile"
     assert payload["scenario"]["slo_targets"]["target_qps"] == 100.0
+    assert payload["scenario"]["cost_model"]["storage_gb_monthly_cost_usd"] == 0.1
     assert payload["results"][0]["vectors"] == 32
     assert payload["results"][0]["results"][0]["engine"] == "WaveMind quantized"
     assert payload["results"][0]["results"][0]["slo_status"] in {
@@ -141,3 +160,5 @@ def test_production_load_cli_writes_json(tmp_path):
         "fail",
     }
     assert payload["results"][0]["slo"][0]["engine"] == "WaveMind quantized"
+    assert payload["results"][0]["cost"][0]["engine"] == "WaveMind quantized"
+    assert payload["results"][0]["results"][0]["compute_cost_per_1m_queries_usd"] > 0

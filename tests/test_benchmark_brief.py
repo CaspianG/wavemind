@@ -33,3 +33,5 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "Hacker News" in brief
     assert "Reddit" in brief
     assert "X Thread" in brief
+    assert "$1.39` per 1M queries" in brief
+    assert "$11.81` per 1M queries" in brief

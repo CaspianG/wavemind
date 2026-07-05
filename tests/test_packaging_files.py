@@ -226,3 +226,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "examples/research_notebook_memory.py" in launch_kit
     assert "checked-in JSON artifacts" in benchmark_brief
     assert "Static vector search is still faster" in benchmark_brief
+    assert "ProductionCostTarget" in readme
+    assert "estimate_production_cost" in readme
+    assert "SLO and cost gates" in roadmap
+    assert "cost $1.39 / 1M queries" in benchmark_brief

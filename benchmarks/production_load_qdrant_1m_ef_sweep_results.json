@@ -15,6 +15,13 @@
       "replicas": 3,
       "autoscaling_max_replicas": 24,
       "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0
     }
   },
   "results": [
@@ -32,7 +39,12 @@
       "max_latency_ms": 68.51829995866865,
       "slo_status": "fail",
       "slo_required_replicas": 7,
-      "slo_autoscaled_qps": 356.22908616181195
+      "slo_autoscaled_qps": 356.22908616181195,
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -48,7 +60,12 @@
       "max_latency_ms": 69.75289998808876,
       "slo_status": "fail",
       "slo_required_replicas": 7,
-      "slo_autoscaled_qps": 381.4551347924683
+      "slo_autoscaled_qps": 381.4551347924683,
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -64,7 +81,12 @@
       "max_latency_ms": 85.5405000038445,
       "slo_status": "fail",
       "slo_required_replicas": 9,
-      "slo_autoscaled_qps": 267.02129637162125
+      "slo_autoscaled_qps": 267.02129637162125,
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.25,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1642.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -80,7 +102,12 @@
       "max_latency_ms": 119.66809997102246,
       "slo_status": "fail",
       "slo_required_replicas": 10,
-      "slo_autoscaled_qps": 256.2658135769654
+      "slo_autoscaled_qps": 256.2658135769654,
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -96,7 +123,12 @@
       "max_latency_ms": 103.77270000753924,
       "slo_status": "fail",
       "slo_required_replicas": 10,
-      "slo_autoscaled_qps": 259.4329218105163
+      "slo_autoscaled_qps": 259.4329218105163,
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+      "estimated_storage_gb": 2.384185791015625
     }
   ],
   "slo": [
@@ -117,7 +149,12 @@
       "autoscaled_capacity_qps": 356.22908616181195,
       "blocking_reasons": [
         "recall_below_target"
-      ]
+      ],
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -136,7 +173,12 @@
       "autoscaled_capacity_qps": 381.4551347924683,
       "blocking_reasons": [
         "recall_below_target"
-      ]
+      ],
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -155,7 +197,12 @@
       "autoscaled_capacity_qps": 267.02129637162125,
       "blocking_reasons": [
         "recall_below_target"
-      ]
+      ],
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.25,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1642.7384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -175,7 +222,12 @@
       "blocking_reasons": [
         "recall_below_target",
         "p99_above_target"
-      ]
+      ],
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+      "estimated_storage_gb": 2.384185791015625
     },
     {
       "engine": "Qdrant service",
@@ -194,7 +246,99 @@
       "autoscaled_capacity_qps": 259.4329218105163,
       "blocking_reasons": [
         "p99_above_target"
-      ]
+      ],
+      "cost_status": "invalid_slo",
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+      "estimated_storage_gb": 2.384185791015625
+    }
+  ],
+  "cost": [
+    {
+      "engine": "Qdrant service",
+      "cost_status": "invalid_slo",
+      "memory_count": 1000000,
+      "vector_dim": 128,
+      "required_replicas": 7,
+      "target_qps": 100.0,
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "vector_storage_gb": 0.476837158203125,
+      "payload_storage_gb": 1.9073486328125,
+      "total_storage_gb": 2.384185791015625,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_compute_cost_at_target_qps_usd": 1277.5,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016
+    },
+    {
+      "engine": "Qdrant service",
+      "cost_status": "invalid_slo",
+      "memory_count": 1000000,
+      "vector_dim": 128,
+      "required_replicas": 7,
+      "target_qps": 100.0,
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "vector_storage_gb": 0.476837158203125,
+      "payload_storage_gb": 1.9073486328125,
+      "total_storage_gb": 2.384185791015625,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "compute_cost_per_1m_queries_usd": 4.861111111111111,
+      "monthly_compute_cost_at_target_qps_usd": 1277.5,
+      "monthly_total_cost_at_target_qps_usd": 1277.7384185791016
+    },
+    {
+      "engine": "Qdrant service",
+      "cost_status": "invalid_slo",
+      "memory_count": 1000000,
+      "vector_dim": 128,
+      "required_replicas": 9,
+      "target_qps": 100.0,
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "vector_storage_gb": 0.476837158203125,
+      "payload_storage_gb": 1.9073486328125,
+      "total_storage_gb": 2.384185791015625,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "compute_cost_per_1m_queries_usd": 6.25,
+      "monthly_compute_cost_at_target_qps_usd": 1642.5,
+      "monthly_total_cost_at_target_qps_usd": 1642.7384185791016
+    },
+    {
+      "engine": "Qdrant service",
+      "cost_status": "invalid_slo",
+      "memory_count": 1000000,
+      "vector_dim": 128,
+      "required_replicas": 10,
+      "target_qps": 100.0,
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "vector_storage_gb": 0.476837158203125,
+      "payload_storage_gb": 1.9073486328125,
+      "total_storage_gb": 2.384185791015625,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_compute_cost_at_target_qps_usd": 1825.0,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016
+    },
+    {
+      "engine": "Qdrant service",
+      "cost_status": "invalid_slo",
+      "memory_count": 1000000,
+      "vector_dim": 128,
+      "required_replicas": 10,
+      "target_qps": 100.0,
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "vector_storage_gb": 0.476837158203125,
+      "payload_storage_gb": 1.9073486328125,
+      "total_storage_gb": 2.384185791015625,
+      "monthly_storage_cost_usd": 0.2384185791015625,
+      "compute_cost_per_1m_queries_usd": 6.944444444444444,
+      "monthly_compute_cost_at_target_qps_usd": 1825.0,
+      "monthly_total_cost_at_target_qps_usd": 1825.2384185791016
     }
   ]
 }

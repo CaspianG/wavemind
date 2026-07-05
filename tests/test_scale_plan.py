@@ -6,7 +6,14 @@ import sys
 
 import pytest
 
-from wavemind import HashingTextEncoder, ProductionSLOTarget, WaveMind, evaluate_production_slo
+from wavemind import (
+    HashingTextEncoder,
+    ProductionCostTarget,
+    ProductionSLOTarget,
+    WaveMind,
+    estimate_production_cost,
+    evaluate_production_slo,
+)
 from wavemind.scale import build_scale_plan, scale_status_meets_or_exceeds
 
 
@@ -134,6 +141,34 @@ def test_production_slo_api_estimates_autoscaling_capacity():
 
     with pytest.raises(ValueError, match="autoscaling_max_replicas"):
         ProductionSLOTarget(replicas=4, autoscaling_max_replicas=3)
+
+
+def test_production_cost_api_estimates_compute_and_storage_costs():
+    slo = evaluate_production_slo(
+        engine="Qdrant service",
+        recall_at_k=1.0,
+        avg_latency_ms=10.0,
+        p99_latency_ms=25.0,
+        target=ProductionSLOTarget(target_qps=100.0, replicas=3),
+    )
+
+    cost = estimate_production_cost(
+        slo=slo,
+        memory_count=100_000,
+        vector_dim=128,
+        target=ProductionCostTarget(
+            replica_hourly_cost_usd=0.25,
+            storage_gb_monthly_cost_usd=0.10,
+            memory_payload_kb=2.0,
+            vector_dtype_bytes=4,
+        ),
+    )
+
+    assert cost.cost_status == "valid_slo"
+    assert cost.required_replicas == 2
+    assert cost.compute_cost_per_1m_queries_usd == pytest.approx(1.3888888889)
+    assert cost.total_storage_gb > 0
+    assert cost.monthly_total_cost_at_target_qps_usd > cost.monthly_storage_cost_usd
 
 
 def test_scale_plan_requires_service_architecture_for_million_plus_memory():

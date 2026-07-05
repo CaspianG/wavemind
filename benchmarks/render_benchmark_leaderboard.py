@@ -187,6 +187,30 @@ def slo_readout(current: dict[str, Any]) -> str | None:
     return "production SLO not measured"
 
 
+def cost_readout(current: dict[str, Any]) -> str | None:
+    rows: list[tuple[str, dict[str, Any]]] = []
+    for engine, metrics in current.items():
+        representative = representative_metrics(metrics)
+        if representative and representative.get("compute_cost_per_1m_queries_usd") is not None:
+            rows.append((engine, representative))
+    if not rows:
+        return None
+    valid_rows = [
+        row for row in rows
+        if row[1].get("cost_status") == "valid_slo"
+    ]
+    ranked = valid_rows or rows
+    engine, metrics = min(
+        ranked,
+        key=lambda item: float(item[1].get("compute_cost_per_1m_queries_usd") or 1_000_000_000.0),
+    )
+    prefix = "cost" if valid_rows else "cost if SLO fixed"
+    return (
+        f"{prefix}: {display_engine_name(engine)} "
+        f"${float(metrics['compute_cost_per_1m_queries_usd']):.2f}/1M queries"
+    )
+
+
 def leaderboard_row(entry: dict[str, Any]) -> str | None:
     current = entry.get("current")
     if not isinstance(current, dict) or not current:
@@ -208,6 +232,8 @@ def leaderboard_row(entry: dict[str, Any]) -> str | None:
     readout = row_status(wave, baseline, metric)
     if slo := slo_readout(current):
         readout = f"{readout}; {slo}"
+    if cost := cost_readout(current):
+        readout = f"{readout}; {cost}"
     return (
         f"| {name} | {entry['category']} | {metric_label(metric)} | "
         f"{wave_text} | {baseline_text} | {readout} |"
@@ -239,6 +265,7 @@ def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
             "- `WaveMind leads on quality` means the best checked-in WaveMind row beats the best checked-in non-WaveMind baseline on that benchmark's primary quality metric.",
             "- `Quality tie; WaveMind slower` is still a real limitation. It means retrieval quality matched the baseline, but the current memory layer adds latency.",
             "- `production SLO pass/miss` uses the checked-in SLO gate: recall target, p99 target, requested QPS, current replicas, autoscaling max replicas, and capacity headroom.",
+            "- `cost` uses the checked-in benchmark cost model: required replicas, target QPS, replica hourly cost, vector size, and estimated payload storage.",
             "- `WaveMind-only check` is a regression or capacity check, not a competitor claim.",
             "- Planned public benchmarks stay in `benchmarks/BENCHMARK_REPORT.md` until a real result JSON is checked in.",
             "",

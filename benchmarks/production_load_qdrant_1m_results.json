@@ -24,6 +24,13 @@
       "replicas": 3,
       "autoscaling_max_replicas": 24,
       "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0
     }
   },
   "results": [
@@ -43,7 +50,12 @@
           "queries": 50,
           "slo_status": "fail",
           "slo_required_replicas": 7,
-          "slo_autoscaled_qps": 366.76312245940164
+          "slo_autoscaled_qps": 366.76312245940164,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
         }
       ],
       "slo": [
@@ -64,7 +76,31 @@
           "autoscaled_capacity_qps": 366.76312245940164,
           "blocking_reasons": [
             "recall_below_target"
-          ]
+          ],
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
+        }
+      ],
+      "cost": [
+        {
+          "engine": "Qdrant service",
+          "cost_status": "invalid_slo",
+          "memory_count": 1000000,
+          "vector_dim": 128,
+          "required_replicas": 7,
+          "target_qps": 100.0,
+          "replica_hourly_cost_usd": 0.25,
+          "storage_gb_monthly_cost_usd": 0.1,
+          "vector_storage_gb": 0.476837158203125,
+          "payload_storage_gb": 1.9073486328125,
+          "total_storage_gb": 2.384185791015625,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_compute_cost_at_target_qps_usd": 1277.5,
+          "monthly_total_cost_at_target_qps_usd": 1277.7384185791016
         }
       ]
     }

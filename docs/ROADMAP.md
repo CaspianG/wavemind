@@ -29,8 +29,9 @@ policy matters more than raw vector-database scale:
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
 - A service-backed production load profile now includes tuned 100000-vector and
   1M-vector Qdrant runs. Qdrant reaches `recall@10 1.000`, p99 `21.26 ms` at
-  100k, and tuned 1M recall reaches `0.984`; the remaining blocker is stable
-  sub-100 ms p99 at 1M.
+  100k with a checked-in estimate of `$1.39` per 1M queries, and tuned 1M
+  recall reaches `0.984` with an estimated `$11.81` per 1M queries if the SLO is
+  fixed by replication; the remaining blocker is stable sub-100 ms p99 at 1M.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
   recall but still misses the production recall target.
@@ -128,7 +129,7 @@ Priorities:
 - Support external vector services such as Qdrant for larger deployments.
   The 100k service-mode Qdrant benchmark is checked in and healthy; the 1M
   service-mode run is checked in but not production-grade yet because default
-  recall is too low.
+  recall is too low and tuned p99 still misses the SLO gate.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
   first persisted FAISS snapshot path and production profile are implemented;
   production still needs Linux/container FAISS at 100k/1M and deeper latency
@@ -291,7 +292,8 @@ Enterprise requirements:
 ### Short Term: 1 To 3 Months
 
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
-  further-tuned pgvector.
+  further-tuned pgvector, with SLO and cost gates tracked for every checked-in
+  production result.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

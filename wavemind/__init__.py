@@ -67,10 +67,13 @@ from .replication import (
     WriteQuorumError,
 )
 from .scale import (
+    ProductionCostResult,
+    ProductionCostTarget,
     ProductionSLOResult,
     ProductionSLOTarget,
     ScalePlan,
     build_scale_plan,
+    estimate_production_cost,
     evaluate_production_slo,
     scale_status_meets_or_exceeds,
 )
@@ -95,7 +98,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.7"
+__version__ = "2.4.8"
 
 __all__ = [
     "FieldProjector",
@@ -131,6 +134,8 @@ __all__ = [
     "ObjectStoreUploadReport",
     "NamespacePlacement",
     "QueryResult",
+    "ProductionCostResult",
+    "ProductionCostTarget",
     "ProductionSLOResult",
     "ProductionSLOTarget",
     "ReadQuorumError",
@@ -171,6 +176,7 @@ __all__ = [
     "create_text_encoder",
     "custom_resource_definition",
     "event_payload",
+    "estimate_production_cost",
     "evaluate_production_slo",
     "image_payload",
     "kubernetes_resource_path",

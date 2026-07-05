@@ -63,6 +63,10 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
                 "slo_status",
                 "slo_required_replicas",
                 "slo_autoscaled_qps",
+                "cost_status",
+                "compute_cost_per_1m_queries_usd",
+                "monthly_total_cost_at_target_qps_usd",
+                "estimated_storage_gb",
             ),
         ) or {}
     return summaries
@@ -87,6 +91,10 @@ def _qdrant_ef_sweep_results(payload: dict[str, Any] | None) -> dict[str, dict[s
                 "slo_status",
                 "slo_required_replicas",
                 "slo_autoscaled_qps",
+                "cost_status",
+                "compute_cost_per_1m_queries_usd",
+                "monthly_total_cost_at_target_qps_usd",
+                "estimated_storage_gb",
             ),
         ) or {}
     return summaries
@@ -688,6 +696,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "SLO status",
                 "required replicas",
                 "autoscaled QPS",
+                "compute cost / 1M queries",
+                "monthly target cost",
                 "build_ms",
             ],
             "current": {**production_load_results, **production_load_100k_tuned_results},
@@ -710,6 +720,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "SLO status",
                 "required replicas",
                 "autoscaled QPS",
+                "compute cost / 1M queries",
+                "monthly target cost",
                 "build_ms",
             ],
             "current": {**production_load_1m_results, **production_load_1m_tuned_results},
@@ -732,6 +744,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "SLO status",
                 "required replicas",
                 "autoscaled QPS",
+                "compute cost / 1M queries",
+                "monthly target cost",
             ],
             "current": production_load_1m_ef_sweep_results,
             "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",

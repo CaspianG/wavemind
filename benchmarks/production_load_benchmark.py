@@ -16,7 +16,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.ann_index_curve_benchmark import run_benchmark as run_ann_curve
-from wavemind.scale import ProductionSLOTarget, evaluate_production_slo
+from wavemind.scale import (
+    ProductionCostTarget,
+    ProductionSLOResult,
+    ProductionSLOTarget,
+    estimate_production_cost,
+    evaluate_production_slo,
+)
 
 
 def _module_available(name: str) -> bool:
@@ -87,6 +93,10 @@ def run_production_load(
     replicas: int = 3,
     autoscaling_max_replicas: int = 24,
     capacity_headroom: float = 0.70,
+    replica_hourly_cost_usd: float = 0.25,
+    storage_gb_monthly_cost_usd: float = 0.10,
+    memory_payload_kb: float = 2.0,
+    vector_dtype_bytes: int = 4,
 ) -> dict[str, Any]:
     size_list = [int(size) for size in sizes]
     payload = run_ann_curve(
@@ -120,6 +130,10 @@ def run_production_load(
         replicas=replicas,
         autoscaling_max_replicas=autoscaling_max_replicas,
         capacity_headroom=capacity_headroom,
+        replica_hourly_cost_usd=replica_hourly_cost_usd,
+        storage_gb_monthly_cost_usd=storage_gb_monthly_cost_usd,
+        memory_payload_kb=memory_payload_kb,
+        vector_dtype_bytes=vector_dtype_bytes,
     )
     return payload
 
@@ -133,6 +147,10 @@ def add_slo_evaluation(
     replicas: int,
     autoscaling_max_replicas: int,
     capacity_headroom: float,
+    replica_hourly_cost_usd: float = 0.25,
+    storage_gb_monthly_cost_usd: float = 0.10,
+    memory_payload_kb: float = 2.0,
+    vector_dtype_bytes: int = 4,
 ) -> dict[str, Any]:
     if target_recall <= 0 or target_recall > 1:
         raise ValueError("target_recall must be in (0, 1]")
@@ -146,6 +164,10 @@ def add_slo_evaluation(
         raise ValueError("autoscaling_max_replicas must be >= replicas")
     if capacity_headroom <= 0 or capacity_headroom > 1:
         raise ValueError("capacity_headroom must be in (0, 1]")
+    if replica_hourly_cost_usd < 0:
+        raise ValueError("replica_hourly_cost_usd cannot be negative")
+    if storage_gb_monthly_cost_usd < 0:
+        raise ValueError("storage_gb_monthly_cost_usd cannot be negative")
 
     target = ProductionSLOTarget(
         target_recall_at_k=target_recall,
@@ -155,19 +177,54 @@ def add_slo_evaluation(
         autoscaling_max_replicas=autoscaling_max_replicas,
         capacity_headroom=capacity_headroom,
     )
+    cost_target = ProductionCostTarget(
+        replica_hourly_cost_usd=replica_hourly_cost_usd,
+        storage_gb_monthly_cost_usd=storage_gb_monthly_cost_usd,
+        memory_payload_kb=memory_payload_kb,
+        vector_dtype_bytes=vector_dtype_bytes,
+    )
     payload["scenario"]["slo_targets"] = target.as_dict()
+    payload["scenario"]["cost_model"] = cost_target.as_dict()
     for size_result in payload.get("results", []):
         slo_rows = []
+        cost_rows = []
         for result in size_result.get("results", []):
             evaluation = evaluate_slo_result(
                 result,
                 target=target,
             )
+            cost = evaluate_cost_result(
+                evaluation,
+                memory_count=int(size_result.get("vectors", 0)),
+                vector_dim=int(
+                    payload["scenario"].get("dim")
+                    or payload["scenario"].get("vector_dim")
+                    or size_result.get("vector_dim")
+                    or 1
+                ),
+                target=cost_target,
+            )
             result["slo_status"] = evaluation["status"]
             result["slo_required_replicas"] = evaluation.get("required_replicas")
             result["slo_autoscaled_qps"] = evaluation.get("autoscaled_capacity_qps")
+            result["cost_status"] = cost["cost_status"]
+            result["compute_cost_per_1m_queries_usd"] = cost.get("compute_cost_per_1m_queries_usd")
+            result["monthly_storage_cost_usd"] = cost.get("monthly_storage_cost_usd")
+            result["monthly_total_cost_at_target_qps_usd"] = cost.get("monthly_total_cost_at_target_qps_usd")
+            result["estimated_storage_gb"] = cost.get("total_storage_gb")
+            evaluation.update(
+                {
+                    "cost_status": cost["cost_status"],
+                    "compute_cost_per_1m_queries_usd": cost.get("compute_cost_per_1m_queries_usd"),
+                    "monthly_storage_cost_usd": cost.get("monthly_storage_cost_usd"),
+                    "monthly_total_cost_at_target_qps_usd": cost.get("monthly_total_cost_at_target_qps_usd"),
+                    "estimated_storage_gb": cost.get("total_storage_gb"),
+                }
+            )
             slo_rows.append(evaluation)
+            cost_rows.append(cost)
         size_result["slo"] = slo_rows
+        size_result["cost"] = cost_rows
     return payload
 
 
@@ -189,6 +246,44 @@ def evaluate_slo_result(
         avg_latency_ms=float(result.get("avg_latency_ms", 0.0)),
         p99_latency_ms=result.get("p99_latency_ms"),
         p95_latency_ms=result.get("p95_latency_ms"),
+        target=target,
+    ).as_dict()
+
+
+def evaluate_cost_result(
+    evaluation: dict[str, Any],
+    *,
+    memory_count: int,
+    vector_dim: int,
+    target: ProductionCostTarget,
+) -> dict[str, Any]:
+    if evaluation.get("status") == "skipped":
+        return {
+            "engine": evaluation.get("engine", "unknown"),
+            "cost_status": "skipped",
+            "reason": evaluation.get("reason", "engine skipped"),
+        }
+    slo = ProductionSLOResult(
+        engine=str(evaluation["engine"]),
+        status=str(evaluation["status"]),
+        target_recall_at_k=float(evaluation["target_recall_at_k"]),
+        target_p99_ms=float(evaluation["target_p99_ms"]),
+        target_qps=float(evaluation["target_qps"]),
+        recall_at_k=float(evaluation["recall_at_k"]),
+        p99_latency_ms=float(evaluation["p99_latency_ms"]),
+        avg_latency_ms=float(evaluation["avg_latency_ms"]),
+        per_replica_qps_at_headroom=float(evaluation["per_replica_qps_at_headroom"]),
+        current_replicas=int(evaluation["current_replicas"]),
+        current_capacity_qps=float(evaluation["current_capacity_qps"]),
+        required_replicas=int(evaluation["required_replicas"]),
+        autoscaling_max_replicas=int(evaluation["autoscaling_max_replicas"]),
+        autoscaled_capacity_qps=float(evaluation["autoscaled_capacity_qps"]),
+        blocking_reasons=tuple(evaluation["blocking_reasons"]),
+    )
+    return estimate_production_cost(
+        slo=slo,
+        memory_count=memory_count,
+        vector_dim=vector_dim,
         target=target,
     ).as_dict()
 
@@ -228,6 +323,22 @@ def print_table(payload: dict[str, Any]) -> None:
                     f"{row['required_replicas']} | "
                     f"{row['autoscaled_capacity_qps']:.1f} qps | {blockers} |"
                 )
+    if payload["scenario"].get("cost_model"):
+        print("\n| vectors | engine | cost status | compute / 1M queries | monthly target cost | storage |")
+        print("|---:|---|---|---:|---:|---:|")
+        for size_result in payload["results"]:
+            for row in size_result.get("cost", []):
+                if row["cost_status"] == "skipped":
+                    print(
+                        f"| {size_result['vectors']} | {row['engine']} | skipped | - | - | - |"
+                    )
+                    continue
+                print(
+                    f"| {size_result['vectors']} | {row['engine']} | {row['cost_status']} | "
+                    f"${row['compute_cost_per_1m_queries_usd']:.4f} | "
+                    f"${row['monthly_total_cost_at_target_qps_usd']:.2f} | "
+                    f"{row['total_storage_gb']:.2f} GB |"
+                )
 
 
 def main() -> int:
@@ -244,6 +355,10 @@ def main() -> int:
     parser.add_argument("--replicas", type=int, default=3)
     parser.add_argument("--autoscaling-max-replicas", type=int, default=24)
     parser.add_argument("--capacity-headroom", type=float, default=0.70)
+    parser.add_argument("--replica-hourly-cost-usd", type=float, default=0.25)
+    parser.add_argument("--storage-gb-monthly-cost-usd", type=float, default=0.10)
+    parser.add_argument("--memory-payload-kb", type=float, default=2.0)
+    parser.add_argument("--vector-dtype-bytes", type=int, default=4)
     parser.add_argument(
         "--engines",
         nargs="+",
@@ -268,6 +383,10 @@ def main() -> int:
         replicas=args.replicas,
         autoscaling_max_replicas=args.autoscaling_max_replicas,
         capacity_headroom=args.capacity_headroom,
+        replica_hourly_cost_usd=args.replica_hourly_cost_usd,
+        storage_gb_monthly_cost_usd=args.storage_gb_monthly_cost_usd,
+        memory_payload_kb=args.memory_payload_kb,
+        vector_dtype_bytes=args.vector_dtype_bytes,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -83,6 +83,52 @@ class ProductionSLOResult:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ProductionCostTarget:
+    replica_hourly_cost_usd: float = 0.25
+    storage_gb_monthly_cost_usd: float = 0.10
+    memory_payload_kb: float = 2.0
+    vector_dtype_bytes: int = 4
+    hours_per_month: float = 730.0
+
+    def __post_init__(self) -> None:
+        if self.replica_hourly_cost_usd < 0:
+            raise ValueError("replica_hourly_cost_usd cannot be negative")
+        if self.storage_gb_monthly_cost_usd < 0:
+            raise ValueError("storage_gb_monthly_cost_usd cannot be negative")
+        if self.memory_payload_kb < 0:
+            raise ValueError("memory_payload_kb cannot be negative")
+        if self.vector_dtype_bytes <= 0:
+            raise ValueError("vector_dtype_bytes must be positive")
+        if self.hours_per_month <= 0:
+            raise ValueError("hours_per_month must be positive")
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ProductionCostResult:
+    engine: str
+    cost_status: str
+    memory_count: int
+    vector_dim: int
+    required_replicas: int
+    target_qps: float
+    replica_hourly_cost_usd: float
+    storage_gb_monthly_cost_usd: float
+    vector_storage_gb: float
+    payload_storage_gb: float
+    total_storage_gb: float
+    monthly_storage_cost_usd: float
+    compute_cost_per_1m_queries_usd: float
+    monthly_compute_cost_at_target_qps_usd: float
+    monthly_total_cost_at_target_qps_usd: float
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def evaluate_production_slo(
     *,
     engine: str,
@@ -139,6 +185,57 @@ def evaluate_production_slo(
         autoscaling_max_replicas=target.autoscaling_max_replicas,
         autoscaled_capacity_qps=autoscaled_capacity_qps,
         blocking_reasons=tuple(blocking_reasons),
+    )
+
+
+def estimate_production_cost(
+    *,
+    slo: ProductionSLOResult,
+    memory_count: int,
+    vector_dim: int,
+    target: ProductionCostTarget | None = None,
+) -> ProductionCostResult:
+    target = target or ProductionCostTarget()
+    memories = max(0, int(memory_count))
+    dim = max(1, int(vector_dim))
+    required_replicas = max(1, int(slo.required_replicas))
+
+    vector_storage_gb = (
+        memories * dim * target.vector_dtype_bytes / float(1024**3)
+    )
+    payload_storage_gb = (
+        memories * target.memory_payload_kb * 1024.0 / float(1024**3)
+    )
+    total_storage_gb = vector_storage_gb + payload_storage_gb
+    monthly_storage_cost = total_storage_gb * target.storage_gb_monthly_cost_usd
+
+    monthly_compute_cost = (
+        required_replicas * target.replica_hourly_cost_usd * target.hours_per_month
+    )
+    monthly_queries_at_target = (
+        slo.target_qps * 3600.0 * target.hours_per_month
+    )
+    compute_cost_per_1m_queries = (
+        monthly_compute_cost / max(monthly_queries_at_target / 1_000_000.0, 0.001)
+    )
+    cost_status = "valid_slo" if slo.status in {"pass", "scale_required"} else "invalid_slo"
+
+    return ProductionCostResult(
+        engine=slo.engine,
+        cost_status=cost_status,
+        memory_count=memories,
+        vector_dim=dim,
+        required_replicas=required_replicas,
+        target_qps=slo.target_qps,
+        replica_hourly_cost_usd=target.replica_hourly_cost_usd,
+        storage_gb_monthly_cost_usd=target.storage_gb_monthly_cost_usd,
+        vector_storage_gb=vector_storage_gb,
+        payload_storage_gb=payload_storage_gb,
+        total_storage_gb=total_storage_gb,
+        monthly_storage_cost_usd=monthly_storage_cost,
+        compute_cost_per_1m_queries_usd=compute_cost_per_1m_queries,
+        monthly_compute_cost_at_target_qps_usd=monthly_compute_cost,
+        monthly_total_cost_at_target_qps_usd=monthly_compute_cost + monthly_storage_cost,
     )
 
 

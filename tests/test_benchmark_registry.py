@@ -34,9 +34,27 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["recall_at_k"] >= 0.9
     assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["slo_status"] == "pass"
     assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["slo_required_replicas"] >= 1
+    assert (
+        entries["production_load_profile_100k"]["current"]["Qdrant service"][
+            "compute_cost_per_1m_queries_usd"
+        ]
+        > 0
+    )
+    assert (
+        entries["production_load_profile_100k"]["current"]["Qdrant service"][
+            "monthly_total_cost_at_target_qps_usd"
+        ]
+        > 0
+    )
     assert entries["production_load_profile_1m"]["status"] == "implemented"
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["recall_at_k"] > 0
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["slo_status"] == "fail"
+    assert (
+        entries["production_load_profile_1m"]["current"]["Qdrant service"][
+            "cost_status"
+        ]
+        == "invalid_slo"
+    )
     assert entries["production_load_qdrant_1m_ef_sweep"]["current"]["hnsw_ef=2048"]["slo_status"] == "fail"
     serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
     assert serverless["scale_to_zero"] is True

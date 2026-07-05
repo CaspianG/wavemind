@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-05T22:36:12Z",
-  "source_ref": "cafa986d88b531d4c78cc10cc573588a4d910a1c",
-  "workflow_run_id": "28757232908",
-  "refresh_profile": "weekly-fast",
+  "generated_at": "2026-07-05T22:42:20Z",
+  "source_ref": "c156403ffde7",
+  "workflow_run_id": null,
+  "refresh_profile": "manual-main",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
   "benchmarks": [
     {
@@ -633,6 +633,8 @@
         "SLO status",
         "required replicas",
         "autoscaled QPS",
+        "compute cost / 1M queries",
+        "monthly target cost",
         "build_ms"
       ],
       "current": {
@@ -644,7 +646,11 @@
           "build_ms": 27439.262800035067,
           "slo_status": "pass",
           "slo_required_replicas": 2,
-          "slo_autoscaled_qps": 1635.0008523166225
+          "slo_autoscaled_qps": 1635.0008523166225,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+          "monthly_total_cost_at_target_qps_usd": 365.02384185791016,
+          "estimated_storage_gb": 0.2384185791015625
         },
         "WaveMind pgvector": {
           "recall_at_k": 0.736,
@@ -653,7 +659,11 @@
           "build_ms": 455703.69949995074,
           "slo_status": "fail",
           "slo_required_replicas": 3,
-          "slo_autoscaled_qps": 945.9427501933837
+          "slo_autoscaled_qps": 945.9427501933837,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 2.083333333333333,
+          "monthly_total_cost_at_target_qps_usd": 547.5238418579102,
+          "estimated_storage_gb": 0.2384185791015625
         },
         "WaveMind faiss-persisted": {
           "skipped": true,
@@ -681,6 +691,8 @@
         "SLO status",
         "required replicas",
         "autoscaled QPS",
+        "compute cost / 1M queries",
+        "monthly target cost",
         "build_ms"
       ],
       "current": {
@@ -692,7 +704,11 @@
           "build_ms": 450674.6019999846,
           "slo_status": "fail",
           "slo_required_replicas": 17,
-          "slo_autoscaled_qps": 143.8352420763443
+          "slo_autoscaled_qps": 143.8352420763443,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 11.805555555555555,
+          "monthly_total_cost_at_target_qps_usd": 3102.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
         }
       },
       "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
@@ -715,7 +731,9 @@
         "p99_latency_ms",
         "SLO status",
         "required replicas",
-        "autoscaled QPS"
+        "autoscaled QPS",
+        "compute cost / 1M queries",
+        "monthly target cost"
       ],
       "current": {
         "hnsw_ef=512": {
@@ -726,7 +744,11 @@
           "max_latency_ms": 68.51829995866865,
           "slo_status": "fail",
           "slo_required_replicas": 7,
-          "slo_autoscaled_qps": 356.22908616181195
+          "slo_autoscaled_qps": 356.22908616181195,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
         },
         "hnsw_ef=768": {
           "recall_at_k": 0.85,
@@ -736,7 +758,11 @@
           "max_latency_ms": 69.75289998808876,
           "slo_status": "fail",
           "slo_required_replicas": 7,
-          "slo_autoscaled_qps": 381.4551347924683
+          "slo_autoscaled_qps": 381.4551347924683,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_total_cost_at_target_qps_usd": 1277.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
         },
         "hnsw_ef=1024": {
           "recall_at_k": 0.8833333333333333,
@@ -746,7 +772,11 @@
           "max_latency_ms": 85.5405000038445,
           "slo_status": "fail",
           "slo_required_replicas": 9,
-          "slo_autoscaled_qps": 267.02129637162125
+          "slo_autoscaled_qps": 267.02129637162125,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 6.25,
+          "monthly_total_cost_at_target_qps_usd": 1642.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
         },
         "hnsw_ef=1536": {
           "recall_at_k": 0.9366666666666666,
@@ -756,7 +786,11 @@
           "max_latency_ms": 119.66809997102246,
           "slo_status": "fail",
           "slo_required_replicas": 10,
-          "slo_autoscaled_qps": 256.2658135769654
+          "slo_autoscaled_qps": 256.2658135769654,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 6.944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+          "estimated_storage_gb": 2.384185791015625
         },
         "hnsw_ef=2048": {
           "recall_at_k": 0.9766666666666667,
@@ -766,7 +800,11 @@
           "max_latency_ms": 103.77270000753924,
           "slo_status": "fail",
           "slo_required_replicas": 10,
-          "slo_autoscaled_qps": 259.4329218105163
+          "slo_autoscaled_qps": 259.4329218105163,
+          "cost_status": "invalid_slo",
+          "compute_cost_per_1m_queries_usd": 6.944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 1825.2384185791016,
+          "estimated_storage_gb": 2.384185791015625
         }
       },
       "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
