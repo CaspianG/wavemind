@@ -1,0 +1,74 @@
+{{- if .Values.repair.enabled }}
+{{- $replicationFactor := int .Values.replicationFactor -}}
+{{- $writeQuorum := add (div $replicationFactor 2) 1 -}}
+{{- if .Values.repair.writeQuorum -}}
+{{- $writeQuorum = int .Values.repair.writeQuorum -}}
+{{- end -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "wavemind.fullname" . }}-repair
+  labels:
+    {{- include "wavemind.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cluster-repair
+spec:
+  schedule: {{ .Values.repair.schedule | quote }}
+  concurrencyPolicy: {{ .Values.repair.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.repair.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.repair.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "wavemind.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: cluster-repair
+        spec:
+          serviceAccountName: {{ include "wavemind.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          containers:
+            - name: cluster-repair
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              {{- if .Values.auth.enabled }}
+              env:
+                - name: WAVEMIND_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "wavemind.authSecretName" . }}
+                      key: {{ .Values.auth.adminKeyKey }}
+              {{- end }}
+              args:
+                - cluster-repair
+                - --replication-factor
+                - {{ .Values.replicationFactor | quote }}
+                - --write-quorum
+                - {{ $writeQuorum | quote }}
+                - --read-quorum
+                - {{ .Values.repair.readQuorum | quote }}
+                - --limit
+                - {{ .Values.repair.limit | quote }}
+                - --json
+                {{- range $index := until (int .Values.replicaCount) }}
+                - --node
+                - {{ printf "node-%d=http://%s-%d.%s.%s.svc.cluster.local:%v" $index (include "wavemind.fullname" $) $index (include "wavemind.headlessServiceName" $) $.Release.Namespace $.Values.service.port | quote }}
+                {{- end }}
+                {{- range .Values.repair.namespaces }}
+                - --namespace
+                - {{ . | quote }}
+                {{- end }}
+                {{- if gt (int .Values.repair.namespaceCount) 0 }}
+                - --namespace-prefix
+                - {{ .Values.repair.namespacePrefix | quote }}
+                - --namespace-count
+                - {{ .Values.repair.namespaceCount | quote }}
+                {{- end }}
+                {{- range .Values.repair.tags }}
+                - --tag
+                - {{ . | quote }}
+                {{- end }}
+                {{- if .Values.repair.includeExpired }}
+                - --include-expired
+                {{- end }}
+{{- end }}
+

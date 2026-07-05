@@ -1,0 +1,73 @@
+replicaCount: 3
+replicationFactor: 2
+
+image:
+  repository: wavemind
+  tag: "2.4.1"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 8000
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 20Gi
+
+auth:
+  enabled: false
+  existingSecret: ""
+  adminKey: ""
+  adminKeyKey: admin-key
+
+runtime:
+  encoder: hash
+  index: numpy
+  scoreThreshold: "0.05"
+  logLevel: INFO
+  auditQueries: "1"
+  cacheCapacity: "512"
+  cacheTtlSeconds: "60"
+  redisUrl: ""
+
+otel:
+  enabled: false
+  exporter: otlp
+  endpoint: ""
+
+repair:
+  enabled: true
+  schedule: "*/15 * * * *"
+  namespacePrefix: tenant
+  namespaceCount: 1
+  namespaces: []
+  readQuorum: 1
+  writeQuorum: null
+  limit: 1000
+  includeExpired: false
+  tags: []
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+
+resources: {}
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+

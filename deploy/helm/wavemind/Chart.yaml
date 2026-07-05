@@ -1,0 +1,17 @@
+apiVersion: v2
+name: wavemind
+description: Local-first dynamic memory layer with scheduled cluster repair
+type: application
+version: 0.1.0
+appVersion: "2.4.1"
+keywords:
+  - ai
+  - memory
+  - vector-search
+  - agents
+home: https://github.com/CaspianG/wavemind
+sources:
+  - https://github.com/CaspianG/wavemind
+maintainers:
+  - name: CaspianG
+

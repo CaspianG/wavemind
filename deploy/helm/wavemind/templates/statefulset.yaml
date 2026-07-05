@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "wavemind.fullname" . }}
+  labels:
+    {{- include "wavemind.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "wavemind.headlessServiceName" . }}
+  replicas: {{ .Values.replicaCount }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      {{- include "wavemind.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "wavemind.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "wavemind.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: wavemind
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: WAVEMIND_DB
+              value: /data/wavemind.sqlite3
+            - name: WAVEMIND_ENCODER
+              value: {{ .Values.runtime.encoder | quote }}
+            - name: WAVEMIND_INDEX
+              value: {{ .Values.runtime.index | quote }}
+            - name: WAVEMIND_SCORE_THRESHOLD
+              value: {{ .Values.runtime.scoreThreshold | quote }}
+            - name: WAVEMIND_LOG_LEVEL
+              value: {{ .Values.runtime.logLevel | quote }}
+            - name: WAVEMIND_AUDIT_QUERIES
+              value: {{ .Values.runtime.auditQueries | quote }}
+            - name: WAVEMIND_CACHE_CAPACITY
+              value: {{ .Values.runtime.cacheCapacity | quote }}
+            - name: WAVEMIND_CACHE_TTL_SECONDS
+              value: {{ .Values.runtime.cacheTtlSeconds | quote }}
+            {{- if .Values.runtime.redisUrl }}
+            - name: WAVEMIND_REDIS_URL
+              value: {{ .Values.runtime.redisUrl | quote }}
+            {{- end }}
+            {{- if .Values.auth.enabled }}
+            - name: WAVEMIND_API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "wavemind.authSecretName" . }}
+                  key: {{ .Values.auth.adminKeyKey }}
+            - name: WAVEMIND_ADMIN_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "wavemind.authSecretName" . }}
+                  key: {{ .Values.auth.adminKeyKey }}
+            {{- end }}
+            {{- if .Values.otel.enabled }}
+            - name: WAVEMIND_OTEL_EXPORTER
+              value: {{ .Values.otel.exporter | quote }}
+            - name: WAVEMIND_OTEL_ENDPOINT
+              value: {{ .Values.otel.endpoint | quote }}
+            {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: state
+              mountPath: /data
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- if not .Values.persistence.enabled }}
+      volumes:
+        - name: state
+          emptyDir: {}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: state
+      spec:
+        accessModes:
+          {{- toYaml .Values.persistence.accessModes | nindent 10 }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+  {{- end }}
+

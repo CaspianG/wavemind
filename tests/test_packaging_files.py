@@ -157,6 +157,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest
     assert "recursive-include examples/production-index-profile *" in manifest
+    assert "recursive-include deploy/helm/wavemind *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/BENCHMARK_BRIEF.md" in readme
@@ -166,6 +167,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "docs/assets/wavemind-demo.gif" in readme
     assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
+    assert "deploy/helm/wavemind" in readme
+    assert "cluster-repair` CronJob" in readme
     assert "wavemind scale-plan --target-memories 50000" in readme
     assert "--fail-on action_required" in readme
     assert "GET /scale-plan" in roadmap

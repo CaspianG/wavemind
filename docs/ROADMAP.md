@@ -44,6 +44,9 @@ policy matters more than raw vector-database scale:
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
   node/zone-loss simulation, read/write quorum reporting, a Kubernetes
   StatefulSet manifest skeleton, and a scheduled repair CronJob manifest.
+- A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
+  normal/headless Services, optional auth Secret wiring, persistent per-pod
+  storage, and scheduled `cluster-repair` CronJob.
 - `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, query-audit-driven cache prewarm, TTL purge, field
@@ -222,7 +225,8 @@ Priorities:
 - release automation, generated release-note categories, labels spec, and
   release checklist;
 - support and security policy docs;
-- Helm chart for Kubernetes deployments after the server path is stable;
+- Kubernetes operator and managed/serverless control plane after the Helm chart
+  stabilizes in real deployments;
 - short technical posts explaining stale memory, corrections, namespaces,
   dynamic priority, and benchmark methodology.
 
@@ -284,7 +288,8 @@ Enterprise requirements:
 - Graph memory v2 with incremental edge updates.
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
-- Docker image and Helm chart for API/sidecar deployment.
+- Published container image, Helm chart hardening, and operator-managed
+  API/sidecar deployment.
 - Observability: richer Prometheus metrics, trace dashboards, and durable
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
