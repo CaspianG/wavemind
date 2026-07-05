@@ -203,8 +203,8 @@ tools, or RAG systems where stale memory is a real problem.
 
 ### X Thread
 
-1. I am building WaveMind: open-source dynamic memory for software that needs to
-remember what still matters, not just what text is nearest.
+1. I am building WaveMind: open-source dynamic memory for software that needs
+to remember what still matters, not just what text is nearest.
 
 Vector search answers similarity. Memory also needs priority, decay, TTL,
 corrections, and scope.
@@ -241,20 +241,32 @@ namespace isolation, stale suppression, and repeated recall.
 
 Static vector search is still faster. That is written honestly in the README.
 
-6. Quick start:
+6. New production-load check:
+
+100k Qdrant service:
+recall@10 1.000
+avg 10.76 ms
+
+1M Qdrant service:
+recall@10 0.506
+avg 45.81 ms
+
+100k is promising. 1M needs tuning before serious production claims.
+
+7. Quick start:
 
 python -m pip install wavemind
 wavemind remember "The user prefers short answers" --namespace demo
 wavemind query "answer style" --namespace demo
 
-7. The research direction is a stronger memory field:
+8. The research direction is a stronger memory field:
 
 related memories excite each other,
 conflicting memories inhibit stale facts,
 low-value memory decays,
 clusters can form higher-level concepts.
 
-8. I am looking for feedback from people building long-running agents, local AI
+9. I am looking for feedback from people building long-running agents, local AI
 apps, RAG systems, and personal assistants.
 
 Repo: https://github.com/CaspianG/wavemind
