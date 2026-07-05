@@ -184,6 +184,93 @@ class ClusterPlan:
             },
         }
 
+    def kubernetes_repair_cronjob(
+        self,
+        *,
+        image: str = "wavemind:latest",
+        schedule: str = "*/15 * * * *",
+        name: str = "wavemind-cluster-repair",
+        api_key_secret: str | None = None,
+        api_key_secret_key: str = "api-key",
+        repair_limit: int = 1000,
+        include_expired: bool = False,
+        tags: Iterable[str] = (),
+    ) -> dict[str, object]:
+        namespaces = [placement.namespace for placement in self.placements]
+        if not namespaces:
+            raise ValueError("repair CronJob requires at least one planned namespace")
+        if repair_limit <= 0:
+            raise ValueError("repair_limit must be positive")
+        write_quorum = self.replication_factor // 2 + 1
+        args = [
+            "cluster-repair",
+            "--replication-factor",
+            str(self.replication_factor),
+            "--write-quorum",
+            str(write_quorum),
+            "--read-quorum",
+            "1",
+            "--limit",
+            str(int(repair_limit)),
+            "--json",
+        ]
+        for node in self.nodes:
+            args.extend(["--node", f"{node.id}={node.address}"])
+        for namespace in namespaces:
+            args.extend(["--namespace", namespace])
+        for tag in tags:
+            args.extend(["--tag", str(tag)])
+        if include_expired:
+            args.append("--include-expired")
+
+        container: dict[str, object] = {
+            "name": "cluster-repair",
+            "image": image,
+            "args": args,
+        }
+        if api_key_secret:
+            container["env"] = [
+                {
+                    "name": "WAVEMIND_API_KEY",
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": api_key_secret,
+                            "key": api_key_secret_key,
+                        }
+                    },
+                }
+            ]
+
+        labels = {
+            "app.kubernetes.io/name": "wavemind",
+            "app.kubernetes.io/component": "cluster-repair",
+        }
+        return {
+            "apiVersion": "batch/v1",
+            "kind": "CronJob",
+            "metadata": {
+                "name": name,
+                "labels": labels,
+            },
+            "spec": {
+                "schedule": schedule,
+                "concurrencyPolicy": "Forbid",
+                "successfulJobsHistoryLimit": 3,
+                "failedJobsHistoryLimit": 3,
+                "jobTemplate": {
+                    "spec": {
+                        "template": {
+                            "metadata": {"labels": labels},
+                            "spec": {
+                                "restartPolicy": "OnFailure",
+                                "containers": [container],
+                            },
+                        }
+                    }
+                },
+            },
+        }
+
     def as_dict(self) -> dict[str, object]:
         return {
             "nodes": [node.as_dict() for node in self.nodes],

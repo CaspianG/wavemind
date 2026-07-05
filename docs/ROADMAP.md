@@ -42,8 +42,8 @@ policy matters more than raw vector-database scale:
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
-  node/zone-loss simulation, read/write quorum reporting, and a Kubernetes
-  StatefulSet manifest skeleton.
+  node/zone-loss simulation, read/write quorum reporting, a Kubernetes
+  StatefulSet manifest skeleton, and a scheduled repair CronJob manifest.
 - `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, query-audit-driven cache prewarm, TTL purge, field
@@ -55,7 +55,8 @@ policy matters more than raw vector-database scale:
   namespace delta sync, service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, and tombstone-aware delete
   repair, anti-entropy background repair through `DistributedRepairWorker`
-  and `wavemind cluster-repair`, checksummed replicated snapshot/restore with offsite and
+  and `wavemind cluster-repair`, Kubernetes CronJob generation for scheduled
+  repair, checksummed replicated snapshot/restore with offsite and
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache

@@ -105,6 +105,65 @@ def test_cluster_plan_emits_kubernetes_statefulset_manifest():
     assert {"name": "WAVEMIND_REPLICATION_FACTOR", "value": "2"} in container["env"]
 
 
+def test_cluster_plan_emits_repair_cronjob_manifest():
+    plan = build_cluster_plan(
+        namespaces=["tenant:a", "tenant:b"],
+        nodes=[
+            ClusterNode(id="node-a", address="https://wm-a.internal", zone="zone-a"),
+            ClusterNode(id="node-b", address="https://wm-b.internal", zone="zone-b"),
+            ClusterNode(id="node-c", address="https://wm-c.internal", zone="zone-c"),
+        ],
+        replication_factor=3,
+    )
+
+    manifest = plan.kubernetes_repair_cronjob(
+        image="wavemind:test",
+        schedule="*/5 * * * *",
+        api_key_secret="wavemind-api-key",
+        repair_limit=250,
+        include_expired=True,
+        tags=("ops",),
+    )
+
+    assert manifest["kind"] == "CronJob"
+    assert manifest["spec"]["schedule"] == "*/5 * * * *"
+    pod_spec = manifest["spec"]["jobTemplate"]["spec"]["template"]["spec"]
+    assert pod_spec["restartPolicy"] == "OnFailure"
+    container = pod_spec["containers"][0]
+    assert container["image"] == "wavemind:test"
+    assert container["env"][0]["valueFrom"]["secretKeyRef"] == {
+        "name": "wavemind-api-key",
+        "key": "api-key",
+    }
+    args = container["args"]
+    assert args[:7] == [
+        "cluster-repair",
+        "--replication-factor",
+        "3",
+        "--write-quorum",
+        "2",
+        "--read-quorum",
+        "1",
+    ]
+    assert ["--node", "node-a=https://wm-a.internal"] == args[args.index("--node") : args.index("--node") + 2]
+    assert args.count("--namespace") == 2
+    assert "tenant:a" in args
+    assert "tenant:b" in args
+    assert "--include-expired" in args
+    assert ["--tag", "ops"] == args[args.index("--tag") : args.index("--tag") + 2]
+
+
+def test_cluster_plan_repair_cronjob_requires_namespaces():
+    plan = build_cluster_plan(
+        namespaces=[],
+        nodes=["node-a", "node-b"],
+        replication_factor=2,
+    )
+
+    with pytest.raises(ValueError, match="at least one planned namespace"):
+        plan.kubernetes_repair_cronjob()
+
+
 def test_cli_cluster_plan_outputs_json():
     result = run_cli(
         "cluster-plan",
@@ -123,3 +182,40 @@ def test_cli_cluster_plan_outputs_json():
     assert payload["replication_factor"] == 2
     assert len(payload["placements"]) == 4
     assert set(payload["node_load"]) == {"node-a", "node-b"}
+
+
+def test_cli_cluster_plan_outputs_repair_cronjob():
+    result = run_cli(
+        "cluster-plan",
+        "--namespace",
+        "tenant:a",
+        "--node",
+        "node-a=https://wm-a.internal",
+        "--node",
+        "node-b=https://wm-b.internal",
+        "--node",
+        "node-c=https://wm-c.internal",
+        "--replication-factor",
+        "3",
+        "--repair-cronjob",
+        "--repair-schedule",
+        "*/10 * * * *",
+        "--repair-api-key-secret",
+        "wavemind-api-key",
+        "--repair-limit",
+        "500",
+        "--repair-tag",
+        "ops",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    cronjob = payload["repair_cronjob"]
+
+    assert cronjob["kind"] == "CronJob"
+    assert cronjob["spec"]["schedule"] == "*/10 * * * *"
+    container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    assert container["env"][0]["valueFrom"]["secretKeyRef"]["name"] == "wavemind-api-key"
+    assert "--namespace" in container["args"]
+    assert "tenant:a" in container["args"]
+    assert "--tag" in container["args"]
+    assert "ops" in container["args"]

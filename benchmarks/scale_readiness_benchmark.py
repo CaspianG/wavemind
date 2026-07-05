@@ -284,6 +284,9 @@ def run_cluster_profile(
     losses = [plan.simulate_node_loss(node.id) for node in nodes]
     min_availability = min(float(loss["availability_ratio"]) for loss in losses)
     quorum = plan.quorum_report()
+    repair_cronjob = plan.kubernetes_repair_cronjob(api_key_secret="wavemind-api-key")
+    repair_container = repair_cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    repair_args = list(repair_container["args"])
     return {
         "engine": "WaveMind cluster planner",
         "simulated_memories": simulated_memories,
@@ -301,6 +304,8 @@ def run_cluster_profile(
         "read_quorum": quorum["read_quorum"],
         "write_quorum": quorum["write_quorum"],
         "kubernetes_manifest_kind": plan.kubernetes_manifest()["kind"],
+        "kubernetes_repair_cronjob_kind": repair_cronjob["kind"],
+        "kubernetes_repair_cronjob_namespaces": repair_args.count("--namespace"),
     }
 
 

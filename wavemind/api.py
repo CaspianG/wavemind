@@ -359,6 +359,14 @@ class ClusterPlanRequest(BaseModel):
     include_kubernetes: bool = False
     image: str = "wavemind:latest"
     storage_size: str = "20Gi"
+    include_repair_cronjob: bool = False
+    repair_schedule: str = "*/15 * * * *"
+    repair_name: str = "wavemind-cluster-repair"
+    repair_api_key_secret: str | None = None
+    repair_api_key_secret_key: str = "api-key"
+    repair_limit: int = Field(default=1000, ge=1)
+    repair_include_expired: bool = False
+    repair_tags: list[str] = Field(default_factory=list)
 
 
 class ConsolidateRequest(BaseModel):
@@ -721,6 +729,17 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             payload["kubernetes"] = plan.kubernetes_manifest(
                 image=request.image,
                 storage_size=request.storage_size,
+            )
+        if request.include_repair_cronjob:
+            payload["repair_cronjob"] = plan.kubernetes_repair_cronjob(
+                image=request.image,
+                schedule=request.repair_schedule,
+                name=request.repair_name,
+                api_key_secret=request.repair_api_key_secret,
+                api_key_secret_key=request.repair_api_key_secret_key,
+                repair_limit=request.repair_limit,
+                include_expired=request.repair_include_expired,
+                tags=tuple(request.repair_tags),
             )
         return payload
 

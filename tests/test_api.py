@@ -98,12 +98,19 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
                     ],
                     "replication_factor": 2,
                     "include_kubernetes": True,
+                    "include_repair_cronjob": True,
+                    "repair_schedule": "*/10 * * * *",
+                    "repair_api_key_secret": "wavemind-api-key",
                 },
             )
             assert cluster_plan.status_code == 200
             cluster_payload = cluster_plan.json()
             assert len(cluster_payload["placements"]) == 4
             assert cluster_payload["kubernetes"]["kind"] == "StatefulSet"
+            assert cluster_payload["repair_cronjob"]["kind"] == "CronJob"
+            repair_container = cluster_payload["repair_cronjob"]["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+            assert repair_container["env"][0]["valueFrom"]["secretKeyRef"]["name"] == "wavemind-api-key"
+            assert "--namespace" in repair_container["args"]
 
             backup_dir = tmp_path / "api-backups"
             backup = client.post(

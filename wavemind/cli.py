@@ -150,6 +150,14 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_plan.add_argument("--kubernetes", action="store_true")
     cluster_plan.add_argument("--image", default="wavemind:latest")
     cluster_plan.add_argument("--storage-size", default="20Gi")
+    cluster_plan.add_argument("--repair-cronjob", action="store_true")
+    cluster_plan.add_argument("--repair-schedule", default="*/15 * * * *")
+    cluster_plan.add_argument("--repair-name", default="wavemind-cluster-repair")
+    cluster_plan.add_argument("--repair-api-key-secret")
+    cluster_plan.add_argument("--repair-api-key-secret-key", default="api-key")
+    cluster_plan.add_argument("--repair-limit", type=int, default=1000)
+    cluster_plan.add_argument("--repair-include-expired", action="store_true")
+    cluster_plan.add_argument("--repair-tag", action="append", default=[])
     cluster_plan.add_argument("--json", action="store_true")
 
     cluster_repair = sub.add_parser(
@@ -754,6 +762,17 @@ def main(argv: list[str] | None = None) -> int:
             payload["kubernetes"] = plan.kubernetes_manifest(
                 image=args.image,
                 storage_size=args.storage_size,
+            )
+        if args.repair_cronjob:
+            payload["repair_cronjob"] = plan.kubernetes_repair_cronjob(
+                image=args.image,
+                schedule=args.repair_schedule,
+                name=args.repair_name,
+                api_key_secret=args.repair_api_key_secret,
+                api_key_secret_key=args.repair_api_key_secret_key,
+                repair_limit=args.repair_limit,
+                include_expired=args.repair_include_expired,
+                tags=tuple(args.repair_tag),
             )
         if args.json:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
