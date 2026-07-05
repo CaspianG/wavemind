@@ -1132,6 +1132,11 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repair-schedule", default="*/15 * * * *")
     parser.add_argument("--repair-limit", type=int, default=1000)
     parser.add_argument("--no-repair", action="store_true")
+    parser.add_argument("--autoscaling", action="store_true")
+    parser.add_argument("--autoscaling-min-replicas", type=int, default=3)
+    parser.add_argument("--autoscaling-max-replicas", type=int, default=12)
+    parser.add_argument("--autoscaling-target-cpu", type=int, default=70)
+    parser.add_argument("--autoscaling-target-memory", type=int)
 
 
 def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
@@ -1156,6 +1161,11 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         repair_enabled=not args.no_repair,
         repair_schedule=args.repair_schedule,
         repair_limit=args.repair_limit,
+        autoscaling_enabled=args.autoscaling,
+        autoscaling_min_replicas=args.autoscaling_min_replicas,
+        autoscaling_max_replicas=args.autoscaling_max_replicas,
+        autoscaling_target_cpu_utilization=args.autoscaling_target_cpu,
+        autoscaling_target_memory_utilization=args.autoscaling_target_memory,
     )
 
 

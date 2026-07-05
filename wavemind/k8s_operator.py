@@ -46,6 +46,11 @@ class WaveMindClusterSpec:
     repair_enabled: bool = True
     repair_schedule: str = "*/15 * * * *"
     repair_limit: int = 1000
+    autoscaling_enabled: bool = False
+    autoscaling_min_replicas: int = 3
+    autoscaling_max_replicas: int = 12
+    autoscaling_target_cpu_utilization: int = 70
+    autoscaling_target_memory_utilization: int | None = None
     resources: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -67,6 +72,16 @@ class WaveMindClusterSpec:
             raise ValueError("service_port must be positive")
         if self.repair_limit <= 0:
             raise ValueError("repair_limit must be positive")
+        if self.autoscaling_min_replicas <= 0:
+            raise ValueError("autoscaling_min_replicas must be positive")
+        if self.autoscaling_max_replicas < self.autoscaling_min_replicas:
+            raise ValueError("autoscaling_max_replicas must be >= autoscaling_min_replicas")
+        if not 1 <= self.autoscaling_target_cpu_utilization <= 100:
+            raise ValueError("autoscaling_target_cpu_utilization must be between 1 and 100")
+        if self.autoscaling_target_memory_utilization is not None and not (
+            1 <= self.autoscaling_target_memory_utilization <= 100
+        ):
+            raise ValueError("autoscaling_target_memory_utilization must be between 1 and 100")
 
     @classmethod
     def from_custom_resource(cls, resource: dict[str, Any]) -> "WaveMindClusterSpec":
@@ -76,6 +91,7 @@ class WaveMindClusterSpec:
         cache = dict(spec.get("cache") or {})
         auth = dict(spec.get("auth") or {})
         repair = dict(spec.get("repair") or {})
+        autoscaling = dict(spec.get("autoscaling") or {})
         persistence = dict(spec.get("persistence") or {})
         service = dict(spec.get("service") or {})
 
@@ -102,6 +118,13 @@ class WaveMindClusterSpec:
             repair_enabled=bool(repair.get("enabled", True)),
             repair_schedule=str(repair.get("schedule", "*/15 * * * *")),
             repair_limit=int(repair.get("limit", 1000)),
+            autoscaling_enabled=bool(autoscaling.get("enabled", False)),
+            autoscaling_min_replicas=int(autoscaling.get("minReplicas", spec.get("replicas", 3))),
+            autoscaling_max_replicas=int(autoscaling.get("maxReplicas", max(12, int(spec.get("replicas", 3))))),
+            autoscaling_target_cpu_utilization=int(autoscaling.get("targetCPUUtilizationPercentage", 70)),
+            autoscaling_target_memory_utilization=_optional_int(
+                autoscaling.get("targetMemoryUtilizationPercentage")
+            ),
             resources=dict(spec.get("resources") or {}),
         )
 
@@ -154,6 +177,18 @@ class WaveMindClusterSpec:
                 "limit": self.repair_limit,
             },
         }
+        if self.autoscaling_enabled:
+            autoscaling: dict[str, Any] = {
+                "enabled": True,
+                "minReplicas": self.autoscaling_min_replicas,
+                "maxReplicas": self.autoscaling_max_replicas,
+                "targetCPUUtilizationPercentage": self.autoscaling_target_cpu_utilization,
+            }
+            if self.autoscaling_target_memory_utilization is not None:
+                autoscaling["targetMemoryUtilizationPercentage"] = (
+                    self.autoscaling_target_memory_utilization
+                )
+            spec["autoscaling"] = autoscaling
         if self.redis_url:
             spec["cache"]["redisUrl"] = self.redis_url
         if self.auth_secret:
@@ -179,6 +214,8 @@ class WaveMindClusterSpec:
             self._service(headless=True),
             self._statefulset(),
         ]
+        if self.autoscaling_enabled:
+            resources.append(self._horizontal_pod_autoscaler())
         if self.repair_enabled and self.namespace_count:
             resources.append(self._repair_cronjob())
         return resources
@@ -326,6 +363,53 @@ class WaveMindClusterSpec:
             container["imagePullPolicy"] = self.image_pull_policy
         return manifest
 
+    def _horizontal_pod_autoscaler(self) -> dict[str, Any]:
+        labels = self._labels()
+        metrics: list[dict[str, Any]] = [
+            {
+                "type": "Resource",
+                "resource": {
+                    "name": "cpu",
+                    "target": {
+                        "type": "Utilization",
+                        "averageUtilization": self.autoscaling_target_cpu_utilization,
+                    },
+                },
+            }
+        ]
+        if self.autoscaling_target_memory_utilization is not None:
+            metrics.append(
+                {
+                    "type": "Resource",
+                    "resource": {
+                        "name": "memory",
+                        "target": {
+                            "type": "Utilization",
+                            "averageUtilization": self.autoscaling_target_memory_utilization,
+                        },
+                    },
+                }
+            )
+        return {
+            "apiVersion": "autoscaling/v2",
+            "kind": "HorizontalPodAutoscaler",
+            "metadata": {
+                "name": self.name,
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            "spec": {
+                "scaleTargetRef": {
+                    "apiVersion": "apps/v1",
+                    "kind": "StatefulSet",
+                    "name": self.name,
+                },
+                "minReplicas": self.autoscaling_min_replicas,
+                "maxReplicas": self.autoscaling_max_replicas,
+                "metrics": metrics,
+            },
+        }
+
 
 def custom_resource_definition() -> dict[str, Any]:
     return {
@@ -370,6 +454,24 @@ def custom_resource_definition() -> dict[str, Any]:
                                         "cache": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "auth": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "repair": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "autoscaling": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {"type": "boolean"},
+                                                "minReplicas": {"type": "integer", "minimum": 1},
+                                                "maxReplicas": {"type": "integer", "minimum": 1},
+                                                "targetCPUUtilizationPercentage": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 100,
+                                                },
+                                                "targetMemoryUtilizationPercentage": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 100,
+                                                },
+                                            },
+                                        },
                                         "resources": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                     },
                                 }
@@ -417,6 +519,11 @@ def operator_bundle(
             {
                 "apiGroups": ["batch"],
                 "resources": ["cronjobs"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+            {
+                "apiGroups": ["autoscaling"],
+                "resources": ["horizontalpodautoscalers"],
                 "verbs": ["get", "list", "watch", "create", "patch", "update"],
             },
         ],
@@ -615,6 +722,8 @@ def kubernetes_resource_path(resource: dict[str, Any]) -> KubernetesResourcePath
         collection = f"/apis/apps/v1/namespaces/{namespace}/statefulsets"
     elif kind == "CronJob":
         collection = f"/apis/batch/v1/namespaces/{namespace}/cronjobs"
+    elif kind == "HorizontalPodAutoscaler":
+        collection = f"/apis/autoscaling/v2/namespaces/{namespace}/horizontalpodautoscalers"
     else:
         raise ValueError(f"Unsupported reconciled resource kind: {kind}")
     return KubernetesResourcePath(
@@ -628,3 +737,9 @@ def _optional_string(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None or value == "":
+        return None
+    return int(value)

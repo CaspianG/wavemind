@@ -702,11 +702,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
                 "kubernetes_repair_cronjob_kind",
+                "has_hpa",
                 "hit_rate",
                 "precision@1",
                 "p99_latency_ms",
@@ -739,6 +740,21 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "prewarm_warmed",
                         "prewarm_hit",
                         "p99_lookup_ms",
+                    ),
+                ),
+                "WaveMind Kubernetes operator": _metric_summary(
+                    scale_readiness_results.get("WaveMind Kubernetes operator"),
+                    (
+                        "bundle_has_crd",
+                        "bundle_has_operator_deployment",
+                        "has_service",
+                        "has_statefulset",
+                        "has_hpa",
+                        "has_repair_cronjob",
+                        "autoscaling_min_replicas",
+                        "autoscaling_max_replicas",
+                        "autoscaling_metrics",
+                        "repair_namespaces",
                     ),
                 ),
                 "WaveMind distributed sharding": _metric_summary(
@@ -789,6 +805,18 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "sync_ms",
                     ),
                 ),
+                "WaveMind field-state CRDT": _metric_summary(
+                    scale_readiness_results.get("WaveMind field-state CRDT"),
+                    (
+                        "regions",
+                        "commutative_convergence",
+                        "idempotent_remerge",
+                        "tombstone_wins",
+                        "top_key_converged",
+                        "budget_activation",
+                        "merge_ms",
+                    ),
+                ),
                 "WaveMind replicated snapshot": _metric_summary(
                     scale_readiness_results.get("WaveMind replicated snapshot"),
                     (
@@ -817,8 +845,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment and scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
-            "next_step": "Move from manifest generation to a Helm chart/operator path, service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling and scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+            "next_step": "Move from manifest generation to service-backed HPA load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {
             "id": "memory_competitor_adapter_profile",

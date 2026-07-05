@@ -329,6 +329,11 @@ def run_operator_profile(
         replication_factor=replication_factor,
         namespace_count=namespace_count,
         auth_secret="wavemind-api-key",
+        autoscaling_enabled=True,
+        autoscaling_min_replicas=node_count,
+        autoscaling_max_replicas=max(node_count * 4, node_count + 1),
+        autoscaling_target_cpu_utilization=70,
+        autoscaling_target_memory_utilization=80,
     )
     bundle = operator_bundle(namespace="wavemind-system", sample=spec)
     reconciled = operator_reconcile(spec.custom_resource())
@@ -338,6 +343,7 @@ def run_operator_profile(
     paths = [kubernetes_resource_path(resource).api_path for resource in resources]
     cronjob = next(resource for resource in resources if resource["kind"] == "CronJob")
     cronjob_container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
     return {
         "engine": "WaveMind Kubernetes operator",
         "bundle_resources": len(bundle["items"]),
@@ -347,8 +353,15 @@ def run_operator_profile(
         "reconciled_resources": len(resources),
         "has_service": "Service" in kinds,
         "has_statefulset": "StatefulSet" in kinds,
+        "has_hpa": "HorizontalPodAutoscaler" in kinds,
         "has_repair_cronjob": "CronJob" in kinds,
         "headless_service": spec.headless_service_name in names,
+        "autoscaling_min_replicas": hpa["spec"]["minReplicas"],
+        "autoscaling_max_replicas": hpa["spec"]["maxReplicas"],
+        "autoscaling_metrics": [
+            metric["resource"]["name"]
+            for metric in hpa["spec"]["metrics"]
+        ],
         "repair_namespaces": list(cronjob_container["args"]).count("--namespace"),
         "api_paths": paths,
     }
@@ -1066,7 +1079,9 @@ def main() -> int:
             print(f"| operator | bundle_has_crd | {result['bundle_has_crd']} |")
             print(f"| operator | bundle_has_operator_deployment | {result['bundle_has_operator_deployment']} |")
             print(f"| operator | has_statefulset | {result['has_statefulset']} |")
+            print(f"| operator | has_hpa | {result['has_hpa']} |")
             print(f"| operator | has_repair_cronjob | {result['has_repair_cronjob']} |")
+            print(f"| operator | autoscaling_max_replicas | {result['autoscaling_max_replicas']} |")
             print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")

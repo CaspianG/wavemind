@@ -1,7 +1,9 @@
 # WaveMind Helm Chart
 
 This chart deploys WaveMind API nodes as a StatefulSet and adds a scheduled
-anti-entropy repair CronJob for namespace-replicated clusters.
+anti-entropy repair CronJob for namespace-replicated clusters. Optional
+HorizontalPodAutoscaler support can scale the API StatefulSet when metrics-server
+is available.
 
 The chart uses the official GitHub Container Registry image by default. Override
 `image.repository` and `image.tag` when using a private registry.
@@ -22,3 +24,17 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
 The repair CronJob calls `wavemind cluster-repair` against the StatefulSet
 pod DNS names. Set `repair.namespaceCount` or `repair.namespaces` to match the
 tenant namespace plan used by your application.
+
+Enable autoscaling for production clusters:
+
+```sh
+helm upgrade --install wavemind ./deploy/helm/wavemind \
+  --set autoscaling.enabled=true \
+  --set autoscaling.minReplicas=3 \
+  --set autoscaling.maxReplicas=24 \
+  --set resources.requests.cpu=500m \
+  --set resources.requests.memory=1Gi
+```
+
+CPU and memory utilization-based HPA needs container resource requests. Without
+requests, Kubernetes can render the HPA but cannot calculate utilization.

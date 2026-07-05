@@ -52,6 +52,9 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert crd["metadata"]["name"] == "wavemindclusters.memory.wavemind.ai"
     assert crd["spec"]["scope"] == "Namespaced"
     assert crd["spec"]["names"]["kind"] == "WaveMindCluster"
+    spec_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"]
+    assert "autoscaling" in spec_props
+    assert "maxReplicas" in spec_props["autoscaling"]["properties"]
 
 
 def test_operator_reconcile_renders_cluster_resources():
@@ -80,6 +83,33 @@ def test_operator_reconcile_renders_cluster_resources():
     assert "wm-prod-0=http://wm-prod-0.wm-prod-headless.wavemind-system.svc.cluster.local:8000" in repair_args
 
 
+def test_operator_reconcile_renders_horizontal_pod_autoscaler_when_enabled():
+    spec = WaveMindClusterSpec(
+        name="wm-scale",
+        namespace="wavemind-system",
+        replicas=4,
+        replication_factor=2,
+        namespace_count=8,
+        autoscaling_enabled=True,
+        autoscaling_min_replicas=4,
+        autoscaling_max_replicas=24,
+        autoscaling_target_cpu_utilization=65,
+        autoscaling_target_memory_utilization=80,
+    )
+
+    payload = operator_reconcile(spec.custom_resource())
+    resources = {resource["kind"]: resource for resource in payload["items"]}
+    hpa = resources["HorizontalPodAutoscaler"]
+
+    assert hpa["apiVersion"] == "autoscaling/v2"
+    assert hpa["spec"]["scaleTargetRef"]["kind"] == "StatefulSet"
+    assert hpa["spec"]["scaleTargetRef"]["name"] == "wm-scale"
+    assert hpa["spec"]["minReplicas"] == 4
+    assert hpa["spec"]["maxReplicas"] == 24
+    metric_names = [metric["resource"]["name"] for metric in hpa["spec"]["metrics"]]
+    assert metric_names == ["cpu", "memory"]
+
+
 def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     bundle = operator_bundle(namespace="wavemind-system")
     kinds = [item["kind"] for item in bundle["items"]]
@@ -98,6 +128,11 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     assert any(rule["apiGroups"] == [""] and rule["resources"] == ["services"] for rule in role["rules"])
     assert any(rule["apiGroups"] == ["apps"] and rule["resources"] == ["statefulsets"] for rule in role["rules"])
     assert any(rule["apiGroups"] == ["batch"] and rule["resources"] == ["cronjobs"] for rule in role["rules"])
+    assert any(
+        rule["apiGroups"] == ["autoscaling"]
+        and rule["resources"] == ["horizontalpodautoscalers"]
+        for rule in role["rules"]
+    )
 
 
 def test_kubernetes_resource_path_maps_supported_resources():
@@ -113,10 +148,15 @@ def test_kubernetes_resource_path_maps_supported_resources():
         "kind": "CronJob",
         "metadata": {"name": "wm-repair", "namespace": "ns"},
     }
+    hpa = {
+        "kind": "HorizontalPodAutoscaler",
+        "metadata": {"name": "wm", "namespace": "ns"},
+    }
 
     assert kubernetes_resource_path(service).api_path == "/api/v1/namespaces/ns/services/wm"
     assert kubernetes_resource_path(statefulset).api_path == "/apis/apps/v1/namespaces/ns/statefulsets/wm"
     assert kubernetes_resource_path(cronjob).api_path == "/apis/batch/v1/namespaces/ns/cronjobs/wm-repair"
+    assert kubernetes_resource_path(hpa).api_path == "/apis/autoscaling/v2/namespaces/ns/horizontalpodautoscalers/wm"
     with pytest.raises(ValueError, match="Unsupported"):
         kubernetes_resource_path({"kind": "ConfigMap", "metadata": {"name": "wm"}})
 
@@ -160,6 +200,9 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
         "2",
         "--namespace-count",
         "2",
+        "--autoscaling",
+        "--autoscaling-max-replicas",
+        "18",
         "--json",
     )
     sample_payload = json.loads(sample.stdout)
@@ -177,8 +220,10 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     assert {item["kind"] for item in reconciled["items"]} == {
         "Service",
         "StatefulSet",
+        "HorizontalPodAutoscaler",
         "CronJob",
     }
+    assert sample_payload["spec"]["autoscaling"]["maxReplicas"] == 18
     assert any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"])
 
 

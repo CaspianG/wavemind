@@ -6,7 +6,7 @@
     "namespace": "wavemind-system"
   },
   "spec": {
-    "image": "ghcr.io/caspiang/wavemind:2.4.4",
+    "image": "ghcr.io/caspiang/wavemind:2.4.5",
     "replicas": 3,
     "replicationFactor": 2,
     "namespaceCount": 4096,
@@ -31,6 +31,23 @@
       "enabled": true,
       "schedule": "*/15 * * * *",
       "limit": 1000
+    },
+    "autoscaling": {
+      "enabled": true,
+      "minReplicas": 3,
+      "maxReplicas": 24,
+      "targetCPUUtilizationPercentage": 70,
+      "targetMemoryUtilizationPercentage": 80
+    },
+    "resources": {
+      "requests": {
+        "cpu": "500m",
+        "memory": "1Gi"
+      },
+      "limits": {
+        "cpu": "2",
+        "memory": "4Gi"
+      }
     }
   }
 }

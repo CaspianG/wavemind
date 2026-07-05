@@ -19,6 +19,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Kubernetes operator"]["bundle_has_operator_deployment"] is True
     assert results["WaveMind Kubernetes operator"]["has_service"] is True
     assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
+    assert results["WaveMind Kubernetes operator"]["has_hpa"] is True
+    assert results["WaveMind Kubernetes operator"]["autoscaling_max_replicas"] == 12
+    assert results["WaveMind Kubernetes operator"]["autoscaling_metrics"] == ["cpu", "memory"]
     assert results["WaveMind Kubernetes operator"]["has_repair_cronjob"] is True
     assert results["WaveMind Kubernetes operator"]["repair_namespaces"] == 64
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0

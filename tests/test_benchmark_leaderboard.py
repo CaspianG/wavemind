@@ -37,3 +37,18 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "token F1" in leaderboard
     assert "extractive smoke: 0.024" not in leaderboard
     assert "WaveMind dynamic capacity" in leaderboard
+
+
+def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
+    workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "contents: write" in workflow
+    assert "dynamic_memory_benchmark.py" in workflow
+    assert "field_memory_dynamics_benchmark.py" in workflow
+    assert "scale_readiness_benchmark.py" in workflow
+    assert "benchmark_registry.py" in workflow
+    assert "render_benchmark_report.py" in workflow
+    assert "render_benchmark_leaderboard.py" in workflow
+    assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow

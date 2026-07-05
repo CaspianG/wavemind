@@ -16,6 +16,7 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert (CHART_ROOT / "values.yaml").exists()
     assert (CHART_ROOT / "templates/statefulset.yaml").exists()
     assert (CHART_ROOT / "templates/repair-cronjob.yaml").exists()
+    assert (CHART_ROOT / "templates/hpa.yaml").exists()
 
     chart = read_chart_file("Chart.yaml")
     values = read_chart_file("values.yaml")
@@ -27,6 +28,8 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "repository: ghcr.io/caspiang/wavemind" in values
     assert "replicaCount: 3" in values
     assert "replicationFactor: 2" in values
+    assert "autoscaling:" in values
+    assert "maxReplicas: 12" in values
 
 
 def test_helm_chart_templates_define_cluster_network_and_state():
@@ -65,6 +68,18 @@ def test_helm_chart_repair_cronjob_wires_cluster_repair():
     assert "--namespace-count" in cronjob
 
 
+def test_helm_chart_hpa_is_optional_and_targets_statefulset():
+    hpa = read_chart_file("templates/hpa.yaml")
+    readme = read_chart_file("README.md")
+
+    assert "HorizontalPodAutoscaler" in hpa
+    assert "{{- if .Values.autoscaling.enabled }}" in hpa
+    assert "kind: StatefulSet" in hpa
+    assert "targetCPUUtilizationPercentage" in hpa
+    assert "targetMemoryUtilizationPercentage" in hpa
+    assert "--set autoscaling.enabled=true" in readme
+
+
 def test_helm_chart_auth_secret_is_optional_but_supported():
     secret = read_chart_file("templates/secret.yaml")
     values = read_chart_file("values.yaml")
@@ -97,3 +112,4 @@ def test_helm_chart_is_checked_by_github_actions():
     assert "helm template wavemind deploy/helm/wavemind" in workflow
     assert "grep -q \"kind: StatefulSet\"" in workflow
     assert "grep -q \"kind: CronJob\"" in workflow
+    assert "grep -q \"kind: HorizontalPodAutoscaler\"" in workflow
