@@ -97,6 +97,98 @@ def test_replicated_wavemind_repairs_recovered_replica(tmp_path):
         memory.close()
 
 
+def test_replicated_wavemind_repair_does_not_resurrect_forgotten_memory(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    try:
+        namespace = "tenant:tombstone"
+        memory.remember("stale replicated memory should stay deleted", namespace=namespace)
+        placement = memory.placement(namespace)
+        missed_delete = placement.replicas[-1]
+
+        memory.set_node_available(missed_delete, False)
+        delete = memory.forget(
+            text="stale replicated memory should stay deleted",
+            namespace=namespace,
+        )
+        assert delete.ok
+
+        memory.set_node_available(missed_delete, True)
+        assert memory._mind(missed_delete).store.count(namespace=namespace) == 1
+        assert memory.query("stale replicated memory", namespace=namespace, top_k=1) == []
+
+        report = memory.repair_namespace(namespace)
+
+        assert report.deleted_records == 1
+        assert report.copied_records == 0
+        assert report.tombstone_keys == 1
+        assert memory._mind(missed_delete).store.count(namespace=namespace) == 0
+        assert memory.query("stale replicated memory", namespace=namespace, top_k=1) == []
+    finally:
+        memory.close()
+
+
+def test_replicated_wavemind_forget_by_id_deletes_replicas_with_different_local_ids(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3, write_quorum=2)
+    try:
+        namespace = "tenant:id-delete"
+        placement = memory.placement(namespace)
+        lagging = next(node_id for node_id in placement.replicas if node_id != placement.primary)
+        memory.set_node_available(lagging, False)
+        memory.remember("advance ids on two replicas", namespace=namespace)
+        memory.set_node_available(lagging, True)
+
+        write = memory.remember("delete this record by primary id", namespace=namespace)
+        lagging_ids = [
+            record.id
+            for record in memory._mind(lagging).store.list(namespace=namespace)
+            if record.text == "delete this record by primary id"
+        ]
+
+        assert write.primary_id is not None
+        assert lagging_ids == [1]
+        assert write.primary_id != lagging_ids[0]
+
+        delete = memory.forget(id=write.primary_id, namespace=namespace)
+
+        assert delete.ok
+        assert all(
+            result.text != "delete this record by primary id"
+            for result in memory.query("delete this record by primary id", namespace=namespace, top_k=3)
+        )
+        for node_id in placement.replicas:
+            texts = [
+                record.text
+                for record in memory._mind(node_id).store.list(namespace=namespace)
+            ]
+            assert "delete this record by primary id" not in texts
+    finally:
+        memory.close()
+
+
+def test_replicated_wavemind_stores_stable_replica_metadata(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    try:
+        namespace = "tenant:metadata"
+        write = memory.remember(
+            "metadata replicated memory",
+            namespace=namespace,
+            tags=["profile"],
+            metadata={"source": "test"},
+        )
+        keys = set()
+        operation_ids = set()
+        for node_id in write.writes:
+            records = memory._mind(node_id).store.list(namespace=namespace)
+            assert len(records) == 1
+            keys.add(records[0].metadata["_wavemind_replica_key"])
+            operation_ids.add(records[0].metadata["_wavemind_operation_id"])
+
+        assert len(keys) == 1
+        assert len(operation_ids) == 1
+    finally:
+        memory.close()
+
+
 def test_replicated_wavemind_rejects_global_db_path(tmp_path):
     with pytest.raises(ValueError, match="db_path"):
         ReplicatedWaveMind(

@@ -184,6 +184,41 @@ def run_replication_runtime_profile() -> dict[str, object]:
             finally:
                 partial.close()
 
+            tombstone = ReplicatedWaveMind(
+                root_path=Path(directory) / "tombstone",
+                nodes=[
+                    {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                    {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                    {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+                ],
+                replication_factor=3,
+                width=16,
+                height=16,
+                layers=1,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            try:
+                tombstone_placement = tombstone.placement(namespace)
+                missed_delete = tombstone_placement.replicas[-1]
+                tombstone.remember("repair must not resurrect deleted memory", namespace=namespace)
+                tombstone.set_node_available(missed_delete, False)
+                tombstone.forget(
+                    text="repair must not resurrect deleted memory",
+                    namespace=namespace,
+                )
+                tombstone.set_node_available(missed_delete, True)
+                suppressed_before_repair = (
+                    tombstone.query("resurrect deleted memory", namespace=namespace, top_k=1)
+                    == []
+                )
+                tombstone_repair = tombstone.repair_namespace(namespace)
+                suppressed_after_repair = (
+                    tombstone.query("resurrect deleted memory", namespace=namespace, top_k=1)
+                    == []
+                )
+            finally:
+                tombstone.close()
+
             return {
                 "engine": "WaveMind replicated runtime",
                 "nodes": 3,
@@ -193,6 +228,9 @@ def run_replication_runtime_profile() -> dict[str, object]:
                 "writes": len(write.writes),
                 "recalled_after_node_loss": recalled_after_loss,
                 "repair_copied_records": repair.copied_records,
+                "tombstone_suppressed_before_repair": suppressed_before_repair,
+                "tombstone_suppressed_after_repair": suppressed_after_repair,
+                "tombstone_repair_deleted_records": tombstone_repair.deleted_records,
                 "avg_query_after_loss_ms": statistics.mean(latencies),
                 "p99_query_after_loss_ms": percentile(latencies, 99),
             }
@@ -340,6 +378,7 @@ def main() -> int:
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
+            print(f"| replicated runtime | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
     print(f"\nWrote {args.output}")

@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 62.52979999408126,
+      "placement_ms": 58.688499964773655,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -32,8 +32,8 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.0015143999480642378,
-      "p99_lookup_ms": 0.006199989002197981
+      "avg_lookup_ms": 0.0016512502334080637,
+      "p99_lookup_ms": 0.005799985956400633
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -44,8 +44,11 @@
       "writes": 3,
       "recalled_after_node_loss": true,
       "repair_copied_records": 1,
-      "avg_query_after_loss_ms": 0.9093000553548336,
-      "p99_query_after_loss_ms": 0.9093000553548336
+      "tombstone_suppressed_before_repair": true,
+      "tombstone_suppressed_after_repair": true,
+      "tombstone_repair_deleted_records": 1,
+      "avg_query_after_loss_ms": 1.435799989849329,
+      "p99_query_after_loss_ms": 1.435799989849329
     },
     {
       "engine": "WaveMind structured payloads",
@@ -57,8 +60,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.5151500226929784,
-      "p99_latency_ms": 0.7709000492468476
+      "avg_latency_ms": 0.47089999134186655,
+      "p99_latency_ms": 0.7531000301241875
     }
   ]
 }

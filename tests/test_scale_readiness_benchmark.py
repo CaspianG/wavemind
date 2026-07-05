@@ -18,5 +18,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
+    assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True
+    assert results["WaveMind replicated runtime"]["tombstone_suppressed_after_repair"] is True
+    assert results["WaveMind replicated runtime"]["tombstone_repair_deleted_records"] == 1
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
     assert payload["scenario"]["simulated_memories"] == 100_000
