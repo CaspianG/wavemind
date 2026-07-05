@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+import wavemind.cli as cli
 from wavemind import HashingTextEncoder, ReplicatedWaveMind
 
 
@@ -211,6 +212,124 @@ def test_cli_cache_prewarm_uses_audited_queries(tmp_path):
     assert payload["candidates"] == 1
     assert payload["warmed"] == 1
     assert payload["ok"] is True
+
+
+def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
+    seen = {}
+
+    class FakeClient:
+        def __init__(self, *, api_key=None, timeout=10.0):
+            seen["api_key"] = api_key
+            seen["timeout"] = timeout
+
+    class FakeMemory:
+        def __init__(
+            self,
+            nodes,
+            *,
+            replication_factor,
+            write_quorum,
+            read_quorum,
+            client,
+        ):
+            seen["nodes"] = nodes
+            seen["replication_factor"] = replication_factor
+            seen["write_quorum"] = write_quorum
+            seen["read_quorum"] = read_quorum
+            seen["client"] = client
+
+    class FakeReport:
+        ok = True
+        repaired_total = 2
+        tombstone_deleted = 1
+
+        def as_dict(self):
+            return {
+                "namespaces": ["tenant:a", "tenant:0", "tenant:1"],
+                "repaired_total": self.repaired_total,
+                "tombstone_deleted": self.tombstone_deleted,
+                "reports": {},
+                "failed_namespaces": {},
+                "ok": self.ok,
+            }
+
+    class FakeWorker:
+        def __init__(self, memory):
+            seen["worker_memory"] = memory
+
+        def run_once(
+            self,
+            *,
+            namespaces,
+            limit,
+            include_expired,
+            tags,
+            fail_fast,
+        ):
+            seen["namespaces"] = namespaces
+            seen["limit"] = limit
+            seen["include_expired"] = include_expired
+            seen["tags"] = tags
+            seen["fail_fast"] = fail_fast
+            return FakeReport()
+
+    monkeypatch.setattr(cli, "HTTPNamespaceShardClient", FakeClient)
+    monkeypatch.setattr(cli, "DistributedShardedWaveMind", FakeMemory)
+    monkeypatch.setattr(cli, "DistributedRepairWorker", FakeWorker)
+
+    exit_code = cli.main(
+        [
+            "cluster-repair",
+            "--node",
+            "node-a=http://127.0.0.1:8001",
+            "--node",
+            "node-b=http://127.0.0.1:8002",
+            "--namespace",
+            "tenant:a",
+            "--namespace-prefix",
+            "tenant",
+            "--namespace-count",
+            "2",
+            "--replication-factor",
+            "2",
+            "--write-quorum",
+            "2",
+            "--read-quorum",
+            "1",
+            "--api-key",
+            "secret",
+            "--timeout",
+            "3.5",
+            "--limit",
+            "99",
+            "--include-expired",
+            "--tag",
+            "ops",
+            "--fail-fast",
+            "--json",
+        ]
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert seen["api_key"] == "secret"
+    assert seen["timeout"] == 3.5
+    assert [node.id for node in seen["nodes"]] == ["node-a", "node-b"]
+    assert [node.address for node in seen["nodes"]] == [
+        "http://127.0.0.1:8001",
+        "http://127.0.0.1:8002",
+    ]
+    assert seen["replication_factor"] == 2
+    assert seen["write_quorum"] == 2
+    assert seen["read_quorum"] == 1
+    assert seen["namespaces"] == ("tenant:a", "tenant:0", "tenant:1")
+    assert seen["limit"] == 99
+    assert seen["include_expired"] is True
+    assert seen["tags"] == ("ops",)
+    assert seen["fail_fast"] is True
+    assert output["repaired_total"] == 2
+    assert output["tombstone_deleted"] == 1
+    assert output["ok"] is True
 
 
 def test_cli_replicated_snapshot_and_restore(tmp_path):

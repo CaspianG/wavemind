@@ -533,12 +533,16 @@ Maintenance workers:
 
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
+wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --api-key "$WAVEMIND_API_KEY" --json
 wavemind replicated-snapshot --root ./state/replicas --node node-a --node node-b --node node-c --out ./backups/replicated --offsite ./offsite/replicated --archive ./archives/replicated --s3 s3://my-bucket/wavemind/prod --keep-last 7 --s3-keep-last 30 --json
 wavemind replicated-drill --from s3://my-bucket/wavemind/prod --to ./state/drill-restore --query "short support replies" --expect-text "Tenant A prefers short support replies." --json
 ```
 
 The first command runs one deterministic memory pass: expired-memory purge,
 optional field/concept consolidation, and index-health repair. The second
+command runs service-mode anti-entropy repair across WaveMind API nodes:
+missing replica records are copied back, and tombstoned stale records are
+deleted instead of resurrected. The third
 command creates a verified replicated snapshot, mirrors it to an offsite path,
 writes a portable `.tar.gz` archive, verifies that archive, can upload it to an
 S3-compatible object store, verify newest-archive metadata, run an object-store

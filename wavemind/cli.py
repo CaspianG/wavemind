@@ -16,6 +16,7 @@ from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
+    DistributedRepairWorker,
     HotMemoryCache,
     MemoryMaintenanceWorker,
     ReplicatedObjectStoreDrillWorker,
@@ -24,6 +25,7 @@ from .jobs import (
 )
 from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
+from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
 
 
@@ -149,6 +151,29 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_plan.add_argument("--image", default="wavemind:latest")
     cluster_plan.add_argument("--storage-size", default="20Gi")
     cluster_plan.add_argument("--json", action="store_true")
+
+    cluster_repair = sub.add_parser(
+        "cluster-repair",
+        help="Run service-mode anti-entropy repair across cluster namespaces",
+    )
+    cluster_repair.add_argument("--namespace", action="append", default=[])
+    cluster_repair.add_argument("--namespace-prefix", default="tenant")
+    cluster_repair.add_argument("--namespace-count", type=int, default=0)
+    cluster_repair.add_argument("--node", action="append", required=True, help="node_id=host:port or node_id")
+    cluster_repair.add_argument("--replication-factor", type=int, default=2)
+    cluster_repair.add_argument("--write-quorum", type=int)
+    cluster_repair.add_argument("--read-quorum", type=int, default=1)
+    cluster_repair.add_argument(
+        "--api-key",
+        default=os.environ.get("WAVEMIND_API_KEY"),
+        help="Bearer token for WaveMind API nodes. Defaults to WAVEMIND_API_KEY.",
+    )
+    cluster_repair.add_argument("--timeout", type=float, default=10.0)
+    cluster_repair.add_argument("--limit", type=int, default=1000)
+    cluster_repair.add_argument("--include-expired", action="store_true")
+    cluster_repair.add_argument("--tag", action="append", default=[])
+    cluster_repair.add_argument("--fail-fast", action="store_true")
+    cluster_repair.add_argument("--json", action="store_true")
 
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
@@ -744,6 +769,44 @@ def main(argv: list[str] | None = None) -> int:
                 for warning in plan.warnings:
                     print(f"- {warning}")
         return 0
+
+    if args.command == "cluster-repair":
+        namespaces = list(args.namespace)
+        namespaces.extend(
+            f"{args.namespace_prefix}:{index}"
+            for index in range(max(0, int(args.namespace_count)))
+        )
+        if not namespaces:
+            print("cluster-repair requires --namespace or --namespace-count", file=sys.stderr)
+            return 2
+        client = HTTPNamespaceShardClient(api_key=args.api_key, timeout=args.timeout)
+        memory = DistributedShardedWaveMind(
+            nodes=[_parse_cluster_node(value) for value in args.node],
+            replication_factor=args.replication_factor,
+            write_quorum=args.write_quorum,
+            read_quorum=args.read_quorum,
+            client=client,
+        )
+        report = DistributedRepairWorker(memory).run_once(
+            namespaces=tuple(namespaces),
+            limit=args.limit,
+            include_expired=args.include_expired,
+            tags=tuple(args.tag),
+            fail_fast=args.fail_fast,
+        )
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"namespaces: {len(payload['namespaces'])}")
+            print(f"repaired_total: {payload['repaired_total']}")
+            print(f"tombstone_deleted: {payload['tombstone_deleted']}")
+            if payload["failed_namespaces"]:
+                print("failed_namespaces:")
+                for namespace, error in payload["failed_namespaces"].items():
+                    print(f"- {namespace}: {error}")
+            print(f"ok: {payload['ok']}")
+        return 0 if report.ok else 4
 
     mind = make_mind(args)
     if args.command == "remember":
