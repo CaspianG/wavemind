@@ -52,6 +52,7 @@ from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
 from .sharding import (
     DistributedForgetResult,
     DistributedReadQuorumError,
+    DistributedRepairReport,
     DistributedShardError,
     DistributedShardedWaveMind,
     DistributedWriteQuorumError,
@@ -68,7 +69,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.5"
+__version__ = "2.3.6"
 
 __all__ = [
     "FieldProjector",
@@ -81,6 +82,7 @@ __all__ = [
     "CachePrewarmWorker",
     "DistributedForgetResult",
     "DistributedReadQuorumError",
+    "DistributedRepairReport",
     "DistributedShardError",
     "DistributedShardedWaveMind",
     "DistributedWriteQuorumError",

@@ -20,6 +20,10 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind hot cache"]["prewarm_hit"] is True
     assert results["WaveMind distributed sharding"]["writes"] == 2
     assert results["WaveMind distributed sharding"]["recalled_after_primary_loss"] is True
+    assert results["WaveMind distributed sharding"]["repair_missing_before"] is True
+    assert results["WaveMind distributed sharding"]["repair_repaired_total"] == 1
+    assert results["WaveMind distributed sharding"]["repair_ok"] is True
+    assert results["WaveMind distributed sharding"]["recalled_after_repair"] is True
     assert results["WaveMind distributed sharding"]["forget_replicated_deletes"] == 2
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1

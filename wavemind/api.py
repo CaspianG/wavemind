@@ -246,6 +246,30 @@ class BackupResponse(BaseModel):
     path: str
 
 
+class MemoryExportRequest(BaseModel):
+    namespace: str
+    limit: int = Field(default=1000, ge=0, le=100000)
+    include_expired: bool = False
+    tags: list[str] = Field(default_factory=list)
+
+
+class MemoryExportRecordResponse(BaseModel):
+    id: int
+    text: str
+    namespace: str
+    tags: list[str]
+    metadata: dict[str, Any]
+    created_at: float
+    updated_at: float
+    expires_at: float | None = None
+    priority: float
+    access_count: int
+
+
+class MemoryExportResponse(BaseModel):
+    records: list[MemoryExportRecordResponse]
+
+
 class AuditEventResponse(BaseModel):
     id: int
     created_at: float
@@ -559,6 +583,36 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.get("/stats", dependencies=[Depends(require_role("read"))])
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
+
+    @app.post(
+        "/memories/export",
+        response_model=MemoryExportResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def export_memories(request: MemoryExportRequest) -> MemoryExportResponse:
+        with _api_operation(app, "memories_export"):
+            records = app.state.mind.store.list(
+                namespace=request.namespace,
+                include_expired=request.include_expired,
+                tags=request.tags,
+            )[: request.limit]
+        return MemoryExportResponse(
+            records=[
+                MemoryExportRecordResponse(
+                    id=record.id,
+                    text=record.text,
+                    namespace=record.namespace,
+                    tags=list(record.tags),
+                    metadata=record.metadata,
+                    created_at=record.created_at,
+                    updated_at=record.updated_at,
+                    expires_at=record.expires_at,
+                    priority=record.priority,
+                    access_count=record.access_count,
+                )
+                for record in records
+            ]
+        )
 
     @app.get("/index/health", dependencies=[Depends(require_role("read"))])
     def index_health():

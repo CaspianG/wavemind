@@ -147,6 +147,36 @@ class LocalWaveMindServiceClient:
             namespace=namespace,
         )
 
+    def export_namespace(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: tuple[str, ...] = (),
+    ) -> list[dict[str, object]]:
+        records = self._mind(address).store.list(
+            namespace=namespace,
+            include_expired=include_expired,
+            tags=tags,
+        )[:limit]
+        return [
+            {
+                "id": record.id,
+                "text": record.text,
+                "namespace": record.namespace,
+                "tags": list(record.tags),
+                "metadata": record.metadata,
+                "created_at": record.created_at,
+                "updated_at": record.updated_at,
+                "expires_at": record.expires_at,
+                "priority": record.priority,
+                "access_count": record.access_count,
+            }
+            for record in records
+        ]
+
     def close(self) -> None:
         for mind in self.minds.values():
             mind.close()
@@ -329,6 +359,23 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 "distributed service shard keeps tenant memory"
             )
             memory.set_node_available(placement.primary, True)
+            stale_node = next(node for node in placement.replicas if node != placement.primary)
+            client._mind(stale_node).forget(
+                namespace=namespace,
+                text="distributed service shard keeps tenant memory",
+            )
+            memory.set_node_available(placement.primary, False)
+            missing_before_repair = (
+                memory.query("tenant memory", namespace=namespace, top_k=1) == []
+            )
+            memory.set_node_available(placement.primary, True)
+            repair = memory.repair_namespace(namespace)
+            memory.set_node_available(placement.primary, False)
+            repaired_results = memory.query("tenant memory", namespace=namespace, top_k=1)
+            recalled_after_repair = bool(repaired_results) and repaired_results[0].text == (
+                "distributed service shard keeps tenant memory"
+            )
+            memory.set_node_available(placement.primary, True)
             forget = memory.forget(
                 namespace=namespace,
                 text="distributed service shard keeps tenant memory",
@@ -343,6 +390,10 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 "primary_node": placement.primary,
                 "replica_nodes": list(placement.replicas),
                 "recalled_after_primary_loss": recalled_after_primary_loss,
+                "repair_missing_before": missing_before_repair,
+                "repair_repaired_total": repair.repaired_total,
+                "repair_ok": repair.ok,
+                "recalled_after_repair": recalled_after_repair,
                 "forget_replicated_deletes": forget.deleted,
                 "write_ms": write_ms,
                 "query_after_primary_loss_ms": query_after_primary_loss_ms,
@@ -769,6 +820,8 @@ def main() -> int:
         elif result["engine"] == "WaveMind distributed sharding":
             print(f"| distributed sharding | writes | {result['writes']} |")
             print(f"| distributed sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")
+            print(f"| distributed sharding | repair_repaired_total | {result['repair_repaired_total']} |")
+            print(f"| distributed sharding | recalled_after_repair | {result['recalled_after_repair']} |")
             print(f"| distributed sharding | forget_replicated_deletes | {result['forget_replicated_deletes']} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")

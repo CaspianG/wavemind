@@ -389,6 +389,44 @@ def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_admin_can_export_namespace_memories(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-export.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        memory_id = mind.remember(
+            "exportable production memory",
+            namespace="tenant:export",
+            tags=["ops"],
+            metadata={"source": "api-test"},
+            priority=4.0,
+        )
+        mind.remember("other tenant memory", namespace="tenant:other")
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/memories/export",
+                json={"namespace": "tenant:export", "tags": ["ops"]},
+            )
+
+            assert response.status_code == 200
+            payload = response.json()
+            assert len(payload["records"]) == 1
+            record = payload["records"][0]
+            assert record["id"] == memory_id
+            assert record["text"] == "exportable production memory"
+            assert record["namespace"] == "tenant:export"
+            assert record["tags"] == ["ops"]
+            assert record["metadata"] == {"source": "api-test"}
+            assert record["priority"] == 4.0
+    finally:
+        mind.close()
+
+
 def test_fastapi_studio_dashboard_state_heatmap_and_feedback(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "studio.sqlite3",

@@ -194,6 +194,42 @@ class DistributedForgetResult:
         }
 
 
+@dataclass(frozen=True)
+class DistributedRepairReport:
+    namespace: str
+    replicas: tuple[str, ...]
+    available_nodes: tuple[str, ...]
+    canonical_records: int
+    repaired: dict[str, int]
+    missing_before_repair: dict[str, int]
+    failed_nodes: dict[str, str] = field(default_factory=dict)
+    read_quorum: int = 1
+    write_quorum: int = 1
+
+    @property
+    def ok(self) -> bool:
+        return len(self.available_nodes) >= self.read_quorum and not self.failed_nodes
+
+    @property
+    def repaired_total(self) -> int:
+        return sum(self.repaired.values())
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "namespace": self.namespace,
+            "replicas": list(self.replicas),
+            "available_nodes": list(self.available_nodes),
+            "canonical_records": self.canonical_records,
+            "repaired": dict(self.repaired),
+            "repaired_total": self.repaired_total,
+            "missing_before_repair": dict(self.missing_before_repair),
+            "failed_nodes": dict(self.failed_nodes),
+            "read_quorum": self.read_quorum,
+            "write_quorum": self.write_quorum,
+            "ok": self.ok,
+        }
+
+
 class HTTPNamespaceShardClient:
     """Small HTTP client for WaveMind API nodes.
 
@@ -267,6 +303,24 @@ class HTTPNamespaceShardClient:
         }
         response = self._request("DELETE", address, "/forget", payload)
         return int(response["deleted"])
+
+    def export_namespace(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: tuple[str, ...] = (),
+    ) -> list[dict[str, Any]]:
+        payload = {
+            "namespace": namespace,
+            "limit": int(limit),
+            "include_expired": bool(include_expired),
+            "tags": list(tags),
+        }
+        response = self._request("POST", address, "/memories/export", payload)
+        return [dict(record) for record in response.get("records", [])]
 
     def _request(
         self,
@@ -484,6 +538,91 @@ class DistributedShardedWaveMind:
             write_quorum=self.write_quorum,
         )
 
+    def repair_namespace(
+        self,
+        namespace: str = "default",
+        *,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: list[str] | tuple[str, ...] = (),
+    ) -> DistributedRepairReport:
+        placement = self.placement(namespace)
+        records_by_node: dict[str, dict[tuple[object, ...], dict[str, Any]]] = {}
+        canonical: dict[tuple[object, ...], dict[str, Any]] = {}
+        failed: dict[str, str] = {}
+        available: list[str] = []
+        for node_id in placement.replicas:
+            if not self._available.get(node_id, False):
+                failed[node_id] = "node unavailable"
+                continue
+            try:
+                exported = self.client.export_namespace(
+                    self._address(node_id),
+                    namespace=namespace,
+                    limit=limit,
+                    include_expired=include_expired,
+                    tags=tuple(tags),
+                )
+            except Exception as exc:  # pragma: no cover - service boundary
+                failed[node_id] = str(exc)
+                continue
+            available.append(node_id)
+            keyed = {_record_key(record): record for record in exported}
+            records_by_node[node_id] = keyed
+            for key, record in keyed.items():
+                canonical.setdefault(key, record)
+
+        if len(available) < self.read_quorum:
+            raise DistributedReadQuorumError(
+                f"Repair read quorum {self.read_quorum} was not reached for "
+                f"namespace {namespace!r}; successful reads: {len(available)}; "
+                f"failures: {failed}"
+            )
+
+        repaired: dict[str, int] = {}
+        missing_before_repair: dict[str, int] = {}
+        for node_id in placement.replicas:
+            if node_id not in records_by_node:
+                continue
+            missing = [
+                record
+                for key, record in canonical.items()
+                if key not in records_by_node[node_id]
+            ]
+            missing_before_repair[node_id] = len(missing)
+            if not missing:
+                repaired[node_id] = 0
+                continue
+            writes = 0
+            for record in missing:
+                try:
+                    self.client.remember(
+                        self._address(node_id),
+                        text=str(record["text"]),
+                        namespace=namespace,
+                        tags=tuple(record.get("tags") or ()),
+                        ttl_seconds=None,
+                        metadata=dict(record.get("metadata") or {}),
+                        priority=float(record.get("priority", 1.0)),
+                    )
+                    writes += 1
+                except Exception as exc:  # pragma: no cover - service boundary
+                    failed[node_id] = str(exc)
+                    break
+            repaired[node_id] = writes
+
+        return DistributedRepairReport(
+            namespace=namespace,
+            replicas=tuple(placement.replicas),
+            available_nodes=tuple(available),
+            canonical_records=len(canonical),
+            repaired=repaired,
+            missing_before_repair=missing_before_repair,
+            failed_nodes=failed,
+            read_quorum=self.read_quorum,
+            write_quorum=self.write_quorum,
+        )
+
     def stats(self) -> dict[str, object]:
         return {
             "nodes": len(self.nodes),
@@ -531,4 +670,19 @@ def _with_node_metadata(result: QueryResult, node_id: str) -> QueryResult:
         namespace=result.namespace,
         tags=result.tags,
         metadata=metadata,
+    )
+
+
+def _record_key(record: dict[str, Any]) -> tuple[object, ...]:
+    metadata = json.dumps(
+        dict(record.get("metadata") or {}),
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str,
+    )
+    return (
+        str(record.get("namespace") or ""),
+        str(record.get("text") or ""),
+        tuple(sorted(str(tag) for tag in (record.get("tags") or ()))),
+        metadata,
     )

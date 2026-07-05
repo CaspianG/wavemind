@@ -7,6 +7,7 @@ from wavemind import (
     DistributedShardedWaveMind,
     DistributedWriteQuorumError,
     HashingTextEncoder,
+    DistributedRepairReport,
     NamespaceShardRouter,
     ShardedWaveMind,
     WaveMind,
@@ -78,6 +79,36 @@ class LocalWaveMindServiceClient:
         text=None,
     ) -> int:
         return self._mind(address).forget(id=id, text=text, namespace=namespace)
+
+    def export_namespace(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags=(),
+    ):
+        records = self._mind(address).store.list(
+            namespace=namespace,
+            include_expired=include_expired,
+            tags=tags,
+        )[:limit]
+        return [
+            {
+                "id": record.id,
+                "text": record.text,
+                "namespace": record.namespace,
+                "tags": list(record.tags),
+                "metadata": record.metadata,
+                "created_at": record.created_at,
+                "updated_at": record.updated_at,
+                "expires_at": record.expires_at,
+                "priority": record.priority,
+                "access_count": record.access_count,
+            }
+            for record in records
+        ]
 
     def close(self):
         for mind in self.minds.values():
@@ -224,5 +255,46 @@ def test_distributed_sharded_wavemind_forget_replicates_delete(tmp_path):
         assert deleted.ok
         assert deleted.deleted == 2
         assert memory.query("distributed fact", namespace=namespace, top_k=1) == []
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_repairs_missing_replica_record(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=2,
+        client=client,
+    )
+    try:
+        namespace = "tenant:repair"
+        write = memory.remember(
+            "repair missing distributed memory",
+            namespace=namespace,
+            tags=("ops",),
+            metadata={"source": "test"},
+            priority=3.0,
+        )
+        stale_node = next(node for node in write.writes if node != write.primary_node)
+        client._mind(stale_node).forget(
+            namespace=namespace,
+            text="repair missing distributed memory",
+        )
+
+        memory.set_node_available(write.primary_node, False)
+        assert memory.query("distributed memory", namespace=namespace, top_k=1) == []
+        memory.set_node_available(write.primary_node, True)
+
+        report = memory.repair_namespace(namespace, tags=("ops",))
+
+        assert isinstance(report, DistributedRepairReport)
+        assert report.ok
+        assert report.canonical_records == 1
+        assert report.missing_before_repair[stale_node] == 1
+        assert report.repaired[stale_node] == 1
+        memory.set_node_available(write.primary_node, False)
+        repaired = memory.query("distributed memory", namespace=namespace, top_k=1)
+        assert repaired[0].text == "repair missing distributed memory"
+        assert repaired[0].metadata["source"] == "test"
     finally:
         client.close()

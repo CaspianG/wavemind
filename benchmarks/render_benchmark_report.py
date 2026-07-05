@@ -45,6 +45,9 @@ METRIC_LABELS = {
     "p95_latency_ms": "p95 latency",
     "prewarm_warmed": "prewarm warmed",
     "prewarm_hit": "prewarm hit",
+    "repair_repaired_total": "repair repaired",
+    "repair_ok": "repair ok",
+    "recalled_after_repair": "recall after repair",
 }
 
 
