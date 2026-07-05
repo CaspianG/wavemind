@@ -774,7 +774,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/scale_readiness_benchmark.py",
-      "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+      "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
       "competitors": [
         "Mem0",
         "Zep",
@@ -785,6 +785,7 @@
         "node_loss_min_availability",
         "kubernetes_repair_cronjob_kind",
         "has_hpa",
+        "scale_to_zero",
         "hit_rate",
         "precision@1",
         "p99_latency_ms"
@@ -802,7 +803,7 @@
           "kubernetes_manifest_kind": "StatefulSet",
           "kubernetes_repair_cronjob_kind": "CronJob",
           "kubernetes_repair_cronjob_namespaces": 4096,
-          "placement_ms": 124.69890003558248
+          "placement_ms": 104.69250002643093
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -811,7 +812,7 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.013599987141788006
+          "p99_lookup_ms": 0.0048999791033566
         },
         "WaveMind Kubernetes operator": {
           "bundle_has_crd": true,
@@ -827,6 +828,22 @@
             "memory"
           ],
           "repair_namespaces": 4096
+        },
+        "WaveMind serverless plan": {
+          "has_knative_service": true,
+          "has_keda_scaled_object": true,
+          "scale_to_zero": true,
+          "max_scale": 64,
+          "target_concurrency": 80,
+          "uses_postgres": true,
+          "uses_external_qdrant": true,
+          "uses_shared_cache": true,
+          "safe_for_pod_eviction": true,
+          "keda_scale_target_kind": "Deployment",
+          "valid_keda_scale_target": true,
+          "env_has_postgres_dsn": true,
+          "env_has_qdrant_url": true,
+          "env_has_redis_url": true
         },
         "WaveMind distributed sharding": {
           "nodes": 3,
@@ -846,7 +863,7 @@
           "anti_entropy_worker_ok": true,
           "anti_entropy_worker_repaired_total": 1,
           "anti_entropy_worker_tombstone_deleted": 1,
-          "query_after_primary_loss_ms": 1.4542000135406852
+          "query_after_primary_loss_ms": 1.65789999300614
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -856,7 +873,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 1.5718999784439802
+          "p99_query_after_loss_ms": 2.0779999904334545
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -865,7 +882,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 266.87910000327975
+          "sync_ms": 205.0738999969326
         },
         "WaveMind field-state CRDT": {
           "regions": 3,
@@ -874,7 +891,7 @@
           "tombstone_wins": true,
           "top_key_converged": true,
           "budget_activation": 5.0,
-          "merge_ms": 0.13990001752972603
+          "merge_ms": 0.10189996100962162
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -888,18 +905,18 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 248.1868999893777,
-          "restore_ms": 170.46430002665147
+          "snapshot_ms": 188.4674000320956,
+          "restore_ms": 103.4745000069961
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.7301250007003546,
-          "p99_latency_ms": 1.098700042348355
+          "avg_latency_ms": 0.6686749984510243,
+          "p99_latency_ms": 0.8542999858036637
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling and scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
-      "next_step": "Move from manifest generation to service-backed HPA load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+      "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
     },
     {
       "id": "memory_competitor_adapter_profile",

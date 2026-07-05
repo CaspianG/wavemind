@@ -13,6 +13,7 @@ from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
+from .serverless import SecretEnvRef, WaveMindServerlessSpec
 from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
@@ -229,6 +230,16 @@ def build_parser() -> argparse.ArgumentParser:
     operator_loop_cmd.add_argument("--timeout", type=float, default=10.0)
     operator_loop_cmd.add_argument("--once", action="store_true")
     operator_loop_cmd.add_argument("--json", action="store_true")
+
+    serverless_sample = sub.add_parser(
+        "serverless-sample",
+        help="Emit Knative/KEDA serverless API resources for external Postgres/Qdrant/Redis",
+    )
+    _add_serverless_spec_args(serverless_sample)
+    serverless_sample.add_argument("--no-keda", action="store_true")
+    serverless_sample.add_argument("--readiness", action="store_true")
+    serverless_sample.add_argument("--json", action="store_true")
+    serverless_sample.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
 
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
@@ -912,6 +923,12 @@ def main(argv: list[str] | None = None) -> int:
         _print_json(report)
         return 0
 
+    if args.command == "serverless-sample":
+        spec = _serverless_spec_from_args(args)
+        payload = spec.readiness_report() if args.readiness else spec.resource_list(include_keda=not args.no_keda)
+        _emit_json(payload, out=args.out)
+        return 0
+
     mind = make_mind(args)
     if args.command == "remember":
         id = mind.remember(
@@ -1166,6 +1183,63 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         autoscaling_max_replicas=args.autoscaling_max_replicas,
         autoscaling_target_cpu_utilization=args.autoscaling_target_cpu,
         autoscaling_target_memory_utilization=args.autoscaling_target_memory,
+    )
+
+
+def _add_serverless_spec_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--name", default="wavemind")
+    parser.add_argument("--namespace", default="default")
+    parser.add_argument("--image", default="ghcr.io/caspiang/wavemind:latest")
+    parser.add_argument("--service-port", type=int, default=8000)
+    parser.add_argument("--min-scale", type=int, default=0)
+    parser.add_argument("--max-scale", type=int, default=24)
+    parser.add_argument("--target-concurrency", type=int, default=50)
+    parser.add_argument("--scale-down-delay-seconds", type=int, default=300)
+    parser.add_argument("--encoder", default="hash")
+    parser.add_argument("--index", default="qdrant")
+    parser.add_argument("--score-threshold", type=float, default=0.0)
+    parser.add_argument("--no-audit-queries", action="store_true")
+    parser.add_argument("--postgres-secret", default="wavemind-postgres")
+    parser.add_argument("--postgres-secret-key", default="dsn")
+    parser.add_argument("--qdrant-secret", default="wavemind-qdrant")
+    parser.add_argument("--qdrant-secret-key", default="url")
+    parser.add_argument("--qdrant-api-key-secret")
+    parser.add_argument("--qdrant-api-key-secret-key", default="api-key")
+    parser.add_argument("--redis-secret", default="wavemind-redis")
+    parser.add_argument("--redis-secret-key", default="url")
+    parser.add_argument("--no-redis", action="store_true")
+    parser.add_argument("--auth-secret", default="wavemind-auth")
+    parser.add_argument("--auth-secret-key", default="api-keys")
+    parser.add_argument("--no-auth", action="store_true")
+
+
+def _serverless_spec_from_args(args: argparse.Namespace) -> WaveMindServerlessSpec:
+    qdrant_url = None
+    if args.index.lower() == "qdrant":
+        qdrant_url = SecretEnvRef(args.qdrant_secret, args.qdrant_secret_key)
+    qdrant_api_key = (
+        SecretEnvRef(args.qdrant_api_key_secret, args.qdrant_api_key_secret_key)
+        if args.qdrant_api_key_secret
+        else None
+    )
+    return WaveMindServerlessSpec(
+        name=args.name,
+        namespace=args.namespace,
+        image=args.image,
+        service_port=args.service_port,
+        min_scale=args.min_scale,
+        max_scale=args.max_scale,
+        target_concurrency=args.target_concurrency,
+        scale_down_delay_seconds=args.scale_down_delay_seconds,
+        index=args.index,
+        encoder=args.encoder,
+        score_threshold=args.score_threshold,
+        audit_queries=not args.no_audit_queries,
+        postgres_dsn=SecretEnvRef(args.postgres_secret, args.postgres_secret_key),
+        qdrant_url=qdrant_url,
+        qdrant_api_key=qdrant_api_key,
+        redis_url=None if args.no_redis else SecretEnvRef(args.redis_secret, args.redis_secret_key),
+        api_keys=None if args.no_auth else SecretEnvRef(args.auth_secret, args.auth_secret_key),
     )
 
 

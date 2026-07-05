@@ -1,0 +1,313 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "serving.knative.dev/v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "wavemind",
+        "namespace": "wavemind-system",
+        "labels": {
+          "app.kubernetes.io/name": "wavemind",
+          "app.kubernetes.io/instance": "wavemind",
+          "app.kubernetes.io/component": "serverless-api",
+          "app.kubernetes.io/managed-by": "wavemind-serverless"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/name": "wavemind",
+              "app.kubernetes.io/instance": "wavemind",
+              "app.kubernetes.io/component": "serverless-api",
+              "app.kubernetes.io/managed-by": "wavemind-serverless"
+            },
+            "annotations": {
+              "autoscaling.knative.dev/class": "kpa.autoscaling.knative.dev",
+              "autoscaling.knative.dev/metric": "concurrency",
+              "autoscaling.knative.dev/target": "50",
+              "autoscaling.knative.dev/min-scale": "0",
+              "autoscaling.knative.dev/max-scale": "64",
+              "autoscaling.knative.dev/scale-down-delay": "300s"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "api",
+                "image": "ghcr.io/caspiang/wavemind:2.4.7",
+                "ports": [
+                  {
+                    "name": "http1",
+                    "containerPort": 8000
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "WAVEMIND_STORE",
+                    "value": "postgres"
+                  },
+                  {
+                    "name": "WAVEMIND_INDEX",
+                    "value": "qdrant"
+                  },
+                  {
+                    "name": "WAVEMIND_ENCODER",
+                    "value": "hash"
+                  },
+                  {
+                    "name": "WAVEMIND_SCORE_THRESHOLD",
+                    "value": "0.0"
+                  },
+                  {
+                    "name": "WAVEMIND_AUDIT_QUERIES",
+                    "value": "1"
+                  },
+                  {
+                    "name": "WAVEMIND_POSTGRES_DSN",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-postgres",
+                        "key": "dsn"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_QDRANT_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-qdrant",
+                        "key": "url"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_REDIS_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-redis",
+                        "key": "url"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_API_KEYS",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-auth",
+                        "key": "api-keys"
+                      }
+                    }
+                  }
+                ],
+                "args": [
+                  "serve",
+                  "--host",
+                  "0.0.0.0",
+                  "--port",
+                  "8000"
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/stats",
+                    "port": 8000
+                  },
+                  "periodSeconds": 10,
+                  "timeoutSeconds": 2
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "wavemind-keda",
+        "namespace": "wavemind-system",
+        "labels": {
+          "app.kubernetes.io/name": "wavemind",
+          "app.kubernetes.io/instance": "wavemind",
+          "app.kubernetes.io/component": "serverless-api-keda",
+          "app.kubernetes.io/managed-by": "wavemind-serverless"
+        }
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app.kubernetes.io/name": "wavemind",
+            "app.kubernetes.io/instance": "wavemind",
+            "app.kubernetes.io/component": "serverless-api-keda",
+            "app.kubernetes.io/managed-by": "wavemind-serverless"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/name": "wavemind",
+              "app.kubernetes.io/instance": "wavemind",
+              "app.kubernetes.io/component": "serverless-api-keda",
+              "app.kubernetes.io/managed-by": "wavemind-serverless"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "api",
+                "image": "ghcr.io/caspiang/wavemind:2.4.7",
+                "ports": [
+                  {
+                    "name": "http1",
+                    "containerPort": 8000
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "WAVEMIND_STORE",
+                    "value": "postgres"
+                  },
+                  {
+                    "name": "WAVEMIND_INDEX",
+                    "value": "qdrant"
+                  },
+                  {
+                    "name": "WAVEMIND_ENCODER",
+                    "value": "hash"
+                  },
+                  {
+                    "name": "WAVEMIND_SCORE_THRESHOLD",
+                    "value": "0.0"
+                  },
+                  {
+                    "name": "WAVEMIND_AUDIT_QUERIES",
+                    "value": "1"
+                  },
+                  {
+                    "name": "WAVEMIND_POSTGRES_DSN",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-postgres",
+                        "key": "dsn"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_QDRANT_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-qdrant",
+                        "key": "url"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_REDIS_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-redis",
+                        "key": "url"
+                      }
+                    }
+                  },
+                  {
+                    "name": "WAVEMIND_API_KEYS",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "wavemind-auth",
+                        "key": "api-keys"
+                      }
+                    }
+                  }
+                ],
+                "args": [
+                  "serve",
+                  "--host",
+                  "0.0.0.0",
+                  "--port",
+                  "8000"
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/stats",
+                    "port": 8000
+                  },
+                  "periodSeconds": 10,
+                  "timeoutSeconds": 2
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "wavemind-keda",
+        "namespace": "wavemind-system",
+        "labels": {
+          "app.kubernetes.io/name": "wavemind",
+          "app.kubernetes.io/instance": "wavemind",
+          "app.kubernetes.io/component": "serverless-api-keda",
+          "app.kubernetes.io/managed-by": "wavemind-serverless"
+        }
+      },
+      "spec": {
+        "type": "ClusterIP",
+        "selector": {
+          "app.kubernetes.io/name": "wavemind",
+          "app.kubernetes.io/instance": "wavemind",
+          "app.kubernetes.io/component": "serverless-api-keda",
+          "app.kubernetes.io/managed-by": "wavemind-serverless"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8000,
+            "targetPort": 8000
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "keda.sh/v1alpha1",
+      "kind": "ScaledObject",
+      "metadata": {
+        "name": "wavemind-keda-scale",
+        "namespace": "wavemind-system",
+        "labels": {
+          "app.kubernetes.io/name": "wavemind",
+          "app.kubernetes.io/instance": "wavemind",
+          "app.kubernetes.io/component": "serverless-api-keda",
+          "app.kubernetes.io/managed-by": "wavemind-serverless"
+        }
+      },
+      "spec": {
+        "scaleTargetRef": {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "name": "wavemind-keda"
+        },
+        "minReplicaCount": 0,
+        "maxReplicaCount": 64,
+        "pollingInterval": 10,
+        "cooldownPeriod": 300,
+        "triggers": [
+          {
+            "type": "cpu",
+            "metricType": "Utilization",
+            "metadata": {
+              "value": "70"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

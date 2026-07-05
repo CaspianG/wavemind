@@ -24,6 +24,19 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Kubernetes operator"]["autoscaling_metrics"] == ["cpu", "memory"]
     assert results["WaveMind Kubernetes operator"]["has_repair_cronjob"] is True
     assert results["WaveMind Kubernetes operator"]["repair_namespaces"] == 64
+    assert results["WaveMind serverless plan"]["has_knative_service"] is True
+    assert results["WaveMind serverless plan"]["has_keda_scaled_object"] is True
+    assert results["WaveMind serverless plan"]["scale_to_zero"] is True
+    assert results["WaveMind serverless plan"]["max_scale"] == 64
+    assert results["WaveMind serverless plan"]["target_concurrency"] == 80
+    assert results["WaveMind serverless plan"]["uses_postgres"] is True
+    assert results["WaveMind serverless plan"]["uses_external_qdrant"] is True
+    assert results["WaveMind serverless plan"]["uses_shared_cache"] is True
+    assert results["WaveMind serverless plan"]["safe_for_pod_eviction"] is True
+    assert results["WaveMind serverless plan"]["keda_scale_target_kind"] == "Deployment"
+    assert results["WaveMind serverless plan"]["valid_keda_scale_target"] is True
+    assert results["WaveMind serverless plan"]["env_has_postgres_dsn"] is True
+    assert results["WaveMind serverless plan"]["env_has_qdrant_url"] is True
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True

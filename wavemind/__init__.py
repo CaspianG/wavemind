@@ -74,6 +74,7 @@ from .scale import (
     evaluate_production_slo,
     scale_status_meets_or_exceeds,
 )
+from .serverless import SecretEnvRef, WaveMindServerlessSpec, serverless_sample_bundle
 from .sharding import (
     DistributedForgetResult,
     DistributedReadQuorumError,
@@ -94,7 +95,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.6"
+__version__ = "2.4.7"
 
 __all__ = [
     "FieldProjector",
@@ -155,10 +156,12 @@ __all__ = [
     "SQLiteMemoryStore",
     "ScalePlan",
     "S3SnapshotStore",
+    "SecretEnvRef",
     "TextEncoder",
     "WaveField",
     "WaveMindClusterSpec",
     "WaveMind",
+    "WaveMindServerlessSpec",
     "WriteQuorumError",
     "__version__",
     "audio_payload",
@@ -178,6 +181,7 @@ __all__ = [
     "query_with_cache",
     "remember_payload",
     "scale_status_meets_or_exceeds",
+    "serverless_sample_bundle",
     "stable_memory_key",
     "stable_record_key",
     "table_payload",

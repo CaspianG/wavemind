@@ -55,6 +55,11 @@ policy matters more than raw vector-database scale:
   operator Deployment, sample custom resource, deterministic reconciliation
   renderer, and an in-cluster loop that applies Services, StatefulSet, and
   repair CronJob resources.
+- `deploy/serverless` and `wavemind serverless-sample` provide the first
+  serverless deployment planner: a Knative scale-to-zero Service plus a valid
+  KEDA Deployment/Service/ScaledObject profile. The profile requires external
+  Postgres for source-of-truth state, external Qdrant for candidate search,
+  Redis for shared hot-query cache, and API keys from Kubernetes Secrets.
 - `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, query-audit-driven cache prewarm, TTL purge, field
@@ -297,8 +302,8 @@ Enterprise requirements:
 - Graph memory v2 with incremental edge updates.
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
-- Managed/serverless control plane for API/sidecar deployment beyond the
-  current Kubernetes operator-style control plane.
+- Harden the new Knative/KEDA serverless planner with real cluster smoke tests,
+  service-backed load tests, and managed-control-plane docs.
 - Observability: richer Prometheus metrics, trace dashboards, and durable
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,

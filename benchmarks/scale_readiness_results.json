@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, operator-style Kubernetes reconciliation, node/zone loss simulation, quorum-replicated runtime behavior, service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, node/zone loss simulation, quorum-replicated runtime behavior, service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 124.69890003558248,
+      "placement_ms": 104.69250002643093,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -56,6 +56,27 @@
       ]
     },
     {
+      "engine": "WaveMind serverless plan",
+      "has_knative_service": true,
+      "has_keda_scaled_object": true,
+      "scale_to_zero": true,
+      "max_scale": 64,
+      "target_concurrency": 80,
+      "uses_postgres": true,
+      "uses_external_qdrant": true,
+      "uses_shared_cache": true,
+      "safe_for_pod_eviction": true,
+      "keda_scale_target": "wavemind-serverless-keda",
+      "keda_scale_target_kind": "Deployment",
+      "valid_keda_scale_target": true,
+      "knative_min_scale": 0,
+      "knative_max_scale": 64,
+      "knative_target_concurrency": 80,
+      "env_has_postgres_dsn": true,
+      "env_has_qdrant_url": true,
+      "env_has_redis_url": true
+    },
+    {
       "engine": "WaveMind hot cache",
       "queries": 2000,
       "capacity": 512,
@@ -63,8 +84,8 @@
       "evictions": 0,
       "prewarm_warmed": 1,
       "prewarm_hit": true,
-      "avg_lookup_ms": 0.004848549928283319,
-      "p99_lookup_ms": 0.013599987141788006
+      "avg_lookup_ms": 0.0017991498752962798,
+      "p99_lookup_ms": 0.0048999791033566
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -95,8 +116,8 @@
       "anti_entropy_worker_ok": true,
       "anti_entropy_worker_repaired_total": 1,
       "anti_entropy_worker_tombstone_deleted": 1,
-      "write_ms": 170.06619996391237,
-      "query_after_primary_loss_ms": 1.4542000135406852
+      "write_ms": 188.28559998655692,
+      "query_after_primary_loss_ms": 1.65789999300614
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -110,8 +131,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 1.5718999784439802,
-      "p99_query_after_loss_ms": 1.5718999784439802
+      "avg_query_after_loss_ms": 2.0779999904334545,
+      "p99_query_after_loss_ms": 2.0779999904334545
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -119,7 +140,7 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 266.87910000327975,
+      "sync_ms": 205.0738999969326,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
@@ -133,7 +154,7 @@
       "top_key_converged": true,
       "budget_activation": 5.0,
       "suppressed_report_activation": 0.75,
-      "merge_ms": 0.13990001752972603
+      "merge_ms": 0.10189996100962162
     },
     {
       "engine": "WaveMind replicated snapshot",
@@ -147,8 +168,8 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 248.1868999893777,
-      "restore_ms": 170.46430002665147,
+      "snapshot_ms": 188.4674000320956,
+      "restore_ms": 103.4745000069961,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -162,8 +183,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.7301250007003546,
-      "p99_latency_ms": 1.098700042348355
+      "avg_latency_ms": 0.6686749984510243,
+      "p99_latency_ms": 0.8542999858036637
     }
   ]
 }

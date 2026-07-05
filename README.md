@@ -588,6 +588,22 @@ keep those resources applied.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
 
+Serverless deployment:
+
+```sh
+wavemind serverless-sample --namespace wavemind-system --max-scale 64 --out deploy/serverless/wavemind-serverless.sample.json
+wavemind serverless-sample --readiness
+```
+
+`deploy/serverless` contains a stateless API worker plan with two profiles: a
+Knative scale-to-zero `Service`, and a KEDA `Deployment`/`Service`/`ScaledObject`
+profile where the autoscaler targets the generated Deployment. It is
+intentionally stricter than local mode: Postgres is required as the source of
+truth, Qdrant is used as the external candidate index, Redis is used for shared
+hot-query cache, and API keys are read from Kubernetes Secrets. This path is the
+current foundation for scale-to-zero and managed/serverless deployments; it is
+not a claim that WaveMind has a hosted control plane yet.
+
 Maintenance workers:
 
 ```sh

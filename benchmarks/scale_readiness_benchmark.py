@@ -37,8 +37,10 @@ from wavemind import (
     operator_reconcile,
     query_with_cache,
     remember_payload,
+    serverless_sample_bundle,
     table_payload,
     WaveMindClusterSpec,
+    WaveMindServerlessSpec,
     stable_memory_key,
 )
 
@@ -364,6 +366,58 @@ def run_operator_profile(
         ],
         "repair_namespaces": list(cronjob_container["args"]).count("--namespace"),
         "api_paths": paths,
+    }
+
+
+def run_serverless_profile() -> dict[str, object]:
+    spec = WaveMindServerlessSpec(
+        name="wavemind-serverless",
+        namespace="wavemind-system",
+        image="ghcr.io/caspiang/wavemind:latest",
+        min_scale=0,
+        max_scale=64,
+        target_concurrency=80,
+    )
+    bundle = serverless_sample_bundle(spec)
+    kinds = [resource["kind"] for resource in bundle["items"]]
+    service = next(
+        resource
+        for resource in bundle["items"]
+        if resource["apiVersion"] == "serving.knative.dev/v1"
+    )
+    deployment_names = {
+        resource["metadata"]["name"]
+        for resource in bundle["items"]
+        if resource["kind"] == "Deployment"
+    }
+    scaled_object = next(
+        resource for resource in bundle["items"] if resource["kind"] == "ScaledObject"
+    )
+    keda_target = scaled_object["spec"]["scaleTargetRef"]["name"]
+    container = service["spec"]["template"]["spec"]["containers"][0]
+    env_names = [item["name"] for item in container["env"]]
+    annotations = service["spec"]["template"]["metadata"]["annotations"]
+    readiness = spec.readiness_report()
+    return {
+        "engine": "WaveMind serverless plan",
+        "has_knative_service": "Service" in kinds,
+        "has_keda_scaled_object": "ScaledObject" in kinds,
+        "scale_to_zero": readiness["scale_to_zero"],
+        "max_scale": readiness["max_scale"],
+        "target_concurrency": readiness["target_concurrency"],
+        "uses_postgres": readiness["uses_postgres"],
+        "uses_external_qdrant": readiness["uses_external_qdrant"],
+        "uses_shared_cache": readiness["uses_shared_cache"],
+        "safe_for_pod_eviction": readiness["safe_for_pod_eviction"],
+        "keda_scale_target": readiness["keda_scale_target"],
+        "keda_scale_target_kind": readiness["keda_scale_target_kind"],
+        "valid_keda_scale_target": keda_target in deployment_names,
+        "knative_min_scale": int(annotations["autoscaling.knative.dev/min-scale"]),
+        "knative_max_scale": int(annotations["autoscaling.knative.dev/max-scale"]),
+        "knative_target_concurrency": int(annotations["autoscaling.knative.dev/target"]),
+        "env_has_postgres_dsn": "WAVEMIND_POSTGRES_DSN" in env_names,
+        "env_has_qdrant_url": "WAVEMIND_QDRANT_URL" in env_names,
+        "env_has_redis_url": "WAVEMIND_REDIS_URL" in env_names,
     }
 
 
@@ -1019,6 +1073,7 @@ def run_benchmark(
             node_count=node_count,
             replication_factor=replication_factor,
         ),
+        run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_distributed_sharding_profile(),
         run_replication_runtime_profile(),
@@ -1036,7 +1091,8 @@ def run_benchmark(
             "replication_factor": replication_factor,
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
-                "operator-style Kubernetes reconciliation, node/zone loss simulation, quorum-replicated runtime behavior, "
+                "operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, "
+                "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. "
@@ -1083,6 +1139,13 @@ def main() -> int:
             print(f"| operator | has_repair_cronjob | {result['has_repair_cronjob']} |")
             print(f"| operator | autoscaling_max_replicas | {result['autoscaling_max_replicas']} |")
             print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
+        elif result["engine"] == "WaveMind serverless plan":
+            print(f"| serverless | has_knative_service | {result['has_knative_service']} |")
+            print(f"| serverless | has_keda_scaled_object | {result['has_keda_scaled_object']} |")
+            print(f"| serverless | scale_to_zero | {result['scale_to_zero']} |")
+            print(f"| serverless | max_scale | {result['max_scale']} |")
+            print(f"| serverless | safe_for_pod_eviction | {result['safe_for_pod_eviction']} |")
+            print(f"| serverless | valid_keda_scale_target | {result['valid_keda_scale_target']} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")

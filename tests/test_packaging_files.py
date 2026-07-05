@@ -181,6 +181,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include examples/production-index-profile *" in manifest
     assert "recursive-include deploy/helm/wavemind *" in manifest
     assert "recursive-include deploy/operator *" in manifest
+    assert "recursive-include deploy/serverless *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/BENCHMARK_BRIEF.md" in readme
@@ -192,8 +193,11 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "docs/OBSERVABILITY.md" in readme
     assert "deploy/helm/wavemind" in readme
     assert "deploy/operator" in readme
+    assert "deploy/serverless" in readme
     assert "wavemind operator-bundle" in readme
+    assert "wavemind serverless-sample" in readme
     assert Path("deploy/operator/wavemindcluster.sample.json").exists()
+    assert Path("deploy/serverless/wavemind-serverless.sample.json").exists()
     assert "cluster-repair` CronJob" in readme
     assert "wavemind scale-plan --target-memories 50000" in readme
     assert "--fail-on action_required" in readme
@@ -203,6 +207,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "POST /consolidate" in readme
     assert "consolidate_concepts" in readme
     assert "scale-plan" in roadmap
+    assert "serverless-sample" in roadmap
+    assert "valid KEDA Deployment" in benchmark_brief
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases
     assert "consolidate_concepts" in use_cases

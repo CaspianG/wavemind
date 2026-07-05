@@ -35,6 +35,10 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["recall_at_k"] > 0
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["slo_status"] == "fail"
     assert entries["production_load_qdrant_1m_ef_sweep"]["current"]["hnsw_ef=2048"]["slo_status"] == "fail"
+    serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
+    assert serverless["scale_to_zero"] is True
+    assert serverless["uses_postgres"] is True
+    assert serverless["valid_keda_scale_target"] is True
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"
