@@ -25,6 +25,7 @@ from benchmarks.crypto_ohlcv import _window_features  # noqa: E402
 from benchmarks.crypto_walk_forward_benchmark import (  # noqa: E402
     MarketDataset,
     _create_engine,
+    _regime_signature_from_window,
 )
 from wavemind.encoders import create_text_encoder  # noqa: E402
 
@@ -57,6 +58,13 @@ class ForecastResult:
     candidate_expected_return_bps: float
     candidate_expected_return_pct: float
     candidate_expected_price: float
+    directional_direction: str
+    directional_expected_return_bps: float
+    directional_expected_return_pct: float
+    directional_expected_price: float
+    directional_method: str
+    directional_support: int
+    directional_note: str
     confidence: float
     filtered: bool
     filter_reason: str
@@ -70,6 +78,15 @@ class ForecastResult:
     calibration_bucket: Mapping[str, Any] | None = None
     calibrated_probability: float | None = None
     probability_kind: str = "none"
+
+
+@dataclass(frozen=True)
+class DirectionalForecast:
+    direction: str
+    expected_return_bps: float
+    method: str
+    support: int
+    note: str
 
 
 def completed_bars(rows: Iterable[Iterable[Any]], *, timeframe: str, now_ts: int | None = None) -> list[OHLCVBar]:
@@ -144,6 +161,95 @@ def make_latest_query_window(
     )
 
 
+def forced_directional_forecast(
+    windows: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+) -> DirectionalForecast:
+    """Return an always-up/down research direction without overriding safety abstention."""
+    signature = set(_regime_signature_from_window(query))
+    scored: list[tuple[float, OHLCVWindow]] = []
+    if signature:
+        for index, window in enumerate(windows):
+            candidate_signature = set(_regime_signature_from_window(window))
+            overlap = len(signature.intersection(candidate_signature))
+            if overlap < 2:
+                continue
+            recency = (index + 1) / max(1, len(windows))
+            score = float(overlap) + 0.35 * recency
+            scored.append((score, window))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    selected = [window for _, window in scored[:64]]
+    analogue_return = _weighted_future_return(selected) if selected else 0.0
+    momentum_return = _momentum_directional_return(query, horizon=horizon)
+    if len(selected) >= 16:
+        expected_return = 0.70 * analogue_return + 0.30 * momentum_return
+        method = "regime_analogue_weighted"
+    elif len(selected) >= 4:
+        expected_return = 0.50 * analogue_return + 0.50 * momentum_return
+        method = "regime_analogue_momentum_blend"
+    else:
+        expected_return = momentum_return
+        method = "momentum_fallback"
+    if math.isclose(expected_return, 0.0, abs_tol=1e-9):
+        expected_return = _last_bar_directional_return(query)
+        method = f"{method}_last_bar_tiebreak"
+    direction = "up" if expected_return >= 0.0 else "down"
+    note = (
+        "forced up/down research estimate; safety decision may still abstain "
+        "when the trade-quality policy does not pass validation"
+    )
+    return DirectionalForecast(
+        direction=direction,
+        expected_return_bps=float(expected_return),
+        method=method,
+        support=len(selected),
+        note=note,
+    )
+
+
+def _weighted_future_return(windows: list[OHLCVWindow]) -> float:
+    if not windows:
+        return 0.0
+    weights = [math.exp(-float(index) / max(6.0, len(windows) / 3.0)) for index, _ in enumerate(windows)]
+    denominator = max(sum(weights), 1e-12)
+    return float(sum(float(window.future_return_bps) * weight for window, weight in zip(windows, weights, strict=False)) / denominator)
+
+
+def _momentum_directional_return(query: OHLCVWindow, *, horizon: int) -> float:
+    features = query.features
+    recent = float(features.get("recent_return_bps", 0.0))
+    trend_slope = float(features.get("trend_slope_bps", 0.0))
+    macd = float(features.get("macd_bps", 0.0))
+    rsi = float(features.get("rsi", 50.0))
+    bollinger_position = float(features.get("bollinger_position", 0.0))
+    horizon_scale = max(1.0, math.sqrt(float(horizon)))
+    reversion = 0.0
+    if rsi < 35.0:
+        reversion += (35.0 - rsi) * 1.8
+    elif rsi > 65.0:
+        reversion -= (rsi - 65.0) * 1.8
+    if bollinger_position < -1.0:
+        reversion += abs(bollinger_position + 1.0) * 18.0
+    elif bollinger_position > 1.0:
+        reversion -= abs(bollinger_position - 1.0) * 18.0
+    return float(0.30 * recent + 0.45 * trend_slope * horizon_scale + 0.35 * macd + reversion)
+
+
+def _last_bar_directional_return(query: OHLCVWindow) -> float:
+    if len(query.bars) < 2:
+        return 1.0
+    previous = float(query.bars[-2].close)
+    current = float(query.bars[-1].close)
+    if previous <= 0.0:
+        return 1.0
+    change_bps = (current / previous - 1.0) * 10_000.0
+    if math.isclose(change_bps, 0.0, abs_tol=1e-9):
+        return 1.0
+    return float(change_bps)
+
+
 def forecast_from_bars(
     bars: Iterable[OHLCVBar],
     *,
@@ -190,6 +296,7 @@ def forecast_from_bars(
         finally:
             engine.close()
     last_close = float(query.bars[-1].close)
+    directional = forced_directional_forecast(windows, query, horizon=horizon)
     decision = "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
     candidate_direction = prediction.candidate_direction or prediction.raw_direction or prediction.direction
     candidate_expected_return_bps = (
@@ -199,6 +306,7 @@ def forecast_from_bars(
     )
     expected_price = last_close * (1.0 + float(prediction.expected_return_bps) / 10_000.0)
     candidate_expected_price = last_close * (1.0 + candidate_expected_return_bps / 10_000.0)
+    directional_expected_price = last_close * (1.0 + directional.expected_return_bps / 10_000.0)
     if decision == "signal":
         calibrated_probability, probability_kind = calibrated_probability_for_evidence(
             calibration_profile,
@@ -226,6 +334,13 @@ def forecast_from_bars(
         candidate_expected_return_bps=candidate_expected_return_bps,
         candidate_expected_return_pct=candidate_expected_return_bps / 100.0,
         candidate_expected_price=float(candidate_expected_price),
+        directional_direction=directional.direction,
+        directional_expected_return_bps=directional.expected_return_bps,
+        directional_expected_return_pct=directional.expected_return_bps / 100.0,
+        directional_expected_price=float(directional_expected_price),
+        directional_method=directional.method,
+        directional_support=int(directional.support),
+        directional_note=directional.note,
         confidence=float(prediction.confidence),
         filtered=bool(prediction.filtered),
         filter_reason=prediction.filter_reason,
@@ -385,6 +500,13 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "candidate_expected_return_bps": result.candidate_expected_return_bps,
         "candidate_expected_return_pct": result.candidate_expected_return_pct,
         "candidate_expected_price": result.candidate_expected_price,
+        "directional_direction": result.directional_direction,
+        "directional_expected_return_bps": result.directional_expected_return_bps,
+        "directional_expected_return_pct": result.directional_expected_return_pct,
+        "directional_expected_price": result.directional_expected_price,
+        "directional_method": result.directional_method,
+        "directional_support": result.directional_support,
+        "directional_note": result.directional_note,
         "evidence_strength": result.evidence_strength,
         "confidence": result.confidence,
         "confidence_is_probability": result.confidence_is_probability,
@@ -407,17 +529,20 @@ def render_markdown(results: list[ForecastResult]) -> str:
         "",
         "Research forecast from completed candles only. Not financial advice.",
         "Evidence strength is analogue/regime agreement, not a calibrated probability.",
-        "`abstain` means WaveMind found no validated trade-quality signal; it does not mean the next price will be unchanged.",
+        "`directional forecast` is forced to up/down because markets do not stay exactly flat.",
+        "`decision=abstain` means WaveMind found no validated trade-quality signal; it does not mean the next price will be unchanged.",
         "",
-        "| symbol | horizon | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |",
-        "|---|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+        "| symbol | horizon | data end UTC | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |",
+        "|---|---:|---|---|---:|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for result in results:
         filter_text = result.filter_reason if result.filtered else ""
         probability_text = "" if result.calibrated_probability is None else f"{result.calibrated_probability:.3f}"
         lines.append(
             "| "
-            f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | {result.decision} | "
+            f"{result.symbol} | {result.horizon_label} | {result.data_end_utc} | "
+            f"{result.directional_direction} | {result.directional_expected_return_pct:.2f}% | "
+            f"{result.directional_expected_price:.6g} | {result.decision} | "
             f"{result.direction} | {result.candidate_direction} | {result.last_close:.6g} | "
             f"{result.expected_return_pct:.2f}% | {result.candidate_expected_return_pct:.2f}% | "
             f"{result.expected_price:.6g} | {result.candidate_expected_price:.6g} | "

@@ -339,28 +339,30 @@ benchmark, trains on the latest completed candles, queries the latest completed
 window, and writes both JSON and Markdown. The JSON output embeds the
 validation profile used to judge whether the engine is credible enough for that
 horizon.
+The forecast has two layers: `directional forecast` is always forced to `up` or
+`down` because markets do not stay exactly flat; `decision` is the safety layer
+and may still be `abstain` when there is no validated trade-quality signal.
 
 The checked-in 24h snapshot uses data through the completed
 `2026-07-05T08:00:00+00:00` 4h candle:
 
-| symbol | horizon | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
-|---|---:|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 24h | abstain | flat | flat | 62656.2 | 0.00% | 0.00% | 0.630 | none | flat_candidate |
-| ETH/USDT | 24h | abstain | flat | flat | 1760.32 | 0.00% | 0.00% | 0.939 | none | flat_candidate |
-| SOL/USDT | 24h | abstain | flat | down | 80.56 | 0.00% | 0.00% | 1.000 | none | adaptive_trend_mismatch |
+| symbol | horizon | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | evidence strength | filter |
+|---|---:|---|---:|---:|---|---|---|---:|---:|---|
+| BTC/USDT | 24h | up | 0.20% | 62781.1 | abstain | flat | flat | 62656.2 | 0.630 | flat_candidate |
+| ETH/USDT | 24h | down | -0.53% | 1751 | abstain | flat | flat | 1760.32 | 0.939 | flat_candidate |
+| SOL/USDT | 24h | up | 1.19% | 81.5183 | abstain | flat | down | 80.56 | 1.000 | adaptive_trend_mismatch |
 
-The checked-in 7d snapshot returns `flat` for BTC/ETH/SOL because the current
-policy routes unvalidated `1d` forecasts to abstention:
+The checked-in 7d snapshot also returns forced directional estimates, but the
+trade-quality policy still abstains because the 1d profile is not validated:
 
-| symbol | horizon | direction | reason |
-|---|---:|---|---|
-| BTC/USDT | 7d | flat | unsupported_timeframe:1d |
-| ETH/USDT | 7d | flat | unsupported_timeframe:1d |
-| SOL/USDT | 7d | flat | unsupported_timeframe:1d |
+| symbol | horizon | directional forecast | directional return | directional price | decision | reason |
+|---|---:|---|---:|---:|---|---|
+| BTC/USDT | 7d | up | 0.31% | 63334 | abstain | unsupported_timeframe:1d |
+| ETH/USDT | 7d | up | 1.36% | 1804.83 | abstain | unsupported_timeframe:1d |
+| SOL/USDT | 7d | down | -1.55% | 80.5292 | abstain | unsupported_timeframe:1d |
 
 This is still research output, not financial advice. The current snapshot is
-an abstention, not a bullish or bearish call: WaveMind did not find a validated
-trade-quality 24h signal.
+an abstention at the trade-signal layer, not a claim that price will stay flat.
 The weekly path intentionally refuses to forecast until a separate daily/weekly
 policy passes walk-forward validation.
 

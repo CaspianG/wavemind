@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-05T13:39:43.768278+00:00",
+  "generated_utc": "2026-07-05T14:15:57.632937+00:00",
   "closed_candles_only": true,
   "results": [
     {
@@ -21,6 +21,13 @@
       "candidate_expected_return_bps": 0.0,
       "candidate_expected_return_pct": 0.0,
       "candidate_expected_price": 62656.2,
+      "directional_direction": "up",
+      "directional_expected_return_bps": 19.934294048999984,
+      "directional_expected_return_pct": 0.19934294048999984,
+      "directional_expected_price": 62781.100711479296,
+      "directional_method": "regime_analogue_weighted",
+      "directional_support": 64,
+      "directional_note": "forced up/down research estimate; safety decision may still abstain when the trade-quality policy does not pass validation",
       "evidence_strength": 0.6302359918939019,
       "confidence": 0.6302359918939019,
       "confidence_is_probability": false,
@@ -31,7 +38,7 @@
       "filter_reason": "flat_candidate",
       "analogue_agreement": 0.0,
       "regime_agreement": 1.0,
-      "latency_ms": 5.588800006080419,
+      "latency_ms": 6.750800064764917,
       "validation": {
         "queries": 1620,
         "active_direction_accuracy": 0.5862068965517241,
@@ -65,6 +72,13 @@
       "candidate_expected_return_bps": 0.0,
       "candidate_expected_return_pct": 0.0,
       "candidate_expected_price": 1760.32,
+      "directional_direction": "down",
+      "directional_expected_return_bps": -52.94365347055422,
+      "directional_expected_return_pct": -0.5294365347055422,
+      "directional_expected_price": 1751.0002227922714,
+      "directional_method": "regime_analogue_weighted",
+      "directional_support": 64,
+      "directional_note": "forced up/down research estimate; safety decision may still abstain when the trade-quality policy does not pass validation",
       "evidence_strength": 0.9388764758521315,
       "confidence": 0.9388764758521315,
       "confidence_is_probability": false,
@@ -75,7 +89,7 @@
       "filter_reason": "flat_candidate",
       "analogue_agreement": 0.0,
       "regime_agreement": 1.0,
-      "latency_ms": 5.604700010735542,
+      "latency_ms": 8.387499954551458,
       "validation": {
         "queries": 1620,
         "active_direction_accuracy": 0.5862068965517241,
@@ -93,16 +107,16 @@
           0.8,
           1.0
         ],
-        "count": 38,
+        "count": 21,
         "avg_evidence_strength": 1.0,
-        "direction_hit_rate": 0.7105263157894737,
-        "calibration_error": 0.2894736842105263,
-        "avg_net_return_bps": 105.83805335290029,
+        "direction_hit_rate": 0.5714285714285714,
+        "calibration_error": 0.4285714285714286,
+        "avg_net_return_bps": 2.138457971288851,
         "probability_ready": false,
         "probability_kind": "none",
-        "base_rate_probability": 0.6785714285714286,
+        "base_rate_probability": 0.5862068965517241,
         "base_rate_probability_ready": false,
-        "monotonic_calibrated_probability": 0.7105263157894737
+        "monotonic_calibrated_probability": 0.5862068965517241
       }
     },
     {
@@ -124,6 +138,13 @@
       "candidate_expected_return_bps": 0.0,
       "candidate_expected_return_pct": 0.0,
       "candidate_expected_price": 80.56,
+      "directional_direction": "up",
+      "directional_expected_return_bps": 118.95382280409949,
+      "directional_expected_return_pct": 1.189538228040995,
+      "directional_expected_price": 81.51829199650983,
+      "directional_method": "regime_analogue_weighted",
+      "directional_support": 64,
+      "directional_note": "forced up/down research estimate; safety decision may still abstain when the trade-quality policy does not pass validation",
       "evidence_strength": 1.0,
       "confidence": 1.0,
       "confidence_is_probability": false,
@@ -134,7 +155,7 @@
       "filter_reason": "adaptive_trend_mismatch",
       "analogue_agreement": 0.0,
       "regime_agreement": 1.0,
-      "latency_ms": 8.13699996797368,
+      "latency_ms": 8.602000016253442,
       "validation": {
         "queries": 1620,
         "active_direction_accuracy": 0.5862068965517241,
@@ -152,16 +173,16 @@
           0.8,
           1.0
         ],
-        "count": 38,
+        "count": 21,
         "avg_evidence_strength": 1.0,
-        "direction_hit_rate": 0.7105263157894737,
-        "calibration_error": 0.2894736842105263,
-        "avg_net_return_bps": 105.83805335290029,
+        "direction_hit_rate": 0.5714285714285714,
+        "calibration_error": 0.4285714285714286,
+        "avg_net_return_bps": 2.138457971288851,
         "probability_ready": false,
         "probability_kind": "none",
-        "base_rate_probability": 0.6785714285714286,
+        "base_rate_probability": 0.5862068965517241,
         "base_rate_probability_ready": false,
-        "monotonic_calibrated_probability": 0.7105263157894737
+        "monotonic_calibrated_probability": 0.5862068965517241
       }
     }
   ]

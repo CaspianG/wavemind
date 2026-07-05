@@ -68,9 +68,15 @@ def test_forecast_from_bars_computes_expected_price():
     assert result.direction in {"up", "down", "flat"}
     assert result.decision in {"signal", "abstain"}
     assert result.candidate_direction in {"up", "down", "flat"}
+    assert result.directional_direction in {"up", "down"}
+    assert not math.isclose(result.directional_expected_return_bps, 0.0)
+    assert result.directional_method
+    assert result.directional_support >= 0
     assert math.isclose(result.expected_price, expected_price)
     candidate_expected_price = result.last_close * (1.0 + result.candidate_expected_return_bps / 10_000.0)
     assert math.isclose(result.candidate_expected_price, candidate_expected_price)
+    directional_expected_price = result.last_close * (1.0 + result.directional_expected_return_bps / 10_000.0)
+    assert math.isclose(result.directional_expected_price, directional_expected_price)
     assert math.isclose(result.evidence_strength, result.confidence)
     assert result.confidence_is_probability is False
     assert datetime.fromisoformat(result.forecast_until_utc) > datetime.fromisoformat(result.data_end_utc)
@@ -204,6 +210,13 @@ def test_render_markdown_contains_price_target():
                 candidate_expected_return_bps=120.0,
                 candidate_expected_return_pct=1.2,
                 candidate_expected_price=101_200.0,
+                directional_direction="up",
+                directional_expected_return_bps=140.0,
+                directional_expected_return_pct=1.4,
+                directional_expected_price=101_400.0,
+                directional_method="regime_analogue_weighted",
+                directional_support=32,
+                directional_note="forced up/down research estimate",
                 confidence=0.73,
                 evidence_strength=0.73,
                 calibration_bucket={"direction_hit_rate": 0.62},
@@ -221,11 +234,13 @@ def test_render_markdown_contains_price_target():
 
     assert "Research forecast from completed candles only" in markdown
     assert "Evidence strength is analogue/regime agreement" in markdown
+    assert "directional forecast" in markdown
     assert "abstain" in markdown
     assert "candidate direction" in markdown
     assert "0.620" in markdown
     assert "base_rate" in markdown
     assert "BTC/USDT" in markdown
+    assert "101400" in markdown
     assert "101200" in markdown
     assert "1.20%" in markdown
 

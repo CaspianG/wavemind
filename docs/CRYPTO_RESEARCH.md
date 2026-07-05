@@ -335,25 +335,34 @@ What it does:
 - trains the same `WaveMind timeframe policy` engine used in the walk-forward
   benchmark;
 - queries the latest completed market window;
-- writes current price, expected return, expected price, evidence strength,
-  filter reason, and the validation profile into JSON/Markdown.
+- writes a forced up/down directional forecast, the safety-layer decision,
+  current price, expected return, expected price, evidence strength, filter
+  reason, and the validation profile into JSON/Markdown.
+
+The forecast has two layers:
+
+- `directional forecast` is always `up` or `down` because markets do not stay
+  exactly flat;
+- `decision` is the safety layer and may remain `abstain` when the policy does
+  not find a validated trade-quality signal.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
 `2026-07-05T08:00:00+00:00`:
 
-| symbol | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
-|---|---|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | flat | 62656.2 | 0.00% | 0.00% | 0.630 | none | flat_candidate |
-| ETH/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | flat | 1760.32 | 0.00% | 0.00% | 0.939 | none | flat_candidate |
-| SOL/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | down | 80.56 | 0.00% | 0.00% | 1.000 | none | adaptive_trend_mismatch |
+| symbol | data end UTC | directional forecast | directional return | directional price | decision | signal direction | candidate direction | last close | evidence strength | filter |
+|---|---|---|---:|---:|---|---|---|---:|---:|---|
+| BTC/USDT | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | abstain | flat | flat | 62656.2 | 0.630 | flat_candidate |
+| ETH/USDT | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | abstain | flat | flat | 1760.32 | 0.939 | flat_candidate |
+| SOL/USDT | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | abstain | flat | down | 80.56 | 1.000 | adaptive_trend_mismatch |
 
-The 24h snapshot is an abstention, not a bullish or bearish call. The current
-market did not produce a validated trade-quality signal.
+The 24h snapshot has a forced directional estimate, but it is still an
+abstention at the trade-signal layer. The current market did not produce a
+validated trade-quality signal.
 
-The 7d runner currently returns `abstain` on BTC/ETH/SOL with
-`unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
-daily/weekly horizons until a separate 1d profile passes walk-forward
-validation.
+The 7d runner currently produces forced directional estimates but returns
+`abstain` on BTC/ETH/SOL with `unsupported_timeframe:1d`. That is intentional.
+The policy refuses to produce trade-quality daily/weekly signals until a
+separate 1d profile passes walk-forward validation.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
