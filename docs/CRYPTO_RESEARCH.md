@@ -86,6 +86,7 @@ target-price predictions per engine.
 
 | engine | queries | direction hit | MAE return | RMSE return | MAPE | within 50 bps | worst slice hit | worst slice MAPE |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind robust target | 8640 | 0.543 | 382.0 bps | 562.3 bps | 3.95% | 0.120 | 0.356 | 10.39% |
 | WaveMind calibrated target | 8640 | 0.531 | 390.9 bps | 573.8 bps | 4.05% | 0.117 | 0.222 | 10.89% |
 | WaveMind price target | 8640 | 0.480 | 394.5 bps | 579.9 bps | 4.09% | 0.113 | 0.211 | 10.71% |
 | Momentum baseline | 8640 | 0.497 | 398.7 bps | 581.2 bps | 4.11% | 0.116 | 0.244 | 10.35% |
@@ -93,8 +94,18 @@ target-price predictions per engine.
 | Historical mean baseline | 8640 | 0.474 | 396.6 bps | 581.1 bps | 4.13% | 0.107 | 0.133 | 10.65% |
 | Naive last-outcome baseline | 8640 | 0.492 | 531.5 bps | 783.1 bps | 5.44% | 0.091 | 0.256 | 15.90% |
 
-The calibrated WaveMind target is the best aggregate result in this run, but
-the branch is not yet robust enough to claim that it works on every coin and
+The robust WaveMind target is the best aggregate result in this run and improves
+the weakest direction-hit slice from 0.222 to 0.356 versus the calibrated target.
+It is deliberately timeframe-aware:
+
+- `1h`: momentum-direction guardrail with WaveMind-derived magnitude, reducing
+  short-horizon sign failures.
+- `4h`: raw field plus historical drift and calibrated field, reducing target
+  error without leaning on the noisy short-term momentum baseline.
+- `1d`: calibrated field plus regime and momentum guards, reducing weekly
+  altcoin false positives.
+
+The branch is still not robust enough to claim that it works on every coin and
 every date range. The useful outcome of this benchmark is that failures are now
 measured explicitly: worst-slice hit rate, worst-slice MAPE, per-symbol
 breakdowns, and a bounded event-level sample are stored in

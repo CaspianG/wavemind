@@ -355,6 +355,7 @@ and 4h runs target roughly 24h ahead; the 1d run targets 7d ahead.
 
 | engine | queries | direction hit | MAE return | RMSE return | MAPE | within 50 bps | worst slice hit | worst slice MAPE |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind robust target | 8640 | 0.543 | 382.0 bps | 562.3 bps | 3.95% | 0.120 | 0.356 | 10.39% |
 | WaveMind calibrated target | 8640 | 0.531 | 390.9 bps | 573.8 bps | 4.05% | 0.117 | 0.222 | 10.89% |
 | WaveMind price target | 8640 | 0.480 | 394.5 bps | 579.9 bps | 4.09% | 0.113 | 0.211 | 10.71% |
 | Momentum baseline | 8640 | 0.497 | 398.7 bps | 581.2 bps | 4.11% | 0.116 | 0.244 | 10.35% |
@@ -362,11 +363,12 @@ and 4h runs target roughly 24h ahead; the 1d run targets 7d ahead.
 | Historical mean baseline | 8640 | 0.474 | 396.6 bps | 581.1 bps | 4.13% | 0.107 | 0.133 | 10.65% |
 | Naive last-outcome baseline | 8640 | 0.492 | 531.5 bps | 783.1 bps | 5.44% | 0.091 | 0.256 | 15.90% |
 
-Interpretation: the calibrated WaveMind target is currently best on aggregate
-MAE/MAPE and direction hit, and it beats naive-last clearly. The result is not
-yet a production trading edge: worst slices remain weak, especially around
-daily/weekly targets and some altcoin periods. That weakness is now visible in
-the benchmark instead of hidden behind a single current forecast.
+Interpretation: the robust WaveMind target is currently best on aggregate
+MAE/MAPE, direction hit, and worst-slice direction hit. It uses a timeframe-aware
+policy: 1h gets a momentum-direction guardrail, 4h blends raw field with
+historical drift, and 1d blends calibrated field with regime/momentum guards.
+This is stronger than the previous calibrated target, but still research-grade:
+daily/weekly altcoin slices can still produce large price-target errors.
 
 ## Current Forecast Snapshot
 

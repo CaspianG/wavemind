@@ -307,6 +307,8 @@ def _predict_return(
         support = len(_regime_matches(history, query))
         method = f"fold_local_field_ensemble:{ensemble.best_component}"
         return _force_nonzero(value, fallback=components.get("wave", _last_actual_return(history))), support, method
+    if engine_key == "wavemind-robust-target":
+        return _robust_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key in {"wavemind-target", "wavemind-calibrated"}:
         forecast = forced_directional_forecast(history, query, horizon=horizon)
         value = forecast.expected_return_bps
@@ -329,6 +331,43 @@ def _predict_return(
         value = _last_actual_return(history)
         return _force_nonzero(value, fallback=1.0), 1, "last_mature_outcome"
     raise ValueError(f"Unknown engine {engine_key!r}")
+
+
+def _robust_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> tuple[float, int, str]:
+    forecast = forced_directional_forecast(history, query, horizon=horizon)
+    matches = _regime_matches(history, query)
+    last_outcome = _last_actual_return(history)
+    raw_wave = _force_nonzero(forecast.expected_return_bps, fallback=last_outcome)
+    calibrated_wave = _force_nonzero(_apply_calibration(raw_wave, calibration), fallback=raw_wave)
+    momentum = _force_nonzero(_momentum_directional_return(query, horizon=horizon), fallback=last_outcome)
+    regime = _force_nonzero(
+        statistics.mean(window.future_return_bps for window in matches) if matches else last_outcome,
+        fallback=last_outcome,
+    )
+    historical = _force_nonzero(statistics.mean(window.future_return_bps for window in history), fallback=last_outcome)
+    naive = _force_nonzero(last_outcome, fallback=1.0)
+
+    if query.timeframe == "1h":
+        short_horizon_magnitude = abs(0.40 * calibrated_wave + 0.40 * momentum + 0.20 * naive)
+        value = math.copysign(short_horizon_magnitude, momentum)
+        method = f"{forecast.method}+robust_1h_momentum_guard"
+    elif query.timeframe == "4h":
+        value = 0.35 * raw_wave + 0.45 * historical + 0.20 * calibrated_wave
+        method = f"{forecast.method}+robust_4h_error_guard"
+    elif query.timeframe == "1d":
+        value = 0.40 * calibrated_wave + 0.25 * momentum + 0.35 * regime
+        method = f"{forecast.method}+robust_1d_regime_guard"
+    else:
+        value = calibrated_wave
+        method = f"{forecast.method}+robust_calibration"
+    support = max(int(forecast.support), len(matches))
+    return _force_nonzero(value, fallback=calibrated_wave), support, method
 
 
 def _component_predictions(history: list[OHLCVWindow], query: OHLCVWindow, *, horizon: int) -> dict[str, float]:
@@ -663,6 +702,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-target": "wavemind-target",
         "wavemind-ensemble": "wavemind-ensemble",
         "ensemble": "wavemind-ensemble",
+        "wavemind-robust": "wavemind-robust-target",
+        "wavemind-robust-target": "wavemind-robust-target",
+        "robust": "wavemind-robust-target",
+        "robust-target": "wavemind-robust-target",
         "wavemind-calibrated": "wavemind-calibrated",
         "calibrated": "wavemind-calibrated",
         "momentum": "momentum",
@@ -682,6 +725,7 @@ def _engine_name(key: str) -> str:
     return {
         "wavemind-target": "WaveMind price target",
         "wavemind-ensemble": "WaveMind ensemble target",
+        "wavemind-robust-target": "WaveMind robust target",
         "wavemind-calibrated": "WaveMind calibrated target",
         "momentum": "Momentum baseline",
         "regime-mean": "Regime mean baseline",
@@ -714,6 +758,7 @@ def parse_args() -> argparse.Namespace:
         "--engines",
         nargs="+",
         default=[
+            "wavemind-robust-target",
             "wavemind-calibrated",
             "wavemind-target",
             "momentum",

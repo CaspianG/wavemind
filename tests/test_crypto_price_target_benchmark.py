@@ -36,7 +36,14 @@ def test_price_target_benchmark_scores_future_price():
                 "source": "synthetic",
             }
         ],
-        engines=["wavemind-ensemble", "wavemind-calibrated", "wavemind-target", "momentum", "naive-last"],
+        engines=[
+            "wavemind-robust-target",
+            "wavemind-ensemble",
+            "wavemind-calibrated",
+            "wavemind-target",
+            "momentum",
+            "naive-last",
+        ],
         train_windows=60,
         test_windows=12,
         folds=2,
@@ -46,9 +53,11 @@ def test_price_target_benchmark_scores_future_price():
 
     result_by_engine = {result["engine"]: result for result in payload["results"]}
     assert payload["scenario"]["target"] == "predict future close price, not only up/down direction"
+    assert result_by_engine["WaveMind robust target"]["queries"] == 24
     assert result_by_engine["WaveMind ensemble target"]["queries"] == 24
     assert result_by_engine["WaveMind calibrated target"]["queries"] == 24
     assert result_by_engine["WaveMind price target"]["queries"] == 24
+    assert result_by_engine["WaveMind robust target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
     assert result_by_engine["WaveMind calibrated target"]["mean_abs_return_error_bps"] >= 0.0
@@ -109,6 +118,7 @@ def test_price_target_markdown_and_cli(tmp_path):
             "--timeframes",
             "4h",
             "--engines",
+            "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
             "wavemind-target",
@@ -142,7 +152,7 @@ def test_price_target_markdown_and_cli(tmp_path):
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     markdown = report.read_text(encoding="utf-8")
-    assert payload["results"][0]["engine"] == "WaveMind ensemble target"
+    assert payload["results"][0]["engine"] == "WaveMind robust target"
     assert payload["event_metrics_total"] >= len(payload["event_metrics"])
     assert "event_metrics_truncated" in payload
     assert "WaveMind Crypto Price Target Benchmark" in markdown
