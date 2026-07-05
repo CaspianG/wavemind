@@ -33,6 +33,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind distributed sharding"]["tombstone_repair_deleted_records"] == 1
     assert results["WaveMind distributed sharding"]["tombstone_stale_records_after_repair"] == 0
     assert results["WaveMind distributed sharding"]["tombstone_suppressed_after_repair"] is True
+    assert results["WaveMind distributed sharding"]["anti_entropy_worker_ok"] is True
+    assert results["WaveMind distributed sharding"]["anti_entropy_worker_repaired_total"] == 1
+    assert results["WaveMind distributed sharding"]["anti_entropy_worker_tombstone_deleted"] == 1
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True

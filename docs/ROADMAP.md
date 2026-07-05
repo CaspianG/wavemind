@@ -54,7 +54,7 @@ policy matters more than raw vector-database scale:
   namespace placement, quorum-replicated runtime behavior, active-active
   namespace delta sync, service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, and tombstone-aware delete
-  repair, checksummed replicated snapshot/restore with offsite and
+  repair, anti-entropy background repair, checksummed replicated snapshot/restore with offsite and
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache

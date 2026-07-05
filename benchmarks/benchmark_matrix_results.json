@@ -741,7 +741,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/scale_readiness_benchmark.py",
-      "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, service-mode tombstone repair, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+      "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
       "competitors": [
         "Mem0",
         "Zep",
@@ -764,7 +764,7 @@
           "zone_loss_min_availability": 1.0,
           "read_quorum": 1,
           "write_quorum": 2,
-          "placement_ms": 91.83249995112419
+          "placement_ms": 63.9400000218302
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -773,7 +773,7 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.00589998671784997
+          "p99_lookup_ms": 0.0032999669201672077
         },
         "WaveMind distributed sharding": {
           "nodes": 3,
@@ -786,7 +786,11 @@
           "repair_ok": true,
           "recalled_after_repair": true,
           "forget_replicated_deletes": 2,
-          "query_after_primary_loss_ms": 0.6763999699614942
+          "tombstone_replication_factor": 3,
+          "tombstone_suppressed_before_repair": true,
+          "tombstone_repair_deleted_records": 1,
+          "tombstone_suppressed_after_repair": true,
+          "query_after_primary_loss_ms": 1.378699962515384
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -796,7 +800,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 1.2332000187598169
+          "p99_query_after_loss_ms": 1.2089000083506107
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -805,7 +809,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 134.40889999037609
+          "sync_ms": 121.9279999495484
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -819,17 +823,17 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 131.94059999659657,
-          "restore_ms": 103.49700000369921
+          "snapshot_ms": 150.99249995546415,
+          "restore_ms": 81.7807000130415
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.6881249864818528,
-          "p99_latency_ms": 1.033599954098463
+          "avg_latency_ms": 0.4984749830327928,
+          "p99_latency_ms": 0.6758999661542475
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
       "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
     },
     {

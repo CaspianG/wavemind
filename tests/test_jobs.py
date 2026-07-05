@@ -5,6 +5,8 @@ from pathlib import Path
 
 from wavemind import (
     CachePrewarmWorker,
+    DistributedRepairWorker,
+    DistributedShardedWaveMind,
     HashingTextEncoder,
     HotMemoryCache,
     MemoryMaintenanceWorker,
@@ -87,6 +89,120 @@ class FakeS3Client:
             self.objects.pop((Bucket, key), None)
             deleted.append({"Key": key})
         return {"Deleted": deleted}
+
+
+class LocalShardServiceClient:
+    def __init__(self, root: Path):
+        self.root = root
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.minds = {}
+
+    def remember(
+        self,
+        address,
+        *,
+        text,
+        namespace,
+        tags=(),
+        ttl_seconds=None,
+        metadata=None,
+        priority=1.0,
+    ):
+        return self._mind(address).remember(
+            text,
+            namespace=namespace,
+            tags=tags,
+            ttl_seconds=ttl_seconds,
+            metadata=metadata,
+            priority=priority,
+        )
+
+    def query(self, address, *, text, namespace, top_k=3, tags=(), min_score=None):
+        return self._mind(address).query(
+            text,
+            namespace=namespace,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
+
+    def forget(self, address, *, namespace, id=None, text=None):
+        return self._mind(address).forget(id=id, text=text, namespace=namespace)
+
+    def export_namespace_state(
+        self,
+        address,
+        *,
+        namespace,
+        limit=1000,
+        include_expired=False,
+        tags=(),
+        include_tombstones=True,
+    ):
+        records = self._mind(address).store.list(
+            namespace=namespace,
+            include_expired=include_expired,
+            tags=tags,
+        )[:limit]
+        tombstones = []
+        if include_tombstones:
+            tombstones = [
+                {
+                    "record_keys": list(event.metadata.get("record_keys", [])),
+                    "texts": list(event.metadata.get("texts", [])),
+                }
+                for event in self._mind(address).audit_events(
+                    namespace=namespace,
+                    action="distributed_tombstone",
+                    limit=10_000,
+                )
+            ]
+        return {
+            "records": [
+                {
+                    "id": record.id,
+                    "text": record.text,
+                    "namespace": record.namespace,
+                    "tags": list(record.tags),
+                    "metadata": record.metadata,
+                    "created_at": record.created_at,
+                    "updated_at": record.updated_at,
+                    "expires_at": record.expires_at,
+                    "priority": record.priority,
+                    "access_count": record.access_count,
+                }
+                for record in records
+            ],
+            "tombstones": tombstones,
+        }
+
+    def log_tombstone(self, address, *, namespace, record_keys=(), texts=()):
+        return self._mind(address).store.log_audit_event(
+            "distributed_tombstone",
+            namespace=namespace,
+            metadata={
+                "record_keys": sorted(record_keys),
+                "texts": sorted(texts),
+            },
+        )
+
+    def close(self):
+        for mind in self.minds.values():
+            mind.close()
+        self.minds.clear()
+
+    def _mind(self, address):
+        mind = self.minds.get(address)
+        if mind is None:
+            mind = WaveMind(
+                db_path=self.root / f"{address}.sqlite3",
+                encoder=HashingTextEncoder(vector_dim=64),
+                width=16,
+                height=16,
+                layers=1,
+            )
+            self.minds[address] = mind
+        return mind
 
 
 def test_hot_memory_cache_reuses_query_results(tmp_path):
@@ -215,6 +331,49 @@ def test_cache_prewarm_worker_warms_hot_queries_from_audit(tmp_path):
         assert cached[0].text == "hot budget preference memory"
     finally:
         memory.close()
+
+
+def test_distributed_repair_worker_repairs_service_mode_namespaces(tmp_path):
+    client = LocalShardServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        client=client,
+    )
+    try:
+        repair_namespace = "tenant:worker-repair"
+        repair_write = memory.remember(
+            "worker repair copies missing service replica",
+            namespace=repair_namespace,
+        )
+        missing_node = next(node for node in repair_write.writes if node != repair_write.primary_node)
+        client._mind(missing_node).forget(
+            namespace=repair_namespace,
+            text="worker repair copies missing service replica",
+        )
+
+        tombstone_namespace = "tenant:worker-tombstone"
+        tombstone_text = "worker repair must not resurrect deleted service memory"
+        memory.remember(tombstone_text, namespace=tombstone_namespace)
+        tombstone_placement = memory.placement(tombstone_namespace)
+        missed_delete = tombstone_placement.replicas[-1]
+        memory.set_node_available(missed_delete, False)
+        memory.forget(namespace=tombstone_namespace, text=tombstone_text)
+        memory.set_node_available(missed_delete, True)
+
+        report = DistributedRepairWorker(memory).run_once(
+            namespaces=(repair_namespace, tombstone_namespace)
+        )
+
+        assert report.ok
+        assert report.repaired_total == 1
+        assert report.tombstone_deleted == 1
+        assert set(report.reports) == {repair_namespace, tombstone_namespace}
+        assert client._mind(missing_node).store.count(namespace=repair_namespace) == 1
+        assert client._mind(missed_delete).store.count(namespace=tombstone_namespace) == 0
+        assert memory.query("deleted service memory", namespace=tombstone_namespace, top_k=1) == []
+    finally:
+        client.close()
 
 
 def test_replicated_snapshot_worker_mirrors_offsite_and_restores(tmp_path):

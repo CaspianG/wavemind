@@ -359,6 +359,31 @@ class CachePrewarmReport:
 
 
 @dataclass(frozen=True)
+class DistributedRepairJobReport:
+    namespaces: tuple[str, ...]
+    repaired_total: int = 0
+    tombstone_deleted: int = 0
+    reports: dict[str, dict[str, object]] = field(default_factory=dict)
+    failed_namespaces: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def ok(self) -> bool:
+        return not self.failed_namespaces and all(
+            bool(report.get("ok", False)) for report in self.reports.values()
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "namespaces": list(self.namespaces),
+            "repaired_total": self.repaired_total,
+            "tombstone_deleted": self.tombstone_deleted,
+            "reports": dict(self.reports),
+            "failed_namespaces": dict(self.failed_namespaces),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class ReplicatedSnapshotJobReport:
     snapshot_path: Path
     verified: bool
@@ -797,6 +822,62 @@ class CachePrewarmWorker:
             warmed=warmed,
             skipped=skipped,
             errors=errors,
+        )
+
+
+class DistributedRepairWorker:
+    """Run anti-entropy namespace repair for distributed memory runtimes."""
+
+    def __init__(self, memory: Any):
+        if not hasattr(memory, "repair_namespace"):
+            raise TypeError("memory object must expose repair_namespace()")
+        self.memory = memory
+
+    def run_once(
+        self,
+        *,
+        namespaces: Iterable[str],
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: Iterable[str] | None = None,
+        fail_fast: bool = False,
+    ) -> DistributedRepairJobReport:
+        requested = tuple(str(namespace) for namespace in namespaces)
+        reports: dict[str, dict[str, object]] = {}
+        failed: dict[str, str] = {}
+        repaired_total = 0
+        tombstone_deleted = 0
+        for namespace in requested:
+            try:
+                report = self.memory.repair_namespace(
+                    namespace,
+                    limit=max(0, int(limit)),
+                    include_expired=include_expired,
+                    tags=tuple(tags or ()),
+                )
+            except Exception as exc:  # pragma: no cover - scheduler boundary
+                failed[namespace] = str(exc)
+                if fail_fast:
+                    break
+                continue
+            payload = (
+                report.as_dict()
+                if hasattr(report, "as_dict")
+                else dict(report)
+            )
+            reports[namespace] = payload
+            repaired_total += int(
+                payload.get("repaired_total", payload.get("copied_records", 0)) or 0
+            )
+            tombstone_deleted += int(
+                payload.get("tombstone_deleted", payload.get("deleted_records", 0)) or 0
+            )
+        return DistributedRepairJobReport(
+            namespaces=requested,
+            repaired_total=repaired_total,
+            tombstone_deleted=tombstone_deleted,
+            reports=reports,
+            failed_namespaces=failed,
         )
 
 

@@ -17,6 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from wavemind import (
     CachePrewarmWorker,
     ClusterNode,
+    DistributedRepairWorker,
     DistributedShardedWaveMind,
     HashingTextEncoder,
     HotMemoryCache,
@@ -472,6 +473,44 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 )
                 == []
             )
+
+            worker_memory = DistributedShardedWaveMind(
+                nodes=[
+                    ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+                    ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+                    ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+                ],
+                replication_factor=3,
+                client=client,
+            )
+            worker_repair_namespace = "tenant:distributed-worker-repair"
+            worker_repair_write = worker_memory.remember(
+                "anti entropy worker copies missing service replica",
+                namespace=worker_repair_namespace,
+            )
+            worker_missing_node = next(
+                node
+                for node in worker_repair_write.writes
+                if node != worker_repair_write.primary_node
+            )
+            client._mind(worker_missing_node).forget(
+                namespace=worker_repair_namespace,
+                text="anti entropy worker copies missing service replica",
+            )
+            worker_tombstone_namespace = "tenant:distributed-worker-tombstone"
+            worker_tombstone_text = "anti entropy worker removes stale deleted memory"
+            worker_memory.remember(worker_tombstone_text, namespace=worker_tombstone_namespace)
+            worker_tombstone_placement = worker_memory.placement(worker_tombstone_namespace)
+            worker_missed_delete = worker_tombstone_placement.replicas[-1]
+            worker_memory.set_node_available(worker_missed_delete, False)
+            worker_memory.forget(
+                namespace=worker_tombstone_namespace,
+                text=worker_tombstone_text,
+            )
+            worker_memory.set_node_available(worker_missed_delete, True)
+            worker_report = DistributedRepairWorker(worker_memory).run_once(
+                namespaces=(worker_repair_namespace, worker_tombstone_namespace)
+            )
             return {
                 "engine": "WaveMind distributed sharding",
                 "nodes": len(memory.nodes),
@@ -495,6 +534,9 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 "tombstone_repair_deleted_records": tombstone_repair.tombstone_deleted,
                 "tombstone_stale_records_after_repair": tombstone_stale_records_after,
                 "tombstone_suppressed_after_repair": tombstone_suppressed_after_repair,
+                "anti_entropy_worker_ok": worker_report.ok,
+                "anti_entropy_worker_repaired_total": worker_report.repaired_total,
+                "anti_entropy_worker_tombstone_deleted": worker_report.tombstone_deleted,
                 "write_ms": write_ms,
                 "query_after_primary_loss_ms": query_after_primary_loss_ms,
             }
@@ -926,6 +968,7 @@ def main() -> int:
             print(f"| distributed sharding | tombstone_suppressed_before_repair | {result['tombstone_suppressed_before_repair']} |")
             print(f"| distributed sharding | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
             print(f"| distributed sharding | tombstone_suppressed_after_repair | {result['tombstone_suppressed_after_repair']} |")
+            print(f"| distributed sharding | anti_entropy_worker_ok | {result['anti_entropy_worker_ok']} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")

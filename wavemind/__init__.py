@@ -12,6 +12,8 @@ from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, Quantiz
 from .jobs import (
     CachePrewarmReport,
     CachePrewarmWorker,
+    DistributedRepairJobReport,
+    DistributedRepairWorker,
     HotMemoryCache,
     MemoryMaintenanceWorker,
     RedisHotMemoryCache,
@@ -69,7 +71,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.7"
+__version__ = "2.3.8"
 
 __all__ = [
     "FieldProjector",
@@ -80,6 +82,8 @@ __all__ = [
     "AuditEvent",
     "CachePrewarmReport",
     "CachePrewarmWorker",
+    "DistributedRepairJobReport",
+    "DistributedRepairWorker",
     "DistributedForgetResult",
     "DistributedReadQuorumError",
     "DistributedRepairReport",

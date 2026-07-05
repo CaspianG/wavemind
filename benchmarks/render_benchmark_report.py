@@ -52,6 +52,9 @@ METRIC_LABELS = {
     "tombstone_suppressed_before_repair": "tombstone suppress before repair",
     "tombstone_repair_deleted_records": "tombstone deleted",
     "tombstone_suppressed_after_repair": "tombstone suppress after repair",
+    "anti_entropy_worker_ok": "anti-entropy worker ok",
+    "anti_entropy_worker_repaired_total": "anti-entropy repaired",
+    "anti_entropy_worker_tombstone_deleted": "anti-entropy tombstone deleted",
 }
 
 
