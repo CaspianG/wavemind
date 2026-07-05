@@ -490,12 +490,13 @@ Checked-in result:
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.01 ms`. |
-| Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `1.27 ms`. |
+| Replicated runtime | 3 physical WaveMind stores, replication factor 3, write quorum 2, node-loss recall `true`, repair copied `1` missing record, p99 query-after-loss `1.16 ms`. |
+| Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `0.69 ms`. |
 
-This profile validates routing, cache behavior, and structured payload handling.
-It is not a 10M-vector load test. Real 100k, 1M, and 10M latency claims should
-come from service-backed FAISS/Qdrant/pgvector load tests on production-like
-hardware.
+This profile validates routing, quorum-replicated runtime behavior, cache
+behavior, and structured payload handling. It is not a 10M-vector load test.
+Real 100k, 1M, and 10M latency claims should come from service-backed
+FAISS/Qdrant/pgvector load tests on production-like hardware.
 
 Cluster placement planning:
 
@@ -512,8 +513,9 @@ wavemind cluster-plan \
 
 This uses deterministic rendezvous placement so each namespace has a primary
 and replica set. The emitted Kubernetes StatefulSet manifest is a deployment
-starting point; it does not claim Raft consensus or automatic distributed
-SQLite writes.
+starting point. Runtime quorum replication is available through
+`ReplicatedWaveMind`; consensus across independently managed network services
+should still use a production database or service layer.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
 
@@ -986,7 +988,7 @@ Current read:
 | LongMemEval 50-query smoke | On the first 50 non-abstention LongMemEval-S questions, WaveMind reaches `evidence_recall@5 0.920`, `precision@1 0.760`, and `MRR@5 0.827`; Chroma/Qdrant static reach `0.600`, `0.260`, and `0.385`. | This is the fast regression profile for checking current changes before rerunning the full LongMemEval profile. WaveMind wins on quality; latency still needs work. |
 | ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
 | Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`. At 1M, tuned Qdrant reaches `recall@10 0.984`, avg `116.80 ms`, p99 `209.28 ms`; an EF sweep finds `recall@10 0.977`, avg `64.76 ms`, p99 `103.77 ms` at `hnsw_ef=2048` on 30 queries. | 100k is production-grade on the tested machine. 1M recall is now strong, but p99 still needs tuning before claiming a stable sub-100 ms SLO. |
-| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, and structured payload precision@1 `1.000`. | This proves routing/cache/payload foundations, not a 10M-vector load-test claim or Raft replication. Real 10M latency still needs service-backed load tests on larger hardware. |
+| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, quorum-replicated runtime recall after node loss, replica repair, and structured payload precision@1 `1.000`. | This proves routing, cache, payload, and replicated-runtime foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00` on the small adapter profile. Mem0, Zep, and LangGraph are listed as skipped unless their real packages/services are configured. | This prevents fake competitor claims. The adapter harness is ready; real Mem0/Zep/LangGraph results still need configured installs. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 
@@ -1005,7 +1007,7 @@ Current read:
 | Production index profile | Docker-backed 50000-vector profile for persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW. | implemented | FAISS / Qdrant service / pgvector | Keep service-mode candidate generation above `0.95` recall@10 and below 10 ms average query latency at 50000 vectors. |
 | Production load profile | 100k and 1M service-backed candidate-index checks with p95/p99 latency. | implemented | Qdrant service / pgvector HNSW / FAISS persisted | Keep 100k at recall@10 `1.000`; push 1M p99 below 100 ms with recall@10 >= 0.95. |
 | Qdrant 1M HNSW ef sweep | One 1M Qdrant collection queried with multiple `hnsw_ef` values. | implemented | Qdrant service | Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable 1M SLO. |
-| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Use this as production foundation proof before real distributed 10M load tests. |
+| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, replicated runtime, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication and repair green while adding larger service-backed 10M load tests. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
@@ -1117,7 +1119,7 @@ If Chroma or Qdrant are not installed, use the baseline-only command:
 python benchmarks/locomo_memory_benchmark.py --dataset benchmarks/data/locomo10.json --engines wavemind static --top-k 5
 ```
 
-## Namespace Sharding
+## Namespace Sharding And Replication
 
 For multi-tenant local deployments, `ShardedWaveMind` routes namespaces across
 multiple SQLite files:
@@ -1134,9 +1136,35 @@ print(memory.stats())
 memory.close()
 ```
 
-This is namespace-level sharding for isolation and local scale. It is not a
-distributed HA cluster yet; the roadmap keeps replication, operator support, and
-managed service work separate.
+For HA-style local or service-mode deployments, `ReplicatedWaveMind` writes each
+namespace to a deterministic replica set and enforces read/write quorum:
+
+```python
+from wavemind import ReplicatedWaveMind
+
+memory = ReplicatedWaveMind(
+    root_path="./state/wavemind-replicas",
+    nodes=[
+        {"id": "node-a", "address": "10.0.0.1:8000", "zone": "zone-a"},
+        {"id": "node-b", "address": "10.0.0.2:8000", "zone": "zone-b"},
+        {"id": "node-c", "address": "10.0.0.3:8000", "zone": "zone-c"},
+    ],
+    replication_factor=3,
+)
+
+memory.remember("Tenant A prefers short support replies.", namespace="tenant:a")
+print(memory.query("support replies", namespace="tenant:a", top_k=3))
+
+memory.set_node_available("node-a", False)
+print(memory.query("support replies", namespace="tenant:a", top_k=3))
+memory.close()
+```
+
+The runtime uses separate durable stores per node, quorum writes, quorum reads,
+merged replica results, and `repair_namespace()` for recovered replicas. It is
+the production foundation for namespace-level HA; for full consensus across
+independent network services, deploy WaveMind with Postgres/Qdrant/ops-layer
+replication.
 
 Checked-in official LoCoMo retrieval result:
 
@@ -1464,7 +1492,7 @@ python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memori
 | Dynamic memory priority | Wave-field hotness, TTL, priority | Metadata/filter driven | Payload/filter driven |
 | Built-in forgetting | TTL and explicit forget | Manual delete/filtering | Manual delete/filtering |
 | Best fit | Small to medium memory streams with dynamic recall | Local RAG apps and prototypes | Large-scale vector search |
-| Scale target today | Up to 1000 optimal on NumPy, FAISS recommended beyond 5000 | Larger than WaveMind local mode | Production scale |
+| Scale target today | Local exact mode for small streams; FAISS/Qdrant/pgvector plus replicated namespaces for production paths | Larger than WaveMind local exact mode | Production vector scale |
 
 WaveMind is not trying to replace dedicated vector databases at scale. The intended product gap is dynamic priority: frequently used memories can become hotter while old or low-priority memories fade. For static RAG over large document collections, use a mature vector database. For memory that needs persistence, scoped recall, TTL, forgetting, and reinforcement, WaveMind is designed to sit above or beside the vector index.
 
@@ -1492,8 +1520,9 @@ If you already use Chroma for local memory, see the practical migration guide:
   from SQLite on load/build, so large service-mode deployments still need a
   measured rebuild strategy and index-health monitoring.
 - The persisted FAISS backend validates a snapshot against current memory ids
-  and avoids unnecessary FAISS rebuilds when the snapshot matches. It is still
-  a single-node flat-index path, not distributed HA.
+  and avoids unnecessary FAISS rebuilds when the snapshot matches. FAISS itself
+  is a single-node flat-index path; use `ReplicatedWaveMind` or external
+  database/service replication when that is not enough.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.

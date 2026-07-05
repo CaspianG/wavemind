@@ -18,6 +18,7 @@ from wavemind import (
     HashingTextEncoder,
     HotMemoryCache,
     QueryResult,
+    ReplicatedWaveMind,
     WaveMind,
     audio_payload,
     build_cluster_plan,
@@ -127,6 +128,78 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
     }
 
 
+def run_replication_runtime_profile() -> dict[str, object]:
+    latencies: list[float] = []
+    with tempfile.TemporaryDirectory() as directory:
+        memory = ReplicatedWaveMind(
+            root_path=Path(directory) / "replicas",
+            nodes=[
+                {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+            ],
+            replication_factor=3,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+        try:
+            namespace = "tenant:replicated"
+            write = memory.remember(
+                "replicated user memory survives one node loss",
+                namespace=namespace,
+            )
+            placement = memory.placement(namespace)
+            lost_node = placement.primary
+            memory.set_node_available(lost_node, False)
+            started = time.perf_counter()
+            results = memory.query("survives node loss", namespace=namespace, top_k=1)
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            recalled_after_loss = bool(results) and results[0].text == (
+                "replicated user memory survives one node loss"
+            )
+
+            partial = ReplicatedWaveMind(
+                root_path=Path(directory) / "partial",
+                nodes=[
+                    {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                    {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                    {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+                ],
+                replication_factor=3,
+                write_quorum=1,
+                width=16,
+                height=16,
+                layers=1,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            try:
+                partial_placement = partial.placement(namespace)
+                recovering_node = partial_placement.replicas[-1]
+                partial.set_node_available(recovering_node, False)
+                partial.remember("repair copies missing replica state", namespace=namespace)
+                partial.set_node_available(recovering_node, True)
+                repair = partial.repair_namespace(namespace)
+            finally:
+                partial.close()
+
+            return {
+                "engine": "WaveMind replicated runtime",
+                "nodes": 3,
+                "replication_factor": 3,
+                "write_quorum": memory.write_quorum,
+                "read_quorum": memory.read_quorum,
+                "writes": len(write.writes),
+                "recalled_after_node_loss": recalled_after_loss,
+                "repair_copied_records": repair.copied_records,
+                "avg_query_after_loss_ms": statistics.mean(latencies),
+                "p99_query_after_loss_ms": percentile(latencies, 99),
+            }
+        finally:
+            memory.close()
+
+
 def run_multimodal_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -213,6 +286,7 @@ def run_benchmark(
             simulated_memories=simulated_memories,
         ),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
+        run_replication_runtime_profile(),
         run_multimodal_profile(),
     ]
     return {
@@ -224,8 +298,9 @@ def run_benchmark(
             "replication_factor": replication_factor,
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
-                "node/zone loss simulation, hot-cache behavior, and structured "
-                "payload retrieval. This is not a 10M-vector database load test."
+                "node/zone loss simulation, quorum-replicated runtime behavior, "
+                "hot-cache behavior, and structured payload retrieval. This is "
+                "not a 10M-vector database load test."
             ),
         },
         "results": results,
@@ -262,6 +337,9 @@ def main() -> int:
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
+        elif result["engine"] == "WaveMind replicated runtime":
+            print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
+            print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
     print(f"\nWrote {args.output}")

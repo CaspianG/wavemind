@@ -18,6 +18,14 @@ from .multimodal import (
     remember_payload,
     table_payload,
 )
+from .replication import (
+    ReadQuorumError,
+    ReplicatedRepairReport,
+    ReplicatedWaveMind,
+    ReplicatedWriteResult,
+    ReplicationError,
+    WriteQuorumError,
+)
 from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import (
@@ -28,7 +36,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.3"
+__version__ = "2.2.4"
 
 __all__ = [
     "FieldProjector",
@@ -45,7 +53,12 @@ __all__ = [
     "NamespaceShardRouter",
     "NamespacePlacement",
     "QueryResult",
+    "ReadQuorumError",
     "RedisHotMemoryCache",
+    "ReplicatedRepairReport",
+    "ReplicatedWaveMind",
+    "ReplicatedWriteResult",
+    "ReplicationError",
     "PgVectorIndex",
     "PostgresMemoryStore",
     "QdrantVectorIndex",
@@ -57,6 +70,7 @@ __all__ = [
     "TextEncoder",
     "WaveField",
     "WaveMind",
+    "WriteQuorumError",
     "__version__",
     "audio_payload",
     "build_scale_plan",

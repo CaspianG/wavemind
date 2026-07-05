@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 115.80999998841435,
+      "placement_ms": 62.52979999408126,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -32,8 +32,20 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.0015844501904211938,
-      "p99_lookup_ms": 0.003500026650726795
+      "avg_lookup_ms": 0.0015143999480642378,
+      "p99_lookup_ms": 0.006199989002197981
+    },
+    {
+      "engine": "WaveMind replicated runtime",
+      "nodes": 3,
+      "replication_factor": 3,
+      "write_quorum": 2,
+      "read_quorum": 1,
+      "writes": 3,
+      "recalled_after_node_loss": true,
+      "repair_copied_records": 1,
+      "avg_query_after_loss_ms": 0.9093000553548336,
+      "p99_query_after_loss_ms": 0.9093000553548336
     },
     {
       "engine": "WaveMind structured payloads",
@@ -45,8 +57,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.8370749856112525,
-      "p99_latency_ms": 1.0724000167101622
+      "avg_latency_ms": 0.5151500226929784,
+      "p99_latency_ms": 0.7709000492468476
     }
   ]
 }
