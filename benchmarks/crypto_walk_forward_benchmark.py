@@ -951,6 +951,231 @@ class WaveMindMicrostructureEngine(MarketEngine):
         )
 
 
+class WaveMindDailyTrendMemoryEngine(MarketEngine):
+    name = "WaveMind daily trend-memory"
+
+    def __init__(
+        self,
+        *,
+        min_support: int = 18,
+        min_test_support: int = 6,
+        validation_holdout: float = 0.35,
+        opposition_confidence: float = 0.42,
+        opposition_edge_bps: float = 60.0,
+        boost_confidence: float = 0.48,
+        min_expected_edge_bps: float = 70.0,
+        performance_lookback: int = 5,
+        min_recent_edge_bps: float = -20.0,
+        local_reliability_support: int = 16,
+        round_trip_cost_bps: float = 30.0,
+    ):
+        self.base = TrendPersistenceEngine()
+        self.records: list[OHLCVWindow] = []
+        self.return_history: list[float] = []
+        self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+        self.pending_predictions: dict[str, str] = {}
+        self.realized_signal_nets: list[float] = []
+        self.min_support = int(min_support)
+        self.min_test_support = int(min_test_support)
+        self.validation_holdout = float(validation_holdout)
+        self.opposition_confidence = float(opposition_confidence)
+        self.opposition_edge_bps = float(opposition_edge_bps)
+        self.boost_confidence = float(boost_confidence)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.performance_lookback = int(performance_lookback)
+        self.min_recent_edge_bps = float(min_recent_edge_bps)
+        self.local_reliability_support = int(local_reliability_support)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        predicted_direction = self.pending_predictions.pop(window.id, None)
+        if predicted_direction is not None:
+            self.realized_signal_nets.append(
+                _net_return_bps(
+                    predicted_direction=predicted_direction,
+                    actual_return_bps=window.future_return_bps,
+                    round_trip_cost_bps=self.round_trip_cost_bps,
+                )
+            )
+        index = len(self.records)
+        self.records.append(window)
+        self.return_history.append(float(window.future_return_bps))
+        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
+            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        self.base.add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        started = time.perf_counter()
+        if len(self.records) < self.min_support:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=0.0,
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="insufficient_daily_history",
+            )
+        recent_edge = _recent_mean(self.realized_signal_nets, lookback=self.performance_lookback)
+        min_samples = min(max(3, self.performance_lookback // 2), self.performance_lookback)
+        if len(self.realized_signal_nets) >= min_samples and recent_edge < self.min_recent_edge_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=[],
+                confidence=max(0.0, min(1.0, 0.5 + recent_edge / 200.0)),
+                raw_direction="flat",
+                filtered=True,
+                filter_reason="negative_daily_recent_edge",
+            )
+
+        base = self.base.query(window, top_k=top_k)
+        candidate_direction = base.direction
+        if candidate_direction == "flat":
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=base.latency_ms,
+                analogues=base.analogues,
+                confidence=base.confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="flat_candidate",
+            )
+
+        features = window.features
+        daily_guard_reason = ""
+        if str(features.get("volume_bucket")) == "expanded":
+            daily_guard_reason = "daily_expanded_volume_reversal_risk"
+        elif (
+            candidate_direction == "up"
+            and str(features.get("recent_trend")) == "up"
+            and str(features.get("bollinger_bucket")) == "middle"
+        ):
+            daily_guard_reason = "daily_mid_band_up_continuation_trap"
+        elif (
+            candidate_direction == "up"
+            and str(features.get("volume_bucket")) == "quiet"
+            and str(features.get("close_position_bucket")) == "near_high"
+        ):
+            daily_guard_reason = "daily_quiet_near_high_reversal_risk"
+        if daily_guard_reason:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=base.analogues,
+                confidence=base.confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=daily_guard_reason,
+            )
+
+        field_signal = _adaptive_relationship_field_signal_from_index(
+            self.return_history,
+            self.relationship_history,
+            window,
+            min_support=self.min_support,
+            min_test_support=self.min_test_support,
+            validation_holdout=self.validation_holdout,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        field_direction = str(field_signal["direction"])
+        field_confidence = float(field_signal["confidence"])
+        field_edge = float(field_signal["edge_bps"])
+        field_stability = float(field_signal["stability"])
+        opposite_direction = "down" if candidate_direction == "up" else "up"
+        if (
+            field_direction == opposite_direction
+            and field_confidence >= self.opposition_confidence
+            and field_edge >= self.opposition_edge_bps
+        ):
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=base.analogues,
+                confidence=field_confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="daily_field_opposition",
+                analogue_agreement=field_confidence,
+                regime_agreement=field_stability,
+            )
+
+        reliability = _local_regime_reliability(
+            self.records,
+            window,
+            direction=candidate_direction,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+            min_overlap=2,
+            lookback=220,
+        )
+        if reliability["support"] >= self.local_reliability_support and (
+            reliability["avg_net_bps"] < -35.0
+            or (
+                reliability["hit_rate"] < 0.42
+                and reliability["avg_net_bps"] < 0.0
+            )
+        ):
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=base.analogues,
+                confidence=min(field_confidence, max(0.0, reliability["hit_rate"])),
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=(
+                    "daily_local_regime_negative:"
+                    f"support={int(reliability['support'])},"
+                    f"hit={reliability['hit_rate']:.3f},"
+                    f"net={reliability['avg_net_bps']:.2f}"
+                ),
+                analogue_agreement=field_confidence,
+                regime_agreement=field_stability,
+            )
+
+        if field_direction == candidate_direction and field_confidence >= self.boost_confidence:
+            expected_return = 0.52 * float(field_signal["expected_return_bps"]) + 0.48 * base.expected_return_bps
+            confidence = max(0.55, min(1.0, field_confidence))
+        else:
+            expected_return = base.expected_return_bps
+            confidence = max(0.35, min(0.62, 0.35 + 0.27 * field_confidence))
+        edge = _directional_edge_after_cost_bps(
+            candidate_direction,
+            expected_return,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        if edge < self.min_expected_edge_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=(time.perf_counter() - started) * 1000.0,
+                analogues=base.analogues,
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="low_expected_edge",
+                analogue_agreement=field_confidence,
+                regime_agreement=field_stability,
+            )
+
+        self.pending_predictions[window.id] = candidate_direction
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=expected_return,
+            latency_ms=(time.perf_counter() - started) * 1000.0,
+            analogues=base.analogues,
+            confidence=confidence,
+            raw_direction=candidate_direction,
+            analogue_agreement=field_confidence,
+            regime_agreement=field_stability,
+        )
+
+
 class WaveMindTimeframePolicyEngine(MarketEngine):
     name = "WaveMind timeframe policy"
 
@@ -1102,11 +1327,16 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
             if self.apply_policy_veto and prediction.direction in {"up", "down"}:
                 guard_reason = ""
                 features = window.features
-                if prediction.confidence < 0.40:
+                use_intraday_confidence_guard = self.timeframe in {"1h", "4h"}
+                if use_intraday_confidence_guard and prediction.confidence < 0.40:
                     guard_reason = "low_policy_confidence"
-                elif prediction.direction == "down" and 0.60 <= prediction.confidence < 0.999:
+                elif (
+                    use_intraday_confidence_guard
+                    and prediction.direction == "down"
+                    and 0.60 <= prediction.confidence < 0.999
+                ):
                     guard_reason = "short_squeeze_guard"
-                elif 0.60 <= prediction.confidence < 0.999:
+                elif use_intraday_confidence_guard and 0.60 <= prediction.confidence < 0.999:
                     guard_reason = "unstable_mid_confidence"
                 if (
                     self.timeframe == "1h"
@@ -1123,6 +1353,21 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     guard_reason = "one_hour_normal_volume_breakdown_exhaustion"
                 if (
                     self.timeframe == "1h"
+                    and prediction.direction == "down"
+                    and str(features.get("volume_bucket")) == "expanded"
+                    and str(features.get("bollinger_bucket")) == "lower_band"
+                ):
+                    guard_reason = "one_hour_expanded_volume_breakdown_exhaustion"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "down"
+                    and str(features.get("rsi_bucket")) == "overbought"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                    and str(features.get("bollinger_bucket")) == "upper_band"
+                ):
+                    guard_reason = "one_hour_breakout_short_guard"
+                if (
+                    self.timeframe == "1h"
                     and prediction.direction == "up"
                     and str(features.get("bollinger_bucket")) == "lower_band"
                     and str(features.get("macd_bucket")) == "flat"
@@ -1137,6 +1382,28 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     and prediction.confidence < 0.55
                 ):
                     guard_reason = "four_hour_quiet_upper_band_long_exhaustion"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                    and str(features.get("bollinger_bucket")) == "middle"
+                ):
+                    guard_reason = "four_hour_mid_band_near_high_long_exhaustion"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("volume_bucket")) == "quiet"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                ):
+                    guard_reason = "four_hour_quiet_near_high_long_exhaustion"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("volume_bucket")) == "expanded"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                    and str(features.get("bollinger_bucket")) == "upper_band"
+                ):
+                    guard_reason = "four_hour_expanded_upper_near_high_long_exhaustion"
                 if (
                     self.timeframe == "4h"
                     and prediction.direction == "up"
@@ -2041,6 +2308,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "risk-overlay",
                     "trend-risk",
                     "microstructure",
+                    "daily-trend-memory",
                     "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
@@ -2063,6 +2331,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "risk-overlay",
                     "trend-risk",
                     "microstructure",
+                    "daily-trend-memory",
                     "timeframe-policy",
                     "adaptive-field",
                     "regime-gated",
@@ -2099,6 +2368,9 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "wavemind-trend-risk",
         "microstructure",
         "wavemind-microstructure",
+        "daily-trend-memory",
+        "wavemind-daily-trend-memory",
+        "daily-memory",
         "timeframe-policy",
         "wavemind-timeframe-policy",
         "adaptive-field",
@@ -2276,6 +2548,16 @@ def _create_engine(
             validation_holdout=adaptive_validation_holdout,
             round_trip_cost_bps=round_trip_cost_bps,
         )
+    if engine_key in {"daily-trend-memory", "wavemind-daily-trend-memory", "daily-memory"}:
+        return WaveMindDailyTrendMemoryEngine(
+            min_support=max(18, int(adaptive_min_support * 0.75)),
+            min_test_support=max(6, int(adaptive_min_test_support * 0.75)),
+            validation_holdout=adaptive_validation_holdout,
+            min_expected_edge_bps=adaptive_min_expected_edge_bps,
+            performance_lookback=max(4, adaptive_performance_lookback),
+            min_recent_edge_bps=-20.0,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
     if engine_key in {"timeframe-policy", "wavemind-timeframe-policy"}:
         return WaveMindTimeframePolicyEngine(
             encoder,
@@ -2358,6 +2640,9 @@ def _engine_display_name(engine_key: str) -> str:
         "wavemind-trend-risk": "WaveMind trend-risk",
         "microstructure": "WaveMind microstructure",
         "wavemind-microstructure": "WaveMind microstructure",
+        "daily-trend-memory": "WaveMind daily trend-memory",
+        "wavemind-daily-trend-memory": "WaveMind daily trend-memory",
+        "daily-memory": "WaveMind daily trend-memory",
         "timeframe-policy": "WaveMind timeframe policy",
         "wavemind-timeframe-policy": "WaveMind timeframe policy",
         "adaptive-field": "WaveMind adaptive-field",

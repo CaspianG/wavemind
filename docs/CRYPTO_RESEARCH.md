@@ -74,13 +74,13 @@ It does not mean:
 - calibrated win rate for this specific coin tomorrow.
 
 The current 24h policy is promising but not production-grade. Its checked
-validation profile has active direction accuracy `0.679`, signal rate `0.026`,
-profit factor `10.489`, max drawdown `139.4` bps, and positive market slices
-`12/36`. A longer BTC/ETH/SOL 2000-bar robustness profile is now positive
-after fees/slippage (`0.48` sized net bps, profit factor `7.475`), and the
-expanded 8-asset 2000-bar stress profile remains positive but small (`0.17`
-sized net bps, profit factor `1.423`). The policy is very selective and still
-not enough to claim a reliable live forecast or calibrated probability.
+validation profile has active direction accuracy `0.680`, signal rate `0.023`,
+profit factor `14.206`, max drawdown `139.4` bps, and positive market slices
+`13/36`. A longer BTC/ETH/SOL 2000-bar robustness profile is now only weakly
+positive after fees/slippage (`0.11` sized net bps, profit factor `1.347`),
+while the expanded 8-asset 2000-bar stress profile is stronger but still small
+(`0.27` sized net bps, profit factor `1.838`). The policy is very selective and
+still not enough to claim a reliable live forecast or calibrated probability.
 
 Required next step:
 
@@ -275,40 +275,43 @@ check it keeps the improvement (`6.44` vs `3.11` bps) and cuts worst-slice loss
 from `-51.68` to `-25.45` bps.
 
 Timeframe-aware BTC/ETH/SOL check after TA conflict veto, local regime
-reliability, mid-confidence suppression, 1h squeeze/falling-knife guards, and
-a live drawdown circuit breaker, 1h/4h/1d, 4 folds x 60 windows per market:
+reliability, mid-confidence suppression, 1h squeeze/falling-knife guards, 4h
+exhaustion guards, and a live drawdown circuit breaker, 1h/4h/1d, 4 folds x 60
+windows per market:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.679 | 0.026 | 3.05 | 10.489 | 139.4 | 12/36 | -1.23 | 0.018 | 1.44 ms |
+| WaveMind timeframe policy | 2160 | 0.680 | 0.023 | 2.84 | 14.206 | 139.4 | 13/36 | -1.23 | 0.015 | 0.95 ms |
 
 Longer BTC/ETH/SOL 2000-bar robustness check, 1h/4h, 5 folds x 120 windows per
 market:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 3600 | 0.704 | 0.007 | 0.48 | 7.475 | 138.9 | 8/30 | -0.46 | 0.000 | 3.76 ms |
-| Naive last-regime | 3600 | 0.437 | 0.818 | -15.00 | 0.822 | 57620.9 | 9/30 | -137.51 | 0.517 | 0.00 ms |
-| TA rules | 3600 | 0.466 | 0.443 | -7.44 | 0.833 | 35406.1 | 8/30 | -53.37 | 0.175 | 0.00 ms |
+| WaveMind timeframe policy | 3600 | 0.533 | 0.008 | 0.11 | 1.347 | 571.8 | 5/30 | -2.51 | 0.004 | 2.61 ms |
+| Naive last-regime | 3600 | 0.396 | 0.806 | -32.37 | 0.612 | 122011.5 | 6/30 | -147.93 | 0.489 | 0.00 ms |
+| TA rules | 3600 | 0.433 | 0.439 | -8.82 | 0.773 | 37024.2 | 8/30 | -41.67 | 0.147 | 0.00 ms |
 
 Expanded 8-asset stress check on BTC/ETH/SOL/ADA/AVAX/DOGE/LINK/XRP, 1h/4h:
 
 | profile | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 720 bars | 3840 | 0.624 | 0.037 | 2.79 | 2.960 | 1540.8 | 25/64 | -12.97 | 0.019 | 1.97 ms |
-| 2000 bars | 9600 | 0.564 | 0.010 | 0.17 | 1.423 | 1291.2 | 17/80 | -5.63 | 0.004 | 2.39 ms |
+| 720 bars | 3840 | 0.616 | 0.033 | 2.69 | 3.301 | 1540.8 | 25/64 | -12.97 | 0.017 | 1.33 ms |
+| 2000 bars | 9600 | 0.594 | 0.010 | 0.27 | 1.838 | 571.8 | 19/80 | -2.51 | 0.005 | 1.83 ms |
 
 Interpretation: timeframe-aware policy is now a conservative research filter.
 The current policy routes 1h through microstructure, 4h through adaptive-field,
 blocks unvalidated 1d forecasts, vetoes WaveMind signals when the TA baseline
 points in the opposite direction, suppresses regimes that historically behaved
-like short squeezes or falling knives, and pauses a market slice after live
-policy drawdown exceeds the circuit-breaker threshold. This is intentionally
+like short squeezes, falling knives, or 4h exhaustion traps, and pauses a
+market slice after live policy drawdown exceeds the circuit-breaker threshold.
+This is intentionally
 conservative: the system uses a timeframe only after that timeframe has its own
 validated policy and abstains otherwise. The longer 2000-bar checks are now
-positive after fees/slippage, but the expanded 8-asset edge is still small; the
-next research steps are higher support, per-symbol/timeframe robustness, and a
-separate 1d trend-memory dynamic.
+positive after fees/slippage, but the BTC/ETH/SOL 2000-bar edge is weak and the
+expanded 8-asset edge is still small; the next research steps are higher
+support, per-symbol/timeframe robustness, and a separate 1d trend-memory
+dynamic.
 
 ## Current Forecast Runner
 
@@ -335,17 +338,16 @@ What it does:
   filter reason, and the validation profile into JSON/Markdown.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
-`2026-07-04T08:00:00+00:00`:
+`2026-07-05T08:00:00+00:00`:
 
 | symbol | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
 |---|---|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 2026-07-04T08:00:00+00:00 | abstain | flat | up | 62493.7 | 0.00% | 0.00% | 0.851 | none | low_expected_edge |
-| ETH/USDT | 2026-07-04T08:00:00+00:00 | abstain | flat | up | 1758.04 | 0.00% | 0.00% | 0.992 | none | low_expected_edge |
-| SOL/USDT | 2026-07-04T08:00:00+00:00 | abstain | flat | up | 81.83 | 0.00% | 0.00% | 1.000 | none | low_expected_edge |
+| BTC/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | flat | 62656.2 | 0.00% | 0.00% | 0.630 | none | flat_candidate |
+| ETH/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | flat | 1760.32 | 0.00% | 0.00% | 0.939 | none | flat_candidate |
+| SOL/USDT | 2026-07-05T08:00:00+00:00 | abstain | flat | down | 80.56 | 0.00% | 0.00% | 1.000 | none | adaptive_trend_mismatch |
 
 The 24h snapshot is an abstention, not a bullish or bearish call. The current
-market produced an upward candidate, but expected edge after costs was too low
-for trade-quality evidence.
+market did not produce a validated trade-quality signal.
 
 The 7d runner currently returns `abstain` on BTC/ETH/SOL with
 `unsupported_timeframe:1d`. That is intentional. The policy refuses to forecast
@@ -546,13 +548,14 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     cross-fold monotonic calibration, active-signal base-rate calibration, and
     fold/symbol/timeframe stability checks.
 14. Done: TA conflict veto, local reliability checks, mid-confidence
-    suppression, 1h squeeze/falling-knife guards, and a live drawdown circuit
-    breaker supersede the earlier strict downside/volume filter. The current
-    checked BTC/ETH/SOL OKX run has active direction accuracy `0.679`, signal
-    rate `0.026`, profit factor `10.489`, and large false positives `0.018`;
-    the longer BTC/ETH/SOL 2000-bar profile reaches `0.48` sized bps/query and
-    profit factor `7.475`; the expanded 8-asset 2000-bar stress profile remains
-    positive but small at `0.17` sized bps/query and profit factor `1.423`.
+    suppression, 1h squeeze/falling-knife guards, 4h exhaustion guards, and a
+    live drawdown circuit breaker supersede the earlier strict downside/volume
+    filter. The current checked BTC/ETH/SOL OKX run has active direction
+    accuracy `0.680`, signal rate `0.023`, profit factor `14.206`, and large
+    false positives `0.015`; the longer BTC/ETH/SOL 2000-bar profile remains
+    positive but weak at `0.11` sized bps/query and profit factor `1.347`; the
+    expanded 8-asset 2000-bar stress profile is `0.27` sized bps/query and
+    profit factor `1.838`.
 15. Next: increase per-symbol/timeframe support so calibrated probability can
     be enabled without hiding weak slices.
 16. Next: build and validate a separate 1d / weekly trend-memory dynamic before

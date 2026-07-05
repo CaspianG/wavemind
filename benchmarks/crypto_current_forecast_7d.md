@@ -6,11 +6,11 @@ Evidence strength is analogue/regime agreement, not a calibrated probability.
 
 | symbol | horizon | data end UTC | decision | signal direction | candidate direction | last close | signal return | candidate return | signal price | candidate price | evidence strength | calibrated probability | probability kind | filter |
 |---|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
-| BTC/USDT | 7d | 2026-07-02T00:00:00+00:00 | abstain | flat | flat | 61559.1 | 0.00% | 0.00% | 61559.1 | 61559.1 | 0.000 |  | none | unsupported_timeframe:1d |
-| ETH/USDT | 7d | 2026-07-02T00:00:00+00:00 | abstain | flat | flat | 1700.7 | 0.00% | 0.00% | 1700.7 | 1700.7 | 0.000 |  | none | unsupported_timeframe:1d |
-| SOL/USDT | 7d | 2026-07-02T00:00:00+00:00 | abstain | flat | flat | 80.73 | 0.00% | 0.00% | 80.73 | 80.73 | 0.000 |  | none | unsupported_timeframe:1d |
+| BTC/USDT | 7d | 2026-07-04T00:00:00+00:00 | abstain | flat | flat | 63140.6 | 0.00% | 0.00% | 63140.6 | 63140.6 | 0.000 |  | none | unsupported_timeframe:1d |
+| ETH/USDT | 7d | 2026-07-04T00:00:00+00:00 | abstain | flat | flat | 1780.64 | 0.00% | 0.00% | 1780.64 | 1780.64 | 0.000 |  | none | unsupported_timeframe:1d |
+| SOL/USDT | 7d | 2026-07-04T00:00:00+00:00 | abstain | flat | flat | 81.8 | 0.00% | 0.00% | 81.8 | 81.8 | 0.000 |  | none | unsupported_timeframe:1d |
 
-Validation profile: historical active direction accuracy 0.512, signal rate 0.075, positive market slices 16/36.
+Validation profile: historical active direction accuracy 0.680, signal rate 0.023, positive market slices 13/36.
 
 Validation profile is embedded in the JSON output for each row.
 Calibrated probability is profile-level and still not financial advice.

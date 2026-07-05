@@ -146,8 +146,8 @@ timeframe policy routes 1h through the microstructure field, 4h through the
 adaptive field, blocks unvalidated 1d forecasts, and uses a simple TA conflict
 veto plus regime-specific squeeze/falling-knife guards and a live drawdown
 circuit breaker. The checked validation profile is the important number:
-historical active direction accuracy `0.679`, signal rate `0.026`, profit
-factor `10.489`, and positive market slices `12/36` on the BTC/ETH/SOL OKX
+historical active direction accuracy `0.680`, signal rate `0.023`, profit
+factor `14.206`, and positive market slices `13/36` on the BTC/ETH/SOL OKX
 run.
 
 The calibration diagnostic is now checked in: it buckets forecasts by evidence
@@ -213,30 +213,30 @@ Current checked-in real OKX timeframe-policy result:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.679 | 0.026 | 3.05 | 10.489 | 139.4 | 12/36 | -1.23 | 0.018 | 0.974 | 1.44 ms |
+| WaveMind timeframe policy | 2160 | 0.680 | 0.023 | 2.84 | 14.206 | 139.4 | 13/36 | -1.23 | 0.015 | 0.977 | 0.95 ms |
 
 Longer 2000-bar robustness profile on BTC/ETH/SOL, 1h/4h only:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 3600 | 0.704 | 0.007 | 0.48 | 7.475 | 138.9 | 8/30 | -0.46 | 0.000 | 0.993 | 3.76 ms |
-| Naive last-regime | 3600 | 0.437 | 0.818 | -15.00 | 0.822 | 57620.9 | 9/30 | -137.51 | 0.517 | 0.000 | 0.00 ms |
-| TA rules | 3600 | 0.466 | 0.443 | -7.44 | 0.833 | 35406.1 | 8/30 | -53.37 | 0.175 | 0.000 | 0.00 ms |
+| WaveMind timeframe policy | 3600 | 0.533 | 0.008 | 0.11 | 1.347 | 571.8 | 5/30 | -2.51 | 0.004 | 0.992 | 2.61 ms |
+| Naive last-regime | 3600 | 0.396 | 0.806 | -32.37 | 0.612 | 122011.5 | 6/30 | -147.93 | 0.489 | 0.000 | 0.00 ms |
+| TA rules | 3600 | 0.433 | 0.439 | -8.82 | 0.773 | 37024.2 | 8/30 | -41.67 | 0.147 | 0.000 | 0.00 ms |
 
 Expanded 8-asset stress profile on BTC/ETH/SOL/ADA/AVAX/DOGE/LINK/XRP,
 1h/4h only:
 
 | profile | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | filtered | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 720 bars | 3840 | 0.624 | 0.037 | 2.79 | 2.960 | 1540.8 | 25/64 | -12.97 | 0.019 | 0.963 | 1.97 ms |
-| 2000 bars | 9600 | 0.564 | 0.010 | 0.17 | 1.423 | 1291.2 | 17/80 | -5.63 | 0.004 | 0.990 | 2.39 ms |
+| 720 bars | 3840 | 0.616 | 0.033 | 2.69 | 3.301 | 1540.8 | 25/64 | -12.97 | 0.017 | 0.967 | 1.33 ms |
+| 2000 bars | 9600 | 0.594 | 0.010 | 0.27 | 1.838 | 571.8 | 19/80 | -2.51 | 0.005 | 0.990 | 1.83 ms |
 
 Interpretation: this is a selective research policy, not a general predictor.
 It allows only a small active subset, abstains on unsupported regimes, and has
 lower false-positive and drawdown behavior than the broad baselines in these
-checked profiles. The live drawdown circuit breaker materially improves the
-long 8-asset stress profile (`0.04` to `0.17` sized bps/query, profit factor
-`1.067` to `1.423`, max drawdown `2507.6` to `1291.2`). This is still not a
+checked profiles. The newer regime guards materially improve the fresh long
+8-asset stress profile (`-0.06` to `0.27` sized bps/query, profit factor
+`0.924` to `1.838`, max drawdown `2257.9` to `571.8`). This is still not a
 finished trading edge: the unresolved work is higher support, calibration, and
 per-symbol/timeframe robustness, not adding more forced forecasts.
 
@@ -303,20 +303,20 @@ higher active direction accuracy, higher profit factor, and lower drawdown
 than raw TA on both checked asset groups.
 
 Timeframe-aware BTC/ETH/SOL check after TA conflict veto, local reliability,
-mid-confidence suppression, 1h squeeze/falling-knife guards, and a live
-drawdown circuit breaker,
+mid-confidence suppression, 1h squeeze/falling-knife guards, 4h exhaustion
+guards, and a live drawdown circuit breaker,
 1h/4h/1d, 4 folds x 60 windows per market:
 
 | engine | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| WaveMind timeframe policy | 2160 | 0.679 | 0.026 | 3.05 | 10.489 | 139.4 | 12/36 | -1.23 | 0.018 | 1.44 ms |
+| WaveMind timeframe policy | 2160 | 0.680 | 0.023 | 2.84 | 14.206 | 139.4 | 13/36 | -1.23 | 0.015 | 0.95 ms |
 
 Expanded 8-asset stress check:
 
 | profile | queries | active d1 | signal rate | sized net bps | profit factor | max DD bps | +slices | worst slice | large FP | avg latency |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 720 bars | 3840 | 0.624 | 0.037 | 2.79 | 2.960 | 1540.8 | 25/64 | -12.97 | 0.019 | 1.97 ms |
-| 2000 bars | 9600 | 0.564 | 0.010 | 0.17 | 1.423 | 1291.2 | 17/80 | -5.63 | 0.004 | 2.39 ms |
+| 720 bars | 3840 | 0.616 | 0.033 | 2.69 | 3.301 | 1540.8 | 25/64 | -12.97 | 0.017 | 1.33 ms |
+| 2000 bars | 9600 | 0.594 | 0.010 | 0.27 | 1.838 | 571.8 | 19/80 | -2.51 | 0.005 | 1.83 ms |
 
 Interpretation: the policy routes 1h through microstructure, 4h through
 adaptive-field, blocks unvalidated 1d forecasts, and vetoes active WaveMind
@@ -335,13 +335,13 @@ validation profile used to judge whether the engine is credible enough for that
 horizon.
 
 The checked-in 24h snapshot uses data through the completed
-`2026-07-04T08:00:00+00:00` 4h candle:
+`2026-07-05T08:00:00+00:00` 4h candle:
 
 | symbol | horizon | decision | signal direction | candidate direction | last close | signal return | candidate return | evidence strength | probability kind | filter |
 |---|---:|---|---|---|---:|---:|---:|---:|---|---|
-| BTC/USDT | 24h | abstain | flat | up | 62493.7 | 0.00% | 0.00% | 0.851 | none | low_expected_edge |
-| ETH/USDT | 24h | abstain | flat | up | 1758.04 | 0.00% | 0.00% | 0.992 | none | low_expected_edge |
-| SOL/USDT | 24h | abstain | flat | up | 81.83 | 0.00% | 0.00% | 1.000 | none | low_expected_edge |
+| BTC/USDT | 24h | abstain | flat | flat | 62656.2 | 0.00% | 0.00% | 0.630 | none | flat_candidate |
+| ETH/USDT | 24h | abstain | flat | flat | 1760.32 | 0.00% | 0.00% | 0.939 | none | flat_candidate |
+| SOL/USDT | 24h | abstain | flat | down | 80.56 | 0.00% | 0.00% | 1.000 | none | adaptive_trend_mismatch |
 
 The checked-in 7d snapshot returns `flat` for BTC/ETH/SOL because the current
 policy routes unvalidated `1d` forecasts to abstention:
@@ -353,9 +353,8 @@ policy routes unvalidated `1d` forecasts to abstention:
 | SOL/USDT | 7d | flat | unsupported_timeframe:1d |
 
 This is still research output, not financial advice. The current snapshot is
-an abstention, not a bullish or bearish call: WaveMind found an upward
-candidate, but expected edge after costs was too low for trade-quality
-evidence.
+an abstention, not a bullish or bearish call: WaveMind did not find a validated
+trade-quality 24h signal.
 The weekly path intentionally refuses to forecast until a separate daily/weekly
 policy passes walk-forward validation.
 
@@ -445,13 +444,14 @@ Near-term execution plan:
     cross-fold monotonic calibration, active-signal base-rate calibration, and
     fold/symbol/timeframe stability checks.
 19. Done: TA conflict veto, local reliability checks, mid-confidence
-    suppression, 1h squeeze/falling-knife guards, and a live drawdown circuit
-    breaker supersede the earlier strict downside/volume filter. The current
-    checked BTC/ETH/SOL OKX run has active direction accuracy `0.679`, signal
-    rate `0.026`, profit factor `10.489`, and large false positives `0.018`;
-    the longer BTC/ETH/SOL 2000-bar profile reaches `0.48` sized bps/query and
-    profit factor `7.475`; the expanded 8-asset 2000-bar stress profile remains
-    positive but small at `0.17` sized bps/query and profit factor `1.423`.
+    suppression, 1h squeeze/falling-knife guards, 4h exhaustion guards, and a
+    live drawdown circuit breaker supersede the earlier strict downside/volume
+    filter. The current checked BTC/ETH/SOL OKX run has active direction
+    accuracy `0.680`, signal rate `0.023`, profit factor `14.206`, and large
+    false positives `0.015`; the longer BTC/ETH/SOL 2000-bar profile remains
+    positive but weak at `0.11` sized bps/query and profit factor `1.347`; the
+    expanded 8-asset 2000-bar stress profile is `0.27` sized bps/query and
+    profit factor `1.838`.
 20. Next: increase per-symbol/timeframe support so calibrated probability can
     be enabled without hiding weak slices.
 21. Next: build and validate a separate 1d / weekly trend-memory dynamic before

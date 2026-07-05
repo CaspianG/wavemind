@@ -114,12 +114,12 @@ Latest timeframe-aware check: applying the same adaptive-field profile across
 timeframe dynamics: 1h routes through `WaveMind microstructure`, 4h routes
 through `WaveMind adaptive-field`, and 1d stays flat until a weekly profile is
 validated. It also uses TA conflict vetoes, regime guards, and a live drawdown
-circuit breaker. The checked BTC/ETH/SOL 1h/4h/1d run reaches `3.05` sized
-bps/query, profit factor `10.489`, max drawdown `139.4` bps, and worst slice
-`-1.23`. The longer BTC/ETH/SOL 2000-bar 1h/4h profile reaches `0.48` sized
-bps/query and profit factor `7.475`. The expanded 8-asset 2000-bar stress
-profile is still positive but small at `0.17` sized bps/query, profit factor
-`1.423`, and worst slice `-5.63`. This is a real risk-control and
+circuit breaker. The checked BTC/ETH/SOL 1h/4h/1d run reaches `2.84` sized
+bps/query, profit factor `14.206`, max drawdown `139.4` bps, and worst slice
+`-1.23`. The longer BTC/ETH/SOL 2000-bar 1h/4h profile is only weakly positive
+at `0.11` sized bps/query and profit factor `1.347`. The expanded 8-asset
+2000-bar stress profile is stronger but still small at `0.27` sized bps/query,
+profit factor `1.838`, and worst slice `-2.51`. This is a real risk-control and
 timeframe-specialization improvement, not final universal alpha: 1d still
 needs a separate trend-memory dynamic and the 8-asset edge needs more support.
 

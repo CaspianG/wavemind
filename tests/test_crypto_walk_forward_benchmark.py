@@ -173,25 +173,157 @@ def test_wavemind_engine_metrics_are_isolated_from_profile_engine(tmp_path):
 
 
 def test_timeframe_policy_abstains_on_unvalidated_daily_timeframe(tmp_path):
-    from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
-    from benchmarks.crypto_walk_forward_benchmark import MarketDataset, run_walk_forward
+    from benchmarks.crypto_walk_forward_benchmark import WaveMindTimeframePolicyEngine
+    from wavemind.encoders import create_text_encoder
 
-    bars = generate_synthetic_ohlcv(symbol="BTC", timeframe="1d", bars=150, seed=14)
-    windows = make_ohlcv_windows(bars, symbol="BTC", timeframe="1d", window=16, horizon=3)
-    payload = run_walk_forward(
-        markets=[MarketDataset(symbol="BTC", timeframe="1d", bars=bars, windows=windows)],
-        engines=["timeframe-policy"],
-        train_windows=45,
-        test_windows=12,
-        top_k=3,
+    engine = WaveMindTimeframePolicyEngine(
+        create_text_encoder(kind="hash", vector_dim=64),
+        symbol="BTC/USDT",
+        timeframe="1d",
+        temp_root=tmp_path,
         memory_store="memory",
     )
 
-    result = payload["results"][0]
+    prediction = engine.query(object(), top_k=3)
 
-    assert result["engine"] == "WaveMind timeframe policy"
-    assert result["signal_rate"] == 0.0
-    assert result["filtered_rate"] == 1.0
+    assert engine.child is None
+    assert prediction.direction == "flat"
+    assert prediction.filter_reason == "unsupported_timeframe:1d"
+
+
+def test_daily_trend_memory_available_as_standalone_engine(tmp_path):
+    from benchmarks.crypto_walk_forward_benchmark import (
+        MarketDataset,
+        WaveMindDailyTrendMemoryEngine,
+        _create_engine,
+    )
+    from wavemind.encoders import create_text_encoder
+
+    market = MarketDataset(symbol="BTC/USDT", timeframe="1d", bars=[], windows=[])
+    engine = _create_engine(
+        "daily-trend-memory",
+        create_text_encoder(kind="hash", vector_dim=64),
+        market=market,
+        temp_root=tmp_path,
+        memory_store="memory",
+    )
+
+    assert isinstance(engine, WaveMindDailyTrendMemoryEngine)
+
+
+def test_daily_trend_memory_vetoes_field_opposition(monkeypatch):
+    import benchmarks.crypto_walk_forward_benchmark as benchmark
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindDailyTrendMemoryEngine
+
+    class BaseEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=180.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=1.0,
+                raw_direction="up",
+            )
+
+    class Window:
+        features = {}
+        future_return_bps = 0.0
+
+    def field_opposition(*args, **kwargs):
+        return {
+            "direction": "down",
+            "expected_return_bps": -180.0,
+            "edge_bps": 150.0,
+            "confidence": 0.70,
+            "stability": 0.80,
+            "support": 40,
+            "relationships": 3,
+            "reason": "",
+        }
+
+    monkeypatch.setattr(benchmark, "_adaptive_relationship_field_signal_from_index", field_opposition)
+
+    engine = object.__new__(WaveMindDailyTrendMemoryEngine)
+    engine.base = BaseEngine()
+    engine.records = [Window() for _ in range(24)]
+    engine.return_history = [0.0] * 24
+    engine.relationship_history = {}
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = []
+    engine.min_support = 18
+    engine.min_test_support = 6
+    engine.validation_holdout = 0.35
+    engine.opposition_confidence = 0.42
+    engine.opposition_edge_bps = 60.0
+    engine.boost_confidence = 0.48
+    engine.min_expected_edge_bps = 70.0
+    engine.performance_lookback = 5
+    engine.min_recent_edge_bps = -20.0
+    engine.local_reliability_support = 16
+    engine.round_trip_cost_bps = 30.0
+
+    prediction = engine.query(Window(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filtered is True
+    assert prediction.filter_reason == "daily_field_opposition"
+    assert prediction.raw_direction == "up"
+
+
+def test_daily_trend_memory_vetoes_expanded_volume_trap(monkeypatch):
+    import benchmarks.crypto_walk_forward_benchmark as benchmark
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindDailyTrendMemoryEngine
+
+    class BaseEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=200.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=1.0,
+                raw_direction="up",
+            )
+
+    class Window:
+        features = {
+            "volume_bucket": "expanded",
+            "recent_trend": "up",
+            "bollinger_bucket": "upper_band",
+            "close_position_bucket": "near_high",
+        }
+        future_return_bps = 0.0
+
+    def unused_field_signal(*args, **kwargs):
+        raise AssertionError("daily guard should run before field scoring")
+
+    monkeypatch.setattr(benchmark, "_adaptive_relationship_field_signal_from_index", unused_field_signal)
+
+    engine = object.__new__(WaveMindDailyTrendMemoryEngine)
+    engine.base = BaseEngine()
+    engine.records = [Window() for _ in range(24)]
+    engine.return_history = [0.0] * 24
+    engine.relationship_history = {}
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = []
+    engine.min_support = 18
+    engine.min_test_support = 6
+    engine.validation_holdout = 0.35
+    engine.opposition_confidence = 0.42
+    engine.opposition_edge_bps = 60.0
+    engine.boost_confidence = 0.48
+    engine.min_expected_edge_bps = 70.0
+    engine.performance_lookback = 5
+    engine.min_recent_edge_bps = -20.0
+    engine.local_reliability_support = 16
+    engine.round_trip_cost_bps = 30.0
+
+    prediction = engine.query(Window(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filter_reason == "daily_expanded_volume_reversal_risk"
+    assert prediction.raw_direction == "up"
 
 
 def test_crypto_walk_forward_supports_multiple_isolated_folds(tmp_path):
@@ -602,6 +734,49 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
         top_k=3,
     )
 
+    expanded_volume_breakdown = make_engine(
+        Prediction(
+            direction="down",
+            expected_return_bps=-120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="down",
+        )
+    ).query(
+        Window(
+            {
+                "trend": "down",
+                "volume_bucket": "expanded",
+                "drawdown_bucket": "deep",
+                "bollinger_bucket": "lower_band",
+                "rsi_bucket": "neutral",
+            }
+        ),
+        top_k=3,
+    )
+
+    breakout_short = make_engine(
+        Prediction(
+            direction="down",
+            expected_return_bps=-120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="down",
+        )
+    ).query(
+        Window(
+            {
+                "trend": "down",
+                "rsi_bucket": "overbought",
+                "close_position_bucket": "near_high",
+                "bollinger_bucket": "upper_band",
+            }
+        ),
+        top_k=3,
+    )
+
     stalled_lower_band_bounce = make_engine(
         Prediction(
             direction="up",
@@ -644,6 +819,12 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
     assert normal_volume_breakdown.direction == "flat"
     assert normal_volume_breakdown.filter_reason == "one_hour_normal_volume_breakdown_exhaustion"
     assert normal_volume_breakdown.candidate_direction == "down"
+    assert expanded_volume_breakdown.direction == "flat"
+    assert expanded_volume_breakdown.filter_reason == "one_hour_expanded_volume_breakdown_exhaustion"
+    assert expanded_volume_breakdown.candidate_direction == "down"
+    assert breakout_short.direction == "flat"
+    assert breakout_short.filter_reason == "one_hour_breakout_short_guard"
+    assert breakout_short.candidate_direction == "down"
     assert stalled_lower_band_bounce.direction == "flat"
     assert stalled_lower_band_bounce.filter_reason == "one_hour_stalled_lower_band_bounce"
     assert stalled_lower_band_bounce.candidate_direction == "up"
@@ -692,6 +873,77 @@ def test_timeframe_policy_vetoes_quiet_four_hour_upper_band_long():
     assert prediction.direction == "flat"
     assert prediction.filter_reason == "four_hour_quiet_upper_band_long_exhaustion"
     assert prediction.candidate_direction == "up"
+
+
+def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=120.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=1.0,
+                raw_direction="up",
+            )
+
+    class FlatTaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+
+    def make_prediction(features):
+        class Window:
+            pass
+
+        window = Window()
+        window.features = features
+        engine = object.__new__(WaveMindTimeframePolicyEngine)
+        engine.timeframe = "4h"
+        engine.child = ChildEngine()
+        engine.ta = FlatTaEngine()
+        engine.apply_policy_veto = True
+        engine.records = []
+        engine.pending_predictions = {}
+        engine.realized_signal_nets = []
+        engine.round_trip_cost_bps = 30.0
+        return engine.query(window, top_k=3)
+
+    mid_band = make_prediction(
+        {
+            "trend": "up",
+            "close_position_bucket": "near_high",
+            "bollinger_bucket": "middle",
+            "volume_bucket": "normal",
+        }
+    )
+    quiet_near_high = make_prediction(
+        {
+            "trend": "up",
+            "close_position_bucket": "near_high",
+            "bollinger_bucket": "upper_band",
+            "volume_bucket": "quiet",
+        }
+    )
+    expanded_upper = make_prediction(
+        {
+            "trend": "up",
+            "close_position_bucket": "near_high",
+            "bollinger_bucket": "upper_band",
+            "volume_bucket": "expanded",
+        }
+    )
+
+    assert mid_band.direction == "flat"
+    assert mid_band.filter_reason == "four_hour_mid_band_near_high_long_exhaustion"
+    assert mid_band.candidate_direction == "up"
+    assert quiet_near_high.direction == "flat"
+    assert quiet_near_high.filter_reason == "four_hour_quiet_near_high_long_exhaustion"
+    assert quiet_near_high.candidate_direction == "up"
+    assert expanded_upper.direction == "flat"
+    assert expanded_upper.filter_reason == "four_hour_expanded_upper_near_high_long_exhaustion"
+    assert expanded_upper.candidate_direction == "up"
 
 
 def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():
