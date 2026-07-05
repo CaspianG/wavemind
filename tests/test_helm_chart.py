@@ -24,6 +24,7 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "name: wavemind" in chart
     assert f'appVersion: "{wavemind.__version__}"' in chart
     assert f'tag: "{wavemind.__version__}"' in values
+    assert "repository: ghcr.io/caspiang/wavemind" in values
     assert "replicaCount: 3" in values
     assert "replicationFactor: 2" in values
 
@@ -77,12 +78,22 @@ def test_helm_chart_auth_secret_is_optional_but_supported():
     assert "--set auth.existingSecret=wavemind-auth" in readme
 
 
-def test_helm_chart_files_do_not_contain_tabs_or_placeholder_registry_claims():
+def test_helm_chart_files_do_not_contain_tabs_and_document_official_registry():
     for path in CHART_ROOT.rglob("*"):
         if path.is_file():
             text = path.read_text(encoding="utf-8")
             assert "\t" not in text, f"tab indentation in {path}"
     readme = read_chart_file("README.md")
-    assert "does not assume a public container registry" in readme
-    assert not re.search(r"ghcr\.io/caspiang/wavemind", readme, re.IGNORECASE)
+    assert "official GitHub Container Registry image" in readme
+    assert re.search(r"ghcr\.io/caspiang/wavemind", read_chart_file("values.yaml"), re.IGNORECASE)
 
+
+def test_helm_chart_is_checked_by_github_actions():
+    workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
+
+    assert "helm:" in workflow
+    assert "azure/setup-helm" in workflow
+    assert "helm lint deploy/helm/wavemind" in workflow
+    assert "helm template wavemind deploy/helm/wavemind" in workflow
+    assert "grep -q \"kind: StatefulSet\"" in workflow
+    assert "grep -q \"kind: CronJob\"" in workflow

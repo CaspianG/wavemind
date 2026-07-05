@@ -2,8 +2,8 @@ replicaCount: 3
 replicationFactor: 2
 
 image:
-  repository: wavemind
-  tag: "2.4.1"
+  repository: ghcr.io/caspiang/wavemind
+  tag: "2.4.2"
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -70,4 +70,3 @@ securityContext: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-

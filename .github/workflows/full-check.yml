@@ -133,3 +133,30 @@ jobs:
             -d '{"query":"Docker API","namespace":"ci","top_k":1}' \
             | tee /tmp/wavemind-query.json
           grep -q "Docker API" /tmp/wavemind-query.json
+
+  helm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Lint Helm chart
+        run: helm lint deploy/helm/wavemind
+
+      - name: Render Helm chart
+        run: |
+          helm template wavemind deploy/helm/wavemind \
+            --set image.repository=ghcr.io/caspiang/wavemind \
+            --set image.tag=ci \
+            --set auth.enabled=true \
+            --set auth.adminKey=test-key \
+            --set repair.namespaceCount=4 \
+            > /tmp/wavemind-chart.yaml
+          grep -q "kind: StatefulSet" /tmp/wavemind-chart.yaml
+          grep -q "kind: CronJob" /tmp/wavemind-chart.yaml
+          grep -q "cluster-repair" /tmp/wavemind-chart.yaml
+          grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml

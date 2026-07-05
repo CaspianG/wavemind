@@ -47,6 +47,9 @@ policy matters more than raw vector-database scale:
 - A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
   storage, and scheduled `cluster-repair` CronJob.
+- GitHub Actions builds and publishes the official
+  `ghcr.io/caspiang/wavemind` container image for `main` and version tags, and
+  `full-check` validates Helm lint/template rendering.
 - `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, query-audit-driven cache prewarm, TTL purge, field
@@ -288,8 +291,8 @@ Enterprise requirements:
 - Graph memory v2 with incremental edge updates.
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
-- Published container image, Helm chart hardening, and operator-managed
-  API/sidecar deployment.
+- Kubernetes operator and managed/serverless control plane for API/sidecar
+  deployment.
 - Observability: richer Prometheus metrics, trace dashboards, and durable
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,

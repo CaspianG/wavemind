@@ -2,8 +2,8 @@ apiVersion: v2
 name: wavemind
 description: Local-first dynamic memory layer with scheduled cluster repair
 type: application
-version: 0.1.0
-appVersion: "2.4.1"
+version: 0.1.1
+appVersion: "2.4.2"
 keywords:
   - ai
   - memory
@@ -14,4 +14,3 @@ sources:
   - https://github.com/CaspianG/wavemind
 maintainers:
   - name: CaspianG
-

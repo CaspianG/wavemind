@@ -133,6 +133,24 @@ def test_release_workflow_builds_and_creates_github_release():
     assert "softprops/action-gh-release" in workflow
 
 
+def test_container_workflow_builds_and_publishes_ghcr_image():
+    workflow = Path(".github/workflows/container.yml").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    chart_values = Path("deploy/helm/wavemind/values.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "docker/build-push-action" in workflow
+    assert "docker/metadata-action" in workflow
+    assert "docker/login-action" in workflow
+    assert "packages: write" in workflow
+    assert "ghcr.io/caspiang/wavemind" in workflow
+    assert "type=semver,pattern={{version}}" in workflow
+    assert "type=raw,value=latest" in workflow
+    assert "ghcr.io/caspiang/wavemind" in readme
+    assert "repository: ghcr.io/caspiang/wavemind" in chart_values
+
+
 def test_manifest_includes_docs_without_large_benchmark_data():
     manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
     readme = Path("README.md").read_text(encoding="utf-8")

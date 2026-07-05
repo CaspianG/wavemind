@@ -535,9 +535,7 @@ or service layer.
 Helm deployment:
 
 ```sh
-helm install wavemind ./deploy/helm/wavemind \
-  --set image.repository=registry.example.com/wavemind \
-  --set image.tag=2.4.1
+helm install wavemind ./deploy/helm/wavemind
 ```
 
 For authenticated API nodes, create a Secret and reference it:
@@ -545,16 +543,14 @@ For authenticated API nodes, create a Secret and reference it:
 ```sh
 kubectl create secret generic wavemind-auth --from-literal=admin-key="$WAVEMIND_ADMIN_KEY"
 helm upgrade --install wavemind ./deploy/helm/wavemind \
-  --set image.repository=registry.example.com/wavemind \
-  --set image.tag=2.4.1 \
   --set auth.enabled=true \
   --set auth.existingSecret=wavemind-auth
 ```
 
 The chart deploys a StatefulSet, normal and headless Services, optional auth
-Secret wiring, and a scheduled `cluster-repair` CronJob. It intentionally does
-not assume a public container registry yet; set `image.repository` to the image
-you build and push for your environment.
+Secret wiring, and a scheduled `cluster-repair` CronJob. It uses
+`ghcr.io/caspiang/wavemind` by default; set `image.repository` when deploying
+from a private registry.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
 
