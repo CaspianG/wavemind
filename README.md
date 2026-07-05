@@ -1153,7 +1153,9 @@ Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/B
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard,
-and commits changed benchmark artifacts back to `main`.
+validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
+`benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
+artifacts back to `main`.
 
 Visual summary generated from the checked-in JSON results:
 

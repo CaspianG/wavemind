@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -1047,12 +1050,39 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
 def build_benchmark_matrix(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     return {
         "schema": "wavemind.benchmark_matrix.v1",
+        "generated_at": _generated_at(),
+        "source_ref": _source_ref(root),
+        "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+        "refresh_profile": os.environ.get("WAVEMIND_BENCHMARK_REFRESH_PROFILE", "local"),
         "note": (
             "Implemented entries are runnable from this repository. Planned entries are "
             "public benchmarks that require optional datasets, services, or heavier dependencies."
         ),
         "benchmarks": _implemented_entries(root) + PUBLIC_BENCHMARKS,
     }
+
+
+def _generated_at() -> str:
+    value = os.environ.get("WAVEMIND_BENCHMARK_GENERATED_AT")
+    if value:
+        return value
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _source_ref(root: Path) -> str:
+    value = os.environ.get("GITHUB_SHA") or os.environ.get("WAVEMIND_BENCHMARK_SOURCE_REF")
+    if value:
+        return value
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short=12", "HEAD"],
+            cwd=root,
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except Exception:
+        return "unknown"
 
 
 def print_table(payload: dict[str, Any]) -> None:

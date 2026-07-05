@@ -129,6 +129,7 @@ def render_report(root: Path = PROJECT_ROOT) -> str:
         "# WaveMind Benchmark Report",
         "",
         "This report is generated from `benchmarks/benchmark_matrix_results.json`.",
+        f"Last refresh: `{payload.get('generated_at', 'unknown')}` from `{payload.get('source_ref', 'unknown')}`.",
         "It separates completed local runs from runner-ready public benchmarks and planned external evaluations.",
         "",
         "Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.",

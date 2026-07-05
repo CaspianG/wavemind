@@ -11,6 +11,8 @@ permissions:
 jobs:
   update-leaderboard:
     runs-on: ubuntu-latest
+    env:
+      WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast
 
     steps:
       - uses: actions/checkout@v5
@@ -39,6 +41,9 @@ jobs:
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
           python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit.json
 
       - name: Validate benchmark renderers
         run: |
@@ -46,6 +51,7 @@ jobs:
             tests/test_benchmark_registry.py \
             tests/test_benchmark_report.py \
             tests/test_benchmark_leaderboard.py \
+            tests/test_benchmark_artifact_audit.py \
             tests/test_dynamic_memory_benchmark.py \
             tests/test_field_memory_dynamics_benchmark.py \
             tests/test_scale_readiness_benchmark.py
@@ -69,6 +75,7 @@ jobs:
           path: |
             benchmarks/BENCHMARK_LEADERBOARD.md
             benchmarks/BENCHMARK_REPORT.md
+            benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
             benchmarks/dynamic_memory_results.json
             benchmarks/field_memory_dynamics_results.json

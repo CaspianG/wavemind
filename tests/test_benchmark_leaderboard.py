@@ -24,6 +24,7 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     leaderboard = output.read_text(encoding="utf-8")
 
     assert leaderboard.startswith("# WaveMind Benchmark Leaderboard")
+    assert "Last refresh:" in leaderboard
     assert "| benchmark | category | primary metric |" in leaderboard
     assert "Dynamic memory policy" in leaderboard
     assert "Chroma static" in leaderboard
@@ -53,4 +54,8 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "benchmark_registry.py" in workflow
     assert "render_benchmark_report.py" in workflow
     assert "render_benchmark_leaderboard.py" in workflow
+    assert "validate_benchmark_artifacts.py" in workflow
+    assert "--max-age-days 8" in workflow
+    assert "WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast" in workflow
+    assert "benchmark_artifact_audit.json" in workflow
     assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow

@@ -36,6 +36,8 @@ purpose-built vector databases.
 
 The generated matrix view is in `benchmarks/BENCHMARK_REPORT.md`; the compact
 leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
+`benchmarks/benchmark_artifact_audit.json` records the latest freshness and
+synchronization check for the generated benchmark artifacts.
 
 ## What This Proves
 

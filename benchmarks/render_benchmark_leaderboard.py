@@ -226,6 +226,7 @@ def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
             "# WaveMind Benchmark Leaderboard",
             "",
             "Generated from `benchmarks/benchmark_matrix_results.json`.",
+            f"Last refresh: `{payload.get('generated_at', 'unknown')}` from `{payload.get('source_ref', 'unknown')}`.",
             "",
             "This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.",
             "",

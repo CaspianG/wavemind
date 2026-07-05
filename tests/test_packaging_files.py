@@ -185,6 +185,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/BENCHMARK_BRIEF.md" in readme
+    assert "benchmark_artifact_audit.json" in readme
+    assert "validate_benchmark_artifacts.py" in readme
     assert "examples/chroma_migration.py" in readme
     assert "examples/customer_support_memory.py" in readme
     assert "examples/research_notebook_memory.py" in readme
@@ -209,6 +211,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "scale-plan" in roadmap
     assert "serverless-sample" in roadmap
     assert "valid KEDA Deployment" in benchmark_brief
+    assert "freshness/audit gate" in roadmap
+    assert "benchmark_artifact_audit.json" in benchmark_brief
+    assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases
     assert "consolidate_concepts" in use_cases

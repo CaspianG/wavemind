@@ -24,6 +24,7 @@ def test_benchmark_report_renderer_writes_status_report(tmp_path):
     report = output.read_text(encoding="utf-8")
 
     assert report.startswith("# WaveMind Benchmark Report")
+    assert "Last refresh:" in report
     assert "## Completed Runs" in report
     assert "## Public Benchmark Roadmap" in report
     assert "VectorDBBench" in report

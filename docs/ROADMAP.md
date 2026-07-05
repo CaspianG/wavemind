@@ -234,6 +234,9 @@ Priorities:
 - clear `good first issue` and `help wanted` labels;
 - GitHub Discussions for support and design proposals;
 - benchmark scripts that contributors can run locally;
+- weekly benchmark refresh that regenerates the matrix/report/leaderboard,
+  validates freshness, and writes a machine-readable artifact audit before
+  committing benchmark changes;
 - Docker images for the API server and sidecar mode;
 - release automation, generated release-note categories, labels spec, and
   release checklist;
@@ -308,7 +311,8 @@ Enterprise requirements:
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
-- Community benchmark dashboard generated from checked-in result JSON.
+- Community benchmark dashboard generated from checked-in result JSON, backed by
+  the weekly freshness/audit gate.
 
 ### Longer Term
 

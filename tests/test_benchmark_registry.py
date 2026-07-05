@@ -12,6 +12,9 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     entries = {entry["id"]: entry for entry in payload["benchmarks"]}
 
     assert payload["schema"] == "wavemind.benchmark_matrix.v1"
+    assert payload["generated_at"].endswith("Z")
+    assert isinstance(payload["source_ref"], str)
+    assert payload["refresh_profile"]
     assert entries["agent_memory_static_chroma"]["status"] == "implemented"
     assert entries["dynamic_memory_policy"]["status"] == "implemented"
     assert entries["field_memory_dynamics"]["status"] == "implemented"
