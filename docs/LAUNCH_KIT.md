@@ -249,9 +249,9 @@ avg 10.28 ms
 p99 21.26 ms
 
 1M Qdrant service tuned:
-recall@10 0.984
-avg 116.80 ms
-p99 209.28 ms
+recall@10 0.975
+avg 105.39 ms
+p99 204.63 ms
 
 1M Qdrant EF sweep:
 recall@10 0.977

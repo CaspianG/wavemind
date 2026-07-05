@@ -959,7 +959,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-            "next_step": "Clear the four current action-required items: 1M p99 SLO, 100+ query 1M confirmation, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile.",
+            "next_step": "Clear the three current action-required items: 1M p99 SLO, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile.",
         },
         {
             "id": "memory_competitor_adapter_profile",

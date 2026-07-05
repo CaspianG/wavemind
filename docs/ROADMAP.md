@@ -30,10 +30,11 @@ policy matters more than raw vector-database scale:
 - A service-backed production load profile now includes tuned 100000-vector and
   1M-vector Qdrant runs. Qdrant reaches `recall@10 1.000`, p99 `21.26 ms` at
   100k with a checked-in estimate of `$1.39` per 1M queries, and tuned 1M
-  recall reaches `0.984` with an estimated `$11.81` per 1M queries if the SLO is
-  fixed by replication; the remaining blocker is stable sub-100 ms p99 at 1M.
+  recall reaches `0.975` over 100 queries with an estimated `$11.11` per 1M
+  queries if the SLO is fixed by replication; the remaining blocker is stable
+  sub-100 ms p99 at 1M.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current gate is `0.733` (`11/15` pass, `4` action
+  production verdict. The current gate is `0.800` (`12/15` pass, `3` action
   required, `0` fail), so complete million-plus readiness is not claimed yet.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
@@ -297,8 +298,8 @@ Enterprise requirements:
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
-- Clear the production readiness gate: 1M p99 SLO, 100+ query 1M confirmation,
-  real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile.
+- Clear the production readiness gate: 1M p99 SLO, real Mem0/Zep/LangGraph
+  adapter runs, and a 10M service-backed load profile.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

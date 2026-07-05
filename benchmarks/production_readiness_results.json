@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-05T23:04:22Z",
+  "generated_at": "2026-07-05T23:37:23Z",
   "overall_status": "action_required",
-  "readiness_score": 0.7333333333333333,
+  "readiness_score": 0.8,
   "summary": {
     "overall_status": "action_required",
-    "readiness_score": 0.7333333333333333,
-    "pass_count": 11,
-    "action_required_count": 4,
+    "readiness_score": 0.8,
+    "pass_count": 12,
+    "action_required_count": 3,
     "fail_count": 0,
     "total_criteria": 15
   },
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-05T22:42:20Z",
+      "evidence": "audit status pass, generated_at 2026-07-05T23:35:29Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -33,16 +33,16 @@
       "title": "1M service-backed load profile meets recall and p99 SLO",
       "status": "action_required",
       "requirement": "recall@10 >= 0.95 and p99 <= 100 ms at 1M vectors.",
-      "evidence": "recall 0.984, p99 209.27749999100342 ms, SLO fail",
-      "next_step": "Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and rerun 1M with 100+ queries."
+      "evidence": "recall 0.975, p99 204.62550001684576 ms, SLO fail",
+      "next_step": "Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and keep rerunning 1M with 100+ queries after each tuning change."
     },
     {
       "id": "production_1m_query_depth",
       "title": "1M load result has enough query depth for a production claim",
-      "status": "action_required",
+      "status": "pass",
       "requirement": "Use at least 100 queries for checked-in 1M production claims.",
-      "evidence": "current tuned 1M profile uses 50 queries",
-      "next_step": "Rerun tuned 1M profile with 100+ queries once disk and service runtime are stable."
+      "evidence": "current tuned 1M profile uses 100 queries",
+      "next_step": "Keep 100+ query depth for all checked-in 1M production profiles."
     },
     {
       "id": "cluster_ha_placement",

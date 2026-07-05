@@ -482,9 +482,9 @@ from wavemind import (
 target = ProductionSLOTarget(target_recall_at_k=0.95, target_p99_ms=100, target_qps=100)
 result = evaluate_production_slo(
     engine="qdrant-service",
-    recall_at_k=0.984,
-    avg_latency_ms=116.8,
-    p99_latency_ms=209.28,
+    recall_at_k=0.975,
+    avg_latency_ms=105.39,
+    p99_latency_ms=204.63,
     target=target,
 )
 print(result.status, result.blocking_reasons)
@@ -1217,9 +1217,9 @@ Current read:
 | LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
 | LongMemEval 50-query smoke | On the first 50 non-abstention LongMemEval-S questions, WaveMind reaches `evidence_recall@5 0.920`, `precision@1 0.760`, and `MRR@5 0.827`; Chroma/Qdrant static reach `0.600`, `0.260`, and `0.385`. | This is the fast regression profile for checking current changes before rerunning the full LongMemEval profile. WaveMind wins on quality; latency still needs work. |
 | ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
-| Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`, passes the checked-in production SLO gate (`recall >= 0.95`, `p99 <= 100 ms`, `100 qps`, 3 replicas, HPA max 24), and estimates `$1.39` per 1M queries with `$365.02` monthly target cost. At 1M, tuned Qdrant reaches `recall@10 0.984`, avg `116.80 ms`, p99 `209.28 ms`, and estimates `$11.81` per 1M queries if the SLO is fixed by replication. An EF sweep finds `recall@10 0.977`, avg `64.76 ms`, p99 `103.77 ms` at `hnsw_ef=2048` on 30 queries. | 100k is production-grade on the tested machine and now has a checked-in cost model. 1M recall is strong, but the SLO gate still fails on p99, so the 1M path remains tuning-in-progress. |
+| Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`, passes the checked-in production SLO gate (`recall >= 0.95`, `p99 <= 100 ms`, `100 qps`, 3 replicas, HPA max 24), and estimates `$1.39` per 1M queries with `$365.02` monthly target cost. At 1M over 100 queries, tuned Qdrant reaches `recall@10 0.975`, avg `105.39 ms`, p99 `204.63 ms`, and estimates `$11.11` per 1M queries if the SLO is fixed by replication. An EF sweep finds `recall@10 0.977`, avg `64.76 ms`, p99 `103.77 ms` at `hnsw_ef=2048` on 30 queries. | 100k is production-grade on the tested machine and now has a checked-in cost model. 1M recall is strong and now has 100-query depth, but the SLO gate still fails on p99, so the 1M path remains tuning-in-progress. |
 | Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, Kubernetes `StatefulSet`, `HorizontalPodAutoscaler`, repair `CronJob`, operator-style `WaveMindCluster` reconciliation for `4096` namespaces, hot-cache hit rate `0.920`, query-audit prewarm warmed `1` query with prewarm hit `true`, service-mode distributed sharding recall after primary loss, service-mode repair copied `1` missing replica record with recall after repair `true`, service-mode tombstone suppression before repair `true`, tombstone repair deleted `1` stale replica record, suppression after repair `true`, anti-entropy worker repaired `1` missing record and deleted `1` stale tombstone record, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active namespace delta sync, field-state CRDT convergence/idempotency/tombstone-wins, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, S3-compatible upload/latest-metadata/download/retention verification, object-store DR drill `true`, and structured payload precision@1 `1.000`. | This proves routing, Kubernetes deployment/operator/HPA/repair manifests, service-mode repair, tombstone-aware delete repair, anti-entropy background repair, cache prewarm, cache, payload, distributed sharding, replicated-runtime, namespace-delta, distributed field-state convergence, offsite/archive/object-store backup lifecycle, and restore-drill foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
-| Production readiness gate | Current gate score is `0.733`: `11/15` criteria pass, `4` require action, `0` fail. The action-required items are 1M p99 SLO, 100+ query 1M confirmation, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile. | This keeps production claims honest. WaveMind has a real production foundation, but complete million-plus readiness is not claimed until this gate reaches `1.000`. |
+| Production readiness gate | Current gate score is `0.800`: `12/15` criteria pass, `3` require action, `0` fail. The action-required items are 1M p99 SLO, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile. | This keeps production claims honest. WaveMind has a real production foundation, but complete million-plus readiness is not claimed until this gate reaches `1.000`. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00` on the small adapter profile. Mem0, Zep, and LangGraph are listed as skipped unless their real packages/services are configured. | This prevents fake competitor claims. The adapter harness is ready; real Mem0/Zep/LangGraph results still need configured installs. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 
@@ -1588,7 +1588,7 @@ Checked-in production load points:
 
 ```sh
 python benchmarks/production_load_benchmark.py --sizes 100000 --dim 128 --queries 100 --top-k 10 --engines qdrant-service pgvector faiss-persisted
-python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queries 50 --top-k 10 --engines qdrant-service --output benchmarks/production_load_qdrant_1m_tuned_results.json
+python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queries 100 --top-k 10 --engines qdrant-service --output benchmarks/production_load_qdrant_1m_tuned_results.json
 ```
 
 | vectors | engine | recall@10 | avg latency | p95 latency | p99 latency | SLO | required replicas | autoscaled capacity | build |
@@ -1596,7 +1596,7 @@ python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queri
 | 100000 | Qdrant service | 1.000 | 10.28 ms | 18.97 ms | 21.26 ms | pass | 2 | 1635.0 qps | 27439.3 ms |
 | 100000 | WaveMind pgvector | 0.736 | 17.76 ms | 23.48 ms | - | fail: recall | 3 | 945.9 qps | 455703.7 ms |
 | 100000 | WaveMind faiss-persisted | skipped | - | - | - | skipped | - | - | - |
-| 1000000 | Qdrant service tuned | 0.984 | 116.80 ms | 153.84 ms | 209.28 ms | fail: p99 | 17 | 143.8 qps | 450674.6 ms |
+| 1000000 | Qdrant service tuned | 0.975 | 105.39 ms | 143.91 ms | 204.63 ms | fail: p99 | 16 | 159.4 qps | 549886.6 ms |
 | 1000000 | Qdrant `hnsw_ef=2048` sweep point | 0.977 | 64.76 ms | 91.18 ms | 103.77 ms | fail: p99 | 10 | 259.4 qps | 451912.4 ms |
 
 Read this as an engineering curve, not an official VectorDBBench result. Annoy

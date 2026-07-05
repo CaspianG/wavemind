@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-05T23:07:33Z",
-  "source_ref": "d52f61923197",
+  "generated_at": "2026-07-05T23:37:23Z",
+  "source_ref": "caacba94ea37",
   "workflow_run_id": null,
   "refresh_profile": "manual-main",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -697,17 +697,17 @@
       ],
       "current": {
         "Qdrant service": {
-          "recall_at_k": 0.984,
-          "avg_latency_ms": 116.80030399700627,
-          "p95_latency_ms": 153.84380001341924,
-          "p99_latency_ms": 209.27749999100342,
-          "build_ms": 450674.6019999846,
+          "recall_at_k": 0.975,
+          "avg_latency_ms": 105.38696300238371,
+          "p95_latency_ms": 143.90710002044216,
+          "p99_latency_ms": 204.62550001684576,
+          "build_ms": 549886.6279000067,
           "slo_status": "fail",
-          "slo_required_replicas": 17,
-          "slo_autoscaled_qps": 143.8352420763443,
+          "slo_required_replicas": 16,
+          "slo_autoscaled_qps": 159.41250721514774,
           "cost_status": "invalid_slo",
-          "compute_cost_per_1m_queries_usd": 11.805555555555555,
-          "monthly_total_cost_at_target_qps_usd": 3102.7384185791016,
+          "compute_cost_per_1m_queries_usd": 11.11111111111111,
+          "monthly_total_cost_at_target_qps_usd": 2920.2384185791016,
           "estimated_storage_gb": 2.384185791015625
         }
       },
@@ -978,16 +978,16 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 0.7333333333333333,
+          "readiness_score": 0.8,
           "overall_status": "action_required",
-          "pass_count": 11,
-          "action_required_count": 4,
+          "pass_count": 12,
+          "action_required_count": 3,
           "fail_count": 0,
           "total_criteria": 15
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-      "next_step": "Clear the four current action-required items: 1M p99 SLO, 100+ query 1M confirmation, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile."
+      "next_step": "Clear the three current action-required items: 1M p99 SLO, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile."
     },
     {
       "id": "memory_competitor_adapter_profile",

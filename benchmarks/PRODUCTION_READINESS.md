@@ -6,18 +6,18 @@ verdict, not a marketing claim.
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| readiness score | `0.733` |
-| passed criteria | `11` |
-| action required | `4` |
+| readiness score | `0.800` |
+| passed criteria | `12` |
+| action required | `3` |
 | failed criteria | `0` |
 | total criteria | `15` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-05T22:42:20Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-05T23:35:29Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
-| 1M service-backed load profile meets recall and p99 SLO | `action_required` | recall 0.984, p99 209.27749999100342 ms, SLO fail | Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and rerun 1M with 100+ queries. |
-| 1M load result has enough query depth for a production claim | `action_required` | current tuned 1M profile uses 50 queries | Rerun tuned 1M profile with 100+ queries once disk and service runtime are stable. |
+| 1M service-backed load profile meets recall and p99 SLO | `action_required` | recall 0.975, p99 204.62550001684576 ms, SLO fail | Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and keep rerunning 1M with 100+ queries after each tuning change. |
+| 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |

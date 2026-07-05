@@ -134,7 +134,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"p99 {load_1m.get('p99_latency_ms')} ms, "
                 f"SLO {load_1m.get('slo_status')}"
             ),
-            next_step="Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and rerun 1M with 100+ queries.",
+            next_step="Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and keep rerunning 1M with 100+ queries after each tuning change.",
         ),
         _criterion(
             criterion_id="production_1m_query_depth",
@@ -142,7 +142,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             status="pass" if load_1m_queries >= 100 else "action_required",
             requirement="Use at least 100 queries for checked-in 1M production claims.",
             evidence=f"current tuned 1M profile uses {load_1m_queries} queries",
-            next_step="Rerun tuned 1M profile with 100+ queries once disk and service runtime are stable.",
+            next_step="Keep 100+ query depth for all checked-in 1M production profiles.",
         ),
         _criterion(
             criterion_id="cluster_ha_placement",

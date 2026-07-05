@@ -11,12 +11,12 @@ def test_production_readiness_gate_reports_current_blockers():
     criteria = {row["id"]: row for row in payload["criteria"]}
 
     assert payload["schema"] == "wavemind.production_readiness.v1"
-    assert payload["summary"]["pass_count"] >= 10
+    assert payload["summary"]["pass_count"] >= 12
     assert payload["summary"]["fail_count"] == 0
     assert payload["overall_status"] == "action_required"
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
     assert criteria["production_1m_slo"]["status"] == "action_required"
-    assert criteria["production_1m_query_depth"]["status"] == "action_required"
+    assert criteria["production_1m_query_depth"]["status"] == "pass"
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert criteria["real_competitor_adapters"]["status"] == "action_required"
