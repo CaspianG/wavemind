@@ -165,7 +165,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     replicated_snapshot = sub.add_parser(
         "replicated-snapshot",
-        help="Snapshot a ReplicatedWaveMind root with optional offsite mirror",
+        help="Snapshot a ReplicatedWaveMind root with optional offsite mirror/archive",
     )
     replicated_snapshot.add_argument("--root", required=True)
     replicated_snapshot.add_argument("--node", action="append", required=True)
@@ -174,6 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
     replicated_snapshot.add_argument("--read-quorum", type=int, default=1)
     replicated_snapshot.add_argument("--out", required=True)
     replicated_snapshot.add_argument("--offsite")
+    replicated_snapshot.add_argument("--archive")
     replicated_snapshot.add_argument("--keep-last", type=int)
     replicated_snapshot.add_argument("--prefix", default="wavemind-replicated")
     replicated_snapshot.add_argument("--allow-partial", action="store_true")
@@ -398,6 +399,7 @@ def main(argv: list[str] | None = None) -> int:
                 keep_last=args.keep_last,
                 require_all=not args.allow_partial,
                 offsite_destination=args.offsite,
+                archive_destination=args.archive,
             )
         finally:
             memory.close()
@@ -410,14 +412,25 @@ def main(argv: list[str] | None = None) -> int:
             if payload["offsite_path"]:
                 print(f"offsite: {payload['offsite_path']}")
                 print(f"offsite_verified: {payload['offsite_verified']}")
+            if payload["archive_path"]:
+                print(f"archive: {payload['archive_path']}")
+                print(f"archive_verified: {payload['archive_verified']}")
         return 0 if report.ok else 4
 
     if args.command == "replicated-restore":
-        restored, report = ReplicatedWaveMind.restore_snapshot(
-            args.source,
-            args.destination,
-            overwrite=args.overwrite,
-        )
+        source = Path(args.source)
+        if source.name.endswith(".tar.gz") or source.suffix == ".tgz":
+            restored, report = ReplicatedWaveMind.restore_snapshot_archive(
+                source,
+                args.destination,
+                overwrite=args.overwrite,
+            )
+        else:
+            restored, report = ReplicatedWaveMind.restore_snapshot(
+                source,
+                args.destination,
+                overwrite=args.overwrite,
+            )
         try:
             payload = report.as_dict()
         finally:

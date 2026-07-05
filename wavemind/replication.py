@@ -4,11 +4,13 @@ import hashlib
 import json
 import re
 import shutil
+import tarfile
+import tempfile
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .cluster import ClusterNode, NamespacePlacement, build_cluster_plan
@@ -83,6 +85,22 @@ class ReplicatedSnapshotReport:
             "checksums": dict(self.checksums),
             "skipped_nodes": dict(self.skipped_nodes),
             "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
+class ReplicatedSnapshotArchiveReport:
+    archive_path: Path
+    snapshot_name: str
+    total_bytes: int
+    verified: bool
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "archive_path": str(self.archive_path),
+            "snapshot_name": self.snapshot_name,
+            "total_bytes": self.total_bytes,
+            "verified": self.verified,
         }
 
 
@@ -632,6 +650,65 @@ class ReplicatedWaveMind:
         )
 
     @staticmethod
+    def archive_snapshot(
+        snapshot_path: str | Path,
+        archive_destination: str | Path,
+    ) -> ReplicatedSnapshotArchiveReport:
+        """Write a verified snapshot directory as a portable .tar.gz archive."""
+        snapshot_path = Path(snapshot_path)
+        health = ReplicatedWaveMind.verify_snapshot(snapshot_path)
+        if not health["healthy"]:
+            raise ReplicationError(
+                f"Snapshot verification failed before archive: {health['failed_nodes']}"
+            )
+        archive_path = ReplicatedWaveMind._resolve_snapshot_archive_path(
+            archive_destination,
+            snapshot_name=snapshot_path.name,
+        )
+        if archive_path.exists():
+            raise FileExistsError(f"Snapshot archive already exists: {archive_path}")
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with tarfile.open(archive_path, "w:gz") as archive:
+            archive.add(snapshot_path, arcname=snapshot_path.name)
+
+        archive_health = ReplicatedWaveMind.verify_snapshot_archive(archive_path)
+        return ReplicatedSnapshotArchiveReport(
+            archive_path=archive_path,
+            snapshot_name=snapshot_path.name,
+            total_bytes=archive_path.stat().st_size,
+            verified=bool(archive_health["healthy"]),
+        )
+
+    @staticmethod
+    def prune_snapshot_archives(
+        directory: str | Path,
+        *,
+        prefix: str = "wavemind-replicated",
+        keep_last: int = 10,
+    ) -> list[Path]:
+        keep_last = max(0, int(keep_last))
+        directory = Path(directory)
+        if not directory.exists():
+            return []
+        archives = sorted(
+            [
+                path
+                for path in directory.iterdir()
+                if path.is_file()
+                and path.name.startswith(f"{prefix}-")
+                and (path.name.endswith(".tar.gz") or path.name.endswith(".tgz"))
+            ],
+            key=lambda path: (path.stat().st_mtime, path.name),
+            reverse=True,
+        )
+        removed: list[Path] = []
+        for path in archives[keep_last:]:
+            path.unlink()
+            removed.append(path)
+        return removed
+
+    @staticmethod
     def verify_snapshot(snapshot_path: str | Path) -> dict[str, Any]:
         snapshot_path = Path(snapshot_path)
         manifest = ReplicatedWaveMind._read_snapshot_manifest(snapshot_path)
@@ -659,6 +736,18 @@ class ReplicatedWaveMind:
             "failed_nodes": failures,
             "total_bytes": total_bytes,
         }
+
+    @staticmethod
+    def verify_snapshot_archive(archive_path: str | Path) -> dict[str, Any]:
+        archive_path = Path(archive_path)
+        with tempfile.TemporaryDirectory(prefix="wavemind-snapshot-verify-") as tmp:
+            snapshot_path = ReplicatedWaveMind._extract_snapshot_archive(
+                archive_path,
+                Path(tmp),
+            )
+            health = ReplicatedWaveMind.verify_snapshot(snapshot_path)
+            health["archive_path"] = str(archive_path)
+            return health
 
     @classmethod
     def restore_snapshot(
@@ -722,6 +811,24 @@ class ReplicatedWaveMind:
             total_bytes=total_bytes,
         )
         return memory, report
+
+    @classmethod
+    def restore_snapshot_archive(
+        cls,
+        archive_path: str | Path,
+        root_path: str | Path,
+        *,
+        overwrite: bool = False,
+        **mind_kwargs: Any,
+    ) -> tuple["ReplicatedWaveMind", ReplicatedRestoreReport]:
+        with tempfile.TemporaryDirectory(prefix="wavemind-snapshot-restore-") as tmp:
+            snapshot_path = cls._extract_snapshot_archive(Path(archive_path), Path(tmp))
+            return cls.restore_snapshot(
+                snapshot_path,
+                root_path,
+                overwrite=overwrite,
+                **mind_kwargs,
+            )
 
     def placement(self, namespace: str = "default") -> NamespacePlacement:
         return build_cluster_plan(
@@ -1119,6 +1226,60 @@ class ReplicatedWaveMind:
         if manifest.get("format") != "wavemind.replicated_snapshot.v1":
             raise ValueError("Unsupported replicated snapshot format")
         return manifest
+
+    @staticmethod
+    def _resolve_snapshot_archive_path(
+        archive_destination: str | Path,
+        *,
+        snapshot_name: str,
+    ) -> Path:
+        destination = Path(archive_destination)
+        if destination.name.endswith(".tar.gz") or destination.suffix == ".tgz":
+            return destination
+        if destination.suffix:
+            raise ValueError("snapshot archive path must end with .tar.gz or .tgz")
+        return destination / f"{snapshot_name}.tar.gz"
+
+    @staticmethod
+    def _extract_snapshot_archive(archive_path: Path, destination: Path) -> Path:
+        if not archive_path.exists():
+            raise FileNotFoundError(f"Snapshot archive does not exist: {archive_path}")
+        destination.mkdir(parents=True, exist_ok=True)
+        destination_root = destination.resolve()
+
+        with tarfile.open(archive_path, "r:gz") as archive:
+            members = archive.getmembers()
+            if not members:
+                raise ReplicationError("Snapshot archive is empty")
+            for member in members:
+                name = PurePosixPath(member.name)
+                if name.is_absolute() or ".." in name.parts:
+                    raise ReplicationError(f"Unsafe archive path: {member.name}")
+                if member.islnk() or member.issym():
+                    raise ReplicationError(
+                        f"Links are not allowed in snapshot archives: {member.name}"
+                    )
+                target = (destination / member.name).resolve()
+                if target != destination_root and destination_root not in target.parents:
+                    raise ReplicationError(
+                        f"Archive entry escapes destination: {member.name}"
+                    )
+            try:
+                archive.extractall(destination, filter="data")
+            except TypeError:  # pragma: no cover - Python < 3.12 compatibility
+                archive.extractall(destination)
+
+        candidates = [
+            path
+            for path in destination.iterdir()
+            if path.is_dir() and (path / "manifest.json").exists()
+        ]
+        if len(candidates) != 1:
+            raise ReplicationError(
+                "Snapshot archive must contain exactly one snapshot directory; "
+                f"found {len(candidates)}"
+            )
+        return candidates[0]
 
     @staticmethod
     def _prune_snapshots(

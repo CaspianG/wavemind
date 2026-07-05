@@ -490,16 +490,17 @@ Checked-in result:
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`. |
-| Replicated runtime | 3 physical WaveMind stores, replication factor 3, write quorum 2, node-loss recall `true`, repair copied `1` missing record, tombstone repair deleted `1` stale record, p99 query-after-loss `1.35 ms`. |
-| Active-active delta sync | 2 regions, bidirectional convergence `true`, stale import suppressed after delete `true`, tombstone convergence `true`, sync `103.42 ms`. |
-| Replicated snapshot job | 3 replica files, manifest checksum validation `true`, offsite mirror validation `true`, restore `7.10 ms`, recall after restored-primary loss `true`. |
-| Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `0.59 ms`. |
+| Replicated runtime | 3 physical WaveMind stores, replication factor 3, write quorum 2, node-loss recall `true`, repair copied `1` missing record, tombstone repair deleted `1` stale record, p99 query-after-loss `1.57 ms`. |
+| Active-active delta sync | 2 regions, bidirectional convergence `true`, stale import suppressed after delete `true`, tombstone convergence `true`, sync `104.43 ms`. |
+| Replicated snapshot job | 3 replica files, manifest checksum validation `true`, offsite mirror validation `true`, portable archive validation `true`, archive restore `25.70 ms`, recall after restored-primary loss `true`. |
+| Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `0.58 ms`. |
 
 This profile validates routing, quorum-replicated runtime behavior, cache
 behavior, active-active namespace delta sync, replicated snapshot/restore, and
-structured payload handling. It is not a 10M-vector load test. Real 100k, 1M,
-and 10M latency claims should come from service-backed FAISS/Qdrant/pgvector
-load tests on production-like hardware.
+structured payload handling, including verified offsite and archive restore.
+It is not a 10M-vector load test. Real 100k, 1M, and 10M latency claims should
+come from service-backed FAISS/Qdrant/pgvector load tests on production-like
+hardware.
 
 Cluster placement planning:
 
@@ -526,14 +527,15 @@ Maintenance workers:
 
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
-wavemind replicated-snapshot --root ./state/replicas --node node-a --node node-b --node node-c --out ./backups/replicated --offsite ./offsite/replicated --keep-last 7 --json
+wavemind replicated-snapshot --root ./state/replicas --node node-a --node node-b --node node-c --out ./backups/replicated --offsite ./offsite/replicated --archive ./archives/replicated --keep-last 7 --json
 ```
 
 The first command runs one deterministic memory pass: expired-memory purge,
 optional field/concept consolidation, and index-health repair. The second
 command creates a verified replicated snapshot, mirrors it to an offsite path,
-and applies retention. Production deployments can call these commands from
-cron, systemd, Kubernetes CronJobs, Celery, RQ, or Temporal.
+writes a portable `.tar.gz` archive, verifies that archive, and applies
+retention. Production deployments can call these commands from cron, systemd,
+Kubernetes CronJobs, Celery, RQ, or Temporal.
 
 Hot-cache options:
 
@@ -636,12 +638,13 @@ memory.remember("Tenant A prefers short support replies.", namespace="tenant:a")
 snapshot_job = ReplicatedSnapshotWorker(memory).run_once(
     destination="./backups/replicated",
     offsite_destination="./offsite/replicated",
+    archive_destination="./archives/replicated",
     keep_last=7,
 )
 assert snapshot_job.ok
 
-restored, report = ReplicatedWaveMind.restore_snapshot(
-    snapshot_job.offsite_path,
+restored, report = ReplicatedWaveMind.restore_snapshot_archive(
+    snapshot_job.archive_path,
     "./state/restored-replicas",
     encoder=HashingTextEncoder(vector_dim=64),
 )
@@ -650,8 +653,10 @@ restored, report = ReplicatedWaveMind.restore_snapshot(
 The replicated snapshot job writes one SQLite backup per replica plus
 `manifest.json` with SHA-256 checksums, replica metadata, quorum settings, and
 node definitions. It can mirror the snapshot to a second path for offsite
-backup and applies `keep_last` retention locally and offsite. Restore refuses to
-overwrite a non-empty root unless `overwrite=True` is passed.
+backup, write a portable `.tar.gz` archive for object-store/offsite systems,
+verify that archive, and apply `keep_last` retention locally, offsite, and for
+archives. Restore refuses to overwrite a non-empty root unless `overwrite=True`
+is passed.
 
 Equivalent CLI:
 
@@ -661,11 +666,12 @@ wavemind replicated-snapshot \
   --node node-a --node node-b --node node-c \
   --out ./backups/replicated \
   --offsite ./offsite/replicated \
+  --archive ./archives/replicated \
   --keep-last 7 \
   --json
 
 wavemind replicated-restore \
-  --from ./offsite/replicated/wavemind-replicated-20260705-120000 \
+  --from ./archives/replicated/wavemind-replicated-20260705-120000.tar.gz \
   --to ./state/restored-replicas \
   --overwrite \
   --json
@@ -1044,7 +1050,7 @@ Current read:
 | LongMemEval 50-query smoke | On the first 50 non-abstention LongMemEval-S questions, WaveMind reaches `evidence_recall@5 0.920`, `precision@1 0.760`, and `MRR@5 0.827`; Chroma/Qdrant static reach `0.600`, `0.260`, and `0.385`. | This is the fast regression profile for checking current changes before rerunning the full LongMemEval profile. WaveMind wins on quality; latency still needs work. |
 | ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
 | Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`. At 1M, tuned Qdrant reaches `recall@10 0.984`, avg `116.80 ms`, p99 `209.28 ms`; an EF sweep finds `recall@10 0.977`, avg `64.76 ms`, p99 `103.77 ms` at `hnsw_ef=2048` on 30 queries. | 100k is production-grade on the tested machine. 1M recall is now strong, but p99 still needs tuning before claiming a stable sub-100 ms SLO. |
-| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active delta sync, checksummed replicated snapshot/restore, offsite snapshot verification, and structured payload precision@1 `1.000`. | This proves routing, cache, payload, replicated-runtime, namespace-delta, offsite backup, and restore-drill foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
+| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active delta sync, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, and structured payload precision@1 `1.000`. | This proves routing, cache, payload, replicated-runtime, namespace-delta, offsite/archive backup, and restore-drill foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00` on the small adapter profile. Mem0, Zep, and LangGraph are listed as skipped unless their real packages/services are configured. | This prevents fake competitor claims. The adapter harness is ready; real Mem0/Zep/LangGraph results still need configured installs. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 
@@ -1063,7 +1069,7 @@ Current read:
 | Production index profile | Docker-backed 50000-vector profile for persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW. | implemented | FAISS / Qdrant service / pgvector | Keep service-mode candidate generation above `0.95` recall@10 and below 10 ms average query latency at 50000 vectors. |
 | Production load profile | 100k and 1M service-backed candidate-index checks with p95/p99 latency. | implemented | Qdrant service / pgvector HNSW / FAISS persisted | Keep 100k at recall@10 `1.000`; push 1M p99 below 100 ms with recall@10 >= 0.95. |
 | Qdrant 1M HNSW ef sweep | One 1M Qdrant collection queried with multiple `hnsw_ef` values. | implemented | Qdrant service | Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable 1M SLO. |
-| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, replicated runtime, active-active delta sync, replicated snapshot/restore with offsite verification, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication, namespace-delta sync, repair, offsite backup, and restore drills green while adding larger service-backed 10M load tests. |
+| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, replicated runtime, active-active delta sync, replicated snapshot/restore with offsite and archive verification, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication, namespace-delta sync, repair, offsite/archive backup, and restore drills green while adding larger service-backed 10M load tests. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |
@@ -1238,25 +1244,27 @@ The delta contains active records plus tombstones. Import is idempotent and
 tombstone-aware, so a stale region export cannot resurrect a deleted memory.
 
 For operational recovery, `ReplicatedSnapshotWorker` creates a checksummed
-replicated snapshot, verifies an optional offsite mirror, and
-`restore_snapshot()` restores it into a fresh replica root:
+replicated snapshot, verifies an optional offsite mirror, writes a verified
+`.tar.gz` archive, and `restore_snapshot_archive()` restores it into a fresh
+replica root:
 
 ```python
 job = ReplicatedSnapshotWorker(memory).run_once(
     destination="./backups/replicated",
     offsite_destination="./offsite/replicated",
+    archive_destination="./archives/replicated",
     keep_last=7,
 )
-restored, report = ReplicatedWaveMind.restore_snapshot(
-    job.offsite_path,
+restored, report = ReplicatedWaveMind.restore_snapshot_archive(
+    job.archive_path,
     "./state/restored-replicas",
 )
 ```
 
 The checked-in scale-readiness profile verifies manifest checksums, verifies the
-offsite mirror, restores three replica files from that offsite mirror, then
-disables the restored primary and confirms the memory is still recalled from the
-remaining replicas.
+offsite mirror, verifies the portable archive, restores three replica files from
+that archive, then disables the restored primary and confirms the memory is
+still recalled from the remaining replicas.
 
 Checked-in official LoCoMo retrieval result:
 
@@ -1606,9 +1614,8 @@ If you already use Chroma for local memory, see the practical migration guide:
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
 - pgvector is a candidate-index backend. PostgreSQL source-of-truth storage is
-  also available separately, but migrations, PITR docs, scheduled backup
-  runbooks, and service benchmark profiles still need more real deployment
-  coverage.
+  also available separately, but migrations, PITR docs, and service benchmark
+  profiles still need more real deployment coverage.
 - The Qdrant backend is also a candidate-index backend. WaveMind rebuilds it
   from SQLite on load/build, so large service-mode deployments still need a
   measured rebuild strategy and index-health monitoring.
@@ -1647,9 +1654,9 @@ Near-term priorities:
 - Faster dynamic re-ranking through smaller candidate windows, caching, and
   background updates.
 - Better production operations: OpenTelemetry and replicated offsite snapshot
-  jobs are implemented; richer latency histograms, index-health metrics,
-  alerting examples, object-store upload adapters, and Postgres PITR runbooks
-  are next.
+  jobs with verified portable archives are implemented; richer latency
+  histograms, index-health metrics, alerting examples, direct object-store
+  upload adapters, and Postgres PITR runbooks are next.
 
 Longer-term direction:
 

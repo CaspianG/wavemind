@@ -342,12 +342,19 @@ class ReplicatedSnapshotJobReport:
     nodes: tuple[str, ...]
     offsite_path: Path | None = None
     offsite_verified: bool = False
+    archive_path: Path | None = None
+    archive_verified: bool = False
     pruned_local: tuple[Path, ...] = ()
     pruned_offsite: tuple[Path, ...] = ()
+    pruned_archives: tuple[Path, ...] = ()
 
     @property
     def ok(self) -> bool:
-        return self.verified and (self.offsite_path is None or self.offsite_verified)
+        return (
+            self.verified
+            and (self.offsite_path is None or self.offsite_verified)
+            and (self.archive_path is None or self.archive_verified)
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -357,8 +364,11 @@ class ReplicatedSnapshotJobReport:
             "nodes": list(self.nodes),
             "offsite_path": str(self.offsite_path) if self.offsite_path else None,
             "offsite_verified": self.offsite_verified,
+            "archive_path": str(self.archive_path) if self.archive_path else None,
+            "archive_verified": self.archive_verified,
             "pruned_local": [str(path) for path in self.pruned_local],
             "pruned_offsite": [str(path) for path in self.pruned_offsite],
+            "pruned_archives": [str(path) for path in self.pruned_archives],
             "ok": self.ok,
         }
 
@@ -377,6 +387,7 @@ class ReplicatedSnapshotWorker:
         keep_last: int | None = None,
         require_all: bool = True,
         offsite_destination: str | Path | None = None,
+        archive_destination: str | Path | None = None,
     ) -> ReplicatedSnapshotJobReport:
         local_destination = Path(destination)
         snapshot = self.memory.snapshot(
@@ -400,8 +411,19 @@ class ReplicatedSnapshotWorker:
                 ReplicatedWaveMind.verify_snapshot(offsite_path)["healthy"]
             )
 
+        archive_path: Path | None = None
+        archive_verified = False
+        if archive_destination is not None:
+            archive = ReplicatedWaveMind.archive_snapshot(
+                snapshot.snapshot_path,
+                archive_destination,
+            )
+            archive_path = archive.archive_path
+            archive_verified = archive.verified
+
         pruned_local: tuple[Path, ...] = ()
         pruned_offsite: tuple[Path, ...] = ()
+        pruned_archives: tuple[Path, ...] = ()
         if keep_last is not None:
             pruned_local = tuple(
                 ReplicatedWaveMind.prune_snapshots(
@@ -418,6 +440,17 @@ class ReplicatedSnapshotWorker:
                         keep_last=keep_last,
                     )
                 )
+            if archive_destination is not None:
+                archive_root = Path(archive_destination)
+                if archive_root.name.endswith(".tar.gz") or archive_root.suffix == ".tgz":
+                    archive_root = archive_root.parent
+                pruned_archives = tuple(
+                    ReplicatedWaveMind.prune_snapshot_archives(
+                        archive_root,
+                        prefix=prefix,
+                        keep_last=keep_last,
+                    )
+                )
 
         return ReplicatedSnapshotJobReport(
             snapshot_path=snapshot.snapshot_path,
@@ -426,8 +459,11 @@ class ReplicatedSnapshotWorker:
             nodes=snapshot.nodes,
             offsite_path=offsite_path,
             offsite_verified=offsite_verified,
+            archive_path=archive_path,
+            archive_verified=archive_verified,
             pruned_local=pruned_local,
             pruned_offsite=pruned_offsite,
+            pruned_archives=pruned_archives,
         )
 
 

@@ -1,4 +1,5 @@
 import fnmatch
+import tarfile
 
 from wavemind import (
     HashingTextEncoder,
@@ -209,3 +210,96 @@ def test_replicated_snapshot_worker_prunes_local_and_offsite_retention(tmp_path)
         assert all((path / "manifest.json").exists() for path in offsite_snapshots)
     finally:
         memory.close()
+
+
+def test_replicated_snapshot_worker_archives_and_restores(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    restored = None
+    try:
+        memory.remember("portable archive keeps replicated memory", namespace="tenant:archive")
+        report = ReplicatedSnapshotWorker(memory).run_once(
+            destination=tmp_path / "snapshots",
+            archive_destination=tmp_path / "archives",
+            keep_last=2,
+        )
+
+        restored, restore_report = ReplicatedWaveMind.restore_snapshot_archive(
+            report.archive_path,
+            tmp_path / "restored-from-archive",
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+
+        assert report.ok
+        assert report.archive_path is not None
+        assert report.archive_path.name.endswith(".tar.gz")
+        assert report.archive_verified is True
+        assert len(restore_report.restored_files) == 3
+        assert restored.query("replicated memory", namespace="tenant:archive", top_k=1)[0].text == (
+            "portable archive keeps replicated memory"
+        )
+    finally:
+        memory.close()
+        if restored is not None:
+            restored.close()
+
+
+def test_replicated_snapshot_worker_prunes_archives(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        worker = ReplicatedSnapshotWorker(memory)
+        reports = []
+        for index in range(3):
+            memory.remember(f"archive retention memory {index}", namespace="tenant:archive")
+            reports.append(
+                worker.run_once(
+                    destination=tmp_path / "snapshots",
+                    archive_destination=tmp_path / "archives",
+                    keep_last=2,
+                    prefix="ops",
+                )
+            )
+
+        archives = sorted((tmp_path / "archives").glob("ops-*.tar.gz"))
+
+        assert len(archives) == 2
+        assert reports[-1].pruned_archives
+        assert all(
+            ReplicatedWaveMind.verify_snapshot_archive(path)["healthy"]
+            for path in archives
+        )
+    finally:
+        memory.close()
+
+
+def test_replicated_snapshot_archive_rejects_path_traversal(tmp_path):
+    archive_path = tmp_path / "unsafe.tar.gz"
+    payload = tmp_path / "payload.txt"
+    payload.write_text("bad", encoding="utf-8")
+    with tarfile.open(archive_path, "w:gz") as archive:
+        archive.add(payload, arcname="../escape.txt")
+
+    try:
+        ReplicatedWaveMind.verify_snapshot_archive(archive_path)
+    except Exception as exc:
+        assert "Unsafe archive path" in str(exc)
+    else:
+        raise AssertionError("unsafe archive was accepted")

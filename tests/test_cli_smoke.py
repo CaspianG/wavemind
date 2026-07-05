@@ -192,13 +192,15 @@ def test_cli_replicated_snapshot_and_restore(tmp_path):
         str(tmp_path / "snapshots"),
         "--offsite",
         str(tmp_path / "offsite"),
+        "--archive",
+        str(tmp_path / "archives"),
         "--json",
     )
     snapshot_payload = json.loads(snapshot.stdout)
     restore = run_cli(
         "replicated-restore",
         "--from",
-        snapshot_payload["offsite_path"],
+        snapshot_payload["archive_path"],
         "--to",
         str(tmp_path / "restored"),
         "--json",
@@ -217,6 +219,8 @@ def test_cli_replicated_snapshot_and_restore(tmp_path):
         )
         assert snapshot_payload["ok"] is True
         assert snapshot_payload["offsite_verified"] is True
+        assert snapshot_payload["archive_verified"] is True
+        assert snapshot_payload["archive_path"].endswith(".tar.gz")
         assert len(restore_payload["restored_files"]) == 3
         assert restored.query("snapshot memory", namespace="tenant:cli", top_k=1)[0].text == (
             "cli replicated snapshot memory"

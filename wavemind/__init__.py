@@ -30,6 +30,7 @@ from .replication import (
     ReplicatedDeltaImportReport,
     ReplicatedRepairReport,
     ReplicatedRestoreReport,
+    ReplicatedSnapshotArchiveReport,
     ReplicatedSnapshotReport,
     ReplicatedWaveMind,
     ReplicatedWriteResult,
@@ -46,7 +47,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.8"
+__version__ = "2.2.9"
 
 __all__ = [
     "FieldProjector",
@@ -68,6 +69,7 @@ __all__ = [
     "ReplicatedDeltaImportReport",
     "ReplicatedRepairReport",
     "ReplicatedRestoreReport",
+    "ReplicatedSnapshotArchiveReport",
     "ReplicatedSnapshotReport",
     "ReplicatedSnapshotJobReport",
     "ReplicatedSnapshotWorker",

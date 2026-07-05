@@ -339,14 +339,15 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             snapshot_job = ReplicatedSnapshotWorker(memory).run_once(
                 destination=root / "snapshots",
                 offsite_destination=root / "offsite",
+                archive_destination=root / "archives",
                 keep_last=2,
             )
             snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
             health = ReplicatedWaveMind.verify_snapshot(snapshot_job.snapshot_path)
 
             restore_started = time.perf_counter()
-            restored, restore = ReplicatedWaveMind.restore_snapshot(
-                snapshot_job.offsite_path,
+            restored, restore = ReplicatedWaveMind.restore_snapshot_archive(
+                snapshot_job.archive_path,
                 root / "restored",
                 width=16,
                 height=16,
@@ -364,6 +365,7 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                 "nodes": len(snapshot_job.nodes),
                 "manifest_healthy": health["healthy"],
                 "offsite_verified": snapshot_job.offsite_verified,
+                "archive_verified": snapshot_job.archive_verified,
                 "total_bytes": snapshot_job.total_bytes,
                 "snapshot_ms": snapshot_ms,
                 "restore_ms": restore_ms,
@@ -477,8 +479,8 @@ def run_benchmark(
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
-                "active-active delta sync, replicated snapshot/restore, hot-cache "
-                "behavior, and structured payload retrieval. This is not a "
+                "active-active delta sync, replicated snapshot/offsite/archive "
+                "restore, hot-cache behavior, and structured payload retrieval. This is not a "
                 "10M-vector database load test."
             ),
         },
@@ -526,6 +528,7 @@ def main() -> int:
         elif result["engine"] == "WaveMind replicated snapshot":
             print(f"| replicated snapshot | manifest_healthy | {result['manifest_healthy']} |")
             print(f"| replicated snapshot | offsite_verified | {result['offsite_verified']} |")
+            print(f"| replicated snapshot | archive_verified | {result['archive_verified']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
