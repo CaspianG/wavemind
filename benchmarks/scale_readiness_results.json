@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/retention verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 72.24250002764165,
+      "placement_ms": 78.79679999314249,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -32,8 +32,8 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.0017484501586295664,
-      "p99_lookup_ms": 0.005199981387704611
+      "avg_lookup_ms": 0.0016424998175352812,
+      "p99_lookup_ms": 0.003800028935074806
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -47,8 +47,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 1.469200011342764,
-      "p99_query_after_loss_ms": 1.469200011342764
+      "avg_query_after_loss_ms": 1.9631999894045293,
+      "p99_query_after_loss_ms": 1.9631999894045293
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -56,7 +56,7 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 135.9029000159353,
+      "sync_ms": 114.70850004116073,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
@@ -70,9 +70,10 @@
       "object_store_verified": true,
       "object_store_latest_verified": true,
       "object_store_pruned": 2,
+      "object_store_download_verified": true,
       "total_bytes": 110592,
-      "snapshot_ms": 185.95519999507815,
-      "restore_ms": 32.917500007897615,
+      "snapshot_ms": 176.10959999728948,
+      "restore_ms": 47.905499988701195,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -86,8 +87,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.5916499794693664,
-      "p99_latency_ms": 0.7669999613426626
+      "avg_latency_ms": 0.5878500087419525,
+      "p99_latency_ms": 0.8010999881662428
     }
   ]
 }

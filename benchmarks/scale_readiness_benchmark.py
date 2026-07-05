@@ -6,6 +6,7 @@ import statistics
 import sys
 import tempfile
 import time
+from io import BytesIO
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +82,9 @@ class InMemoryS3Client:
             self.objects.pop((Bucket, key), None)
             deleted.append({"Key": key})
         return {"Deleted": deleted}
+
+    def get_object(self, Bucket: str, Key: str) -> dict[str, object]:
+        return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -408,10 +412,22 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
             health = ReplicatedWaveMind.verify_snapshot(snapshot_job.snapshot_path)
             latest_object_archive = object_store.latest_archive()
+            object_store_download_verified = False
+            downloaded_archive = None
+            if latest_object_archive is not None:
+                downloaded_archive = object_store.download_archive(
+                    latest_object_archive.uri,
+                    root / "object-store-downloads",
+                )
+                object_store_download_verified = bool(
+                    ReplicatedWaveMind.verify_snapshot_archive(downloaded_archive)[
+                        "healthy"
+                    ]
+                )
 
             restore_started = time.perf_counter()
             restored, restore = ReplicatedWaveMind.restore_snapshot_archive(
-                snapshot_job.archive_path,
+                downloaded_archive or snapshot_job.archive_path,
                 root / "restored",
                 width=16,
                 height=16,
@@ -438,6 +454,7 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                     latest_object_archive and latest_object_archive.verified
                 ),
                 "object_store_pruned": len(snapshot_job.pruned_object_store),
+                "object_store_download_verified": object_store_download_verified,
                 "total_bytes": snapshot_job.total_bytes,
                 "snapshot_ms": snapshot_ms,
                 "restore_ms": restore_ms,
@@ -553,7 +570,7 @@ def run_benchmark(
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "retention verification, hot-cache behavior, and structured payload retrieval. "
+                "download/retention verification, hot-cache behavior, and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -605,6 +622,7 @@ def main() -> int:
             print(f"| replicated snapshot | object_store_verified | {result['object_store_verified']} |")
             print(f"| replicated snapshot | object_store_latest_verified | {result['object_store_latest_verified']} |")
             print(f"| replicated snapshot | object_store_pruned | {result['object_store_pruned']} |")
+            print(f"| replicated snapshot | object_store_download_verified | {result['object_store_download_verified']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")

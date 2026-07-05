@@ -53,8 +53,8 @@ policy matters more than raw vector-database scale:
   namespace placement, quorum-replicated runtime behavior, active-active
   namespace delta sync, checksummed replicated snapshot/restore with offsite
   and portable-archive verification, S3-compatible object-store upload,
-  latest-archive, and retention verification, hot-cache behavior, and
-  structured-payload retrieval.
+  latest-archive metadata, remote download, and retention verification,
+  hot-cache behavior, and structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
@@ -68,8 +68,8 @@ policy matters more than raw vector-database scale:
 - SQLite backup, timestamped retention, restore, admin-only HTTP backup,
   replicated snapshot/restore, offsite-mirrored snapshot jobs, and verified
   `.tar.gz` snapshot archives with S3-compatible upload, latest-archive lookup,
-  restore-from-latest support, and object-store retention are available as the
-  first durability layer.
+  restore-from-latest support, remote download verification, and object-store
+  retention are available as the first durability layer.
 - Public retrieval evidence exists for LoCoMo, LongMemEval, and BEIR/SciFact,
   but full answer-quality evaluation is still the next proof step.
 
@@ -248,10 +248,10 @@ Enterprise requirements:
 - audit logs for remember, query, recall feedback, and forget;
 - backup, restore, and point-in-time recovery. SQLite backup/restore and
   replicated snapshot/restore, offsite-mirrored snapshot jobs, and portable
-  snapshot archives with S3-compatible upload, latest-archive lookup, and
-  retention are implemented; point-in-time recovery, real cloud
-  disaster-recovery drills, and
-  network-service consensus remain future work;
+  snapshot archives with S3-compatible upload, latest-archive lookup, remote
+  download verification, and retention are implemented; point-in-time recovery,
+  real cloud disaster-recovery drills, and network-service consensus remain
+  future work;
 - data residency controls;
 - SSO/OAuth integration;
 - SLOs for latency, throughput, and durability;
