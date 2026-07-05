@@ -29,4 +29,5 @@ include examples/*.py
 recursive-include examples/observability *
 recursive-include examples/production-index-profile *
 recursive-include deploy/helm/wavemind *
+recursive-include deploy/operator *
 prune benchmarks/data

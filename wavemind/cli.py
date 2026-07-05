@@ -23,6 +23,13 @@ from .jobs import (
     ReplicatedSnapshotWorker,
     RedisHotMemoryCache,
 )
+from .k8s_operator import (
+    KubernetesApplyClient,
+    WaveMindClusterSpec,
+    operator_bundle,
+    operator_loop,
+    operator_reconcile,
+)
 from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
@@ -182,6 +189,46 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_repair.add_argument("--tag", action="append", default=[])
     cluster_repair.add_argument("--fail-fast", action="store_true")
     cluster_repair.add_argument("--json", action="store_true")
+
+    operator_sample = sub.add_parser(
+        "operator-sample",
+        help="Emit a WaveMindCluster custom resource as Kubernetes JSON",
+    )
+    _add_operator_spec_args(operator_sample)
+    operator_sample.add_argument("--json", action="store_true")
+    operator_sample.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
+
+    operator_bundle_cmd = sub.add_parser(
+        "operator-bundle",
+        help="Emit CRD, RBAC, operator deployment, and sample WaveMindCluster",
+    )
+    operator_bundle_cmd.add_argument("--namespace", default="default")
+    operator_bundle_cmd.add_argument("--operator-image", default="ghcr.io/caspiang/wavemind:latest")
+    operator_bundle_cmd.add_argument("--sample-name", default="wavemind")
+    operator_bundle_cmd.add_argument("--sample-image", default="ghcr.io/caspiang/wavemind:latest")
+    operator_bundle_cmd.add_argument("--sample-replicas", type=int, default=3)
+    operator_bundle_cmd.add_argument("--sample-replication-factor", type=int, default=2)
+    operator_bundle_cmd.add_argument("--sample-namespace-count", type=int, default=128)
+    operator_bundle_cmd.add_argument("--json", action="store_true")
+    operator_bundle_cmd.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
+
+    operator_reconcile_cmd = sub.add_parser(
+        "operator-reconcile",
+        help="Render Kubernetes resources from a WaveMindCluster JSON file",
+    )
+    operator_reconcile_cmd.add_argument("--file", required=True, help="WaveMindCluster JSON file or '-' for stdin")
+    operator_reconcile_cmd.add_argument("--json", action="store_true")
+    operator_reconcile_cmd.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
+
+    operator_loop_cmd = sub.add_parser(
+        "operator-loop",
+        help="Run the in-cluster WaveMindCluster reconciliation loop",
+    )
+    operator_loop_cmd.add_argument("--namespace", default=os.environ.get("POD_NAMESPACE", "default"))
+    operator_loop_cmd.add_argument("--interval-seconds", type=float, default=30.0)
+    operator_loop_cmd.add_argument("--timeout", type=float, default=10.0)
+    operator_loop_cmd.add_argument("--once", action="store_true")
+    operator_loop_cmd.add_argument("--json", action="store_true")
 
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
@@ -827,6 +874,44 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ok: {payload['ok']}")
         return 0 if report.ok else 4
 
+    if args.command == "operator-sample":
+        _emit_json(_operator_spec_from_args(args).custom_resource(), out=args.out)
+        return 0
+
+    if args.command == "operator-bundle":
+        sample = WaveMindClusterSpec(
+            name=args.sample_name,
+            namespace=args.namespace,
+            image=args.sample_image,
+            replicas=args.sample_replicas,
+            replication_factor=args.sample_replication_factor,
+            namespace_count=args.sample_namespace_count,
+        )
+        _emit_json(
+            operator_bundle(
+                operator_image=args.operator_image,
+                namespace=args.namespace,
+                sample=sample,
+            ),
+            out=args.out,
+        )
+        return 0
+
+    if args.command == "operator-reconcile":
+        _emit_json(operator_reconcile(_read_json_file(args.file)), out=args.out)
+        return 0
+
+    if args.command == "operator-loop":
+        client = KubernetesApplyClient.in_cluster(timeout=args.timeout)
+        report = operator_loop(
+            namespace=args.namespace,
+            client=client,
+            interval_seconds=args.interval_seconds,
+            once=args.once,
+        )
+        _print_json(report)
+        return 0
+
     mind = make_mind(args)
     if args.command == "remember":
         id = mind.remember(
@@ -1024,6 +1109,78 @@ def _parse_cluster_node(value: str) -> ClusterNode:
     node_id = node_id.strip()
     address = address.strip() if sep else node_id
     return ClusterNode(id=node_id, address=address)
+
+
+def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--name", default="wavemind")
+    parser.add_argument("--namespace", default="default")
+    parser.add_argument("--image", default="ghcr.io/caspiang/wavemind:latest")
+    parser.add_argument("--replicas", type=int, default=3)
+    parser.add_argument("--replication-factor", type=int, default=2)
+    parser.add_argument("--namespace-count", type=int, default=128)
+    parser.add_argument("--namespace-prefix", default="tenant")
+    parser.add_argument("--storage-size", default="20Gi")
+    parser.add_argument("--service-port", type=int, default=8000)
+    parser.add_argument("--encoder", default="hash")
+    parser.add_argument("--index", default="faiss-persisted")
+    parser.add_argument("--score-threshold", type=float, default=0.0)
+    parser.add_argument("--cache-capacity", type=int, default=512)
+    parser.add_argument("--cache-ttl-seconds", type=float, default=60.0)
+    parser.add_argument("--redis-url")
+    parser.add_argument("--auth-secret")
+    parser.add_argument("--auth-secret-key", default="api-key")
+    parser.add_argument("--repair-schedule", default="*/15 * * * *")
+    parser.add_argument("--repair-limit", type=int, default=1000)
+    parser.add_argument("--no-repair", action="store_true")
+
+
+def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
+    return WaveMindClusterSpec(
+        name=args.name,
+        namespace=args.namespace,
+        image=args.image,
+        replicas=args.replicas,
+        replication_factor=args.replication_factor,
+        namespace_count=args.namespace_count,
+        namespace_prefix=args.namespace_prefix,
+        storage_size=args.storage_size,
+        service_port=args.service_port,
+        encoder=args.encoder,
+        index=args.index,
+        score_threshold=args.score_threshold,
+        cache_capacity=args.cache_capacity,
+        cache_ttl_seconds=args.cache_ttl_seconds,
+        redis_url=args.redis_url,
+        auth_secret=args.auth_secret,
+        auth_secret_key=args.auth_secret_key,
+        repair_enabled=not args.no_repair,
+        repair_schedule=args.repair_schedule,
+        repair_limit=args.repair_limit,
+    )
+
+
+def _read_json_file(path: str) -> dict[str, object]:
+    if path == "-":
+        return json.loads(sys.stdin.read())
+    raw = Path(path).read_bytes()
+    for encoding in ("utf-8-sig", "utf-16"):
+        try:
+            return json.loads(raw.decode(encoding))
+        except UnicodeDecodeError:
+            continue
+    return json.loads(raw.decode("utf-8", errors="replace"))
+
+
+def _print_json(payload: object) -> None:
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _emit_json(payload: object, *, out: str | None = None) -> None:
+    text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    if out:
+        Path(out).write_text(text, encoding="utf-8")
+    else:
+        print(text, end="")
 
 
 if __name__ == "__main__":

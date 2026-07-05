@@ -50,6 +50,11 @@ policy matters more than raw vector-database scale:
 - GitHub Actions builds and publishes the official
   `ghcr.io/caspiang/wavemind` container image for `main` and version tags, and
   `full-check` validates Helm lint/template rendering.
+- `deploy/operator` and `wavemind operator-*` commands provide the first
+  Kubernetes operator-style control plane: a `WaveMindCluster` CRD, RBAC,
+  operator Deployment, sample custom resource, deterministic reconciliation
+  renderer, and an in-cluster loop that applies Services, StatefulSet, and
+  repair CronJob resources.
 - `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, query-audit-driven cache prewarm, TTL purge, field
@@ -228,8 +233,9 @@ Priorities:
 - release automation, generated release-note categories, labels spec, and
   release checklist;
 - support and security policy docs;
-- Kubernetes operator and managed/serverless control plane after the Helm chart
-  stabilizes in real deployments;
+- harden the Kubernetes operator-style control plane from renderer/loop into a
+  documented production controller, then add managed/serverless deployment
+  options after real cluster feedback;
 - short technical posts explaining stale memory, corrections, namespaces,
   dynamic priority, and benchmark methodology.
 
@@ -291,8 +297,8 @@ Enterprise requirements:
 - Graph memory v2 with incremental edge updates.
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
-- Kubernetes operator and managed/serverless control plane for API/sidecar
-  deployment.
+- Managed/serverless control plane for API/sidecar deployment beyond the
+  current Kubernetes operator-style control plane.
 - Observability: richer Prometheus metrics, trace dashboards, and durable
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,

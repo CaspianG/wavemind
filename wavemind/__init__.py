@@ -23,6 +23,15 @@ from .jobs import (
     ReplicatedSnapshotWorker,
     query_with_cache,
 )
+from .k8s_operator import (
+    KubernetesApplyClient,
+    WaveMindClusterSpec,
+    custom_resource_definition,
+    kubernetes_resource_path,
+    operator_bundle,
+    operator_loop,
+    operator_reconcile,
+)
 from .multimodal import (
     MemoryPayload,
     audio_payload,
@@ -71,7 +80,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.2"
+__version__ = "2.4.3"
 
 __all__ = [
     "FieldProjector",
@@ -93,6 +102,7 @@ __all__ = [
     "DistributedWriteResult",
     "HotMemoryCache",
     "HTTPNamespaceShardClient",
+    "KubernetesApplyClient",
     "MemoryMaintenanceWorker",
     "MemoryFieldGraph",
     "MemoryRecord",
@@ -128,6 +138,7 @@ __all__ = [
     "S3SnapshotStore",
     "TextEncoder",
     "WaveField",
+    "WaveMindClusterSpec",
     "WaveMind",
     "WriteQuorumError",
     "__version__",
@@ -136,8 +147,13 @@ __all__ = [
     "build_cluster_plan",
     "create_memory_store",
     "create_text_encoder",
+    "custom_resource_definition",
     "event_payload",
     "image_payload",
+    "kubernetes_resource_path",
+    "operator_bundle",
+    "operator_loop",
+    "operator_reconcile",
     "parse_object_store_uri",
     "query_with_cache",
     "remember_payload",

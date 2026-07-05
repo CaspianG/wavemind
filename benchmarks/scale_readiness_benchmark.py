@@ -31,9 +31,13 @@ from wavemind import (
     build_cluster_plan,
     event_payload,
     image_payload,
+    kubernetes_resource_path,
+    operator_bundle,
+    operator_reconcile,
     query_with_cache,
     remember_payload,
     table_payload,
+    WaveMindClusterSpec,
 )
 
 
@@ -306,6 +310,45 @@ def run_cluster_profile(
         "kubernetes_manifest_kind": plan.kubernetes_manifest()["kind"],
         "kubernetes_repair_cronjob_kind": repair_cronjob["kind"],
         "kubernetes_repair_cronjob_namespaces": repair_args.count("--namespace"),
+    }
+
+
+def run_operator_profile(
+    *,
+    namespace_count: int,
+    node_count: int,
+    replication_factor: int,
+) -> dict[str, object]:
+    spec = WaveMindClusterSpec(
+        name="wavemind",
+        namespace="wavemind-system",
+        image="ghcr.io/caspiang/wavemind:latest",
+        replicas=node_count,
+        replication_factor=replication_factor,
+        namespace_count=namespace_count,
+        auth_secret="wavemind-api-key",
+    )
+    bundle = operator_bundle(namespace="wavemind-system", sample=spec)
+    reconciled = operator_reconcile(spec.custom_resource())
+    resources = list(reconciled["items"])
+    kinds = [str(resource["kind"]) for resource in resources]
+    names = [str(resource["metadata"]["name"]) for resource in resources]
+    paths = [kubernetes_resource_path(resource).api_path for resource in resources]
+    cronjob = next(resource for resource in resources if resource["kind"] == "CronJob")
+    cronjob_container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    return {
+        "engine": "WaveMind Kubernetes operator",
+        "bundle_resources": len(bundle["items"]),
+        "bundle_has_crd": any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"]),
+        "bundle_has_operator_deployment": any(item["kind"] == "Deployment" for item in bundle["items"]),
+        "sample_kind": spec.custom_resource()["kind"],
+        "reconciled_resources": len(resources),
+        "has_service": "Service" in kinds,
+        "has_statefulset": "StatefulSet" in kinds,
+        "has_repair_cronjob": "CronJob" in kinds,
+        "headless_service": spec.headless_service_name in names,
+        "repair_namespaces": list(cronjob_container["args"]).count("--namespace"),
+        "api_paths": paths,
     }
 
 
@@ -905,6 +948,11 @@ def run_benchmark(
             replication_factor=replication_factor,
             simulated_memories=simulated_memories,
         ),
+        run_operator_profile(
+            namespace_count=namespace_count,
+            node_count=node_count,
+            replication_factor=replication_factor,
+        ),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_distributed_sharding_profile(),
         run_replication_runtime_profile(),
@@ -921,7 +969,7 @@ def run_benchmark(
             "replication_factor": replication_factor,
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
-                "node/zone loss simulation, quorum-replicated runtime behavior, "
+                "operator-style Kubernetes reconciliation, node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. "
@@ -960,6 +1008,12 @@ def main() -> int:
             print(f"| cluster | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")
             zone_loss = result["zone_loss_min_availability"]
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
+        elif result["engine"] == "WaveMind Kubernetes operator":
+            print(f"| operator | bundle_has_crd | {result['bundle_has_crd']} |")
+            print(f"| operator | bundle_has_operator_deployment | {result['bundle_has_operator_deployment']} |")
+            print(f"| operator | has_statefulset | {result['has_statefulset']} |")
+            print(f"| operator | has_repair_cronjob | {result['has_repair_cronjob']} |")
+            print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")

@@ -68,6 +68,13 @@ jobs:
           wavemind --db /tmp/wavemind-smoke.sqlite3 remember "Andrey is testing WaveMind in CI" --namespace ci
           wavemind --db /tmp/wavemind-smoke.sqlite3 query "testing CI" --namespace ci
           wavemind --db /tmp/wavemind-smoke.sqlite3 stats --namespace ci
+          wavemind operator-sample --name wavemind-ci --namespace wavemind-system --replicas 3 --replication-factor 2 --namespace-count 4 --out /tmp/wavemindcluster.json
+          python -m json.tool /tmp/wavemindcluster.json >/dev/null
+          wavemind operator-reconcile --file /tmp/wavemindcluster.json --out /tmp/wavemind-resources.json
+          grep -q '"kind": "StatefulSet"' /tmp/wavemind-resources.json
+          grep -q '"kind": "CronJob"' /tmp/wavemind-resources.json
+          wavemind operator-bundle --namespace wavemind-system --out /tmp/wavemind-operator-bundle.json
+          grep -q '"kind": "CustomResourceDefinition"' /tmp/wavemind-operator-bundle.json
 
   benchmarks:
     runs-on: ubuntu-latest

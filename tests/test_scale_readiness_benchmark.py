@@ -15,6 +15,12 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind cluster planner"]["node_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["zone_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["write_quorum"] == 2
+    assert results["WaveMind Kubernetes operator"]["bundle_has_crd"] is True
+    assert results["WaveMind Kubernetes operator"]["bundle_has_operator_deployment"] is True
+    assert results["WaveMind Kubernetes operator"]["has_service"] is True
+    assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
+    assert results["WaveMind Kubernetes operator"]["has_repair_cronjob"] is True
+    assert results["WaveMind Kubernetes operator"]["repair_namespaces"] == 64
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True

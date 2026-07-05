@@ -1,0 +1,36 @@
+{
+  "apiVersion": "memory.wavemind.ai/v1alpha1",
+  "kind": "WaveMindCluster",
+  "metadata": {
+    "name": "wavemind",
+    "namespace": "wavemind-system"
+  },
+  "spec": {
+    "image": "ghcr.io/caspiang/wavemind:2.4.3",
+    "replicas": 3,
+    "replicationFactor": 2,
+    "namespaceCount": 4096,
+    "namespacePrefix": "tenant",
+    "persistence": {
+      "size": "20Gi"
+    },
+    "service": {
+      "port": 8000
+    },
+    "runtime": {
+      "encoder": "hash",
+      "index": "faiss-persisted",
+      "scoreThreshold": 0.0,
+      "auditQueries": true
+    },
+    "cache": {
+      "capacity": 512,
+      "ttlSeconds": 60.0
+    },
+    "repair": {
+      "enabled": true,
+      "schedule": "*/15 * * * *",
+      "limit": 1000
+    }
+  }
+}

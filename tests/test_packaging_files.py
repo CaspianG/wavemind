@@ -116,11 +116,15 @@ def test_dockerfile_copies_readme_before_editable_install():
 
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
+    full_check = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
 
     assert "branches: [main]" in workflow
     assert "3.10" in workflow
     assert "3.11" in workflow
     assert "pytest -q" in workflow
+    assert "wavemind operator-sample" in full_check
+    assert "wavemind operator-reconcile" in full_check
+    assert "wavemind operator-bundle" in full_check
 
 
 def test_release_workflow_builds_and_creates_github_release():
@@ -176,6 +180,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include examples/observability *" in manifest
     assert "recursive-include examples/production-index-profile *" in manifest
     assert "recursive-include deploy/helm/wavemind *" in manifest
+    assert "recursive-include deploy/operator *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/BENCHMARK_BRIEF.md" in readme
@@ -186,6 +191,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("docs/assets/wavemind-demo.gif").exists()
     assert "docs/OBSERVABILITY.md" in readme
     assert "deploy/helm/wavemind" in readme
+    assert "deploy/operator" in readme
+    assert "wavemind operator-bundle" in readme
+    assert Path("deploy/operator/wavemindcluster.sample.json").exists()
     assert "cluster-repair` CronJob" in readme
     assert "wavemind scale-plan --target-memories 50000" in readme
     assert "--fail-on action_required" in readme

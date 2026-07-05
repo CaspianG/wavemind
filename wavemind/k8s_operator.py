@@ -1,0 +1,630 @@
+from __future__ import annotations
+
+import json
+import ssl
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Iterable
+from urllib.error import HTTPError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+from .cluster import ClusterNode, build_cluster_plan
+
+
+API_GROUP = "memory.wavemind.ai"
+API_VERSION = "v1alpha1"
+RESOURCE_KIND = "WaveMindCluster"
+RESOURCE_PLURAL = "wavemindclusters"
+SERVICE_ACCOUNT_ROOT = Path("/var/run/secrets/kubernetes.io/serviceaccount")
+
+
+@dataclass(frozen=True)
+class WaveMindClusterSpec:
+    """Declarative Kubernetes deployment spec for a WaveMind cluster."""
+
+    name: str = "wavemind"
+    namespace: str = "default"
+    image: str = "ghcr.io/caspiang/wavemind:latest"
+    replicas: int = 3
+    replication_factor: int = 2
+    namespace_count: int = 128
+    namespace_prefix: str = "tenant"
+    storage_size: str = "20Gi"
+    service_port: int = 8000
+    image_pull_policy: str = "IfNotPresent"
+    encoder: str = "hash"
+    index: str = "faiss-persisted"
+    score_threshold: float = 0.0
+    cache_capacity: int = 512
+    cache_ttl_seconds: float = 60.0
+    audit_queries: bool = True
+    redis_url: str | None = None
+    auth_secret: str | None = None
+    auth_secret_key: str = "api-key"
+    repair_enabled: bool = True
+    repair_schedule: str = "*/15 * * * *"
+    repair_limit: int = 1000
+    resources: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.name.strip():
+            raise ValueError("name must not be empty")
+        if not self.namespace.strip():
+            raise ValueError("namespace must not be empty")
+        if not self.image.strip():
+            raise ValueError("image must not be empty")
+        if self.replicas <= 0:
+            raise ValueError("replicas must be positive")
+        if self.replication_factor <= 0:
+            raise ValueError("replication_factor must be positive")
+        if self.replication_factor > self.replicas:
+            raise ValueError("replication_factor cannot exceed replicas")
+        if self.namespace_count < 0:
+            raise ValueError("namespace_count cannot be negative")
+        if self.service_port <= 0:
+            raise ValueError("service_port must be positive")
+        if self.repair_limit <= 0:
+            raise ValueError("repair_limit must be positive")
+
+    @classmethod
+    def from_custom_resource(cls, resource: dict[str, Any]) -> "WaveMindClusterSpec":
+        metadata = dict(resource.get("metadata") or {})
+        spec = dict(resource.get("spec") or {})
+        runtime = dict(spec.get("runtime") or {})
+        cache = dict(spec.get("cache") or {})
+        auth = dict(spec.get("auth") or {})
+        repair = dict(spec.get("repair") or {})
+        persistence = dict(spec.get("persistence") or {})
+        service = dict(spec.get("service") or {})
+
+        return cls(
+            name=str(metadata.get("name") or spec.get("name") or "wavemind"),
+            namespace=str(metadata.get("namespace") or spec.get("namespace") or "default"),
+            image=str(spec.get("image") or "ghcr.io/caspiang/wavemind:latest"),
+            replicas=int(spec.get("replicas", 3)),
+            replication_factor=int(spec.get("replicationFactor", 2)),
+            namespace_count=int(spec.get("namespaceCount", 128)),
+            namespace_prefix=str(spec.get("namespacePrefix", "tenant")),
+            storage_size=str(persistence.get("size") or spec.get("storageSize") or "20Gi"),
+            service_port=int(service.get("port", spec.get("servicePort", 8000))),
+            image_pull_policy=str(spec.get("imagePullPolicy", "IfNotPresent")),
+            encoder=str(runtime.get("encoder", "hash")),
+            index=str(runtime.get("index", "faiss-persisted")),
+            score_threshold=float(runtime.get("scoreThreshold", 0.0)),
+            cache_capacity=int(cache.get("capacity", runtime.get("cacheCapacity", 512))),
+            cache_ttl_seconds=float(cache.get("ttlSeconds", runtime.get("cacheTtlSeconds", 60.0))),
+            audit_queries=bool(runtime.get("auditQueries", True)),
+            redis_url=_optional_string(cache.get("redisUrl") or runtime.get("redisUrl")),
+            auth_secret=_optional_string(auth.get("secretName") or spec.get("authSecret")),
+            auth_secret_key=str(auth.get("secretKey", "api-key")),
+            repair_enabled=bool(repair.get("enabled", True)),
+            repair_schedule=str(repair.get("schedule", "*/15 * * * *")),
+            repair_limit=int(repair.get("limit", 1000)),
+            resources=dict(spec.get("resources") or {}),
+        )
+
+    @property
+    def headless_service_name(self) -> str:
+        return f"{self.name}-headless"
+
+    @property
+    def namespaces(self) -> tuple[str, ...]:
+        return tuple(
+            f"{self.namespace_prefix}:{index}"
+            for index in range(self.namespace_count)
+        )
+
+    @property
+    def nodes(self) -> tuple[ClusterNode, ...]:
+        return tuple(
+            ClusterNode(
+                id=f"{self.name}-{index}",
+                address=(
+                    f"http://{self.name}-{index}.{self.headless_service_name}."
+                    f"{self.namespace}.svc.cluster.local:{self.service_port}"
+                ),
+            )
+            for index in range(self.replicas)
+        )
+
+    def custom_resource(self) -> dict[str, Any]:
+        spec: dict[str, Any] = {
+            "image": self.image,
+            "replicas": self.replicas,
+            "replicationFactor": self.replication_factor,
+            "namespaceCount": self.namespace_count,
+            "namespacePrefix": self.namespace_prefix,
+            "persistence": {"size": self.storage_size},
+            "service": {"port": self.service_port},
+            "runtime": {
+                "encoder": self.encoder,
+                "index": self.index,
+                "scoreThreshold": self.score_threshold,
+                "auditQueries": self.audit_queries,
+            },
+            "cache": {
+                "capacity": self.cache_capacity,
+                "ttlSeconds": self.cache_ttl_seconds,
+            },
+            "repair": {
+                "enabled": self.repair_enabled,
+                "schedule": self.repair_schedule,
+                "limit": self.repair_limit,
+            },
+        }
+        if self.redis_url:
+            spec["cache"]["redisUrl"] = self.redis_url
+        if self.auth_secret:
+            spec["auth"] = {
+                "secretName": self.auth_secret,
+                "secretKey": self.auth_secret_key,
+            }
+        if self.resources:
+            spec["resources"] = dict(self.resources)
+        return {
+            "apiVersion": f"{API_GROUP}/{API_VERSION}",
+            "kind": RESOURCE_KIND,
+            "metadata": {
+                "name": self.name,
+                "namespace": self.namespace,
+            },
+            "spec": spec,
+        }
+
+    def reconciled_resources(self) -> list[dict[str, Any]]:
+        resources = [
+            self._service(headless=False),
+            self._service(headless=True),
+            self._statefulset(),
+        ]
+        if self.repair_enabled and self.namespace_count:
+            resources.append(self._repair_cronjob())
+        return resources
+
+    def as_resource_list(self, resources: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
+        return {
+            "apiVersion": "v1",
+            "kind": "List",
+            "items": list(resources if resources is not None else self.reconciled_resources()),
+        }
+
+    def _labels(self) -> dict[str, str]:
+        return {
+            "app.kubernetes.io/name": "wavemind",
+            "app.kubernetes.io/instance": self.name,
+            "app.kubernetes.io/component": "api",
+            "app.kubernetes.io/managed-by": "wavemind-operator",
+        }
+
+    def _service(self, *, headless: bool) -> dict[str, Any]:
+        labels = self._labels()
+        name = self.headless_service_name if headless else self.name
+        spec: dict[str, Any] = {
+            "ports": [
+                {
+                    "name": "http",
+                    "port": self.service_port,
+                    "targetPort": "http",
+                    "protocol": "TCP",
+                }
+            ],
+            "selector": labels,
+        }
+        if headless:
+            spec["clusterIP"] = "None"
+            spec["publishNotReadyAddresses"] = True
+        else:
+            spec["type"] = "ClusterIP"
+        return {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": name,
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            "spec": spec,
+        }
+
+    def _statefulset(self) -> dict[str, Any]:
+        labels = self._labels()
+        env = [
+            {"name": "WAVEMIND_DB", "value": "/data/wavemind.sqlite3"},
+            {"name": "WAVEMIND_CLUSTER_MODE", "value": "namespace-sharded"},
+            {"name": "WAVEMIND_REPLICATION_FACTOR", "value": str(self.replication_factor)},
+            {"name": "WAVEMIND_ENCODER", "value": self.encoder},
+            {"name": "WAVEMIND_INDEX", "value": self.index},
+            {"name": "WAVEMIND_SCORE_THRESHOLD", "value": str(self.score_threshold)},
+            {"name": "WAVEMIND_AUDIT_QUERIES", "value": "true" if self.audit_queries else "false"},
+            {"name": "WAVEMIND_CACHE_CAPACITY", "value": str(self.cache_capacity)},
+            {"name": "WAVEMIND_CACHE_TTL_SECONDS", "value": str(self.cache_ttl_seconds)},
+        ]
+        if self.redis_url:
+            env.append({"name": "WAVEMIND_REDIS_URL", "value": self.redis_url})
+        if self.auth_secret:
+            secret_ref = {
+                "secretKeyRef": {
+                    "name": self.auth_secret,
+                    "key": self.auth_secret_key,
+                }
+            }
+            env.extend(
+                [
+                    {"name": "WAVEMIND_API_KEYS", "valueFrom": secret_ref},
+                    {"name": "WAVEMIND_ADMIN_KEYS", "valueFrom": secret_ref},
+                ]
+            )
+
+        container: dict[str, Any] = {
+            "name": "wavemind",
+            "image": self.image,
+            "imagePullPolicy": self.image_pull_policy,
+            "ports": [{"name": "http", "containerPort": self.service_port, "protocol": "TCP"}],
+            "env": env,
+            "livenessProbe": {
+                "tcpSocket": {"port": "http"},
+                "initialDelaySeconds": 10,
+                "periodSeconds": 20,
+            },
+            "readinessProbe": {
+                "tcpSocket": {"port": "http"},
+                "initialDelaySeconds": 5,
+                "periodSeconds": 10,
+            },
+            "volumeMounts": [{"name": "state", "mountPath": "/data"}],
+        }
+        if self.resources:
+            container["resources"] = dict(self.resources)
+
+        return {
+            "apiVersion": "apps/v1",
+            "kind": "StatefulSet",
+            "metadata": {
+                "name": self.name,
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            "spec": {
+                "serviceName": self.headless_service_name,
+                "replicas": self.replicas,
+                "podManagementPolicy": "Parallel",
+                "selector": {"matchLabels": labels},
+                "template": {
+                    "metadata": {"labels": labels},
+                    "spec": {"containers": [container]},
+                },
+                "volumeClaimTemplates": [
+                    {
+                        "metadata": {"name": "state"},
+                        "spec": {
+                            "accessModes": ["ReadWriteOnce"],
+                            "resources": {"requests": {"storage": self.storage_size}},
+                        },
+                    }
+                ],
+            },
+        }
+
+    def _repair_cronjob(self) -> dict[str, Any]:
+        plan = build_cluster_plan(
+            namespaces=self.namespaces,
+            nodes=self.nodes,
+            replication_factor=self.replication_factor,
+        )
+        manifest = plan.kubernetes_repair_cronjob(
+            image=self.image,
+            schedule=self.repair_schedule,
+            name=f"{self.name}-cluster-repair",
+            api_key_secret=self.auth_secret,
+            api_key_secret_key=self.auth_secret_key,
+            repair_limit=self.repair_limit,
+        )
+        manifest["metadata"]["namespace"] = self.namespace
+        for container in manifest["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"]:
+            container["imagePullPolicy"] = self.image_pull_policy
+        return manifest
+
+
+def custom_resource_definition() -> dict[str, Any]:
+    return {
+        "apiVersion": "apiextensions.k8s.io/v1",
+        "kind": "CustomResourceDefinition",
+        "metadata": {"name": f"{RESOURCE_PLURAL}.{API_GROUP}"},
+        "spec": {
+            "group": API_GROUP,
+            "scope": "Namespaced",
+            "names": {
+                "plural": RESOURCE_PLURAL,
+                "singular": "wavemindcluster",
+                "kind": RESOURCE_KIND,
+                "shortNames": ["wmc"],
+            },
+            "versions": [
+                {
+                    "name": API_VERSION,
+                    "served": True,
+                    "storage": True,
+                    "schema": {
+                        "openAPIV3Schema": {
+                            "type": "object",
+                            "properties": {
+                                "spec": {
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {"type": "string"},
+                                        "replicas": {"type": "integer", "minimum": 1},
+                                        "replicationFactor": {"type": "integer", "minimum": 1},
+                                        "namespaceCount": {"type": "integer", "minimum": 0},
+                                        "namespacePrefix": {"type": "string"},
+                                        "persistence": {
+                                            "type": "object",
+                                            "properties": {"size": {"type": "string"}},
+                                        },
+                                        "service": {
+                                            "type": "object",
+                                            "properties": {"port": {"type": "integer", "minimum": 1}},
+                                        },
+                                        "runtime": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "cache": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "auth": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "repair": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "resources": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                    },
+                                }
+                            },
+                        }
+                    },
+                }
+            ],
+        },
+    }
+
+
+def operator_bundle(
+    *,
+    operator_image: str = "ghcr.io/caspiang/wavemind:latest",
+    namespace: str = "default",
+    sample: WaveMindClusterSpec | None = None,
+) -> dict[str, Any]:
+    sample_spec = sample or WaveMindClusterSpec(namespace=namespace)
+    service_account = {
+        "apiVersion": "v1",
+        "kind": "ServiceAccount",
+        "metadata": {"name": "wavemind-operator", "namespace": namespace},
+    }
+    role = {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRole",
+        "metadata": {"name": "wavemind-operator"},
+        "rules": [
+            {
+                "apiGroups": [API_GROUP],
+                "resources": [RESOURCE_PLURAL],
+                "verbs": ["get", "list", "watch", "patch", "update"],
+            },
+            {
+                "apiGroups": [""],
+                "resources": ["services"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+            {
+                "apiGroups": ["apps"],
+                "resources": ["statefulsets"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+            {
+                "apiGroups": ["batch"],
+                "resources": ["cronjobs"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+        ],
+    }
+    binding = {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRoleBinding",
+        "metadata": {"name": "wavemind-operator"},
+        "subjects": [
+            {
+                "kind": "ServiceAccount",
+                "name": "wavemind-operator",
+                "namespace": namespace,
+            }
+        ],
+        "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "ClusterRole",
+            "name": "wavemind-operator",
+        },
+    }
+    deployment = {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": "wavemind-operator", "namespace": namespace},
+        "spec": {
+            "replicas": 1,
+            "selector": {"matchLabels": {"app.kubernetes.io/name": "wavemind-operator"}},
+            "template": {
+                "metadata": {"labels": {"app.kubernetes.io/name": "wavemind-operator"}},
+                "spec": {
+                    "serviceAccountName": "wavemind-operator",
+                    "containers": [
+                        {
+                            "name": "operator",
+                            "image": operator_image,
+                            "imagePullPolicy": "IfNotPresent",
+                            "args": ["operator-loop", "--namespace", namespace],
+                        }
+                    ],
+                },
+            },
+        },
+    }
+    return {
+        "apiVersion": "v1",
+        "kind": "List",
+        "items": [
+            custom_resource_definition(),
+            service_account,
+            role,
+            binding,
+            deployment,
+            sample_spec.custom_resource(),
+        ],
+    }
+
+
+def operator_reconcile(resource: dict[str, Any]) -> dict[str, Any]:
+    spec = WaveMindClusterSpec.from_custom_resource(resource)
+    return spec.as_resource_list()
+
+
+@dataclass(frozen=True)
+class KubernetesResourcePath:
+    api_path: str
+    collection_path: str
+
+
+class KubernetesApplyClient:
+    """Minimal stdlib Kubernetes client for the WaveMind operator loop."""
+
+    def __init__(
+        self,
+        *,
+        host: str,
+        token: str,
+        ca_cert: str | Path | None = None,
+        timeout: float = 10.0,
+    ):
+        self.host = host.rstrip("/")
+        self.token = token
+        self.timeout = float(timeout)
+        self.ssl_context = None
+        if ca_cert:
+            self.ssl_context = ssl.create_default_context(cafile=str(ca_cert))
+
+    @classmethod
+    def in_cluster(
+        cls,
+        *,
+        service_account_root: str | Path = SERVICE_ACCOUNT_ROOT,
+        timeout: float = 10.0,
+    ) -> "KubernetesApplyClient":
+        root = Path(service_account_root)
+        token = (root / "token").read_text(encoding="utf-8").strip()
+        host = "https://kubernetes.default.svc"
+        return cls(host=host, token=token, ca_cert=root / "ca.crt", timeout=timeout)
+
+    def list_wavemind_clusters(self, namespace: str) -> list[dict[str, Any]]:
+        payload = self._request(
+            "GET",
+            f"/apis/{API_GROUP}/{API_VERSION}/namespaces/{namespace}/{RESOURCE_PLURAL}",
+        )
+        return [dict(item) for item in payload.get("items", [])]
+
+    def apply(self, resource: dict[str, Any], *, field_manager: str = "wavemind-operator") -> dict[str, Any]:
+        path = kubernetes_resource_path(resource)
+        query = urlencode({"fieldManager": field_manager, "force": "true"})
+        try:
+            return self._request(
+                "PATCH",
+                f"{path.api_path}?{query}",
+                payload=resource,
+                content_type="application/apply-patch+yaml",
+            )
+        except HTTPError as exc:
+            if exc.code != 404:
+                raise
+            return self._request(
+                "POST",
+                path.collection_path,
+                payload=resource,
+                content_type="application/json",
+            )
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        content_type: str = "application/json",
+    ) -> dict[str, Any]:
+        body = None
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.token}",
+        }
+        if payload is not None:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            headers["Content-Type"] = content_type
+        request = Request(
+            f"{self.host}{path}",
+            data=body,
+            method=method,
+            headers=headers,
+        )
+        with urlopen(request, timeout=self.timeout, context=self.ssl_context) as response:
+            raw = response.read().decode("utf-8")
+        return json.loads(raw or "{}")
+
+
+def operator_loop(
+    *,
+    namespace: str,
+    client: KubernetesApplyClient,
+    interval_seconds: float = 30.0,
+    once: bool = False,
+) -> dict[str, Any]:
+    last_report: dict[str, Any] = {}
+    while True:
+        clusters = client.list_wavemind_clusters(namespace)
+        applied: list[dict[str, Any]] = []
+        for cluster in clusters:
+            for resource in operator_reconcile(cluster)["items"]:
+                client.apply(resource)
+                applied.append(
+                    {
+                        "kind": resource["kind"],
+                        "name": resource["metadata"]["name"],
+                        "namespace": resource["metadata"].get("namespace", namespace),
+                    }
+                )
+        last_report = {
+            "namespace": namespace,
+            "clusters": len(clusters),
+            "applied": applied,
+            "applied_count": len(applied),
+        }
+        if once:
+            return last_report
+        time.sleep(interval_seconds)
+
+
+def kubernetes_resource_path(resource: dict[str, Any]) -> KubernetesResourcePath:
+    kind = str(resource.get("kind") or "")
+    metadata = dict(resource.get("metadata") or {})
+    name = str(metadata.get("name") or "")
+    namespace = str(metadata.get("namespace") or "default")
+    if not kind or not name:
+        raise ValueError("Kubernetes resource requires kind and metadata.name")
+    if kind == "Service":
+        collection = f"/api/v1/namespaces/{namespace}/services"
+    elif kind == "StatefulSet":
+        collection = f"/apis/apps/v1/namespaces/{namespace}/statefulsets"
+    elif kind == "CronJob":
+        collection = f"/apis/batch/v1/namespaces/{namespace}/cronjobs"
+    else:
+        raise ValueError(f"Unsupported reconciled resource kind: {kind}")
+    return KubernetesResourcePath(
+        api_path=f"{collection}/{name}",
+        collection_path=collection,
+    )
+
+
+def _optional_string(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
