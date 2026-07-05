@@ -16,6 +16,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind cluster planner"]["zone_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["write_quorum"] == 2
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
+    assert results["WaveMind distributed sharding"]["writes"] == 2
+    assert results["WaveMind distributed sharding"]["recalled_after_primary_loss"] is True
+    assert results["WaveMind distributed sharding"]["forget_replicated_deletes"] == 2
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True

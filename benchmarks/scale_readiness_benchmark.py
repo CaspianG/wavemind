@@ -16,6 +16,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import (
     ClusterNode,
+    DistributedShardedWaveMind,
     HashingTextEncoder,
     HotMemoryCache,
     QueryResult,
@@ -86,6 +87,82 @@ class InMemoryS3Client:
 
     def get_object(self, Bucket: str, Key: str) -> dict[str, object]:
         return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
+
+
+class LocalWaveMindServiceClient:
+    def __init__(self, root: Path):
+        self.root = root
+        self.minds: dict[str, WaveMind] = {}
+
+    def remember(
+        self,
+        address: str,
+        *,
+        text: str,
+        namespace: str,
+        tags: tuple[str, ...] = (),
+        ttl_seconds: float | None = None,
+        metadata: dict[str, object] | None = None,
+        priority: float = 1.0,
+    ) -> int:
+        return self._mind(address).remember(
+            text,
+            namespace=namespace,
+            tags=tags,
+            ttl_seconds=ttl_seconds,
+            metadata=metadata,
+            priority=priority,
+        )
+
+    def query(
+        self,
+        address: str,
+        *,
+        text: str,
+        namespace: str,
+        top_k: int = 3,
+        tags: tuple[str, ...] = (),
+        min_score: float | None = None,
+    ) -> list[QueryResult]:
+        return self._mind(address).query(
+            text,
+            namespace=namespace,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
+
+    def forget(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        id: int | None = None,
+        text: str | None = None,
+    ) -> int:
+        return self._mind(address).forget(
+            id=id,
+            text=text,
+            namespace=namespace,
+        )
+
+    def close(self) -> None:
+        for mind in self.minds.values():
+            mind.close()
+        self.minds.clear()
+
+    def _mind(self, address: str) -> WaveMind:
+        mind = self.minds.get(address)
+        if mind is None:
+            mind = WaveMind(
+                db_path=self.root / f"{address}.sqlite3",
+                width=16,
+                height=16,
+                layers=1,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            self.minds[address] = mind
+        return mind
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -184,6 +261,57 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
         "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
         "p99_lookup_ms": percentile(latencies, 99),
     }
+
+
+def run_distributed_sharding_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        client = LocalWaveMindServiceClient(Path(directory) / "services")
+        memory = DistributedShardedWaveMind(
+            nodes=[
+                ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+                ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+                ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+            ],
+            replication_factor=2,
+            client=client,
+        )
+        try:
+            namespace = "tenant:distributed"
+            started = time.perf_counter()
+            write = memory.remember(
+                "distributed service shard keeps tenant memory",
+                namespace=namespace,
+            )
+            write_ms = (time.perf_counter() - started) * 1000.0
+            placement = memory.placement(namespace)
+            memory.set_node_available(placement.primary, False)
+            query_started = time.perf_counter()
+            results = memory.query("tenant memory", namespace=namespace, top_k=1)
+            query_after_primary_loss_ms = (time.perf_counter() - query_started) * 1000.0
+            recalled_after_primary_loss = bool(results) and results[0].text == (
+                "distributed service shard keeps tenant memory"
+            )
+            memory.set_node_available(placement.primary, True)
+            forget = memory.forget(
+                namespace=namespace,
+                text="distributed service shard keeps tenant memory",
+            )
+            return {
+                "engine": "WaveMind distributed sharding",
+                "nodes": len(memory.nodes),
+                "replication_factor": memory.replication_factor,
+                "write_quorum": memory.write_quorum,
+                "read_quorum": memory.read_quorum,
+                "writes": len(write.writes),
+                "primary_node": placement.primary,
+                "replica_nodes": list(placement.replicas),
+                "recalled_after_primary_loss": recalled_after_primary_loss,
+                "forget_replicated_deletes": forget.deleted,
+                "write_ms": write_ms,
+                "query_after_primary_loss_ms": query_after_primary_loss_ms,
+            }
+        finally:
+            client.close()
 
 
 def run_replication_runtime_profile() -> dict[str, object]:
@@ -543,6 +671,7 @@ def run_benchmark(
             simulated_memories=simulated_memories,
         ),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
+        run_distributed_sharding_profile(),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
         run_replicated_snapshot_profile(),
@@ -558,7 +687,7 @@ def run_benchmark(
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
-                "active-active delta sync, replicated snapshot/offsite/archive "
+                "service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
@@ -598,6 +727,10 @@ def main() -> int:
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
+        elif result["engine"] == "WaveMind distributed sharding":
+            print(f"| distributed sharding | writes | {result['writes']} |")
+            print(f"| distributed sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")
+            print(f"| distributed sharding | forget_replicated_deletes | {result['forget_replicated_deletes']} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")

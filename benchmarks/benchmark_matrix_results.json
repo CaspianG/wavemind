@@ -764,14 +764,24 @@
           "zone_loss_min_availability": 1.0,
           "read_quorum": 1,
           "write_quorum": 2,
-          "placement_ms": 81.04710001498461
+          "placement_ms": 55.74119999073446
         },
         "WaveMind hot cache": {
           "queries": 2000,
           "capacity": 512,
           "hit_rate": 0.92,
           "evictions": 0,
-          "p99_lookup_ms": 0.003400025889277458
+          "p99_lookup_ms": 0.002900022082030773
+        },
+        "WaveMind distributed sharding": {
+          "nodes": 3,
+          "replication_factor": 2,
+          "write_quorum": 2,
+          "read_quorum": 1,
+          "writes": 2,
+          "recalled_after_primary_loss": true,
+          "forget_replicated_deletes": 2,
+          "query_after_primary_loss_ms": 0.7972000166773796
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -781,7 +791,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 1.7821999499574304
+          "p99_query_after_loss_ms": 2.315400051884353
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -790,7 +800,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 113.8127000303939
+          "sync_ms": 103.66969997994602
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -804,17 +814,17 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 133.94379999954253,
-          "restore_ms": 72.30180001351982
+          "snapshot_ms": 128.1141000217758,
+          "restore_ms": 70.98629995016381
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.5105750169605017,
-          "p99_latency_ms": 0.785200041718781
+          "avg_latency_ms": 0.4563249822240323,
+          "p99_latency_ms": 0.6626999820582569
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
       "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
     },
     {

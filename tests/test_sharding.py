@@ -2,7 +2,86 @@ from pathlib import Path
 
 import pytest
 
-from wavemind import HashingTextEncoder, NamespaceShardRouter, ShardedWaveMind
+from wavemind import (
+    ClusterNode,
+    DistributedShardedWaveMind,
+    DistributedWriteQuorumError,
+    HashingTextEncoder,
+    NamespaceShardRouter,
+    ShardedWaveMind,
+    WaveMind,
+)
+
+
+class LocalWaveMindServiceClient:
+    def __init__(self, tmp_path):
+        self.tmp_path = tmp_path
+        self.minds = {}
+
+    def _mind(self, address: str) -> WaveMind:
+        mind = self.minds.get(address)
+        if mind is None:
+            mind = WaveMind(
+                db_path=self.tmp_path / f"{address}.sqlite3",
+                width=32,
+                height=32,
+                layers=2,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            self.minds[address] = mind
+        return mind
+
+    def remember(
+        self,
+        address: str,
+        *,
+        text: str,
+        namespace: str,
+        tags=(),
+        ttl_seconds=None,
+        metadata=None,
+        priority=1.0,
+    ) -> int:
+        return self._mind(address).remember(
+            text,
+            namespace=namespace,
+            tags=tags,
+            ttl_seconds=ttl_seconds,
+            metadata=metadata,
+            priority=priority,
+        )
+
+    def query(
+        self,
+        address: str,
+        *,
+        text: str,
+        namespace: str,
+        top_k: int = 3,
+        tags=(),
+        min_score=None,
+    ):
+        return self._mind(address).query(
+            text,
+            namespace=namespace,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
+
+    def forget(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        id=None,
+        text=None,
+    ) -> int:
+        return self._mind(address).forget(id=id, text=text, namespace=namespace)
+
+    def close(self):
+        for mind in self.minds.values():
+            mind.close()
 
 
 def _two_namespaces_on_different_shards(router: NamespaceShardRouter) -> tuple[str, str]:
@@ -75,3 +154,75 @@ def test_sharded_wavemind_can_backup_open_shards(tmp_path):
         assert backups[0].parent == backup_dir
     finally:
         memory.close()
+
+
+def test_distributed_sharded_wavemind_routes_to_replicas_and_reads_after_primary_loss(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=[
+            ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+            ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+            ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+        ],
+        replication_factor=2,
+        client=client,
+    )
+    try:
+        namespace = "tenant:distributed"
+        write = memory.remember(
+            "distributed shard keeps tenant memory",
+            namespace=namespace,
+        )
+
+        assert write.ok
+        assert len(write.writes) == 2
+        assert set(write.writes) == set(memory.placement(namespace).replicas)
+
+        memory.set_node_available(write.primary_node, False)
+        results = memory.query("tenant memory", namespace=namespace, top_k=1)
+
+        assert results[0].text == "distributed shard keeps tenant memory"
+        assert results[0].metadata["_wavemind_node"] != write.primary_node
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_enforces_write_quorum(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        client=client,
+    )
+    namespace = "tenant:quorum"
+    placement = memory.placement(namespace)
+    memory.set_node_available(placement.replicas[0], False)
+    memory.set_node_available(placement.replicas[1], False)
+
+    try:
+        with pytest.raises(DistributedWriteQuorumError):
+            memory.remember("quorum protected memory", namespace=namespace)
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_forget_replicates_delete(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=2,
+        client=client,
+    )
+    try:
+        namespace = "tenant:forget"
+        memory.remember("delete this distributed fact", namespace=namespace)
+        deleted = memory.forget(
+            namespace=namespace,
+            text="delete this distributed fact",
+        )
+
+        assert deleted.ok
+        assert deleted.deleted == 2
+        assert memory.query("distributed fact", namespace=namespace, top_k=1) == []
+    finally:
+        client.close()

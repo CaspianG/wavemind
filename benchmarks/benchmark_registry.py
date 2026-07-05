@@ -735,6 +735,19 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p99_lookup_ms",
                     ),
                 ),
+                "WaveMind distributed sharding": _metric_summary(
+                    scale_readiness_results.get("WaveMind distributed sharding"),
+                    (
+                        "nodes",
+                        "replication_factor",
+                        "write_quorum",
+                        "read_quorum",
+                        "writes",
+                        "recalled_after_primary_loss",
+                        "forget_replicated_deletes",
+                        "query_after_primary_loss_ms",
+                    ),
+                ),
                 "WaveMind replicated runtime": _metric_summary(
                     scale_readiness_results.get("WaveMind replicated runtime"),
                     (
@@ -788,7 +801,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
             "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {

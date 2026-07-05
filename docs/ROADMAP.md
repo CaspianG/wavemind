@@ -51,8 +51,9 @@ policy matters more than raw vector-database scale:
   and events while preserving modality metadata in the same memory API.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, quorum-replicated runtime behavior, active-active
-  namespace delta sync, checksummed replicated snapshot/restore with offsite
-  and portable-archive verification, S3-compatible object-store upload,
+  namespace delta sync, service-mode distributed namespace sharding with
+  primary-loss recall, checksummed replicated snapshot/restore with offsite and
+  portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, hot-cache behavior, and
   structured-payload retrieval.

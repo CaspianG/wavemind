@@ -47,7 +47,17 @@ from .replication import (
     WriteQuorumError,
 )
 from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
-from .sharding import NamespaceShardRouter, ShardedWaveMind
+from .sharding import (
+    DistributedForgetResult,
+    DistributedReadQuorumError,
+    DistributedShardError,
+    DistributedShardedWaveMind,
+    DistributedWriteQuorumError,
+    DistributedWriteResult,
+    HTTPNamespaceShardClient,
+    NamespaceShardRouter,
+    ShardedWaveMind,
+)
 from .storage import (
     AuditEvent,
     MemoryRecord,
@@ -56,7 +66,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.3"
+__version__ = "2.3.4"
 
 __all__ = [
     "FieldProjector",
@@ -65,7 +75,14 @@ __all__ = [
     "ClusterNode",
     "ClusterPlan",
     "AuditEvent",
+    "DistributedForgetResult",
+    "DistributedReadQuorumError",
+    "DistributedShardError",
+    "DistributedShardedWaveMind",
+    "DistributedWriteQuorumError",
+    "DistributedWriteResult",
     "HotMemoryCache",
+    "HTTPNamespaceShardClient",
     "MemoryMaintenanceWorker",
     "MemoryFieldGraph",
     "MemoryRecord",
