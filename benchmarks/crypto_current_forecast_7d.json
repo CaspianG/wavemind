@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-05T13:07:40.099143+00:00",
+  "generated_utc": "2026-07-05T13:39:43.527429+00:00",
   "closed_candles_only": true,
   "results": [
     {
@@ -33,16 +33,16 @@
       "regime_agreement": 1.0,
       "latency_ms": 0.0,
       "validation": {
-        "queries": 2160,
-        "active_direction_accuracy": 0.68,
-        "signal_rate": 0.023148148148148147,
-        "avg_sized_net_return_bps": 2.8438465470031633,
-        "sized_profit_factor": 14.20557600772717,
-        "sized_max_drawdown_bps": 139.4307513409649,
-        "positive_market_slices": 13,
-        "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -1.2337658335939314,
-        "large_move_false_positive_rate": 0.015313935681470138
+        "queries": 1620,
+        "active_direction_accuracy": 0.5862068965517241,
+        "signal_rate": 0.017901234567901235,
+        "avg_sized_net_return_bps": 0.6054569800813815,
+        "sized_profit_factor": 1.5567969410033573,
+        "sized_max_drawdown_bps": 744.5320733195267,
+        "positive_market_slices": 7,
+        "market_slices": 27,
+        "worst_market_slice_sized_net_bps": -9.600322884221855,
+        "large_move_false_positive_rate": 0.008658008658008658
       },
       "calibration_bucket": {}
     },
@@ -77,16 +77,16 @@
       "regime_agreement": 1.0,
       "latency_ms": 0.0,
       "validation": {
-        "queries": 2160,
-        "active_direction_accuracy": 0.68,
-        "signal_rate": 0.023148148148148147,
-        "avg_sized_net_return_bps": 2.8438465470031633,
-        "sized_profit_factor": 14.20557600772717,
-        "sized_max_drawdown_bps": 139.4307513409649,
-        "positive_market_slices": 13,
-        "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -1.2337658335939314,
-        "large_move_false_positive_rate": 0.015313935681470138
+        "queries": 1620,
+        "active_direction_accuracy": 0.5862068965517241,
+        "signal_rate": 0.017901234567901235,
+        "avg_sized_net_return_bps": 0.6054569800813815,
+        "sized_profit_factor": 1.5567969410033573,
+        "sized_max_drawdown_bps": 744.5320733195267,
+        "positive_market_slices": 7,
+        "market_slices": 27,
+        "worst_market_slice_sized_net_bps": -9.600322884221855,
+        "large_move_false_positive_rate": 0.008658008658008658
       },
       "calibration_bucket": {}
     },
@@ -121,16 +121,16 @@
       "regime_agreement": 1.0,
       "latency_ms": 0.0,
       "validation": {
-        "queries": 2160,
-        "active_direction_accuracy": 0.68,
-        "signal_rate": 0.023148148148148147,
-        "avg_sized_net_return_bps": 2.8438465470031633,
-        "sized_profit_factor": 14.20557600772717,
-        "sized_max_drawdown_bps": 139.4307513409649,
-        "positive_market_slices": 13,
-        "market_slices": 36,
-        "worst_market_slice_sized_net_bps": -1.2337658335939314,
-        "large_move_false_positive_rate": 0.015313935681470138
+        "queries": 1620,
+        "active_direction_accuracy": 0.5862068965517241,
+        "signal_rate": 0.017901234567901235,
+        "avg_sized_net_return_bps": 0.6054569800813815,
+        "sized_profit_factor": 1.5567969410033573,
+        "sized_max_drawdown_bps": 744.5320733195267,
+        "positive_market_slices": 7,
+        "market_slices": 27,
+        "worst_market_slice_sized_net_bps": -9.600322884221855,
+        "large_move_false_positive_rate": 0.008658008658008658
       },
       "calibration_bucket": {}
     }

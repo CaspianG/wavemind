@@ -7,78 +7,78 @@
         "timeframe": "1h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "BTC/USDT",
         "timeframe": "4h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_4h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "BTC/USDT",
         "timeframe": "1d",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\BTC_USDT_1d.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "ETH/USDT",
         "timeframe": "1h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "ETH/USDT",
         "timeframe": "4h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_4h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "ETH/USDT",
         "timeframe": "1d",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\ETH_USDT_1d.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "SOL/USDT",
         "timeframe": "1h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "SOL/USDT",
         "timeframe": "4h",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_4h.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       },
       {
         "symbol": "SOL/USDT",
         "timeframe": "1d",
         "bars": 720,
         "windows": 683,
-        "source": "ccxt_cache:okx",
-        "source_path": "benchmarks\\data\\crypto_ohlcv\\okx\\SOL_USDT_1d.csv"
+        "source": "ccxt:okx",
+        "source_path": ""
       }
     ],
     "train_windows": 360,
     "test_windows": 60,
     "folds": 4,
-    "fold_stride": null,
+    "fold_stride": 88,
     "top_k": 5,
     "fee_bps": 10.0,
     "slippage_bps": 5.0,
@@ -111,9 +111,9 @@
   "calibration": [
     {
       "engine": "WaveMind timeframe policy",
-      "signal_events": 56,
-      "brier_score_if_treated_as_probability": 0.27192410799664113,
-      "expected_calibration_error": 0.21594515713523102,
+      "signal_events": 29,
+      "brier_score_if_treated_as_probability": 0.37477120980424106,
+      "expected_calibration_error": 0.3347655522558599,
       "probability_ready": false,
       "probability_kind": "none",
       "note": "Raw evidence strength is not probability. Base-rate probability is allowed only as a group-level active-signal probability.",
@@ -152,13 +152,13 @@
             0.4,
             0.6
           ],
-          "count": 18,
-          "avg_score": 0.5503928444681703,
-          "direction_hit_rate": 0.6111111111111112,
-          "calibration_error": 0.06071826664294089,
-          "avg_net_return_bps": 142.12630649110915,
-          "avg_sized_net_return_bps": 142.12630649110915,
-          "avg_evidence_strength": 0.5503928444681703
+          "count": 8,
+          "avg_score": 0.5364748730725079,
+          "direction_hit_rate": 0.625,
+          "calibration_error": 0.08852512692749215,
+          "avg_net_return_bps": 116.99158629184652,
+          "avg_sized_net_return_bps": 116.99158629184652,
+          "avg_evidence_strength": 0.5364748730725079
         },
         {
           "bin": 3,
@@ -180,62 +180,53 @@
             0.8,
             1.0
           ],
-          "count": 38,
+          "count": 21,
           "avg_score": 1.0,
-          "direction_hit_rate": 0.7105263157894737,
-          "calibration_error": 0.2894736842105263,
-          "avg_net_return_bps": 105.83805335290029,
-          "avg_sized_net_return_bps": 105.83805335290029,
+          "direction_hit_rate": 0.5714285714285714,
+          "calibration_error": 0.4285714285714286,
+          "avg_net_return_bps": 2.138457971288851,
+          "avg_sized_net_return_bps": 2.138457971288851,
           "avg_evidence_strength": 1.0
         }
       ],
       "monotonic_calibration": {
         "method": "bucketed_isotonic_pav",
         "out_of_sample": true,
-        "events": 56,
-        "brier_score": 0.38182423434243146,
-        "expected_calibration_error": 0.30437207972704927,
-        "min_block_count": 18,
+        "events": 29,
+        "brier_score": 0.3857481555365568,
+        "expected_calibration_error": 0.27455590386624873,
+        "min_block_count": 29,
         "blocks": [
           {
             "range": [
               0.4,
-              0.6
-            ],
-            "count": 18,
-            "avg_evidence_strength": 0.5503928444681703,
-            "calibrated_probability": 0.6111111111111112
-          },
-          {
-            "range": [
-              0.8,
               1.0
             ],
-            "count": 38,
-            "avg_evidence_strength": 1.0,
-            "calibrated_probability": 0.7105263157894737
+            "count": 29,
+            "avg_evidence_strength": 0.872130999468278,
+            "calibrated_probability": 0.5862068965517241
           }
         ],
         "folds": [
           {
             "fold_index": 0,
-            "train_events": 51,
-            "test_events": 5,
+            "train_events": 21,
+            "test_events": 8,
             "blocks": [
               {
                 "range": [
                   0.4,
                   1.0
                 ],
-                "count": 51,
-                "avg_evidence_strength": 0.8687382168495955,
-                "calibrated_probability": 0.7058823529411765
+                "count": 21,
+                "avg_evidence_strength": 0.8671319296301616,
+                "calibrated_probability": 0.6666666666666666
               }
             ],
             "metrics": {
-              "events": 5,
-              "brier_score": 0.3335640138408305,
-              "expected_calibration_error": 0.3058823529411765,
+              "events": 8,
+              "brier_score": 0.3194444444444444,
+              "expected_calibration_error": 0.29166666666666663,
               "buckets": [
                 {
                   "bin": 0,
@@ -282,12 +273,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 5,
-                  "avg_score": 0.7058823529411765,
-                  "direction_hit_rate": 0.4,
-                  "calibration_error": 0.3058823529411765,
-                  "avg_net_return_bps": 20.11039211270307,
-                  "avg_sized_net_return_bps": 20.11039211270307
+                  "count": 8,
+                  "avg_score": 0.6666666666666666,
+                  "direction_hit_rate": 0.375,
+                  "calibration_error": 0.29166666666666663,
+                  "avg_net_return_bps": -88.89688950860047,
+                  "avg_sized_net_return_bps": -88.89688950860047
                 },
                 {
                   "bin": 4,
@@ -307,16 +298,16 @@
           },
           {
             "fold_index": 1,
-            "train_events": 25,
-            "test_events": 31,
+            "train_events": 13,
+            "test_events": 16,
             "blocks": [
               {
                 "range": [
                   0.4,
                   0.6
                 ],
-                "count": 3,
-                "avg_evidence_strength": 0.5338073803658974,
+                "count": 2,
+                "avg_evidence_strength": 0.5410142311733337,
                 "calibrated_probability": 0.0
               },
               {
@@ -324,15 +315,15 @@
                   0.8,
                   1.0
                 ],
-                "count": 22,
+                "count": 11,
                 "avg_evidence_strength": 1.0,
-                "calibrated_probability": 0.6363636363636364
+                "calibrated_probability": 0.5454545454545454
               }
             ],
             "metrics": {
-              "events": 31,
-              "brier_score": 0.44948013862969877,
-              "expected_calibration_error": 0.4457478005865102,
+              "events": 16,
+              "brier_score": 0.4643595041322314,
+              "expected_calibration_error": 0.3465909090909091,
               "buckets": [
                 {
                   "bin": 0,
@@ -340,12 +331,12 @@
                     0.0,
                     0.2
                   ],
-                  "count": 15,
+                  "count": 6,
                   "avg_score": 0.0,
-                  "direction_hit_rate": 0.7333333333333333,
-                  "calibration_error": 0.7333333333333333,
-                  "avg_net_return_bps": 177.10428619064595,
-                  "avg_sized_net_return_bps": 177.10428619064595
+                  "direction_hit_rate": 0.8333333333333334,
+                  "calibration_error": 0.8333333333333334,
+                  "avg_net_return_bps": 168.32644005840135,
+                  "avg_sized_net_return_bps": 168.32644005840135
                 },
                 {
                   "bin": 1,
@@ -366,12 +357,12 @@
                     0.4,
                     0.6
                   ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
+                  "count": 10,
+                  "avg_score": 0.5454545454545454,
+                  "direction_hit_rate": 0.6,
+                  "calibration_error": 0.054545454545454564,
+                  "avg_net_return_bps": 85.06074963601554,
+                  "avg_sized_net_return_bps": 85.06074963601554
                 },
                 {
                   "bin": 3,
@@ -379,12 +370,12 @@
                     0.6,
                     0.8
                   ],
-                  "count": 16,
-                  "avg_score": 0.6363636363636364,
-                  "direction_hit_rate": 0.8125,
-                  "calibration_error": 0.17613636363636365,
-                  "avg_net_return_bps": 166.54680100190924,
-                  "avg_sized_net_return_bps": 166.54680100190924
+                  "count": 0,
+                  "avg_score": 0.0,
+                  "direction_hit_rate": 0.0,
+                  "calibration_error": 0.0,
+                  "avg_net_return_bps": 0.0,
+                  "avg_sized_net_return_bps": 0.0
                 },
                 {
                   "bin": 4,
@@ -404,32 +395,23 @@
           },
           {
             "fold_index": 2,
-            "train_events": 45,
-            "test_events": 11,
+            "train_events": 24,
+            "test_events": 5,
             "blocks": [
               {
                 "range": [
                   0.4,
-                  0.6
-                ],
-                "count": 18,
-                "avg_evidence_strength": 0.5503928444681703,
-                "calibrated_probability": 0.6111111111111112
-              },
-              {
-                "range": [
-                  0.8,
                   1.0
                 ],
-                "count": 27,
-                "avg_evidence_strength": 1.0,
-                "calibrated_probability": 0.8148148148148148
+                "count": 24,
+                "avg_evidence_strength": 0.8454916243575026,
+                "calibrated_probability": 0.5833333333333334
               }
             ],
             "metrics": {
-              "events": 11,
-              "brier_score": 0.37772789624641473,
-              "expected_calibration_error": 0.36026936026936024,
+              "events": 5,
+              "brier_score": 0.24027777777777778,
+              "expected_calibration_error": 0.016666666666666607,
               "buckets": [
                 {
                   "bin": 0,
@@ -463,12 +445,12 @@
                     0.4,
                     0.6
                   ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
+                  "count": 5,
+                  "avg_score": 0.5833333333333334,
+                  "direction_hit_rate": 0.6,
+                  "calibration_error": 0.016666666666666607,
+                  "avg_net_return_bps": -33.71014258198432,
+                  "avg_sized_net_return_bps": -33.71014258198432
                 },
                 {
                   "bin": 3,
@@ -482,103 +464,6 @@
                   "calibration_error": 0.0,
                   "avg_net_return_bps": 0.0,
                   "avg_sized_net_return_bps": 0.0
-                },
-                {
-                  "bin": 4,
-                  "range": [
-                    0.8,
-                    1.0
-                  ],
-                  "count": 11,
-                  "avg_score": 0.8148148148148148,
-                  "direction_hit_rate": 0.45454545454545453,
-                  "calibration_error": 0.36026936026936024,
-                  "avg_net_return_bps": 36.56196435062464,
-                  "avg_sized_net_return_bps": 36.56196435062464
-                }
-              ]
-            }
-          },
-          {
-            "fold_index": 3,
-            "train_events": 47,
-            "test_events": 9,
-            "blocks": [
-              {
-                "range": [
-                  0.4,
-                  0.6
-                ],
-                "count": 18,
-                "avg_evidence_strength": 0.5503928444681703,
-                "calibrated_probability": 0.6111111111111112
-              },
-              {
-                "range": [
-                  0.8,
-                  1.0
-                ],
-                "count": 29,
-                "avg_evidence_strength": 1.0,
-                "calibrated_probability": 0.6896551724137931
-              }
-            ],
-            "metrics": {
-              "events": 9,
-              "brier_score": 0.1806050997489761,
-              "expected_calibration_error": 0.08812260536398464,
-              "buckets": [
-                {
-                  "bin": 0,
-                  "range": [
-                    0.0,
-                    0.2
-                  ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
-                },
-                {
-                  "bin": 1,
-                  "range": [
-                    0.2,
-                    0.4
-                  ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
-                },
-                {
-                  "bin": 2,
-                  "range": [
-                    0.4,
-                    0.6
-                  ],
-                  "count": 0,
-                  "avg_score": 0.0,
-                  "direction_hit_rate": 0.0,
-                  "calibration_error": 0.0,
-                  "avg_net_return_bps": 0.0,
-                  "avg_sized_net_return_bps": 0.0
-                },
-                {
-                  "bin": 3,
-                  "range": [
-                    0.6,
-                    0.8
-                  ],
-                  "count": 9,
-                  "avg_score": 0.6896551724137931,
-                  "direction_hit_rate": 0.7777777777777778,
-                  "calibration_error": 0.08812260536398464,
-                  "avg_net_return_bps": 84.00809632661682,
-                  "avg_sized_net_return_bps": 84.00809632661682
                 },
                 {
                   "bin": 4,
@@ -604,12 +489,12 @@
               0.0,
               0.2
             ],
-            "count": 15,
+            "count": 6,
             "avg_score": 0.0,
-            "direction_hit_rate": 0.7333333333333333,
-            "calibration_error": 0.7333333333333333,
-            "avg_net_return_bps": 177.10428619064595,
-            "avg_sized_net_return_bps": 177.10428619064595
+            "direction_hit_rate": 0.8333333333333334,
+            "calibration_error": 0.8333333333333334,
+            "avg_net_return_bps": 168.32644005840135,
+            "avg_sized_net_return_bps": 168.32644005840135
           },
           {
             "bin": 1,
@@ -630,12 +515,12 @@
               0.4,
               0.6
             ],
-            "count": 0,
-            "avg_score": 0.0,
-            "direction_hit_rate": 0.0,
-            "calibration_error": 0.0,
-            "avg_net_return_bps": 0.0,
-            "avg_sized_net_return_bps": 0.0
+            "count": 15,
+            "avg_score": 0.5580808080808081,
+            "direction_hit_rate": 0.6,
+            "calibration_error": 0.04191919191919191,
+            "avg_net_return_bps": 45.47045223001558,
+            "avg_sized_net_return_bps": 45.47045223001558
           },
           {
             "bin": 3,
@@ -643,12 +528,12 @@
               0.6,
               0.8
             ],
-            "count": 30,
-            "avg_score": 0.6639375499416067,
-            "direction_hit_rate": 0.7333333333333333,
-            "calibration_error": 0.06939578339172658,
-            "avg_net_return_bps": 117.3791214511205,
-            "avg_sized_net_return_bps": 117.3791214511205
+            "count": 8,
+            "avg_score": 0.6666666666666666,
+            "direction_hit_rate": 0.375,
+            "calibration_error": 0.29166666666666663,
+            "avg_net_return_bps": -88.89688950860047,
+            "avg_sized_net_return_bps": -88.89688950860047
           },
           {
             "bin": 4,
@@ -656,54 +541,46 @@
               0.8,
               1.0
             ],
-            "count": 11,
-            "avg_score": 0.8148148148148148,
-            "direction_hit_rate": 0.45454545454545453,
-            "calibration_error": 0.36026936026936024,
-            "avg_net_return_bps": 36.56196435062464,
-            "avg_sized_net_return_bps": 36.56196435062464
+            "count": 0,
+            "avg_score": 0.0,
+            "direction_hit_rate": 0.0,
+            "calibration_error": 0.0,
+            "avg_net_return_bps": 0.0,
+            "avg_sized_net_return_bps": 0.0
           }
         ]
       },
       "base_rate_calibration": {
         "method": "crossfold_signal_base_rate",
         "out_of_sample": true,
-        "events": 56,
-        "base_rate_probability": 0.6785714285714286,
-        "brier_score": 0.2459454651568329,
-        "expected_calibration_error": 0.18164729721675898,
+        "events": 29,
+        "base_rate_probability": 0.5862068965517241,
+        "brier_score": 0.2762545625609286,
+        "expected_calibration_error": 0.20800176834659587,
         "folds": [
           {
             "fold_index": 0,
-            "train_events": 51,
-            "test_events": 5,
-            "base_rate_probability": 0.7058823529411765,
-            "test_hit_rate": 0.4,
-            "abs_error": 0.3058823529411765
+            "train_events": 21,
+            "test_events": 8,
+            "base_rate_probability": 0.6666666666666666,
+            "test_hit_rate": 0.375,
+            "abs_error": 0.29166666666666663
           },
           {
             "fold_index": 1,
-            "train_events": 25,
-            "test_events": 31,
-            "base_rate_probability": 0.56,
-            "test_hit_rate": 0.7741935483870968,
-            "abs_error": 0.2141935483870967
+            "train_events": 13,
+            "test_events": 16,
+            "base_rate_probability": 0.46153846153846156,
+            "test_hit_rate": 0.6875,
+            "abs_error": 0.22596153846153844
           },
           {
             "fold_index": 2,
-            "train_events": 45,
-            "test_events": 11,
-            "base_rate_probability": 0.7333333333333333,
-            "test_hit_rate": 0.45454545454545453,
-            "abs_error": 0.27878787878787875
-          },
-          {
-            "fold_index": 3,
-            "train_events": 47,
-            "test_events": 9,
-            "base_rate_probability": 0.6595744680851063,
-            "test_hit_rate": 0.7777777777777778,
-            "abs_error": 0.11820330969267145
+            "train_events": 24,
+            "test_events": 5,
+            "base_rate_probability": 0.5833333333333334,
+            "test_hit_rate": 0.6,
+            "abs_error": 0.016666666666666607
           }
         ],
         "buckets": [
@@ -739,12 +616,12 @@
               0.4,
               0.6
             ],
-            "count": 31,
-            "avg_score": 0.56,
-            "direction_hit_rate": 0.7741935483870968,
-            "calibration_error": 0.2141935483870967,
-            "avg_net_return_bps": 171.65526157710443,
-            "avg_sized_net_return_bps": 171.65526157710443
+            "count": 21,
+            "avg_score": 0.49053724053724057,
+            "direction_hit_rate": 0.6666666666666666,
+            "calibration_error": 0.17612942612942606,
+            "avg_net_return_bps": 80.57216303812581,
+            "avg_sized_net_return_bps": 80.57216303812581
           },
           {
             "bin": 3,
@@ -752,12 +629,12 @@
               0.6,
               0.8
             ],
-            "count": 25,
-            "avg_score": 0.7012899457655403,
-            "direction_hit_rate": 0.56,
-            "calibration_error": 0.14128994576554021,
-            "avg_net_return_bps": 50.35225741439751,
-            "avg_sized_net_return_bps": 50.35225741439751
+            "count": 8,
+            "avg_score": 0.6666666666666666,
+            "direction_hit_rate": 0.375,
+            "calibration_error": 0.29166666666666663,
+            "avg_net_return_bps": -88.89688950860047,
+            "avg_sized_net_return_bps": -88.89688950860047
           },
           {
             "bin": 4,
@@ -782,53 +659,43 @@
             "fold_index"
           ],
           "min_events": 8,
-          "total_slices": 4,
-          "eligible_slices": 3,
-          "positive_net_slices": 3,
-          "min_hit_rate": 0.45454545454545453,
-          "max_hit_rate": 0.7777777777777778,
-          "max_abs_error_from_reference": 0.22402597402597407,
+          "total_slices": 3,
+          "eligible_slices": 2,
+          "positive_net_slices": 1,
+          "min_hit_rate": 0.375,
+          "max_hit_rate": 0.6875,
+          "max_abs_error_from_reference": 0.2112068965517241,
           "stable": false,
           "slices": [
             {
               "key": [
                 "0"
               ],
-              "count": 5,
-              "eligible": false,
-              "hit_rate": 0.4,
-              "abs_error_from_reference": 0.2785714285714286,
-              "avg_net_return_bps": 20.11039211270307
+              "count": 8,
+              "eligible": true,
+              "hit_rate": 0.375,
+              "abs_error_from_reference": 0.2112068965517241,
+              "avg_net_return_bps": -88.89688950860047
             },
             {
               "key": [
                 "1"
               ],
-              "count": 31,
+              "count": 16,
               "eligible": true,
-              "hit_rate": 0.7741935483870968,
-              "abs_error_from_reference": 0.09562211981566815,
-              "avg_net_return_bps": 171.65526157710443
+              "hit_rate": 0.6875,
+              "abs_error_from_reference": 0.10129310344827591,
+              "avg_net_return_bps": 116.28538354441021
             },
             {
               "key": [
                 "2"
               ],
-              "count": 11,
-              "eligible": true,
-              "hit_rate": 0.45454545454545453,
-              "abs_error_from_reference": 0.22402597402597407,
-              "avg_net_return_bps": 36.56196435062464
-            },
-            {
-              "key": [
-                "3"
-              ],
-              "count": 9,
-              "eligible": true,
-              "hit_rate": 0.7777777777777778,
-              "abs_error_from_reference": 0.09920634920634919,
-              "avg_net_return_bps": 84.00809632661682
+              "count": 5,
+              "eligible": false,
+              "hit_rate": 0.6,
+              "abs_error_from_reference": 0.01379310344827589,
+              "avg_net_return_bps": -33.71014258198432
             }
           ]
         },
@@ -838,42 +705,42 @@
           ],
           "min_events": 20,
           "total_slices": 3,
-          "eligible_slices": 2,
-          "positive_net_slices": 2,
-          "min_hit_rate": 0.6538461538461539,
-          "max_hit_rate": 0.8095238095238095,
-          "max_abs_error_from_reference": 0.13095238095238093,
+          "eligible_slices": 0,
+          "positive_net_slices": 0,
+          "min_hit_rate": 0.0,
+          "max_hit_rate": 0.0,
+          "max_abs_error_from_reference": 0.0,
           "stable": false,
           "slices": [
             {
               "key": [
                 "BTC/USDT"
               ],
-              "count": 9,
+              "count": 5,
               "eligible": false,
-              "hit_rate": 0.4444444444444444,
-              "abs_error_from_reference": 0.23412698412698418,
-              "avg_net_return_bps": 9.107721052354075
+              "hit_rate": 0.6,
+              "abs_error_from_reference": 0.01379310344827589,
+              "avg_net_return_bps": 95.63734000011605
             },
             {
               "key": [
                 "ETH/USDT"
               ],
-              "count": 26,
-              "eligible": true,
-              "hit_rate": 0.6538461538461539,
-              "abs_error_from_reference": 0.02472527472527475,
-              "avg_net_return_bps": 111.94197357666434
+              "count": 16,
+              "eligible": false,
+              "hit_rate": 0.5,
+              "abs_error_from_reference": 0.08620689655172409,
+              "avg_net_return_bps": -21.406571656596473
             },
             {
               "key": [
                 "SOL/USDT"
               ],
-              "count": 21,
-              "eligible": true,
-              "hit_rate": 0.8095238095238095,
-              "abs_error_from_reference": 0.13095238095238093,
-              "avg_net_return_bps": 170.84089246598646
+              "count": 8,
+              "eligible": false,
+              "hit_rate": 0.75,
+              "abs_error_from_reference": 0.1637931034482759,
+              "avg_net_return_bps": 105.64484427960016
             }
           ]
         },
@@ -885,30 +752,30 @@
           "total_slices": 2,
           "eligible_slices": 1,
           "positive_net_slices": 1,
-          "min_hit_rate": 0.7272727272727273,
-          "max_hit_rate": 0.7272727272727273,
-          "max_abs_error_from_reference": 0.04870129870129869,
+          "min_hit_rate": 0.6086956521739131,
+          "max_hit_rate": 0.6086956521739131,
+          "max_abs_error_from_reference": 0.022488755622188994,
           "stable": false,
           "slices": [
             {
               "key": [
                 "1h"
               ],
-              "count": 44,
+              "count": 23,
               "eligible": true,
-              "hit_rate": 0.7272727272727273,
-              "abs_error_from_reference": 0.04870129870129869,
-              "avg_net_return_bps": 120.4604271348546
+              "hit_rate": 0.6086956521739131,
+              "abs_error_from_reference": 0.022488755622188994,
+              "avg_net_return_bps": 20.521660496276166
             },
             {
               "key": [
                 "4h"
               ],
-              "count": 12,
+              "count": 6,
               "eligible": false,
               "hit_rate": 0.5,
-              "abs_error_from_reference": 0.1785714285714286,
-              "avg_net_return_bps": 106.65506252638109
+              "abs_error_from_reference": 0.08620689655172409,
+              "avg_net_return_bps": 84.8070193862477
             }
           ]
         },
@@ -919,11 +786,11 @@
           ],
           "min_events": 12,
           "total_slices": 6,
-          "eligible_slices": 2,
-          "positive_net_slices": 2,
-          "min_hit_rate": 0.75,
-          "max_hit_rate": 0.8,
-          "max_abs_error_from_reference": 0.12142857142857144,
+          "eligible_slices": 1,
+          "positive_net_slices": 0,
+          "min_hit_rate": 0.5,
+          "max_hit_rate": 0.5,
+          "max_abs_error_from_reference": 0.08620689655172409,
           "stable": false,
           "slices": [
             {
@@ -931,11 +798,11 @@
                 "BTC/USDT",
                 "1h"
               ],
-              "count": 8,
+              "count": 4,
               "eligible": false,
-              "hit_rate": 0.5,
-              "abs_error_from_reference": 0.1785714285714286,
-              "avg_net_return_bps": 11.391658720565383
+              "hit_rate": 0.75,
+              "abs_error_from_reference": 0.1637931034482759,
+              "avg_net_return_bps": 121.83762007347917
             },
             {
               "key": [
@@ -945,7 +812,7 @@
               "count": 1,
               "eligible": false,
               "hit_rate": 0.0,
-              "abs_error_from_reference": 0.6785714285714286,
+              "abs_error_from_reference": 0.5862068965517241,
               "avg_net_return_bps": -9.163780293336394
             },
             {
@@ -953,33 +820,33 @@
                 "ETH/USDT",
                 "1h"
               ],
-              "count": 16,
+              "count": 12,
               "eligible": true,
-              "hit_rate": 0.75,
-              "abs_error_from_reference": 0.0714285714285714,
-              "avg_net_return_bps": 122.32526336762822
+              "hit_rate": 0.5,
+              "abs_error_from_reference": 0.08620689655172409,
+              "avg_net_return_bps": -43.731134301473155
             },
             {
               "key": [
                 "ETH/USDT",
                 "4h"
               ],
-              "count": 10,
+              "count": 4,
               "eligible": false,
               "hit_rate": 0.5,
-              "abs_error_from_reference": 0.1785714285714286,
-              "avg_net_return_bps": 95.3287099111221
+              "abs_error_from_reference": 0.08620689655172409,
+              "avg_net_return_bps": 45.56711627803359
             },
             {
               "key": [
                 "SOL/USDT",
                 "1h"
               ],
-              "count": 20,
-              "eligible": true,
-              "hit_rate": 0.8,
-              "abs_error_from_reference": 0.12142857142857144,
-              "avg_net_return_bps": 162.59606551435138
+              "count": 7,
+              "eligible": false,
+              "hit_rate": 0.7142857142857143,
+              "abs_error_from_reference": 0.1280788177339902,
+              "avg_net_return_bps": 72.77447467687328
             },
             {
               "key": [
@@ -989,7 +856,7 @@
               "count": 1,
               "eligible": false,
               "hit_rate": 1.0,
-              "abs_error_from_reference": 0.3214285714285714,
+              "abs_error_from_reference": 0.4137931034482759,
               "avg_net_return_bps": 335.7374314986883
             }
           ]

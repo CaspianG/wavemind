@@ -10,7 +10,7 @@ Evidence strength is analogue/regime agreement, not a calibrated probability.
 | ETH/USDT | 7d | 2026-07-04T00:00:00+00:00 | abstain | flat | flat | 1780.64 | 0.00% | 0.00% | 1780.64 | 1780.64 | 0.000 |  | none | unsupported_timeframe:1d |
 | SOL/USDT | 7d | 2026-07-04T00:00:00+00:00 | abstain | flat | flat | 81.8 | 0.00% | 0.00% | 81.8 | 81.8 | 0.000 |  | none | unsupported_timeframe:1d |
 
-Validation profile: historical active direction accuracy 0.680, signal rate 0.023, positive market slices 13/36.
+Validation profile: historical active direction accuracy 0.586, signal rate 0.018, positive market slices 7/27.
 
 Validation profile is embedded in the JSON output for each row.
 Calibrated probability is profile-level and still not financial advice.

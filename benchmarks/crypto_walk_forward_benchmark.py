@@ -116,6 +116,14 @@ class EventMetric:
     large_move_false_positive: float
     position_size: float
     confidence: float
+    raw_direction: str
+    candidate_direction: str
+    candidate_expected_return_bps: float
+    filter_reason: str
+    analogue_agreement: float
+    regime_agreement: float
+    regime_signature: tuple[str, ...]
+    features: dict[str, object]
     filtered: float
     net_return_bps: float
     sized_net_return_bps: float
@@ -1421,6 +1429,39 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     and str(features.get("rsi_bucket")) == "oversold"
                 ):
                     guard_reason = "one_hour_falling_knife_guard"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "up"
+                    and str(features.get("rsi_bucket")) == "oversold"
+                    and str(features.get("bollinger_bucket")) == "lower_band"
+                    and str(features.get("close_position_bucket")) == "near_low"
+                    and str(features.get("volatility_bucket")) == "high"
+                    and str(features.get("drawdown_bucket")) == "deep"
+                    and str(features.get("macd_bucket")) == "down"
+                ):
+                    range_compression = float(features.get("range_compression") or 0.0)
+                    rsi = float(features.get("rsi") or 0.0)
+                    if range_compression >= 0.95 or range_compression <= 0.65:
+                        guard_reason = "one_hour_unconfirmed_falling_knife_reversal"
+                    elif 25.0 <= rsi < 30.0:
+                        guard_reason = "one_hour_mid_rsi_falling_knife_reversal"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "up"
+                    and str(features.get("bollinger_bucket")) == "middle"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                    and str(features.get("volume_bucket")) == "expanded"
+                ):
+                    guard_reason = "one_hour_expanded_mid_band_late_breakout"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("bollinger_bucket")) == "upper_band"
+                    and str(features.get("close_position_bucket")) == "near_high"
+                    and str(features.get("volatility_bucket")) == "high"
+                    and str(features.get("drawdown_bucket")) == "deep"
+                ):
+                    guard_reason = "four_hour_high_vol_upper_band_long_exhaustion"
                 recent_edge = _recent_mean(self.realized_signal_nets, lookback=8)
                 if len(self.realized_signal_nets) >= 4 and recent_edge < -10.0:
                     defensive_allowed = (
@@ -2247,6 +2288,11 @@ def main() -> int:
     parser.add_argument("--disable-regime-filter", action="store_true")
     parser.add_argument("--encoder", choices=["hash", "sentence"], default="hash")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--include-event-metrics",
+        action="store_true",
+        help="Include per-query event metrics in the JSON output for regime diagnostics.",
+    )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_walk_forward_results.json"))
     parser.add_argument("--analogue-html", type=Path, default=Path("benchmarks/crypto_analogue_explorer.html"))
     args = parser.parse_args()
@@ -2286,6 +2332,7 @@ def main() -> int:
         adaptive_performance_lookback=args.adaptive_performance_lookback,
         adaptive_min_recent_edge_bps=args.adaptive_min_recent_edge_bps,
         memory_store=args.memory_store,
+        include_event_metrics=args.include_event_metrics,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -2806,6 +2853,14 @@ def _event_metric(
         large_move_false_positive=1.0 if predicted_large and not actual_large else 0.0,
         position_size=position_size,
         confidence=float(prediction.confidence),
+        raw_direction=prediction.raw_direction,
+        candidate_direction=prediction.candidate_direction,
+        candidate_expected_return_bps=float(prediction.candidate_expected_return_bps),
+        filter_reason=prediction.filter_reason,
+        analogue_agreement=float(prediction.analogue_agreement),
+        regime_agreement=float(prediction.regime_agreement),
+        regime_signature=_regime_signature_from_window(window),
+        features=dict(window.features),
         filtered=1.0 if prediction.filtered else 0.0,
         net_return_bps=net,
         sized_net_return_bps=net * position_size,

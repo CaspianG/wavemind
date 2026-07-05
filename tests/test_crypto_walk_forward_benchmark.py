@@ -400,6 +400,7 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "40",
             "--test-windows",
             "8",
+            "--include-event-metrics",
             "--output",
             str(output),
             "--analogue-html",
@@ -427,6 +428,11 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["results"][7]["engine"] == "WaveMind regime-gated"
     assert payload["results"][8]["engine"] == "WaveMind calibrated"
     assert payload["results"][9]["engine"] == "WaveMind field-off"
+    assert "event_metrics" in payload
+    assert payload["event_metrics"][0]["fold_index"] == 0
+    assert payload["event_metrics"][0]["fold_start"] == 40
+    assert "regime_signature" in payload["event_metrics"][0]
+    assert "features" in payload["event_metrics"][0]
     assert html_output.exists()
 
 
@@ -799,6 +805,75 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
         top_k=3,
     )
 
+    unconfirmed_falling_knife = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="up",
+        )
+    ).query(
+        Window(
+            {
+                "rsi_bucket": "oversold",
+                "bollinger_bucket": "lower_band",
+                "close_position_bucket": "near_low",
+                "volatility_bucket": "high",
+                "drawdown_bucket": "deep",
+                "macd_bucket": "down",
+                "range_compression": 1.0,
+            }
+        ),
+        top_k=3,
+    )
+
+    late_breakout = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="up",
+        )
+    ).query(
+        Window(
+            {
+                "bollinger_bucket": "middle",
+                "close_position_bucket": "near_high",
+                "volume_bucket": "expanded",
+            }
+        ),
+        top_k=3,
+    )
+
+    mid_rsi_falling_knife = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="up",
+        )
+    ).query(
+        Window(
+            {
+                "rsi_bucket": "oversold",
+                "rsi": 27.0,
+                "bollinger_bucket": "lower_band",
+                "close_position_bucket": "near_low",
+                "volatility_bucket": "high",
+                "drawdown_bucket": "deep",
+                "macd_bucket": "down",
+                "range_compression": 0.78,
+            }
+        ),
+        top_k=3,
+    )
+
     unstable_mid = make_engine(
         Prediction(
             direction="up",
@@ -828,6 +903,15 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
     assert stalled_lower_band_bounce.direction == "flat"
     assert stalled_lower_band_bounce.filter_reason == "one_hour_stalled_lower_band_bounce"
     assert stalled_lower_band_bounce.candidate_direction == "up"
+    assert unconfirmed_falling_knife.direction == "flat"
+    assert unconfirmed_falling_knife.filter_reason == "one_hour_unconfirmed_falling_knife_reversal"
+    assert unconfirmed_falling_knife.candidate_direction == "up"
+    assert late_breakout.direction == "flat"
+    assert late_breakout.filter_reason == "one_hour_expanded_mid_band_late_breakout"
+    assert late_breakout.candidate_direction == "up"
+    assert mid_rsi_falling_knife.direction == "flat"
+    assert mid_rsi_falling_knife.filter_reason == "one_hour_mid_rsi_falling_knife_reversal"
+    assert mid_rsi_falling_knife.candidate_direction == "up"
     assert unstable_mid.direction == "flat"
     assert unstable_mid.filter_reason == "unstable_mid_confidence"
     assert unstable_mid.candidate_direction == "up"
@@ -934,6 +1018,16 @@ def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
             "volume_bucket": "expanded",
         }
     )
+    high_vol_upper = make_prediction(
+        {
+            "trend": "up",
+            "close_position_bucket": "near_high",
+            "bollinger_bucket": "upper_band",
+            "volume_bucket": "normal",
+            "volatility_bucket": "high",
+            "drawdown_bucket": "deep",
+        }
+    )
 
     assert mid_band.direction == "flat"
     assert mid_band.filter_reason == "four_hour_mid_band_near_high_long_exhaustion"
@@ -944,6 +1038,9 @@ def test_timeframe_policy_vetoes_four_hour_near_high_long_exhaustion():
     assert expanded_upper.direction == "flat"
     assert expanded_upper.filter_reason == "four_hour_expanded_upper_near_high_long_exhaustion"
     assert expanded_upper.candidate_direction == "up"
+    assert high_vol_upper.direction == "flat"
+    assert high_vol_upper.filter_reason == "four_hour_high_vol_upper_band_long_exhaustion"
+    assert high_vol_upper.candidate_direction == "up"
 
 
 def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():

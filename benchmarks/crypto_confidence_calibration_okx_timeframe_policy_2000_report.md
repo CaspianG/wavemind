@@ -5,15 +5,15 @@ It is a research diagnostic, not a trading signal.
 
 ## WaveMind timeframe policy
 
-- signal events: 31
-- raw Brier if treated as probability: 0.380
-- raw expected calibration error: 0.375
-- monotonic Brier: 0.311
-- monotonic expected calibration error: 0.364
+- signal events: 10
+- raw Brier if treated as probability: 0.368
+- raw expected calibration error: 0.336
+- monotonic Brier: 0.519
+- monotonic expected calibration error: 0.648
 - monotonic out-of-sample: true
-- base-rate probability: 0.613
-- base-rate Brier: 0.311
-- base-rate expected calibration error: 0.364
+- base-rate probability: 0.600
+- base-rate Brier: 0.519
+- base-rate expected calibration error: 0.648
 - probability ready: false
 - probability kind: none
 
@@ -21,9 +21,9 @@ It is a research diagnostic, not a trading signal.
 
 | slice | eligible slices | min hit rate | max hit rate | max abs error | stable |
 |---|---:|---:|---:|---:|---|
-| fold | 2 | 0.444 | 1.000 | 0.387 | false |
+| fold | 0 | 0.000 | 0.000 | 0.000 | false |
 | symbol | 0 | 0.000 | 0.000 | 0.000 | false |
-| timeframe | 1 | 0.577 | 0.577 | 0.036 | false |
+| timeframe | 0 | 0.000 | 0.000 | 0.000 | false |
 | symbol_timeframe | 0 | 0.000 | 0.000 | 0.000 | false |
 
 ### Raw Evidence Buckets
@@ -32,12 +32,12 @@ It is a research diagnostic, not a trading signal.
 |---|---:|---:|---:|---:|---:|
 | 0.0-0.2 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
 | 0.2-0.4 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
-| 0.4-0.6 | 8 | 0.548 | 0.750 | 0.202 | 63.24 |
+| 0.4-0.6 | 3 | 0.548 | 0.667 | 0.119 | 31.38 |
 | 0.6-0.8 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
-| 0.8-1.0 | 23 | 1.000 | 0.565 | 0.435 | 5.41 |
+| 0.8-1.0 | 7 | 1.000 | 0.571 | 0.429 | 25.24 |
 
 ### Monotonic Calibration Blocks
 
 | evidence range | train count | avg evidence | calibrated probability |
 |---|---:|---:|---:|
-| 0.4-1.0 | 31 | 0.883 | 0.613 |
+| 0.4-1.0 | 10 | 0.864 | 0.600 |

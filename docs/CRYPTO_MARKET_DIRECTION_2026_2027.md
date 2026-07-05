@@ -112,16 +112,20 @@ Latest timeframe-aware check: applying the same adaptive-field profile across
 1h, 4h, and 1d BTC/ETH/SOL is not robust (`-1.33` sized net bps, profit factor
 `0.954`, worst slice `-106.89`). The current robust policy uses separate
 timeframe dynamics: 1h routes through `WaveMind microstructure`, 4h routes
-through `WaveMind adaptive-field`, and 1d stays flat until a weekly profile is
-validated. It also uses TA conflict vetoes, regime guards, and a live drawdown
-circuit breaker. The checked BTC/ETH/SOL 1h/4h/1d run reaches `2.84` sized
-bps/query, profit factor `14.206`, max drawdown `139.4` bps, and worst slice
-`-1.23`. The longer BTC/ETH/SOL 2000-bar 1h/4h profile is only weakly positive
-at `0.11` sized bps/query and profit factor `1.347`. The expanded 8-asset
-2000-bar stress profile is stronger but still small at `0.27` sized bps/query,
-profit factor `1.838`, and worst slice `-2.51`. This is a real risk-control and
+through `WaveMind adaptive-field`, and 1d stays flat until a daily profile is
+validated. It also uses TA conflict vetoes, local regime reliability, event
+metrics, falling-knife/late-breakout guards, 4h exhaustion guards, and a live
+drawdown circuit breaker. The checked BTC/ETH/SOL 1h/4h/1d run is modest at
+`0.61` sized bps/query, profit factor `1.557`, max drawdown `744.5` bps, and
+worst slice `-9.60`. The longer BTC/ETH/SOL 2000-bar 1h/4h profile is
+low-frequency but risk-controlled at `0.09` sized bps/query, profit factor
+`3.915`, max drawdown `68.6` bps, and worst slice `-0.38`. The expanded
+8-asset 2000-bar stress profile is stronger at `0.65` sized bps/query, active
+direction accuracy `0.750`, profit factor `6.919`, max drawdown `288.7` bps,
+and worst slice `-2.41`. This is a real risk-control and
 timeframe-specialization improvement, not final universal alpha: 1d still
-needs a separate trend-memory dynamic and the 8-asset edge needs more support.
+needs a separate trend-memory dynamic and the signal rate is still too small
+for a finished product.
 
 Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
 miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`
