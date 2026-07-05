@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) in sys.path:
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import (
+    CachePrewarmWorker,
     ClusterNode,
     DistributedShardedWaveMind,
     HashingTextEncoder,
@@ -252,12 +253,48 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
             cache.put(namespace, query, result, top_k=3)
         latencies.append((time.perf_counter() - started) * 1000.0)
     stats = cache.stats()
+    prewarm_report_warmed = 0
+    prewarm_hit = False
+    with tempfile.TemporaryDirectory() as directory:
+        memory = WaveMind(
+            db_path=Path(directory) / "prewarm.sqlite3",
+            encoder=HashingTextEncoder(vector_dim=64),
+            width=16,
+            height=16,
+            layers=1,
+            audit_queries=True,
+        )
+        prewarm_cache = HotMemoryCache(capacity=32, ttl_seconds=120)
+        try:
+            memory.remember("hot cached budget preference", namespace="tenant:prewarm")
+            memory.query("budget preference", namespace="tenant:prewarm", top_k=1)
+            memory.query("budget preference", namespace="tenant:prewarm", top_k=1)
+            prewarm = CachePrewarmWorker(memory, prewarm_cache).run_once(
+                namespace="tenant:prewarm",
+                audit_limit=16,
+                max_queries=4,
+                min_frequency=2,
+                top_k=1,
+            )
+            prewarm_report_warmed = prewarm.warmed
+            cached = query_with_cache(
+                memory,
+                prewarm_cache,
+                "budget preference",
+                namespace="tenant:prewarm",
+                top_k=1,
+            )
+            prewarm_hit = bool(cached) and prewarm_cache.stats().hits > 0
+        finally:
+            memory.close()
     return {
         "engine": "WaveMind hot cache",
         "queries": queries,
         "capacity": capacity,
         "hit_rate": stats.hit_rate,
         "evictions": stats.evictions,
+        "prewarm_warmed": prewarm_report_warmed,
+        "prewarm_hit": prewarm_hit,
         "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
         "p99_lookup_ms": percentile(latencies, 99),
     }
@@ -727,6 +764,8 @@ def main() -> int:
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
+            print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")
+            print(f"| hot cache | prewarm_hit | {result['prewarm_hit']} |")
         elif result["engine"] == "WaveMind distributed sharding":
             print(f"| distributed sharding | writes | {result['writes']} |")
             print(f"| distributed sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")

@@ -44,8 +44,9 @@ policy matters more than raw vector-database scale:
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
   node/zone-loss simulation, read/write quorum reporting, and a Kubernetes
   StatefulSet manifest skeleton.
-- `HotMemoryCache`, `query_with_cache()`, and `MemoryMaintenanceWorker` provide
-  the first worker/cache primitives for hot namespaces, TTL purge, field
+- `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
+  `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
+  namespaces, query-audit-driven cache prewarm, TTL purge, field
   consolidation, concept consolidation, and index-health repair loops.
 - Structured payload helpers cover image captions, audio transcripts, tables,
   and events while preserving modality metadata in the same memory API.
@@ -55,8 +56,8 @@ policy matters more than raw vector-database scale:
   primary-loss recall, checksummed replicated snapshot/restore with offsite and
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
-  deterministic object-store disaster-recovery drill, hot-cache behavior, and
-  structured-payload retrieval.
+  deterministic object-store disaster-recovery drill, query-audit cache
+  prewarm, hot-cache behavior, and structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
@@ -152,7 +153,7 @@ memory policy also needs to become cheaper:
 
 Potential infrastructure:
 
-- Redis for hot-memory and query caches;
+- Redis for hot-memory/query caches and scheduled query-audit prewarm jobs;
 - Celery, RQ, Temporal, or a simple built-in worker for background tasks;
 - OpenTelemetry spans for profiling production requests;
 - expand Prometheus-compatible metrics for latency, recall feedback, TTL expiry,

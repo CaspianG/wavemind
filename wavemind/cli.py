@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -14,9 +15,12 @@ from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
 from .jobs import (
+    CachePrewarmWorker,
+    HotMemoryCache,
     MemoryMaintenanceWorker,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
+    RedisHotMemoryCache,
 )
 from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
@@ -73,6 +77,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--graph-weight", type=float, default=0.0)
     parser.add_argument("--graph-steps", type=int, default=2)
     parser.add_argument("--graph-expand-k", type=int, default=10)
+    parser.add_argument(
+        "--audit-queries",
+        action="store_true",
+        default=os.environ.get("WAVEMIND_AUDIT_QUERIES", "0").lower()
+        in {"1", "true", "yes", "on"},
+        help="Store query text in the audit log for cache prewarm and diagnostics.",
+    )
 
     sub = parser.add_subparsers(dest="command")
 
@@ -151,6 +162,29 @@ def build_parser() -> argparse.ArgumentParser:
     maintenance.add_argument("--consolidate-concepts", action="store_true")
     maintenance.add_argument("--no-rebuild-index", action="store_true")
     maintenance.add_argument("--json", action="store_true")
+
+    cache_prewarm = sub.add_parser(
+        "cache-prewarm",
+        help="Prewarm hot query cache from audited query events",
+    )
+    cache_prewarm.add_argument("--namespace")
+    cache_prewarm.add_argument("--audit-limit", type=int, default=256)
+    cache_prewarm.add_argument("--max-queries", type=int, default=32)
+    cache_prewarm.add_argument("--min-frequency", type=int, default=1)
+    cache_prewarm.add_argument("--top-k", type=int, default=3)
+    cache_prewarm.add_argument("--min-score", type=float)
+    cache_prewarm.add_argument("--capacity", type=int, default=512)
+    cache_prewarm.add_argument("--ttl-seconds", type=float, default=60.0)
+    cache_prewarm.add_argument(
+        "--redis-url",
+        default=os.environ.get("WAVEMIND_REDIS_URL"),
+        help="Redis URL for a shared production cache. Defaults to WAVEMIND_REDIS_URL.",
+    )
+    cache_prewarm.add_argument(
+        "--redis-prefix",
+        default=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
+    )
+    cache_prewarm.add_argument("--json", action="store_true")
 
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
@@ -272,6 +306,7 @@ def make_mind(args) -> WaveMind:
         encoder=encoder,
         index_kind=args.index,
         score_threshold=args.score_threshold,
+        audit_queries=args.audit_queries,
         graph_weight=args.graph_weight,
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
@@ -292,6 +327,7 @@ def make_replicated_mind(args) -> ReplicatedWaveMind:
         encoder=encoder,
         index_kind=args.index,
         score_threshold=args.score_threshold,
+        audit_queries=args.audit_queries,
         graph_weight=args.graph_weight,
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
@@ -828,6 +864,36 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_stats(payload)
         return 0
+
+    if args.command == "cache-prewarm":
+        if args.redis_url:
+            cache = RedisHotMemoryCache.from_url(
+                args.redis_url,
+                prefix=args.redis_prefix,
+                ttl_seconds=args.ttl_seconds,
+            )
+        else:
+            cache = HotMemoryCache(capacity=args.capacity, ttl_seconds=args.ttl_seconds)
+        report = CachePrewarmWorker(mind, cache).run_once(
+            namespace=args.namespace,
+            audit_limit=args.audit_limit,
+            max_queries=args.max_queries,
+            min_frequency=args.min_frequency,
+            top_k=args.top_k,
+            min_score=args.min_score,
+        )
+        payload = report.as_dict()
+        payload["cache"] = "redis" if args.redis_url else "local"
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_stats(payload)
+            if not args.redis_url:
+                print(
+                    "note: local cache is process-local; use --redis-url for production prewarm",
+                    file=sys.stderr,
+                )
+        return 0 if report.ok else 4
 
     if args.command == "import":
         ids = import_path(

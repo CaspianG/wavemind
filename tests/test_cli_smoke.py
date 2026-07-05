@@ -160,6 +160,59 @@ def test_cli_maintenance_runs_one_job(tmp_path):
     assert payload["index_rebuilt"] in {True, False}
 
 
+def test_cli_cache_prewarm_uses_audited_queries(tmp_path):
+    db_path = tmp_path / "cache.sqlite3"
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "cli cache prewarm budget preference",
+        "--namespace",
+        "ops",
+    )
+    run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "query",
+        "budget preference",
+        "--namespace",
+        "ops",
+        "--top-k",
+        "1",
+    )
+    run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "query",
+        "budget preference",
+        "--namespace",
+        "ops",
+        "--top-k",
+        "1",
+    )
+
+    result = run_cli(
+        "--db",
+        str(db_path),
+        "cache-prewarm",
+        "--namespace",
+        "ops",
+        "--min-frequency",
+        "2",
+        "--top-k",
+        "1",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["cache"] == "local"
+    assert payload["candidates"] == 1
+    assert payload["warmed"] == 1
+    assert payload["ok"] is True
+
+
 def test_cli_replicated_snapshot_and_restore(tmp_path):
     root = tmp_path / "replicas"
     nodes = ["node-a", "node-b", "node-c"]

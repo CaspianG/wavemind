@@ -43,6 +43,8 @@ METRIC_LABELS = {
     "context_budget_saved": "context saved",
     "avg_latency_ms": "avg latency",
     "p95_latency_ms": "p95 latency",
+    "prewarm_warmed": "prewarm warmed",
+    "prewarm_hit": "prewarm hit",
 }
 
 

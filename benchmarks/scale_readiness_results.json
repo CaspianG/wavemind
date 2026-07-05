@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 55.74119999073446,
+      "placement_ms": 54.827400017529726,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -32,8 +32,10 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.001408100186381489,
-      "p99_lookup_ms": 0.002900022082030773
+      "prewarm_warmed": 1,
+      "prewarm_hit": true,
+      "avg_lookup_ms": 0.001538300362881273,
+      "p99_lookup_ms": 0.003100023604929447
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -49,8 +51,8 @@
       ],
       "recalled_after_primary_loss": true,
       "forget_replicated_deletes": 2,
-      "write_ms": 308.4963000146672,
-      "query_after_primary_loss_ms": 0.7972000166773796
+      "write_ms": 156.40300000086427,
+      "query_after_primary_loss_ms": 0.4922000225633383
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -64,8 +66,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 2.315400051884353,
-      "p99_query_after_loss_ms": 2.315400051884353
+      "avg_query_after_loss_ms": 1.2317000073380768,
+      "p99_query_after_loss_ms": 1.2317000073380768
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -73,7 +75,7 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 103.66969997994602,
+      "sync_ms": 110.4605000000447,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
@@ -90,8 +92,8 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 128.1141000217758,
-      "restore_ms": 70.98629995016381,
+      "snapshot_ms": 115.13420002302155,
+      "restore_ms": 68.15539998933673,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -105,8 +107,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.4563249822240323,
-      "p99_latency_ms": 0.6626999820582569
+      "avg_latency_ms": 0.39822502003517,
+      "p99_latency_ms": 0.5884999991394579
     }
   ]
 }

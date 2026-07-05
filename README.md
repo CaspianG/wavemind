@@ -489,7 +489,7 @@ Checked-in result:
 | profile | result |
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`. |
-| Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`. |
+| Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`, query-audit prewarm warmed `1` hot query, prewarm hit `true`. |
 | Distributed sharding | 3 service nodes, replication factor 2, write quorum 2, writes `2`, recall after primary loss `true`, replicated forget deletes `2`, query-after-primary-loss `0.80 ms`. |
 | Replicated runtime | 3 physical WaveMind stores, replication factor 3, write quorum 2, node-loss recall `true`, repair copied `1` missing record, tombstone repair deleted `1` stale record, p99 query-after-loss `2.32 ms`. |
 | Active-active delta sync | 2 regions, bidirectional convergence `true`, stale import suppressed after delete `true`, tombstone convergence `true`, sync `103.67 ms`. |
@@ -497,7 +497,7 @@ Checked-in result:
 | Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `0.66 ms`. |
 
 This profile validates routing, service-mode distributed namespace sharding,
-quorum-replicated runtime behavior, cache behavior, active-active namespace
+quorum-replicated runtime behavior, query-audit cache prewarm, cache behavior, active-active namespace
 delta sync, replicated snapshot/restore, and structured payload handling,
 including verified offsite, archive, object-store latest lookup, object-store
 download, object-store retention, and a disaster recovery drill that restores
@@ -551,6 +551,34 @@ Hot-cache options:
 |---|---|
 | `HotMemoryCache` | in-process local API/server cache. |
 | `RedisHotMemoryCache` | shared cache for multiple API workers. Install with `pip install "wavemind[redis]"`. |
+
+API cache can be enabled with:
+
+```sh
+WAVEMIND_CACHE_CAPACITY=512 WAVEMIND_CACHE_TTL_SECONDS=60 wavemind serve
+```
+
+For multiple API workers, use a shared Redis cache:
+
+```sh
+WAVEMIND_REDIS_URL=redis://localhost:6379/0 WAVEMIND_AUDIT_QUERIES=1 wavemind serve
+```
+
+For production workers, enable query audit and prewarm the cache from repeated
+real queries:
+
+```sh
+WAVEMIND_AUDIT_QUERIES=1 WAVEMIND_CACHE_CAPACITY=512 wavemind serve
+wavemind --audit-queries query "budget preference" --namespace demo
+curl -X POST http://127.0.0.1:8000/cache/prewarm -H "x-api-key: $WAVEMIND_ADMIN_KEY" -d '{"min_frequency":2,"max_queries":32}'
+wavemind cache-prewarm --redis-url redis://localhost:6379/0 --min-frequency 2 --max-queries 32
+```
+
+The same path is available in Python through `CachePrewarmWorker`. The CLI can
+also run with a process-local cache for diagnostics, but production prewarm
+should use Redis so warmed entries survive the worker process. Query audit
+stores query text, so keep it opt-in for deployments with stricter privacy
+requirements.
 
 ## Structured And Multimodal Memory
 
@@ -1088,7 +1116,7 @@ Current read:
 | LongMemEval 50-query smoke | On the first 50 non-abstention LongMemEval-S questions, WaveMind reaches `evidence_recall@5 0.920`, `precision@1 0.760`, and `MRR@5 0.827`; Chroma/Qdrant static reach `0.600`, `0.260`, and `0.385`. | This is the fast regression profile for checking current changes before rerunning the full LongMemEval profile. WaveMind wins on quality; latency still needs work. |
 | ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
 | Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`. At 1M, tuned Qdrant reaches `recall@10 0.984`, avg `116.80 ms`, p99 `209.28 ms`; an EF sweep finds `recall@10 0.977`, avg `64.76 ms`, p99 `103.77 ms` at `hnsw_ef=2048` on 30 queries. | 100k is production-grade on the tested machine. 1M recall is now strong, but p99 still needs tuning before claiming a stable sub-100 ms SLO. |
-| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, service-mode distributed sharding recall after primary loss, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active delta sync, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, S3-compatible upload/latest-metadata/download/retention verification, object-store DR drill `true`, and structured payload precision@1 `1.000`. | This proves routing, cache, payload, distributed sharding, replicated-runtime, namespace-delta, offsite/archive/object-store backup lifecycle, and restore-drill foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
+| Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, hot-cache hit rate `0.920`, query-audit prewarm warmed `1` query with prewarm hit `true`, service-mode distributed sharding recall after primary loss, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active delta sync, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, S3-compatible upload/latest-metadata/download/retention verification, object-store DR drill `true`, and structured payload precision@1 `1.000`. | This proves routing, cache prewarm, cache, payload, distributed sharding, replicated-runtime, namespace-delta, offsite/archive/object-store backup lifecycle, and restore-drill foundations. It is not a 10M-vector latency claim; real 10M latency still needs service-backed load tests on larger hardware. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00` on the small adapter profile. Mem0, Zep, and LangGraph are listed as skipped unless their real packages/services are configured. | This prevents fake competitor claims. The adapter harness is ready; real Mem0/Zep/LangGraph results still need configured installs. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 
@@ -1107,7 +1135,7 @@ Current read:
 | Production index profile | Docker-backed 50000-vector profile for persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW. | implemented | FAISS / Qdrant service / pgvector | Keep service-mode candidate generation above `0.95` recall@10 and below 10 ms average query latency at 50000 vectors. |
 | Production load profile | 100k and 1M service-backed candidate-index checks with p95/p99 latency. | implemented | Qdrant service / pgvector HNSW / FAISS persisted | Keep 100k at recall@10 `1.000`; push 1M p99 below 100 ms with recall@10 >= 0.95. |
 | Qdrant 1M HNSW ef sweep | One 1M Qdrant collection queried with multiple `hnsw_ef` values. | implemented | Qdrant service | Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable 1M SLO. |
-| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, service-mode distributed namespace sharding, replicated runtime, active-active delta sync, replicated snapshot/restore with offsite, archive, object-store latest-metadata/download/retention/DR-drill verification, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication, distributed namespace routing, namespace-delta sync, repair, offsite/archive/object-store backup lifecycle, and restore drills green while adding larger service-backed 10M load tests. |
+| Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, service-mode distributed namespace sharding, replicated runtime, active-active delta sync, replicated snapshot/restore with offsite, archive, object-store latest-metadata/download/retention/DR-drill verification, query-audit cache prewarm, hot-cache behavior, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication, distributed namespace routing, namespace-delta sync, repair, cache prewarm, offsite/archive/object-store backup lifecycle, and restore drills green while adding larger service-backed 10M load tests. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
 | [MTEB Retrieval](https://github.com/embeddings-benchmark/mteb) | Separates encoder quality from retrieval-store quality. | planned | Chroma / Qdrant / FAISS | Prove WaveMind does not reduce same-embedding retrieval quality. |

@@ -1,3 +1,6 @@
+import sys
+import types
+
 from fastapi.testclient import TestClient
 import numpy as np
 
@@ -248,6 +251,140 @@ def test_fastapi_query_accepts_query_alias(tmp_path):
 
             assert query.status_code == 200
             assert query.json()["results"][0]["text"] == "Andrey is a trader"
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_prewarm_requires_enabled_cache(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    mind = WaveMind(
+        db_path=tmp_path / "api-cache-disabled.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post("/cache/prewarm", json={})
+
+            assert response.status_code == 400
+            assert "Cache is disabled" in response.json()["detail"]
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_prewarm_uses_query_audit_and_exposes_metrics(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.setenv("WAVEMIND_CACHE_TTL_SECONDS", "60")
+    mind = WaveMind(
+        db_path=tmp_path / "api-cache.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("cached audit driven memory", namespace="tenant:cache")
+        mind.query("audit driven", namespace="tenant:cache", top_k=1)
+        mind.query("audit driven", namespace="tenant:cache", top_k=1)
+
+        with TestClient(create_app(mind=mind)) as client:
+            report = client.post(
+                "/cache/prewarm",
+                json={
+                    "namespace": "tenant:cache",
+                    "min_frequency": 2,
+                    "top_k": 1,
+                },
+            )
+            assert report.status_code == 200
+            payload = report.json()
+            assert payload["ok"] is True
+            assert payload["warmed"] == 1
+
+            query = client.post(
+                "/query",
+                json={
+                    "text": "audit driven",
+                    "namespace": "tenant:cache",
+                    "top_k": 1,
+                },
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "cached audit driven memory"
+
+            metrics = client.get("/metrics")
+            assert metrics.status_code == 200
+            assert "wavemind_cache_hits_total 1" in metrics.text
+            assert "wavemind_cache_size 1" in metrics.text
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
+    class FakeRedisClient:
+        values = {}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert url == "redis://cache.test/0"
+            assert decode_responses is True
+            return cls()
+
+        def get(self, key):
+            return self.values.get(key)
+
+        def set(self, key, value, ex=None):
+            self.values[key] = value
+
+        def scan_iter(self, match=None):
+            prefix = (match or "").rstrip("*")
+            for key in list(self.values):
+                if key.startswith(prefix):
+                    yield key
+
+        def delete(self, *keys):
+            for key in keys:
+                self.values.pop(key, None)
+
+    fake_redis_module = types.SimpleNamespace(Redis=FakeRedisClient)
+    monkeypatch.setitem(sys.modules, "redis", fake_redis_module)
+    monkeypatch.setenv("WAVEMIND_REDIS_URL", "redis://cache.test/0")
+    monkeypatch.setenv("WAVEMIND_REDIS_PREFIX", "wm:test")
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-redis-cache.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("redis warmed memory", namespace="tenant:redis")
+        mind.query("warmed memory", namespace="tenant:redis", top_k=1)
+
+        with TestClient(create_app(mind=mind)) as client:
+            report = client.post(
+                "/cache/prewarm",
+                json={"namespace": "tenant:redis", "top_k": 1},
+            )
+            assert report.status_code == 200
+            assert report.json()["warmed"] == 1
+
+            query = client.post(
+                "/query",
+                json={"text": "warmed memory", "namespace": "tenant:redis", "top_k": 1},
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "redis warmed memory"
+            assert any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
     finally:
         mind.close()
 

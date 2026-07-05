@@ -702,7 +702,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, hot-cache, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -732,6 +732,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "capacity",
                         "hit_rate",
                         "evictions",
+                        "prewarm_warmed",
+                        "prewarm_hit",
                         "p99_lookup_ms",
                     ),
                 ),

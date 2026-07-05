@@ -18,6 +18,12 @@ from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
+from .jobs import (
+    CachePrewarmWorker,
+    HotMemoryCache,
+    RedisHotMemoryCache,
+    query_with_cache,
+)
 from .observability import configure_observability, instrument_fastapi_app
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
@@ -134,6 +140,21 @@ def _split_keys(raw: str) -> list[str]:
     return [key.strip() for key in raw.split(",") if key.strip()]
 
 
+def _cache_from_env() -> HotMemoryCache | RedisHotMemoryCache | None:
+    redis_url = os.environ.get("WAVEMIND_REDIS_URL")
+    ttl_seconds = float(os.environ.get("WAVEMIND_CACHE_TTL_SECONDS", "60") or "60")
+    if redis_url:
+        return RedisHotMemoryCache.from_url(
+            redis_url,
+            prefix=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
+            ttl_seconds=ttl_seconds,
+        )
+    capacity = int(os.environ.get("WAVEMIND_CACHE_CAPACITY", "0") or "0")
+    if capacity <= 0:
+        return None
+    return HotMemoryCache(capacity=capacity, ttl_seconds=ttl_seconds)
+
+
 def _metric_key(value: str) -> str:
     return "".join(char if char.isalnum() else "_" for char in value.lower()).strip("_")
 
@@ -244,6 +265,24 @@ class ObservabilityResponse(BaseModel):
     service_name: str
     fastapi_instrumented: bool = False
     reason: str | None = None
+
+
+class CachePrewarmRequest(BaseModel):
+    namespace: str | None = None
+    audit_limit: int = Field(default=256, ge=0, le=10000)
+    max_queries: int = Field(default=32, ge=0, le=1000)
+    min_frequency: int = Field(default=1, ge=1)
+    top_k: int = Field(default=3, ge=1, le=100)
+    min_score: float | None = None
+
+
+class CachePrewarmResponse(BaseModel):
+    scanned_events: int
+    candidates: int
+    warmed: int
+    skipped: int
+    errors: dict[str, str]
+    ok: bool
 
 
 class ScalePlanResponse(BaseModel):
@@ -407,6 +446,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.mind = mind or build_default_mind()
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
+    app.state.cache = _cache_from_env()
     app.state.operation_metrics = APIOperationMetrics(
         max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
     )
@@ -464,13 +504,24 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
         with _api_operation(app, "query"):
-            results = app.state.mind.query(
-                request.text,
-                namespace=request.namespace,
-                top_k=request.top_k,
-                tags=request.tags,
-                min_score=request.min_score,
-            )
+            if app.state.cache is None:
+                results = app.state.mind.query(
+                    request.text,
+                    namespace=request.namespace,
+                    top_k=request.top_k,
+                    tags=request.tags,
+                    min_score=request.min_score,
+                )
+            else:
+                results = query_with_cache(
+                    app.state.mind,
+                    app.state.cache,
+                    request.text,
+                    namespace=request.namespace,
+                    top_k=request.top_k,
+                    tags=request.tags,
+                    min_score=request.min_score,
+                )
         return QueryResponse(
             results=[
                 QueryResultResponse(
@@ -574,10 +625,23 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:
+        operation_metrics = app.state.operation_metrics.snapshot()
+        if app.state.cache is not None:
+            cache_stats = app.state.cache.stats()
+            operation_metrics.update(
+                {
+                    "cache_hits_total": cache_stats.hits,
+                    "cache_misses_total": cache_stats.misses,
+                    "cache_evictions_total": cache_stats.evictions,
+                    "cache_size": cache_stats.size,
+                    "cache_capacity": cache_stats.capacity,
+                    "cache_hit_rate": cache_stats.hit_rate,
+                }
+            )
         return PlainTextResponse(
             _metrics_text(
                 app.state.mind.stats(namespace=namespace),
-                app.state.operation_metrics.snapshot(),
+                operation_metrics,
             ),
             media_type="text/plain; version=0.0.4",
         )
@@ -585,6 +649,27 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.get("/observability", response_model=ObservabilityResponse, dependencies=[Depends(require_role("admin"))])
     def observability() -> ObservabilityResponse:
         return ObservabilityResponse(**app.state.observability)
+
+    @app.post("/cache/prewarm", response_model=CachePrewarmResponse, dependencies=[Depends(require_role("admin"))])
+    def cache_prewarm(request: CachePrewarmRequest) -> CachePrewarmResponse:
+        if app.state.cache is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cache is disabled. Set WAVEMIND_CACHE_CAPACITY > 0 "
+                    "or WAVEMIND_REDIS_URL."
+                ),
+            )
+        with _api_operation(app, "cache_prewarm"):
+            report = CachePrewarmWorker(app.state.mind, app.state.cache).run_once(
+                namespace=request.namespace,
+                audit_limit=request.audit_limit,
+                max_queries=request.max_queries,
+                min_frequency=request.min_frequency,
+                top_k=request.top_k,
+                min_score=request.min_score,
+            )
+        return CachePrewarmResponse(**report.as_dict())
 
     @app.get("/audit", response_model=AuditResponse, dependencies=[Depends(require_role("admin"))])
     def audit(

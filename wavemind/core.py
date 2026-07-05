@@ -390,6 +390,7 @@ class WaveMind:
                 "query",
                 namespace=namespace,
                 metadata={
+                    "query": text,
                     "top_k": int(top_k),
                     "result_count": len(selected),
                     "candidate_count": len(candidate_scores),

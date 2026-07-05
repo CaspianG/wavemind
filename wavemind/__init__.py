@@ -10,6 +10,8 @@ from .encoders import (
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
 from .jobs import (
+    CachePrewarmReport,
+    CachePrewarmWorker,
     HotMemoryCache,
     MemoryMaintenanceWorker,
     RedisHotMemoryCache,
@@ -66,7 +68,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.4"
+__version__ = "2.3.5"
 
 __all__ = [
     "FieldProjector",
@@ -75,6 +77,8 @@ __all__ = [
     "ClusterNode",
     "ClusterPlan",
     "AuditEvent",
+    "CachePrewarmReport",
+    "CachePrewarmWorker",
     "DistributedForgetResult",
     "DistributedReadQuorumError",
     "DistributedShardError",

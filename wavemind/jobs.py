@@ -5,7 +5,7 @@ import json
 import hashlib
 import shutil
 from collections import OrderedDict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -333,6 +333,29 @@ class MaintenanceReport:
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class CachePrewarmReport:
+    scanned_events: int = 0
+    candidates: int = 0
+    warmed: int = 0
+    skipped: int = 0
+    errors: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "scanned_events": self.scanned_events,
+            "candidates": self.candidates,
+            "warmed": self.warmed,
+            "skipped": self.skipped,
+            "errors": dict(self.errors),
+            "ok": self.ok,
+        }
 
 
 @dataclass(frozen=True)
@@ -691,6 +714,89 @@ class MemoryMaintenanceWorker:
             concepts_created=len(concepts),
             index_rebuilt=rebuilt,
             cache_invalidated=invalidated,
+        )
+
+
+class CachePrewarmWorker:
+    """Warm hot query cache from audited query events."""
+
+    def __init__(self, memory: Any, cache: HotMemoryCache | RedisHotMemoryCache):
+        self.memory = memory
+        self.cache = cache
+
+    def run_once(
+        self,
+        *,
+        namespace: str | None = None,
+        audit_limit: int = 256,
+        max_queries: int = 32,
+        min_frequency: int = 1,
+        top_k: int = 3,
+        min_score: float | None = None,
+    ) -> CachePrewarmReport:
+        if not hasattr(self.memory, "audit_events"):
+            raise TypeError("memory object must expose audit_events()")
+        events = self.memory.audit_events(
+            namespace=namespace,
+            action="query",
+            limit=max(0, int(audit_limit)),
+        )
+        counts: OrderedDict[tuple[str, str], int] = OrderedDict()
+        for event in events:
+            event_namespace = event.namespace or namespace or "default"
+            query = str((event.metadata or {}).get("query") or "").strip()
+            if not query:
+                continue
+            key = (event_namespace, query)
+            counts[key] = counts.get(key, 0) + 1
+
+        ordered = sorted(
+            counts.items(),
+            key=lambda item: (-item[1], item[0][0], item[0][1]),
+        )
+        candidates = [
+            (key, frequency)
+            for key, frequency in ordered
+            if frequency >= max(1, int(min_frequency))
+        ][: max(0, int(max_queries))]
+
+        warmed = 0
+        skipped = 0
+        errors: dict[str, str] = {}
+        for (event_namespace, query), _frequency in candidates:
+            existing = self.cache.get(
+                event_namespace,
+                query,
+                top_k=top_k,
+                min_score=min_score,
+            )
+            if existing is not None:
+                skipped += 1
+                continue
+            try:
+                results = self.memory.query(
+                    query,
+                    namespace=event_namespace,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+                self.cache.put(
+                    event_namespace,
+                    query,
+                    results,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+                warmed += 1
+            except Exception as exc:  # pragma: no cover - defensive job boundary
+                errors[f"{event_namespace}:{query}"] = str(exc)
+
+        return CachePrewarmReport(
+            scanned_events=len(events),
+            candidates=len(candidates),
+            warmed=warmed,
+            skipped=skipped,
+            errors=errors,
         )
 
 

@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 
 from wavemind import (
+    CachePrewarmWorker,
     HashingTextEncoder,
     HotMemoryCache,
     MemoryMaintenanceWorker,
@@ -176,6 +177,42 @@ def test_maintenance_worker_purges_expired_and_invalidates_cache(tmp_path):
         assert report.expired_purged == 1
         assert report.cache_invalidated == 1
         assert memory.stats(namespace="tenant:a")["active_memories"] == 1
+    finally:
+        memory.close()
+
+
+def test_cache_prewarm_worker_warms_hot_queries_from_audit(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "prewarm.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    cache = HotMemoryCache(capacity=8, ttl_seconds=60)
+    try:
+        memory.remember("hot budget preference memory", namespace="tenant:hot")
+        memory.query("budget preference", namespace="tenant:hot", top_k=1)
+        memory.query("budget preference", namespace="tenant:hot", top_k=1)
+
+        assert cache.get("tenant:hot", "budget preference", top_k=1) is None
+
+        report = CachePrewarmWorker(memory, cache).run_once(
+            namespace="tenant:hot",
+            audit_limit=10,
+            max_queries=4,
+            min_frequency=2,
+            top_k=1,
+        )
+        cached = cache.get("tenant:hot", "budget preference", top_k=1)
+
+        assert report.ok
+        assert report.scanned_events >= 2
+        assert report.candidates == 1
+        assert report.warmed == 1
+        assert cached is not None
+        assert cached[0].text == "hot budget preference memory"
     finally:
         memory.close()
 
