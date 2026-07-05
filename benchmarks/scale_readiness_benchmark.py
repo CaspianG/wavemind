@@ -311,6 +311,65 @@ def run_active_active_delta_profile() -> dict[str, object]:
             region_b.close()
 
 
+def run_replicated_snapshot_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        memory = ReplicatedWaveMind(
+            root_path=root / "replicas",
+            nodes=[
+                {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+            ],
+            replication_factor=3,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+        restored = None
+        try:
+            namespace = "tenant:snapshot"
+            memory.remember(
+                "replicated snapshot restore survives node loss",
+                namespace=namespace,
+            )
+            snapshot_started = time.perf_counter()
+            snapshot = memory.snapshot(root / "snapshots")
+            snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
+            health = ReplicatedWaveMind.verify_snapshot(snapshot.snapshot_path)
+
+            restore_started = time.perf_counter()
+            restored, restore = ReplicatedWaveMind.restore_snapshot(
+                snapshot.snapshot_path,
+                root / "restored",
+                width=16,
+                height=16,
+                layers=1,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            restore_ms = (time.perf_counter() - restore_started) * 1000.0
+            placement = restored.placement(namespace)
+            restored.set_node_available(placement.primary, False)
+            recalled_after_restore_loss = bool(
+                restored.query("snapshot restore node loss", namespace=namespace, top_k=1)
+            )
+            return {
+                "engine": "WaveMind replicated snapshot",
+                "nodes": len(snapshot.nodes),
+                "manifest_healthy": health["healthy"],
+                "total_bytes": snapshot.total_bytes,
+                "snapshot_ms": snapshot_ms,
+                "restore_ms": restore_ms,
+                "restored_files": len(restore.restored_files),
+                "recalled_after_restore_node_loss": recalled_after_restore_loss,
+            }
+        finally:
+            memory.close()
+            if restored is not None:
+                restored.close()
+
+
 def run_multimodal_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -399,6 +458,7 @@ def run_benchmark(
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
+        run_replicated_snapshot_profile(),
         run_multimodal_profile(),
     ]
     return {
@@ -411,8 +471,9 @@ def run_benchmark(
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
-                "active-active delta sync, hot-cache behavior, and structured "
-                "payload retrieval. This is not a 10M-vector database load test."
+                "active-active delta sync, replicated snapshot/restore, hot-cache "
+                "behavior, and structured payload retrieval. This is not a "
+                "10M-vector database load test."
             ),
         },
         "results": results,
@@ -456,6 +517,9 @@ def main() -> int:
         elif result["engine"] == "WaveMind active-active delta sync":
             print(f"| active-active delta | converged | {result['converged_after_bidirectional_sync']} |")
             print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")
+        elif result["engine"] == "WaveMind replicated snapshot":
+            print(f"| replicated snapshot | manifest_healthy | {result['manifest_healthy']} |")
+            print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
     print(f"\nWrote {args.output}")

@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, active-active delta sync, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, active-active delta sync, replicated snapshot/restore, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 55.97210000269115,
+      "placement_ms": 59.205800003837794,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -32,8 +32,8 @@
       "capacity": 512,
       "hit_rate": 0.92,
       "evictions": 0,
-      "avg_lookup_ms": 0.001386649877531454,
-      "p99_lookup_ms": 0.0026999623514711857
+      "avg_lookup_ms": 0.0014145502645988017,
+      "p99_lookup_ms": 0.002700020559132099
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -47,8 +47,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 1.3324000174179673,
-      "p99_query_after_loss_ms": 1.3324000174179673
+      "avg_query_after_loss_ms": 1.2885000323876739,
+      "p99_query_after_loss_ms": 1.2885000323876739
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -56,10 +56,20 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 120.19369995687157,
+      "sync_ms": 112.49550001230091,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
+    },
+    {
+      "engine": "WaveMind replicated snapshot",
+      "nodes": 3,
+      "manifest_healthy": true,
+      "total_bytes": 110592,
+      "snapshot_ms": 49.16400002548471,
+      "restore_ms": 11.4187000435777,
+      "restored_files": 3,
+      "recalled_after_restore_node_loss": true
     },
     {
       "engine": "WaveMind structured payloads",
@@ -71,8 +81,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.4274749953765422,
-      "p99_latency_ms": 0.6231999723240733
+      "avg_latency_ms": 0.44750000233761966,
+      "p99_latency_ms": 0.6680000224150717
     }
   ]
 }

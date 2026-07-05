@@ -3,9 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -59,6 +61,48 @@ class ReplicatedDeltaImportReport:
     deleted_records: int = 0
     imported_tombstones: int = 0
     failed_nodes: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ReplicatedSnapshotReport:
+    snapshot_path: Path
+    nodes: tuple[str, ...]
+    total_bytes: int
+    checksums: dict[str, str]
+    skipped_nodes: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def ok(self) -> bool:
+        return not self.skipped_nodes
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "snapshot_path": str(self.snapshot_path),
+            "nodes": list(self.nodes),
+            "total_bytes": self.total_bytes,
+            "checksums": dict(self.checksums),
+            "skipped_nodes": dict(self.skipped_nodes),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
+class ReplicatedRestoreReport:
+    root_path: Path
+    nodes: tuple[str, ...]
+    restored_files: dict[str, Path]
+    total_bytes: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "root_path": str(self.root_path),
+            "nodes": list(self.nodes),
+            "restored_files": {
+                node_id: str(path)
+                for node_id, path in self.restored_files.items()
+            },
+            "total_bytes": self.total_bytes,
+        }
 
 
 @dataclass(frozen=True)
@@ -477,6 +521,195 @@ class ReplicatedWaveMind:
             failed_nodes=failed,
         )
 
+    def snapshot(
+        self,
+        destination: str | Path,
+        *,
+        prefix: str = "wavemind-replicated",
+        keep_last: int | None = None,
+        require_all: bool = True,
+    ) -> ReplicatedSnapshotReport:
+        """Create a checksummed snapshot of every replica SQLite store."""
+        destination = Path(destination)
+        if destination.suffix:
+            raise ValueError("replicated snapshot destination must be a directory")
+        destination.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        snapshot_path = destination / f"{prefix}-{timestamp}"
+        if snapshot_path.exists():
+            snapshot_path = destination / f"{prefix}-{timestamp}-{time.time_ns()}"
+        snapshot_path.mkdir(parents=True)
+
+        nodes_payload: list[dict[str, Any]] = []
+        skipped: dict[str, str] = {}
+        checksums: dict[str, str] = {}
+        total_bytes = 0
+
+        for node in self.nodes:
+            node_id = node.id
+            if not self._available.get(node_id, False):
+                skipped[node_id] = "node unavailable"
+                if require_all:
+                    shutil.rmtree(snapshot_path, ignore_errors=True)
+                    raise ReplicationError(
+                        f"Cannot snapshot unavailable replica {node_id!r}"
+                    )
+                continue
+
+            mind = self._mind(node_id)
+            backup = getattr(mind.store, "backup", None)
+            commit = getattr(mind.store, "commit", None)
+            if not callable(backup):
+                skipped[node_id] = "store does not support SQLite file backup"
+                if require_all:
+                    shutil.rmtree(snapshot_path, ignore_errors=True)
+                    raise NotImplementedError(
+                        "Replicated snapshots currently require SQLite-backed replicas"
+                    )
+                continue
+            if callable(commit):
+                commit()
+
+            filename = f"{self._safe_node_dir(node_id)}.sqlite3"
+            target = snapshot_path / filename
+            backup(target)
+            digest = self._sha256_file(target)
+            size = target.stat().st_size
+            checksums[node_id] = digest
+            total_bytes += size
+            stats = mind.stats()
+            nodes_payload.append(
+                {
+                    "id": node.id,
+                    "address": node.address,
+                    "zone": node.zone,
+                    "weight": node.weight,
+                    "db_file": filename,
+                    "sha256": digest,
+                    "bytes": size,
+                    "active_memories": stats.get("active_memories"),
+                    "total_memories": stats.get("total_memories"),
+                    "audit_events": stats.get("audit_events"),
+                }
+            )
+
+        manifest = {
+            "format": "wavemind.replicated_snapshot.v1",
+            "created_at": time.time(),
+            "replication_factor": self.replication_factor,
+            "write_quorum": self.write_quorum,
+            "read_quorum": self.read_quorum,
+            "nodes": nodes_payload,
+            "skipped_nodes": skipped,
+            "total_bytes": total_bytes,
+        }
+        (snapshot_path / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        if keep_last is not None:
+            self._prune_snapshots(destination, prefix=prefix, keep_last=keep_last)
+
+        return ReplicatedSnapshotReport(
+            snapshot_path=snapshot_path,
+            nodes=tuple(item["id"] for item in nodes_payload),
+            total_bytes=total_bytes,
+            checksums=checksums,
+            skipped_nodes=skipped,
+        )
+
+    @staticmethod
+    def verify_snapshot(snapshot_path: str | Path) -> dict[str, Any]:
+        snapshot_path = Path(snapshot_path)
+        manifest = ReplicatedWaveMind._read_snapshot_manifest(snapshot_path)
+        failures: dict[str, str] = {}
+        verified: dict[str, str] = {}
+        total_bytes = 0
+        for node in manifest.get("nodes", []):
+            node_id = str(node["id"])
+            db_file = snapshot_path / str(node["db_file"])
+            if not db_file.exists():
+                failures[node_id] = "snapshot database file is missing"
+                continue
+            actual = ReplicatedWaveMind._sha256_file(db_file)
+            expected = str(node["sha256"])
+            if actual != expected:
+                failures[node_id] = "sha256 mismatch"
+                continue
+            verified[node_id] = actual
+            total_bytes += db_file.stat().st_size
+        return {
+            "format": manifest["format"],
+            "healthy": not failures,
+            "snapshot_path": str(snapshot_path),
+            "verified_nodes": verified,
+            "failed_nodes": failures,
+            "total_bytes": total_bytes,
+        }
+
+    @classmethod
+    def restore_snapshot(
+        cls,
+        snapshot_path: str | Path,
+        root_path: str | Path,
+        *,
+        overwrite: bool = False,
+        **mind_kwargs: Any,
+    ) -> tuple["ReplicatedWaveMind", ReplicatedRestoreReport]:
+        snapshot_path = Path(snapshot_path)
+        root_path = Path(root_path)
+        health = cls.verify_snapshot(snapshot_path)
+        if not health["healthy"]:
+            raise ReplicationError(
+                f"Snapshot verification failed: {health['failed_nodes']}"
+            )
+        if root_path.exists() and any(root_path.iterdir()):
+            if not overwrite:
+                raise FileExistsError(
+                    f"Restore root already exists and is not empty: {root_path}"
+                )
+            shutil.rmtree(root_path)
+        root_path.mkdir(parents=True, exist_ok=True)
+
+        manifest = cls._read_snapshot_manifest(snapshot_path)
+        restored_files: dict[str, Path] = {}
+        total_bytes = 0
+        nodes: list[ClusterNode] = []
+        for node_payload in manifest["nodes"]:
+            node = ClusterNode(
+                id=str(node_payload["id"]),
+                address=str(node_payload["address"]),
+                zone=(
+                    str(node_payload["zone"])
+                    if node_payload.get("zone") is not None
+                    else None
+                ),
+                weight=float(node_payload.get("weight", 1.0)),
+            )
+            nodes.append(node)
+            target = root_path / cls._safe_node_dir(node.id) / "wavemind.sqlite3"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source = snapshot_path / str(node_payload["db_file"])
+            shutil.copy2(source, target)
+            restored_files[node.id] = target
+            total_bytes += target.stat().st_size
+
+        memory = cls(
+            root_path=root_path,
+            nodes=nodes,
+            replication_factor=int(manifest["replication_factor"]),
+            write_quorum=int(manifest["write_quorum"]),
+            read_quorum=int(manifest["read_quorum"]),
+            **mind_kwargs,
+        )
+        report = ReplicatedRestoreReport(
+            root_path=root_path,
+            nodes=tuple(node.id for node in nodes),
+            restored_files=restored_files,
+            total_bytes=total_bytes,
+        )
+        return memory, report
+
     def placement(self, namespace: str = "default") -> NamespacePlacement:
         return build_cluster_plan(
             namespaces=[namespace],
@@ -855,3 +1088,44 @@ class ReplicatedWaveMind:
     def _safe_node_dir(node_id: str) -> str:
         safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", node_id).strip(".-")
         return safe or "node"
+
+    @staticmethod
+    def _sha256_file(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    @staticmethod
+    def _read_snapshot_manifest(snapshot_path: Path) -> dict[str, Any]:
+        manifest_path = snapshot_path / "manifest.json"
+        if not manifest_path.exists():
+            raise FileNotFoundError(f"Snapshot manifest does not exist: {manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("format") != "wavemind.replicated_snapshot.v1":
+            raise ValueError("Unsupported replicated snapshot format")
+        return manifest
+
+    @staticmethod
+    def _prune_snapshots(
+        directory: Path,
+        *,
+        prefix: str,
+        keep_last: int,
+    ) -> list[Path]:
+        keep_last = max(0, int(keep_last))
+        snapshots = sorted(
+            [
+                path
+                for path in directory.glob(f"{prefix}-*")
+                if path.is_dir() and (path / "manifest.json").exists()
+            ],
+            key=lambda path: (path.stat().st_mtime, path.name),
+            reverse=True,
+        )
+        deleted: list[Path] = []
+        for path in snapshots[keep_last:]:
+            shutil.rmtree(path)
+            deleted.append(path)
+        return deleted

@@ -702,7 +702,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement plus hot-cache and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/restore, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -735,6 +735,42 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p99_lookup_ms",
                     ),
                 ),
+                "WaveMind replicated runtime": _metric_summary(
+                    scale_readiness_results.get("WaveMind replicated runtime"),
+                    (
+                        "nodes",
+                        "replication_factor",
+                        "write_quorum",
+                        "read_quorum",
+                        "recalled_after_node_loss",
+                        "repair_copied_records",
+                        "tombstone_repair_deleted_records",
+                        "p99_query_after_loss_ms",
+                    ),
+                ),
+                "WaveMind active-active delta sync": _metric_summary(
+                    scale_readiness_results.get("WaveMind active-active delta sync"),
+                    (
+                        "regions",
+                        "replication_factor_per_region",
+                        "records_imported",
+                        "converged_after_bidirectional_sync",
+                        "suppressed_stale_import_after_delete",
+                        "tombstone_converged",
+                        "sync_ms",
+                    ),
+                ),
+                "WaveMind replicated snapshot": _metric_summary(
+                    scale_readiness_results.get("WaveMind replicated snapshot"),
+                    (
+                        "nodes",
+                        "manifest_healthy",
+                        "restored_files",
+                        "recalled_after_restore_node_loss",
+                        "snapshot_ms",
+                        "restore_ms",
+                    ),
+                ),
                 "WaveMind structured payloads": _metric_summary(
                     scale_readiness_results.get("WaveMind structured payloads"),
                     (
@@ -745,8 +781,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",
-            "next_step": "Move from single-node service profiles to namespace sharding and replicated service runs.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, restore drills, hot-cache behavior, and structured payload recall.",
+            "next_step": "Move from local replicated runtime to service-backed replicated runs, scheduled/offsite snapshots, and larger 10M candidate-index load tests.",
         },
         {
             "id": "memory_competitor_adapter_profile",

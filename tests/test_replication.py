@@ -4,6 +4,7 @@ from wavemind import (
     HashingTextEncoder,
     ReadQuorumError,
     ReplicatedWaveMind,
+    ReplicationError,
     WriteQuorumError,
 )
 
@@ -275,6 +276,92 @@ def test_replicated_wavemind_tombstone_delta_beats_stale_record_delta(tmp_path):
     finally:
         region_a.close()
         region_b.close()
+
+
+def test_replicated_wavemind_snapshot_restore_survives_node_loss(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    restored = None
+    try:
+        namespace = "tenant:snapshot"
+        write = memory.remember(
+            "snapshot restore keeps replicated memory available",
+            namespace=namespace,
+        )
+
+        report = memory.snapshot(tmp_path / "snapshots")
+        health = ReplicatedWaveMind.verify_snapshot(report.snapshot_path)
+        restored, restore_report = ReplicatedWaveMind.restore_snapshot(
+            report.snapshot_path,
+            tmp_path / "restored",
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+        placement = restored.placement(namespace)
+        restored.set_node_available(placement.primary, False)
+        results = restored.query("replicated memory available", namespace=namespace, top_k=1)
+
+        assert report.ok
+        assert set(report.nodes) == set(write.writes)
+        assert health["healthy"] is True
+        assert set(health["verified_nodes"]) == set(write.writes)
+        assert set(restore_report.restored_files) == set(write.writes)
+        assert results[0].text == "snapshot restore keeps replicated memory available"
+    finally:
+        memory.close()
+        if restored is not None:
+            restored.close()
+
+
+def test_replicated_wavemind_snapshot_verify_detects_checksum_drift(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    try:
+        memory.remember("checksum protected snapshot", namespace="tenant:snapshot")
+        report = memory.snapshot(tmp_path / "snapshots")
+        first_node = report.nodes[0]
+        with (report.snapshot_path / f"{first_node}.sqlite3").open("ab") as handle:
+            handle.write(b"corruption")
+
+        health = ReplicatedWaveMind.verify_snapshot(report.snapshot_path)
+
+        assert health["healthy"] is False
+        assert health["failed_nodes"] == {first_node: "sha256 mismatch"}
+        with pytest.raises(ReplicationError, match="Snapshot verification failed"):
+            ReplicatedWaveMind.restore_snapshot(report.snapshot_path, tmp_path / "restored")
+    finally:
+        memory.close()
+
+
+def test_replicated_wavemind_restore_requires_overwrite_for_nonempty_root(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    restored = None
+    try:
+        memory.remember("restore overwrite guard", namespace="tenant:snapshot")
+        report = memory.snapshot(tmp_path / "snapshots")
+        destination = tmp_path / "existing"
+        destination.mkdir()
+        (destination / "marker.txt").write_text("keep", encoding="utf-8")
+
+        with pytest.raises(FileExistsError):
+            ReplicatedWaveMind.restore_snapshot(report.snapshot_path, destination)
+
+        restored, restore_report = ReplicatedWaveMind.restore_snapshot(
+            report.snapshot_path,
+            destination,
+            overwrite=True,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+
+        assert not (destination / "marker.txt").exists()
+        assert len(restore_report.restored_files) == 3
+    finally:
+        memory.close()
+        if restored is not None:
+            restored.close()
 
 
 def test_replicated_wavemind_rejects_global_db_path(tmp_path):

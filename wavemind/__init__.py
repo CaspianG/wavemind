@@ -22,6 +22,8 @@ from .replication import (
     ReadQuorumError,
     ReplicatedDeltaImportReport,
     ReplicatedRepairReport,
+    ReplicatedRestoreReport,
+    ReplicatedSnapshotReport,
     ReplicatedWaveMind,
     ReplicatedWriteResult,
     ReplicationError,
@@ -37,7 +39,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.6"
+__version__ = "2.2.7"
 
 __all__ = [
     "FieldProjector",
@@ -58,6 +60,8 @@ __all__ = [
     "RedisHotMemoryCache",
     "ReplicatedDeltaImportReport",
     "ReplicatedRepairReport",
+    "ReplicatedRestoreReport",
+    "ReplicatedSnapshotReport",
     "ReplicatedWaveMind",
     "ReplicatedWriteResult",
     "ReplicationError",

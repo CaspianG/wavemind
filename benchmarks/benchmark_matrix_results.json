@@ -741,7 +741,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/scale_readiness_benchmark.py",
-      "dataset": "Deterministic 1M-memory simulation for namespace placement plus hot-cache and structured-payload retrieval checks.",
+      "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/restore, hot-cache, and structured-payload retrieval checks.",
       "competitors": [
         "Mem0",
         "Zep",
@@ -764,24 +764,51 @@
           "zone_loss_min_availability": 1.0,
           "read_quorum": 1,
           "write_quorum": 2,
-          "placement_ms": 115.80999998841435
+          "placement_ms": 59.205800003837794
         },
         "WaveMind hot cache": {
           "queries": 2000,
           "capacity": 512,
           "hit_rate": 0.92,
           "evictions": 0,
-          "p99_lookup_ms": 0.003500026650726795
+          "p99_lookup_ms": 0.002700020559132099
+        },
+        "WaveMind replicated runtime": {
+          "nodes": 3,
+          "replication_factor": 3,
+          "write_quorum": 2,
+          "read_quorum": 1,
+          "recalled_after_node_loss": true,
+          "repair_copied_records": 1,
+          "tombstone_repair_deleted_records": 1,
+          "p99_query_after_loss_ms": 1.2885000323876739
+        },
+        "WaveMind active-active delta sync": {
+          "regions": 2,
+          "replication_factor_per_region": 3,
+          "records_imported": 6,
+          "converged_after_bidirectional_sync": true,
+          "suppressed_stale_import_after_delete": true,
+          "tombstone_converged": true,
+          "sync_ms": 112.49550001230091
+        },
+        "WaveMind replicated snapshot": {
+          "nodes": 3,
+          "manifest_healthy": true,
+          "restored_files": 3,
+          "recalled_after_restore_node_loss": true,
+          "snapshot_ms": 49.16400002548471,
+          "restore_ms": 11.4187000435777
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.8370749856112525,
-          "p99_latency_ms": 1.0724000167101622
+          "avg_latency_ms": 0.44750000233761966,
+          "p99_latency_ms": 0.6680000224150717
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",
-      "next_step": "Move from single-node service profiles to namespace sharding and replicated service runs."
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, restore drills, hot-cache behavior, and structured payload recall.",
+      "next_step": "Move from local replicated runtime to service-backed replicated runs, scheduled/offsite snapshots, and larger 10M candidate-index load tests."
     },
     {
       "id": "memory_competitor_adapter_profile",
