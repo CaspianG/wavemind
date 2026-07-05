@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 from . import __version__
@@ -13,6 +14,7 @@ from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
 from .jobs import MemoryMaintenanceWorker, ReplicatedSnapshotWorker
+from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
 from .storage import SQLiteMemoryStore
 
@@ -175,6 +177,12 @@ def build_parser() -> argparse.ArgumentParser:
     replicated_snapshot.add_argument("--out", required=True)
     replicated_snapshot.add_argument("--offsite")
     replicated_snapshot.add_argument("--archive")
+    replicated_snapshot.add_argument(
+        "--s3",
+        help="Upload archive to s3://bucket/prefix or s3://bucket/key.tar.gz",
+    )
+    replicated_snapshot.add_argument("--s3-endpoint-url")
+    replicated_snapshot.add_argument("--s3-region")
     replicated_snapshot.add_argument("--keep-last", type=int)
     replicated_snapshot.add_argument("--prefix", default="wavemind-replicated")
     replicated_snapshot.add_argument("--allow-partial", action="store_true")
@@ -187,6 +195,8 @@ def build_parser() -> argparse.ArgumentParser:
     replicated_restore.add_argument("--from", dest="source", required=True)
     replicated_restore.add_argument("--to", dest="destination", required=True)
     replicated_restore.add_argument("--overwrite", action="store_true")
+    replicated_restore.add_argument("--s3-endpoint-url")
+    replicated_restore.add_argument("--s3-region")
     replicated_restore.add_argument("--json", action="store_true")
 
     bench = sub.add_parser("benchmark", help="Run a synthetic recall benchmark")
@@ -393,6 +403,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "replicated-snapshot":
         memory = make_replicated_mind(args)
         try:
+            object_store = None
+            if args.s3 and (args.s3_endpoint_url or args.s3_region):
+                object_store = S3SnapshotStore.from_uri(
+                    args.s3,
+                    endpoint_url=args.s3_endpoint_url,
+                    region_name=args.s3_region,
+                )
             report = ReplicatedSnapshotWorker(memory).run_once(
                 destination=args.out,
                 prefix=args.prefix,
@@ -400,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
                 require_all=not args.allow_partial,
                 offsite_destination=args.offsite,
                 archive_destination=args.archive,
+                object_store_destination=args.s3,
+                object_store=object_store,
             )
         finally:
             memory.close()
@@ -415,11 +434,28 @@ def main(argv: list[str] | None = None) -> int:
             if payload["archive_path"]:
                 print(f"archive: {payload['archive_path']}")
                 print(f"archive_verified: {payload['archive_verified']}")
+            if payload["object_store_upload"]:
+                upload = payload["object_store_upload"]
+                print(f"object_store: {upload['uri']}")
+                print(f"object_store_verified: {upload['verified']}")
         return 0 if report.ok else 4
 
     if args.command == "replicated-restore":
         source = Path(args.source)
-        if source.name.endswith(".tar.gz") or source.suffix == ".tgz":
+        if args.source.startswith("s3://"):
+            store = S3SnapshotStore.from_uri(
+                args.source,
+                endpoint_url=args.s3_endpoint_url,
+                region_name=args.s3_region,
+            )
+            with tempfile.TemporaryDirectory(prefix="wavemind-s3-restore-") as tmp:
+                archive_path = store.download_archive(args.source, tmp)
+                restored, report = ReplicatedWaveMind.restore_snapshot_archive(
+                    archive_path,
+                    args.destination,
+                    overwrite=args.overwrite,
+                )
+        elif source.name.endswith(".tar.gz") or source.suffix == ".tgz":
             restored, report = ReplicatedWaveMind.restore_snapshot_archive(
                 source,
                 args.destination,

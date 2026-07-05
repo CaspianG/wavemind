@@ -57,6 +57,9 @@ def test_otel_and_production_extras_are_available():
     assert "opentelemetry-instrumentation-fastapi>=0.46b0" in optional_requirements
     assert "production = [" in pyproject
     assert '"opentelemetry-instrumentation-fastapi>=0.46b0"' in pyproject
+    assert "s3 = [" in pyproject
+    assert '"boto3>=1.34"' in pyproject
+    assert "boto3>=1.34" in optional_requirements
 
 
 def test_langchain_extra_installs_classic_memory_api():

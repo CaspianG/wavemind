@@ -702,7 +702,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/offsite/archive restore, hot-cache, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -767,6 +767,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "manifest_healthy",
                         "offsite_verified",
                         "archive_verified",
+                        "object_store_verified",
                         "restored_files",
                         "recalled_after_restore_node_loss",
                         "snapshot_ms",
@@ -783,8 +784,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive-verified restore drills, hot-cache behavior, and structured payload recall.",
-            "next_step": "Move from local replicated runtime to service-backed replicated runs, object-store snapshot adapters, and larger 10M candidate-index load tests.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive/object-store-verified restore drills, hot-cache behavior, and structured payload recall.",
+            "next_step": "Move from local replicated runtime to service-backed replicated runs, object-store retention/download drills, and larger 10M candidate-index load tests.",
         },
         {
             "id": "memory_competitor_adapter_profile",

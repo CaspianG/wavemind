@@ -230,6 +230,17 @@ def test_cli_replicated_snapshot_and_restore(tmp_path):
             restored.close()
 
 
+def test_cli_replicated_snapshot_and_restore_help_mentions_s3_flags():
+    snapshot_help = run_cli("replicated-snapshot", "--help")
+    restore_help = run_cli("replicated-restore", "--help")
+
+    assert "--s3" in snapshot_help.stdout
+    assert "--s3-endpoint-url" in snapshot_help.stdout
+    assert "--s3-region" in snapshot_help.stdout
+    assert "--s3-endpoint-url" in restore_help.stdout
+    assert "--s3-region" in restore_help.stdout
+
+
 def test_cli_consolidate_creates_concept_memory(tmp_path):
     db_path = tmp_path / "concepts.sqlite3"
 

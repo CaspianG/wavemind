@@ -25,6 +25,12 @@ from .multimodal import (
     remember_payload,
     table_payload,
 )
+from .object_store import (
+    ObjectStoreLocation,
+    ObjectStoreUploadReport,
+    S3SnapshotStore,
+    parse_object_store_uri,
+)
 from .replication import (
     ReadQuorumError,
     ReplicatedDeltaImportReport,
@@ -47,7 +53,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.9"
+__version__ = "2.3.0"
 
 __all__ = [
     "FieldProjector",
@@ -62,6 +68,8 @@ __all__ = [
     "MemoryRecord",
     "MemoryPayload",
     "NamespaceShardRouter",
+    "ObjectStoreLocation",
+    "ObjectStoreUploadReport",
     "NamespacePlacement",
     "QueryResult",
     "ReadQuorumError",
@@ -84,6 +92,7 @@ __all__ = [
     "ShardedWaveMind",
     "SQLiteMemoryStore",
     "ScalePlan",
+    "S3SnapshotStore",
     "TextEncoder",
     "WaveField",
     "WaveMind",
@@ -96,6 +105,7 @@ __all__ = [
     "create_text_encoder",
     "event_payload",
     "image_payload",
+    "parse_object_store_uri",
     "query_with_cache",
     "remember_payload",
     "scale_status_meets_or_exceeds",

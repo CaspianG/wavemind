@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .core import QueryResult
+from .object_store import ObjectStoreUploadReport, S3SnapshotStore
 from .replication import ReplicatedWaveMind
 
 
@@ -344,6 +345,7 @@ class ReplicatedSnapshotJobReport:
     offsite_verified: bool = False
     archive_path: Path | None = None
     archive_verified: bool = False
+    object_store_upload: ObjectStoreUploadReport | None = None
     pruned_local: tuple[Path, ...] = ()
     pruned_offsite: tuple[Path, ...] = ()
     pruned_archives: tuple[Path, ...] = ()
@@ -354,6 +356,10 @@ class ReplicatedSnapshotJobReport:
             self.verified
             and (self.offsite_path is None or self.offsite_verified)
             and (self.archive_path is None or self.archive_verified)
+            and (
+                self.object_store_upload is None
+                or self.object_store_upload.verified
+            )
         )
 
     def as_dict(self) -> dict[str, object]:
@@ -366,6 +372,16 @@ class ReplicatedSnapshotJobReport:
             "offsite_verified": self.offsite_verified,
             "archive_path": str(self.archive_path) if self.archive_path else None,
             "archive_verified": self.archive_verified,
+            "object_store_upload": (
+                self.object_store_upload.as_dict()
+                if self.object_store_upload is not None
+                else None
+            ),
+            "object_store_verified": (
+                self.object_store_upload.verified
+                if self.object_store_upload is not None
+                else False
+            ),
             "pruned_local": [str(path) for path in self.pruned_local],
             "pruned_offsite": [str(path) for path in self.pruned_offsite],
             "pruned_archives": [str(path) for path in self.pruned_archives],
@@ -388,6 +404,8 @@ class ReplicatedSnapshotWorker:
         require_all: bool = True,
         offsite_destination: str | Path | None = None,
         archive_destination: str | Path | None = None,
+        object_store_destination: str | None = None,
+        object_store: S3SnapshotStore | None = None,
     ) -> ReplicatedSnapshotJobReport:
         local_destination = Path(destination)
         snapshot = self.memory.snapshot(
@@ -413,6 +431,8 @@ class ReplicatedSnapshotWorker:
 
         archive_path: Path | None = None
         archive_verified = False
+        if object_store_destination is not None and archive_destination is None:
+            archive_destination = local_destination
         if archive_destination is not None:
             archive = ReplicatedWaveMind.archive_snapshot(
                 snapshot.snapshot_path,
@@ -420,6 +440,15 @@ class ReplicatedSnapshotWorker:
             )
             archive_path = archive.archive_path
             archive_verified = archive.verified
+
+        object_store_upload: ObjectStoreUploadReport | None = None
+        if object_store_destination is not None:
+            if archive_path is None:
+                raise RuntimeError("object-store upload requires a snapshot archive")
+            object_store = object_store or S3SnapshotStore.from_uri(
+                object_store_destination
+            )
+            object_store_upload = object_store.upload_archive(archive_path)
 
         pruned_local: tuple[Path, ...] = ()
         pruned_offsite: tuple[Path, ...] = ()
@@ -461,6 +490,7 @@ class ReplicatedSnapshotWorker:
             offsite_verified=offsite_verified,
             archive_path=archive_path,
             archive_verified=archive_verified,
+            object_store_upload=object_store_upload,
             pruned_local=pruned_local,
             pruned_offsite=pruned_offsite,
             pruned_archives=pruned_archives,

@@ -20,6 +20,7 @@ from wavemind import (
     QueryResult,
     ReplicatedWaveMind,
     ReplicatedSnapshotWorker,
+    S3SnapshotStore,
     WaveMind,
     audio_payload,
     build_cluster_plan,
@@ -29,6 +30,26 @@ from wavemind import (
     remember_payload,
     table_payload,
 )
+
+
+class InMemoryS3Client:
+    def __init__(self):
+        self.objects: dict[tuple[str, str], dict[str, object]] = {}
+
+    def upload_file(self, filename: str, bucket: str, key: str, ExtraArgs=None):
+        self.objects[(bucket, key)] = {
+            "Body": Path(filename).read_bytes(),
+            "Metadata": dict((ExtraArgs or {}).get("Metadata") or {}),
+        }
+
+    def head_object(self, Bucket: str, Key: str) -> dict[str, object]:
+        payload = self.objects[(Bucket, Key)]
+        body = payload["Body"]
+        return {
+            "ContentLength": len(body),
+            "Metadata": dict(payload["Metadata"]),
+            "ETag": '"benchmark-etag"',
+        }
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -336,10 +357,16 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                 namespace=namespace,
             )
             snapshot_started = time.perf_counter()
+            object_store = S3SnapshotStore.from_uri(
+                "s3://wavemind-benchmark/replicated",
+                client=InMemoryS3Client(),
+            )
             snapshot_job = ReplicatedSnapshotWorker(memory).run_once(
                 destination=root / "snapshots",
                 offsite_destination=root / "offsite",
                 archive_destination=root / "archives",
+                object_store_destination="s3://wavemind-benchmark/replicated",
+                object_store=object_store,
                 keep_last=2,
             )
             snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
@@ -366,6 +393,10 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                 "manifest_healthy": health["healthy"],
                 "offsite_verified": snapshot_job.offsite_verified,
                 "archive_verified": snapshot_job.archive_verified,
+                "object_store_verified": bool(
+                    snapshot_job.object_store_upload
+                    and snapshot_job.object_store_upload.verified
+                ),
                 "total_bytes": snapshot_job.total_bytes,
                 "snapshot_ms": snapshot_ms,
                 "restore_ms": restore_ms,
@@ -480,8 +511,9 @@ def run_benchmark(
                 "Deterministic scale-readiness profile for cluster placement, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "active-active delta sync, replicated snapshot/offsite/archive "
-                "restore, hot-cache behavior, and structured payload retrieval. This is not a "
-                "10M-vector database load test."
+                "restore, S3-compatible object-store upload verification, hot-cache "
+                "behavior, and structured payload retrieval. This is not a 10M-vector "
+                "database load test."
             ),
         },
         "results": results,
@@ -529,6 +561,7 @@ def main() -> int:
             print(f"| replicated snapshot | manifest_healthy | {result['manifest_healthy']} |")
             print(f"| replicated snapshot | offsite_verified | {result['offsite_verified']} |")
             print(f"| replicated snapshot | archive_verified | {result['archive_verified']} |")
+            print(f"| replicated snapshot | object_store_verified | {result['object_store_verified']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")

@@ -1,5 +1,6 @@
 import fnmatch
 import tarfile
+from pathlib import Path
 
 from wavemind import (
     HashingTextEncoder,
@@ -9,6 +10,7 @@ from wavemind import (
     RedisHotMemoryCache,
     ReplicatedSnapshotWorker,
     ReplicatedWaveMind,
+    S3SnapshotStore,
     WaveMind,
     query_with_cache,
 )
@@ -35,6 +37,25 @@ class FakeRedis:
         for key in keys:
             self.items.pop(key, None)
             self.expirations.pop(key, None)
+
+
+class FakeS3Client:
+    def __init__(self):
+        self.objects = {}
+
+    def upload_file(self, filename, bucket, key, ExtraArgs=None):
+        self.objects[(bucket, key)] = {
+            "Body": Path(filename).read_bytes(),
+            "Metadata": dict((ExtraArgs or {}).get("Metadata") or {}),
+        }
+
+    def head_object(self, Bucket, Key):
+        payload = self.objects[(Bucket, Key)]
+        return {
+            "ContentLength": len(payload["Body"]),
+            "Metadata": dict(payload["Metadata"]),
+            "ETag": '"fake-etag"',
+        }
 
 
 def test_hot_memory_cache_reuses_query_results(tmp_path):
@@ -286,6 +307,44 @@ def test_replicated_snapshot_worker_prunes_archives(tmp_path):
             ReplicatedWaveMind.verify_snapshot_archive(path)["healthy"]
             for path in archives
         )
+    finally:
+        memory.close()
+
+
+def test_replicated_snapshot_worker_uploads_archive_to_object_store(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    client = FakeS3Client()
+    store = S3SnapshotStore.from_uri(
+        "s3://wavemind-backups/prod",
+        client=client,
+    )
+    try:
+        memory.remember("object store keeps replicated memory", namespace="tenant:s3")
+        report = ReplicatedSnapshotWorker(memory).run_once(
+            destination=tmp_path / "snapshots",
+            object_store_destination="s3://wavemind-backups/prod",
+            object_store=store,
+            keep_last=2,
+        )
+
+        upload = report.object_store_upload
+
+        assert report.ok
+        assert report.archive_path is not None
+        assert report.archive_verified is True
+        assert upload is not None
+        assert upload.verified is True
+        assert upload.uri.startswith("s3://wavemind-backups/prod/")
+        assert upload.key.endswith(".tar.gz")
+        assert ("wavemind-backups", upload.key) in client.objects
     finally:
         memory.close()
 
