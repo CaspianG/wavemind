@@ -177,6 +177,57 @@ class LocalWaveMindServiceClient:
             for record in records
         ]
 
+    def export_namespace_state(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: tuple[str, ...] = (),
+        include_tombstones: bool = True,
+    ) -> dict[str, object]:
+        tombstones = []
+        if include_tombstones:
+            tombstones = [
+                {
+                    "record_keys": list(event.metadata.get("record_keys", [])),
+                    "texts": list(event.metadata.get("texts", [])),
+                }
+                for event in self._mind(address).audit_events(
+                    namespace=namespace,
+                    action="distributed_tombstone",
+                    limit=10_000,
+                )
+            ]
+        return {
+            "records": self.export_namespace(
+                address,
+                namespace=namespace,
+                limit=limit,
+                include_expired=include_expired,
+                tags=tags,
+            ),
+            "tombstones": tombstones,
+        }
+
+    def log_tombstone(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        record_keys: tuple[str, ...] = (),
+        texts: tuple[str, ...] = (),
+    ) -> int:
+        return self._mind(address).store.log_audit_event(
+            "distributed_tombstone",
+            namespace=namespace,
+            metadata={
+                "record_keys": sorted(record_keys),
+                "texts": sorted(texts),
+            },
+        )
+
     def close(self) -> None:
         for mind in self.minds.values():
             mind.close()
@@ -380,6 +431,47 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 namespace=namespace,
                 text="distributed service shard keeps tenant memory",
             )
+
+            tombstone_memory = DistributedShardedWaveMind(
+                nodes=[
+                    ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+                    ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+                    ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+                ],
+                replication_factor=3,
+                client=client,
+            )
+            tombstone_namespace = "tenant:distributed-tombstone"
+            tombstone_text = "service repair must not resurrect deleted memory"
+            tombstone_memory.remember(tombstone_text, namespace=tombstone_namespace)
+            tombstone_placement = tombstone_memory.placement(tombstone_namespace)
+            missed_delete = tombstone_placement.replicas[-1]
+            tombstone_memory.set_node_available(missed_delete, False)
+            tombstone_memory.forget(namespace=tombstone_namespace, text=tombstone_text)
+            tombstone_memory.set_node_available(missed_delete, True)
+            tombstone_stale_records_before = client._mind(missed_delete).store.count(
+                namespace=tombstone_namespace
+            )
+            tombstone_suppressed_before_repair = (
+                tombstone_memory.query(
+                    "resurrect deleted memory",
+                    namespace=tombstone_namespace,
+                    top_k=1,
+                )
+                == []
+            )
+            tombstone_repair = tombstone_memory.repair_namespace(tombstone_namespace)
+            tombstone_stale_records_after = client._mind(missed_delete).store.count(
+                namespace=tombstone_namespace
+            )
+            tombstone_suppressed_after_repair = (
+                tombstone_memory.query(
+                    "resurrect deleted memory",
+                    namespace=tombstone_namespace,
+                    top_k=1,
+                )
+                == []
+            )
             return {
                 "engine": "WaveMind distributed sharding",
                 "nodes": len(memory.nodes),
@@ -395,6 +487,14 @@ def run_distributed_sharding_profile() -> dict[str, object]:
                 "repair_ok": repair.ok,
                 "recalled_after_repair": recalled_after_repair,
                 "forget_replicated_deletes": forget.deleted,
+                "tombstone_replication_factor": tombstone_memory.replication_factor,
+                "tombstone_write_quorum": tombstone_memory.write_quorum,
+                "tombstone_missed_delete_replica_records": tombstone_stale_records_before,
+                "tombstone_suppressed_before_repair": tombstone_suppressed_before_repair,
+                "tombstone_repair_canonical_records": tombstone_repair.canonical_records,
+                "tombstone_repair_deleted_records": tombstone_repair.tombstone_deleted,
+                "tombstone_stale_records_after_repair": tombstone_stale_records_after,
+                "tombstone_suppressed_after_repair": tombstone_suppressed_after_repair,
                 "write_ms": write_ms,
                 "query_after_primary_loss_ms": query_after_primary_loss_ms,
             }
@@ -823,6 +923,9 @@ def main() -> int:
             print(f"| distributed sharding | repair_repaired_total | {result['repair_repaired_total']} |")
             print(f"| distributed sharding | recalled_after_repair | {result['recalled_after_repair']} |")
             print(f"| distributed sharding | forget_replicated_deletes | {result['forget_replicated_deletes']} |")
+            print(f"| distributed sharding | tombstone_suppressed_before_repair | {result['tombstone_suppressed_before_repair']} |")
+            print(f"| distributed sharding | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
+            print(f"| distributed sharding | tombstone_suppressed_after_repair | {result['tombstone_suppressed_after_repair']} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")

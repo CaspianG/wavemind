@@ -251,6 +251,8 @@ class MemoryExportRequest(BaseModel):
     limit: int = Field(default=1000, ge=0, le=100000)
     include_expired: bool = False
     tags: list[str] = Field(default_factory=list)
+    include_tombstones: bool = False
+    tombstone_limit: int = Field(default=10000, ge=0, le=100000)
 
 
 class MemoryExportRecordResponse(BaseModel):
@@ -266,8 +268,26 @@ class MemoryExportRecordResponse(BaseModel):
     access_count: int
 
 
+class MemoryTombstoneResponse(BaseModel):
+    id: int
+    created_at: float
+    record_keys: list[str]
+    texts: list[str]
+
+
 class MemoryExportResponse(BaseModel):
     records: list[MemoryExportRecordResponse]
+    tombstones: list[MemoryTombstoneResponse] = Field(default_factory=list)
+
+
+class MemoryTombstoneRequest(BaseModel):
+    namespace: str
+    record_keys: list[str] = Field(default_factory=list)
+    texts: list[str] = Field(default_factory=list)
+
+
+class MemoryTombstoneWriteResponse(BaseModel):
+    id: int
 
 
 class AuditEventResponse(BaseModel):
@@ -596,6 +616,15 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 include_expired=request.include_expired,
                 tags=request.tags,
             )[: request.limit]
+            tombstone_events = (
+                app.state.mind.audit_events(
+                    namespace=request.namespace,
+                    action="distributed_tombstone",
+                    limit=request.tombstone_limit,
+                )
+                if request.include_tombstones
+                else []
+            )
         return MemoryExportResponse(
             records=[
                 MemoryExportRecordResponse(
@@ -611,8 +640,44 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                     access_count=record.access_count,
                 )
                 for record in records
-            ]
+            ],
+            tombstones=[
+                MemoryTombstoneResponse(
+                    id=event.id,
+                    created_at=event.created_at,
+                    record_keys=[
+                        str(key)
+                        for key in event.metadata.get("record_keys", [])
+                        if key is not None
+                    ],
+                    texts=[
+                        str(text)
+                        for text in event.metadata.get("texts", [])
+                        if text is not None
+                    ],
+                )
+                for event in tombstone_events
+            ],
         )
+
+    @app.post(
+        "/memories/tombstone",
+        response_model=MemoryTombstoneWriteResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def write_memory_tombstone(request: MemoryTombstoneRequest) -> MemoryTombstoneWriteResponse:
+        if not request.record_keys and not request.texts:
+            raise HTTPException(status_code=400, detail="Tombstone requires record_keys or texts.")
+        with _api_operation(app, "memories_tombstone"):
+            event_id = app.state.mind.store.log_audit_event(
+                "distributed_tombstone",
+                namespace=request.namespace,
+                metadata={
+                    "record_keys": sorted(set(request.record_keys)),
+                    "texts": sorted(set(request.texts)),
+                },
+            )
+        return MemoryTombstoneWriteResponse(id=event_id)
 
     @app.get("/index/health", dependencies=[Depends(require_role("read"))])
     def index_health():

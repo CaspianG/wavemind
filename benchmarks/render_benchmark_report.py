@@ -48,6 +48,10 @@ METRIC_LABELS = {
     "repair_repaired_total": "repair repaired",
     "repair_ok": "repair ok",
     "recalled_after_repair": "recall after repair",
+    "tombstone_replication_factor": "tombstone RF",
+    "tombstone_suppressed_before_repair": "tombstone suppress before repair",
+    "tombstone_repair_deleted_records": "tombstone deleted",
+    "tombstone_suppressed_after_repair": "tombstone suppress after repair",
 }
 
 

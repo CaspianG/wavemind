@@ -110,6 +110,57 @@ class LocalWaveMindServiceClient:
             for record in records
         ]
 
+    def export_namespace_state(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags=(),
+        include_tombstones: bool = True,
+    ):
+        tombstones = []
+        if include_tombstones:
+            tombstones = [
+                {
+                    "record_keys": list(event.metadata.get("record_keys", [])),
+                    "texts": list(event.metadata.get("texts", [])),
+                }
+                for event in self._mind(address).audit_events(
+                    namespace=namespace,
+                    action="distributed_tombstone",
+                    limit=10_000,
+                )
+            ]
+        return {
+            "records": self.export_namespace(
+                address,
+                namespace=namespace,
+                limit=limit,
+                include_expired=include_expired,
+                tags=tags,
+            ),
+            "tombstones": tombstones,
+        }
+
+    def log_tombstone(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        record_keys=(),
+        texts=(),
+    ) -> int:
+        return self._mind(address).store.log_audit_event(
+            "distributed_tombstone",
+            namespace=namespace,
+            metadata={
+                "record_keys": sorted(record_keys),
+                "texts": sorted(texts),
+            },
+        )
+
     def close(self):
         for mind in self.minds.values():
             mind.close()
@@ -296,5 +347,44 @@ def test_distributed_sharded_wavemind_repairs_missing_replica_record(tmp_path):
         repaired = memory.query("distributed memory", namespace=namespace, top_k=1)
         assert repaired[0].text == "repair missing distributed memory"
         assert repaired[0].metadata["source"] == "test"
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_tombstone_repair_does_not_resurrect_delete(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        client=client,
+    )
+    try:
+        namespace = "tenant:service-tombstone"
+        write = memory.remember(
+            "service repair must not resurrect deleted memory",
+            namespace=namespace,
+        )
+        missed_delete = next(node for node in write.writes if node != write.primary_node)
+        memory.set_node_available(missed_delete, False)
+
+        delete = memory.forget(
+            namespace=namespace,
+            text="service repair must not resurrect deleted memory",
+        )
+
+        assert delete.ok
+        memory.set_node_available(missed_delete, True)
+        assert client._mind(missed_delete).store.count(namespace=namespace) == 1
+        assert memory.query("resurrect deleted memory", namespace=namespace, top_k=1) == []
+
+        report = memory.repair_namespace(namespace)
+
+        assert report.ok
+        assert report.canonical_records == 0
+        assert report.repaired_total == 0
+        assert report.tombstone_texts == 1
+        assert report.tombstone_deleted == 1
+        assert client._mind(missed_delete).store.count(namespace=namespace) == 0
+        assert memory.query("resurrect deleted memory", namespace=namespace, top_k=1) == []
     finally:
         client.close()

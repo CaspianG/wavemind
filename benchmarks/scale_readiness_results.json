@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 91.83249995112419,
+      "placement_ms": 63.9400000218302,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -34,8 +34,8 @@
       "evictions": 0,
       "prewarm_warmed": 1,
       "prewarm_hit": true,
-      "avg_lookup_ms": 0.002104399958625436,
-      "p99_lookup_ms": 0.00589998671784997
+      "avg_lookup_ms": 0.0015372000052593648,
+      "p99_lookup_ms": 0.0032999669201672077
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -55,8 +55,16 @@
       "repair_ok": true,
       "recalled_after_repair": true,
       "forget_replicated_deletes": 2,
-      "write_ms": 189.66929998714477,
-      "query_after_primary_loss_ms": 0.6763999699614942
+      "tombstone_replication_factor": 3,
+      "tombstone_write_quorum": 2,
+      "tombstone_missed_delete_replica_records": 1,
+      "tombstone_suppressed_before_repair": true,
+      "tombstone_repair_canonical_records": 0,
+      "tombstone_repair_deleted_records": 1,
+      "tombstone_stale_records_after_repair": 0,
+      "tombstone_suppressed_after_repair": true,
+      "write_ms": 155.026699998416,
+      "query_after_primary_loss_ms": 1.378699962515384
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -70,8 +78,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 1.2332000187598169,
-      "p99_query_after_loss_ms": 1.2332000187598169
+      "avg_query_after_loss_ms": 1.2089000083506107,
+      "p99_query_after_loss_ms": 1.2089000083506107
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -79,7 +87,7 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 134.40889999037609,
+      "sync_ms": 121.9279999495484,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
@@ -96,8 +104,8 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 131.94059999659657,
-      "restore_ms": 103.49700000369921,
+      "snapshot_ms": 150.99249995546415,
+      "restore_ms": 81.7807000130415,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -111,8 +119,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.6881249864818528,
-      "p99_latency_ms": 1.033599954098463
+      "avg_latency_ms": 0.4984749830327928,
+      "p99_latency_ms": 0.6758999661542475
     }
   ]
 }

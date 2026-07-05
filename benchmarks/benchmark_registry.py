@@ -702,7 +702,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, service-mode tombstone repair, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -750,6 +750,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "repair_ok",
                         "recalled_after_repair",
                         "forget_replicated_deletes",
+                        "tombstone_replication_factor",
+                        "tombstone_suppressed_before_repair",
+                        "tombstone_repair_deleted_records",
+                        "tombstone_suppressed_after_repair",
                         "query_after_primary_loss_ms",
                     ),
                 ),
@@ -806,7 +810,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding and repair, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
             "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {

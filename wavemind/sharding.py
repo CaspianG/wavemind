@@ -202,6 +202,9 @@ class DistributedRepairReport:
     canonical_records: int
     repaired: dict[str, int]
     missing_before_repair: dict[str, int]
+    tombstone_keys: int = 0
+    tombstone_texts: int = 0
+    tombstone_deleted: int = 0
     failed_nodes: dict[str, str] = field(default_factory=dict)
     read_quorum: int = 1
     write_quorum: int = 1
@@ -223,11 +226,23 @@ class DistributedRepairReport:
             "repaired": dict(self.repaired),
             "repaired_total": self.repaired_total,
             "missing_before_repair": dict(self.missing_before_repair),
+            "tombstone_keys": self.tombstone_keys,
+            "tombstone_texts": self.tombstone_texts,
+            "tombstone_deleted": self.tombstone_deleted,
             "failed_nodes": dict(self.failed_nodes),
             "read_quorum": self.read_quorum,
             "write_quorum": self.write_quorum,
             "ok": self.ok,
         }
+
+
+@dataclass(frozen=True)
+class _ServiceTombstoneState:
+    keys: frozenset[str] = frozenset()
+    texts: frozenset[str] = frozenset()
+
+
+_SERVICE_TOMBSTONE_ACTION = "distributed_tombstone"
 
 
 class HTTPNamespaceShardClient:
@@ -321,6 +336,41 @@ class HTTPNamespaceShardClient:
         }
         response = self._request("POST", address, "/memories/export", payload)
         return [dict(record) for record in response.get("records", [])]
+
+    def export_namespace_state(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        limit: int = 1000,
+        include_expired: bool = False,
+        tags: tuple[str, ...] = (),
+        include_tombstones: bool = True,
+    ) -> dict[str, Any]:
+        payload = {
+            "namespace": namespace,
+            "limit": int(limit),
+            "include_expired": bool(include_expired),
+            "tags": list(tags),
+            "include_tombstones": bool(include_tombstones),
+        }
+        return self._request("POST", address, "/memories/export", payload)
+
+    def log_tombstone(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        record_keys: tuple[str, ...] = (),
+        texts: tuple[str, ...] = (),
+    ) -> int:
+        payload = {
+            "namespace": namespace,
+            "record_keys": list(record_keys),
+            "texts": list(texts),
+        }
+        response = self._request("POST", address, "/memories/tombstone", payload)
+        return int(response["id"])
 
     def _request(
         self,
@@ -462,6 +512,7 @@ class DistributedShardedWaveMind:
         min_score: float | None = None,
     ) -> list[QueryResult]:
         placement = self.placement(namespace)
+        tombstones = self._tombstone_state(namespace, placement)
         successful_reads = 0
         failed: dict[str, str] = {}
         best_by_key: dict[tuple[str, str, tuple[str, ...]], QueryResult] = {}
@@ -483,7 +534,10 @@ class DistributedShardedWaveMind:
                 failed[node_id] = str(exc)
                 continue
             for result in results:
-                key = (result.namespace, result.text, tuple(sorted(result.tags)))
+                result_key = _query_result_key(result)
+                if result_key in tombstones.keys or result.text in tombstones.texts:
+                    continue
+                key = (result.namespace, result_key, tuple(sorted(result.tags)))
                 current = best_by_key.get(key)
                 enriched = _with_node_metadata(result, node_id)
                 if current is None or enriched.score > current.score:
@@ -510,6 +564,12 @@ class DistributedShardedWaveMind:
         if id is None and text is None:
             raise ValueError("forget requires id or text")
         placement = self.placement(namespace)
+        tombstone_keys, tombstone_texts = self._resolve_tombstone_targets(
+            placement,
+            namespace,
+            id=id,
+            text=text,
+        )
         deletes: dict[str, int] = {}
         failed: dict[str, str] = {}
         for node_id in placement.replicas:
@@ -517,12 +577,19 @@ class DistributedShardedWaveMind:
                 failed[node_id] = "node unavailable"
                 continue
             try:
-                deletes[node_id] = self.client.forget(
+                deleted = self.client.forget(
                     self._address(node_id),
                     namespace=namespace,
                     id=id,
                     text=text,
                 )
+                self.client.log_tombstone(
+                    self._address(node_id),
+                    namespace=namespace,
+                    record_keys=tuple(sorted(tombstone_keys)),
+                    texts=tuple(sorted(tombstone_texts)),
+                )
+                deletes[node_id] = deleted
             except Exception as exc:  # pragma: no cover - service boundary
                 failed[node_id] = str(exc)
         if len(deletes) < self.write_quorum:
@@ -549,6 +616,8 @@ class DistributedShardedWaveMind:
         placement = self.placement(namespace)
         records_by_node: dict[str, dict[tuple[object, ...], dict[str, Any]]] = {}
         canonical: dict[tuple[object, ...], dict[str, Any]] = {}
+        tombstone_keys: set[str] = set()
+        tombstone_texts: set[str] = set()
         failed: dict[str, str] = {}
         available: list[str] = []
         for node_id in placement.replicas:
@@ -556,7 +625,7 @@ class DistributedShardedWaveMind:
                 failed[node_id] = "node unavailable"
                 continue
             try:
-                exported = self.client.export_namespace(
+                exported_state = self.client.export_namespace_state(
                     self._address(node_id),
                     namespace=namespace,
                     limit=limit,
@@ -567,9 +636,20 @@ class DistributedShardedWaveMind:
                 failed[node_id] = str(exc)
                 continue
             available.append(node_id)
+            exported = [dict(record) for record in exported_state.get("records", [])]
+            for tombstone in exported_state.get("tombstones", []):
+                raw_keys = tombstone.get("record_keys", [])
+                raw_texts = tombstone.get("texts", [])
+                if isinstance(raw_keys, list):
+                    tombstone_keys.update(str(key) for key in raw_keys)
+                if isinstance(raw_texts, list):
+                    tombstone_texts.update(str(item) for item in raw_texts)
             keyed = {_record_key(record): record for record in exported}
             records_by_node[node_id] = keyed
             for key, record in keyed.items():
+                key_string = _record_key_string_from_tuple(key)
+                if key_string in tombstone_keys or str(record.get("text") or "") in tombstone_texts:
+                    continue
                 canonical.setdefault(key, record)
 
         if len(available) < self.read_quorum:
@@ -578,16 +658,37 @@ class DistributedShardedWaveMind:
                 f"namespace {namespace!r}; successful reads: {len(available)}; "
                 f"failures: {failed}"
             )
+        canonical = {
+            key: record
+            for key, record in canonical.items()
+            if _record_key_string_from_tuple(key) not in tombstone_keys
+            and str(record.get("text") or "") not in tombstone_texts
+        }
 
         repaired: dict[str, int] = {}
         missing_before_repair: dict[str, int] = {}
+        tombstone_deleted = 0
         for node_id in placement.replicas:
             if node_id not in records_by_node:
                 continue
+            for key, record in list(records_by_node[node_id].items()):
+                key_string = _record_key_string_from_tuple(key)
+                if key_string in tombstone_keys or str(record.get("text") or "") in tombstone_texts:
+                    try:
+                        tombstone_deleted += self.client.forget(
+                            self._address(node_id),
+                            namespace=namespace,
+                            text=str(record["text"]),
+                        )
+                    except Exception as exc:  # pragma: no cover - service boundary
+                        failed[node_id] = str(exc)
+                    records_by_node[node_id].pop(key, None)
             missing = [
                 record
                 for key, record in canonical.items()
                 if key not in records_by_node[node_id]
+                and _record_key_string_from_tuple(key) not in tombstone_keys
+                and str(record.get("text") or "") not in tombstone_texts
             ]
             missing_before_repair[node_id] = len(missing)
             if not missing:
@@ -618,6 +719,9 @@ class DistributedShardedWaveMind:
             canonical_records=len(canonical),
             repaired=repaired,
             missing_before_repair=missing_before_repair,
+            tombstone_keys=len(tombstone_keys),
+            tombstone_texts=len(tombstone_texts),
+            tombstone_deleted=tombstone_deleted,
             failed_nodes=failed,
             read_quorum=self.read_quorum,
             write_quorum=self.write_quorum,
@@ -634,6 +738,69 @@ class DistributedShardedWaveMind:
 
     def _address(self, node_id: str) -> str:
         return self._node_by_id[node_id].address
+
+    def _resolve_tombstone_targets(
+        self,
+        placement: NamespacePlacement,
+        namespace: str,
+        *,
+        id: int | None,
+        text: str | None,
+    ) -> tuple[set[str], set[str]]:
+        keys: set[str] = set()
+        texts: set[str] = set()
+        if text is not None:
+            texts.add(text)
+        for node_id in placement.replicas:
+            if not self._available.get(node_id, False):
+                continue
+            try:
+                state = self.client.export_namespace_state(
+                    self._address(node_id),
+                    namespace=namespace,
+                    limit=10_000,
+                    include_expired=True,
+                    include_tombstones=False,
+                )
+            except Exception:
+                continue
+            for record in state.get("records", []):
+                record_id = record.get("id")
+                record_text = str(record.get("text") or "")
+                if (id is not None and int(record_id) == int(id)) or (
+                    text is not None and record_text == text
+                ):
+                    keys.add(_record_key_string(record))
+                    texts.add(record_text)
+        return keys, texts
+
+    def _tombstone_state(
+        self,
+        namespace: str,
+        placement: NamespacePlacement,
+    ) -> _ServiceTombstoneState:
+        keys: set[str] = set()
+        texts: set[str] = set()
+        for node_id in placement.replicas:
+            if not self._available.get(node_id, False):
+                continue
+            try:
+                state = self.client.export_namespace_state(
+                    self._address(node_id),
+                    namespace=namespace,
+                    limit=0,
+                    include_tombstones=True,
+                )
+            except Exception:
+                continue
+            for tombstone in state.get("tombstones", []):
+                raw_keys = tombstone.get("record_keys", [])
+                raw_texts = tombstone.get("texts", [])
+                if isinstance(raw_keys, list):
+                    keys.update(str(key) for key in raw_keys)
+                if isinstance(raw_texts, list):
+                    texts.update(str(item) for item in raw_texts)
+        return _ServiceTombstoneState(keys=frozenset(keys), texts=frozenset(texts))
 
 
 def _join_url(address: str, path: str) -> str:
@@ -685,4 +852,23 @@ def _record_key(record: dict[str, Any]) -> tuple[object, ...]:
         str(record.get("text") or ""),
         tuple(sorted(str(tag) for tag in (record.get("tags") or ()))),
         metadata,
+    )
+
+
+def _record_key_string(record: dict[str, Any]) -> str:
+    return json.dumps(_record_key(record), ensure_ascii=False, sort_keys=True, default=str)
+
+
+def _record_key_string_from_tuple(key: tuple[object, ...]) -> str:
+    return json.dumps(key, ensure_ascii=False, sort_keys=True, default=str)
+
+
+def _query_result_key(result: QueryResult) -> str:
+    return _record_key_string(
+        {
+            "namespace": result.namespace,
+            "text": result.text,
+            "tags": list(result.tags),
+            "metadata": result.metadata,
+        }
     )

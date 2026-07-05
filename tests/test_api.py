@@ -427,6 +427,49 @@ def test_fastapi_admin_can_export_namespace_memories(tmp_path):
         mind.close()
 
 
+def test_fastapi_admin_can_write_and_export_tombstones(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-tombstone.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            tombstone = client.post(
+                "/memories/tombstone",
+                json={
+                    "namespace": "tenant:tombstone",
+                    "record_keys": ["record-key-1"],
+                    "texts": ["deleted memory"],
+                },
+            )
+            assert tombstone.status_code == 200
+            assert tombstone.json()["id"] >= 1
+
+            exported = client.post(
+                "/memories/export",
+                json={
+                    "namespace": "tenant:tombstone",
+                    "include_tombstones": True,
+                },
+            )
+            assert exported.status_code == 200
+            payload = exported.json()
+            assert payload["records"] == []
+            assert payload["tombstones"][0]["record_keys"] == ["record-key-1"]
+            assert payload["tombstones"][0]["texts"] == ["deleted memory"]
+
+            bad = client.post(
+                "/memories/tombstone",
+                json={"namespace": "tenant:tombstone"},
+            )
+            assert bad.status_code == 400
+    finally:
+        mind.close()
+
+
 def test_fastapi_studio_dashboard_state_heatmap_and_feedback(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "studio.sqlite3",
