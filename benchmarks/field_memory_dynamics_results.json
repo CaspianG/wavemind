@@ -1,20 +1,22 @@
 {
   "scenario": "field_memory_dynamics",
-  "description": "Agent-memory stress test with conflicting facts, stale suppression, activation spreading, decay, and concept-candidate formation.",
+  "description": "Agent-memory stress test with conflicting facts, stale suppression, activation spreading, decay, concept-candidate formation, and durable concept consolidation.",
   "wave_static": {
     "precision@1": 0.2,
     "precision@3": 1.0,
     "stale_suppression": 0.2,
     "concept_formation": 0.0,
+    "concept_consolidation": 0.0,
     "decay_ratio": 0.0,
-    "avg_latency_ms": 0.4269
+    "avg_latency_ms": 0.4785
   },
   "wave_graph": {
     "precision@1": 1.0,
     "precision@3": 1.0,
     "stale_suppression": 1.0,
     "concept_formation": 1.0,
+    "concept_consolidation": 1.0,
     "decay_ratio": 0.81,
-    "avg_latency_ms": 0.8194
+    "avg_latency_ms": 1.8071
   }
 }

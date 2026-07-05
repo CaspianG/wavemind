@@ -31,8 +31,8 @@
       "contains_answer": 0.38,
       "token_f1": 0.33311619190404795,
       "evidence_recall_at_k": 0.92,
-      "avg_retrieval_ms": 2.083188000251539,
-      "avg_generation_ms": 2148.4425140015082
+      "avg_retrieval_ms": 2.000100004952401,
+      "avg_generation_ms": 2153.0035440041684
     },
     {
       "engine": "Chroma static",
@@ -43,8 +43,8 @@
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 4.386841998202726,
-      "avg_generation_ms": 1818.4313860000111
+      "avg_retrieval_ms": 7.05064800567925,
+      "avg_generation_ms": 2082.3815600026865
     },
     {
       "engine": "Qdrant static",
@@ -55,8 +55,8 @@
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 55.92094799911138,
-      "avg_generation_ms": 611.2973620009143
+      "avg_retrieval_ms": 100.19960600417107,
+      "avg_generation_ms": 758.1143879971933
     }
   ],
   "metrics": {
@@ -68,8 +68,8 @@
     "contains_answer": 0.38,
     "token_f1": 0.33311619190404795,
     "evidence_recall_at_k": 0.92,
-    "avg_retrieval_ms": 2.083188000251539,
-    "avg_generation_ms": 2148.4425140015082
+    "avg_retrieval_ms": 2.000100004952401,
+    "avg_generation_ms": 2153.0035440041684
   },
   "examples": [
     {

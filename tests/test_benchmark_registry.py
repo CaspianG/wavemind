@@ -27,6 +27,12 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["vectordbbench"]["category"] == "vector-db"
     assert entries["longmemeval_evidence_retrieval"]["status"] == "implemented"
     assert entries["ann_index_curve"]["status"] == "implemented"
+    assert entries["production_load_profile_100k"]["status"] == "implemented"
+    assert entries["production_load_profile_100k"]["current"]["Qdrant service"]["recall_at_k"] >= 0.9
+    assert entries["production_load_profile_1m"]["status"] == "implemented"
+    assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["recall_at_k"] > 0
+    assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
+    assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"
     assert entries["longmemeval_answer_generation"]["current"]["WaveMind + qwen2.5:1.5b"]["queries"] == 50
     assert entries["lmeb"]["source_url"].startswith("https://")

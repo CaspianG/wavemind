@@ -80,3 +80,45 @@ def test_wavemind_exposes_coactivated_concept_candidates(tmp_path):
     assert concepts
     assert set(concepts[0]["memory_ids"]).issuperset({rust_id, compiler_id})
     assert concepts[0]["label"] == "systems"
+
+
+def test_wavemind_consolidates_active_cluster_into_durable_concept_memory(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "graph-consolidation.sqlite3",
+        encoder=TopicEncoder(),
+        width=8,
+        height=8,
+        layers=1,
+        graph_weight=0.4,
+        graph_steps=2,
+        rerank_k=5,
+    )
+    rust_id = mind.remember("User likes Rust systems programming", namespace="agent", tags=("systems",))
+    compiler_id = mind.remember("User studies compiler internals", namespace="agent", tags=("systems",))
+    mind.remember("User cooks pasta on Sundays", namespace="agent", tags=("cooking",))
+
+    created = mind.consolidate_concepts(
+        namespace="agent",
+        seed_text="Rust compiler systems",
+        min_energy=0.01,
+        min_size=2,
+    )
+
+    assert len(created) == 1
+    concept = created[0]
+    assert concept["namespace"] == "agent"
+    assert "Consolidated memory: systems" in concept["text"]
+    assert set(concept["metadata"]["memory_ids"]).issuperset({rust_id, compiler_id})
+    assert concept["metadata"]["source"] == "wavemind_consolidation"
+
+    duplicates = mind.consolidate_concepts(
+        namespace="agent",
+        seed_text="Rust compiler systems",
+        min_energy=0.01,
+        min_size=2,
+    )
+    assert duplicates == []
+
+    concept_hits = mind.query("systems programming", namespace="agent", tags=("concept",), top_k=1)
+    assert concept_hits
+    assert concept_hits[0].id == concept["id"]

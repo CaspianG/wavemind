@@ -82,6 +82,17 @@ Problem:
 Support bots need to remember a customer's preferences, previous issues, and
 resolved problems without leaking data between accounts.
 
+Runnable demo:
+
+```sh
+python examples/customer_support_memory.py
+```
+
+The demo is offline and keyless. It shows four behaviors support teams usually
+have to implement by hand: corrected CRM data outranking stale data, temporary
+discount codes expiring, customer namespaces preventing cross-account leakage,
+and audit-friendly state in SQLite.
+
 Pattern:
 
 ```python
@@ -116,6 +127,16 @@ Problem:
 Research work changes over time. Some hypotheses expire, some findings become
 core, and source metadata matters.
 
+Runnable demo:
+
+```sh
+python examples/research_notebook_memory.py
+```
+
+The demo is offline and keyless. It shows confirmed findings with source
+metadata, temporary hypotheses expiring, decisions and action items sharing one
+project namespace, and unrelated projects staying isolated.
+
 Pattern:
 
 ```python
@@ -140,6 +161,8 @@ Why WaveMind:
 - temporary hypotheses can expire;
 - confirmed findings can get higher priority;
 - source metadata stays attached to recall results.
+- recurring clusters can be consolidated into auditable concept memories:
+  `memory.consolidate_concepts(namespace="project:latency", seed_text="latency index rebuild")`.
 
 ## 5. Trading Or Market-Research Agent
 
@@ -270,5 +293,7 @@ Before using WaveMind in a production service:
 - set API keys if serving HTTP;
 - set rate limits for shared deployments;
 - configure backups;
+- run `wavemind scale-plan --target-memories <N> --fail-on action_required`
+  before large imports or deployments;
 - check `/index/health`;
 - keep benchmark claims tied to your real workload.

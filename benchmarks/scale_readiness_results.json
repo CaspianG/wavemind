@@ -1,0 +1,129 @@
+{
+  "scenario": {
+    "name": "scale_readiness",
+    "simulated_memories": 1000000,
+    "namespace_count": 4096,
+    "node_count": 4,
+    "replication_factor": 2,
+    "description": "Deterministic scale-readiness profile for cluster placement, node/zone loss simulation, quorum-replicated runtime behavior, service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+  },
+  "results": [
+    {
+      "engine": "WaveMind cluster planner",
+      "simulated_memories": 1000000,
+      "namespaces": 4096,
+      "nodes": 4,
+      "replication_factor": 2,
+      "placement_ms": 98.51659997366369,
+      "max_replica_load": 2413,
+      "min_replica_load": 1728,
+      "replica_load_stdev": 316.54462560593254,
+      "max_primary_load": 1051,
+      "min_primary_load": 994,
+      "node_loss_min_availability": 1.0,
+      "zone_loss_min_availability": 1.0,
+      "read_quorum": 1,
+      "write_quorum": 2,
+      "kubernetes_manifest_kind": "StatefulSet"
+    },
+    {
+      "engine": "WaveMind hot cache",
+      "queries": 2000,
+      "capacity": 512,
+      "hit_rate": 0.92,
+      "evictions": 0,
+      "prewarm_warmed": 1,
+      "prewarm_hit": true,
+      "avg_lookup_ms": 0.002364350133575499,
+      "p99_lookup_ms": 0.010400020983070135
+    },
+    {
+      "engine": "WaveMind distributed sharding",
+      "nodes": 3,
+      "replication_factor": 2,
+      "write_quorum": 2,
+      "read_quorum": 1,
+      "writes": 2,
+      "primary_node": "node-b",
+      "replica_nodes": [
+        "node-b",
+        "node-a"
+      ],
+      "recalled_after_primary_loss": true,
+      "repair_missing_before": true,
+      "repair_repaired_total": 1,
+      "repair_ok": true,
+      "recalled_after_repair": true,
+      "forget_replicated_deletes": 2,
+      "tombstone_replication_factor": 3,
+      "tombstone_write_quorum": 2,
+      "tombstone_missed_delete_replica_records": 1,
+      "tombstone_suppressed_before_repair": true,
+      "tombstone_repair_canonical_records": 0,
+      "tombstone_repair_deleted_records": 1,
+      "tombstone_stale_records_after_repair": 0,
+      "tombstone_suppressed_after_repair": true,
+      "anti_entropy_worker_ok": true,
+      "anti_entropy_worker_repaired_total": 1,
+      "anti_entropy_worker_tombstone_deleted": 1,
+      "write_ms": 173.90430002706125,
+      "query_after_primary_loss_ms": 1.2719999649561942
+    },
+    {
+      "engine": "WaveMind replicated runtime",
+      "nodes": 3,
+      "replication_factor": 3,
+      "write_quorum": 2,
+      "read_quorum": 1,
+      "writes": 3,
+      "recalled_after_node_loss": true,
+      "repair_copied_records": 1,
+      "tombstone_suppressed_before_repair": true,
+      "tombstone_suppressed_after_repair": true,
+      "tombstone_repair_deleted_records": 1,
+      "avg_query_after_loss_ms": 2.392499998677522,
+      "p99_query_after_loss_ms": 2.392499998677522
+    },
+    {
+      "engine": "WaveMind active-active delta sync",
+      "regions": 2,
+      "replication_factor_per_region": 3,
+      "records_imported": 6,
+      "converged_after_bidirectional_sync": true,
+      "sync_ms": 115.31540000578389,
+      "suppressed_stale_import_after_delete": true,
+      "tombstone_deleted_records": 3,
+      "tombstone_converged": true
+    },
+    {
+      "engine": "WaveMind replicated snapshot",
+      "nodes": 3,
+      "manifest_healthy": true,
+      "offsite_verified": true,
+      "archive_verified": true,
+      "object_store_verified": true,
+      "object_store_latest_verified": true,
+      "object_store_pruned": 2,
+      "object_store_download_verified": true,
+      "object_store_drill_ok": true,
+      "total_bytes": 110592,
+      "snapshot_ms": 143.10739998472854,
+      "restore_ms": 81.97889995062724,
+      "restored_files": 3,
+      "recalled_after_restore_node_loss": true
+    },
+    {
+      "engine": "WaveMind structured payloads",
+      "modalities": [
+        "image",
+        "audio",
+        "table",
+        "event"
+      ],
+      "queries": 4,
+      "precision_at_1": 1.0,
+      "avg_latency_ms": 0.6984749925322831,
+      "p99_latency_ms": 1.3063999940641224
+    }
+  ]
+}

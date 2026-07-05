@@ -4,18 +4,26 @@ import logging
 import os
 import time
 from collections import deque
+from contextlib import contextmanager
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, Iterator
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
+from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
+from .jobs import (
+    CachePrewarmWorker,
+    HotMemoryCache,
+    RedisHotMemoryCache,
+    query_with_cache,
+)
 from .observability import configure_observability, instrument_fastapi_app
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
@@ -94,8 +102,61 @@ class InMemoryRateLimiter:
             return True
 
 
+class APIOperationMetrics:
+    def __init__(self, max_samples: int = 512):
+        self.max_samples = max(1, int(max_samples))
+        self._lock = Lock()
+        self._requests: dict[str, int] = {}
+        self._failures: dict[str, int] = {}
+        self._durations: dict[str, deque[float]] = {}
+
+    def record(self, operation: str, duration_ms: float, failed: bool) -> None:
+        key = _metric_key(operation)
+        with self._lock:
+            self._requests[key] = self._requests.get(key, 0) + 1
+            if failed:
+                self._failures[key] = self._failures.get(key, 0) + 1
+            durations = self._durations.setdefault(key, deque(maxlen=self.max_samples))
+            durations.append(float(duration_ms))
+
+    def snapshot(self) -> dict[str, float | int]:
+        payload: dict[str, float | int] = {}
+        with self._lock:
+            operations = set(self._requests) | set(self._failures) | set(self._durations)
+            for operation in sorted(operations):
+                durations = list(self._durations.get(operation, ()))
+                payload[f"api_{operation}_requests_total"] = self._requests.get(operation, 0)
+                payload[f"api_{operation}_failures_total"] = self._failures.get(operation, 0)
+                if durations:
+                    ordered = sorted(durations)
+                    p95_index = min(len(ordered) - 1, int(len(ordered) * 0.95))
+                    payload[f"api_{operation}_avg_latency_ms"] = sum(durations) / len(durations)
+                    payload[f"api_{operation}_p95_latency_ms"] = ordered[p95_index]
+                    payload[f"api_{operation}_max_latency_ms"] = max(durations)
+        return payload
+
+
 def _split_keys(raw: str) -> list[str]:
     return [key.strip() for key in raw.split(",") if key.strip()]
+
+
+def _cache_from_env() -> HotMemoryCache | RedisHotMemoryCache | None:
+    redis_url = os.environ.get("WAVEMIND_REDIS_URL")
+    ttl_seconds = float(os.environ.get("WAVEMIND_CACHE_TTL_SECONDS", "60") or "60")
+    if redis_url:
+        return RedisHotMemoryCache.from_url(
+            redis_url,
+            prefix=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
+            ttl_seconds=ttl_seconds,
+        )
+    capacity = int(os.environ.get("WAVEMIND_CACHE_CAPACITY", "0") or "0")
+    if capacity <= 0:
+        return None
+    return HotMemoryCache(capacity=capacity, ttl_seconds=ttl_seconds)
+
+
+def _metric_key(value: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in value.lower()).strip("_")
 
 
 def _rate_limit_key(request: Request) -> str:
@@ -185,6 +246,50 @@ class BackupResponse(BaseModel):
     path: str
 
 
+class MemoryExportRequest(BaseModel):
+    namespace: str
+    limit: int = Field(default=1000, ge=0, le=100000)
+    include_expired: bool = False
+    tags: list[str] = Field(default_factory=list)
+    include_tombstones: bool = False
+    tombstone_limit: int = Field(default=10000, ge=0, le=100000)
+
+
+class MemoryExportRecordResponse(BaseModel):
+    id: int
+    text: str
+    namespace: str
+    tags: list[str]
+    metadata: dict[str, Any]
+    created_at: float
+    updated_at: float
+    expires_at: float | None = None
+    priority: float
+    access_count: int
+
+
+class MemoryTombstoneResponse(BaseModel):
+    id: int
+    created_at: float
+    record_keys: list[str]
+    texts: list[str]
+
+
+class MemoryExportResponse(BaseModel):
+    records: list[MemoryExportRecordResponse]
+    tombstones: list[MemoryTombstoneResponse] = Field(default_factory=list)
+
+
+class MemoryTombstoneRequest(BaseModel):
+    namespace: str
+    record_keys: list[str] = Field(default_factory=list)
+    texts: list[str] = Field(default_factory=list)
+
+
+class MemoryTombstoneWriteResponse(BaseModel):
+    id: int
+
+
 class AuditEventResponse(BaseModel):
     id: int
     created_at: float
@@ -206,13 +311,94 @@ class ObservabilityResponse(BaseModel):
     reason: str | None = None
 
 
+class CachePrewarmRequest(BaseModel):
+    namespace: str | None = None
+    audit_limit: int = Field(default=256, ge=0, le=10000)
+    max_queries: int = Field(default=32, ge=0, le=1000)
+    min_frequency: int = Field(default=1, ge=1)
+    top_k: int = Field(default=3, ge=1, le=100)
+    min_score: float | None = None
+
+
+class CachePrewarmResponse(BaseModel):
+    scanned_events: int
+    candidates: int
+    warmed: int
+    skipped: int
+    errors: dict[str, str]
+    ok: bool
+
+
+class ScalePlanResponse(BaseModel):
+    current_memories: int
+    target_memories: int
+    index: str
+    vector_dim: int
+    namespace: str | None
+    latency_target_ms: float
+    tier: str
+    status: str
+    recommended_index: str
+    warnings: list[str]
+    actions: list[str]
+
+
+class ClusterPlanNodeRequest(BaseModel):
+    id: str
+    address: str
+    zone: str | None = None
+    weight: float = Field(default=1.0, gt=0.0)
+
+
+class ClusterPlanRequest(BaseModel):
+    namespaces: list[str] = Field(default_factory=list)
+    namespace_prefix: str = "tenant"
+    namespace_count: int = Field(default=0, ge=0, le=100_000)
+    nodes: list[ClusterPlanNodeRequest] = Field(min_length=1)
+    replication_factor: int = Field(default=2, ge=1)
+    include_kubernetes: bool = False
+    image: str = "wavemind:latest"
+    storage_size: str = "20Gi"
+
+
+class ConsolidateRequest(BaseModel):
+    namespace: str | None = None
+    seed_text: str | None = None
+    min_energy: float = Field(default=0.05, ge=0.0)
+    min_size: int = Field(default=2, ge=2)
+    max_concepts: int = Field(default=3, ge=0, le=100)
+    priority: float = Field(default=6.0, ge=0.0)
+
+
+class ConsolidateResponse(BaseModel):
+    concepts: list[dict[str, Any]]
+
+
 class FeedbackRequest(BaseModel):
     id: int
     useful: bool = True
     strength: float = Field(default=0.25, ge=0.0, le=10.0)
 
 
-def _metrics_text(stats: dict[str, Any]) -> str:
+@contextmanager
+def _api_operation(app: FastAPI, operation: str) -> Iterator[None]:
+    started = time.perf_counter()
+    failed = False
+    try:
+        yield
+    except Exception:
+        failed = True
+        raise
+    finally:
+        metrics = getattr(app.state, "operation_metrics", None)
+        if metrics is not None:
+            metrics.record(operation, (time.perf_counter() - started) * 1000.0, failed)
+
+
+def _metrics_text(
+    stats: dict[str, Any],
+    operation_metrics: dict[str, float | int] | None = None,
+) -> str:
     metric_names = {
         "active_memories": "wavemind_active_memories",
         "expired_memories": "wavemind_expired_memories",
@@ -241,6 +427,22 @@ def _metrics_text(stats: dict[str, Any]) -> str:
             value = 1 if value else 0
         if isinstance(value, (int, float)):
             lines.append(f"{metric} {value}")
+    if operation_metrics:
+        for key, value in sorted(operation_metrics.items()):
+            if isinstance(value, (int, float)):
+                metric = f"wavemind_{key}"
+                if key.endswith("_requests_total"):
+                    lines.append(f"# HELP {metric} API operation requests since process start.")
+                    lines.append(f"# TYPE {metric} counter")
+                elif key.endswith("_failures_total"):
+                    lines.append(f"# HELP {metric} API operation failures since process start.")
+                    lines.append(f"# TYPE {metric} counter")
+                elif key.endswith("_latency_ms"):
+                    lines.append(
+                        f"# HELP {metric} API operation latency over recent in-process samples."
+                    )
+                    lines.append(f"# TYPE {metric} gauge")
+                lines.append(f"{metric} {float(value):.6g}")
     return "\n".join(lines) + "\n"
 
 
@@ -288,6 +490,10 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.mind = mind or build_default_mind()
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
+    app.state.cache = _cache_from_env()
+    app.state.operation_metrics = APIOperationMetrics(
+        max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
+    )
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
@@ -327,26 +533,39 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
-        id = app.state.mind.remember(
-            request.text,
-            namespace=request.namespace,
-            tags=request.tags,
-            ttl_seconds=request.ttl_seconds,
-            metadata=request.metadata,
-            priority=request.priority,
-        )
+        with _api_operation(app, "remember"):
+            id = app.state.mind.remember(
+                request.text,
+                namespace=request.namespace,
+                tags=request.tags,
+                ttl_seconds=request.ttl_seconds,
+                metadata=request.metadata,
+                priority=request.priority,
+            )
         logger.info("remembered id=%s namespace=%s", id, request.namespace)
         return RememberResponse(id=id)
 
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
-        results = app.state.mind.query(
-            request.text,
-            namespace=request.namespace,
-            top_k=request.top_k,
-            tags=request.tags,
-            min_score=request.min_score,
-        )
+        with _api_operation(app, "query"):
+            if app.state.cache is None:
+                results = app.state.mind.query(
+                    request.text,
+                    namespace=request.namespace,
+                    top_k=request.top_k,
+                    tags=request.tags,
+                    min_score=request.min_score,
+                )
+            else:
+                results = query_with_cache(
+                    app.state.mind,
+                    app.state.cache,
+                    request.text,
+                    namespace=request.namespace,
+                    top_k=request.top_k,
+                    tags=request.tags,
+                    min_score=request.min_score,
+                )
         return QueryResponse(
             results=[
                 QueryResultResponse(
@@ -372,11 +591,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         namespace: str | None = Query(default=None),
     ) -> ForgetResponse:
         payload = request or ForgetRequest(id=id, text=text, namespace=namespace)
-        deleted = app.state.mind.forget(
-            id=payload.id,
-            text=payload.text,
-            namespace=payload.namespace,
-        )
+        with _api_operation(app, "forget"):
+            deleted = app.state.mind.forget(
+                id=payload.id,
+                text=payload.text,
+                namespace=payload.namespace,
+            )
         logger.info("forgot deleted=%s namespace=%s", deleted, payload.namespace)
         return ForgetResponse(deleted=deleted)
 
@@ -384,24 +604,191 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
 
+    @app.post(
+        "/memories/export",
+        response_model=MemoryExportResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def export_memories(request: MemoryExportRequest) -> MemoryExportResponse:
+        with _api_operation(app, "memories_export"):
+            records = app.state.mind.store.list(
+                namespace=request.namespace,
+                include_expired=request.include_expired,
+                tags=request.tags,
+            )[: request.limit]
+            tombstone_events = (
+                app.state.mind.audit_events(
+                    namespace=request.namespace,
+                    action="distributed_tombstone",
+                    limit=request.tombstone_limit,
+                )
+                if request.include_tombstones
+                else []
+            )
+        return MemoryExportResponse(
+            records=[
+                MemoryExportRecordResponse(
+                    id=record.id,
+                    text=record.text,
+                    namespace=record.namespace,
+                    tags=list(record.tags),
+                    metadata=record.metadata,
+                    created_at=record.created_at,
+                    updated_at=record.updated_at,
+                    expires_at=record.expires_at,
+                    priority=record.priority,
+                    access_count=record.access_count,
+                )
+                for record in records
+            ],
+            tombstones=[
+                MemoryTombstoneResponse(
+                    id=event.id,
+                    created_at=event.created_at,
+                    record_keys=[
+                        str(key)
+                        for key in event.metadata.get("record_keys", [])
+                        if key is not None
+                    ],
+                    texts=[
+                        str(text)
+                        for text in event.metadata.get("texts", [])
+                        if text is not None
+                    ],
+                )
+                for event in tombstone_events
+            ],
+        )
+
+    @app.post(
+        "/memories/tombstone",
+        response_model=MemoryTombstoneWriteResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def write_memory_tombstone(request: MemoryTombstoneRequest) -> MemoryTombstoneWriteResponse:
+        if not request.record_keys and not request.texts:
+            raise HTTPException(status_code=400, detail="Tombstone requires record_keys or texts.")
+        with _api_operation(app, "memories_tombstone"):
+            event_id = app.state.mind.store.log_audit_event(
+                "distributed_tombstone",
+                namespace=request.namespace,
+                metadata={
+                    "record_keys": sorted(set(request.record_keys)),
+                    "texts": sorted(set(request.texts)),
+                },
+            )
+        return MemoryTombstoneWriteResponse(id=event_id)
+
     @app.get("/index/health", dependencies=[Depends(require_role("read"))])
     def index_health():
         return app.state.mind.index_health()
 
+    @app.get("/scale-plan", response_model=ScalePlanResponse, dependencies=[Depends(require_role("read"))])
+    def scale_plan(
+        namespace: str | None = None,
+        target_memories: int | None = Query(default=None, ge=0),
+        latency_target_ms: float = Query(default=20.0, gt=0),
+    ) -> ScalePlanResponse:
+        plan = app.state.mind.scale_plan(
+            target_memories=target_memories,
+            namespace=namespace,
+            latency_target_ms=latency_target_ms,
+        )
+        return ScalePlanResponse(**plan.as_dict())
+
+    @app.post("/cluster-plan", dependencies=[Depends(require_role("read"))])
+    def cluster_plan(request: ClusterPlanRequest):
+        namespaces = list(request.namespaces)
+        namespaces.extend(
+            f"{request.namespace_prefix}:{index}"
+            for index in range(request.namespace_count)
+        )
+        plan = build_cluster_plan(
+            namespaces=namespaces,
+            nodes=[
+                ClusterNode(
+                    id=node.id,
+                    address=node.address,
+                    zone=node.zone,
+                    weight=node.weight,
+                )
+                for node in request.nodes
+            ],
+            replication_factor=request.replication_factor,
+        )
+        payload = plan.as_dict()
+        if request.include_kubernetes:
+            payload["kubernetes"] = plan.kubernetes_manifest(
+                image=request.image,
+                storage_size=request.storage_size,
+            )
+        return payload
+
     @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
     def rebuild_index():
-        return app.state.mind.rebuild_index()
+        with _api_operation(app, "index_rebuild"):
+            return app.state.mind.rebuild_index()
+
+    @app.post("/consolidate", response_model=ConsolidateResponse, dependencies=[Depends(require_role("write"))])
+    def consolidate(request: ConsolidateRequest) -> ConsolidateResponse:
+        with _api_operation(app, "consolidate"):
+            concepts = app.state.mind.consolidate_concepts(
+                namespace=request.namespace,
+                seed_text=request.seed_text,
+                min_energy=request.min_energy,
+                min_size=request.min_size,
+                max_concepts=request.max_concepts,
+                priority=request.priority,
+            )
+        return ConsolidateResponse(concepts=concepts)
 
     @app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_role("read"))])
     def metrics(namespace: str | None = None) -> PlainTextResponse:
+        operation_metrics = app.state.operation_metrics.snapshot()
+        if app.state.cache is not None:
+            cache_stats = app.state.cache.stats()
+            operation_metrics.update(
+                {
+                    "cache_hits_total": cache_stats.hits,
+                    "cache_misses_total": cache_stats.misses,
+                    "cache_evictions_total": cache_stats.evictions,
+                    "cache_size": cache_stats.size,
+                    "cache_capacity": cache_stats.capacity,
+                    "cache_hit_rate": cache_stats.hit_rate,
+                }
+            )
         return PlainTextResponse(
-            _metrics_text(app.state.mind.stats(namespace=namespace)),
+            _metrics_text(
+                app.state.mind.stats(namespace=namespace),
+                operation_metrics,
+            ),
             media_type="text/plain; version=0.0.4",
         )
 
     @app.get("/observability", response_model=ObservabilityResponse, dependencies=[Depends(require_role("admin"))])
     def observability() -> ObservabilityResponse:
         return ObservabilityResponse(**app.state.observability)
+
+    @app.post("/cache/prewarm", response_model=CachePrewarmResponse, dependencies=[Depends(require_role("admin"))])
+    def cache_prewarm(request: CachePrewarmRequest) -> CachePrewarmResponse:
+        if app.state.cache is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cache is disabled. Set WAVEMIND_CACHE_CAPACITY > 0 "
+                    "or WAVEMIND_REDIS_URL."
+                ),
+            )
+        with _api_operation(app, "cache_prewarm"):
+            report = CachePrewarmWorker(app.state.mind, app.state.cache).run_once(
+                namespace=request.namespace,
+                audit_limit=request.audit_limit,
+                max_queries=request.max_queries,
+                min_frequency=request.min_frequency,
+                top_k=request.top_k,
+                min_score=request.min_score,
+            )
+        return CachePrewarmResponse(**report.as_dict())
 
     @app.get("/audit", response_model=AuditResponse, dependencies=[Depends(require_role("admin"))])
     def audit(
@@ -430,23 +817,25 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.post("/import", response_model=ImportResponse, dependencies=[Depends(require_role("write"))])
     def batch_import(request: ImportRequest) -> ImportResponse:
-        ids = import_path(
-            request.path,
-            app.state.mind,
-            namespace=request.namespace,
-            tags=request.tags,
-            max_chars=request.max_chars,
-            overlap=request.overlap,
-        )
+        with _api_operation(app, "import"):
+            ids = import_path(
+                request.path,
+                app.state.mind,
+                namespace=request.namespace,
+                tags=request.tags,
+                max_chars=request.max_chars,
+                overlap=request.overlap,
+            )
         return ImportResponse(ids=ids)
 
     @app.post("/backup", response_model=BackupResponse, dependencies=[Depends(require_role("admin"))])
     def backup(request: BackupRequest) -> BackupResponse:
-        path = app.state.mind.save(
-            request.path,
-            keep_last=request.keep_last,
-            backup_prefix=request.prefix,
-        )
+        with _api_operation(app, "backup"):
+            path = app.state.mind.save(
+                request.path,
+                keep_last=request.keep_last,
+                backup_prefix=request.prefix,
+            )
         return BackupResponse(path=str(path))
 
     return app

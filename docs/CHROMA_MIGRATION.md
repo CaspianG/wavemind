@@ -146,6 +146,20 @@ What changed:
 Use Chroma's `get()` pagination to export documents and metadata, then insert
 the memory-shaped records into WaveMind.
 
+The repository includes a tested offline fixture:
+
+```sh
+pip install -e ".[bench]"
+python examples/chroma_migration.py \
+  --chroma-path ./state/chroma-demo \
+  --wavemind-db ./state/wavemind-from-chroma.sqlite3
+```
+
+It creates a real local Chroma `PersistentClient` collection with documents,
+metadata, ids, and precomputed embeddings, migrates it into WaveMind, and then
+queries the migrated namespace. It does not require API keys or network access.
+The same path is covered by `tests/test_chroma_migration_example.py`.
+
 ```python
 from __future__ import annotations
 
@@ -397,6 +411,8 @@ python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memori
 | Forgetting to preserve Chroma ids | Store them in `metadata["chroma_id"]` for traceability. |
 | Expecting Chroma latency from WaveMind dynamic ranking | Chroma is faster for static retrieval; WaveMind adds memory policy. |
 | Switching encoders without reindexing | Use a new database or rebuild indexes when changing vector dimensions. |
+| Depending on Chroma's default embedding download in an offline migration test | Pass existing embeddings or use precomputed fixture embeddings. |
+| Storing list values in Chroma metadata | Chroma metadata is scalar-oriented; use comma-separated tag strings and split them during migration. |
 
 ## Recommended Migration Path
 

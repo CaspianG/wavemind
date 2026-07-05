@@ -1,0 +1,39 @@
+groups:
+  - name: wavemind
+    rules:
+      - alert: WaveMindHighQueryLatency
+        expr: wavemind_api_query_p95_latency_ms > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: WaveMind query p95 latency is high
+          description: Query p95 latency has been above 1000 ms for 5 minutes.
+
+      - alert: WaveMindBackupFailures
+        expr: increase(wavemind_api_backup_failures_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: WaveMind backup operation failed
+          description: At least one backup request failed during the last 10 minutes.
+
+      - alert: WaveMindIndexRebuildFailures
+        expr: increase(wavemind_api_index_rebuild_failures_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: WaveMind index rebuild failed
+          description: At least one index rebuild request failed during the last 10 minutes.
+
+      - alert: WaveMindIndexUnhealthy
+        expr: wavemind_index_healthy == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: WaveMind vector index is unhealthy
+          description: Source-of-truth memory records and vector index records are out of sync.
+

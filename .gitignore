@@ -17,6 +17,7 @@ dist/
 data/
 backups/
 logs/
+state/
 
 .env
 .env.*

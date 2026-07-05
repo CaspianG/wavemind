@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 import os
 import statistics
@@ -57,11 +58,15 @@ def _recall_at_k(results: list[list[int]], expected: list[set[int]], top_k: int)
     return statistics.mean(recalls) if recalls else 0.0
 
 
-def _p95(values: list[float]) -> float:
+def _percentile(values: list[float], pct: float) -> float:
     if not values:
         return 0.0
     ordered = sorted(values)
-    return ordered[min(len(ordered) - 1, int(len(ordered) * 0.95))]
+    index = min(
+        len(ordered) - 1,
+        max(0, int(round((pct / 100.0) * (len(ordered) - 1)))),
+    )
+    return ordered[index]
 
 
 def run_wavemind_index(
@@ -87,7 +92,10 @@ def run_wavemind_index(
         "engine": f"WaveMind {kind}",
         "recall_at_k": _recall_at_k(ids, expected, top_k),
         "avg_latency_ms": statistics.mean(latencies) if latencies else 0.0,
-        "p95_latency_ms": _p95(latencies),
+        "p50_latency_ms": statistics.median(latencies) if latencies else 0.0,
+        "p95_latency_ms": _percentile(latencies, 95),
+        "p99_latency_ms": _percentile(latencies, 99),
+        "max_latency_ms": max(latencies) if latencies else 0.0,
         "build_ms": build_ms,
         "queries": len(queries),
     }
@@ -108,39 +116,61 @@ def run_qdrant(
         url = ":memory:"
     try:
         from qdrant_client import QdrantClient
-        from qdrant_client.models import Distance, PointStruct, VectorParams
+        from qdrant_client.models import Distance, PointStruct, SearchParams, VectorParams
     except ImportError as exc:
         raise RuntimeError("Install qdrant-client to run the Qdrant ANN curve") from exc
-    if service:
-        client = QdrantClient(url=url, api_key=os.environ.get("WAVEMIND_QDRANT_API_KEY"))
-        engine = "Qdrant service"
-    else:
-        client = QdrantClient(url)
-        engine = "Qdrant local"
+    with _local_no_proxy(url):
+        if service:
+            client = QdrantClient(
+                url=url,
+                api_key=os.environ.get("WAVEMIND_QDRANT_API_KEY"),
+                timeout=float(os.environ.get("WAVEMIND_QDRANT_TIMEOUT", "120")),
+            )
+            engine = "Qdrant service"
+        else:
+            client = QdrantClient(url)
+            engine = "Qdrant local"
     collection_name = f"wavemind_ann_curve_{time.time_ns()}"
     try:
         started = time.perf_counter()
         client.recreate_collection(
             collection_name=collection_name,
             vectors_config=VectorParams(size=int(vectors.shape[1]), distance=Distance.COSINE),
+            timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
         )
-        points = [
-            PointStruct(id=index + 1, vector=vector.tolist())
-            for index, vector in enumerate(vectors)
-        ]
-        for offset in range(0, len(points), 1000):
-            client.upsert(collection_name=collection_name, points=points[offset : offset + 1000])
+        batch = []
+        for index, vector in enumerate(vectors):
+            batch.append(PointStruct(id=index + 1, vector=vector.tolist()))
+            if len(batch) >= 1000:
+                client.upsert(collection_name=collection_name, points=batch)
+                batch.clear()
+        if batch:
+            client.upsert(collection_name=collection_name, points=batch)
         build_ms = (time.perf_counter() - started) * 1000.0
         ids: list[list[int]] = []
         latencies: list[float] = []
         for query in queries:
             started = time.perf_counter()
+            search_params = None
+            hnsw_ef = os.environ.get("WAVEMIND_QDRANT_HNSW_EF")
+            exact = os.environ.get("WAVEMIND_QDRANT_EXACT", "").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+            if hnsw_ef or exact:
+                search_params = SearchParams(
+                    hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
+                    exact=exact or None,
+                )
             hits = list(
                 client.query_points(
                     collection_name=collection_name,
                     query=query.tolist(),
                     limit=top_k,
                     with_payload=False,
+                    search_params=search_params,
                 ).points
             )
             latencies.append((time.perf_counter() - started) * 1000.0)
@@ -149,9 +179,16 @@ def run_qdrant(
             "engine": engine,
             "recall_at_k": _recall_at_k(ids, expected, top_k),
             "avg_latency_ms": statistics.mean(latencies) if latencies else 0.0,
-            "p95_latency_ms": _p95(latencies),
+            "p50_latency_ms": statistics.median(latencies) if latencies else 0.0,
+            "p95_latency_ms": _percentile(latencies, 95),
+            "p99_latency_ms": _percentile(latencies, 99),
+            "max_latency_ms": max(latencies) if latencies else 0.0,
             "build_ms": build_ms,
             "queries": len(queries),
+            "search_params": {
+                "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
+                "exact": exact,
+            },
         }
     finally:
         if os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() not in {
@@ -202,7 +239,7 @@ def run_size(
         elif key in {"qdrant", "qdrant-local"}:
             try:
                 results.append(run_qdrant(vectors, queries, expected, top_k, service=False))
-            except RuntimeError as exc:
+            except Exception as exc:
                 results.append(
                     {
                         "engine": "Qdrant local",
@@ -213,7 +250,7 @@ def run_size(
         elif key == "qdrant-service":
             try:
                 results.append(run_qdrant(vectors, queries, expected, top_k, service=True))
-            except RuntimeError as exc:
+            except Exception as exc:
                 results.append(
                     {
                         "engine": "Qdrant service",
@@ -231,6 +268,33 @@ def run_size(
         "noise": noise,
         "results": results,
     }
+
+
+@contextmanager
+def _local_no_proxy(url: str):
+    if not any(host in url for host in ("127.0.0.1", "localhost", "::1")):
+        yield
+        return
+    original_no_proxy = os.environ.get("NO_PROXY")
+    original_no_proxy_lower = os.environ.get("no_proxy")
+    local_hosts = "127.0.0.1,localhost,::1"
+    os.environ["NO_PROXY"] = (
+        f"{original_no_proxy},{local_hosts}" if original_no_proxy else local_hosts
+    )
+    os.environ["no_proxy"] = (
+        f"{original_no_proxy_lower},{local_hosts}" if original_no_proxy_lower else local_hosts
+    )
+    try:
+        yield
+    finally:
+        if original_no_proxy is None:
+            os.environ.pop("NO_PROXY", None)
+        else:
+            os.environ["NO_PROXY"] = original_no_proxy
+        if original_no_proxy_lower is None:
+            os.environ.pop("no_proxy", None)
+        else:
+            os.environ["no_proxy"] = original_no_proxy_lower
 
 
 def run_benchmark(
@@ -274,18 +338,19 @@ def run_benchmark(
 
 def print_table(payload: dict[str, Any]) -> None:
     top_k = payload["scenario"]["top_k"]
-    print(f"| vectors | engine | recall@{top_k} | avg latency | p95 latency | build |")
-    print("|---:|---|---:|---:|---:|---:|")
+    print(f"| vectors | engine | recall@{top_k} | avg latency | p95 latency | p99 latency | build |")
+    print("|---:|---|---:|---:|---:|---:|---:|")
     for size_result in payload["results"]:
         for result in size_result["results"]:
             if result.get("skipped"):
-                print(f"| {size_result['vectors']} | {result['engine']} | skipped | - | - | - |")
+                print(f"| {size_result['vectors']} | {result['engine']} | skipped | - | - | - | - |")
                 continue
             print(
                 f"| {size_result['vectors']} | {result['engine']} | "
                 f"{result['recall_at_k']:.3f} | "
                 f"{result['avg_latency_ms']:.2f} ms | "
                 f"{result['p95_latency_ms']:.2f} ms | "
+                f"{result['p99_latency_ms']:.2f} ms | "
                 f"{result['build_ms']:.1f} ms |"
             )
 

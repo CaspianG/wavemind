@@ -124,7 +124,8 @@ def run_benchmark(workdir: str | Path) -> dict[str, object]:
         "scenario": "field_memory_dynamics",
         "description": (
             "Agent-memory stress test with conflicting facts, stale suppression, "
-            "activation spreading, decay, and concept-candidate formation."
+            "activation spreading, decay, concept-candidate formation, and durable "
+            "concept consolidation."
         ),
         "wave_static": static_result,
         "wave_graph": graph_result,
@@ -189,12 +190,25 @@ def _run_engine(db_path: Path, graph: bool) -> dict[str, float]:
     mind.query("Rust", namespace="agent", top_k=1)
     concepts = mind.concept_candidates(namespace="agent", min_energy=0.01) if graph else []
     concept_formation = 1.0 if _has_systems_concept(concepts) else 0.0
+    consolidated = (
+        mind.consolidate_concepts(
+            namespace="agent",
+            seed_text="Rust compiler systems",
+            min_energy=0.01,
+            min_size=2,
+            max_concepts=1,
+        )
+        if graph
+        else []
+    )
+    concept_consolidation = 1.0 if _has_consolidated_systems_concept(consolidated) else 0.0
 
     return {
         "precision@1": round(top1_hits / len(CONFLICT_FACTS), 4),
         "precision@3": round(top3_hits / len(CONFLICT_FACTS), 4),
         "stale_suppression": round(stale_suppressed / len(CONFLICT_FACTS), 4),
         "concept_formation": concept_formation,
+        "concept_consolidation": concept_consolidation,
         "decay_ratio": round((after_decay / before_decay), 4) if before_decay > 0 else 0.0,
         "avg_latency_ms": round(sum(latencies) / len(latencies), 4),
     }
@@ -205,6 +219,19 @@ def _has_systems_concept(concepts: Iterable[dict[str, object]]) -> bool:
         label = str(concept.get("label", ""))
         memory_ids = concept.get("memory_ids", [])
         if "systems" in label and isinstance(memory_ids, list) and len(memory_ids) >= 2:
+            return True
+    return False
+
+
+def _has_consolidated_systems_concept(concepts: Iterable[dict[str, object]]) -> bool:
+    for concept in concepts:
+        metadata = concept.get("metadata", {})
+        tags = concept.get("tags", [])
+        if not isinstance(metadata, dict) or not isinstance(tags, list):
+            continue
+        if metadata.get("source") != "wavemind_consolidation":
+            continue
+        if "concept" in tags and "systems" in tags:
             return True
     return False
 

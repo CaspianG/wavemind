@@ -8,7 +8,10 @@
     "queries": 20,
     "memories": 980,
     "top_k": 5,
-    "description": "LongMemEval answer-generation evaluation over WaveMind-retrieved evidence."
+    "engines": [
+      "WaveMind"
+    ],
+    "description": "LongMemEval answer-generation evaluation over retrieved compact evidence."
   },
   "embedding": {
     "kind": "hash",
@@ -16,7 +19,22 @@
     "cached": true,
     "vector_dim": 384
   },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "provider": "extractive",
+      "model": null,
+      "queries": 20,
+      "exact_match": 0.0,
+      "contains_answer": 0.05,
+      "token_f1": 0.018367529146058867,
+      "evidence_recall_at_k": 1.0,
+      "avg_retrieval_ms": 3.79294001031667,
+      "avg_generation_ms": 0.7694199972320348
+    }
+  ],
   "metrics": {
+    "engine": "WaveMind",
     "provider": "extractive",
     "model": null,
     "queries": 20,
@@ -24,8 +42,8 @@
     "contains_answer": 0.05,
     "token_f1": 0.018367529146058867,
     "evidence_recall_at_k": 1.0,
-    "avg_retrieval_ms": 1.299194999592146,
-    "avg_generation_ms": 0.04707000043708831
+    "avg_retrieval_ms": 3.79294001031667,
+    "avg_generation_ms": 0.7694199972320348
   },
   "examples": [
     {
@@ -93,5 +111,74 @@
         "1e043500::e132259f"
       ]
     }
-  ]
+  ],
+  "examples_by_engine": {
+    "WaveMind": [
+      {
+        "id": "e47becba",
+        "question": "What degree did I graduate with?",
+        "expected": "Business Administration",
+        "prediction": "I'm looking to get some advice on setting up a comfortable home workspace. I've recently converted my guest room into a home office, and I'm trying to make the most of the space.",
+        "evidence_ids": [
+          "e47becba::02bd2b90_3",
+          "e47becba::5dac7cc2_1",
+          "e47becba::f6859b48_2",
+          "e47becba::answer_280352e9",
+          "e47becba::sharegpt_QZMeA7V_17"
+        ]
+      },
+      {
+        "id": "118b2229",
+        "question": "How long is my daily commute to work?",
+        "expected": "45 minutes each way",
+        "prediction": "I've been really into learning new things lately, especially on YouTube. I've watched at least 10 hours of Crash Course videos over the past month, covering topics like world history, biology, and astronomy. Can you recommend some good docu",
+        "evidence_ids": [
+          "118b2229::afe04238_1",
+          "118b2229::answer_40a90d51",
+          "118b2229::db73b7e4_4",
+          "118b2229::5dce60dd",
+          "118b2229::db50c0f6"
+        ]
+      },
+      {
+        "id": "51a45a95",
+        "question": "Where did I redeem a $5 coupon on coffee creamer?",
+        "expected": "Target",
+        "prediction": "I'm trying to organize my coupons and receipts, do you have any tips on the best way to do that?",
+        "evidence_ids": [
+          "51a45a95::answer_d61669c7",
+          "51a45a95::8fa64936_1",
+          "51a45a95::5c44d9fe_1",
+          "51a45a95::98c198fb",
+          "51a45a95::217debf7"
+        ]
+      },
+      {
+        "id": "58bf7951",
+        "question": "What play did I attend at the local community theater?",
+        "expected": "The Glass Menagerie",
+        "prediction": "I'm looking for some recommendations for local Italian restaurants. I recently tried the new place downtown and it was pretty good, but I'd love to explore other options.",
+        "evidence_ids": [
+          "58bf7951::answer_355c48bb",
+          "58bf7951::ultrachat_268434",
+          "58bf7951::08469b58",
+          "58bf7951::5b83c26e_1",
+          "58bf7951::1587bd78_1"
+        ]
+      },
+      {
+        "id": "1e043500",
+        "question": "What is the name of the playlist I created on Spotify?",
+        "expected": "Summer Vibes",
+        "prediction": "I've been trying to get back into playing the guitar, can you recommend some online resources besides Fender Play that can help me improve my skills?",
+        "evidence_ids": [
+          "1e043500::answer_3e012175",
+          "1e043500::4d0d7984",
+          "1e043500::01bd9def",
+          "1e043500::7b1d1f43_1",
+          "1e043500::e132259f"
+        ]
+      }
+    ]
+  }
 }

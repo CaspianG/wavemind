@@ -132,6 +132,19 @@ def _safe_identifier(value: str, label: str) -> str:
     return value
 
 
+def _env_positive_int(name: str, default: int | None = None) -> int | None:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return default
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a positive integer") from exc
+    if parsed <= 0:
+        raise ValueError(f"{name} must be a positive integer")
+    return parsed
+
+
 class NumpyVectorIndex:
     name = "numpy-exact"
 
@@ -599,6 +612,9 @@ class PgVectorIndex:
         table: str | None = None,
         collection: str | None = None,
         create_hnsw: bool | None = None,
+        hnsw_m: int | None = None,
+        hnsw_ef_construction: int | None = None,
+        ef_search: int | None = None,
     ):
         self.vector_dim = int(vector_dim)
         self.dsn = dsn or os.environ.get("WAVEMIND_PGVECTOR_DSN")
@@ -629,6 +645,13 @@ class PgVectorIndex:
                 "on",
             }
         self.create_hnsw = bool(create_hnsw)
+        self.hnsw_m = hnsw_m or _env_positive_int("WAVEMIND_PGVECTOR_HNSW_M")
+        self.hnsw_ef_construction = hnsw_ef_construction or _env_positive_int(
+            "WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"
+        )
+        self.ef_search = ef_search or _env_positive_int(
+            "WAVEMIND_PGVECTOR_EF_SEARCH"
+        )
         self.conn = psycopg.connect(self.dsn, autocommit=True)
         self._closed = False
         self._ensure_schema()
@@ -651,9 +674,16 @@ class PgVectorIndex:
             f"ON {self.table} (collection)"
         )
         if self.create_hnsw:
+            options = []
+            if self.hnsw_m is not None:
+                options.append(f"m = {self.hnsw_m}")
+            if self.hnsw_ef_construction is not None:
+                options.append(f"ef_construction = {self.hnsw_ef_construction}")
+            with_options = f" WITH ({', '.join(options)})" if options else ""
             self.conn.execute(
                 f"CREATE INDEX IF NOT EXISTS {self.table}_embedding_hnsw_idx "
                 f"ON {self.table} USING hnsw (embedding vector_cosine_ops)"
+                f"{with_options}"
             )
 
     def add(self, id: int, vector: np.ndarray) -> None:
@@ -679,24 +709,29 @@ class PgVectorIndex:
             f"DELETE FROM {self.table} WHERE collection = %s",
             (self.collection,),
         )
-        rows = [
-            (self.collection, int(record.id), _vector_literal(record.vector))
-            for record in records
-            if record.id is not None
-        ]
-        if not rows:
-            return
         with self.conn.cursor() as cur:
-            cur.executemany(
-                f"""
-                INSERT INTO {self.table} (
-                    collection, memory_id, embedding, updated_at
-                ) VALUES (%s, %s, %s::vector, now())
-                ON CONFLICT (collection, memory_id)
-                DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
-                """,
-                rows,
-            )
+            batch = []
+            for record in records:
+                if record.id is None:
+                    continue
+                batch.append((self.collection, int(record.id), _vector_literal(record.vector)))
+                if len(batch) >= 1000:
+                    self._insert_batch(cur, batch)
+                    batch.clear()
+            if batch:
+                self._insert_batch(cur, batch)
+
+    def _insert_batch(self, cur, rows: list[tuple[str, int, str]]) -> None:
+        cur.executemany(
+            f"""
+            INSERT INTO {self.table} (
+                collection, memory_id, embedding, updated_at
+            ) VALUES (%s, %s, %s::vector, now())
+            ON CONFLICT (collection, memory_id)
+            DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
+            """,
+            rows,
+        )
 
     def search(
         self,
@@ -706,6 +741,8 @@ class PgVectorIndex:
     ) -> list[IndexResult]:
         if top_k <= 0:
             return []
+        if self.ef_search is not None:
+            self.conn.execute(f"SET hnsw.ef_search = {self.ef_search}")
         query = _vector_literal(vector)
         params: list[object] = [query, self.collection]
         where = "collection = %s"
@@ -888,15 +925,21 @@ class QdrantVectorIndex:
 
     def build(self, records: Iterable) -> None:
         self._ensure_collection(recreate=True)
-        points = [
-            self._point(record.id, record.vector)
-            for record in records
-            if record.id is not None
-        ]
-        for offset in range(0, len(points), 1000):
+        points = []
+        for record in records:
+            if record.id is None:
+                continue
+            points.append(self._point(record.id, record.vector))
+            if len(points) >= 1000:
+                self.client.upsert(
+                    collection_name=self.collection,
+                    points=points,
+                )
+                points.clear()
+        if points:
             self.client.upsert(
                 collection_name=self.collection,
-                points=points[offset : offset + 1000],
+                points=points,
             )
 
     def _allowed_filter(self, allowed_ids: set[int] | None):

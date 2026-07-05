@@ -28,4 +28,6 @@ def test_benchmark_report_renderer_writes_status_report(tmp_path):
     assert "## Public Benchmark Roadmap" in report
     assert "VectorDBBench" in report
     assert "LoCoMo evidence retrieval runner" in report
+    assert "Production index profile" in report
+    assert "WaveMind faiss-persisted" in report
     assert "Planned rows are not claimed wins." in report

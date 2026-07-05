@@ -64,7 +64,10 @@ question first-class.
 - Namespaces, tags, TTL, score thresholds, audit log, backup/restore.
 - Prometheus-compatible metrics and optional OpenTelemetry traces.
 - Benchmarks checked into the repository with commands and JSON results.
-- Offline demos: `examples/demo.py` and `examples/dynamic_memory_demo.py`.
+- Public benchmark post draft: `docs/BENCHMARK_BRIEF.md`.
+- Offline demos: `examples/demo.py`, `examples/dynamic_memory_demo.py`,
+  `examples/customer_support_memory.py`, and
+  `examples/research_notebook_memory.py`.
 - Use-case gallery: `docs/USE_CASES.md`.
 
 ## GitHub Page Checklist
@@ -200,8 +203,8 @@ tools, or RAG systems where stale memory is a real problem.
 
 ### X Thread
 
-1. I am building WaveMind: open-source dynamic memory for software that needs to
-remember what still matters, not just what text is nearest.
+1. I am building WaveMind: open-source dynamic memory for software that needs
+to remember what still matters, not just what text is nearest.
 
 Vector search answers similarity. Memory also needs priority, decay, TTL,
 corrections, and scope.
@@ -238,20 +241,40 @@ namespace isolation, stale suppression, and repeated recall.
 
 Static vector search is still faster. That is written honestly in the README.
 
-6. Quick start:
+6. New production-load check:
+
+100k Qdrant service:
+recall@10 1.000
+avg 10.28 ms
+p99 21.26 ms
+
+1M Qdrant service tuned:
+recall@10 0.984
+avg 116.80 ms
+p99 209.28 ms
+
+1M Qdrant EF sweep:
+recall@10 0.977
+avg 64.76 ms
+p99 103.77 ms
+
+100k is production-ready on the tested machine. 1M recall is strong, but p99
+still needs tuning before a stable sub-100 ms claim.
+
+7. Quick start:
 
 python -m pip install wavemind
 wavemind remember "The user prefers short answers" --namespace demo
 wavemind query "answer style" --namespace demo
 
-7. The research direction is a stronger memory field:
+8. The research direction is a stronger memory field:
 
 related memories excite each other,
 conflicting memories inhibit stale facts,
 low-value memory decays,
 clusters can form higher-level concepts.
 
-8. I am looking for feedback from people building long-running agents, local AI
+9. I am looking for feedback from people building long-running agents, local AI
 apps, RAG systems, and personal assistants.
 
 Repo: https://github.com/CaspianG/wavemind

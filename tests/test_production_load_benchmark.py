@@ -1,0 +1,73 @@
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def test_production_load_runner_reports_preflight_and_skips_unconfigured_services(monkeypatch):
+    from benchmarks.production_load_benchmark import run_production_load
+
+    monkeypatch.delenv("WAVEMIND_FAISS_PATH", raising=False)
+    monkeypatch.delenv("WAVEMIND_QDRANT_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+
+    payload = run_production_load(
+        sizes=[32],
+        dim=8,
+        query_count=4,
+        top_k=3,
+        seed=11,
+        engines=["faiss-persisted", "qdrant-service", "pgvector"],
+        noise=0.01,
+        output_path=Path("benchmarks/production_load_results.json"),
+    )
+
+    assert payload["scenario"]["name"] == "production_load_profile"
+    assert payload["scenario"]["default_target_sizes"] == [100000, 1000000]
+    assert "preflight" in payload
+    results = {result["engine"]: result for result in payload["results"][0]["results"]}
+    assert results["WaveMind faiss-persisted"]["skipped"] is True
+    assert "WAVEMIND_FAISS_PATH" in results["WaveMind faiss-persisted"]["reason"]
+    assert results["Qdrant service"]["skipped"] is True
+    assert "WAVEMIND_QDRANT_URL" in results["Qdrant service"]["reason"]
+    assert results["WaveMind pgvector"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector"]["reason"]
+
+
+def test_production_load_cli_writes_json(tmp_path):
+    output = tmp_path / "production-load.json"
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/production_load_benchmark.py",
+            "--sizes",
+            "32",
+            "--dim",
+            "8",
+            "--queries",
+            "4",
+            "--top-k",
+            "3",
+            "--engines",
+            "quantized",
+            "--output",
+            str(output),
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["scenario"]["name"] == "production_load_profile"
+    assert payload["results"][0]["vectors"] == 32
+    assert payload["results"][0]["results"][0]["engine"] == "WaveMind quantized"
+

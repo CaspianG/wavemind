@@ -31,8 +31,8 @@
       "contains_answer": 0.18,
       "token_f1": 0.18308614585546518,
       "evidence_recall_at_k": 0.92,
-      "avg_retrieval_ms": 2.001148000708781,
-      "avg_generation_ms": 1331.836292000371
+      "avg_retrieval_ms": 2.9792159993667156,
+      "avg_generation_ms": 1428.1996439944487
     },
     {
       "engine": "Chroma static",
@@ -43,8 +43,8 @@
       "contains_answer": 0.12,
       "token_f1": 0.12615298986727558,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 4.4275459996424615,
-      "avg_generation_ms": 1157.0555100002093
+      "avg_retrieval_ms": 4.1023979999590665,
+      "avg_generation_ms": 1234.6932660019957
     },
     {
       "engine": "Qdrant static",
@@ -55,8 +55,8 @@
       "contains_answer": 0.12,
       "token_f1": 0.12615298986727558,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 52.296541999676265,
-      "avg_generation_ms": 835.9314120013732
+      "avg_retrieval_ms": 63.80351200001314,
+      "avg_generation_ms": 893.4776440006681
     }
   ],
   "metrics": {
@@ -68,8 +68,8 @@
     "contains_answer": 0.18,
     "token_f1": 0.18308614585546518,
     "evidence_recall_at_k": 0.92,
-    "avg_retrieval_ms": 2.001148000708781,
-    "avg_generation_ms": 1331.836292000371
+    "avg_retrieval_ms": 2.9792159993667156,
+    "avg_generation_ms": 1428.1996439944487
   },
   "examples": [
     {
@@ -224,7 +224,7 @@
         "id": "118b2229",
         "question": "How long is my daily commute to work?",
         "expected": "45 minutes each way",
-        "prediction": "The significance of the Lincoln Memorial extends beyond its physical presence; it has become an integral part of American culture,",
+        "prediction": "The Lincoln Memorial is not only a physical landmark but also an",
         "evidence_ids": [
           "118b2229::ultrachat_387144",
           "118b2229::febc8622",
@@ -291,7 +291,7 @@
         "id": "118b2229",
         "question": "How long is my daily commute to work?",
         "expected": "45 minutes each way",
-        "prediction": "The significance of the Lincoln Memorial extends beyond its physical presence; it has become an integral part of American culture,",
+        "prediction": "The Lincoln Memorial is not only a physical landmark but also an",
         "evidence_ids": [
           "118b2229::ultrachat_387144",
           "118b2229::febc8622",

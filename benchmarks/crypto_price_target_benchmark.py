@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -82,6 +84,24 @@ class EnsembleCalibration:
     note: str
 
 
+@dataclass(frozen=True)
+class TargetModelCalibration:
+    enabled: bool
+    feature_names: tuple[str, ...]
+    means: tuple[float, ...]
+    scales: tuple[float, ...]
+    coefficients: tuple[float, ...]
+    intercept_bps: float
+    cap_abs_bps: float
+    alpha: float
+    validation_mae_bps: float
+    validation_direction_hit: float
+    robust_validation_mae_bps: float
+    robust_validation_direction_hit: float
+    samples: int
+    note: str
+
+
 def run_price_target_benchmark(
     *,
     markets: list[dict],
@@ -110,6 +130,16 @@ def run_price_target_benchmark(
                 horizon=int(market["horizon"]),
                 calibration_windows=calibration_windows,
             )
+            fold_target_model = (
+                _fit_target_model(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=fold_calibration,
+                    calibration_windows=calibration_windows,
+                )
+                if "wavemind-learned-target" in engine_keys
+                else _disabled_target_model("not_requested")
+            )
             fold_events: list[PriceTargetEvent] = []
             for query in queries:
                 history = _mature_history(windows, current=query)
@@ -123,6 +153,7 @@ def run_price_target_benchmark(
                         horizon=int(market["horizon"]),
                         calibration=fold_calibration,
                         ensemble=fold_ensemble,
+                        target_model=fold_target_model,
                     )
                     event = _price_target_event(
                         engine=_engine_name(engine_key),
@@ -136,6 +167,13 @@ def run_price_target_benchmark(
                     fold_events.append(event)
             for engine_key in engine_keys:
                 engine_events = [event for event in fold_events if event.engine == _engine_name(engine_key)]
+                fold_metadata = {
+                    "fold_start": int(fold_start),
+                    "calibration": asdict(fold_calibration),
+                    "ensemble": asdict(fold_ensemble),
+                }
+                if "wavemind-learned-target" in engine_keys:
+                    fold_metadata["target_model"] = asdict(fold_target_model)
                 by_market.append(
                     _summarize_events(
                         engine_events,
@@ -144,11 +182,7 @@ def run_price_target_benchmark(
                         timeframe=str(market["timeframe"]),
                         fold_index=fold_index,
                     )
-                    | {
-                        "fold_start": int(fold_start),
-                        "calibration": asdict(fold_calibration),
-                        "ensemble": asdict(fold_ensemble),
-                    }
+                    | fold_metadata
                 )
     results = [_summarize_events([event for event in events if event.engine == _engine_name(engine)], engine=_engine_name(engine)) for engine in engine_keys]
     _attach_robustness(results, by_market)
@@ -300,6 +334,7 @@ def _predict_return(
     horizon: int,
     calibration: ReturnCalibration,
     ensemble: EnsembleCalibration,
+    target_model: TargetModelCalibration,
 ) -> tuple[float, int, str]:
     if engine_key == "wavemind-ensemble":
         components = _component_predictions(history, query, horizon=horizon)
@@ -309,6 +344,16 @@ def _predict_return(
         return _force_nonzero(value, fallback=components.get("wave", _last_actual_return(history))), support, method
     if engine_key == "wavemind-robust-target":
         return _robust_target_return(history, query, horizon=horizon, calibration=calibration)
+    if engine_key == "wavemind-learned-target":
+        features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+        robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
+        robust_support = int(max(0.0, round(features.get("support_count", 0.0))))
+        robust_method = f"feature_components+{robust_suffix}"
+        if not target_model.enabled:
+            return robust_value, robust_support, f"{robust_method}+learned_disabled:{target_model.note}"
+        value = _predict_target_model_from_features(target_model, features)
+        value = math.copysign(min(abs(value), abs(robust_value)), robust_value)
+        return _force_nonzero(value, fallback=robust_value), robust_support, f"{robust_method}+learned_ridge_safe"
     if engine_key in {"wavemind-target", "wavemind-calibrated"}:
         forecast = forced_directional_forecast(history, query, horizon=horizon)
         value = forecast.expected_return_bps
@@ -368,6 +413,282 @@ def _robust_target_return(
         method = f"{forecast.method}+robust_calibration"
     support = max(int(forecast.support), len(matches))
     return _force_nonzero(value, fallback=calibrated_wave), support, method
+
+
+TARGET_MODEL_FEATURES = (
+    "raw_wave",
+    "calibrated_wave",
+    "momentum",
+    "regime",
+    "historical",
+    "naive",
+    "support_log",
+    "wave_momentum_agreement",
+    "wave_regime_agreement",
+    "window_return_bps",
+    "recent_return_bps",
+    "range_bps",
+    "volatility_bps",
+    "drawdown_bps",
+    "trend_slope_bps",
+    "macd_bps",
+    "bollinger_position",
+    "range_compression",
+    "volume_ratio",
+    "rsi",
+    "close_position",
+    "trend_code",
+    "recent_trend_code",
+)
+
+
+def _disabled_target_model(note: str) -> TargetModelCalibration:
+    return TargetModelCalibration(
+        enabled=False,
+        feature_names=(),
+        means=(),
+        scales=(),
+        coefficients=(),
+        intercept_bps=0.0,
+        cap_abs_bps=0.0,
+        alpha=0.0,
+        validation_mae_bps=math.inf,
+        validation_direction_hit=0.0,
+        robust_validation_mae_bps=math.inf,
+        robust_validation_direction_hit=0.0,
+        samples=0,
+        note=note,
+    )
+
+
+def _fit_target_model(
+    history: list[OHLCVWindow],
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    calibration_windows: int,
+) -> TargetModelCalibration:
+    timeframe = str(history[-1].timeframe) if history else ""
+    if timeframe != "1h":
+        return _disabled_target_model("learned_magnitude_head_enabled_for_1h_only")
+    if len(history) < max(90, calibration_windows):
+        return _disabled_target_model("insufficient_history")
+    model_windows = min(int(calibration_windows), 72)
+    start = max(32, len(history) - model_windows)
+    rows: list[tuple[dict[str, float], float, float]] = []
+    for index in range(start, len(history)):
+        prior = history[:index]
+        if len(prior) < 24:
+            continue
+        features = _target_model_features(prior, history[index], horizon=horizon, calibration=calibration)
+        robust_value, _ = _robust_value_from_features(features, history[index].timeframe)
+        rows.append((features, float(history[index].future_return_bps), float(robust_value)))
+    if len(rows) < 48:
+        return _disabled_target_model("insufficient_calibration_samples")
+
+    names = TARGET_MODEL_FEATURES
+    x_all = np.array([[features.get(name, 0.0) for name in names] for features, _, _ in rows], dtype=float)
+    y_all = np.array([actual for _, actual, _ in rows], dtype=float)
+    robust_all = np.array([robust for _, _, robust in rows], dtype=float)
+    split = min(len(rows) - 12, max(24, int(len(rows) * 0.70)))
+    if split <= 0 or split >= len(rows):
+        return _disabled_target_model("invalid_validation_split")
+
+    x_train, y_train = x_all[:split], y_all[:split]
+    x_val, y_val = x_all[split:], y_all[split:]
+    robust_val = robust_all[split:]
+    robust_mae = float(np.mean(np.abs(robust_val - y_val)))
+    robust_hit = float(np.mean([1.0 if _signed_direction(pred) == _signed_direction(actual) else 0.0 for pred, actual in zip(robust_val, y_val)]))
+
+    best: tuple[float, float, float, TargetModelCalibration] | None = None
+    for alpha in (0.1, 1.0, 10.0, 100.0, 1000.0):
+        candidate = _fit_ridge_target_model(names, x_train, y_train, alpha=alpha)
+        predicted = np.array([_predict_target_model_from_array(candidate, row) for row in x_val], dtype=float)
+        predicted = np.copysign(np.minimum(np.abs(predicted), np.abs(robust_val)), robust_val)
+        mae = float(np.mean(np.abs(predicted - y_val)))
+        hit = float(np.mean([1.0 if _signed_direction(pred) == _signed_direction(actual) else 0.0 for pred, actual in zip(predicted, y_val)]))
+        score = mae * (1.0 + max(0.0, robust_hit - hit))
+        ranked = (score, mae, -hit, candidate)
+        if best is None or ranked < best:
+            best = ranked
+
+    assert best is not None
+    _, validation_mae, negative_hit, _ = best
+    validation_hit = -negative_hit
+    materially_lower_error = validation_mae <= robust_mae * 0.965 and validation_hit >= robust_hit - 0.02
+    materially_better_direction = validation_hit >= robust_hit + 0.05 and validation_mae <= robust_mae * 1.01
+    if not (materially_lower_error or materially_better_direction):
+        disabled = _disabled_target_model("validation_not_better_than_robust")
+        return TargetModelCalibration(
+            enabled=disabled.enabled,
+            feature_names=disabled.feature_names,
+            means=disabled.means,
+            scales=disabled.scales,
+            coefficients=disabled.coefficients,
+            intercept_bps=disabled.intercept_bps,
+            cap_abs_bps=disabled.cap_abs_bps,
+            alpha=disabled.alpha,
+            validation_mae_bps=validation_mae,
+            validation_direction_hit=validation_hit,
+            robust_validation_mae_bps=robust_mae,
+            robust_validation_direction_hit=robust_hit,
+            samples=len(rows),
+            note=disabled.note,
+        )
+
+    final_model = _fit_ridge_target_model(names, x_all, y_all, alpha=best[3].alpha)
+    return TargetModelCalibration(
+        enabled=True,
+        feature_names=final_model.feature_names,
+        means=final_model.means,
+        scales=final_model.scales,
+        coefficients=final_model.coefficients,
+        intercept_bps=final_model.intercept_bps,
+        cap_abs_bps=final_model.cap_abs_bps,
+        alpha=final_model.alpha,
+        validation_mae_bps=validation_mae,
+        validation_direction_hit=validation_hit,
+        robust_validation_mae_bps=robust_mae,
+        robust_validation_direction_hit=robust_hit,
+        samples=len(rows),
+        note="fold-local ridge target head enabled after validation gate",
+    )
+
+
+def _fit_ridge_target_model(
+    feature_names: tuple[str, ...],
+    x_values: np.ndarray,
+    y_values: np.ndarray,
+    *,
+    alpha: float,
+) -> TargetModelCalibration:
+    means = x_values.mean(axis=0)
+    scales = x_values.std(axis=0)
+    scales = np.where(scales <= 1e-9, 1.0, scales)
+    centered = (x_values - means) / scales
+    y_mean = float(y_values.mean())
+    system = centered.T @ centered + float(alpha) * np.eye(centered.shape[1])
+    target = centered.T @ (y_values - y_mean)
+    try:
+        coefficients = np.linalg.solve(system, target)
+    except np.linalg.LinAlgError:
+        coefficients = np.linalg.pinv(system) @ target
+    cap_abs_bps = max(25.0, float(np.quantile(np.abs(y_values), 0.90)) * 1.25)
+    return TargetModelCalibration(
+        enabled=True,
+        feature_names=tuple(feature_names),
+        means=tuple(float(value) for value in means),
+        scales=tuple(float(value) for value in scales),
+        coefficients=tuple(float(value) for value in coefficients),
+        intercept_bps=y_mean,
+        cap_abs_bps=cap_abs_bps,
+        alpha=float(alpha),
+        validation_mae_bps=math.inf,
+        validation_direction_hit=0.0,
+        robust_validation_mae_bps=math.inf,
+        robust_validation_direction_hit=0.0,
+        samples=int(len(y_values)),
+        note="ridge target model",
+    )
+
+
+def _predict_target_model(
+    model: TargetModelCalibration,
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> float:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    row = np.array([features.get(name, 0.0) for name in model.feature_names], dtype=float)
+    return _predict_target_model_from_array(model, row)
+
+
+def _predict_target_model_from_features(model: TargetModelCalibration, features: dict[str, float]) -> float:
+    row = np.array([features.get(name, 0.0) for name in model.feature_names], dtype=float)
+    return _predict_target_model_from_array(model, row)
+
+
+def _predict_target_model_from_array(model: TargetModelCalibration, row: np.ndarray) -> float:
+    means = np.array(model.means, dtype=float)
+    scales = np.array(model.scales, dtype=float)
+    coefficients = np.array(model.coefficients, dtype=float)
+    value = float(model.intercept_bps + np.dot((row - means) / scales, coefficients))
+    return float(np.clip(value, -model.cap_abs_bps, model.cap_abs_bps))
+
+
+def _robust_value_from_features(features: dict[str, float], timeframe: str) -> tuple[float, str]:
+    raw_wave = float(features.get("raw_wave", 0.0))
+    calibrated_wave = float(features.get("calibrated_wave", raw_wave))
+    momentum = float(features.get("momentum", calibrated_wave))
+    regime = float(features.get("regime", calibrated_wave))
+    historical = float(features.get("historical", calibrated_wave))
+    naive = float(features.get("naive", momentum))
+    if timeframe == "1h":
+        short_horizon_magnitude = abs(0.40 * calibrated_wave + 0.40 * momentum + 0.20 * naive)
+        return _force_nonzero(math.copysign(short_horizon_magnitude, momentum), fallback=calibrated_wave), "robust_1h_momentum_guard"
+    if timeframe == "4h":
+        return _force_nonzero(0.35 * raw_wave + 0.45 * historical + 0.20 * calibrated_wave, fallback=calibrated_wave), "robust_4h_error_guard"
+    if timeframe == "1d":
+        return _force_nonzero(0.40 * calibrated_wave + 0.25 * momentum + 0.35 * regime, fallback=calibrated_wave), "robust_1d_regime_guard"
+    return _force_nonzero(calibrated_wave, fallback=raw_wave), "robust_calibration"
+
+
+def _target_model_features(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> dict[str, float]:
+    forecast = forced_directional_forecast(history, query, horizon=horizon)
+    matches = _regime_matches(history, query)
+    last_outcome = _last_actual_return(history)
+    raw_wave = _force_nonzero(forecast.expected_return_bps, fallback=last_outcome)
+    calibrated_wave = _force_nonzero(_apply_calibration(raw_wave, calibration), fallback=raw_wave)
+    momentum = _force_nonzero(_momentum_directional_return(query, horizon=horizon), fallback=last_outcome)
+    regime = _force_nonzero(
+        statistics.mean(window.future_return_bps for window in matches) if matches else last_outcome,
+        fallback=last_outcome,
+    )
+    historical = _force_nonzero(statistics.mean(window.future_return_bps for window in history), fallback=last_outcome)
+    features = query.features
+    return {
+        "raw_wave": raw_wave,
+        "calibrated_wave": calibrated_wave,
+        "momentum": momentum,
+        "regime": regime,
+        "historical": historical,
+        "naive": _force_nonzero(last_outcome, fallback=1.0),
+        "support_count": float(max(int(forecast.support), len(matches))),
+        "support_log": math.log1p(max(int(forecast.support), len(matches))),
+        "wave_momentum_agreement": 1.0 if _signed_direction(raw_wave) == _signed_direction(momentum) else -1.0,
+        "wave_regime_agreement": 1.0 if _signed_direction(raw_wave) == _signed_direction(regime) else -1.0,
+        "window_return_bps": float(features.get("window_return_bps", 0.0)),
+        "recent_return_bps": float(features.get("recent_return_bps", 0.0)),
+        "range_bps": float(features.get("range_bps", 0.0)),
+        "volatility_bps": float(features.get("volatility_bps", 0.0)),
+        "drawdown_bps": float(features.get("drawdown_bps", 0.0)),
+        "trend_slope_bps": float(features.get("trend_slope_bps", 0.0)),
+        "macd_bps": float(features.get("macd_bps", 0.0)),
+        "bollinger_position": float(features.get("bollinger_position", 0.0)),
+        "range_compression": float(features.get("range_compression", 0.0)),
+        "volume_ratio": float(features.get("volume_ratio", 0.0)),
+        "rsi": float(features.get("rsi", 50.0)),
+        "close_position": float(features.get("close_position", 0.5)),
+        "trend_code": _trend_code(features.get("trend")),
+        "recent_trend_code": _trend_code(features.get("recent_trend")),
+    }
+
+
+def _trend_code(value: object) -> float:
+    key = str(value or "flat").strip().lower()
+    if key == "up":
+        return 1.0
+    if key == "down":
+        return -1.0
+    return 0.0
 
 
 def _component_predictions(history: list[OHLCVWindow], query: OHLCVWindow, *, horizon: int) -> dict[str, float]:
@@ -706,6 +1027,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-robust-target": "wavemind-robust-target",
         "robust": "wavemind-robust-target",
         "robust-target": "wavemind-robust-target",
+        "wavemind-learned": "wavemind-learned-target",
+        "wavemind-learned-target": "wavemind-learned-target",
+        "learned": "wavemind-learned-target",
+        "learned-target": "wavemind-learned-target",
         "wavemind-calibrated": "wavemind-calibrated",
         "calibrated": "wavemind-calibrated",
         "momentum": "momentum",
@@ -726,6 +1051,7 @@ def _engine_name(key: str) -> str:
         "wavemind-target": "WaveMind price target",
         "wavemind-ensemble": "WaveMind ensemble target",
         "wavemind-robust-target": "WaveMind robust target",
+        "wavemind-learned-target": "WaveMind learned target",
         "wavemind-calibrated": "WaveMind calibrated target",
         "momentum": "Momentum baseline",
         "regime-mean": "Regime mean baseline",

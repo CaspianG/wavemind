@@ -29,7 +29,8 @@ DATA_URL = "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned"
 
 
 def _read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    with path.open("r", encoding="utf-8-sig") as handle:
+        return json.load(handle)
 
 
 def _samples(payload: Any) -> list[dict[str, Any]]:

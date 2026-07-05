@@ -100,6 +100,42 @@ def test_price_target_loader_uses_cached_csv(tmp_path):
     assert len(markets[0]["windows"]) > 0
 
 
+def test_learned_price_target_alias_runs_with_safe_fallback():
+    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="1h", bars=180, seed=52)
+    windows = make_ohlcv_windows(
+        bars,
+        symbol="BTC/USDT",
+        timeframe="1h",
+        window=16,
+        horizon=24,
+        direction_threshold_bps=0.0,
+    )
+
+    payload = run_price_target_benchmark(
+        markets=[
+            {
+                "symbol": "BTC/USDT",
+                "timeframe": "1h",
+                "horizon": 24,
+                "bars": bars,
+                "windows": windows,
+                "source": "synthetic",
+            }
+        ],
+        engines=["learned-target", "wavemind-robust-target"],
+        train_windows=95,
+        test_windows=8,
+        folds=1,
+        calibration_windows=48,
+    )
+
+    result_by_engine = {result["engine"]: result for result in payload["results"]}
+    assert result_by_engine["WaveMind learned target"]["queries"] == 8
+    assert result_by_engine["WaveMind robust target"]["queries"] == 8
+    assert result_by_engine["WaveMind learned target"]["mean_abs_return_error_bps"] >= 0.0
+    assert payload["by_market"][0]["target_model"]["note"]
+
+
 def test_price_target_markdown_and_cli(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     output = tmp_path / "price-target.json"

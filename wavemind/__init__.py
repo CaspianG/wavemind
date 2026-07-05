@@ -1,4 +1,5 @@
 from .core import QueryResult, WaveField, WaveMind
+from .cluster import ClusterNode, ClusterPlan, NamespacePlacement, build_cluster_plan
 from .encoders import (
     FieldProjector,
     HashingTextEncoder,
@@ -8,7 +9,60 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
-from .sharding import NamespaceShardRouter, ShardedWaveMind
+from .jobs import (
+    CachePrewarmReport,
+    CachePrewarmWorker,
+    DistributedRepairJobReport,
+    DistributedRepairWorker,
+    HotMemoryCache,
+    MemoryMaintenanceWorker,
+    RedisHotMemoryCache,
+    ReplicatedObjectStoreDrillReport,
+    ReplicatedObjectStoreDrillWorker,
+    ReplicatedSnapshotJobReport,
+    ReplicatedSnapshotWorker,
+    query_with_cache,
+)
+from .multimodal import (
+    MemoryPayload,
+    audio_payload,
+    event_payload,
+    image_payload,
+    remember_payload,
+    table_payload,
+)
+from .object_store import (
+    ObjectStoreArchive,
+    ObjectStoreLocation,
+    ObjectStoreUploadReport,
+    S3SnapshotStore,
+    parse_object_store_uri,
+)
+from .replication import (
+    ReadQuorumError,
+    ReplicatedDeltaImportReport,
+    ReplicatedRepairReport,
+    ReplicatedRestoreReport,
+    ReplicatedSnapshotArchiveReport,
+    ReplicatedSnapshotReport,
+    ReplicatedWaveMind,
+    ReplicatedWriteResult,
+    ReplicationError,
+    WriteQuorumError,
+)
+from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
+from .sharding import (
+    DistributedForgetResult,
+    DistributedReadQuorumError,
+    DistributedRepairReport,
+    DistributedShardError,
+    DistributedShardedWaveMind,
+    DistributedWriteQuorumError,
+    DistributedWriteResult,
+    HTTPNamespaceShardClient,
+    NamespaceShardRouter,
+    ShardedWaveMind,
+)
 from .storage import (
     AuditEvent,
     MemoryRecord,
@@ -17,17 +71,52 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.1"
+__version__ = "2.3.9"
 
 __all__ = [
     "FieldProjector",
     "FaissVectorIndex",
     "HashingTextEncoder",
+    "ClusterNode",
+    "ClusterPlan",
     "AuditEvent",
+    "CachePrewarmReport",
+    "CachePrewarmWorker",
+    "DistributedRepairJobReport",
+    "DistributedRepairWorker",
+    "DistributedForgetResult",
+    "DistributedReadQuorumError",
+    "DistributedRepairReport",
+    "DistributedShardError",
+    "DistributedShardedWaveMind",
+    "DistributedWriteQuorumError",
+    "DistributedWriteResult",
+    "HotMemoryCache",
+    "HTTPNamespaceShardClient",
+    "MemoryMaintenanceWorker",
     "MemoryFieldGraph",
     "MemoryRecord",
+    "MemoryPayload",
     "NamespaceShardRouter",
+    "ObjectStoreArchive",
+    "ObjectStoreLocation",
+    "ObjectStoreUploadReport",
+    "NamespacePlacement",
     "QueryResult",
+    "ReadQuorumError",
+    "RedisHotMemoryCache",
+    "ReplicatedObjectStoreDrillReport",
+    "ReplicatedObjectStoreDrillWorker",
+    "ReplicatedDeltaImportReport",
+    "ReplicatedRepairReport",
+    "ReplicatedRestoreReport",
+    "ReplicatedSnapshotArchiveReport",
+    "ReplicatedSnapshotReport",
+    "ReplicatedSnapshotJobReport",
+    "ReplicatedSnapshotWorker",
+    "ReplicatedWaveMind",
+    "ReplicatedWriteResult",
+    "ReplicationError",
     "PgVectorIndex",
     "PostgresMemoryStore",
     "QdrantVectorIndex",
@@ -35,10 +124,23 @@ __all__ = [
     "SentenceTransformerTextEncoder",
     "ShardedWaveMind",
     "SQLiteMemoryStore",
+    "ScalePlan",
+    "S3SnapshotStore",
     "TextEncoder",
     "WaveField",
     "WaveMind",
+    "WriteQuorumError",
     "__version__",
+    "audio_payload",
+    "build_scale_plan",
+    "build_cluster_plan",
     "create_memory_store",
     "create_text_encoder",
+    "event_payload",
+    "image_payload",
+    "parse_object_store_uri",
+    "query_with_cache",
+    "remember_payload",
+    "scale_status_meets_or_exceeds",
+    "table_payload",
 ]

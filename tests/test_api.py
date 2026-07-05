@@ -1,7 +1,27 @@
+import sys
+import types
+
 from fastapi.testclient import TestClient
+import numpy as np
 
 from wavemind import HashingTextEncoder, WaveMind, __version__
 from wavemind.api import create_app
+
+
+class ConsolidationEncoder:
+    vector_dim = 4
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        lowered = text.lower()
+        if "pasta" in lowered:
+            return self._unit([0.0, 1.0, 0.0, 0.0])
+        if "compiler" in lowered:
+            return self._unit([0.95, 0.05, 0.0, 0.0])
+        return self._unit([1.0, 0.0, 0.0, 0.0])
+
+    def _unit(self, values: list[float]) -> np.ndarray:
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
 def test_fastapi_remember_query_forget_and_stats(tmp_path):
@@ -56,6 +76,35 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert health.json()["healthy"] is True
             assert health.json()["expected_count"] == 1
 
+            scale_plan = client.get(
+                "/scale-plan",
+                params={"namespace": "pets", "target_memories": 50000},
+            )
+            assert scale_plan.status_code == 200
+            scale_payload = scale_plan.json()
+            assert scale_payload["current_memories"] == 1
+            assert scale_payload["target_memories"] == 50000
+            assert scale_payload["namespace"] == "pets"
+            assert scale_payload["tier"] == "large-local"
+            assert scale_payload["recommended_index"] == "faiss-persisted or qdrant"
+
+            cluster_plan = client.post(
+                "/cluster-plan",
+                json={
+                    "namespace_count": 4,
+                    "nodes": [
+                        {"id": "node-a", "address": "10.0.0.1:8000"},
+                        {"id": "node-b", "address": "10.0.0.2:8000"},
+                    ],
+                    "replication_factor": 2,
+                    "include_kubernetes": True,
+                },
+            )
+            assert cluster_plan.status_code == 200
+            cluster_payload = cluster_plan.json()
+            assert len(cluster_payload["placements"]) == 4
+            assert cluster_payload["kubernetes"]["kind"] == "StatefulSet"
+
             backup_dir = tmp_path / "api-backups"
             backup = client.post(
                 "/backup",
@@ -91,6 +140,93 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
         mind.close()
 
 
+def test_fastapi_consolidate_creates_durable_concept_memory(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-consolidate.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=ConsolidationEncoder(),
+        graph_weight=1.0,
+        graph_steps=2,
+        graph_expand_k=10,
+        rerank_k=10,
+        score_threshold=0.0,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            first = client.post(
+                "/remember",
+                json={
+                    "text": "User likes Rust systems programming",
+                    "namespace": "agent",
+                    "tags": ["systems"],
+                },
+            )
+            second = client.post(
+                "/remember",
+                json={
+                    "text": "User studies compiler systems internals",
+                    "namespace": "agent",
+                    "tags": ["systems"],
+                },
+            )
+            client.post(
+                "/remember",
+                json={
+                    "text": "User cooks pasta on weekends",
+                    "namespace": "agent",
+                    "tags": ["cooking"],
+                },
+            )
+
+            response = client.post(
+                "/consolidate",
+                json={
+                    "namespace": "agent",
+                    "seed_text": "Rust compiler systems",
+                    "min_energy": 0.01,
+                },
+            )
+
+            assert response.status_code == 200
+            concepts = response.json()["concepts"]
+            assert len(concepts) == 1
+            concept = concepts[0]
+            assert concept["namespace"] == "agent"
+            assert concept["text"].startswith("Consolidated memory:")
+            assert concept["metadata"]["source"] == "wavemind_consolidation"
+            assert set(concept["metadata"]["memory_ids"]) == {
+                first.json()["id"],
+                second.json()["id"],
+            }
+
+            query = client.post(
+                "/query",
+                json={
+                    "text": "systems programming",
+                    "namespace": "agent",
+                    "tags": ["concept"],
+                    "top_k": 1,
+                },
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["id"] == concept["id"]
+
+            duplicate = client.post(
+                "/consolidate",
+                json={
+                    "namespace": "agent",
+                    "seed_text": "Rust compiler systems",
+                    "min_energy": 0.01,
+                },
+            )
+            assert duplicate.status_code == 200
+            assert duplicate.json()["concepts"] == []
+    finally:
+        mind.close()
+
+
 def test_fastapi_query_accepts_query_alias(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api.sqlite3",
@@ -115,6 +251,221 @@ def test_fastapi_query_accepts_query_alias(tmp_path):
 
             assert query.status_code == 200
             assert query.json()["results"][0]["text"] == "Andrey is a trader"
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_prewarm_requires_enabled_cache(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    mind = WaveMind(
+        db_path=tmp_path / "api-cache-disabled.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post("/cache/prewarm", json={})
+
+            assert response.status_code == 400
+            assert "Cache is disabled" in response.json()["detail"]
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_prewarm_uses_query_audit_and_exposes_metrics(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.setenv("WAVEMIND_CACHE_TTL_SECONDS", "60")
+    mind = WaveMind(
+        db_path=tmp_path / "api-cache.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("cached audit driven memory", namespace="tenant:cache")
+        mind.query("audit driven", namespace="tenant:cache", top_k=1)
+        mind.query("audit driven", namespace="tenant:cache", top_k=1)
+
+        with TestClient(create_app(mind=mind)) as client:
+            report = client.post(
+                "/cache/prewarm",
+                json={
+                    "namespace": "tenant:cache",
+                    "min_frequency": 2,
+                    "top_k": 1,
+                },
+            )
+            assert report.status_code == 200
+            payload = report.json()
+            assert payload["ok"] is True
+            assert payload["warmed"] == 1
+
+            query = client.post(
+                "/query",
+                json={
+                    "text": "audit driven",
+                    "namespace": "tenant:cache",
+                    "top_k": 1,
+                },
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "cached audit driven memory"
+
+            metrics = client.get("/metrics")
+            assert metrics.status_code == 200
+            assert "wavemind_cache_hits_total 1" in metrics.text
+            assert "wavemind_cache_size 1" in metrics.text
+    finally:
+        mind.close()
+
+
+def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
+    class FakeRedisClient:
+        values = {}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert url == "redis://cache.test/0"
+            assert decode_responses is True
+            return cls()
+
+        def get(self, key):
+            return self.values.get(key)
+
+        def set(self, key, value, ex=None):
+            self.values[key] = value
+
+        def scan_iter(self, match=None):
+            prefix = (match or "").rstrip("*")
+            for key in list(self.values):
+                if key.startswith(prefix):
+                    yield key
+
+        def delete(self, *keys):
+            for key in keys:
+                self.values.pop(key, None)
+
+    fake_redis_module = types.SimpleNamespace(Redis=FakeRedisClient)
+    monkeypatch.setitem(sys.modules, "redis", fake_redis_module)
+    monkeypatch.setenv("WAVEMIND_REDIS_URL", "redis://cache.test/0")
+    monkeypatch.setenv("WAVEMIND_REDIS_PREFIX", "wm:test")
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-redis-cache.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("redis warmed memory", namespace="tenant:redis")
+        mind.query("warmed memory", namespace="tenant:redis", top_k=1)
+
+        with TestClient(create_app(mind=mind)) as client:
+            report = client.post(
+                "/cache/prewarm",
+                json={"namespace": "tenant:redis", "top_k": 1},
+            )
+            assert report.status_code == 200
+            assert report.json()["warmed"] == 1
+
+            query = client.post(
+                "/query",
+                json={"text": "warmed memory", "namespace": "tenant:redis", "top_k": 1},
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "redis warmed memory"
+            assert any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
+    finally:
+        mind.close()
+
+
+def test_fastapi_admin_can_export_namespace_memories(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-export.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        memory_id = mind.remember(
+            "exportable production memory",
+            namespace="tenant:export",
+            tags=["ops"],
+            metadata={"source": "api-test"},
+            priority=4.0,
+        )
+        mind.remember("other tenant memory", namespace="tenant:other")
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/memories/export",
+                json={"namespace": "tenant:export", "tags": ["ops"]},
+            )
+
+            assert response.status_code == 200
+            payload = response.json()
+            assert len(payload["records"]) == 1
+            record = payload["records"][0]
+            assert record["id"] == memory_id
+            assert record["text"] == "exportable production memory"
+            assert record["namespace"] == "tenant:export"
+            assert record["tags"] == ["ops"]
+            assert record["metadata"] == {"source": "api-test"}
+            assert record["priority"] == 4.0
+    finally:
+        mind.close()
+
+
+def test_fastapi_admin_can_write_and_export_tombstones(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-tombstone.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            tombstone = client.post(
+                "/memories/tombstone",
+                json={
+                    "namespace": "tenant:tombstone",
+                    "record_keys": ["record-key-1"],
+                    "texts": ["deleted memory"],
+                },
+            )
+            assert tombstone.status_code == 200
+            assert tombstone.json()["id"] >= 1
+
+            exported = client.post(
+                "/memories/export",
+                json={
+                    "namespace": "tenant:tombstone",
+                    "include_tombstones": True,
+                },
+            )
+            assert exported.status_code == 200
+            payload = exported.json()
+            assert payload["records"] == []
+            assert payload["tombstones"][0]["record_keys"] == ["record-key-1"]
+            assert payload["tombstones"][0]["texts"] == ["deleted memory"]
+
+            bad = client.post(
+                "/memories/tombstone",
+                json={"namespace": "tenant:tombstone"},
+            )
+            assert bad.status_code == 400
     finally:
         mind.close()
 

@@ -1,0 +1,75 @@
+{
+  "scenario": {
+    "name": "production_load_profile",
+    "description": "Service-backed large-N candidate-index load profile. The intended production path is SQLite/Postgres as source of truth plus persisted FAISS, Qdrant service, or pgvector HNSW for candidate generation. Skipped engines are reported explicitly when optional services or dependencies are not configured.",
+    "sizes": [
+      100000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "load_sizes": [
+      100000
+    ],
+    "default_target_sizes": [
+      100000,
+      1000000
+    ]
+  },
+  "results": [
+    {
+      "vectors": 100000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 10.275224001379684,
+          "p50_latency_ms": 7.814699987648055,
+          "p95_latency_ms": 18.97340000141412,
+          "p99_latency_ms": 21.25629998045042,
+          "max_latency_ms": 22.747599985450506,
+          "build_ms": 27439.262800035067,
+          "queries": 100,
+          "search_params": {
+            "hnsw_ef": 1024,
+            "exact": false
+          }
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": false,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": "1024",
+      "WAVEMIND_QDRANT_EXACT": "0"
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 9.05,
+      "total_gb": 231.85
+    }
+  }
+}

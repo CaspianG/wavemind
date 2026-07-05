@@ -84,6 +84,7 @@
         "precision@3",
         "stale_suppression",
         "concept_formation",
+        "concept_consolidation",
         "decay_ratio",
         "avg_latency_ms"
       ],
@@ -93,19 +94,21 @@
           "precision@3": 1.0,
           "stale_suppression": 1.0,
           "concept_formation": 1.0,
+          "concept_consolidation": 1.0,
           "decay_ratio": 0.81,
-          "avg_latency_ms": 0.8194
+          "avg_latency_ms": 1.8071
         },
         "WaveMind static": {
           "precision@1": 0.2,
           "precision@3": 1.0,
           "stale_suppression": 0.2,
           "concept_formation": 0.0,
+          "concept_consolidation": 0.0,
           "decay_ratio": 0.0,
-          "avg_latency_ms": 0.4269
+          "avg_latency_ms": 0.4785
         }
       },
-      "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+      "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
       "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets."
     },
     {
@@ -458,6 +461,63 @@
       "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation."
     },
     {
+      "id": "longmemeval_evidence_50_smoke",
+      "name": "LongMemEval evidence 50-query smoke",
+      "category": "long-term-agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/longmemeval_evidence_50_results.json",
+      "source_url": "https://github.com/xiaowu0162/LongMemEval",
+      "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+      "competitors": [
+        "Static vector",
+        "Chroma static",
+        "Qdrant static"
+      ],
+      "metrics": [
+        "evidence_recall@k",
+        "precision@1",
+        "MRR@k",
+        "context_budget_saved",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "evidence_recall_at_k": 0.92,
+          "precision_at_1": 0.76,
+          "mrr_at_k": 0.8266666666666667,
+          "context_budget_saved": 0.8687520008056814,
+          "avg_latency_ms": 15.271843997761607,
+          "p95_latency_ms": 42.931800009682775
+        },
+        "Chroma static": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 13.30225400510244,
+          "p95_latency_ms": 26.026900042779744
+        },
+        "Static vector": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 0.3373400052078068,
+          "p95_latency_ms": 2.1440000273287296
+        },
+        "Qdrant static": {
+          "evidence_recall_at_k": 0.6,
+          "precision_at_1": 0.26,
+          "mrr_at_k": 0.3853333333333333,
+          "context_budget_saved": 0.8866891289440013,
+          "avg_latency_ms": 180.1915079995524,
+          "p95_latency_ms": 296.727099979762
+        }
+      },
+      "target": "Keep this smoke profile above Chroma/Qdrant evidence recall while using it as the fast regression check before full LongMemEval reruns.",
+      "next_step": "Speed up full LongMemEval reruns by reusing per-question candidate indexes or adding a streaming runner mode."
+    },
+    {
       "id": "ann_index_curve",
       "name": "ANN index latency curve",
       "category": "index-latency",
@@ -495,7 +555,10 @@
           "p95_latency_ms": 7.37469999876339,
           "build_ms": 4090.066400000069
         },
-        "WaveMind faiss": {},
+        "WaveMind faiss": {
+          "skipped": true,
+          "reason": "Install faiss-cpu to use FaissVectorIndex"
+        },
         "Qdrant local": {
           "recall_at_k": 1.0,
           "avg_latency_ms": 43.48527499991178,
@@ -505,6 +568,318 @@
       },
       "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
       "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors."
+    },
+    {
+      "id": "production_index_profile",
+      "name": "Production index profile",
+      "category": "index-latency",
+      "status": "implemented",
+      "source": "benchmarks/production_index_profile_results.json",
+      "dataset": "Docker-backed 50000-vector profile comparing persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW.",
+      "competitors": [
+        "Qdrant service",
+        "pgvector HNSW"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "WaveMind faiss-persisted": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 3.5238632199934727,
+          "p95_latency_ms": 7.880882999870664,
+          "build_ms": 715.9043760000259
+        },
+        "Qdrant service": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 4.413577210011681,
+          "p95_latency_ms": 5.932154999982231,
+          "build_ms": 12269.771776000198
+        },
+        "WaveMind pgvector": {
+          "recall_at_k": 0.811,
+          "avg_latency_ms": 10.945468529985192,
+          "p95_latency_ms": 15.685024000049452,
+          "build_ms": 185048.9231660001
+        }
+      },
+      "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
+      "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency."
+    },
+    {
+      "id": "production_load_profile_100k",
+      "name": "Production load profile 100k",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_benchmark.py",
+      "dataset": "100000 generated normalized 128-d vectors; recall@10 measured against exact cosine neighbors.",
+      "competitors": [
+        "Qdrant service",
+        "pgvector HNSW",
+        "FAISS persisted"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "Qdrant service": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 10.275224001379684,
+          "p95_latency_ms": 18.97340000141412,
+          "p99_latency_ms": 21.25629998045042,
+          "build_ms": 27439.262800035067
+        },
+        "WaveMind pgvector": {
+          "recall_at_k": 0.736,
+          "avg_latency_ms": 17.76006000000052,
+          "p95_latency_ms": 23.47620000364259,
+          "build_ms": 455703.69949995074
+        },
+        "WaveMind faiss-persisted": {
+          "skipped": true,
+          "reason": "Set WAVEMIND_FAISS_PATH to use the persisted FAISS backend"
+        }
+      },
+      "target": "Reach recall@10 >= 0.95 and p99 latency < 100 ms on at least one production service backend at 100000 memories.",
+      "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container."
+    },
+    {
+      "id": "production_load_profile_1m",
+      "name": "Production load profile 1M",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
+      "competitors": [
+        "Qdrant service"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "Qdrant service": {
+          "recall_at_k": 0.984,
+          "avg_latency_ms": 116.80030399700627,
+          "p95_latency_ms": 153.84380001341924,
+          "p99_latency_ms": 209.27749999100342,
+          "build_ms": 450674.6019999846
+        }
+      },
+      "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
+      "next_step": "Tune Qdrant indexing/search params further, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk."
+    },
+    {
+      "id": "production_load_qdrant_1m_ef_sweep",
+      "name": "Qdrant 1M HNSW ef sweep",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_qdrant_1m_ef_sweep_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; one Qdrant service collection queried with multiple hnsw_ef settings.",
+      "competitors": [
+        "Qdrant service"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms"
+      ],
+      "current": {
+        "hnsw_ef=512": {
+          "recall_at_k": 0.7533333333333333,
+          "avg_latency_ms": 47.16066332766786,
+          "p95_latency_ms": 68.49600002169609,
+          "p99_latency_ms": 68.51829995866865,
+          "max_latency_ms": 68.51829995866865
+        },
+        "hnsw_ef=768": {
+          "recall_at_k": 0.85,
+          "avg_latency_ms": 44.041876665626965,
+          "p95_latency_ms": 69.07949998276308,
+          "p99_latency_ms": 69.75289998808876,
+          "max_latency_ms": 69.75289998808876
+        },
+        "hnsw_ef=1024": {
+          "recall_at_k": 0.8833333333333333,
+          "avg_latency_ms": 62.91633000170501,
+          "p95_latency_ms": 81.1338999774307,
+          "p99_latency_ms": 85.5405000038445,
+          "max_latency_ms": 85.5405000038445
+        },
+        "hnsw_ef=1536": {
+          "recall_at_k": 0.9366666666666666,
+          "avg_latency_ms": 65.5569299919686,
+          "p95_latency_ms": 111.21890001231804,
+          "p99_latency_ms": 119.66809997102246,
+          "max_latency_ms": 119.66809997102246
+        },
+        "hnsw_ef=2048": {
+          "recall_at_k": 0.9766666666666667,
+          "avg_latency_ms": 64.75662334123626,
+          "p95_latency_ms": 91.18230000603944,
+          "p99_latency_ms": 103.77270000753924,
+          "max_latency_ms": 103.77270000753924
+        }
+      },
+      "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
+      "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable production SLO."
+    },
+    {
+      "id": "scale_readiness",
+      "name": "Scale readiness profile",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/scale_readiness_benchmark.py",
+      "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+      "competitors": [
+        "Mem0",
+        "Zep",
+        "LangGraph persistent memory",
+        "GraphRAG"
+      ],
+      "metrics": [
+        "node_loss_min_availability",
+        "hit_rate",
+        "precision@1",
+        "p99_latency_ms"
+      ],
+      "current": {
+        "WaveMind cluster planner": {
+          "simulated_memories": 1000000,
+          "namespaces": 4096,
+          "nodes": 4,
+          "replication_factor": 2,
+          "node_loss_min_availability": 1.0,
+          "zone_loss_min_availability": 1.0,
+          "read_quorum": 1,
+          "write_quorum": 2,
+          "placement_ms": 63.9400000218302
+        },
+        "WaveMind hot cache": {
+          "queries": 2000,
+          "capacity": 512,
+          "hit_rate": 0.92,
+          "evictions": 0,
+          "prewarm_warmed": 1,
+          "prewarm_hit": true,
+          "p99_lookup_ms": 0.0032999669201672077
+        },
+        "WaveMind distributed sharding": {
+          "nodes": 3,
+          "replication_factor": 2,
+          "write_quorum": 2,
+          "read_quorum": 1,
+          "writes": 2,
+          "recalled_after_primary_loss": true,
+          "repair_repaired_total": 1,
+          "repair_ok": true,
+          "recalled_after_repair": true,
+          "forget_replicated_deletes": 2,
+          "tombstone_replication_factor": 3,
+          "tombstone_suppressed_before_repair": true,
+          "tombstone_repair_deleted_records": 1,
+          "tombstone_suppressed_after_repair": true,
+          "query_after_primary_loss_ms": 1.378699962515384
+        },
+        "WaveMind replicated runtime": {
+          "nodes": 3,
+          "replication_factor": 3,
+          "write_quorum": 2,
+          "read_quorum": 1,
+          "recalled_after_node_loss": true,
+          "repair_copied_records": 1,
+          "tombstone_repair_deleted_records": 1,
+          "p99_query_after_loss_ms": 1.2089000083506107
+        },
+        "WaveMind active-active delta sync": {
+          "regions": 2,
+          "replication_factor_per_region": 3,
+          "records_imported": 6,
+          "converged_after_bidirectional_sync": true,
+          "suppressed_stale_import_after_delete": true,
+          "tombstone_converged": true,
+          "sync_ms": 121.9279999495484
+        },
+        "WaveMind replicated snapshot": {
+          "nodes": 3,
+          "manifest_healthy": true,
+          "offsite_verified": true,
+          "archive_verified": true,
+          "object_store_verified": true,
+          "object_store_latest_verified": true,
+          "object_store_pruned": 2,
+          "object_store_download_verified": true,
+          "object_store_drill_ok": true,
+          "restored_files": 3,
+          "recalled_after_restore_node_loss": true,
+          "snapshot_ms": 150.99249995546415,
+          "restore_ms": 81.7807000130415
+        },
+        "WaveMind structured payloads": {
+          "queries": 4,
+          "precision_at_1": 1.0,
+          "avg_latency_ms": 0.4984749830327928,
+          "p99_latency_ms": 0.6758999661542475
+        }
+      },
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+      "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
+    },
+    {
+      "id": "memory_competitor_adapter_profile",
+      "name": "Memory competitor adapter profile",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/memory_competitor_benchmark.py",
+      "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+      "competitors": [
+        "Mem0",
+        "Zep",
+        "LangGraph persistent memory"
+      ],
+      "metrics": [
+        "precision@1",
+        "precision@3",
+        "stale_suppression",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "precision_at_1": 0.8,
+          "precision_at_3": 1.0,
+          "stale_suppression": 1.0,
+          "avg_latency_ms": 0.55384998753046,
+          "p95_latency_ms": 0.8311999845318496
+        },
+        "Mem0": {
+          "engine": "Mem0",
+          "skipped": true,
+          "reason": "Install Mem0 to run this adapter profile: pip install \"mem0ai\""
+        },
+        "Zep": {
+          "engine": "Zep",
+          "skipped": true,
+          "reason": "Install the Zep client package and set ZEP_API_KEY or ZEP_API_URL."
+        },
+        "LangGraph persistent memory": {
+          "engine": "LangGraph persistent memory",
+          "skipped": true,
+          "reason": "Install LangGraph to run this adapter profile: pip install \"langgraph\""
+        }
+      },
+      "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
+      "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run."
     },
     {
       "id": "longmemeval_answer_generation",
@@ -532,8 +907,8 @@
           "exact_match": 0.0,
           "contains_answer": 0.05,
           "token_f1": 0.018367529146058867,
-          "avg_retrieval_ms": 1.299194999592146,
-          "avg_generation_ms": 0.04707000043708831
+          "avg_retrieval_ms": 3.79294001031667,
+          "avg_generation_ms": 0.7694199972320348
         },
         "WaveMind + qwen2.5:0.5b": {
           "queries": 50,
@@ -541,8 +916,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.18,
           "token_f1": 0.18308614585546518,
-          "avg_retrieval_ms": 2.001148000708781,
-          "avg_generation_ms": 1331.836292000371
+          "avg_retrieval_ms": 2.9792159993667156,
+          "avg_generation_ms": 1428.1996439944487
         },
         "Chroma static + qwen2.5:0.5b": {
           "queries": 50,
@@ -550,8 +925,8 @@
           "exact_match": 0.1,
           "contains_answer": 0.12,
           "token_f1": 0.12615298986727558,
-          "avg_retrieval_ms": 4.4275459996424615,
-          "avg_generation_ms": 1157.0555100002093
+          "avg_retrieval_ms": 4.1023979999590665,
+          "avg_generation_ms": 1234.6932660019957
         },
         "Qdrant static + qwen2.5:0.5b": {
           "queries": 50,
@@ -559,8 +934,8 @@
           "exact_match": 0.1,
           "contains_answer": 0.12,
           "token_f1": 0.12615298986727558,
-          "avg_retrieval_ms": 52.296541999676265,
-          "avg_generation_ms": 835.9314120013732
+          "avg_retrieval_ms": 63.80351200001314,
+          "avg_generation_ms": 893.4776440006681
         },
         "WaveMind + qwen2.5:1.5b": {
           "queries": 50,
@@ -568,8 +943,8 @@
           "exact_match": 0.24,
           "contains_answer": 0.38,
           "token_f1": 0.33311619190404795,
-          "avg_retrieval_ms": 2.083188000251539,
-          "avg_generation_ms": 2148.4425140015082
+          "avg_retrieval_ms": 2.000100004952401,
+          "avg_generation_ms": 2153.0035440041684
         },
         "Chroma static + qwen2.5:1.5b": {
           "queries": 50,
@@ -577,8 +952,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 4.386841998202726,
-          "avg_generation_ms": 1818.4313860000111
+          "avg_retrieval_ms": 7.05064800567925,
+          "avg_generation_ms": 2082.3815600026865
         },
         "Qdrant static + qwen2.5:1.5b": {
           "queries": 50,
@@ -586,8 +961,8 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 55.92094799911138,
-          "avg_generation_ms": 611.2973620009143
+          "avg_retrieval_ms": 100.19960600417107,
+          "avg_generation_ms": 758.1143879971933
         }
       },
       "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",

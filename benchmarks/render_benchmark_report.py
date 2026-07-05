@@ -38,10 +38,23 @@ METRIC_LABELS = {
     "stale_suppression": "stale suppression",
     "suppression_rate": "stale suppression",
     "concept_formation": "concept formation",
+    "concept_consolidation": "concept consolidation",
     "decay_ratio": "decay ratio",
     "context_budget_saved": "context saved",
     "avg_latency_ms": "avg latency",
     "p95_latency_ms": "p95 latency",
+    "prewarm_warmed": "prewarm warmed",
+    "prewarm_hit": "prewarm hit",
+    "repair_repaired_total": "repair repaired",
+    "repair_ok": "repair ok",
+    "recalled_after_repair": "recall after repair",
+    "tombstone_replication_factor": "tombstone RF",
+    "tombstone_suppressed_before_repair": "tombstone suppress before repair",
+    "tombstone_repair_deleted_records": "tombstone deleted",
+    "tombstone_suppressed_after_repair": "tombstone suppress after repair",
+    "anti_entropy_worker_ok": "anti-entropy worker ok",
+    "anti_entropy_worker_repaired_total": "anti-entropy repaired",
+    "anti_entropy_worker_tombstone_deleted": "anti-entropy tombstone deleted",
 }
 
 
@@ -63,6 +76,9 @@ def metric_line(current: dict[str, Any] | None) -> str:
                 f"{engine}: {rows} points, last p@1 {fmt(last.get('precision_at_1'))}, "
                 f"avg {fmt(last.get('avg_latency_ms'))} ms"
             )
+        elif metrics.get("skipped"):
+            reason = str(metrics.get("reason") or "not configured")
+            parts.append(f"{engine}: skipped - {reason}")
         else:
             metric_bits = [
                 f"{metric_label(key)} {fmt(value)}"

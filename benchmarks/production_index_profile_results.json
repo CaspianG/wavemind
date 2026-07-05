@@ -1,0 +1,83 @@
+{
+  "scenario": {
+    "name": "ann_index_curve",
+    "description": "ANN/VectorDBBench-style local recall/latency curve. Random normalized vectors are queried with noisy copies, and recall@k is measured against exact cosine nearest neighbors.",
+    "sizes": [
+      10000,
+      50000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08
+  },
+  "results": [
+    {
+      "vectors": 10000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "WaveMind faiss-persisted",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 0.3410210099980304,
+          "p95_latency_ms": 0.47343999995064223,
+          "build_ms": 147.3115249999637,
+          "queries": 100
+        },
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 3.4312566899961894,
+          "p95_latency_ms": 4.781564000040817,
+          "build_ms": 3426.749544000131,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind pgvector",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 5.698984560001463,
+          "p95_latency_ms": 6.891976999895633,
+          "build_ms": 23765.425490000096,
+          "queries": 100
+        }
+      ]
+    },
+    {
+      "vectors": 50000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "WaveMind faiss-persisted",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 3.5238632199934727,
+          "p95_latency_ms": 7.880882999870664,
+          "build_ms": 715.9043760000259,
+          "queries": 100
+        },
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 4.413577210011681,
+          "p95_latency_ms": 5.932154999982231,
+          "build_ms": 12269.771776000198,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind pgvector",
+          "recall_at_k": 0.811,
+          "avg_latency_ms": 10.945468529985192,
+          "p95_latency_ms": 15.685024000049452,
+          "build_ms": 185048.9231660001,
+          "queries": 100
+        }
+      ]
+    }
+  ]
+}

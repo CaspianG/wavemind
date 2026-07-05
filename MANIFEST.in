@@ -14,14 +14,19 @@ include docs/RELEASE.md
 include docs/PROJECT_BOARD.md
 include docs/DEMO_SCRIPT.md
 include docs/LAUNCH_KIT.md
+include docs/BENCHMARK_BRIEF.md
 include docs/CHROMA_MIGRATION.md
+include docs/OBSERVABILITY.md
 include docs/RU_LAUNCH_POSTS.md
 include docs/USE_CASES.md
 include docs/assets/benchmark-summary.svg
 include docs/assets/wavemind-social-card.svg
+include docs/assets/wavemind-demo.gif
 include benchmarks/*.py
 include benchmarks/*.json
 include benchmarks/*.html
 include benchmarks/*.md
 include examples/*.py
+recursive-include examples/observability *
+recursive-include examples/production-index-profile *
 prune benchmarks/data

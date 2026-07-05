@@ -38,14 +38,43 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
     if not size_results:
         return {}
     latest = size_results[-1]
-    return {
-        str(result["engine"]): _metric_summary(
+    summaries: dict[str, dict[str, Any]] = {}
+    for result in latest.get("results", []):
+        if "engine" not in result:
+            continue
+        engine = str(result["engine"])
+        if result.get("skipped"):
+            summaries[engine] = {
+                "skipped": True,
+                "reason": result.get("reason", "not configured"),
+            }
+            continue
+        summaries[engine] = _metric_summary(
             result,
-            ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "build_ms"),
-        )
-        for result in latest.get("results", [])
-        if "engine" in result
-    }
+            ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"),
+        ) or {}
+    return summaries
+
+
+def _qdrant_ef_sweep_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not payload:
+        return {}
+    summaries: dict[str, dict[str, Any]] = {}
+    for result in payload.get("results", []):
+        ef = result.get("hnsw_ef")
+        if ef is None:
+            continue
+        summaries[f"hnsw_ef={ef}"] = _metric_summary(
+            result,
+            (
+                "recall_at_k",
+                "avg_latency_ms",
+                "p95_latency_ms",
+                "p99_latency_ms",
+                "max_latency_ms",
+            ),
+        ) or {}
+    return summaries
 
 
 def _answer_result_summaries(
@@ -91,7 +120,16 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_payload = _load_json(root / "benchmarks" / "locomo_evidence_results.json")
     locomo_sentence_payload = _load_json(root / "benchmarks" / "locomo_sentence_evidence_results.json")
     longmemeval_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_results.json")
+    longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
+    production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
+    production_load_payload = _load_json(root / "benchmarks" / "production_load_results.json")
+    production_load_1m_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_results.json")
+    production_load_100k_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_100k_tuned_results.json")
+    production_load_1m_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_tuned_results.json")
+    production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
+    scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
+    memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
     agent_results = _engine_results(agent_payload)
@@ -102,7 +140,16 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     locomo_results = _engine_results(locomo_payload)
     locomo_sentence_results = _engine_results(locomo_sentence_payload)
     longmemeval_results = _engine_results(longmemeval_payload)
+    longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
+    production_index_results = _ann_latest_results(production_index_payload)
+    production_load_results = _ann_latest_results(production_load_payload)
+    production_load_1m_results = _ann_latest_results(production_load_1m_payload)
+    production_load_100k_tuned_results = _ann_latest_results(production_load_100k_tuned_payload)
+    production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
+    production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
+    scale_readiness_results = _engine_results(scale_readiness_payload)
+    memory_competitor_results = _engine_results(memory_competitor_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
@@ -169,6 +216,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "precision@3",
                 "stale_suppression",
                 "concept_formation",
+                "concept_consolidation",
                 "decay_ratio",
                 "avg_latency_ms",
             ],
@@ -180,6 +228,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "precision@3",
                         "stale_suppression",
                         "concept_formation",
+                        "concept_consolidation",
                         "decay_ratio",
                         "avg_latency_ms",
                     ),
@@ -191,12 +240,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "precision@3",
                         "stale_suppression",
                         "concept_formation",
+                        "concept_consolidation",
                         "decay_ratio",
                         "avg_latency_ms",
                     ),
                 ),
             },
-            "target": "Keep graph precision@1, stale suppression, and concept formation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
+            "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
             "next_step": "Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets.",
         },
         {
@@ -516,6 +566,71 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "next_step": "Run turn-level evidence mode and sentence-transformers, then add LLM answer accuracy/abstention evaluation.",
         },
         {
+            "id": "longmemeval_evidence_50_smoke",
+            "name": "LongMemEval evidence 50-query smoke",
+            "category": "long-term-agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/longmemeval_evidence_50_results.json",
+            "source_url": "https://github.com/xiaowu0162/LongMemEval",
+            "dataset": "Official LongMemEval-S cleaned file, first 50 non-abstention questions, session-level evidence retrieval.",
+            "competitors": ["Static vector", "Chroma static", "Qdrant static"],
+            "metrics": [
+                "evidence_recall@k",
+                "precision@1",
+                "MRR@k",
+                "context_budget_saved",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind": _metric_summary(
+                    longmemeval_50_results.get("WaveMind"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma static": _metric_summary(
+                    longmemeval_50_results.get("Chroma static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Static vector": _metric_summary(
+                    longmemeval_50_results.get("Static vector"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Qdrant static": _metric_summary(
+                    longmemeval_50_results.get("Qdrant static"),
+                    (
+                        "evidence_recall_at_k",
+                        "precision_at_1",
+                        "mrr_at_k",
+                        "context_budget_saved",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Keep this smoke profile above Chroma/Qdrant evidence recall while using it as the fast regression check before full LongMemEval reruns.",
+            "next_step": "Speed up full LongMemEval reruns by reusing per-question candidate indexes or adding a streaming runner mode.",
+        },
+        {
             "id": "ann_index_curve",
             "name": "ANN index latency curve",
             "category": "index-latency",
@@ -528,6 +643,199 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "current": ann_results,
             "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",
             "next_step": "Tune quantized search kernels, add FAISS on Linux/macOS CI, and test Qdrant service-mode curves beyond 50000 vectors.",
+        },
+        {
+            "id": "production_index_profile",
+            "name": "Production index profile",
+            "category": "index-latency",
+            "status": "implemented",
+            "source": "benchmarks/production_index_profile_results.json",
+            "dataset": "Docker-backed 50000-vector profile comparing persisted FAISS, Qdrant service, and PostgreSQL/pgvector HNSW.",
+            "competitors": ["Qdrant service", "pgvector HNSW"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
+            "current": production_index_results,
+            "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
+            "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency.",
+        },
+        {
+            "id": "production_load_profile_100k",
+            "name": "Production load profile 100k",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_benchmark.py",
+            "dataset": "100000 generated normalized 128-d vectors; recall@10 measured against exact cosine neighbors.",
+            "competitors": ["Qdrant service", "pgvector HNSW", "FAISS persisted"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"],
+            "current": {**production_load_results, **production_load_100k_tuned_results},
+            "target": "Reach recall@10 >= 0.95 and p99 latency < 100 ms on at least one production service backend at 100000 memories.",
+            "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container.",
+        },
+        {
+            "id": "production_load_profile_1m",
+            "name": "Production load profile 1M",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
+            "competitors": ["Qdrant service"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"],
+            "current": {**production_load_1m_results, **production_load_1m_tuned_results},
+            "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
+            "next_step": "Tune Qdrant indexing/search params further, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk.",
+        },
+        {
+            "id": "production_load_qdrant_1m_ef_sweep",
+            "name": "Qdrant 1M HNSW ef sweep",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_qdrant_1m_ef_sweep_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; one Qdrant service collection queried with multiple hnsw_ef settings.",
+            "competitors": ["Qdrant service"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms"],
+            "current": production_load_1m_ef_sweep_results,
+            "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
+            "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters before claiming a stable production SLO.",
+        },
+        {
+            "id": "scale_readiness",
+            "name": "Scale readiness profile",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/scale_readiness_benchmark.py",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+            "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
+            "metrics": [
+                "node_loss_min_availability",
+                "hit_rate",
+                "precision@1",
+                "p99_latency_ms",
+            ],
+            "current": {
+                "WaveMind cluster planner": _metric_summary(
+                    scale_readiness_results.get("WaveMind cluster planner"),
+                    (
+                        "simulated_memories",
+                        "namespaces",
+                        "nodes",
+                        "replication_factor",
+                        "node_loss_min_availability",
+                        "zone_loss_min_availability",
+                        "read_quorum",
+                        "write_quorum",
+                        "placement_ms",
+                    ),
+                ),
+                "WaveMind hot cache": _metric_summary(
+                    scale_readiness_results.get("WaveMind hot cache"),
+                    (
+                        "queries",
+                        "capacity",
+                        "hit_rate",
+                        "evictions",
+                        "prewarm_warmed",
+                        "prewarm_hit",
+                        "p99_lookup_ms",
+                    ),
+                ),
+                "WaveMind distributed sharding": _metric_summary(
+                    scale_readiness_results.get("WaveMind distributed sharding"),
+                    (
+                        "nodes",
+                        "replication_factor",
+                        "write_quorum",
+                        "read_quorum",
+                        "writes",
+                        "recalled_after_primary_loss",
+                        "repair_repaired_total",
+                        "repair_ok",
+                        "recalled_after_repair",
+                        "forget_replicated_deletes",
+                        "tombstone_replication_factor",
+                        "tombstone_suppressed_before_repair",
+                        "tombstone_repair_deleted_records",
+                        "tombstone_suppressed_after_repair",
+                        "anti_entropy_worker_ok",
+                        "anti_entropy_worker_repaired_total",
+                        "anti_entropy_worker_tombstone_deleted",
+                        "query_after_primary_loss_ms",
+                    ),
+                ),
+                "WaveMind replicated runtime": _metric_summary(
+                    scale_readiness_results.get("WaveMind replicated runtime"),
+                    (
+                        "nodes",
+                        "replication_factor",
+                        "write_quorum",
+                        "read_quorum",
+                        "recalled_after_node_loss",
+                        "repair_copied_records",
+                        "tombstone_repair_deleted_records",
+                        "p99_query_after_loss_ms",
+                    ),
+                ),
+                "WaveMind active-active delta sync": _metric_summary(
+                    scale_readiness_results.get("WaveMind active-active delta sync"),
+                    (
+                        "regions",
+                        "replication_factor_per_region",
+                        "records_imported",
+                        "converged_after_bidirectional_sync",
+                        "suppressed_stale_import_after_delete",
+                        "tombstone_converged",
+                        "sync_ms",
+                    ),
+                ),
+                "WaveMind replicated snapshot": _metric_summary(
+                    scale_readiness_results.get("WaveMind replicated snapshot"),
+                    (
+                        "nodes",
+                        "manifest_healthy",
+                        "offsite_verified",
+                        "archive_verified",
+                        "object_store_verified",
+                        "object_store_latest_verified",
+                        "object_store_pruned",
+                        "object_store_download_verified",
+                        "object_store_drill_ok",
+                        "restored_files",
+                        "recalled_after_restore_node_loss",
+                        "snapshot_ms",
+                        "restore_ms",
+                    ),
+                ),
+                "WaveMind structured payloads": _metric_summary(
+                    scale_readiness_results.get("WaveMind structured payloads"),
+                    (
+                        "queries",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p99_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
+            "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
+        },
+        {
+            "id": "memory_competitor_adapter_profile",
+            "name": "Memory competitor adapter profile",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/memory_competitor_benchmark.py",
+            "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+            "competitors": ["Mem0", "Zep", "LangGraph persistent memory"],
+            "metrics": ["precision@1", "precision@3", "stale_suppression", "avg_latency_ms"],
+            "current": {
+                "WaveMind": _metric_summary(
+                    memory_competitor_results.get("WaveMind"),
+                    ("precision_at_1", "precision_at_3", "stale_suppression", "avg_latency_ms", "p95_latency_ms"),
+                ),
+                "Mem0": memory_competitor_results.get("Mem0"),
+                "Zep": memory_competitor_results.get("Zep"),
+                "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
+            },
+            "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
+            "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run.",
         },
         {
             "id": "longmemeval_answer_generation",

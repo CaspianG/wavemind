@@ -521,3 +521,19 @@ FastAPI, Studio, and public memory benchmarks, use the main branch:
 
 For migration from Chroma to the core memory layer, see
 [`docs/CHROMA_MIGRATION.md`](docs/CHROMA_MIGRATION.md).
+
+Core project references kept in this branch for packaging parity with `main`:
+[`docs/BENCHMARK_BRIEF.md`](docs/BENCHMARK_BRIEF.md),
+[`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md),
+[`docs/assets/wavemind-demo.gif`](docs/assets/wavemind-demo.gif),
+[`examples/chroma_migration.py`](examples/chroma_migration.py),
+[`examples/customer_support_memory.py`](examples/customer_support_memory.py),
+and [`examples/research_notebook_memory.py`](examples/research_notebook_memory.py).
+
+Core operational commands include `wavemind scale-plan --target-memories 50000`,
+`wavemind consolidate`, `POST /consolidate`, `/scale-plan?target_memories=50000`,
+`consolidate_concepts`, and the scale gate `--fail-on action_required`.
+
+Checked-in production 50000-vector point: `WaveMind faiss-persisted` and
+`Qdrant service` both reach full recall in the current production index
+profile; pgvector tuning includes `WAVEMIND_PGVECTOR_EF_SEARCH=400`.
