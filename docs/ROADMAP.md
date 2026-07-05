@@ -36,6 +36,16 @@ policy matters more than raw vector-database scale:
   available as deployment guardrails: they map current and target memory counts
   to a scale tier, status, recommended index, warnings, and concrete actions.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
+- Deterministic cluster placement planning is available through
+  `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
+  single-node-loss simulation, and a Kubernetes StatefulSet manifest skeleton.
+- `HotMemoryCache`, `query_with_cache()`, and `MemoryMaintenanceWorker` provide
+  the first worker/cache primitives for hot namespaces, TTL purge, field
+  consolidation, concept consolidation, and index-health repair loops.
+- Structured payload helpers cover image captions, audio transcripts, tables,
+  and events while preserving modality metadata in the same memory API.
+- `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
+  namespace placement, hot-cache behavior, and structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
@@ -101,6 +111,8 @@ WaveMind should scale by isolating memory early:
 - support per-namespace quotas and retention policy;
 - expose migration tools for moving one namespace between databases;
 - keep deletion and TTL behavior auditable.
+- use deterministic cluster placement to plan primary/replica ownership before
+  a namespace is migrated to another node.
 
 Initial target: 100k to 1M memories on one node before horizontal clustering.
 
@@ -113,6 +125,8 @@ memory policy also needs to become cheaper:
 - cache hot namespaces and hot query patterns;
 - batch recall feedback updates;
 - run decay, graph edge updates, and consolidation in background jobs;
+- keep maintenance jobs deterministic so Celery/RQ/Temporal wrappers can call
+  the same `MemoryMaintenanceWorker.run_once()` path in production;
 - compress or quantize embeddings where quality allows it;
 - benchmark p50, p95, p99 latency separately for candidate search, reranking,
   SQLite writes, and feedback updates.

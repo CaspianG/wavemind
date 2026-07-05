@@ -1,4 +1,5 @@
 from .core import QueryResult, WaveField, WaveMind
+from .cluster import ClusterNode, ClusterPlan, NamespacePlacement, build_cluster_plan
 from .encoders import (
     FieldProjector,
     HashingTextEncoder,
@@ -8,6 +9,15 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
+from .jobs import HotMemoryCache, MemoryMaintenanceWorker, query_with_cache
+from .multimodal import (
+    MemoryPayload,
+    audio_payload,
+    event_payload,
+    image_payload,
+    remember_payload,
+    table_payload,
+)
 from .scale import ScalePlan, build_scale_plan, scale_status_meets_or_exceeds
 from .sharding import NamespaceShardRouter, ShardedWaveMind
 from .storage import (
@@ -24,10 +34,16 @@ __all__ = [
     "FieldProjector",
     "FaissVectorIndex",
     "HashingTextEncoder",
+    "ClusterNode",
+    "ClusterPlan",
     "AuditEvent",
+    "HotMemoryCache",
+    "MemoryMaintenanceWorker",
     "MemoryFieldGraph",
     "MemoryRecord",
+    "MemoryPayload",
     "NamespaceShardRouter",
+    "NamespacePlacement",
     "QueryResult",
     "PgVectorIndex",
     "PostgresMemoryStore",
@@ -41,8 +57,15 @@ __all__ = [
     "WaveField",
     "WaveMind",
     "__version__",
+    "audio_payload",
     "build_scale_plan",
+    "build_cluster_plan",
     "create_memory_store",
     "create_text_encoder",
+    "event_payload",
+    "image_payload",
+    "query_with_cache",
+    "remember_payload",
     "scale_status_meets_or_exceeds",
+    "table_payload",
 ]

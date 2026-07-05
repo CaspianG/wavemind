@@ -85,6 +85,23 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert scale_payload["tier"] == "large-local"
             assert scale_payload["recommended_index"] == "faiss-persisted or qdrant"
 
+            cluster_plan = client.post(
+                "/cluster-plan",
+                json={
+                    "namespace_count": 4,
+                    "nodes": [
+                        {"id": "node-a", "address": "10.0.0.1:8000"},
+                        {"id": "node-b", "address": "10.0.0.2:8000"},
+                    ],
+                    "replication_factor": 2,
+                    "include_kubernetes": True,
+                },
+            )
+            assert cluster_plan.status_code == 200
+            cluster_payload = cluster_plan.json()
+            assert len(cluster_payload["placements"]) == 4
+            assert cluster_payload["kubernetes"]["kind"] == "StatefulSet"
+
             backup_dir = tmp_path / "api-backups"
             backup = client.post(
                 "/backup",

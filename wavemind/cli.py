@@ -7,6 +7,7 @@ from pathlib import Path
 
 from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
+from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
@@ -118,6 +119,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero when scale status reaches this threshold",
     )
     scale_plan.add_argument("--json", action="store_true")
+
+    cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
+    cluster_plan.add_argument("--namespace", action="append", default=[])
+    cluster_plan.add_argument("--namespace-prefix", default="tenant")
+    cluster_plan.add_argument("--namespace-count", type=int, default=0)
+    cluster_plan.add_argument("--node", action="append", required=True, help="node_id=host:port or node_id")
+    cluster_plan.add_argument("--replication-factor", type=int, default=2)
+    cluster_plan.add_argument("--kubernetes", action="store_true")
+    cluster_plan.add_argument("--image", default="wavemind:latest")
+    cluster_plan.add_argument("--storage-size", default="20Gi")
+    cluster_plan.add_argument("--json", action="store_true")
 
     audit = sub.add_parser("audit", help="Show audit log events")
     audit.add_argument("--namespace")
@@ -359,6 +371,39 @@ def main(argv: list[str] | None = None) -> int:
             print_scale_plan(plan)
         return 3 if failed_threshold else 0
 
+    if args.command == "cluster-plan":
+        namespaces = list(args.namespace)
+        namespaces.extend(
+            f"{args.namespace_prefix}:{index}"
+            for index in range(max(0, int(args.namespace_count)))
+        )
+        nodes = [_parse_cluster_node(value) for value in args.node]
+        plan = build_cluster_plan(
+            namespaces=namespaces,
+            nodes=nodes,
+            replication_factor=args.replication_factor,
+        )
+        payload = plan.as_dict()
+        if args.kubernetes:
+            payload["kubernetes"] = plan.kubernetes_manifest(
+                image=args.image,
+                storage_size=args.storage_size,
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"nodes: {len(plan.nodes)}")
+            print(f"namespaces: {len(plan.placements)}")
+            print(f"replication_factor: {plan.replication_factor}")
+            print("node_load:")
+            for node_id, load in sorted(plan.node_load.items()):
+                print(f"- {node_id}: {load}")
+            if plan.warnings:
+                print("warnings:")
+                for warning in plan.warnings:
+                    print(f"- {warning}")
+        return 0
+
     mind = make_mind(args)
     if args.command == "remember":
         id = mind.remember(
@@ -505,6 +550,13 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.print_help()
     return 2
+
+
+def _parse_cluster_node(value: str) -> ClusterNode:
+    node_id, sep, address = value.partition("=")
+    node_id = node_id.strip()
+    address = address.strip() if sep else node_id
+    return ClusterNode(id=node_id, address=address)
 
 
 if __name__ == "__main__":

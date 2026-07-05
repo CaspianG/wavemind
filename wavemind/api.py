@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
+from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
@@ -257,6 +258,24 @@ class ScalePlanResponse(BaseModel):
     recommended_index: str
     warnings: list[str]
     actions: list[str]
+
+
+class ClusterPlanNodeRequest(BaseModel):
+    id: str
+    address: str
+    zone: str | None = None
+    weight: float = Field(default=1.0, gt=0.0)
+
+
+class ClusterPlanRequest(BaseModel):
+    namespaces: list[str] = Field(default_factory=list)
+    namespace_prefix: str = "tenant"
+    namespace_count: int = Field(default=0, ge=0, le=100_000)
+    nodes: list[ClusterPlanNodeRequest] = Field(min_length=1)
+    replication_factor: int = Field(default=2, ge=1)
+    include_kubernetes: bool = False
+    image: str = "wavemind:latest"
+    storage_size: str = "20Gi"
 
 
 class ConsolidateRequest(BaseModel):
@@ -506,6 +525,34 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             latency_target_ms=latency_target_ms,
         )
         return ScalePlanResponse(**plan.as_dict())
+
+    @app.post("/cluster-plan", dependencies=[Depends(require_role("read"))])
+    def cluster_plan(request: ClusterPlanRequest):
+        namespaces = list(request.namespaces)
+        namespaces.extend(
+            f"{request.namespace_prefix}:{index}"
+            for index in range(request.namespace_count)
+        )
+        plan = build_cluster_plan(
+            namespaces=namespaces,
+            nodes=[
+                ClusterNode(
+                    id=node.id,
+                    address=node.address,
+                    zone=node.zone,
+                    weight=node.weight,
+                )
+                for node in request.nodes
+            ],
+            replication_factor=request.replication_factor,
+        )
+        payload = plan.as_dict()
+        if request.include_kubernetes:
+            payload["kubernetes"] = plan.kubernetes_manifest(
+                image=request.image,
+                storage_size=request.storage_size,
+            )
+        return payload
 
     @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
     def rebuild_index():

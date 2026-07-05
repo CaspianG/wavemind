@@ -26,10 +26,11 @@ purpose-built vector databases.
 | Dynamic memory policy | WaveMind reaches `precision@1 1.00` and `stale suppression 1.00`; Chroma static reaches `precision@1 0.57` and `stale suppression 0.00`. | `benchmarks/dynamic_memory_results.json` | `python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memories 200 --output benchmarks/dynamic_memory_results.json` |
 | LoCoMo evidence retrieval | WaveMind sentence reaches `evidence_recall@5 0.547`; Chroma sentence reaches `0.407`; Qdrant sentence reaches `0.409`. | `benchmarks/locomo_sentence_evidence_results.json` | `python benchmarks/locomo_memory_benchmark.py --engines wavemind-sentence chroma-sentence qdrant-sentence --output benchmarks/locomo_sentence_evidence_results.json` |
 | LongMemEval evidence retrieval | WaveMind reaches `evidence_recall@5 0.782`; Chroma static reaches `0.518`; Qdrant static reaches `0.520`. | `benchmarks/longmemeval_evidence_results.json` | `python benchmarks/longmemeval_memory_benchmark.py --engines wavemind chroma qdrant --output benchmarks/longmemeval_evidence_results.json` |
-| LongMemEval answer smoke | With local Ollama `qwen2.5:1.5b`, WaveMind reaches `token_f1 0.333`; Chroma static and Qdrant static reach `0.170`. | `benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` | `python benchmarks/longmemeval_answer_benchmark.py --engines wavemind chroma qdrant --ollama-model qwen2.5:1.5b --limit 50 --output benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` |
+| LongMemEval answer smoke | With local Ollama `qwen2.5:1.5b`, WaveMind reaches `token_f1 0.333`; Chroma static and Qdrant static reach `0.170`. | `benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` | `python benchmarks/longmemeval_answer_benchmark.py --dataset benchmarks/data/longmemeval_s_cleaned.json --provider ollama --model qwen2.5:1.5b --engines wavemind chroma qdrant --limit-queries 50 --output benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json` |
 | BEIR SciFact retrieval | WaveMind reaches `nDCG@10 0.354`; Chroma reaches `0.350`; Qdrant reaches `0.354`. Chroma is much faster on this static retrieval path. | `benchmarks/open_retrieval_scifact_results.json` | `python benchmarks/open_retrieval_benchmark.py --dataset scifact --engines wavemind chroma qdrant --output benchmarks/open_retrieval_scifact_results.json` |
 | NoMIRACL Russian retrieval | WaveMind reaches `nDCG@10 0.434`; Chroma reaches `0.435`; Qdrant reaches `0.433`. Chroma is faster. | `benchmarks/nomiracl_russian_results.json` | `python benchmarks/nomiracl_russian_benchmark.py --engines wavemind chroma qdrant --output benchmarks/nomiracl_russian_results.json` |
 | Production index profile | At 50000 vectors, persisted FAISS and Qdrant service both reach `recall@10 1.000`; pgvector with `ef_search=400` reaches `0.811`. | `benchmarks/production_index_profile_results.json` | `docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark` |
+| Scale readiness profile | Deterministic 1M-memory simulation: namespace placement survives single-node loss at `1.000`, hot-cache hit rate is `0.920`, structured payload precision@1 is `1.000`. | `benchmarks/scale_readiness_results.json` | `python benchmarks/scale_readiness_benchmark.py --simulated-memories 1000000 --output benchmarks/scale_readiness_results.json` |
 
 The generated matrix view is in `benchmarks/BENCHMARK_REPORT.md`; the compact
 leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
@@ -54,6 +55,7 @@ This report does not prove:
 - that WaveMind is faster than Chroma for static vector retrieval;
 - that the current local answer-generation smoke run is a full answer-quality
   benchmark;
+- that the scale-readiness profile is a 10M-vector database load test;
 - that pgvector is already a recommended production candidate index for
   WaveMind. The current profile improves recall but still misses the production
   target.

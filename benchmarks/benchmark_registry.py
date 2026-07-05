@@ -94,6 +94,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
+    scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
     agent_results = _engine_results(agent_payload)
@@ -107,6 +108,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
     production_index_results = _ann_latest_results(production_index_payload)
+    scale_readiness_results = _engine_results(scale_readiness_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
@@ -613,6 +615,55 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "current": production_index_results,
             "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
             "next_step": "Add 100000 and 1000000-vector profiles, plus persistence/rebuild validation after process restart.",
+        },
+        {
+            "id": "scale_readiness",
+            "name": "Scale readiness profile",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/scale_readiness_benchmark.py",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement plus hot-cache and structured-payload retrieval checks.",
+            "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
+            "metrics": [
+                "node_loss_min_availability",
+                "hit_rate",
+                "precision@1",
+                "p99_latency_ms",
+            ],
+            "current": {
+                "WaveMind cluster planner": _metric_summary(
+                    scale_readiness_results.get("WaveMind cluster planner"),
+                    (
+                        "simulated_memories",
+                        "namespaces",
+                        "nodes",
+                        "replication_factor",
+                        "node_loss_min_availability",
+                        "placement_ms",
+                    ),
+                ),
+                "WaveMind hot cache": _metric_summary(
+                    scale_readiness_results.get("WaveMind hot cache"),
+                    (
+                        "queries",
+                        "capacity",
+                        "hit_rate",
+                        "evictions",
+                        "p99_lookup_ms",
+                    ),
+                ),
+                "WaveMind structured payloads": _metric_summary(
+                    scale_readiness_results.get("WaveMind structured payloads"),
+                    (
+                        "queries",
+                        "precision_at_1",
+                        "avg_latency_ms",
+                        "p99_latency_ms",
+                    ),
+                ),
+            },
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",
+            "next_step": "Add real distributed load tests against Mem0, Zep, LangGraph persistent memory, and GraphRAG adapters on production-like hardware.",
         },
         {
             "id": "longmemeval_answer_generation",
