@@ -40,6 +40,30 @@ class ObjectStoreUploadReport:
         }
 
 
+@dataclass(frozen=True)
+class ObjectStoreArchive:
+    uri: str
+    bucket: str
+    key: str
+    total_bytes: int
+    sha256: str | None
+    verified: bool
+    last_modified: str | None = None
+    etag: str | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "uri": self.uri,
+            "bucket": self.bucket,
+            "key": self.key,
+            "total_bytes": self.total_bytes,
+            "sha256": self.sha256,
+            "verified": self.verified,
+            "last_modified": self.last_modified,
+            "etag": self.etag,
+        }
+
+
 def parse_object_store_uri(uri: str) -> ObjectStoreLocation:
     parsed = urlparse(uri)
     if parsed.scheme not in {"s3"}:
@@ -213,6 +237,110 @@ class S3SnapshotStore:
             and metadata.get("wavemind-bytes") == str(int(total_bytes))
         )
 
+    def list_archives(
+        self,
+        *,
+        prefix: str | None = None,
+        verify_metadata: bool = True,
+    ) -> tuple[ObjectStoreArchive, ...]:
+        list_prefix = self._list_prefix(prefix)
+        archives: list[ObjectStoreArchive] = []
+        token: str | None = None
+        while True:
+            kwargs: dict[str, Any] = {
+                "Bucket": self.bucket,
+                "Prefix": list_prefix,
+            }
+            if token:
+                kwargs["ContinuationToken"] = token
+            response = dict(self.client.list_objects_v2(**kwargs))
+            for item in response.get("Contents") or []:
+                key = str(item.get("Key") or "")
+                if not _is_snapshot_archive_key(key):
+                    continue
+                head = self._head(key) if verify_metadata else {}
+                metadata = {
+                    str(k).lower(): str(v)
+                    for k, v in dict(head.get("Metadata") or {}).items()
+                }
+                total_bytes = int(
+                    head.get("ContentLength", item.get("Size", -1))
+                )
+                sha256 = metadata.get("wavemind-sha256")
+                metadata_bytes = metadata.get("wavemind-bytes")
+                verified = True
+                if verify_metadata:
+                    verified = (
+                        total_bytes >= 0
+                        and bool(sha256)
+                        and metadata_bytes == str(total_bytes)
+                    )
+                archives.append(
+                    ObjectStoreArchive(
+                        uri=f"{self.scheme}://{self.bucket}/{key}",
+                        bucket=self.bucket,
+                        key=key,
+                        total_bytes=total_bytes,
+                        sha256=sha256,
+                        verified=verified,
+                        last_modified=_format_last_modified(
+                            item.get("LastModified")
+                        ),
+                        etag=str(head.get("ETag") or item.get("ETag") or "")
+                        or None,
+                    )
+                )
+            if not response.get("IsTruncated"):
+                break
+            token = response.get("NextContinuationToken")
+            if not token:
+                break
+        return tuple(
+            sorted(
+                archives,
+                key=lambda archive: (archive.last_modified or "", archive.key),
+                reverse=True,
+            )
+        )
+
+    def latest_archive(
+        self,
+        *,
+        prefix: str | None = None,
+        verify_metadata: bool = True,
+    ) -> ObjectStoreArchive | None:
+        archives = self.list_archives(
+            prefix=prefix,
+            verify_metadata=verify_metadata,
+        )
+        return archives[0] if archives else None
+
+    def prune_archives(
+        self,
+        *,
+        keep_last: int,
+        prefix: str | None = None,
+        verify_metadata: bool = True,
+    ) -> tuple[ObjectStoreArchive, ...]:
+        keep_last = max(0, int(keep_last))
+        archives = self.list_archives(
+            prefix=prefix,
+            verify_metadata=verify_metadata,
+        )
+        removable = archives[keep_last:]
+        if not removable:
+            return ()
+        objects = [{"Key": archive.key} for archive in removable]
+        if hasattr(self.client, "delete_objects"):
+            self.client.delete_objects(
+                Bucket=self.bucket,
+                Delete={"Objects": objects, "Quiet": True},
+            )
+        else:
+            for item in objects:
+                self.client.delete_object(Bucket=self.bucket, Key=item["Key"])
+        return tuple(removable)
+
     def _resolve_key(self, key: str | None, *, default_name: str) -> str:
         if key:
             return key.strip("/")
@@ -233,6 +361,12 @@ class S3SnapshotStore:
     def _head(self, key: str) -> dict[str, Any]:
         return dict(self.client.head_object(Bucket=self.bucket, Key=key))
 
+    def _list_prefix(self, prefix: str | None) -> str:
+        if prefix is None:
+            prefix = self.prefix
+        prefix = prefix.strip("/")
+        return prefix
+
 
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -240,3 +374,16 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _is_snapshot_archive_key(key: str) -> bool:
+    return key.endswith(".tar.gz") or key.endswith(".tgz")
+
+
+def _format_last_modified(value: Any) -> str | None:
+    if value is None:
+        return None
+    isoformat = getattr(value, "isoformat", None)
+    if callable(isoformat):
+        return str(isoformat())
+    return str(value)

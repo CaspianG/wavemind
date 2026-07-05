@@ -42,11 +42,14 @@ class FakeRedis:
 class FakeS3Client:
     def __init__(self):
         self.objects = {}
+        self.counter = 0
 
     def upload_file(self, filename, bucket, key, ExtraArgs=None):
+        self.counter += 1
         self.objects[(bucket, key)] = {
             "Body": Path(filename).read_bytes(),
             "Metadata": dict((ExtraArgs or {}).get("Metadata") or {}),
+            "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
         }
 
     def head_object(self, Bucket, Key):
@@ -56,6 +59,28 @@ class FakeS3Client:
             "Metadata": dict(payload["Metadata"]),
             "ETag": '"fake-etag"',
         }
+
+    def list_objects_v2(self, Bucket, Prefix="", ContinuationToken=None):
+        contents = []
+        for (bucket, key), payload in self.objects.items():
+            if bucket == Bucket and key.startswith(Prefix):
+                contents.append(
+                    {
+                        "Key": key,
+                        "Size": len(payload["Body"]),
+                        "LastModified": payload["LastModified"],
+                        "ETag": '"fake-etag"',
+                    }
+                )
+        return {"Contents": sorted(contents, key=lambda item: item["Key"])}
+
+    def delete_objects(self, Bucket, Delete):
+        deleted = []
+        for item in Delete["Objects"]:
+            key = item["Key"]
+            self.objects.pop((Bucket, key), None)
+            deleted.append({"Key": key})
+        return {"Deleted": deleted}
 
 
 def test_hot_memory_cache_reuses_query_results(tmp_path):
@@ -326,6 +351,10 @@ def test_replicated_snapshot_worker_uploads_archive_to_object_store(tmp_path):
         "s3://wavemind-backups/prod",
         client=client,
     )
+    for index in range(2):
+        old_archive = tmp_path / f"old-{index}.tar.gz"
+        old_archive.write_bytes(f"old-{index}".encode("utf-8"))
+        store.upload_archive(old_archive)
     try:
         memory.remember("object store keeps replicated memory", namespace="tenant:s3")
         report = ReplicatedSnapshotWorker(memory).run_once(
@@ -333,9 +362,11 @@ def test_replicated_snapshot_worker_uploads_archive_to_object_store(tmp_path):
             object_store_destination="s3://wavemind-backups/prod",
             object_store=store,
             keep_last=2,
+            object_store_keep_last=1,
         )
 
         upload = report.object_store_upload
+        remaining = store.list_archives()
 
         assert report.ok
         assert report.archive_path is not None
@@ -344,6 +375,11 @@ def test_replicated_snapshot_worker_uploads_archive_to_object_store(tmp_path):
         assert upload.verified is True
         assert upload.uri.startswith("s3://wavemind-backups/prod/")
         assert upload.key.endswith(".tar.gz")
+        assert [archive.key for archive in report.pruned_object_store] == [
+            "prod/old-1.tar.gz",
+            "prod/old-0.tar.gz",
+        ]
+        assert [archive.key for archive in remaining] == [upload.key]
         assert ("wavemind-backups", upload.key) in client.objects
     finally:
         memory.close()

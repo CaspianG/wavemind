@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .core import QueryResult
-from .object_store import ObjectStoreUploadReport, S3SnapshotStore
+from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
 from .replication import ReplicatedWaveMind
 
 
@@ -349,6 +349,7 @@ class ReplicatedSnapshotJobReport:
     pruned_local: tuple[Path, ...] = ()
     pruned_offsite: tuple[Path, ...] = ()
     pruned_archives: tuple[Path, ...] = ()
+    pruned_object_store: tuple[ObjectStoreArchive, ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -385,6 +386,9 @@ class ReplicatedSnapshotJobReport:
             "pruned_local": [str(path) for path in self.pruned_local],
             "pruned_offsite": [str(path) for path in self.pruned_offsite],
             "pruned_archives": [str(path) for path in self.pruned_archives],
+            "pruned_object_store": [
+                archive.as_dict() for archive in self.pruned_object_store
+            ],
             "ok": self.ok,
         }
 
@@ -406,6 +410,7 @@ class ReplicatedSnapshotWorker:
         archive_destination: str | Path | None = None,
         object_store_destination: str | None = None,
         object_store: S3SnapshotStore | None = None,
+        object_store_keep_last: int | None = None,
     ) -> ReplicatedSnapshotJobReport:
         local_destination = Path(destination)
         snapshot = self.memory.snapshot(
@@ -453,6 +458,7 @@ class ReplicatedSnapshotWorker:
         pruned_local: tuple[Path, ...] = ()
         pruned_offsite: tuple[Path, ...] = ()
         pruned_archives: tuple[Path, ...] = ()
+        pruned_object_store: tuple[ObjectStoreArchive, ...] = ()
         if keep_last is not None:
             pruned_local = tuple(
                 ReplicatedWaveMind.prune_snapshots(
@@ -480,6 +486,10 @@ class ReplicatedSnapshotWorker:
                         keep_last=keep_last,
                     )
                 )
+        if object_store is not None and object_store_keep_last is not None:
+            pruned_object_store = object_store.prune_archives(
+                keep_last=object_store_keep_last
+            )
 
         return ReplicatedSnapshotJobReport(
             snapshot_path=snapshot.snapshot_path,
@@ -494,6 +504,7 @@ class ReplicatedSnapshotWorker:
             pruned_local=pruned_local,
             pruned_offsite=pruned_offsite,
             pruned_archives=pruned_archives,
+            pruned_object_store=pruned_object_store,
         )
 
 

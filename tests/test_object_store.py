@@ -11,12 +11,15 @@ from wavemind import S3SnapshotStore, parse_object_store_uri
 class FakeS3Client:
     def __init__(self):
         self.objects = {}
+        self.counter = 0
 
     def upload_file(self, filename, bucket, key, ExtraArgs=None):
+        self.counter += 1
         self.objects[(bucket, key)] = {
             "Body": Path(filename).read_bytes(),
             "ContentType": (ExtraArgs or {}).get("ContentType"),
             "Metadata": dict((ExtraArgs or {}).get("Metadata") or {}),
+            "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
         }
 
     def download_file(self, bucket, key, filename):
@@ -32,6 +35,28 @@ class FakeS3Client:
 
     def get_object(self, Bucket, Key):
         return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
+
+    def list_objects_v2(self, Bucket, Prefix="", ContinuationToken=None):
+        contents = []
+        for (bucket, key), payload in self.objects.items():
+            if bucket == Bucket and key.startswith(Prefix):
+                contents.append(
+                    {
+                        "Key": key,
+                        "Size": len(payload["Body"]),
+                        "LastModified": payload["LastModified"],
+                        "ETag": '"fake-etag"',
+                    }
+                )
+        return {"Contents": sorted(contents, key=lambda item: item["Key"])}
+
+    def delete_objects(self, Bucket, Delete):
+        deleted = []
+        for item in Delete["Objects"]:
+            key = item["Key"]
+            self.objects.pop((Bucket, key), None)
+            deleted.append({"Key": key})
+        return {"Deleted": deleted}
 
 
 def test_parse_object_store_uri_requires_s3_bucket_and_key():
@@ -86,3 +111,33 @@ def test_s3_snapshot_store_accepts_exact_archive_uri(tmp_path):
 
     assert report.key == "exact/remote-name.tar.gz"
     assert report.uri == "s3://wavemind-backups/exact/remote-name.tar.gz"
+
+
+def test_s3_snapshot_store_lists_latest_and_prunes_archives(tmp_path):
+    client = FakeS3Client()
+    store = S3SnapshotStore.from_uri(
+        "s3://wavemind-backups/prod",
+        client=client,
+    )
+
+    reports = []
+    for index in range(3):
+        archive = tmp_path / f"snapshot-{index}.tar.gz"
+        archive.write_bytes(f"snapshot-{index}".encode("utf-8"))
+        reports.append(store.upload_archive(archive))
+
+    archives = store.list_archives()
+    latest = store.latest_archive()
+    pruned = store.prune_archives(keep_last=1)
+    remaining = store.list_archives()
+
+    assert [archive.key for archive in archives] == [
+        reports[2].key,
+        reports[1].key,
+        reports[0].key,
+    ]
+    assert latest is not None
+    assert latest.key == reports[2].key
+    assert all(archive.verified for archive in archives)
+    assert [archive.key for archive in pruned] == [reports[1].key, reports[0].key]
+    assert [archive.key for archive in remaining] == [reports[2].key]

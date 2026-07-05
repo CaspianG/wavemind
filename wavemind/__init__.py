@@ -26,6 +26,7 @@ from .multimodal import (
     table_payload,
 )
 from .object_store import (
+    ObjectStoreArchive,
     ObjectStoreLocation,
     ObjectStoreUploadReport,
     S3SnapshotStore,
@@ -53,7 +54,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 
 __all__ = [
     "FieldProjector",
@@ -68,6 +69,7 @@ __all__ = [
     "MemoryRecord",
     "MemoryPayload",
     "NamespaceShardRouter",
+    "ObjectStoreArchive",
     "ObjectStoreLocation",
     "ObjectStoreUploadReport",
     "NamespacePlacement",

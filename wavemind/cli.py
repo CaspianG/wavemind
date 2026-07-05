@@ -183,6 +183,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     replicated_snapshot.add_argument("--s3-endpoint-url")
     replicated_snapshot.add_argument("--s3-region")
+    replicated_snapshot.add_argument(
+        "--s3-keep-last",
+        type=int,
+        help="Prune older S3-compatible snapshot archives after upload",
+    )
     replicated_snapshot.add_argument("--keep-last", type=int)
     replicated_snapshot.add_argument("--prefix", default="wavemind-replicated")
     replicated_snapshot.add_argument("--allow-partial", action="store_true")
@@ -197,7 +202,23 @@ def build_parser() -> argparse.ArgumentParser:
     replicated_restore.add_argument("--overwrite", action="store_true")
     replicated_restore.add_argument("--s3-endpoint-url")
     replicated_restore.add_argument("--s3-region")
+    replicated_restore.add_argument(
+        "--latest",
+        action="store_true",
+        help="Restore the newest archive under an s3://bucket/prefix source",
+    )
     replicated_restore.add_argument("--json", action="store_true")
+
+    replicated_s3_archives = sub.add_parser(
+        "replicated-s3-archives",
+        help="List or prune S3-compatible replicated snapshot archives",
+    )
+    replicated_s3_archives.add_argument("--s3", required=True)
+    replicated_s3_archives.add_argument("--s3-endpoint-url")
+    replicated_s3_archives.add_argument("--s3-region")
+    replicated_s3_archives.add_argument("--latest", action="store_true")
+    replicated_s3_archives.add_argument("--prune-keep-last", type=int)
+    replicated_s3_archives.add_argument("--json", action="store_true")
 
     bench = sub.add_parser("benchmark", help="Run a synthetic recall benchmark")
     bench.add_argument("--namespace", default="bench")
@@ -419,6 +440,7 @@ def main(argv: list[str] | None = None) -> int:
                 archive_destination=args.archive,
                 object_store_destination=args.s3,
                 object_store=object_store,
+                object_store_keep_last=args.s3_keep_last,
             )
         finally:
             memory.close()
@@ -438,6 +460,8 @@ def main(argv: list[str] | None = None) -> int:
                 upload = payload["object_store_upload"]
                 print(f"object_store: {upload['uri']}")
                 print(f"object_store_verified: {upload['verified']}")
+            if payload["pruned_object_store"]:
+                print(f"object_store_pruned: {len(payload['pruned_object_store'])}")
         return 0 if report.ok else 4
 
     if args.command == "replicated-restore":
@@ -449,12 +473,25 @@ def main(argv: list[str] | None = None) -> int:
                 region_name=args.s3_region,
             )
             with tempfile.TemporaryDirectory(prefix="wavemind-s3-restore-") as tmp:
-                archive_path = store.download_archive(args.source, tmp)
+                remote_source = args.source
+                if args.latest:
+                    latest = store.latest_archive()
+                    if latest is None:
+                        print(
+                            f"no snapshot archives found under {args.source}",
+                            file=sys.stderr,
+                        )
+                        return 4
+                    remote_source = latest.uri
+                archive_path = store.download_archive(remote_source, tmp)
                 restored, report = ReplicatedWaveMind.restore_snapshot_archive(
                     archive_path,
                     args.destination,
                     overwrite=args.overwrite,
                 )
+        elif args.latest:
+            print("--latest is only supported with s3:// sources", file=sys.stderr)
+            return 2
         elif source.name.endswith(".tar.gz") or source.suffix == ".tgz":
             restored, report = ReplicatedWaveMind.restore_snapshot_archive(
                 source,
@@ -476,6 +513,42 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"restored: {payload['root_path']}")
             print(f"nodes: {len(payload['nodes'])}")
+        return 0
+
+    if args.command == "replicated-s3-archives":
+        store = S3SnapshotStore.from_uri(
+            args.s3,
+            endpoint_url=args.s3_endpoint_url,
+            region_name=args.s3_region,
+        )
+        pruned = ()
+        if args.prune_keep_last is not None:
+            pruned = store.prune_archives(keep_last=args.prune_keep_last)
+        archives = store.list_archives()
+        latest = archives[0] if archives else None
+        archive_dicts = [archive.as_dict() for archive in archives]
+        if args.latest:
+            archive_dicts = [latest.as_dict()] if latest is not None else []
+        payload = {
+            "source": args.s3,
+            "archives": archive_dicts,
+            "latest": latest.as_dict() if latest is not None else None,
+            "pruned": [archive.as_dict() for archive in pruned],
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            if not archive_dicts:
+                print(f"no snapshot archives found under {args.s3}")
+            else:
+                for archive in archive_dicts:
+                    print(
+                        f"{archive['uri']} "
+                        f"bytes={archive['total_bytes']} "
+                        f"verified={archive['verified']}"
+                    )
+                if pruned:
+                    print(f"pruned: {len(pruned)}")
         return 0
 
     if args.command == "scale-plan":
