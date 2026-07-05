@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-05T22:26:43Z",
-  "source_ref": "56f78cadda8b",
-  "workflow_run_id": null,
-  "refresh_profile": "manual-main",
+  "generated_at": "2026-07-05T22:36:12Z",
+  "source_ref": "cafa986d88b531d4c78cc10cc573588a4d910a1c",
+  "workflow_run_id": "28757232908",
+  "refresh_profile": "weekly-fast",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
   "benchmarks": [
     {
@@ -59,15 +59,15 @@
           "precision_at_1": 1.0,
           "precision_at_3": 1.0,
           "suppression_rate": 1.0,
-          "avg_latency_ms": 28.27136252017226,
-          "p95_latency_ms": 32.41500002332032
+          "avg_latency_ms": 4.577223500000116,
+          "p95_latency_ms": 5.385965999998632
         },
         "Chroma static": {
           "precision_at_1": 0.5714285714285714,
-          "precision_at_3": 1.0,
+          "precision_at_3": 0.8571428571428571,
           "suppression_rate": 0.0,
-          "avg_latency_ms": 2.1511874947464094,
-          "p95_latency_ms": 7.806400011759251
+          "avg_latency_ms": 1.6383461250004672,
+          "p95_latency_ms": 5.5365369999975655
         }
       },
       "target": "Keep precision@1 and stale suppression at 1.00 while reducing avg latency below 10 ms at 1000 memories.",
@@ -100,7 +100,7 @@
           "concept_formation": 1.0,
           "concept_consolidation": 1.0,
           "decay_ratio": 0.81,
-          "avg_latency_ms": 0.8212
+          "avg_latency_ms": 0.3582
         },
         "WaveMind static": {
           "precision@1": 0.2,
@@ -109,7 +109,7 @@
           "concept_formation": 0.0,
           "concept_consolidation": 0.0,
           "decay_ratio": 0.0,
-          "avg_latency_ms": 0.4725
+          "avg_latency_ms": 0.2253
         }
       },
       "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
@@ -807,7 +807,7 @@
           "kubernetes_manifest_kind": "StatefulSet",
           "kubernetes_repair_cronjob_kind": "CronJob",
           "kubernetes_repair_cronjob_namespaces": 4096,
-          "placement_ms": 104.69250002643093
+          "placement_ms": 32.18423400000603
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -816,7 +816,7 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.0048999791033566
+          "p99_lookup_ms": 0.0021739999951364553
         },
         "WaveMind Kubernetes operator": {
           "bundle_has_crd": true,
@@ -867,7 +867,7 @@
           "anti_entropy_worker_ok": true,
           "anti_entropy_worker_repaired_total": 1,
           "anti_entropy_worker_tombstone_deleted": 1,
-          "query_after_primary_loss_ms": 1.65789999300614
+          "query_after_primary_loss_ms": 0.5417729999948051
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -877,7 +877,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 2.0779999904334545
+          "p99_query_after_loss_ms": 0.7203679999960855
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -886,7 +886,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 205.0738999969326
+          "sync_ms": 20.908321000000285
         },
         "WaveMind field-state CRDT": {
           "regions": 3,
@@ -895,7 +895,7 @@
           "tombstone_wins": true,
           "top_key_converged": true,
           "budget_activation": 5.0,
-          "merge_ms": 0.10189996100962162
+          "merge_ms": 0.07525099999838858
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -909,14 +909,14 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 188.4674000320956,
-          "restore_ms": 103.4745000069961
+          "snapshot_ms": 17.813581999995165,
+          "restore_ms": 10.58754499999992
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.6686749984510243,
-          "p99_latency_ms": 0.8542999858036637
+          "avg_latency_ms": 0.2687405000010301,
+          "p99_latency_ms": 0.32957700000224577
         }
       },
       "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",

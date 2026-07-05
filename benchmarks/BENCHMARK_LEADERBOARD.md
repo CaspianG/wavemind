@@ -1,15 +1,15 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-05T22:26:43Z` from `56f78cadda8b`.
+Last refresh: `2026-07-05T22:36:12Z` from `cafa986d88b531d4c78cc10cc573588a4d910a1c`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
 | benchmark | category | primary metric | best WaveMind result | best baseline result | readout |
 |---|---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | precision@1 | WaveMind: 0.82 / 2.249 ms | Chroma: 0.82 / 0.933 ms | Quality tie; WaveMind slower |
-| Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 28.3 ms | Chroma static: 0.571 / 2.151 ms | WaveMind leads on quality |
-| Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.821 ms | - | WaveMind-only check |
+| Dynamic memory policy | agent-memory | precision@1 | WaveMind: 1 / 4.577 ms | Chroma static: 0.571 / 1.638 ms | WaveMind leads on quality |
+| Field memory graph dynamics | agent-memory | precision@1 | WaveMind graph: 1 / 0.358 ms | - | WaveMind-only check |
 | WaveMind capacity curve | capacity | precision@1 | WaveMind dynamic capacity: 1 / 48.4 ms | - | WaveMind-only check |
 | Long-term memory evidence | long-term-agent-memory | evidence recall@k | WaveMind: 1 / 6.103 ms | Static vector: 1 / 0.648 ms | Quality tie; WaveMind slower |
 | BEIR-style open retrieval runner | retrieval | precision@1 | WaveMind: 0.24 / 117.0 ms | Chroma: 0.243 / 1.794 ms | Baseline leads on quality |
@@ -22,7 +22,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production load profile 100k | production-scale | Recall@k | WaveMind pgvector: 0.736 / 17.8 ms | Qdrant service: 1 / 10.3 ms | Baseline leads on quality; production SLO pass: Qdrant service |
 | Production load profile 1M | production-scale | Recall@k | - | Qdrant service: 0.984 / 116.8 ms | No WaveMind result; production SLO miss |
 | Qdrant 1M HNSW ef sweep | production-scale | Recall@k | - | hnsw_ef=2048: 0.977 / 64.8 ms | No WaveMind result; production SLO miss |
-| Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.669 ms | - | WaveMind-only check |
+| Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.269 ms | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.554 ms | - | WaveMind-only check |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 

@@ -29,14 +29,14 @@
         "namespace": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 28.27136252017226,
-      "p95_latency_ms": 32.41500002332032,
+      "avg_latency_ms": 4.577223500000116,
+      "p95_latency_ms": 5.385965999998632,
       "checks": 8
     },
     {
       "engine": "Chroma static",
       "precision_at_1": 0.5714285714285714,
-      "precision_at_3": 1.0,
+      "precision_at_3": 0.8571428571428571,
       "suppression_rate": 0.0,
       "category_success": {
         "correction": 0.0,
@@ -44,8 +44,8 @@
         "namespace": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 2.1511874947464094,
-      "p95_latency_ms": 7.806400011759251,
+      "avg_latency_ms": 1.6383461250004672,
+      "p95_latency_ms": 5.5365369999975655,
       "checks": 8
     }
   ]
