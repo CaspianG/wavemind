@@ -152,6 +152,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_tuned_results.json")
     production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
+    production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
@@ -172,6 +173,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
     production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
     scale_readiness_results = _engine_results(scale_readiness_payload)
+    production_readiness_summary = (
+        production_readiness_payload.get("summary", {})
+        if production_readiness_payload
+        else {}
+    )
     memory_competitor_results = _engine_results(memory_competitor_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
@@ -922,6 +928,38 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
             "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
+        },
+        {
+            "id": "production_readiness_gate",
+            "name": "Production readiness gate",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_readiness_results.json",
+            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, distributed repair, active-active CRDT convergence, backups, structured payloads, competitor-adapter coverage, and 10M-load presence.",
+            "competitors": [],
+            "metrics": [
+                "readiness_score",
+                "overall_status",
+                "pass_count",
+                "action_required_count",
+                "fail_count",
+                "total_criteria",
+            ],
+            "current": {
+                "WaveMind production readiness": _metric_summary(
+                    production_readiness_summary,
+                    (
+                        "readiness_score",
+                        "overall_status",
+                        "pass_count",
+                        "action_required_count",
+                        "fail_count",
+                        "total_criteria",
+                    ),
+                ),
+            },
+            "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
+            "next_step": "Clear the four current action-required items: 1M p99 SLO, 100+ query 1M confirmation, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile.",
         },
         {
             "id": "memory_competitor_adapter_profile",

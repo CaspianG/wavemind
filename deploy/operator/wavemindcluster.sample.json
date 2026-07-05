@@ -6,7 +6,7 @@
     "namespace": "wavemind-system"
   },
   "spec": {
-    "image": "ghcr.io/caspiang/wavemind:2.4.8",
+    "image": "ghcr.io/caspiang/wavemind:2.4.9",
     "replicas": 3,
     "replicationFactor": 2,
     "namespaceCount": 4096,

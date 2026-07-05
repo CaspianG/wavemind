@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-05T22:42:20Z` from `c156403ffde7`.
+Last refresh: `2026-07-05T23:07:33Z` from `d52f61923197`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -23,6 +23,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production load profile 1M | production-scale | Recall@k | - | Qdrant service: 0.984 / 116.8 ms | No WaveMind result; production SLO miss; cost if SLO fixed: Qdrant service $11.81/1M queries |
 | Qdrant 1M HNSW ef sweep | production-scale | Recall@k | - | hnsw_ef=2048: 0.977 / 64.8 ms | No WaveMind result; production SLO miss; cost if SLO fixed: hnsw_ef=512 $4.86/1M queries |
 | Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.269 ms | - | WaveMind-only check |
+| Production readiness gate | production-scale | readiness score | WaveMind production readiness: 0.733 / - | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.554 ms | - | WaveMind-only check |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 

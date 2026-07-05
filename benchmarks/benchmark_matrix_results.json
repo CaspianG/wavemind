@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-05T22:42:20Z",
-  "source_ref": "c156403ffde7",
+  "generated_at": "2026-07-05T23:07:33Z",
+  "source_ref": "d52f61923197",
   "workflow_run_id": null,
   "refresh_profile": "manual-main",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -959,6 +959,35 @@
       },
       "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
       "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
+    },
+    {
+      "id": "production_readiness_gate",
+      "name": "Production readiness gate",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_readiness_results.json",
+      "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, distributed repair, active-active CRDT convergence, backups, structured payloads, competitor-adapter coverage, and 10M-load presence.",
+      "competitors": [],
+      "metrics": [
+        "readiness_score",
+        "overall_status",
+        "pass_count",
+        "action_required_count",
+        "fail_count",
+        "total_criteria"
+      ],
+      "current": {
+        "WaveMind production readiness": {
+          "readiness_score": 0.7333333333333333,
+          "overall_status": "action_required",
+          "pass_count": 11,
+          "action_required_count": 4,
+          "fail_count": 0,
+          "total_criteria": 15
+        }
+      },
+      "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
+      "next_step": "Clear the four current action-required items: 1M p99 SLO, 100+ query 1M confirmation, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile."
     },
     {
       "id": "memory_competitor_adapter_profile",

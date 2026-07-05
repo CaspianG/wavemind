@@ -1,0 +1,136 @@
+{
+  "schema": "wavemind.production_readiness.v1",
+  "generated_at": "2026-07-05T23:04:22Z",
+  "overall_status": "action_required",
+  "readiness_score": 0.7333333333333333,
+  "summary": {
+    "overall_status": "action_required",
+    "readiness_score": 0.7333333333333333,
+    "pass_count": 11,
+    "action_required_count": 4,
+    "fail_count": 0,
+    "total_criteria": 15
+  },
+  "criteria": [
+    {
+      "id": "benchmark_artifact_freshness",
+      "title": "Checked-in benchmark artifacts are synchronized",
+      "status": "pass",
+      "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
+      "evidence": "audit status pass, generated_at 2026-07-05T22:42:20Z",
+      "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
+    },
+    {
+      "id": "production_100k_slo_cost",
+      "title": "100k service-backed load profile passes SLO and cost gate",
+      "status": "pass",
+      "requirement": "recall@10 >= 0.95, p99 <= 100 ms, target QPS capacity available, and cost estimate present.",
+      "evidence": "recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries",
+      "next_step": "Keep the 100k profile green while adding persisted FAISS and pgvector service runs."
+    },
+    {
+      "id": "production_1m_slo",
+      "title": "1M service-backed load profile meets recall and p99 SLO",
+      "status": "action_required",
+      "requirement": "recall@10 >= 0.95 and p99 <= 100 ms at 1M vectors.",
+      "evidence": "recall 0.984, p99 209.27749999100342 ms, SLO fail",
+      "next_step": "Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and rerun 1M with 100+ queries."
+    },
+    {
+      "id": "production_1m_query_depth",
+      "title": "1M load result has enough query depth for a production claim",
+      "status": "action_required",
+      "requirement": "Use at least 100 queries for checked-in 1M production claims.",
+      "evidence": "current tuned 1M profile uses 50 queries",
+      "next_step": "Rerun tuned 1M profile with 100+ queries once disk and service runtime are stable."
+    },
+    {
+      "id": "cluster_ha_placement",
+      "title": "Namespace placement survives node and zone loss",
+      "status": "pass",
+      "requirement": "Replicated namespace placement must keep availability at 1.0 under node and zone loss simulation.",
+      "evidence": "node loss 1.0, zone loss 1.0, namespaces 4096",
+      "next_step": "Validate the same placement under live multi-node service load."
+    },
+    {
+      "id": "operator_autoscaling_repair",
+      "title": "Kubernetes operator bundle includes HPA and repair job",
+      "status": "pass",
+      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, and scheduled repair.",
+      "evidence": "CRD True, HPA True, repair True",
+      "next_step": "Run a real Kubernetes smoke deploy and collect HPA behavior under load."
+    },
+    {
+      "id": "serverless_externalized_state",
+      "title": "Serverless plan externalizes state and validates KEDA target",
+      "status": "pass",
+      "requirement": "Serverless mode must use external durable state, external vector index, and shared cache.",
+      "evidence": "Postgres True, Qdrant True, Redis True",
+      "next_step": "Run service-backed KEDA/Knative load tests instead of manifest-only checks."
+    },
+    {
+      "id": "hot_cache_prewarm",
+      "title": "Hot cache and query-audit prewarm work",
+      "status": "pass",
+      "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0021739999951364553 ms",
+      "next_step": "Back the cache with Redis in a service-mode benchmark."
+    },
+    {
+      "id": "distributed_repair_tombstones",
+      "title": "Distributed sharding repairs replicas and tombstones stale deletes",
+      "status": "pass",
+      "requirement": "Replicated writes, missing-record repair, tombstone repair, and anti-entropy must all pass.",
+      "evidence": "repair 1, tombstone deleted 1, anti-entropy repaired 1",
+      "next_step": "Run the same repair flow against real HTTP shard clients."
+    },
+    {
+      "id": "replicated_runtime_loss",
+      "title": "Runtime replica quorum survives node loss",
+      "status": "pass",
+      "requirement": "Quorum runtime must recall after node loss and repair missing records plus tombstones.",
+      "evidence": "recall after loss True, repair copied 1, p99 0.7203679999960855 ms",
+      "next_step": "Measure the same path under concurrent writes and reads."
+    },
+    {
+      "id": "active_active_field_crdt",
+      "title": "Active-active sync and field-state CRDT converge",
+      "status": "pass",
+      "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification.",
+      "evidence": "delta sync True, CRDT idempotent True",
+      "next_step": "Run active-active sync against independent persistent stores."
+    },
+    {
+      "id": "backup_restore_dr",
+      "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
+      "status": "pass",
+      "requirement": "Backups must be checksummed, restorable, offsite-capable, and recover recall after restore.",
+      "evidence": "archive True, object-store DR True, restored files 3",
+      "next_step": "Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps."
+    },
+    {
+      "id": "structured_multimodal_payloads",
+      "title": "Structured and multimodal payload retrieval works",
+      "status": "pass",
+      "requirement": "Images, audio, tables, and events must be storable and retrievable through the same memory API.",
+      "evidence": "modalities image, audio, table, event, precision@1 1.0",
+      "next_step": "Add real CLIP/audio embedding backends and larger multimodal retrieval tests."
+    },
+    {
+      "id": "real_competitor_adapters",
+      "title": "Mem0, Zep, and LangGraph adapters have real configured results",
+      "status": "action_required",
+      "requirement": "Competitor comparison must run real packages/services, not approximations.",
+      "evidence": "skipped: Mem0, Zep, LangGraph persistent memory",
+      "next_step": "Install/configure competitor stacks in a separate benchmark environment and check in real results."
+    },
+    {
+      "id": "ten_million_load_profile",
+      "title": "10M-vector production load profile exists",
+      "status": "action_required",
+      "requirement": "A 10M-vector service-backed benchmark is required before claiming million-plus production dominance.",
+      "evidence": "production_load_10m_results.json is not checked in",
+      "next_step": "Run 10M on larger hardware after the 1M p99 SLO is green."
+    }
+  ]
+}

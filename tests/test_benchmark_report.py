@@ -30,6 +30,8 @@ def test_benchmark_report_renderer_writes_status_report(tmp_path):
     assert "VectorDBBench" in report
     assert "LoCoMo evidence retrieval runner" in report
     assert "Production index profile" in report
+    assert "Production readiness gate" in report
+    assert "readiness score" in report
     assert "WaveMind faiss-persisted" in report
     assert "cost / 1M queries" in report
     assert "monthly target cost" in report

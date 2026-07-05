@@ -34,6 +34,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "WaveMind-only check" in leaderboard
     assert "LongMemEval answer generation" in leaderboard
     assert "Production index profile" in leaderboard
+    assert "Production readiness gate" in leaderboard
+    assert "readiness score" in leaderboard
     assert "Qdrant service" in leaderboard
     assert "production SLO pass: Qdrant service" in leaderboard
     assert "production SLO miss" in leaderboard
@@ -53,6 +55,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "dynamic_memory_benchmark.py" in workflow
     assert "field_memory_dynamics_benchmark.py" in workflow
     assert "scale_readiness_benchmark.py" in workflow
+    assert "production_readiness_gate.py" in workflow
     assert "benchmark_registry.py" in workflow
     assert "render_benchmark_report.py" in workflow
     assert "render_benchmark_leaderboard.py" in workflow
@@ -60,4 +63,6 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "--max-age-days 8" in workflow
     assert "WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast" in workflow
     assert "benchmark_artifact_audit.json" in workflow
+    assert "production_readiness_results.json" in workflow
+    assert "PRODUCTION_READINESS.md" in workflow
     assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow
