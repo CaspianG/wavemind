@@ -8,6 +8,13 @@ from .encoders import (
     create_text_encoder,
 )
 from .field_graph import MemoryFieldGraph
+from .field_crdt import (
+    FieldStateCRDT,
+    FieldStateDelta,
+    FieldStateMergeReport,
+    stable_memory_key,
+    stable_record_key,
+)
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
 from .jobs import (
     CachePrewarmReport,
@@ -80,10 +87,13 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.3"
+__version__ = "2.4.4"
 
 __all__ = [
     "FieldProjector",
+    "FieldStateCRDT",
+    "FieldStateDelta",
+    "FieldStateMergeReport",
     "FaissVectorIndex",
     "HashingTextEncoder",
     "ClusterNode",
@@ -158,5 +168,7 @@ __all__ = [
     "query_with_cache",
     "remember_payload",
     "scale_status_meets_or_exceeds",
+    "stable_memory_key",
+    "stable_record_key",
     "table_payload",
 ]

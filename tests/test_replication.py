@@ -253,6 +253,48 @@ def test_replicated_wavemind_delta_import_is_idempotent(tmp_path):
         region_b.close()
 
 
+def test_replicated_wavemind_namespace_delta_merges_field_state(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:field-crdt"
+        region_a.remember("hot active active field memory", namespace=namespace)
+        delta = region_a.export_namespace_delta(namespace)
+        replica_key = delta["records"][0]["replica_key"]
+
+        region_a.query("field memory", namespace=namespace, top_k=1)
+        report = region_b.import_namespace_delta(region_a.export_namespace_delta(namespace))
+
+        imported = region_b.export_field_state_delta(namespace).to_dict()
+        assert report.imported_records == 3
+        assert imported["positive"][replica_key][region_a.field_actor] > 1.0
+        assert region_b.query("field memory", namespace=namespace, top_k=1)[0].metadata[
+            "_field_crdt_activation"
+        ] > 0.0
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_replicated_wavemind_field_tombstone_suppresses_local_stale_record(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:field-tombstone"
+        region_a.remember("field tombstone hides stale memory", namespace=namespace)
+        region_b.import_namespace_delta(region_a.export_namespace_delta(namespace))
+        replica_key = region_a.export_namespace_delta(namespace)["records"][0]["replica_key"]
+
+        field_state = region_a.export_field_state_delta(namespace).to_dict()
+        field_state["tombstones"][replica_key] = {region_a.field_actor: 123.0}
+        region_b.import_field_state_delta(field_state)
+
+        assert region_b.query("stale memory", namespace=namespace, top_k=1) == []
+    finally:
+        region_a.close()
+        region_b.close()
+
+
 def test_replicated_wavemind_tombstone_delta_beats_stale_record_delta(tmp_path):
     region_a = _region(tmp_path, "region-a", replication_factor=3)
     region_b = _region(tmp_path, "region-b", replication_factor=3)

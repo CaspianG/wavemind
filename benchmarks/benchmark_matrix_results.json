@@ -55,15 +55,15 @@
           "precision_at_1": 1.0,
           "precision_at_3": 1.0,
           "suppression_rate": 1.0,
-          "avg_latency_ms": 25.26212499833491,
-          "p95_latency_ms": 28.486399998655543
+          "avg_latency_ms": 28.27136252017226,
+          "p95_latency_ms": 32.41500002332032
         },
         "Chroma static": {
           "precision_at_1": 0.5714285714285714,
           "precision_at_3": 1.0,
           "suppression_rate": 0.0,
-          "avg_latency_ms": 1.7523125043226173,
-          "p95_latency_ms": 6.284899995080195
+          "avg_latency_ms": 2.1511874947464094,
+          "p95_latency_ms": 7.806400011759251
         }
       },
       "target": "Keep precision@1 and stale suppression at 1.00 while reducing avg latency below 10 ms at 1000 memories.",
@@ -96,7 +96,7 @@
           "concept_formation": 1.0,
           "concept_consolidation": 1.0,
           "decay_ratio": 0.81,
-          "avg_latency_ms": 1.8071
+          "avg_latency_ms": 0.8212
         },
         "WaveMind static": {
           "precision@1": 0.2,
@@ -105,7 +105,7 @@
           "concept_formation": 0.0,
           "concept_consolidation": 0.0,
           "decay_ratio": 0.0,
-          "avg_latency_ms": 0.4785
+          "avg_latency_ms": 0.4725
         }
       },
       "target": "Keep graph precision@1, stale suppression, concept formation, and concept consolidation at 1.00 while moving the same memory dynamics into LoCoMo/LongMemEval evidence tasks.",
@@ -768,7 +768,7 @@
           "kubernetes_manifest_kind": "StatefulSet",
           "kubernetes_repair_cronjob_kind": "CronJob",
           "kubernetes_repair_cronjob_namespaces": 4096,
-          "placement_ms": 93.05069997208193
+          "placement_ms": 102.52910002600402
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -777,7 +777,7 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.006399990525096655
+          "p99_lookup_ms": 0.0048999791033566
         },
         "WaveMind distributed sharding": {
           "nodes": 3,
@@ -797,7 +797,7 @@
           "anti_entropy_worker_ok": true,
           "anti_entropy_worker_repaired_total": 1,
           "anti_entropy_worker_tombstone_deleted": 1,
-          "query_after_primary_loss_ms": 0.9423000155948102
+          "query_after_primary_loss_ms": 2.0071000326424837
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -807,7 +807,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 1.593099965248257
+          "p99_query_after_loss_ms": 2.1933999960310757
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -816,7 +816,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 233.4149000234902
+          "sync_ms": 274.1096999961883
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -830,14 +830,14 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 177.3962999577634,
-          "restore_ms": 88.67839997401461
+          "snapshot_ms": 252.09449999965727,
+          "restore_ms": 127.82779999542981
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.5526000313693658,
-          "p99_latency_ms": 0.8758999756537378
+          "avg_latency_ms": 0.8583749877288938,
+          "p99_latency_ms": 1.297399983741343
         }
       },
       "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment and scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",

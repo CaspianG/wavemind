@@ -51,6 +51,11 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind active-active delta sync"]["suppressed_stale_import_after_delete"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_converged"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_deleted_records"] == 3
+    assert results["WaveMind field-state CRDT"]["commutative_convergence"] is True
+    assert results["WaveMind field-state CRDT"]["idempotent_remerge"] is True
+    assert results["WaveMind field-state CRDT"]["tombstone_wins"] is True
+    assert results["WaveMind field-state CRDT"]["top_key_converged"] is True
+    assert results["WaveMind field-state CRDT"]["budget_activation"] == 5.0
     assert results["WaveMind replicated snapshot"]["manifest_healthy"] is True
     assert results["WaveMind replicated snapshot"]["offsite_verified"] is True
     assert results["WaveMind replicated snapshot"]["archive_verified"] is True

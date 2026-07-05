@@ -15,6 +15,7 @@ from typing import Any, Iterable
 
 from .cluster import ClusterNode, NamespacePlacement, build_cluster_plan
 from .core import QueryResult, WaveMind
+from .field_crdt import FieldStateCRDT, FieldStateDelta, FieldStateMergeReport
 from .storage import MemoryRecord
 
 
@@ -151,6 +152,7 @@ class ReplicatedWaveMind:
         replication_factor: int = 3,
         write_quorum: int | None = None,
         read_quorum: int = 1,
+        field_state_weight: float = 0.02,
         **mind_kwargs: Any,
     ):
         if "db_path" in mind_kwargs:
@@ -164,6 +166,7 @@ class ReplicatedWaveMind:
             else int(write_quorum)
         )
         self.read_quorum = int(read_quorum)
+        self.field_state_weight = float(field_state_weight)
         if self.write_quorum <= 0:
             raise ValueError("write_quorum must be positive")
         if self.read_quorum <= 0:
@@ -182,6 +185,9 @@ class ReplicatedWaveMind:
         self.mind_kwargs = dict(mind_kwargs)
         self._available = {node.id: True for node in self.nodes}
         self._minds: dict[str, WaveMind] = {}
+        actor_seed = str(self.root_path.resolve())
+        self.field_actor = hashlib.sha256(actor_seed.encode("utf-8")).hexdigest()[:16]
+        self._field_states: dict[str, FieldStateCRDT] = {}
 
     def remember(
         self,
@@ -217,6 +223,13 @@ class ReplicatedWaveMind:
             raise WriteQuorumError(
                 f"Write quorum {self.write_quorum} was not reached for "
                 f"namespace {namespace!r}; successful writes: {len(writes)}"
+            )
+        replica_key = str(prepared_kwargs.get("metadata", {}).get(_REPLICA_KEY) or "")
+        if replica_key:
+            self._field_state(namespace).boost(
+                replica_key,
+                amount=max(0.1, float(prepared_kwargs.get("priority", kwargs.get("priority", 1.0)))),
+                actor=self.field_actor,
             )
         return ReplicatedWriteResult(
             namespace=namespace,
@@ -260,10 +273,24 @@ class ReplicatedWaveMind:
                 replica_key = self._result_replica_key(result)
                 if replica_key in tombstones.keys or result.text in tombstones.texts:
                     continue
+                field_state = self._field_states.get(namespace)
+                if field_state is not None and field_state.is_tombstoned(replica_key):
+                    continue
                 key = (result.namespace, replica_key, tuple(sorted(result.tags)))
                 current = best_by_key.get(key)
-                if current is None or result.score > current.score:
-                    best_by_key[key] = self._with_replica_metadata(result, node_id)
+                activation = (
+                    field_state.activation(replica_key)
+                    if field_state is not None
+                    else 0.0
+                )
+                scored = self._with_replica_metadata(
+                    result,
+                    node_id,
+                    field_activation=activation,
+                    score_boost=self.field_state_weight * activation,
+                )
+                if current is None or scored.score > current.score:
+                    best_by_key[key] = scored
 
         if successful_reads < self.read_quorum:
             raise ReadQuorumError(
@@ -273,7 +300,13 @@ class ReplicatedWaveMind:
             )
 
         merged = sorted(best_by_key.values(), key=lambda item: item.score, reverse=True)
-        return merged[:top_k]
+        selected = merged[:top_k]
+        field_state = self._field_state(namespace)
+        for result in selected:
+            replica_key = self._result_replica_key(result)
+            if replica_key:
+                field_state.boost(replica_key, amount=0.05, actor=self.field_actor)
+        return selected
 
     def forget(
         self,
@@ -327,6 +360,9 @@ class ReplicatedWaveMind:
                 f"Forget quorum {self.write_quorum} was not reached for "
                 f"namespace {namespace!r}; successful writes: {len(writes)}"
             )
+        field_state = self._field_state(namespace)
+        for key in keys:
+            field_state.tombstone(key, actor=self.field_actor, deleted_at=deleted_at)
         return ReplicatedWriteResult(
             namespace=namespace,
             primary_node=placement.primary,
@@ -424,7 +460,22 @@ class ReplicatedWaveMind:
             "replication_factor": self.replication_factor,
             "records": [self._record_to_delta(record) for record in records],
             "tombstones": events,
+            "field_state": self.export_field_state_delta(namespace).to_dict(),
         }
+
+    def export_field_state_delta(self, namespace: str = "default") -> FieldStateDelta:
+        """Export distributed field activation/suppression state."""
+        return self._field_state(namespace).delta()
+
+    def import_field_state_delta(
+        self,
+        delta: dict[str, Any],
+        namespace: str | None = None,
+    ) -> FieldStateMergeReport:
+        target_namespace = namespace or str(delta.get("namespace") or "default")
+        payload = dict(delta)
+        payload["namespace"] = target_namespace
+        return self._field_state(target_namespace).merge(payload)
 
     def import_namespace_delta(
         self,
@@ -443,6 +494,8 @@ class ReplicatedWaveMind:
             )
 
         incoming_tombstones = self._delta_tombstone_state(delta)
+        if isinstance(delta.get("field_state"), dict):
+            self.import_field_state_delta(delta["field_state"], namespace=target_namespace)
         imported_records = 0
         skipped_records = 0
         deleted_records = 0
@@ -889,6 +942,14 @@ class ReplicatedWaveMind:
             self._minds[node_id] = mind
         return mind
 
+    def _field_state(self, namespace: str) -> FieldStateCRDT:
+        namespace = str(namespace or "default")
+        state = self._field_states.get(namespace)
+        if state is None:
+            state = FieldStateCRDT(namespace=namespace, actor=self.field_actor)
+            self._field_states[namespace] = state
+        return state
+
     def _available_replicas(self, placement: NamespacePlacement) -> list[str]:
         return [
             node_id
@@ -1189,13 +1250,20 @@ class ReplicatedWaveMind:
         return 0.0 if remaining <= 0 else remaining
 
     @staticmethod
-    def _with_replica_metadata(result: QueryResult, node_id: str) -> QueryResult:
+    def _with_replica_metadata(
+        result: QueryResult,
+        node_id: str,
+        *,
+        field_activation: float = 0.0,
+        score_boost: float = 0.0,
+    ) -> QueryResult:
         metadata = dict(result.metadata)
         metadata["_replica_node"] = node_id
+        metadata["_field_crdt_activation"] = float(field_activation)
         return QueryResult(
             id=result.id,
             text=result.text,
-            score=result.score,
+            score=float(result.score + score_boost),
             vector_score=result.vector_score,
             field_score=result.field_score,
             graph_score=result.graph_score,

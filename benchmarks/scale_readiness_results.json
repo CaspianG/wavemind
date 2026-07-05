@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 113.54389996267855,
+      "placement_ms": 102.52910002600402,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -55,8 +55,8 @@
       "evictions": 0,
       "prewarm_warmed": 1,
       "prewarm_hit": true,
-      "avg_lookup_ms": 0.003753600234631449,
-      "p99_lookup_ms": 0.026099965907633305
+      "avg_lookup_ms": 0.0023201499425340444,
+      "p99_lookup_ms": 0.0048999791033566
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -87,8 +87,8 @@
       "anti_entropy_worker_ok": true,
       "anti_entropy_worker_repaired_total": 1,
       "anti_entropy_worker_tombstone_deleted": 1,
-      "write_ms": 190.69339998532087,
-      "query_after_primary_loss_ms": 2.0731999538838863
+      "write_ms": 335.27420001337305,
+      "query_after_primary_loss_ms": 2.0071000326424837
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -102,8 +102,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 2.0992999779991806,
-      "p99_query_after_loss_ms": 2.0992999779991806
+      "avg_query_after_loss_ms": 2.1933999960310757,
+      "p99_query_after_loss_ms": 2.1933999960310757
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -111,10 +111,21 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 200.68299997365102,
+      "sync_ms": 274.1096999961883,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
+    },
+    {
+      "engine": "WaveMind field-state CRDT",
+      "regions": 3,
+      "commutative_convergence": true,
+      "idempotent_remerge": true,
+      "tombstone_wins": true,
+      "top_key_converged": true,
+      "budget_activation": 5.0,
+      "suppressed_report_activation": 0.75,
+      "merge_ms": 0.1604999997653067
     },
     {
       "engine": "WaveMind replicated snapshot",
@@ -128,8 +139,8 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 296.7180999694392,
-      "restore_ms": 175.62190000899136,
+      "snapshot_ms": 252.09449999965727,
+      "restore_ms": 127.82779999542981,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -143,8 +154,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.7783999753883108,
-      "p99_latency_ms": 1.0585999698378146
+      "avg_latency_ms": 0.8583749877288938,
+      "p99_latency_ms": 1.297399983741343
     }
   ]
 }

@@ -19,6 +19,7 @@ from wavemind import (
     ClusterNode,
     DistributedRepairWorker,
     DistributedShardedWaveMind,
+    FieldStateCRDT,
     HashingTextEncoder,
     HotMemoryCache,
     QueryResult,
@@ -38,6 +39,7 @@ from wavemind import (
     remember_payload,
     table_payload,
     WaveMindClusterSpec,
+    stable_memory_key,
 )
 
 
@@ -775,6 +777,57 @@ def run_active_active_delta_profile() -> dict[str, object]:
             region_b.close()
 
 
+def run_field_crdt_profile() -> dict[str, object]:
+    namespace = "tenant:field-crdt"
+    budget_key = stable_memory_key(namespace=namespace, text="user budget is 2000")
+    stale_key = stable_memory_key(namespace=namespace, text="user old city is Berlin")
+    report_key = stable_memory_key(namespace=namespace, text="user wants weekly reports")
+
+    region_a = FieldStateCRDT(namespace=namespace, actor="region-a")
+    region_b = FieldStateCRDT(namespace=namespace, actor="region-b")
+    region_c = FieldStateCRDT(namespace=namespace, actor="region-c")
+
+    started = time.perf_counter()
+    region_a.boost(budget_key, 3.0)
+    region_a.boost(report_key, 1.0)
+    region_b.boost(budget_key, 2.0)
+    region_b.suppress(report_key, 0.25)
+    region_c.boost(stale_key, 5.0)
+    region_a.tombstone(stale_key, deleted_at=100.0)
+
+    left = FieldStateCRDT(namespace=namespace, actor="left")
+    left.merge(region_a.delta())
+    left.merge(region_b.delta())
+    left.merge(region_c.delta())
+    left.merge(region_b.delta())
+
+    right = FieldStateCRDT(namespace=namespace, actor="right")
+    right.merge(region_c.delta())
+    right.merge(region_b.delta())
+    right.merge(region_a.delta())
+    right.merge(region_a.delta())
+    merge_ms = (time.perf_counter() - started) * 1000.0
+
+    left_payload = left.to_dict()
+    right_payload = right.to_dict()
+    same_state = (
+        left_payload["positive"] == right_payload["positive"]
+        and left_payload["negative"] == right_payload["negative"]
+        and left_payload["tombstones"] == right_payload["tombstones"]
+    )
+    return {
+        "engine": "WaveMind field-state CRDT",
+        "regions": 3,
+        "commutative_convergence": same_state,
+        "idempotent_remerge": left.merge(region_b.delta()).changed is False,
+        "tombstone_wins": left.activation(stale_key) == 0.0 and left.is_tombstoned(stale_key),
+        "top_key_converged": left.top(limit=1) == right.top(limit=1),
+        "budget_activation": left.activation(budget_key),
+        "suppressed_report_activation": left.activation(report_key),
+        "merge_ms": merge_ms,
+    }
+
+
 def run_replicated_snapshot_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
@@ -957,6 +1010,7 @@ def run_benchmark(
         run_distributed_sharding_profile(),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
+        run_field_crdt_profile(),
         run_replicated_snapshot_profile(),
         run_multimodal_profile(),
     ]
@@ -1035,6 +1089,11 @@ def main() -> int:
         elif result["engine"] == "WaveMind active-active delta sync":
             print(f"| active-active delta | converged | {result['converged_after_bidirectional_sync']} |")
             print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")
+        elif result["engine"] == "WaveMind field-state CRDT":
+            print(f"| field-state CRDT | commutative_convergence | {result['commutative_convergence']} |")
+            print(f"| field-state CRDT | idempotent_remerge | {result['idempotent_remerge']} |")
+            print(f"| field-state CRDT | tombstone_wins | {result['tombstone_wins']} |")
+            print(f"| field-state CRDT | budget_activation | {result['budget_activation']:.3f} |")
         elif result["engine"] == "WaveMind replicated snapshot":
             print(f"| replicated snapshot | manifest_healthy | {result['manifest_healthy']} |")
             print(f"| replicated snapshot | offsite_verified | {result['offsite_verified']} |")
@@ -1045,7 +1104,7 @@ def main() -> int:
             print(f"| replicated snapshot | object_store_download_verified | {result['object_store_download_verified']} |")
             print(f"| replicated snapshot | object_store_drill_ok | {result['object_store_drill_ok']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
-        else:
+        elif result["engine"] == "WaveMind structured payloads":
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
     print(f"\nWrote {args.output}")
     return 0

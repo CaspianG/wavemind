@@ -29,8 +29,8 @@
         "namespace": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 25.26212499833491,
-      "p95_latency_ms": 28.486399998655543,
+      "avg_latency_ms": 28.27136252017226,
+      "p95_latency_ms": 32.41500002332032,
       "checks": 8
     },
     {
@@ -44,8 +44,8 @@
         "namespace": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 1.7523125043226173,
-      "p95_latency_ms": 6.284899995080195,
+      "avg_latency_ms": 2.1511874947464094,
+      "p95_latency_ms": 7.806400011759251,
       "checks": 8
     }
   ]

@@ -255,23 +255,40 @@ class SentenceTransformerTextEncoder:
 
 
 class FieldProjector:
-    def __init__(self, width: int, height: int, vector_dim: int, seed: int = 1729):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        vector_dim: int,
+        seed: int = 1729,
+        features_per_cell: int = 16,
+    ):
         self.width = int(width)
         self.height = int(height)
         self.vector_dim = int(vector_dim)
-        rng = np.random.default_rng(seed + self.width * 31 + self.height * 17 + self.vector_dim)
-        self._matrix = rng.normal(
+        self.seed = int(seed + self.width * 31 + self.height * 17 + self.vector_dim)
+        self.features_per_cell = max(1, min(int(features_per_cell), self.vector_dim))
+        rng = np.random.default_rng(self.seed)
+        shape = (self.height * self.width, self.features_per_cell)
+        self._indices = rng.integers(
+            0,
+            self.vector_dim,
+            size=shape,
+            dtype=np.int32,
+        )
+        self._weights = rng.normal(
             loc=0.0,
-            scale=1.0 / max(1, self.vector_dim) ** 0.5,
-            size=(self.height * self.width, self.vector_dim),
+            scale=1.0 / max(1, self.features_per_cell) ** 0.5,
+            size=shape,
         ).astype(np.float32)
 
     def to_pattern(self, vector: np.ndarray) -> np.ndarray:
         vector = _l2_normalize(vector)
-        projected = self._matrix @ vector
-        projected = np.maximum(projected, 0.0)
+        projected = (vector[self._indices] * self._weights).sum(axis=1, dtype=np.float32)
+        raw = projected.copy()
+        np.maximum(projected, 0.0, out=projected)
         if not np.any(projected):
-            projected = np.abs(self._matrix @ vector)
+            projected = np.abs(raw)
         pattern = projected.reshape(self.height, self.width).astype(np.float32)
         return _l2_normalize(pattern)
 
