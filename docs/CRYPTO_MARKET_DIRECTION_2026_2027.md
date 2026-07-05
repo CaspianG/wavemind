@@ -113,13 +113,15 @@ Latest timeframe-aware check: applying the same adaptive-field profile across
 `0.954`, worst slice `-106.89`). The current robust policy uses separate
 timeframe dynamics: 1h routes through `WaveMind microstructure`, 4h routes
 through `WaveMind adaptive-field`, and 1d stays flat until a weekly profile is
-validated. That `WaveMind timeframe policy` reaches `14.97` sized net bps
-across the combined 1h/4h/1d run, profit factor `2.354`, max drawdown `5305.3`
-bps, and worst slice `-51.18`. On 1h specifically, microstructure improves
-over raw TA on both BTC/ETH/SOL (`6.98` vs `6.41` bps) and
-XRP/DOGE/ADA/LINK/AVAX (`6.44` vs `3.11` bps). This is a real risk-control and
+validated. It also uses TA conflict vetoes, regime guards, and a live drawdown
+circuit breaker. The checked BTC/ETH/SOL 1h/4h/1d run reaches `3.05` sized
+bps/query, profit factor `10.489`, max drawdown `139.4` bps, and worst slice
+`-1.23`. The longer BTC/ETH/SOL 2000-bar 1h/4h profile reaches `0.48` sized
+bps/query and profit factor `7.475`. The expanded 8-asset 2000-bar stress
+profile is still positive but small at `0.17` sized bps/query, profit factor
+`1.423`, and worst slice `-5.63`. This is a real risk-control and
 timeframe-specialization improvement, not final universal alpha: 1d still
-needs a separate trend-memory dynamic.
+needs a separate trend-memory dynamic and the 8-asset edge needs more support.
 
 Relationship-mining evidence: on checked-in OKX BTC/ETH/SOL 4h windows, the
 miner finds explainable regimes such as `rsi_bucket=neutral & trend=up`

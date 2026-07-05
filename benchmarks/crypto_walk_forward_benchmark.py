@@ -626,20 +626,23 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         min_recent_edge_bps: float = 20.0,
         round_trip_cost_bps: float = 30.0,
         memory_store: str = "disk",
+        store_vector_memory: bool = False,
     ):
-        super().__init__(
-            encoder,
-            symbol=symbol,
-            timeframe=timeframe,
-            temp_root=temp_root,
-            use_field=True,
-            db_label="adaptivefield",
-            vector_weight=0.92,
-            field_weight=0.04,
-            priority_weight=0.04,
-            lexical_weight=0.0,
-            memory_store=memory_store,
-        )
+        self.store_vector_memory = bool(store_vector_memory)
+        if self.store_vector_memory:
+            super().__init__(
+                encoder,
+                symbol=symbol,
+                timeframe=timeframe,
+                temp_root=temp_root,
+                use_field=True,
+                db_label="adaptivefield",
+                vector_weight=0.92,
+                field_weight=0.04,
+                priority_weight=0.04,
+                lexical_weight=0.0,
+                memory_store=memory_store,
+            )
         self.name = "WaveMind adaptive-field"
         self.records: list[OHLCVWindow] = []
         self.return_history: list[float] = []
@@ -672,7 +675,12 @@ class WaveMindAdaptiveFieldEngine(WaveMindEngine):
         self.return_history.append(float(window.future_return_bps))
         for relationship in _relationship_candidates(_regime_signature_from_window(window)):
             self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
-        super().add(window)
+        if self.store_vector_memory:
+            super().add(window)
+
+    def close(self) -> None:
+        if self.store_vector_memory:
+            super().close()
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
         started = time.perf_counter()
@@ -964,6 +972,7 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
         adaptive_min_recent_edge_bps: float = 20.0,
         round_trip_cost_bps: float = 30.0,
         memory_store: str = "disk",
+        max_policy_drawdown_bps: float = 400.0,
     ):
         self.timeframe = timeframe
         self.ta = TaRulesEngine()
@@ -971,6 +980,7 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
         self.pending_predictions: dict[str, str] = {}
         self.realized_signal_nets: list[float] = []
         self.round_trip_cost_bps = float(round_trip_cost_bps)
+        self.max_policy_drawdown_bps = float(max_policy_drawdown_bps)
         self.apply_policy_veto = True
         self.child: MarketEngine | None = None
         if timeframe == "1h":
@@ -1016,6 +1026,19 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
             self.child.add(window)
 
     def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        max_drawdown_bps = float(getattr(self, "max_policy_drawdown_bps", 0.0))
+        realized_drawdown = _max_drawdown_bps(getattr(self, "realized_signal_nets", []))
+        if max_drawdown_bps > 0.0 and realized_drawdown >= max_drawdown_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=0.0,
+                analogues=[],
+                confidence=0.0,
+                raw_direction="flat",
+                filtered=True,
+                filter_reason=f"policy_drawdown_circuit_breaker:{realized_drawdown:.2f}",
+            )
         if self.child is not None:
             prediction = self.child.query(window, top_k=top_k)
             ta_prediction = self.ta.query(window, top_k=top_k) if self.apply_policy_veto else None
@@ -1093,6 +1116,38 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                     guard_reason = "one_hour_short_squeeze_guard"
                 if (
                     self.timeframe == "1h"
+                    and prediction.direction == "down"
+                    and str(features.get("volume_bucket")) == "normal"
+                    and str(features.get("bollinger_bucket")) == "lower_band"
+                ):
+                    guard_reason = "one_hour_normal_volume_breakdown_exhaustion"
+                if (
+                    self.timeframe == "1h"
+                    and prediction.direction == "up"
+                    and str(features.get("bollinger_bucket")) == "lower_band"
+                    and str(features.get("macd_bucket")) == "flat"
+                    and str(features.get("volatility_bucket")) == "high"
+                ):
+                    guard_reason = "one_hour_stalled_lower_band_bounce"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("bollinger_bucket")) == "upper_band"
+                    and str(features.get("volume_bucket")) == "quiet"
+                    and prediction.confidence < 0.55
+                ):
+                    guard_reason = "four_hour_quiet_upper_band_long_exhaustion"
+                if (
+                    self.timeframe == "4h"
+                    and prediction.direction == "up"
+                    and str(features.get("recent_trend")) == "up"
+                    and str(features.get("close_position_bucket")) == "middle"
+                    and str(features.get("volatility_bucket")) == "high"
+                    and str(features.get("drawdown_bucket")) == "deep"
+                ):
+                    guard_reason = "four_hour_midrange_continuation_trap"
+                if (
+                    self.timeframe == "1h"
                     and prediction.direction == "up"
                     and prediction.confidence < 0.999
                     and str(features.get("trend")) == "down"
@@ -1105,6 +1160,7 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
                         self.timeframe == "1h"
                         and prediction.direction == "up"
                         and prediction.confidence >= 0.999
+                        and str(features.get("trend")) == "up"
                     )
                     if not defensive_allowed:
                         guard_reason = f"negative_policy_recent_edge:{recent_edge:.2f}"

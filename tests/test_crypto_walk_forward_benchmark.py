@@ -364,6 +364,23 @@ def test_adaptive_relationship_field_uses_past_holdout_signal():
     assert signal["confidence"] > 0.0
 
 
+def test_adaptive_field_can_skip_vector_memory_initialization(tmp_path):
+    from benchmarks.crypto_walk_forward_benchmark import WaveMindAdaptiveFieldEngine
+    from wavemind.encoders import create_text_encoder
+
+    engine = WaveMindAdaptiveFieldEngine(
+        create_text_encoder(kind="hash", vector_dim=64),
+        symbol="BTC/USDT",
+        timeframe="4h",
+        temp_root=tmp_path,
+        memory_store="memory",
+        store_vector_memory=False,
+    )
+
+    assert not hasattr(engine, "memory")
+    engine.close()
+
+
 def test_load_markets_from_ccxt_cache_without_network(tmp_path, monkeypatch):
     from argparse import Namespace
     from benchmarks.crypto_ohlcv import OHLCVBar, save_ohlcv_csv
@@ -492,6 +509,25 @@ def test_timeframe_policy_vetoes_ta_conflict():
     assert prediction.candidate_expected_return_bps == 120.0
 
 
+def test_timeframe_policy_drawdown_circuit_breaker_skips_child():
+    from benchmarks.crypto_walk_forward_benchmark import WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            raise AssertionError("child should not be queried after policy drawdown circuit breaker trips")
+
+    engine = object.__new__(WaveMindTimeframePolicyEngine)
+    engine.child = ChildEngine()
+    engine.realized_signal_nets = [-120.0, -160.0, -150.0]
+    engine.max_policy_drawdown_bps = 400.0
+
+    prediction = engine.query(object(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filtered is True
+    assert prediction.filter_reason.startswith("policy_drawdown_circuit_breaker:")
+
+
 def test_timeframe_policy_vetoes_unstable_one_hour_setups():
     from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
 
@@ -544,6 +580,50 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
         )
     ).query(Window({"trend": "up", "rsi_bucket": "overbought"}), top_k=3)
 
+    normal_volume_breakdown = make_engine(
+        Prediction(
+            direction="down",
+            expected_return_bps=-120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="down",
+        )
+    ).query(
+        Window(
+            {
+                "trend": "down",
+                "volume_bucket": "normal",
+                "drawdown_bucket": "deep",
+                "bollinger_bucket": "lower_band",
+                "rsi_bucket": "neutral",
+            }
+        ),
+        top_k=3,
+    )
+
+    stalled_lower_band_bounce = make_engine(
+        Prediction(
+            direction="up",
+            expected_return_bps=120.0,
+            latency_ms=0.1,
+            analogues=[],
+            confidence=1.0,
+            raw_direction="up",
+        )
+    ).query(
+        Window(
+            {
+                "trend": "up",
+                "bollinger_bucket": "lower_band",
+                "macd_bucket": "flat",
+                "volatility_bucket": "high",
+                "rsi_bucket": "oversold",
+            }
+        ),
+        top_k=3,
+    )
+
     unstable_mid = make_engine(
         Prediction(
             direction="up",
@@ -561,6 +641,135 @@ def test_timeframe_policy_vetoes_unstable_one_hour_setups():
     assert squeeze_short.direction == "flat"
     assert squeeze_short.filter_reason == "one_hour_short_squeeze_guard"
     assert squeeze_short.candidate_direction == "down"
+    assert normal_volume_breakdown.direction == "flat"
+    assert normal_volume_breakdown.filter_reason == "one_hour_normal_volume_breakdown_exhaustion"
+    assert normal_volume_breakdown.candidate_direction == "down"
+    assert stalled_lower_band_bounce.direction == "flat"
+    assert stalled_lower_band_bounce.filter_reason == "one_hour_stalled_lower_band_bounce"
+    assert stalled_lower_band_bounce.candidate_direction == "up"
     assert unstable_mid.direction == "flat"
     assert unstable_mid.filter_reason == "unstable_mid_confidence"
     assert unstable_mid.candidate_direction == "up"
+
+
+def test_timeframe_policy_vetoes_quiet_four_hour_upper_band_long():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=120.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=0.54,
+                raw_direction="up",
+            )
+
+    class FlatTaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+
+    class Window:
+        features = {
+            "trend": "up",
+            "bollinger_bucket": "upper_band",
+            "volume_bucket": "quiet",
+        }
+
+    engine = object.__new__(WaveMindTimeframePolicyEngine)
+    engine.timeframe = "4h"
+    engine.child = ChildEngine()
+    engine.ta = FlatTaEngine()
+    engine.apply_policy_veto = True
+    engine.records = []
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = []
+    engine.round_trip_cost_bps = 30.0
+
+    prediction = engine.query(Window(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filter_reason == "four_hour_quiet_upper_band_long_exhaustion"
+    assert prediction.candidate_direction == "up"
+
+
+def test_timeframe_policy_vetoes_four_hour_midrange_continuation_trap():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=120.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=1.0,
+                raw_direction="up",
+            )
+
+    class FlatTaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+
+    class Window:
+        features = {
+            "recent_trend": "up",
+            "close_position_bucket": "middle",
+            "volatility_bucket": "high",
+            "drawdown_bucket": "deep",
+        }
+
+    engine = object.__new__(WaveMindTimeframePolicyEngine)
+    engine.timeframe = "4h"
+    engine.child = ChildEngine()
+    engine.ta = FlatTaEngine()
+    engine.apply_policy_veto = True
+    engine.records = []
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = []
+    engine.round_trip_cost_bps = 30.0
+
+    prediction = engine.query(Window(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filter_reason == "four_hour_midrange_continuation_trap"
+    assert prediction.candidate_direction == "up"
+
+
+def test_timeframe_policy_blocks_high_confidence_falling_knife_after_losses():
+    from benchmarks.crypto_walk_forward_benchmark import Prediction, WaveMindTimeframePolicyEngine
+
+    class ChildEngine:
+        def query(self, window, *, top_k):
+            return Prediction(
+                direction="up",
+                expected_return_bps=140.0,
+                latency_ms=0.1,
+                analogues=[],
+                confidence=1.0,
+                raw_direction="up",
+            )
+
+    class FlatTaEngine:
+        def query(self, window, *, top_k):
+            return Prediction(direction="flat", expected_return_bps=0.0, latency_ms=0.0, analogues=[])
+
+    class Window:
+        features = {"trend": "down", "rsi_bucket": "oversold"}
+
+    engine = object.__new__(WaveMindTimeframePolicyEngine)
+    engine.timeframe = "1h"
+    engine.child = ChildEngine()
+    engine.ta = FlatTaEngine()
+    engine.apply_policy_veto = True
+    engine.records = []
+    engine.pending_predictions = {}
+    engine.realized_signal_nets = [-35.0, -28.0, -22.0, -18.0]
+    engine.round_trip_cost_bps = 30.0
+
+    prediction = engine.query(Window(), top_k=3)
+
+    assert prediction.direction == "flat"
+    assert prediction.filter_reason.startswith("negative_policy_recent_edge:")
+    assert prediction.candidate_direction == "up"
