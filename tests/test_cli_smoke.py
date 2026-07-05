@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 
+from wavemind import HashingTextEncoder, ReplicatedWaveMind
+
 
 def run_cli(*args, cwd=None):
     env = os.environ.copy()
@@ -156,6 +158,72 @@ def test_cli_maintenance_runs_one_job(tmp_path):
 
     assert payload["expired_purged"] == 1
     assert payload["index_rebuilt"] in {True, False}
+
+
+def test_cli_replicated_snapshot_and_restore(tmp_path):
+    root = tmp_path / "replicas"
+    nodes = ["node-a", "node-b", "node-c"]
+    memory = ReplicatedWaveMind(
+        root_path=root,
+        nodes=nodes,
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    restored = None
+    try:
+        memory.remember("cli replicated snapshot memory", namespace="tenant:cli")
+    finally:
+        memory.close()
+
+    snapshot = run_cli(
+        "replicated-snapshot",
+        "--root",
+        str(root),
+        "--node",
+        "node-a",
+        "--node",
+        "node-b",
+        "--node",
+        "node-c",
+        "--out",
+        str(tmp_path / "snapshots"),
+        "--offsite",
+        str(tmp_path / "offsite"),
+        "--json",
+    )
+    snapshot_payload = json.loads(snapshot.stdout)
+    restore = run_cli(
+        "replicated-restore",
+        "--from",
+        snapshot_payload["offsite_path"],
+        "--to",
+        str(tmp_path / "restored"),
+        "--json",
+    )
+    restore_payload = json.loads(restore.stdout)
+
+    try:
+        restored = ReplicatedWaveMind(
+            root_path=restore_payload["root_path"],
+            nodes=nodes,
+            replication_factor=3,
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+        assert snapshot_payload["ok"] is True
+        assert snapshot_payload["offsite_verified"] is True
+        assert len(restore_payload["restored_files"]) == 3
+        assert restored.query("snapshot memory", namespace="tenant:cli", top_k=1)[0].text == (
+            "cli replicated snapshot memory"
+        )
+    finally:
+        if restored is not None:
+            restored.close()
 
 
 def test_cli_consolidate_creates_concept_memory(tmp_path):

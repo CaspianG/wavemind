@@ -6,6 +6,8 @@ from wavemind import (
     MemoryMaintenanceWorker,
     QueryResult,
     RedisHotMemoryCache,
+    ReplicatedSnapshotWorker,
+    ReplicatedWaveMind,
     WaveMind,
     query_with_cache,
 )
@@ -122,5 +124,88 @@ def test_maintenance_worker_purges_expired_and_invalidates_cache(tmp_path):
         assert report.expired_purged == 1
         assert report.cache_invalidated == 1
         assert memory.stats(namespace="tenant:a")["active_memories"] == 1
+    finally:
+        memory.close()
+
+
+def test_replicated_snapshot_worker_mirrors_offsite_and_restores(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=[
+            {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+            {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+            {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+        ],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    restored = None
+    try:
+        memory.remember("offsite snapshot keeps production memory", namespace="tenant:ops")
+        report = ReplicatedSnapshotWorker(memory).run_once(
+            destination=tmp_path / "snapshots",
+            offsite_destination=tmp_path / "offsite",
+            keep_last=2,
+        )
+
+        restored, restore_report = ReplicatedWaveMind.restore_snapshot(
+            report.offsite_path,
+            tmp_path / "restored",
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+
+        assert report.ok
+        assert report.offsite_path is not None
+        assert report.offsite_path.exists()
+        assert report.offsite_verified is True
+        assert len(restore_report.restored_files) == 3
+        assert restored.query("production memory", namespace="tenant:ops", top_k=1)[0].text == (
+            "offsite snapshot keeps production memory"
+        )
+    finally:
+        memory.close()
+        if restored is not None:
+            restored.close()
+
+
+def test_replicated_snapshot_worker_prunes_local_and_offsite_retention(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        worker = ReplicatedSnapshotWorker(memory)
+        reports = []
+        for index in range(3):
+            memory.remember(f"retention memory {index}", namespace="tenant:ops")
+            reports.append(
+                worker.run_once(
+                    destination=tmp_path / "snapshots",
+                    offsite_destination=tmp_path / "offsite",
+                    keep_last=2,
+                    prefix="ops",
+                )
+            )
+
+        local_snapshots = sorted((tmp_path / "snapshots").glob("ops-*"))
+        offsite_snapshots = sorted((tmp_path / "offsite").glob("ops-*"))
+
+        assert len(local_snapshots) == 2
+        assert len(offsite_snapshots) == 2
+        assert reports[-1].pruned_local
+        assert reports[-1].pruned_offsite
+        assert all((path / "manifest.json").exists() for path in local_snapshots)
+        assert all((path / "manifest.json").exists() for path in offsite_snapshots)
     finally:
         memory.close()

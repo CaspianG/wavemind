@@ -619,6 +619,19 @@ class ReplicatedWaveMind:
         )
 
     @staticmethod
+    def prune_snapshots(
+        directory: str | Path,
+        *,
+        prefix: str = "wavemind-replicated",
+        keep_last: int = 10,
+    ) -> list[Path]:
+        return ReplicatedWaveMind._prune_snapshots(
+            Path(directory),
+            prefix=prefix,
+            keep_last=keep_last,
+        )
+
+    @staticmethod
     def verify_snapshot(snapshot_path: str | Path) -> dict[str, Any]:
         snapshot_path = Path(snapshot_path)
         manifest = ReplicatedWaveMind._read_snapshot_manifest(snapshot_path)

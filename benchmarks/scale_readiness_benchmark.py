@@ -19,6 +19,7 @@ from wavemind import (
     HotMemoryCache,
     QueryResult,
     ReplicatedWaveMind,
+    ReplicatedSnapshotWorker,
     WaveMind,
     audio_payload,
     build_cluster_plan,
@@ -335,13 +336,17 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                 namespace=namespace,
             )
             snapshot_started = time.perf_counter()
-            snapshot = memory.snapshot(root / "snapshots")
+            snapshot_job = ReplicatedSnapshotWorker(memory).run_once(
+                destination=root / "snapshots",
+                offsite_destination=root / "offsite",
+                keep_last=2,
+            )
             snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
-            health = ReplicatedWaveMind.verify_snapshot(snapshot.snapshot_path)
+            health = ReplicatedWaveMind.verify_snapshot(snapshot_job.snapshot_path)
 
             restore_started = time.perf_counter()
             restored, restore = ReplicatedWaveMind.restore_snapshot(
-                snapshot.snapshot_path,
+                snapshot_job.offsite_path,
                 root / "restored",
                 width=16,
                 height=16,
@@ -356,9 +361,10 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             )
             return {
                 "engine": "WaveMind replicated snapshot",
-                "nodes": len(snapshot.nodes),
+                "nodes": len(snapshot_job.nodes),
                 "manifest_healthy": health["healthy"],
-                "total_bytes": snapshot.total_bytes,
+                "offsite_verified": snapshot_job.offsite_verified,
+                "total_bytes": snapshot_job.total_bytes,
                 "snapshot_ms": snapshot_ms,
                 "restore_ms": restore_ms,
                 "restored_files": len(restore.restored_files),
@@ -519,6 +525,7 @@ def main() -> int:
             print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")
         elif result["engine"] == "WaveMind replicated snapshot":
             print(f"| replicated snapshot | manifest_healthy | {result['manifest_healthy']} |")
+            print(f"| replicated snapshot | offsite_verified | {result['offsite_verified']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")

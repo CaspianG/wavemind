@@ -12,7 +12,8 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
-from .jobs import MemoryMaintenanceWorker
+from .jobs import MemoryMaintenanceWorker, ReplicatedSnapshotWorker
+from .replication import ReplicatedWaveMind
 from .storage import SQLiteMemoryStore
 
 
@@ -162,6 +163,31 @@ def build_parser() -> argparse.ArgumentParser:
     restore.add_argument("--to", dest="destination")
     restore.add_argument("--overwrite", action="store_true")
 
+    replicated_snapshot = sub.add_parser(
+        "replicated-snapshot",
+        help="Snapshot a ReplicatedWaveMind root with optional offsite mirror",
+    )
+    replicated_snapshot.add_argument("--root", required=True)
+    replicated_snapshot.add_argument("--node", action="append", required=True)
+    replicated_snapshot.add_argument("--replication-factor", type=int, default=3)
+    replicated_snapshot.add_argument("--write-quorum", type=int)
+    replicated_snapshot.add_argument("--read-quorum", type=int, default=1)
+    replicated_snapshot.add_argument("--out", required=True)
+    replicated_snapshot.add_argument("--offsite")
+    replicated_snapshot.add_argument("--keep-last", type=int)
+    replicated_snapshot.add_argument("--prefix", default="wavemind-replicated")
+    replicated_snapshot.add_argument("--allow-partial", action="store_true")
+    replicated_snapshot.add_argument("--json", action="store_true")
+
+    replicated_restore = sub.add_parser(
+        "replicated-restore",
+        help="Restore a ReplicatedWaveMind snapshot into a replica root",
+    )
+    replicated_restore.add_argument("--from", dest="source", required=True)
+    replicated_restore.add_argument("--to", dest="destination", required=True)
+    replicated_restore.add_argument("--overwrite", action="store_true")
+    replicated_restore.add_argument("--json", action="store_true")
+
     bench = sub.add_parser("benchmark", help="Run a synthetic recall benchmark")
     bench.add_argument("--namespace", default="bench")
     bench.add_argument("--top-k", type=int, default=1)
@@ -186,6 +212,26 @@ def make_mind(args) -> WaveMind:
         db_path=db_path,
         store_kind=args.store,
         postgres_dsn=args.postgres_dsn,
+        width=args.width,
+        height=args.height,
+        layers=args.layers,
+        encoder=encoder,
+        index_kind=args.index,
+        score_threshold=args.score_threshold,
+        graph_weight=args.graph_weight,
+        graph_steps=args.graph_steps,
+        graph_expand_k=args.graph_expand_k,
+    )
+
+
+def make_replicated_mind(args) -> ReplicatedWaveMind:
+    encoder = create_text_encoder(kind=args.encoder, vector_dim=384, model_name=args.model)
+    return ReplicatedWaveMind(
+        root_path=args.root,
+        nodes=[_parse_cluster_node(value) for value in args.node],
+        replication_factor=args.replication_factor,
+        write_quorum=args.write_quorum,
+        read_quorum=args.read_quorum,
         width=args.width,
         height=args.height,
         layers=args.layers,
@@ -341,6 +387,46 @@ def main(argv: list[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(f"restored: {path}")
+        return 0
+
+    if args.command == "replicated-snapshot":
+        memory = make_replicated_mind(args)
+        try:
+            report = ReplicatedSnapshotWorker(memory).run_once(
+                destination=args.out,
+                prefix=args.prefix,
+                keep_last=args.keep_last,
+                require_all=not args.allow_partial,
+                offsite_destination=args.offsite,
+            )
+        finally:
+            memory.close()
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"snapshot: {payload['snapshot_path']}")
+            print(f"verified: {payload['verified']}")
+            if payload["offsite_path"]:
+                print(f"offsite: {payload['offsite_path']}")
+                print(f"offsite_verified: {payload['offsite_verified']}")
+        return 0 if report.ok else 4
+
+    if args.command == "replicated-restore":
+        restored, report = ReplicatedWaveMind.restore_snapshot(
+            args.source,
+            args.destination,
+            overwrite=args.overwrite,
+        )
+        try:
+            payload = report.as_dict()
+        finally:
+            restored.close()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"restored: {payload['root_path']}")
+            print(f"nodes: {len(payload['nodes'])}")
         return 0
 
     if args.command == "scale-plan":

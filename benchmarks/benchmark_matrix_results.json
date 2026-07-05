@@ -764,14 +764,14 @@
           "zone_loss_min_availability": 1.0,
           "read_quorum": 1,
           "write_quorum": 2,
-          "placement_ms": 59.205800003837794
+          "placement_ms": 77.1686999942176
         },
         "WaveMind hot cache": {
           "queries": 2000,
           "capacity": 512,
           "hit_rate": 0.92,
           "evictions": 0,
-          "p99_lookup_ms": 0.002700020559132099
+          "p99_lookup_ms": 0.0030999653972685337
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -781,7 +781,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 1.2885000323876739
+          "p99_query_after_loss_ms": 1.35420000879094
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -790,25 +790,26 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 112.49550001230091
+          "sync_ms": 103.42070000478998
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
           "manifest_healthy": true,
+          "offsite_verified": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 49.16400002548471,
-          "restore_ms": 11.4187000435777
+          "snapshot_ms": 69.7173000080511,
+          "restore_ms": 7.101800001692027
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.44750000233761966,
-          "p99_latency_ms": 0.6680000224150717
+          "avg_latency_ms": 0.40072499541565776,
+          "p99_latency_ms": 0.5899000097997487
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, restore drills, hot-cache behavior, and structured payload recall.",
-      "next_step": "Move from local replicated runtime to service-backed replicated runs, scheduled/offsite snapshots, and larger 10M candidate-index load tests."
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite-verified restore drills, hot-cache behavior, and structured payload recall.",
+      "next_step": "Move from local replicated runtime to service-backed replicated runs, object-store snapshot adapters, and larger 10M candidate-index load tests."
     },
     {
       "id": "memory_competitor_adapter_profile",

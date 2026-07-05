@@ -765,6 +765,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     (
                         "nodes",
                         "manifest_healthy",
+                        "offsite_verified",
                         "restored_files",
                         "recalled_after_restore_node_loss",
                         "snapshot_ms",
@@ -781,8 +782,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, restore drills, hot-cache behavior, and structured payload recall.",
-            "next_step": "Move from local replicated runtime to service-backed replicated runs, scheduled/offsite snapshots, and larger 10M candidate-index load tests.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite-verified restore drills, hot-cache behavior, and structured payload recall.",
+            "next_step": "Move from local replicated runtime to service-backed replicated runs, object-store snapshot adapters, and larger 10M candidate-index load tests.",
         },
         {
             "id": "memory_competitor_adapter_profile",

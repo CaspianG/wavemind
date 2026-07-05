@@ -9,7 +9,14 @@ from .encoders import (
 )
 from .field_graph import MemoryFieldGraph
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
-from .jobs import HotMemoryCache, MemoryMaintenanceWorker, RedisHotMemoryCache, query_with_cache
+from .jobs import (
+    HotMemoryCache,
+    MemoryMaintenanceWorker,
+    RedisHotMemoryCache,
+    ReplicatedSnapshotJobReport,
+    ReplicatedSnapshotWorker,
+    query_with_cache,
+)
 from .multimodal import (
     MemoryPayload,
     audio_payload,
@@ -39,7 +46,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.7"
+__version__ = "2.2.8"
 
 __all__ = [
     "FieldProjector",
@@ -62,6 +69,8 @@ __all__ = [
     "ReplicatedRepairReport",
     "ReplicatedRestoreReport",
     "ReplicatedSnapshotReport",
+    "ReplicatedSnapshotJobReport",
+    "ReplicatedSnapshotWorker",
     "ReplicatedWaveMind",
     "ReplicatedWriteResult",
     "ReplicationError",

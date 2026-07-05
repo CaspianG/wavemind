@@ -3,11 +3,14 @@ from __future__ import annotations
 import time
 import json
 import hashlib
+import shutil
 from collections import OrderedDict
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any, Iterable
 
 from .core import QueryResult
+from .replication import ReplicatedWaveMind
 
 
 @dataclass(frozen=True)
@@ -329,6 +332,103 @@ class MaintenanceReport:
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ReplicatedSnapshotJobReport:
+    snapshot_path: Path
+    verified: bool
+    total_bytes: int
+    nodes: tuple[str, ...]
+    offsite_path: Path | None = None
+    offsite_verified: bool = False
+    pruned_local: tuple[Path, ...] = ()
+    pruned_offsite: tuple[Path, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return self.verified and (self.offsite_path is None or self.offsite_verified)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "snapshot_path": str(self.snapshot_path),
+            "verified": self.verified,
+            "total_bytes": self.total_bytes,
+            "nodes": list(self.nodes),
+            "offsite_path": str(self.offsite_path) if self.offsite_path else None,
+            "offsite_verified": self.offsite_verified,
+            "pruned_local": [str(path) for path in self.pruned_local],
+            "pruned_offsite": [str(path) for path in self.pruned_offsite],
+            "ok": self.ok,
+        }
+
+
+class ReplicatedSnapshotWorker:
+    """One-shot replicated snapshot job for schedulers and CronJobs."""
+
+    def __init__(self, memory: ReplicatedWaveMind):
+        self.memory = memory
+
+    def run_once(
+        self,
+        *,
+        destination: str | Path,
+        prefix: str = "wavemind-replicated",
+        keep_last: int | None = None,
+        require_all: bool = True,
+        offsite_destination: str | Path | None = None,
+    ) -> ReplicatedSnapshotJobReport:
+        local_destination = Path(destination)
+        snapshot = self.memory.snapshot(
+            local_destination,
+            prefix=prefix,
+            keep_last=None,
+            require_all=require_all,
+        )
+        health = ReplicatedWaveMind.verify_snapshot(snapshot.snapshot_path)
+        verified = bool(health["healthy"])
+        offsite_path: Path | None = None
+        offsite_verified = False
+        if offsite_destination is not None:
+            offsite_root = Path(offsite_destination)
+            offsite_root.mkdir(parents=True, exist_ok=True)
+            offsite_path = offsite_root / snapshot.snapshot_path.name
+            if offsite_path.exists():
+                shutil.rmtree(offsite_path)
+            shutil.copytree(snapshot.snapshot_path, offsite_path)
+            offsite_verified = bool(
+                ReplicatedWaveMind.verify_snapshot(offsite_path)["healthy"]
+            )
+
+        pruned_local: tuple[Path, ...] = ()
+        pruned_offsite: tuple[Path, ...] = ()
+        if keep_last is not None:
+            pruned_local = tuple(
+                ReplicatedWaveMind.prune_snapshots(
+                    local_destination,
+                    prefix=prefix,
+                    keep_last=keep_last,
+                )
+            )
+            if offsite_destination is not None:
+                pruned_offsite = tuple(
+                    ReplicatedWaveMind.prune_snapshots(
+                        offsite_destination,
+                        prefix=prefix,
+                        keep_last=keep_last,
+                    )
+                )
+
+        return ReplicatedSnapshotJobReport(
+            snapshot_path=snapshot.snapshot_path,
+            verified=verified,
+            total_bytes=snapshot.total_bytes,
+            nodes=snapshot.nodes,
+            offsite_path=offsite_path,
+            offsite_verified=offsite_verified,
+            pruned_local=pruned_local,
+            pruned_offsite=pruned_offsite,
+        )
 
 
 class MemoryMaintenanceWorker:

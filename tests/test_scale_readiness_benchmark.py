@@ -26,6 +26,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind active-active delta sync"]["tombstone_converged"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_deleted_records"] == 3
     assert results["WaveMind replicated snapshot"]["manifest_healthy"] is True
+    assert results["WaveMind replicated snapshot"]["offsite_verified"] is True
     assert results["WaveMind replicated snapshot"]["restored_files"] == 3
     assert results["WaveMind replicated snapshot"]["recalled_after_restore_node_loss"] is True
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
