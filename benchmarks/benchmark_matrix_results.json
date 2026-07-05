@@ -555,7 +555,10 @@
           "p95_latency_ms": 7.37469999876339,
           "build_ms": 4090.066400000069
         },
-        "WaveMind faiss": {},
+        "WaveMind faiss": {
+          "skipped": true,
+          "reason": "Install faiss-cpu to use FaissVectorIndex"
+        },
         "Qdrant local": {
           "recall_at_k": 1.0,
           "avg_latency_ms": 43.48527499991178,
@@ -604,7 +607,73 @@
         }
       },
       "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
-      "next_step": "Add 100000 and 1000000-vector profiles, plus persistence/rebuild validation after process restart."
+      "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency."
+    },
+    {
+      "id": "production_load_profile_100k",
+      "name": "Production load profile 100k",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_benchmark.py",
+      "dataset": "100000 generated normalized 128-d vectors; recall@10 measured against exact cosine neighbors.",
+      "competitors": [
+        "Qdrant service",
+        "pgvector HNSW",
+        "FAISS persisted"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "Qdrant service": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 10.75583399971947,
+          "p95_latency_ms": 18.775899952743202,
+          "build_ms": 39873.22780000977
+        },
+        "WaveMind pgvector": {
+          "recall_at_k": 0.736,
+          "avg_latency_ms": 17.76006000000052,
+          "p95_latency_ms": 23.47620000364259,
+          "build_ms": 455703.69949995074
+        },
+        "WaveMind faiss-persisted": {
+          "skipped": true,
+          "reason": "Set WAVEMIND_FAISS_PATH to use the persisted FAISS backend"
+        }
+      },
+      "target": "Reach recall@10 >= 0.95 and avg latency < 20 ms on at least one production service backend at 100000 memories.",
+      "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container."
+    },
+    {
+      "id": "production_load_profile_1m",
+      "name": "Production load profile 1M",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_load_qdrant_1m_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with 50 queries.",
+      "competitors": [
+        "Qdrant service"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "Qdrant service": {
+          "recall_at_k": 0.506,
+          "avg_latency_ms": 45.80613199970685,
+          "p95_latency_ms": 65.17819996224716,
+          "build_ms": 563945.4993000254
+        }
+      },
+      "target": "Tune service settings until recall@10 >= 0.95 with p95 latency below 100 ms at 1M vectors.",
+      "next_step": "Run Qdrant with tuned HNSW/search params, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk."
     },
     {
       "id": "scale_readiness",
@@ -649,7 +718,52 @@
         }
       },
       "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",
-      "next_step": "Add real distributed load tests against Mem0, Zep, LangGraph persistent memory, and GraphRAG adapters on production-like hardware."
+      "next_step": "Move from single-node service profiles to namespace sharding and replicated service runs."
+    },
+    {
+      "id": "memory_competitor_adapter_profile",
+      "name": "Memory competitor adapter profile",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/memory_competitor_benchmark.py",
+      "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+      "competitors": [
+        "Mem0",
+        "Zep",
+        "LangGraph persistent memory"
+      ],
+      "metrics": [
+        "precision@1",
+        "precision@3",
+        "stale_suppression",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "precision_at_1": 0.8,
+          "precision_at_3": 1.0,
+          "stale_suppression": 1.0,
+          "avg_latency_ms": 0.55384998753046,
+          "p95_latency_ms": 0.8311999845318496
+        },
+        "Mem0": {
+          "engine": "Mem0",
+          "skipped": true,
+          "reason": "Install Mem0 to run this adapter profile: pip install \"mem0ai\""
+        },
+        "Zep": {
+          "engine": "Zep",
+          "skipped": true,
+          "reason": "Install the Zep client package and set ZEP_API_KEY or ZEP_API_URL."
+        },
+        "LangGraph persistent memory": {
+          "engine": "LangGraph persistent memory",
+          "skipped": true,
+          "reason": "Install LangGraph to run this adapter profile: pip install \"langgraph\""
+        }
+      },
+      "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
+      "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run."
     },
     {
       "id": "longmemeval_answer_generation",

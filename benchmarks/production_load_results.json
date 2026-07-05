@@ -1,0 +1,79 @@
+{
+  "scenario": {
+    "name": "production_load_profile",
+    "description": "Service-backed large-N candidate-index load profile. The intended production path is SQLite/Postgres as source of truth plus persisted FAISS, Qdrant service, or pgvector HNSW for candidate generation. Skipped engines are reported explicitly when optional services or dependencies are not configured.",
+    "sizes": [
+      100000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "load_sizes": [
+      100000
+    ],
+    "default_target_sizes": [
+      100000,
+      1000000
+    ]
+  },
+  "results": [
+    {
+      "vectors": 100000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 10.75583399971947,
+          "p95_latency_ms": 18.775899952743202,
+          "build_ms": 39873.22780000977,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind pgvector",
+          "recall_at_k": 0.736,
+          "avg_latency_ms": 17.76006000000052,
+          "p95_latency_ms": 23.47620000364259,
+          "build_ms": 455703.69949995074,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind faiss-persisted",
+          "skipped": true,
+          "reason": "Set WAVEMIND_FAISS_PATH to use the persisted FAISS backend"
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": false,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": true,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+      "WAVEMIND_PGVECTOR_EF_SEARCH": "400"
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 4.45,
+      "total_gb": 231.85
+    }
+  }
+}

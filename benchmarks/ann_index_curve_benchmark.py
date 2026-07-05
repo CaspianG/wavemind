@@ -124,12 +124,14 @@ def run_qdrant(
             collection_name=collection_name,
             vectors_config=VectorParams(size=int(vectors.shape[1]), distance=Distance.COSINE),
         )
-        points = [
-            PointStruct(id=index + 1, vector=vector.tolist())
-            for index, vector in enumerate(vectors)
-        ]
-        for offset in range(0, len(points), 1000):
-            client.upsert(collection_name=collection_name, points=points[offset : offset + 1000])
+        batch = []
+        for index, vector in enumerate(vectors):
+            batch.append(PointStruct(id=index + 1, vector=vector.tolist()))
+            if len(batch) >= 1000:
+                client.upsert(collection_name=collection_name, points=batch)
+                batch.clear()
+        if batch:
+            client.upsert(collection_name=collection_name, points=batch)
         build_ms = (time.perf_counter() - started) * 1000.0
         ids: list[list[int]] = []
         latencies: list[float] = []

@@ -1,0 +1,41 @@
+{
+  "scenario": {
+    "name": "memory_competitor_adapter_profile",
+    "description": "Small dynamic-memory adapter profile for comparing WaveMind against Mem0, Zep, and LangGraph persistent memory when those optional stacks are installed and explicitly configured. Missing competitors are reported as skipped instead of being approximated.",
+    "facts": 9,
+    "checks": 6,
+    "top_k": 3,
+    "behaviors": [
+      "correction",
+      "ttl",
+      "namespace",
+      "preference"
+    ]
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "precision_at_1": 0.8,
+      "precision_at_3": 1.0,
+      "stale_suppression": 1.0,
+      "avg_latency_ms": 0.55384998753046,
+      "p95_latency_ms": 0.8311999845318496,
+      "checks": 6
+    },
+    {
+      "engine": "Mem0",
+      "skipped": true,
+      "reason": "Install Mem0 to run this adapter profile: pip install \"mem0ai\""
+    },
+    {
+      "engine": "Zep",
+      "skipped": true,
+      "reason": "Install the Zep client package and set ZEP_API_KEY or ZEP_API_URL."
+    },
+    {
+      "engine": "LangGraph persistent memory",
+      "skipped": true,
+      "reason": "Install LangGraph to run this adapter profile: pip install \"langgraph\""
+    }
+  ]
+}

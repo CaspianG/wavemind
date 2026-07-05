@@ -1,0 +1,66 @@
+{
+  "scenario": {
+    "name": "production_load_profile",
+    "description": "Service-backed large-N candidate-index load profile. The intended production path is SQLite/Postgres as source of truth plus persisted FAISS, Qdrant service, or pgvector HNSW for candidate generation. Skipped engines are reported explicitly when optional services or dependencies are not configured.",
+    "sizes": [
+      1000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 50,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "load_sizes": [
+      1000000
+    ],
+    "default_target_sizes": [
+      100000,
+      1000000
+    ]
+  },
+  "results": [
+    {
+      "vectors": 1000000,
+      "vector_dim": 128,
+      "queries": 50,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 0.506,
+          "avg_latency_ms": 45.80613199970685,
+          "p95_latency_ms": 65.17819996224716,
+          "build_ms": 563945.4993000254,
+          "queries": 50
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": false,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 3.4,
+      "total_gb": 231.85
+    }
+  }
+}

@@ -709,24 +709,29 @@ class PgVectorIndex:
             f"DELETE FROM {self.table} WHERE collection = %s",
             (self.collection,),
         )
-        rows = [
-            (self.collection, int(record.id), _vector_literal(record.vector))
-            for record in records
-            if record.id is not None
-        ]
-        if not rows:
-            return
         with self.conn.cursor() as cur:
-            cur.executemany(
-                f"""
-                INSERT INTO {self.table} (
-                    collection, memory_id, embedding, updated_at
-                ) VALUES (%s, %s, %s::vector, now())
-                ON CONFLICT (collection, memory_id)
-                DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
-                """,
-                rows,
-            )
+            batch = []
+            for record in records:
+                if record.id is None:
+                    continue
+                batch.append((self.collection, int(record.id), _vector_literal(record.vector)))
+                if len(batch) >= 1000:
+                    self._insert_batch(cur, batch)
+                    batch.clear()
+            if batch:
+                self._insert_batch(cur, batch)
+
+    def _insert_batch(self, cur, rows: list[tuple[str, int, str]]) -> None:
+        cur.executemany(
+            f"""
+            INSERT INTO {self.table} (
+                collection, memory_id, embedding, updated_at
+            ) VALUES (%s, %s, %s::vector, now())
+            ON CONFLICT (collection, memory_id)
+            DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()
+            """,
+            rows,
+        )
 
     def search(
         self,
@@ -920,15 +925,21 @@ class QdrantVectorIndex:
 
     def build(self, records: Iterable) -> None:
         self._ensure_collection(recreate=True)
-        points = [
-            self._point(record.id, record.vector)
-            for record in records
-            if record.id is not None
-        ]
-        for offset in range(0, len(points), 1000):
+        points = []
+        for record in records:
+            if record.id is None:
+                continue
+            points.append(self._point(record.id, record.vector))
+            if len(points) >= 1000:
+                self.client.upsert(
+                    collection_name=self.collection,
+                    points=points,
+                )
+                points.clear()
+        if points:
             self.client.upsert(
                 collection_name=self.collection,
-                points=points[offset : offset + 1000],
+                points=points,
             )
 
     def _allowed_filter(self, allowed_ids: set[int] | None):

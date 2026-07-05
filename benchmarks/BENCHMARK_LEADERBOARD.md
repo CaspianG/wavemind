@@ -18,7 +18,10 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | [LongMemEval evidence 50-query smoke](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | evidence recall@k | WaveMind: 0.92 / 15.3 ms | Static vector: 0.6 / 0.337 ms | WaveMind leads on quality |
 | [ANN index latency curve](https://github.com/erikbern/ann-benchmarks) | index-latency | Recall@k | WaveMind numpy: 1 / 6.485 ms | Qdrant local: 1 / 43.5 ms | Quality tie; WaveMind faster |
 | Production index profile | index-latency | Recall@k | WaveMind faiss-persisted: 1 / 3.524 ms | Qdrant service: 1 / 4.414 ms | Quality tie; WaveMind faster |
+| Production load profile 100k | production-scale | Recall@k | WaveMind pgvector: 0.736 / 17.8 ms | Qdrant service: 1 / 10.8 ms | Baseline leads on quality |
+| Production load profile 1M | production-scale | Recall@k | - | Qdrant service: 0.506 / 45.8 ms | No WaveMind result |
 | Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.791 ms | - | WaveMind-only check |
+| Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.554 ms | - | WaveMind-only check |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 
 ## Reading Rules

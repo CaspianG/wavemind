@@ -64,6 +64,9 @@ def metric_line(current: dict[str, Any] | None) -> str:
                 f"{engine}: {rows} points, last p@1 {fmt(last.get('precision_at_1'))}, "
                 f"avg {fmt(last.get('avg_latency_ms'))} ms"
             )
+        elif metrics.get("skipped"):
+            reason = str(metrics.get("reason") or "not configured")
+            parts.append(f"{engine}: skipped - {reason}")
         else:
             metric_bits = [
                 f"{metric_label(key)} {fmt(value)}"

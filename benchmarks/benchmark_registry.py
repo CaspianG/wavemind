@@ -38,14 +38,22 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
     if not size_results:
         return {}
     latest = size_results[-1]
-    return {
-        str(result["engine"]): _metric_summary(
+    summaries: dict[str, dict[str, Any]] = {}
+    for result in latest.get("results", []):
+        if "engine" not in result:
+            continue
+        engine = str(result["engine"])
+        if result.get("skipped"):
+            summaries[engine] = {
+                "skipped": True,
+                "reason": result.get("reason", "not configured"),
+            }
+            continue
+        summaries[engine] = _metric_summary(
             result,
             ("recall_at_k", "avg_latency_ms", "p95_latency_ms", "build_ms"),
-        )
-        for result in latest.get("results", [])
-        if "engine" in result
-    }
+        ) or {}
+    return summaries
 
 
 def _answer_result_summaries(
@@ -94,7 +102,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
+    production_load_payload = _load_json(root / "benchmarks" / "production_load_results.json")
+    production_load_1m_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
+    memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
 
     agent_results = _engine_results(agent_payload)
@@ -108,7 +119,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
     production_index_results = _ann_latest_results(production_index_payload)
+    production_load_results = _ann_latest_results(production_load_payload)
+    production_load_1m_results = _ann_latest_results(production_load_1m_payload)
     scale_readiness_results = _engine_results(scale_readiness_payload)
+    memory_competitor_results = _engine_results(memory_competitor_payload)
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
@@ -614,7 +628,33 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
             "current": production_index_results,
             "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
-            "next_step": "Add 100000 and 1000000-vector profiles, plus persistence/rebuild validation after process restart.",
+            "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency.",
+        },
+        {
+            "id": "production_load_profile_100k",
+            "name": "Production load profile 100k",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_benchmark.py",
+            "dataset": "100000 generated normalized 128-d vectors; recall@10 measured against exact cosine neighbors.",
+            "competitors": ["Qdrant service", "pgvector HNSW", "FAISS persisted"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
+            "current": production_load_results,
+            "target": "Reach recall@10 >= 0.95 and avg latency < 20 ms on at least one production service backend at 100000 memories.",
+            "next_step": "Tune pgvector HNSW build/search parameters and add persisted FAISS from the Linux benchmark container.",
+        },
+        {
+            "id": "production_load_profile_1m",
+            "name": "Production load profile 1M",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_load_qdrant_1m_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with 50 queries.",
+            "competitors": ["Qdrant service"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "build_ms"],
+            "current": production_load_1m_results,
+            "target": "Tune service settings until recall@10 >= 0.95 with p95 latency below 100 ms at 1M vectors.",
+            "next_step": "Run Qdrant with tuned HNSW/search params, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk.",
         },
         {
             "id": "scale_readiness",
@@ -663,7 +703,28 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, hot-cache behavior, and structured payload recall.",
-            "next_step": "Add real distributed load tests against Mem0, Zep, LangGraph persistent memory, and GraphRAG adapters on production-like hardware.",
+            "next_step": "Move from single-node service profiles to namespace sharding and replicated service runs.",
+        },
+        {
+            "id": "memory_competitor_adapter_profile",
+            "name": "Memory competitor adapter profile",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/memory_competitor_benchmark.py",
+            "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+            "competitors": ["Mem0", "Zep", "LangGraph persistent memory"],
+            "metrics": ["precision@1", "precision@3", "stale_suppression", "avg_latency_ms"],
+            "current": {
+                "WaveMind": _metric_summary(
+                    memory_competitor_results.get("WaveMind"),
+                    ("precision_at_1", "precision_at_3", "stale_suppression", "avg_latency_ms", "p95_latency_ms"),
+                ),
+                "Mem0": memory_competitor_results.get("Mem0"),
+                "Zep": memory_competitor_results.get("Zep"),
+                "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
+            },
+            "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
+            "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run.",
         },
         {
             "id": "longmemeval_answer_generation",

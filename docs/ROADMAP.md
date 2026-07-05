@@ -27,6 +27,10 @@ policy matters more than raw vector-database scale:
   deployments where startup rebuild time matters.
 - A Docker-backed production index profile now compares persisted FAISS,
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
+- A service-backed production load profile now includes 100000-vector Qdrant
+  and pgvector runs plus a 1M-vector Qdrant-only run. Qdrant is strong at 100k,
+  but the first 1M run drops to `recall@10 0.506`, so large-N tuning remains an
+  active blocker.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
   recall but still misses the production recall target.
@@ -91,12 +95,13 @@ Priorities:
 - Keep pgvector as an optional candidate-index backend and harden the separate
   Postgres source-of-truth backend for multi-tenant storage.
 - Support external vector services such as Qdrant for larger deployments.
-  The first service-mode Qdrant benchmark is checked in; the remaining work is
-  rebuild strategy, operational health checks, and larger-service latency
-  curves.
+  The 100k service-mode Qdrant benchmark is checked in and healthy; the 1M
+  service-mode run is checked in but not production-grade yet because default
+  recall is too low.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
   first persisted FAISS snapshot path and production profile are implemented;
-  production still needs larger profiles and deeper latency traces.
+  production still needs Linux/container FAISS at 100k/1M and deeper latency
+  traces.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
