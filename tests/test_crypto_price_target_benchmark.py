@@ -8,6 +8,8 @@ from pathlib import Path
 
 from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
 from benchmarks.crypto_price_target_benchmark import (
+    _robust_1h_target_value,
+    _robust_1d_target_value,
     load_markets,
     render_markdown,
     run_price_target_benchmark,
@@ -134,6 +136,44 @@ def test_learned_price_target_alias_runs_with_safe_fallback():
     assert result_by_engine["WaveMind robust target"]["queries"] == 8
     assert result_by_engine["WaveMind learned target"]["mean_abs_return_error_bps"] >= 0.0
     assert payload["by_market"][0]["target_model"]["note"]
+
+
+def test_robust_1d_target_reduces_magnitude_in_high_risk_windows():
+    calm = _robust_1d_target_value(
+        calibrated_wave=300.0,
+        momentum=180.0,
+        regime=220.0,
+        features={"volatility_bps": 20.0, "trend_slope_bps": 5.0},
+    )
+    volatile = _robust_1d_target_value(
+        calibrated_wave=300.0,
+        momentum=180.0,
+        regime=220.0,
+        features={"volatility_bps": 450.0, "trend_slope_bps": 180.0},
+    )
+
+    assert calm > 0.0
+    assert volatile > 0.0
+    assert abs(volatile) < abs(calm)
+
+
+def test_robust_1h_target_uses_combo_sign_only_on_rsi_extremes():
+    calm = _robust_1h_target_value(
+        calibrated_wave=200.0,
+        momentum=-80.0,
+        naive=120.0,
+        features={"rsi": 50.0},
+    )
+    extreme = _robust_1h_target_value(
+        calibrated_wave=200.0,
+        momentum=-80.0,
+        naive=120.0,
+        features={"rsi": 72.0},
+    )
+
+    assert calm < 0.0
+    assert extreme > 0.0
+    assert abs(calm) == abs(extreme)
 
 
 def test_price_target_markdown_and_cli(tmp_path):

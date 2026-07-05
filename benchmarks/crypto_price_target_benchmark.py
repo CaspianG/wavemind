@@ -399,15 +399,24 @@ def _robust_target_return(
     naive = _force_nonzero(last_outcome, fallback=1.0)
 
     if query.timeframe == "1h":
-        short_horizon_magnitude = abs(0.40 * calibrated_wave + 0.40 * momentum + 0.20 * naive)
-        value = math.copysign(short_horizon_magnitude, momentum)
-        method = f"{forecast.method}+robust_1h_momentum_guard"
+        value = _robust_1h_target_value(
+            calibrated_wave=calibrated_wave,
+            momentum=momentum,
+            naive=naive,
+            features=query.features,
+        )
+        method = f"{forecast.method}+robust_1h_rsi_extreme_guard"
     elif query.timeframe == "4h":
         value = 0.35 * raw_wave + 0.45 * historical + 0.20 * calibrated_wave
         method = f"{forecast.method}+robust_4h_error_guard"
     elif query.timeframe == "1d":
-        value = 0.40 * calibrated_wave + 0.25 * momentum + 0.35 * regime
-        method = f"{forecast.method}+robust_1d_regime_guard"
+        value = _robust_1d_target_value(
+            calibrated_wave=calibrated_wave,
+            momentum=momentum,
+            regime=regime,
+            features=query.features,
+        )
+        method = f"{forecast.method}+robust_1d_volatility_guard"
     else:
         value = calibrated_wave
         method = f"{forecast.method}+robust_calibration"
@@ -626,13 +635,62 @@ def _robust_value_from_features(features: dict[str, float], timeframe: str) -> t
     historical = float(features.get("historical", calibrated_wave))
     naive = float(features.get("naive", momentum))
     if timeframe == "1h":
-        short_horizon_magnitude = abs(0.40 * calibrated_wave + 0.40 * momentum + 0.20 * naive)
-        return _force_nonzero(math.copysign(short_horizon_magnitude, momentum), fallback=calibrated_wave), "robust_1h_momentum_guard"
+        value = _robust_1h_target_value(
+            calibrated_wave=calibrated_wave,
+            momentum=momentum,
+            naive=naive,
+            features=features,
+        )
+        return _force_nonzero(value, fallback=calibrated_wave), "robust_1h_rsi_extreme_guard"
     if timeframe == "4h":
         return _force_nonzero(0.35 * raw_wave + 0.45 * historical + 0.20 * calibrated_wave, fallback=calibrated_wave), "robust_4h_error_guard"
     if timeframe == "1d":
-        return _force_nonzero(0.40 * calibrated_wave + 0.25 * momentum + 0.35 * regime, fallback=calibrated_wave), "robust_1d_regime_guard"
+        value = _robust_1d_target_value(
+            calibrated_wave=calibrated_wave,
+            momentum=momentum,
+            regime=regime,
+            features=features,
+        )
+        return _force_nonzero(value, fallback=calibrated_wave), "robust_1d_volatility_guard"
     return _force_nonzero(calibrated_wave, fallback=raw_wave), "robust_calibration"
+
+
+def _robust_1h_target_value(
+    *,
+    calibrated_wave: float,
+    momentum: float,
+    naive: float,
+    features: dict[str, object],
+) -> float:
+    weighted = 0.40 * float(calibrated_wave) + 0.40 * float(momentum) + 0.20 * float(naive)
+    sign_source = weighted if _is_rsi_extreme(features) else float(momentum)
+    return math.copysign(abs(weighted), sign_source)
+
+
+def _is_rsi_extreme(features: dict[str, object]) -> bool:
+    rsi = _float_feature(features, "rsi", 50.0)
+    return rsi < 35.0 or rsi > 65.0
+
+
+def _robust_1d_target_value(
+    *,
+    calibrated_wave: float,
+    momentum: float,
+    regime: float,
+    features: dict[str, object],
+) -> float:
+    base = 0.40 * float(calibrated_wave) + 0.25 * float(momentum) + 0.35 * float(regime)
+    volatility_bps = abs(_float_feature(features, "volatility_bps"))
+    trend_bps = abs(_float_feature(features, "trend_slope_bps"))
+    risk_scale = 1.0 / (1.0 + 1.50 * volatility_bps / 500.0 + trend_bps / 500.0)
+    return math.copysign(abs(base) * risk_scale, base)
+
+
+def _float_feature(features: dict[str, object], name: str, default: float = 0.0) -> float:
+    try:
+        return float(features.get(name, default))
+    except (TypeError, ValueError):
+        return float(default)
 
 
 def _target_model_features(
