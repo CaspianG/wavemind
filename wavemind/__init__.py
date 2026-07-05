@@ -20,6 +20,7 @@ from .multimodal import (
 )
 from .replication import (
     ReadQuorumError,
+    ReplicatedDeltaImportReport,
     ReplicatedRepairReport,
     ReplicatedWaveMind,
     ReplicatedWriteResult,
@@ -36,7 +37,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.2.5"
+__version__ = "2.2.6"
 
 __all__ = [
     "FieldProjector",
@@ -55,6 +56,7 @@ __all__ = [
     "QueryResult",
     "ReadQuorumError",
     "RedisHotMemoryCache",
+    "ReplicatedDeltaImportReport",
     "ReplicatedRepairReport",
     "ReplicatedWaveMind",
     "ReplicatedWriteResult",

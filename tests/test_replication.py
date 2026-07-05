@@ -24,6 +24,22 @@ def _cluster(tmp_path, **kwargs):
     )
 
 
+def _region(tmp_path, name: str, **kwargs):
+    return ReplicatedWaveMind(
+        root_path=tmp_path / name,
+        nodes=[
+            {"id": f"{name}-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+            {"id": f"{name}-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+            {"id": f"{name}-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+        ],
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        **kwargs,
+    )
+
+
 def test_replicated_wavemind_writes_to_all_replicas_and_reads_after_node_loss(tmp_path):
     memory = _cluster(tmp_path, replication_factor=3)
     try:
@@ -187,6 +203,78 @@ def test_replicated_wavemind_stores_stable_replica_metadata(tmp_path):
         assert len(operation_ids) == 1
     finally:
         memory.close()
+
+
+def test_replicated_wavemind_namespace_delta_converges_two_regions(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:active-active"
+        region_a.remember("region a remembers billing preference", namespace=namespace)
+        region_b.remember("region b remembers support preference", namespace=namespace)
+
+        report_b = region_b.import_namespace_delta(region_a.export_namespace_delta(namespace))
+        report_a = region_a.import_namespace_delta(region_b.export_namespace_delta(namespace))
+
+        assert report_b.imported_records == 3
+        assert report_a.imported_records == 3
+        assert region_a.query("support preference", namespace=namespace, top_k=1)[0].text == (
+            "region b remembers support preference"
+        )
+        assert region_b.query("billing preference", namespace=namespace, top_k=1)[0].text == (
+            "region a remembers billing preference"
+        )
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_replicated_wavemind_delta_import_is_idempotent(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:idempotent"
+        region_a.remember("idempotent active active memory", namespace=namespace)
+        delta = region_a.export_namespace_delta(namespace)
+
+        first = region_b.import_namespace_delta(delta)
+        second = region_b.import_namespace_delta(delta)
+        placement = region_b.placement(namespace)
+
+        assert first.imported_records == 3
+        assert second.imported_records == 0
+        assert second.skipped_records == 3
+        for node_id in placement.replicas:
+            records = region_b._mind(node_id).store.list(namespace=namespace)
+            assert [record.text for record in records] == ["idempotent active active memory"]
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_replicated_wavemind_tombstone_delta_beats_stale_record_delta(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:tombstone-delta"
+        region_a.remember("delete wins over stale region export", namespace=namespace)
+        region_b.import_namespace_delta(region_a.export_namespace_delta(namespace))
+        stale_delta = region_b.export_namespace_delta(namespace)
+
+        region_a.forget(text="delete wins over stale region export", namespace=namespace)
+        region_a.import_namespace_delta(stale_delta)
+
+        assert region_a.query("stale region export", namespace=namespace, top_k=1) == []
+
+        tombstone_delta = region_a.export_namespace_delta(namespace)
+        report = region_b.import_namespace_delta(tombstone_delta)
+
+        assert report.deleted_records == 3
+        assert report.imported_tombstones == 3
+        assert region_b.query("stale region export", namespace=namespace, top_k=1) == []
+    finally:
+        region_a.close()
+        region_b.close()
 
 
 def test_replicated_wavemind_rejects_global_db_path(tmp_path):

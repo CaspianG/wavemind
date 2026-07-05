@@ -238,6 +238,79 @@ def run_replication_runtime_profile() -> dict[str, object]:
             memory.close()
 
 
+def run_active_active_delta_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        kwargs = {
+            "replication_factor": 3,
+            "width": 16,
+            "height": 16,
+            "layers": 1,
+            "encoder": HashingTextEncoder(vector_dim=64),
+        }
+        region_a = ReplicatedWaveMind(
+            root_path=Path(directory) / "region-a",
+            nodes=[
+                {"id": "region-a-1", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                {"id": "region-a-2", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                {"id": "region-a-3", "address": "127.0.0.1:8103", "zone": "zone-c"},
+            ],
+            **kwargs,
+        )
+        region_b = ReplicatedWaveMind(
+            root_path=Path(directory) / "region-b",
+            nodes=[
+                {"id": "region-b-1", "address": "127.0.0.1:8201", "zone": "zone-a"},
+                {"id": "region-b-2", "address": "127.0.0.1:8202", "zone": "zone-b"},
+                {"id": "region-b-3", "address": "127.0.0.1:8203", "zone": "zone-c"},
+            ],
+            **kwargs,
+        )
+        try:
+            namespace = "tenant:active-active"
+            region_a.remember("region a billing preference", namespace=namespace)
+            region_b.remember("region b support preference", namespace=namespace)
+            sync_started = time.perf_counter()
+            import_b = region_b.import_namespace_delta(
+                region_a.export_namespace_delta(namespace)
+            )
+            import_a = region_a.import_namespace_delta(
+                region_b.export_namespace_delta(namespace)
+            )
+            sync_ms = (time.perf_counter() - sync_started) * 1000.0
+            converged = (
+                region_a.query("support preference", namespace=namespace, top_k=1)
+                and region_b.query("billing preference", namespace=namespace, top_k=1)
+            )
+
+            stale_delta = region_b.export_namespace_delta(namespace)
+            region_a.forget(text="region a billing preference", namespace=namespace)
+            region_a.import_namespace_delta(stale_delta)
+            suppressed_stale_import = all(
+                result.text != "region a billing preference"
+                for result in region_a.query("billing preference", namespace=namespace, top_k=3)
+            )
+            tombstone_delta = region_a.export_namespace_delta(namespace)
+            tombstone_report = region_b.import_namespace_delta(tombstone_delta)
+            tombstone_converged = all(
+                result.text != "region a billing preference"
+                for result in region_b.query("billing preference", namespace=namespace, top_k=3)
+            )
+            return {
+                "engine": "WaveMind active-active delta sync",
+                "regions": 2,
+                "replication_factor_per_region": 3,
+                "records_imported": import_a.imported_records + import_b.imported_records,
+                "converged_after_bidirectional_sync": bool(converged),
+                "sync_ms": sync_ms,
+                "suppressed_stale_import_after_delete": suppressed_stale_import,
+                "tombstone_deleted_records": tombstone_report.deleted_records,
+                "tombstone_converged": tombstone_converged,
+            }
+        finally:
+            region_a.close()
+            region_b.close()
+
+
 def run_multimodal_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -325,6 +398,7 @@ def run_benchmark(
         ),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_replication_runtime_profile(),
+        run_active_active_delta_profile(),
         run_multimodal_profile(),
     ]
     return {
@@ -337,8 +411,8 @@ def run_benchmark(
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
-                "hot-cache behavior, and structured payload retrieval. This is "
-                "not a 10M-vector database load test."
+                "active-active delta sync, hot-cache behavior, and structured "
+                "payload retrieval. This is not a 10M-vector database load test."
             ),
         },
         "results": results,
@@ -379,6 +453,9 @@ def main() -> int:
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
             print(f"| replicated runtime | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
+        elif result["engine"] == "WaveMind active-active delta sync":
+            print(f"| active-active delta | converged | {result['converged_after_bidirectional_sync']} |")
+            print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
     print(f"\nWrote {args.output}")

@@ -21,5 +21,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_after_repair"] is True
     assert results["WaveMind replicated runtime"]["tombstone_repair_deleted_records"] == 1
+    assert results["WaveMind active-active delta sync"]["converged_after_bidirectional_sync"] is True
+    assert results["WaveMind active-active delta sync"]["suppressed_stale_import_after_delete"] is True
+    assert results["WaveMind active-active delta sync"]["tombstone_converged"] is True
+    assert results["WaveMind active-active delta sync"]["tombstone_deleted_records"] == 3
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
     assert payload["scenario"]["simulated_memories"] == 100_000

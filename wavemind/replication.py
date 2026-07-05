@@ -52,6 +52,16 @@ class ReplicatedRepairReport:
 
 
 @dataclass(frozen=True)
+class ReplicatedDeltaImportReport:
+    namespace: str
+    imported_records: int = 0
+    skipped_records: int = 0
+    deleted_records: int = 0
+    imported_tombstones: int = 0
+    failed_nodes: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class TombstoneState:
     keys: frozenset[str] = frozenset()
     texts: frozenset[str] = frozenset()
@@ -339,6 +349,134 @@ class ReplicatedWaveMind:
             failed_nodes=failed,
         )
 
+    def export_namespace_delta(self, namespace: str = "default") -> dict[str, Any]:
+        """Export active records and tombstones for active-active sync."""
+        placement = self.placement(namespace)
+        tombstones = self._tombstone_state(namespace, placement)
+        _source_node, records = self._source_records(namespace, placement, tombstones)
+        events = self._tombstone_events(namespace, placement)
+        return {
+            "format": "wavemind.namespace_delta.v1",
+            "namespace": namespace,
+            "created_at": time.time(),
+            "replication_factor": self.replication_factor,
+            "records": [self._record_to_delta(record) for record in records],
+            "tombstones": events,
+        }
+
+    def import_namespace_delta(
+        self,
+        delta: dict[str, Any],
+        namespace: str | None = None,
+    ) -> ReplicatedDeltaImportReport:
+        if delta.get("format") != "wavemind.namespace_delta.v1":
+            raise ValueError("Unsupported replicated namespace delta format")
+        target_namespace = namespace or str(delta["namespace"])
+        placement = self.placement(target_namespace)
+        available_replicas = self._available_replicas(placement)
+        if len(available_replicas) < self.write_quorum:
+            raise WriteQuorumError(
+                f"Import quorum {self.write_quorum} cannot be reached for "
+                f"namespace {target_namespace!r}; available replicas: {available_replicas}"
+            )
+
+        incoming_tombstones = self._delta_tombstone_state(delta)
+        imported_records = 0
+        skipped_records = 0
+        deleted_records = 0
+        imported_tombstones = 0
+        failed: dict[str, str] = {}
+
+        for node_id in placement.replicas:
+            if not self._available.get(node_id, False):
+                failed[node_id] = "node unavailable"
+                continue
+            try:
+                mind = self._mind(node_id)
+                existing_tombstones = self._existing_tombstone_operation_ids(
+                    mind,
+                    target_namespace,
+                )
+                for event in delta.get("tombstones", []):
+                    operation_id = str(event.get("operation_id", ""))
+                    if operation_id and operation_id in existing_tombstones:
+                        continue
+                    keys = {str(key) for key in event.get("replica_keys", [])}
+                    texts = {str(text) for text in event.get("texts", [])}
+                    self._log_tombstone(
+                        mind,
+                        namespace=target_namespace,
+                        keys=keys,
+                        texts=texts,
+                        operation_id=operation_id or uuid.uuid4().hex,
+                        deleted_at=float(event.get("deleted_at", time.time())),
+                    )
+                    imported_tombstones += 1
+                deleted_records += self._forget_records(
+                    mind,
+                    namespace=target_namespace,
+                    keys=set(incoming_tombstones.keys),
+                    texts=set(incoming_tombstones.texts),
+                )
+
+                existing = {
+                    self._record_replica_key(record): record
+                    for record in mind.store.list(
+                        namespace=target_namespace,
+                        include_expired=False,
+                    )
+                }
+                local_tombstones = self._tombstone_state(target_namespace, placement)
+                for record_payload in delta.get("records", []):
+                    key = str(record_payload.get("replica_key", ""))
+                    text = str(record_payload.get("text", ""))
+                    if key in local_tombstones.keys or text in local_tombstones.texts:
+                        skipped_records += 1
+                        continue
+                    if key in existing:
+                        skipped_records += 1
+                        continue
+                    ttl_seconds = self._delta_remaining_ttl(record_payload)
+                    if ttl_seconds == 0:
+                        skipped_records += 1
+                        continue
+                    metadata = dict(record_payload.get("metadata") or {})
+                    metadata.setdefault(_REPLICA_KEY, key)
+                    metadata.setdefault(
+                        _REPLICA_OPERATION_ID,
+                        str(record_payload.get("operation_id") or uuid.uuid4().hex),
+                    )
+                    metadata.setdefault(
+                        _REPLICA_UPDATED_AT,
+                        float(record_payload.get("updated_at", time.time())),
+                    )
+                    mind.remember(
+                        text,
+                        namespace=target_namespace,
+                        tags=tuple(record_payload.get("tags", [])),
+                        ttl_seconds=ttl_seconds,
+                        metadata=metadata,
+                        priority=float(record_payload.get("priority", 1.0)),
+                    )
+                    imported_records += 1
+            except Exception as exc:  # pragma: no cover - defensive store boundary
+                failed[node_id] = str(exc)
+
+        successful_writes = len(placement.replicas) - len(failed)
+        if successful_writes < self.write_quorum:
+            raise WriteQuorumError(
+                f"Import quorum {self.write_quorum} was not reached for "
+                f"namespace {target_namespace!r}; successful writes: {successful_writes}"
+            )
+        return ReplicatedDeltaImportReport(
+            namespace=target_namespace,
+            imported_records=imported_records,
+            skipped_records=skipped_records,
+            deleted_records=deleted_records,
+            imported_tombstones=imported_tombstones,
+            failed_nodes=failed,
+        )
+
     def placement(self, namespace: str = "default") -> NamespacePlacement:
         return build_cluster_plan(
             namespaces=[namespace],
@@ -548,6 +686,98 @@ class ReplicatedWaveMind:
                 if isinstance(raw_texts, list):
                     texts.update(str(item) for item in raw_texts)
         return TombstoneState(keys=frozenset(keys), texts=frozenset(texts))
+
+    def _tombstone_events(
+        self,
+        namespace: str,
+        placement: NamespacePlacement,
+    ) -> list[dict[str, Any]]:
+        by_operation: dict[str, dict[str, Any]] = {}
+        for node_id in placement.replicas:
+            if not self._available.get(node_id, False):
+                continue
+            events = self._mind(node_id).store.list_audit_events(
+                namespace=namespace,
+                action=_TOMBSTONE_ACTION,
+                limit=10_000,
+            )
+            for event in events:
+                operation_id = str(event.metadata.get("operation_id") or event.id or uuid.uuid4().hex)
+                payload = by_operation.setdefault(
+                    operation_id,
+                    {
+                        "operation_id": operation_id,
+                        "deleted_at": float(event.metadata.get("deleted_at", event.created_at)),
+                        "replica_keys": set(),
+                        "texts": set(),
+                    },
+                )
+                raw_keys = event.metadata.get("replica_keys", [])
+                raw_texts = event.metadata.get("texts", [])
+                if isinstance(raw_keys, list):
+                    payload["replica_keys"].update(str(key) for key in raw_keys)
+                if isinstance(raw_texts, list):
+                    payload["texts"].update(str(text) for text in raw_texts)
+        return [
+            {
+                "operation_id": payload["operation_id"],
+                "deleted_at": payload["deleted_at"],
+                "replica_keys": sorted(payload["replica_keys"]),
+                "texts": sorted(payload["texts"]),
+            }
+            for payload in sorted(
+                by_operation.values(),
+                key=lambda item: (float(item["deleted_at"]), str(item["operation_id"])),
+            )
+        ]
+
+    @staticmethod
+    def _delta_tombstone_state(delta: dict[str, Any]) -> TombstoneState:
+        keys: set[str] = set()
+        texts: set[str] = set()
+        for event in delta.get("tombstones", []):
+            raw_keys = event.get("replica_keys", [])
+            raw_texts = event.get("texts", [])
+            if isinstance(raw_keys, list):
+                keys.update(str(key) for key in raw_keys)
+            if isinstance(raw_texts, list):
+                texts.update(str(text) for text in raw_texts)
+        return TombstoneState(keys=frozenset(keys), texts=frozenset(texts))
+
+    @staticmethod
+    def _existing_tombstone_operation_ids(mind: WaveMind, namespace: str) -> set[str]:
+        operation_ids: set[str] = set()
+        for event in mind.store.list_audit_events(
+            namespace=namespace,
+            action=_TOMBSTONE_ACTION,
+            limit=10_000,
+        ):
+            operation_id = event.metadata.get("operation_id")
+            if operation_id:
+                operation_ids.add(str(operation_id))
+        return operation_ids
+
+    def _record_to_delta(self, record: MemoryRecord) -> dict[str, Any]:
+        replica_key = self._record_replica_key(record)
+        return {
+            "replica_key": replica_key,
+            "operation_id": str(record.metadata.get(_REPLICA_OPERATION_ID, "")),
+            "text": record.text,
+            "tags": list(record.tags),
+            "metadata": dict(record.metadata),
+            "priority": float(record.priority),
+            "created_at": float(record.created_at),
+            "updated_at": self._record_updated_at(record),
+            "expires_at": record.expires_at,
+        }
+
+    @staticmethod
+    def _delta_remaining_ttl(record_payload: dict[str, Any]) -> float | None:
+        expires_at = record_payload.get("expires_at")
+        if expires_at is None:
+            return None
+        remaining = float(expires_at) - time.time()
+        return 0.0 if remaining <= 0 else remaining
 
     def _record_replica_key(self, record: MemoryRecord) -> str:
         value = record.metadata.get(_REPLICA_KEY)
