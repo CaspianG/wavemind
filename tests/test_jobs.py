@@ -1,5 +1,6 @@
 import fnmatch
 import tarfile
+from io import BytesIO
 from pathlib import Path
 
 from wavemind import (
@@ -8,6 +9,7 @@ from wavemind import (
     MemoryMaintenanceWorker,
     QueryResult,
     RedisHotMemoryCache,
+    ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
     ReplicatedWaveMind,
     S3SnapshotStore,
@@ -59,6 +61,9 @@ class FakeS3Client:
             "Metadata": dict(payload["Metadata"]),
             "ETag": '"fake-etag"',
         }
+
+    def get_object(self, Bucket, Key):
+        return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
 
     def list_objects_v2(self, Bucket, Prefix="", ContinuationToken=None):
         contents = []
@@ -381,6 +386,55 @@ def test_replicated_snapshot_worker_uploads_archive_to_object_store(tmp_path):
         ]
         assert [archive.key for archive in remaining] == [upload.key]
         assert ("wavemind-backups", upload.key) in client.objects
+    finally:
+        memory.close()
+
+
+def test_replicated_object_store_drill_restores_downloaded_archive(tmp_path):
+    memory = ReplicatedWaveMind(
+        root_path=tmp_path / "replicas",
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    client = FakeS3Client()
+    store = S3SnapshotStore.from_uri(
+        "s3://wavemind-backups/prod",
+        client=client,
+    )
+    try:
+        memory.remember("drill restores replicated memory", namespace="tenant:dr")
+        ReplicatedSnapshotWorker(memory).run_once(
+            destination=tmp_path / "snapshots",
+            object_store_destination="s3://wavemind-backups/prod",
+            object_store=store,
+        )
+
+        report = ReplicatedObjectStoreDrillWorker(store).run_once(
+            source="s3://wavemind-backups/prod",
+            destination=tmp_path / "drill-restore",
+            download_destination=tmp_path / "downloads",
+            namespace="tenant:dr",
+            query="restores replicated",
+            expected_text="drill restores replicated memory",
+            width=16,
+            height=16,
+            layers=1,
+            encoder=HashingTextEncoder(vector_dim=64),
+        )
+
+        assert report.ok
+        assert report.selected_archive.uri.startswith("s3://wavemind-backups/prod/")
+        assert report.downloaded_archive_path.exists()
+        assert report.download_matches_object is True
+        assert report.archive_verified is True
+        assert report.restored_files == 3
+        assert report.primary_node_disabled is not None
+        assert report.recalled_after_primary_loss is True
+        assert report.expected_text_found is True
     finally:
         memory.close()
 

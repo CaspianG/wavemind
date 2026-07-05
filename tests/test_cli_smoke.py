@@ -234,6 +234,7 @@ def test_cli_replicated_snapshot_and_restore_help_mentions_s3_flags():
     snapshot_help = run_cli("replicated-snapshot", "--help")
     restore_help = run_cli("replicated-restore", "--help")
     archives_help = run_cli("replicated-s3-archives", "--help")
+    drill_help = run_cli("replicated-drill", "--help")
 
     assert "--s3" in snapshot_help.stdout
     assert "--s3-endpoint-url" in snapshot_help.stdout
@@ -244,6 +245,9 @@ def test_cli_replicated_snapshot_and_restore_help_mentions_s3_flags():
     assert "--latest" in restore_help.stdout
     assert "--s3" in archives_help.stdout
     assert "--prune-keep-last" in archives_help.stdout
+    assert "--download-to" in drill_help.stdout
+    assert "--expect-text" in drill_help.stdout
+    assert "--keep-primary" in drill_help.stdout
 
 
 def test_cli_consolidate_creates_concept_memory(tmp_path):

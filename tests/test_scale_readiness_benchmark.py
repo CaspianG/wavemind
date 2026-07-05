@@ -32,6 +32,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind replicated snapshot"]["object_store_latest_verified"] is True
     assert results["WaveMind replicated snapshot"]["object_store_pruned"] == 2
     assert results["WaveMind replicated snapshot"]["object_store_download_verified"] is True
+    assert results["WaveMind replicated snapshot"]["object_store_drill_ok"] is True
     assert results["WaveMind replicated snapshot"]["restored_files"] == 3
     assert results["WaveMind replicated snapshot"]["recalled_after_restore_node_loss"] is True
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0

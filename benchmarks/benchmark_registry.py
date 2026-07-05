@@ -771,6 +771,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "object_store_latest_verified",
                         "object_store_pruned",
                         "object_store_download_verified",
+                        "object_store_drill_ok",
                         "restored_files",
                         "recalled_after_restore_node_loss",
                         "snapshot_ms",
@@ -787,7 +788,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention restore drills, hot-cache behavior, and structured payload recall.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, survivable replicas, active-active sync, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
             "next_step": "Move from local replicated runtime to service-backed replicated runs, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {

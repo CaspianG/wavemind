@@ -13,6 +13,8 @@ from .jobs import (
     HotMemoryCache,
     MemoryMaintenanceWorker,
     RedisHotMemoryCache,
+    ReplicatedObjectStoreDrillReport,
+    ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotJobReport,
     ReplicatedSnapshotWorker,
     query_with_cache,
@@ -54,7 +56,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.3.2"
+__version__ = "2.3.3"
 
 __all__ = [
     "FieldProjector",
@@ -76,6 +78,8 @@ __all__ = [
     "QueryResult",
     "ReadQuorumError",
     "RedisHotMemoryCache",
+    "ReplicatedObjectStoreDrillReport",
+    "ReplicatedObjectStoreDrillWorker",
     "ReplicatedDeltaImportReport",
     "ReplicatedRepairReport",
     "ReplicatedRestoreReport",

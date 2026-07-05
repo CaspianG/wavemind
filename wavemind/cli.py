@@ -13,7 +13,11 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .importers import import_path
-from .jobs import MemoryMaintenanceWorker, ReplicatedSnapshotWorker
+from .jobs import (
+    MemoryMaintenanceWorker,
+    ReplicatedObjectStoreDrillWorker,
+    ReplicatedSnapshotWorker,
+)
 from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
 from .storage import SQLiteMemoryStore
@@ -220,6 +224,24 @@ def build_parser() -> argparse.ArgumentParser:
     replicated_s3_archives.add_argument("--prune-keep-last", type=int)
     replicated_s3_archives.add_argument("--json", action="store_true")
 
+    replicated_drill = sub.add_parser(
+        "replicated-drill",
+        help="Run an S3-compatible replicated snapshot disaster-recovery drill",
+    )
+    replicated_drill.add_argument("--from", dest="source", required=True)
+    replicated_drill.add_argument("--to", dest="destination", required=True)
+    replicated_drill.add_argument("--download-to")
+    replicated_drill.add_argument("--overwrite", action="store_true")
+    replicated_drill.add_argument("--s3-endpoint-url")
+    replicated_drill.add_argument("--s3-region")
+    replicated_drill.add_argument("--latest", action="store_true")
+    replicated_drill.add_argument("--namespace")
+    replicated_drill.add_argument("--query")
+    replicated_drill.add_argument("--expect-text")
+    replicated_drill.add_argument("--top-k", type=int, default=1)
+    replicated_drill.add_argument("--keep-primary", action="store_true")
+    replicated_drill.add_argument("--json", action="store_true")
+
     bench = sub.add_parser("benchmark", help="Run a synthetic recall benchmark")
     bench.add_argument("--namespace", default="bench")
     bench.add_argument("--top-k", type=int, default=1)
@@ -274,6 +296,24 @@ def make_replicated_mind(args) -> ReplicatedWaveMind:
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
     )
+
+
+def replicated_restore_kwargs(args) -> dict[str, object]:
+    return {
+        "width": args.width,
+        "height": args.height,
+        "layers": args.layers,
+        "encoder": create_text_encoder(
+            kind=args.encoder,
+            vector_dim=384,
+            model_name=args.model,
+        ),
+        "index_kind": args.index,
+        "score_threshold": args.score_threshold,
+        "graph_weight": args.graph_weight,
+        "graph_steps": args.graph_steps,
+        "graph_expand_k": args.graph_expand_k,
+    }
 
 
 def print_stats(stats: dict) -> None:
@@ -550,6 +590,55 @@ def main(argv: list[str] | None = None) -> int:
                 if pruned:
                     print(f"pruned: {len(pruned)}")
         return 0
+
+    if args.command == "replicated-drill":
+        store = S3SnapshotStore.from_uri(
+            args.source,
+            endpoint_url=args.s3_endpoint_url,
+            region_name=args.s3_region,
+        )
+        try:
+            report = ReplicatedObjectStoreDrillWorker(store).run_once(
+                source=args.source,
+                destination=args.destination,
+                latest=args.latest or None,
+                download_destination=args.download_to,
+                overwrite=args.overwrite,
+                namespace=args.namespace,
+                query=args.query,
+                expected_text=args.expect_text,
+                top_k=args.top_k,
+                disable_primary=not args.keep_primary,
+                **replicated_restore_kwargs(args),
+            )
+        except Exception as exc:
+            if args.json:
+                print(
+                    json.dumps(
+                        {"ok": False, "error": str(exc)},
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            else:
+                print(f"drill failed: {exc}", file=sys.stderr)
+            return 4
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"selected_archive: {payload['selected_archive']['uri']}")
+            print(f"download_matches_object: {payload['download_matches_object']}")
+            print(f"archive_verified: {payload['archive_verified']}")
+            print(f"restored: {payload['restore_root']}")
+            if payload["primary_node_disabled"]:
+                print(f"primary_node_disabled: {payload['primary_node_disabled']}")
+                print(
+                    "recalled_after_primary_loss: "
+                    f"{payload['recalled_after_primary_loss']}"
+                )
+            print(f"ok: {payload['ok']}")
+        return 0 if report.ok else 4
 
     if args.command == "scale-plan":
         current_memories = args.current_memories

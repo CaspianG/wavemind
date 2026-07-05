@@ -19,6 +19,7 @@ from wavemind import (
     HashingTextEncoder,
     HotMemoryCache,
     QueryResult,
+    ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
     ReplicatedSnapshotWorker,
     S3SnapshotStore,
@@ -384,7 +385,6 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             layers=1,
             encoder=HashingTextEncoder(vector_dim=64),
         )
-        restored = None
         try:
             namespace = "tenant:snapshot"
             memory.remember(
@@ -412,34 +412,21 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             snapshot_ms = (time.perf_counter() - snapshot_started) * 1000.0
             health = ReplicatedWaveMind.verify_snapshot(snapshot_job.snapshot_path)
             latest_object_archive = object_store.latest_archive()
-            object_store_download_verified = False
-            downloaded_archive = None
-            if latest_object_archive is not None:
-                downloaded_archive = object_store.download_archive(
-                    latest_object_archive.uri,
-                    root / "object-store-downloads",
-                )
-                object_store_download_verified = bool(
-                    ReplicatedWaveMind.verify_snapshot_archive(downloaded_archive)[
-                        "healthy"
-                    ]
-                )
 
             restore_started = time.perf_counter()
-            restored, restore = ReplicatedWaveMind.restore_snapshot_archive(
-                downloaded_archive or snapshot_job.archive_path,
-                root / "restored",
+            drill = ReplicatedObjectStoreDrillWorker(object_store).run_once(
+                source="s3://wavemind-benchmark/replicated",
+                destination=root / "restored",
+                download_destination=root / "object-store-downloads",
+                namespace=namespace,
+                query="snapshot restore node loss",
+                expected_text="replicated snapshot restore survives node loss",
                 width=16,
                 height=16,
                 layers=1,
                 encoder=HashingTextEncoder(vector_dim=64),
             )
             restore_ms = (time.perf_counter() - restore_started) * 1000.0
-            placement = restored.placement(namespace)
-            restored.set_node_available(placement.primary, False)
-            recalled_after_restore_loss = bool(
-                restored.query("snapshot restore node loss", namespace=namespace, top_k=1)
-            )
             return {
                 "engine": "WaveMind replicated snapshot",
                 "nodes": len(snapshot_job.nodes),
@@ -454,17 +441,20 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
                     latest_object_archive and latest_object_archive.verified
                 ),
                 "object_store_pruned": len(snapshot_job.pruned_object_store),
-                "object_store_download_verified": object_store_download_verified,
+                "object_store_download_verified": (
+                    drill.download_matches_object and drill.archive_verified
+                ),
+                "object_store_drill_ok": drill.ok,
                 "total_bytes": snapshot_job.total_bytes,
                 "snapshot_ms": snapshot_ms,
                 "restore_ms": restore_ms,
-                "restored_files": len(restore.restored_files),
-                "recalled_after_restore_node_loss": recalled_after_restore_loss,
+                "restored_files": drill.restored_files,
+                "recalled_after_restore_node_loss": bool(
+                    drill.recalled_after_primary_loss
+                ),
             }
         finally:
             memory.close()
-            if restored is not None:
-                restored.close()
 
 
 def run_multimodal_profile() -> dict[str, object]:
@@ -570,7 +560,7 @@ def run_benchmark(
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "download/retention verification, hot-cache behavior, and structured payload retrieval. "
+                "download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -623,6 +613,7 @@ def main() -> int:
             print(f"| replicated snapshot | object_store_latest_verified | {result['object_store_latest_verified']} |")
             print(f"| replicated snapshot | object_store_pruned | {result['object_store_pruned']} |")
             print(f"| replicated snapshot | object_store_download_verified | {result['object_store_download_verified']} |")
+            print(f"| replicated snapshot | object_store_drill_ok | {result['object_store_drill_ok']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         else:
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")

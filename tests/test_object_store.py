@@ -113,6 +113,25 @@ def test_s3_snapshot_store_accepts_exact_archive_uri(tmp_path):
     assert report.uri == "s3://wavemind-backups/exact/remote-name.tar.gz"
 
 
+def test_s3_snapshot_store_describes_exact_archive(tmp_path):
+    archive = tmp_path / "snapshot.tar.gz"
+    archive.write_bytes(b"describe-me")
+    client = FakeS3Client()
+    store = S3SnapshotStore.from_uri(
+        "s3://wavemind-backups/prod",
+        client=client,
+    )
+    upload = store.upload_archive(archive)
+
+    described = store.describe_archive(upload.uri)
+
+    assert described.uri == upload.uri
+    assert described.key == upload.key
+    assert described.total_bytes == upload.total_bytes
+    assert described.sha256 == upload.sha256
+    assert described.verified is True
+
+
 def test_s3_snapshot_store_lists_latest_and_prunes_archives(tmp_path):
     client = FakeS3Client()
     store = S3SnapshotStore.from_uri(

@@ -315,6 +315,39 @@ class S3SnapshotStore:
         )
         return archives[0] if archives else None
 
+    def describe_archive(
+        self,
+        uri_or_key: str,
+        *,
+        verify_metadata: bool = True,
+    ) -> ObjectStoreArchive:
+        key = self._key_from_uri_or_key(uri_or_key)
+        head = self._head(key)
+        metadata = {
+            str(k).lower(): str(v)
+            for k, v in dict(head.get("Metadata") or {}).items()
+        }
+        total_bytes = int(head.get("ContentLength", -1))
+        sha256 = metadata.get("wavemind-sha256")
+        metadata_bytes = metadata.get("wavemind-bytes")
+        verified = True
+        if verify_metadata:
+            verified = (
+                total_bytes >= 0
+                and bool(sha256)
+                and metadata_bytes == str(total_bytes)
+            )
+        return ObjectStoreArchive(
+            uri=f"{self.scheme}://{self.bucket}/{key}",
+            bucket=self.bucket,
+            key=key,
+            total_bytes=total_bytes,
+            sha256=sha256,
+            verified=verified,
+            last_modified=_format_last_modified(head.get("LastModified")),
+            etag=str(head.get("ETag") or "") or None,
+        )
+
     def prune_archives(
         self,
         *,

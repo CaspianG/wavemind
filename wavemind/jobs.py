@@ -393,6 +393,62 @@ class ReplicatedSnapshotJobReport:
         }
 
 
+@dataclass(frozen=True)
+class ReplicatedObjectStoreDrillReport:
+    source: str
+    selected_archive: ObjectStoreArchive
+    downloaded_archive_path: Path
+    downloaded_sha256: str
+    download_matches_object: bool
+    archive_verified: bool
+    restore_root: Path
+    restored_nodes: tuple[str, ...]
+    restored_files: int
+    restored_total_bytes: int
+    namespace: str | None = None
+    query: str | None = None
+    expected_text: str | None = None
+    primary_node_disabled: str | None = None
+    recalled_after_primary_loss: bool | None = None
+    expected_text_found: bool | None = None
+
+    @property
+    def ok(self) -> bool:
+        query_ok = True
+        if self.query is not None:
+            query_ok = bool(self.recalled_after_primary_loss)
+            if self.expected_text is not None:
+                query_ok = query_ok and bool(self.expected_text_found)
+        return (
+            self.selected_archive.verified
+            and self.download_matches_object
+            and self.archive_verified
+            and self.restored_files > 0
+            and query_ok
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "source": self.source,
+            "selected_archive": self.selected_archive.as_dict(),
+            "downloaded_archive_path": str(self.downloaded_archive_path),
+            "downloaded_sha256": self.downloaded_sha256,
+            "download_matches_object": self.download_matches_object,
+            "archive_verified": self.archive_verified,
+            "restore_root": str(self.restore_root),
+            "restored_nodes": list(self.restored_nodes),
+            "restored_files": self.restored_files,
+            "restored_total_bytes": self.restored_total_bytes,
+            "namespace": self.namespace,
+            "query": self.query,
+            "expected_text": self.expected_text,
+            "primary_node_disabled": self.primary_node_disabled,
+            "recalled_after_primary_loss": self.recalled_after_primary_loss,
+            "expected_text_found": self.expected_text_found,
+            "ok": self.ok,
+        }
+
+
 class ReplicatedSnapshotWorker:
     """One-shot replicated snapshot job for schedulers and CronJobs."""
 
@@ -508,6 +564,94 @@ class ReplicatedSnapshotWorker:
         )
 
 
+class ReplicatedObjectStoreDrillWorker:
+    """Restore and verify the newest or exact object-store snapshot archive."""
+
+    def __init__(self, object_store: S3SnapshotStore):
+        self.object_store = object_store
+
+    def run_once(
+        self,
+        *,
+        source: str,
+        destination: str | Path,
+        latest: bool | None = None,
+        download_destination: str | Path | None = None,
+        overwrite: bool = False,
+        namespace: str | None = None,
+        query: str | None = None,
+        expected_text: str | None = None,
+        top_k: int = 1,
+        disable_primary: bool = True,
+        **mind_kwargs: Any,
+    ) -> ReplicatedObjectStoreDrillReport:
+        use_latest = latest if latest is not None else not _looks_like_archive(source)
+        if use_latest:
+            selected = self.object_store.latest_archive()
+            if selected is None:
+                raise RuntimeError(f"no snapshot archives found under {source}")
+        else:
+            selected = self.object_store.describe_archive(source)
+
+        download_root = Path(download_destination) if download_destination else (
+            Path(destination).parent / "object-store-downloads"
+        )
+        downloaded = self.object_store.download_archive(selected.uri, download_root)
+        downloaded_sha256 = _sha256_file(downloaded)
+        download_matches_object = (
+            bool(selected.sha256) and downloaded_sha256 == selected.sha256
+        )
+        archive_health = ReplicatedWaveMind.verify_snapshot_archive(downloaded)
+        archive_verified = bool(archive_health["healthy"])
+
+        restored = None
+        try:
+            restored, restore = ReplicatedWaveMind.restore_snapshot_archive(
+                downloaded,
+                destination,
+                overwrite=overwrite,
+                **mind_kwargs,
+            )
+            primary_node: str | None = None
+            recalled: bool | None = None
+            expected_found: bool | None = None
+            if query is not None:
+                query_namespace = namespace or "default"
+                if disable_primary:
+                    placement = restored.placement(query_namespace)
+                    primary_node = placement.primary
+                    restored.set_node_available(primary_node, False)
+                results = restored.query(
+                    query,
+                    namespace=query_namespace,
+                    top_k=top_k,
+                )
+                recalled = bool(results)
+                if expected_text is not None:
+                    expected_found = any(result.text == expected_text for result in results)
+            return ReplicatedObjectStoreDrillReport(
+                source=source,
+                selected_archive=selected,
+                downloaded_archive_path=downloaded,
+                downloaded_sha256=downloaded_sha256,
+                download_matches_object=download_matches_object,
+                archive_verified=archive_verified,
+                restore_root=restore.root_path,
+                restored_nodes=restore.nodes,
+                restored_files=len(restore.restored_files),
+                restored_total_bytes=restore.total_bytes,
+                namespace=namespace,
+                query=query,
+                expected_text=expected_text,
+                primary_node_disabled=primary_node,
+                recalled_after_primary_loss=recalled,
+                expected_text_found=expected_found,
+            )
+        finally:
+            if restored is not None:
+                restored.close()
+
+
 class MemoryMaintenanceWorker:
     """Deterministic maintenance worker for scheduled jobs or external queues."""
 
@@ -548,3 +692,15 @@ class MemoryMaintenanceWorker:
             index_rebuilt=rebuilt,
             cache_invalidated=invalidated,
         )
+
+
+def _looks_like_archive(value: str) -> bool:
+    return value.endswith(".tar.gz") or value.endswith(".tgz")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
