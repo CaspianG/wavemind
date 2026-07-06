@@ -375,22 +375,29 @@ class HTTPNamespaceShardClient:
         response = self._request("POST", address, "/memories/tombstone", payload)
         return int(response["id"])
 
+    def stats(self, address: str) -> dict[str, Any]:
+        return self._request("GET", address, "/stats", None)
+
     def _request(
         self,
         method: str,
         address: str,
         path: str,
-        payload: dict[str, Any],
+        payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        body = (
+            None
+            if payload is None
+            else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        )
+        headers = {"Accept": "application/json"}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
         request = Request(
             _join_url(address, path),
             data=body,
             method=method,
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
+            headers=headers,
         )
         if self.api_key:
             request.add_header("Authorization", f"Bearer {self.api_key}")
@@ -463,6 +470,11 @@ class DistributedShardedWaveMind:
         self.client = client or HTTPNamespaceShardClient()
         self._available = {node.id: True for node in self.nodes}
         self._node_by_id = {node.id: node for node in self.nodes}
+        self._node_failures = {node.id: 0 for node in self.nodes}
+        self._node_successes = {node.id: 0 for node in self.nodes}
+        self._node_last_error: dict[str, str | None] = {
+            node.id: None for node in self.nodes
+        }
 
     def placement(self, namespace: str = "default") -> NamespacePlacement:
         return build_cluster_plan(
@@ -503,7 +515,9 @@ class DistributedShardedWaveMind:
                     metadata=metadata,
                     priority=priority,
                 )
+                self._mark_node_success(node_id)
             except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
                 failed[node_id] = str(exc)
         if len(writes) < self.write_quorum:
             raise DistributedWriteQuorumError(
@@ -548,7 +562,9 @@ class DistributedShardedWaveMind:
                     min_score=min_score,
                 )
                 successful_reads += 1
+                self._mark_node_success(node_id)
             except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
                 failed[node_id] = str(exc)
                 continue
             for result in results:
@@ -608,7 +624,9 @@ class DistributedShardedWaveMind:
                     texts=tuple(sorted(tombstone_texts)),
                 )
                 deletes[node_id] = deleted
+                self._mark_node_success(node_id)
             except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
                 failed[node_id] = str(exc)
         if len(deletes) < self.write_quorum:
             raise DistributedWriteQuorumError(
@@ -650,7 +668,9 @@ class DistributedShardedWaveMind:
                     include_expired=include_expired,
                     tags=tuple(tags),
                 )
+                self._mark_node_success(node_id)
             except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
                 failed[node_id] = str(exc)
                 continue
             available.append(node_id)
@@ -698,7 +718,9 @@ class DistributedShardedWaveMind:
                             namespace=namespace,
                             text=str(record["text"]),
                         )
+                        self._mark_node_success(node_id)
                     except Exception as exc:  # pragma: no cover - service boundary
+                        self._mark_node_failure(node_id, exc)
                         failed[node_id] = str(exc)
                     records_by_node[node_id].pop(key, None)
             missing = [
@@ -725,7 +747,9 @@ class DistributedShardedWaveMind:
                         priority=float(record.get("priority", 1.0)),
                     )
                     writes += 1
+                    self._mark_node_success(node_id)
                 except Exception as exc:  # pragma: no cover - service boundary
+                    self._mark_node_failure(node_id, exc)
                     failed[node_id] = str(exc)
                     break
             repaired[node_id] = writes
@@ -746,6 +770,7 @@ class DistributedShardedWaveMind:
         )
 
     def stats(self) -> dict[str, object]:
+        health = self.node_health()
         return {
             "nodes": len(self.nodes),
             "replication_factor": self.replication_factor,
@@ -753,7 +778,55 @@ class DistributedShardedWaveMind:
             "read_quorum": self.read_quorum,
             "read_fanout": self.read_fanout,
             "available_nodes": sum(1 for value in self._available.values() if value),
+            "healthy_nodes": sum(
+                1 for payload in health.values() if payload["status"] == "healthy"
+            ),
+            "degraded_nodes": sum(
+                1 for payload in health.values() if payload["status"] == "degraded"
+            ),
+            "unavailable_nodes": sum(
+                1 for payload in health.values() if payload["status"] == "unavailable"
+            ),
+            "node_health": health,
         }
+
+    def node_health(self) -> dict[str, dict[str, object]]:
+        """Return operator-facing health and circuit state for cluster nodes."""
+
+        payload: dict[str, dict[str, object]] = {}
+        for node in self.nodes:
+            available = bool(self._available.get(node.id, False))
+            last_error = self._node_last_error.get(node.id)
+            if not available:
+                status = "unavailable"
+            elif last_error:
+                status = "degraded"
+            else:
+                status = "healthy"
+            payload[node.id] = {
+                "id": node.id,
+                "address": node.address,
+                "zone": node.zone,
+                "available": available,
+                "status": status,
+                "successes": int(self._node_successes.get(node.id, 0)),
+                "failures": int(self._node_failures.get(node.id, 0)),
+                "last_error": last_error,
+            }
+        return payload
+
+    def probe_nodes(self) -> dict[str, dict[str, object]]:
+        """Probe every available service node and return updated health state."""
+
+        for node in self.nodes:
+            if not self._available.get(node.id, False):
+                continue
+            try:
+                self.client.stats(self._address(node.id))
+                self._mark_node_success(node.id)
+            except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node.id, exc)
+        return self.node_health()
 
     def _address(self, node_id: str) -> str:
         return self._node_by_id[node_id].address
@@ -789,7 +862,9 @@ class DistributedShardedWaveMind:
                     include_expired=True,
                     include_tombstones=False,
                 )
-            except Exception:
+                self._mark_node_success(node_id)
+            except Exception as exc:
+                self._mark_node_failure(node_id, exc)
                 continue
             for record in state.get("records", []):
                 record_id = record.get("id")
@@ -818,7 +893,9 @@ class DistributedShardedWaveMind:
                     limit=0,
                     include_tombstones=True,
                 )
-            except Exception:
+                self._mark_node_success(node_id)
+            except Exception as exc:
+                self._mark_node_failure(node_id, exc)
                 continue
             for tombstone in state.get("tombstones", []):
                 raw_keys = tombstone.get("record_keys", [])
@@ -828,6 +905,18 @@ class DistributedShardedWaveMind:
                 if isinstance(raw_texts, list):
                     texts.update(str(item) for item in raw_texts)
         return _ServiceTombstoneState(keys=frozenset(keys), texts=frozenset(texts))
+
+    def _mark_node_success(self, node_id: str) -> None:
+        if node_id not in self._node_successes:
+            return
+        self._node_successes[node_id] += 1
+        self._node_last_error[node_id] = None
+
+    def _mark_node_failure(self, node_id: str, error: object) -> None:
+        if node_id not in self._node_failures:
+            return
+        self._node_failures[node_id] += 1
+        self._node_last_error[node_id] = str(error)
 
 
 def _join_url(address: str, path: str) -> str:

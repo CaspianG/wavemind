@@ -240,6 +240,28 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_repair.add_argument("--fail-fast", action="store_true")
     cluster_repair.add_argument("--json", action="store_true")
 
+    cluster_health = sub.add_parser(
+        "cluster-health",
+        help="Probe service-mode cluster nodes and show health/circuit state",
+    )
+    cluster_health.add_argument("--node", action="append", required=True, help="node_id=host:port or node_id")
+    cluster_health.add_argument("--replication-factor", type=int, default=2)
+    cluster_health.add_argument("--write-quorum", type=int)
+    cluster_health.add_argument("--read-quorum", type=int, default=1)
+    cluster_health.add_argument("--read-fanout", type=int)
+    cluster_health.add_argument(
+        "--api-key",
+        default=os.environ.get("WAVEMIND_API_KEY"),
+        help="Bearer token for WaveMind API nodes. Defaults to WAVEMIND_API_KEY.",
+    )
+    cluster_health.add_argument("--timeout", type=float, default=10.0)
+    cluster_health.add_argument(
+        "--fail-on-degraded",
+        action="store_true",
+        help="Exit non-zero when any node is degraded or unavailable.",
+    )
+    cluster_health.add_argument("--json", action="store_true")
+
     operator_sample = sub.add_parser(
         "operator-sample",
         help="Emit a WaveMindCluster custom resource as Kubernetes JSON",
@@ -1119,6 +1141,42 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"- {namespace}: {error}")
             print(f"ok: {payload['ok']}")
         return 0 if report.ok else 4
+
+    if args.command == "cluster-health":
+        client = HTTPNamespaceShardClient(api_key=args.api_key, timeout=args.timeout)
+        memory = DistributedShardedWaveMind(
+            nodes=[_parse_cluster_node(value) for value in args.node],
+            replication_factor=args.replication_factor,
+            write_quorum=args.write_quorum,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            client=client,
+        )
+        health = memory.probe_nodes()
+        stats = memory.stats()
+        payload = {
+            "ok": stats["degraded_nodes"] == 0 and stats["unavailable_nodes"] == 0,
+            "nodes": stats["nodes"],
+            "healthy_nodes": stats["healthy_nodes"],
+            "degraded_nodes": stats["degraded_nodes"],
+            "unavailable_nodes": stats["unavailable_nodes"],
+            "replication_factor": stats["replication_factor"],
+            "write_quorum": stats["write_quorum"],
+            "read_quorum": stats["read_quorum"],
+            "read_fanout": stats["read_fanout"],
+            "node_health": health,
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"ok: {str(payload['ok']).lower()}")
+            print(f"healthy_nodes: {payload['healthy_nodes']}")
+            print(f"degraded_nodes: {payload['degraded_nodes']}")
+            print(f"unavailable_nodes: {payload['unavailable_nodes']}")
+            for node_id, node in health.items():
+                suffix = f" ({node['last_error']})" if node["last_error"] else ""
+                print(f"- {node_id}: {node['status']}{suffix}")
+        return 4 if args.fail_on_degraded and not payload["ok"] else 0
 
     if args.command == "operator-sample":
         _emit_json(_operator_spec_from_args(args).custom_resource(), out=args.out)

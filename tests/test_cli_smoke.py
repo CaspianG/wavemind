@@ -399,6 +399,55 @@ def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
     assert output["ok"] is True
 
 
+def test_cli_cluster_health_probes_service_nodes(monkeypatch, capsys):
+    seen = {}
+
+    class FakeClient:
+        def __init__(self, *, api_key=None, timeout=10.0):
+            seen["api_key"] = api_key
+            seen["timeout"] = timeout
+
+        def stats(self, address):
+            if address.endswith("8002"):
+                raise RuntimeError("health timeout")
+            return {"active_memories": 1}
+
+    monkeypatch.setattr(cli, "HTTPNamespaceShardClient", FakeClient)
+
+    exit_code = cli.main(
+        [
+            "cluster-health",
+            "--node",
+            "node-a=http://127.0.0.1:8001",
+            "--node",
+            "node-b=http://127.0.0.1:8002",
+            "--replication-factor",
+            "2",
+            "--read-quorum",
+            "1",
+            "--read-fanout",
+            "1",
+            "--api-key",
+            "secret",
+            "--timeout",
+            "2.5",
+            "--fail-on-degraded",
+            "--json",
+        ]
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 4
+    assert seen["api_key"] == "secret"
+    assert seen["timeout"] == 2.5
+    assert output["ok"] is False
+    assert output["healthy_nodes"] == 1
+    assert output["degraded_nodes"] == 1
+    assert output["node_health"]["node-a"]["status"] == "healthy"
+    assert output["node_health"]["node-b"]["status"] == "degraded"
+    assert "health timeout" in output["node_health"]["node-b"]["last_error"]
+
+
 def test_cli_replicated_snapshot_and_restore(tmp_path):
     root = tmp_path / "replicas"
     nodes = ["node-a", "node-b", "node-c"]

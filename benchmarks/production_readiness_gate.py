@@ -136,6 +136,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and local_http_cluster.get("repair_ok")
         and int(local_http_cluster.get("repair_repaired_total", 0)) >= 1
         and local_http_cluster.get("repaired_replica")
+        and local_http_cluster.get("cluster_health_ok")
+        and int(local_http_cluster.get("healthy_nodes", 0))
+        == int(local_http_cluster.get("nodes", 0))
+        and int(local_http_cluster.get("degraded_nodes", 1)) == 0
+        and int(local_http_cluster.get("unavailable_nodes", 1)) == 0
         and local_http_cluster.get("slo_pass")
         and float(local_http_cluster.get("p99_operation_ms", float("inf"))) <= 1000.0
     )
@@ -585,6 +590,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"success {local_http_cluster.get('success_rate')}, "
                 f"failover {local_http_cluster.get('failover_hit_rate')}, "
                 f"repair {local_http_cluster.get('repair_repaired_total')}, "
+                f"health {local_http_cluster.get('cluster_health_ok')}, "
+                f"degraded {local_http_cluster.get('degraded_nodes')}, "
                 f"p99 {local_http_cluster.get('p99_operation_ms')} ms, "
                 f"slo {local_http_cluster.get('slo_pass')}"
             ),

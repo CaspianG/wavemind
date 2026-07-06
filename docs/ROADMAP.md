@@ -48,7 +48,8 @@ policy matters more than raw vector-database scale:
   same service-mode path. It starts 4 real localhost API processes with isolated
   SQLite stores, uses RF=3 and quorum-sized `read_fanout=1`, and currently
   passes with success `1.000`, failover hit `1.000`, delete suppression `1.000`,
-  one repaired replica, and p99 `257.13 ms`.
+  one repaired replica, post-load cluster health `true`, degraded nodes `0`,
+  and p99 `348.83 ms`.
 - `benchmarks/http_cluster_load_benchmark.py` is the remote service-node runner
   for the same mixed workload. It takes real `--node id=https://host` API URLs,
   emits `slo_pass`, and is the next deployment gate before any external-cluster

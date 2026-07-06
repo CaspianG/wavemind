@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.scale_readiness_benchmark import run_sustained_http_cluster_workload
-from wavemind import ClusterNode, HTTPNamespaceShardClient
+from wavemind import ClusterNode, DistributedShardedWaveMind, HTTPNamespaceShardClient
 
 
 @dataclass(frozen=True)
@@ -194,12 +194,13 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
                 ClusterNode(id=node.id, address=node.address, zone=node.zone)
                 for node in nodes
             ]
+            client = HTTPNamespaceShardClient(
+                timeout=args.timeout,
+                trust_env=False,
+            )
             result = run_sustained_http_cluster_workload(
                 cluster_nodes,
-                client=HTTPNamespaceShardClient(
-                    timeout=args.timeout,
-                    trust_env=False,
-                ),
+                client=client,
                 engine="WaveMind local HTTP cluster smoke",
                 namespace_prefix=namespace_prefix,
                 namespace_count=args.namespace_count,
@@ -210,6 +211,34 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
                 read_fanout=args.read_fanout,
                 max_workers=args.workers,
             )
+            health_memory = DistributedShardedWaveMind(
+                nodes=cluster_nodes,
+                replication_factor=args.replication_factor,
+                write_quorum=args.write_quorum,
+                read_quorum=args.read_quorum,
+                read_fanout=args.read_fanout,
+                client=client,
+            )
+            health = health_memory.probe_nodes()
+            healthy_nodes = sum(
+                1 for payload in health.values() if payload["status"] == "healthy"
+            )
+            degraded_nodes = sum(
+                1 for payload in health.values() if payload["status"] == "degraded"
+            )
+            unavailable_nodes = sum(
+                1 for payload in health.values() if payload["status"] == "unavailable"
+            )
+            cluster_health_ok = (
+                healthy_nodes == len(cluster_nodes)
+                and degraded_nodes == 0
+                and unavailable_nodes == 0
+            )
+            result["cluster_health_ok"] = cluster_health_ok
+            result["healthy_nodes"] = healthy_nodes
+            result["degraded_nodes"] = degraded_nodes
+            result["unavailable_nodes"] = unavailable_nodes
+            result["node_health"] = health
             result["slo_min_success_rate"] = args.min_success_rate
             result["slo_min_failover_hit_rate"] = args.min_failover_hit_rate
             result["slo_p99_ms"] = args.p99_slo_ms
@@ -217,6 +246,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
                 float(result["success_rate"]) >= args.min_success_rate
                 and float(result["failover_hit_rate"]) >= args.min_failover_hit_rate
                 and float(result["p99_operation_ms"]) <= args.p99_slo_ms
+                and cluster_health_ok
             )
             return {
                 "scenario": {
@@ -266,6 +296,8 @@ def main() -> int:
     print(f"| local HTTP cluster | success_rate | {result['success_rate']:.3f} |")
     print(f"| local HTTP cluster | failover_hit_rate | {result['failover_hit_rate']:.3f} |")
     print(f"| local HTTP cluster | p99_operation_ms | {result['p99_operation_ms']:.2f} |")
+    print(f"| local HTTP cluster | healthy_nodes | {result['healthy_nodes']} |")
+    print(f"| local HTTP cluster | degraded_nodes | {result['degraded_nodes']} |")
     print(f"| local HTTP cluster | repair_repaired_total | {result['repair_repaired_total']} |")
     print(f"| local HTTP cluster | slo_pass | {result['slo_pass']} |")
     print(f"\nWrote {args.output}")

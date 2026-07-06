@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T12:40:42Z",
+  "generated_at": "2026-07-06T12:57:28Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -137,7 +137,7 @@
       "title": "Real local HTTP cluster smoke passes SLO",
       "status": "pass",
       "requirement": "CI must start multiple real localhost WaveMind API processes with isolated SQLite stores and run the sustained HTTP cluster workload through the same service-mode client used for remote nodes.",
-      "evidence": "workflow True, nodes 4, read_fanout 1, success 1.0, failover 1.0, repair 1, p99 257.1266000159085 ms, slo True",
+      "evidence": "workflow True, nodes 4, read_fanout 1, success 1.0, failover 1.0, repair 1, health True, degraded 0, p99 348.82529999595135 ms, slo True",
       "next_step": "Refresh local_http_cluster_smoke_results.json from CI on every release candidate."
     },
     {

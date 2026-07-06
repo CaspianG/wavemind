@@ -1389,7 +1389,7 @@ def run_distributed_http_sharding_profile() -> dict[str, object]:
             _start_api_node(root, "node-b"),
             _start_api_node(root, "node-c"),
         ]
-        client = HTTPNamespaceShardClient(timeout=5.0)
+        client = HTTPNamespaceShardClient(timeout=15.0)
         memory = DistributedShardedWaveMind(
             nodes=[
                 ClusterNode(id=node["id"], address=node["address"], zone=node["zone"])

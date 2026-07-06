@@ -318,6 +318,57 @@ def test_distributed_sharded_wavemind_read_fanout_limits_service_reads(tmp_path)
         client.close()
 
 
+def test_distributed_sharded_wavemind_tracks_node_health_and_recovery(tmp_path):
+    class FlakyClient(LocalWaveMindServiceClient):
+        def __init__(self, tmp_path):
+            super().__init__(tmp_path)
+            self.failed_addresses = set()
+
+        def query(self, address, **kwargs):
+            if address in self.failed_addresses:
+                raise RuntimeError(f"{address} query timeout")
+            return super().query(address, **kwargs)
+
+        def export_namespace_state(self, address, **kwargs):
+            if address in self.failed_addresses:
+                raise RuntimeError(f"{address} state timeout")
+            return super().export_namespace_state(address, **kwargs)
+
+    client = FlakyClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        read_quorum=1,
+        read_fanout=2,
+        client=client,
+    )
+    try:
+        namespace = "tenant:node-health"
+        memory.remember("cluster health should recover after transient failure", namespace=namespace)
+        failed_node = memory.placement(namespace).replicas[0]
+        client.failed_addresses.add(failed_node)
+
+        results = memory.query("transient failure", namespace=namespace, top_k=1)
+        degraded = memory.node_health()[failed_node]
+
+        assert results[0].text == "cluster health should recover after transient failure"
+        assert degraded["status"] == "degraded"
+        assert degraded["failures"] >= 1
+        assert "timeout" in str(degraded["last_error"])
+        assert memory.stats()["degraded_nodes"] == 1
+
+        client.failed_addresses.clear()
+        recovered = memory.query("transient failure", namespace=namespace, top_k=1)
+        health = memory.node_health()[failed_node]
+
+        assert recovered[0].text == "cluster health should recover after transient failure"
+        assert health["status"] == "healthy"
+        assert health["successes"] >= 1
+        assert health["last_error"] is None
+    finally:
+        client.close()
+
+
 def test_distributed_sharded_wavemind_enforces_write_quorum(tmp_path):
     client = LocalWaveMindServiceClient(tmp_path / "services")
     memory = DistributedShardedWaveMind(

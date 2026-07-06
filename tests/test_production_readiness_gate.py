@@ -50,6 +50,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "success_rate 1.0" in criteria["real_redis_api_load_ci"]["evidence"]
     assert criteria["real_local_http_cluster_ci"]["status"] == "pass"
     assert "multiple real localhost WaveMind API processes" in criteria["real_local_http_cluster_ci"]["requirement"]
+    assert "health True" in criteria["real_local_http_cluster_ci"]["evidence"]
+    assert "degraded 0" in criteria["real_local_http_cluster_ci"]["evidence"]
     assert "slo True" in criteria["real_local_http_cluster_ci"]["evidence"]
     assert criteria["distributed_http_shard_transport"]["status"] == "pass"
     assert criteria["sustained_http_cluster_load"]["status"] == "pass"

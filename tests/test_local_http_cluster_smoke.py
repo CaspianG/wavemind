@@ -51,6 +51,13 @@ def test_run_from_args_starts_real_node_specs_and_reports_slo(monkeypatch, tmp_p
     started = []
     stopped = []
 
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def stats(self, address):
+            return {"active_memories": 1}
+
     def fake_start(root, node_id, **kwargs):
         node = smoke.LocalAPINode(
             id=node_id,
@@ -99,6 +106,7 @@ def test_run_from_args_starts_real_node_specs_and_reports_slo(monkeypatch, tmp_p
 
     monkeypatch.setattr(smoke, "start_api_node", fake_start)
     monkeypatch.setattr(smoke, "stop_api_nodes", fake_stop)
+    monkeypatch.setattr(smoke, "HTTPNamespaceShardClient", FakeClient)
     monkeypatch.setattr(smoke, "run_sustained_http_cluster_workload", fake_workload)
 
     payload = smoke.run_from_args(_args())
@@ -107,10 +115,20 @@ def test_run_from_args_starts_real_node_specs_and_reports_slo(monkeypatch, tmp_p
     assert len(stopped) == 4
     assert payload["scenario"]["name"] == "local_http_cluster_smoke"
     assert payload["scenario"]["started_api_processes"] == 4
+    assert payload["results"][0]["cluster_health_ok"] is True
+    assert payload["results"][0]["healthy_nodes"] == 4
+    assert payload["results"][0]["degraded_nodes"] == 0
     assert payload["results"][0]["slo_pass"] is True
 
 
 def test_run_from_args_marks_slo_failure(monkeypatch):
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def stats(self, address):
+            return {"active_memories": 1}
+
     monkeypatch.setattr(
         smoke,
         "start_api_node",
@@ -123,6 +141,7 @@ def test_run_from_args_marks_slo_failure(monkeypatch):
         ),
     )
     monkeypatch.setattr(smoke, "stop_api_nodes", lambda nodes: None)
+    monkeypatch.setattr(smoke, "HTTPNamespaceShardClient", FakeClient)
     monkeypatch.setattr(
         smoke,
         "run_sustained_http_cluster_workload",
