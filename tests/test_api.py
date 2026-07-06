@@ -129,6 +129,28 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
             assert repair_container["env"][0]["valueFrom"]["secretKeyRef"]["name"] == "wavemind-api-key"
             assert "--namespace" in repair_container["args"]
 
+            autoscale = client.post(
+                "/cluster-autoscale-plan",
+                json={
+                    "namespace_count": 64,
+                    "nodes": [
+                        {"id": "node-a", "address": "10.0.0.1:8000", "zone": "zone-a"},
+                        {"id": "node-b", "address": "10.0.0.2:8000", "zone": "zone-b"},
+                        {"id": "node-c", "address": "10.0.0.3:8000", "zone": "zone-c"},
+                    ],
+                    "replication_factor": 3,
+                    "target_memories": 10_000_000,
+                    "max_memories_per_node": 1_000_000,
+                    "zones": ["zone-a", "zone-b", "zone-c"],
+                    "max_moves": 5,
+                },
+            )
+            assert autoscale.status_code == 200
+            autoscale_payload = autoscale.json()
+            assert autoscale_payload["status"] == "scale_required"
+            assert autoscale_payload["required_nodes"] >= 43
+            assert len(autoscale_payload["moves"]) == 5
+
             backup_dir = tmp_path / "api-backups"
             backup = client.post(
                 "/backup",

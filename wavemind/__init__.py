@@ -1,5 +1,13 @@
 from .core import QueryResult, WaveField, WaveMind
-from .cluster import ClusterNode, ClusterPlan, NamespacePlacement, build_cluster_plan
+from .cluster import (
+    ClusterAutoscalePlan,
+    ClusterNode,
+    ClusterPlan,
+    NamespaceMove,
+    NamespacePlacement,
+    build_cluster_autoscale_plan,
+    build_cluster_plan,
+)
 from .encoders import (
     FieldProjector,
     HashingTextEncoder,
@@ -121,6 +129,7 @@ __all__ = [
     "FieldStateMergeReport",
     "FaissVectorIndex",
     "HashingTextEncoder",
+    "ClusterAutoscalePlan",
     "ClusterNode",
     "ClusterPlan",
     "AuditEvent",
@@ -147,6 +156,7 @@ __all__ = [
     "MemoryOSWorker",
     "MemoryRecord",
     "MemoryPayload",
+    "NamespaceMove",
     "NamespaceShardRouter",
     "ObjectStoreArchive",
     "ObjectStoreLocation",
@@ -195,6 +205,7 @@ __all__ = [
     "advice_status_meets_or_exceeds",
     "advise_memory_architecture",
     "build_scale_plan",
+    "build_cluster_autoscale_plan",
     "build_cluster_plan",
     "create_memory_store",
     "create_text_encoder",

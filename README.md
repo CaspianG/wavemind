@@ -545,6 +545,7 @@ Checked-in result:
 | profile | result |
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`, Kubernetes `StatefulSet` + repair `CronJob` covering `4096` namespaces. |
+| Cluster autoscaler | 10M target memories, RF=3, current nodes `4`, required nodes `50`, additional nodes `46`, target max node load `678711`, headroom pass `true`, namespace move sample `25` with `4069` omitted. |
 | Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, and repair `CronJob`; HPA min replicas `4`, max replicas `16`, CPU+memory metrics. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`, query-audit prewarm warmed `1` hot query, prewarm hit `true`. |
 | Query-vector cache | 200 repeated queries, one local encoder call, local hit rate `0.995`, Redis-compatible cache shared across workers `true`. |
@@ -561,7 +562,7 @@ Checked-in result:
 | Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `1.10 ms`. |
 | 100M capacity envelope | 100000000 target memories, 32768 deterministic namespace buckets, 128 nodes, 8 zones, replication factor 3, node-loss availability `1.000`, zone-loss availability `1.000`, replica-load skew `1.094`, max storage per node `5.81 GB`, valid capacity plan `true`. |
 
-This profile validates routing, Kubernetes deployment, HPA autoscaling, and scheduled repair
+This profile validates routing, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, and scheduled repair
 manifest generation, service-mode distributed namespace sharding, real HTTP
 shard transport, sustained mixed HTTP cluster load, replica
 repair and tombstone-aware delete repair, plus a reusable anti-entropy repair
@@ -665,6 +666,27 @@ repair CronJob resources, and `wavemind operator-loop` can run in-cluster to
 keep those resources applied.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
+
+Cluster autoscale planning:
+
+```sh
+wavemind cluster-autoscale-plan \
+  --namespace-count 4096 \
+  --node node-a=https://wm-a.internal \
+  --node node-b=https://wm-b.internal \
+  --node node-c=https://wm-c.internal \
+  --replication-factor 3 \
+  --target-memories 10000000 \
+  --max-memories-per-node 1000000 \
+  --headroom 0.70 \
+  --zone zone-a --zone zone-b --zone zone-c \
+  --json
+```
+
+This calculates the required node count for the target memory volume, adds
+future nodes with deterministic names and addresses, checks the target max
+per-node memory load against the headroom limit, and returns a bounded sample
+of namespace moves. The HTTP surface is `POST /cluster-autoscale-plan`.
 
 Serverless deployment:
 
@@ -1328,7 +1350,7 @@ Current read:
 | Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`, passes the checked-in production SLO gate (`recall >= 0.95`, `p99 <= 100 ms`, `100 qps`, 3 replicas, HPA max 24), and estimates `$1.39` per 1M queries with `$365.02` monthly target cost. At 1M over 100 queries, persisted FAISS reaches `recall@10 1.000`, avg `39.12 ms`, p99 `57.71 ms`, and estimates `$4.17` per 1M queries with 6 replicas for 100 qps. Tuned Qdrant at 1M reaches `recall@10 0.984`, avg `82.57 ms`, p99 `137.86 ms`, so its service path still needs tail-latency tuning. | 100k Qdrant and 1M persisted FAISS now pass the recall/p99 production gates on the tested machine. Qdrant at 1M is recall-credible but not yet below the p99 SLO. |
 | Streaming production load | `benchmarks/production_streaming_load_benchmark.py` generates and inserts vectors in batches, stores only query source vectors outside the index, and measures target-recall, p99, SLO, and cost. The checked-in 10M compressed FAISS IVF-PQ run reaches target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status; the 100k smoke reaches `0.960`, p99 `1.10 ms`; the 10k smoke reaches `1.000`, p99 `0.98 ms`. | This is the first real 10M production-scale artifact. It is a compressed target-recall profile, not exact-neighbor recall and not yet a Qdrant/pgvector 10M service comparison. |
 | Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, Kubernetes `StatefulSet`, `HorizontalPodAutoscaler`, repair `CronJob`, operator-style `WaveMindCluster` reconciliation for `4096` namespaces, hot-cache hit rate `0.920`, query-audit prewarm warmed `1` query with prewarm hit `true`, query-vector cache local hit rate `0.995` with `1` encode call, Redis query-vector cache shared across workers `true`, shared Redis rate limiter allows `4` and limits `1` across 2 workers, Redis-compatible shared cache visible across workers, Memory OS Redis prewarm warmed `2` queries, predictive prefetch warmed `5` neighbor queries, Redis Memory OS demoted cold memories, Redis cross-worker hit `true`, Redis namespace invalidation `true`, API cache invalidation on `/remember` and `/forget` prevents stale cached recall, Memory OS found `2` hot queries, warmed `2`, predictively warmed `5`, demoted cold memories, purged `1` expired memory, and created `1` durable concept, service-mode distributed sharding recall after primary loss, service-mode repair copied `1` missing replica record with recall after repair `true`, real HTTP shard transport with proxy bypass `true`, HTTP repair copied `1` missing replica record, HTTP tombstone repair deleted `1` stale API record, concurrent HTTP writes `12`, concurrent query hit rate `1.000`, service-mode tombstone suppression before repair `true`, tombstone repair deleted `1` stale replica record, suppression after repair `true`, anti-entropy worker repaired `1` missing record and deleted `1` stale tombstone record, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, concurrent runtime writes `12`, concurrent runtime query hit rate `1.000`, active-active namespace delta sync, field-state CRDT convergence/idempotency/tombstone-wins, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, S3-compatible upload/latest-metadata/download/retention verification, object-store DR drill `true`, structured payload precision@1 `1.000`, and a deterministic 100M-memory capacity envelope with 128 nodes, 8 zones, RF=3, node/zone-loss availability `1.000`, and valid capacity plan `true`. | This proves routing, Kubernetes deployment/operator/HPA/repair manifests, service-mode repair, real HTTP shard transport, concurrent API safety for local WaveMind/SQLite nodes, concurrent replicated-runtime safety, tombstone-aware delete repair, anti-entropy background repair, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/predictive prefetch/consolidation/forgetting, local and Redis-compatible cache prewarm, shared cache invalidation and mutation safety, payload, distributed sharding, replicated-runtime, namespace-delta, distributed field-state convergence, offsite/archive/object-store backup lifecycle, restore-drill foundations, and 100M-scale placement/capacity planning. |
-| Production readiness gate | Current WaveMind core gate score is `1.000`: `24/24` criteria pass, `0` require action, `0` fail. Live Zep competitor evidence is tracked separately and remains pending until a real `ZEP_API_URL` or `ZEP_API_KEY` is configured. | This keeps production claims honest without letting a missing commercial competitor credential block WaveMind's own readiness verdict. WaveMind has a real production foundation, a checked-in 10M compressed FAISS profile, a deterministic 100M capacity envelope, and an architecture advisor preflight. |
+| Production readiness gate | Current WaveMind core gate score is `1.000`: `25/25` criteria pass, `0` require action, `0` fail. Live Zep competitor evidence is tracked separately and remains pending until a real `ZEP_API_URL` or `ZEP_API_KEY` is configured. | This keeps production claims honest without letting a missing commercial competitor credential block WaveMind's own readiness verdict. WaveMind has a real production foundation, a checked-in 10M compressed FAISS profile, a deterministic 100M capacity envelope, architecture advisor preflight, and cluster autoscale planning. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00`. Mem0 runs locally with Qdrant + FastEmbed and reaches `0.80`, `1.00`, stale suppression `0.60`. LangGraph persistent SQLite reaches `0.80`, `1.00`, stale suppression `1.00`. GraphRAG-style static graph reaches `1.00`, `1.00`, stale suppression `1.00` on this small static scenario. Zep has live adapter paths for the current `zep-cloud` Graph API and legacy/OSS-compatible `zep-python`; it is skipped only until `ZEP_API_URL` or `ZEP_API_KEY` points at a real Zep service. | This prevents fake competitor claims while still checking real installed competitors when they are available. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 

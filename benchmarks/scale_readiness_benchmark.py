@@ -42,6 +42,7 @@ from wavemind import (
     S3SnapshotStore,
     WaveMind,
     audio_payload,
+    build_cluster_autoscale_plan,
     build_cluster_plan,
     event_payload,
     image_payload,
@@ -468,6 +469,58 @@ def run_cluster_profile(
         "kubernetes_manifest_kind": plan.kubernetes_manifest()["kind"],
         "kubernetes_repair_cronjob_kind": repair_cronjob["kind"],
         "kubernetes_repair_cronjob_namespaces": repair_args.count("--namespace"),
+    }
+
+
+def run_cluster_autoscale_profile(
+    *,
+    namespace_count: int,
+    node_count: int,
+    replication_factor: int,
+    target_memories: int,
+) -> dict[str, object]:
+    namespaces = [f"tenant:{index}" for index in range(namespace_count)]
+    nodes = [
+        ClusterNode(
+            id=f"node-{index}",
+            address=f"https://wavemind-{index}.internal",
+            zone=f"zone-{index % 3}",
+        )
+        for index in range(node_count)
+    ]
+    started = time.perf_counter()
+    plan = build_cluster_autoscale_plan(
+        namespaces=namespaces,
+        nodes=nodes,
+        replication_factor=max(3, replication_factor),
+        target_memories=target_memories,
+        max_memories_per_node=1_000_000,
+        headroom=0.70,
+        node_prefix="wavemind",
+        address_template="https://{node_id}.internal",
+        zones=("zone-0", "zone-1", "zone-2"),
+        max_moves=25,
+    )
+    plan_ms = (time.perf_counter() - started) * 1000.0
+    return {
+        "engine": "WaveMind cluster autoscaler",
+        "status": plan.status,
+        "namespace_count": namespace_count,
+        "current_nodes": len(plan.current_nodes),
+        "required_nodes": plan.required_nodes,
+        "additional_nodes": plan.additional_nodes,
+        "replication_factor": plan.replication_factor,
+        "target_memories": plan.target_memories,
+        "max_memories_per_node": plan.max_memories_per_node,
+        "headroom": plan.headroom,
+        "current_max_node_memories": plan.current_max_node_memories,
+        "target_max_node_memories": plan.target_max_node_memories,
+        "target_within_headroom": plan.target_max_node_memories
+        <= int(plan.max_memories_per_node * plan.headroom),
+        "move_sample": len(plan.moves),
+        "omitted_moves": plan.omitted_moves,
+        "has_scale_action": any("Add" in action for action in plan.actions),
+        "plan_ms": plan_ms,
     }
 
 
@@ -2268,6 +2321,12 @@ def run_benchmark(
             replication_factor=replication_factor,
             simulated_memories=simulated_memories,
         ),
+        run_cluster_autoscale_profile(
+            namespace_count=namespace_count,
+            node_count=node_count,
+            replication_factor=replication_factor,
+            target_memories=max(simulated_memories * 10, 10_000_000),
+        ),
         run_operator_profile(
             namespace_count=namespace_count,
             node_count=node_count,
@@ -2299,6 +2358,7 @@ def run_benchmark(
             "replication_factor": replication_factor,
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
+                "cluster autoscale planning, "
                 "operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, real HTTP shard transport, "

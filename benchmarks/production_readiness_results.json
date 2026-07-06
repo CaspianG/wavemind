@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T10:24:40Z",
+  "generated_at": "2026-07-06T10:58:51Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 24,
+    "pass_count": 25,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 24
+    "total_criteria": 25
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T09:58:58Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T10:24:54Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -53,6 +53,14 @@
       "next_step": "Validate the same placement under live multi-node service load."
     },
     {
+      "id": "cluster_autoscale_planner",
+      "title": "Cluster autoscaler plans node additions within headroom",
+      "status": "pass",
+      "requirement": "Autoscale planning must convert target memories, RF, and per-node capacity into required node count, bounded target load, and namespace movement actions.",
+      "evidence": "current 4, required 50, target max 678711, moves 25+4069",
+      "next_step": "Connect this planner to operator reconciliation status and real HPA/load metrics."
+    },
+    {
       "id": "hundred_million_capacity_envelope",
       "title": "100M-memory capacity envelope is planned across a large cluster",
       "status": "pass",
@@ -81,7 +89,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0037999707274138927 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.00890000956133008 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -153,7 +161,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 221.50 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 320.65 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -161,7 +169,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.4084000140428543 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.3216999941505492 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`24/24` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`25/25` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -75,6 +75,11 @@ policy matters more than raw vector-database scale:
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
   node/zone-loss simulation, read/write quorum reporting, a Kubernetes
   StatefulSet manifest skeleton, and a scheduled repair CronJob manifest.
+- Cluster autoscale planning is available through
+  `build_cluster_autoscale_plan()`, `wavemind cluster-autoscale-plan`, and
+  `POST /cluster-autoscale-plan`: it maps target memories, replication factor,
+  per-node capacity, and headroom into required node count, future nodes,
+  bounded per-node load, and namespace movement actions.
 - A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
   storage, and scheduled `cluster-repair` CronJob.

@@ -17,7 +17,7 @@ from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
 from .advisor import advise_memory_architecture
-from .cluster import ClusterNode, build_cluster_plan
+from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .importers import import_path
@@ -574,6 +574,21 @@ class ClusterPlanRequest(BaseModel):
     repair_tags: list[str] = Field(default_factory=list)
 
 
+class ClusterAutoscaleRequest(BaseModel):
+    namespaces: list[str] = Field(default_factory=list)
+    namespace_prefix: str = "tenant"
+    namespace_count: int = Field(default=0, ge=0, le=1_000_000)
+    nodes: list[ClusterPlanNodeRequest] = Field(min_length=1)
+    replication_factor: int = Field(default=3, ge=1)
+    target_memories: int = Field(ge=0)
+    max_memories_per_node: int = Field(default=1_000_000, gt=0)
+    headroom: float = Field(default=0.70, gt=0.0, le=1.0)
+    node_prefix: str = "node"
+    address_template: str = "http://{node_id}:8000"
+    zones: list[str] = Field(default_factory=list)
+    max_moves: int = Field(default=100, ge=0, le=100_000)
+
+
 class ConsolidateRequest(BaseModel):
     namespace: str | None = None
     seed_text: str | None = None
@@ -1018,6 +1033,40 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 tags=tuple(request.repair_tags),
             )
         return payload
+
+    @app.post("/cluster-autoscale-plan", dependencies=[Depends(require_role("read"))])
+    def cluster_autoscale_plan(request: ClusterAutoscaleRequest):
+        namespaces = list(request.namespaces)
+        namespaces.extend(
+            f"{request.namespace_prefix}:{index}"
+            for index in range(request.namespace_count)
+        )
+        if not namespaces:
+            raise HTTPException(
+                status_code=400,
+                detail="cluster-autoscale-plan requires namespaces or namespace_count",
+            )
+        plan = build_cluster_autoscale_plan(
+            namespaces=namespaces,
+            nodes=[
+                ClusterNode(
+                    id=node.id,
+                    address=node.address,
+                    zone=node.zone,
+                    weight=node.weight,
+                )
+                for node in request.nodes
+            ],
+            replication_factor=request.replication_factor,
+            target_memories=request.target_memories,
+            max_memories_per_node=request.max_memories_per_node,
+            headroom=request.headroom,
+            node_prefix=request.node_prefix,
+            address_template=request.address_template,
+            zones=tuple(request.zones),
+            max_moves=request.max_moves,
+        )
+        return plan.as_dict()
 
     @app.post("/index/rebuild", dependencies=[Depends(require_role("admin"))])
     def rebuild_index():

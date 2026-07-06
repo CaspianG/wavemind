@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from wavemind import ClusterNode, build_cluster_plan
+from wavemind import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 
 
 def run_cli(*args):
@@ -219,3 +219,90 @@ def test_cli_cluster_plan_outputs_repair_cronjob():
     assert "tenant:a" in container["args"]
     assert "--tag" in container["args"]
     assert "ops" in container["args"]
+
+
+def test_cluster_autoscale_plan_adds_nodes_and_plans_namespace_moves():
+    plan = build_cluster_autoscale_plan(
+        namespaces=[f"tenant:{index}" for index in range(128)],
+        nodes=[
+            ClusterNode(id="node-a", address="https://wm-a.internal", zone="zone-a"),
+            ClusterNode(id="node-b", address="https://wm-b.internal", zone="zone-b"),
+            ClusterNode(id="node-c", address="https://wm-c.internal", zone="zone-c"),
+        ],
+        replication_factor=3,
+        target_memories=10_000_000,
+        max_memories_per_node=1_000_000,
+        headroom=0.70,
+        node_prefix="wm",
+        address_template="https://{node_id}.internal",
+        zones=("zone-a", "zone-b", "zone-c"),
+        max_moves=10,
+    )
+    payload = plan.as_dict()
+
+    assert plan.status == "scale_required"
+    assert plan.required_nodes >= 43
+    assert plan.additional_nodes == plan.required_nodes - 3
+    assert len(payload["target_nodes"]) == plan.required_nodes
+    assert payload["target_nodes"][3]["id"] == "wm-1"
+    assert payload["target_nodes"][3]["address"] == "https://wm-1.internal"
+    assert plan.target_max_node_memories <= int(1_000_000 * 0.70)
+    assert len(plan.moves) == 10
+    assert plan.omitted_moves > 0
+    assert any(f"Add {plan.additional_nodes} node" in action for action in plan.actions)
+
+
+def test_cluster_autoscale_plan_reports_ok_when_capacity_is_enough():
+    plan = build_cluster_autoscale_plan(
+        namespaces=[f"tenant:{index}" for index in range(32)],
+        nodes=[
+            ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+            ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+            ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+        ],
+        replication_factor=3,
+        target_memories=100_000,
+        max_memories_per_node=1_000_000,
+    )
+
+    assert plan.status == "ok"
+    assert plan.additional_nodes == 0
+    assert not plan.warnings
+
+
+def test_cli_cluster_autoscale_plan_outputs_json():
+    result = run_cli(
+        "cluster-autoscale-plan",
+        "--namespace-count",
+        "64",
+        "--node",
+        "node-a=https://wm-a.internal",
+        "--node",
+        "node-b=https://wm-b.internal",
+        "--node",
+        "node-c=https://wm-c.internal",
+        "--replication-factor",
+        "3",
+        "--target-memories",
+        "10000000",
+        "--max-memories-per-node",
+        "1000000",
+        "--node-prefix",
+        "wm",
+        "--zone",
+        "zone-a",
+        "--zone",
+        "zone-b",
+        "--zone",
+        "zone-c",
+        "--max-moves",
+        "5",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "scale_required"
+    assert payload["required_nodes"] >= 43
+    assert payload["additional_nodes"] == payload["required_nodes"] - 3
+    assert len(payload["moves"]) == 5
+    assert payload["omitted_moves"] > 0

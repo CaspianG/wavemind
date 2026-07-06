@@ -15,6 +15,10 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind cluster planner"]["node_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["zone_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["write_quorum"] == 2
+    assert results["WaveMind cluster autoscaler"]["status"] == "scale_required"
+    assert results["WaveMind cluster autoscaler"]["required_nodes"] > 3
+    assert results["WaveMind cluster autoscaler"]["target_within_headroom"] is True
+    assert results["WaveMind cluster autoscaler"]["has_scale_action"] is True
     assert results["WaveMind Kubernetes operator"]["bundle_has_crd"] is True
     assert results["WaveMind Kubernetes operator"]["bundle_has_operator_deployment"] is True
     assert results["WaveMind Kubernetes operator"]["has_service"] is True

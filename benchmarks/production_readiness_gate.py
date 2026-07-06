@@ -163,6 +163,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     competitors = _engine_results(artifacts["competitors"])
 
     cluster = scale.get("WaveMind cluster planner", {})
+    cluster_autoscaler = scale.get("WaveMind cluster autoscaler", {})
     capacity_100m = scale.get("WaveMind 100M capacity envelope", {})
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
@@ -301,6 +302,31 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"namespaces {cluster.get('namespaces')}"
             ),
             next_step="Validate the same placement under live multi-node service load.",
+        ),
+        _criterion(
+            criterion_id="cluster_autoscale_planner",
+            title="Cluster autoscaler plans node additions within headroom",
+            status=(
+                "pass"
+                if cluster_autoscaler.get("status") == "scale_required"
+                and int(cluster_autoscaler.get("required_nodes", 0))
+                > int(cluster_autoscaler.get("current_nodes", 0))
+                and cluster_autoscaler.get("target_within_headroom")
+                and cluster_autoscaler.get("has_scale_action")
+                else "fail"
+            ),
+            requirement=(
+                "Autoscale planning must convert target memories, RF, and "
+                "per-node capacity into required node count, bounded target "
+                "load, and namespace movement actions."
+            ),
+            evidence=(
+                f"current {cluster_autoscaler.get('current_nodes')}, "
+                f"required {cluster_autoscaler.get('required_nodes')}, "
+                f"target max {cluster_autoscaler.get('target_max_node_memories')}, "
+                f"moves {cluster_autoscaler.get('move_sample')}+{cluster_autoscaler.get('omitted_moves')}"
+            ),
+            next_step="Connect this planner to operator reconciliation status and real HPA/load metrics.",
         ),
         _criterion(
             criterion_id="hundred_million_capacity_envelope",

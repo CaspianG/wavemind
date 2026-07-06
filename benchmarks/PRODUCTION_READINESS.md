@@ -7,22 +7,23 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `24` |
+| passed criteria | `25` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `24` |
+| total criteria | `25` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T09:58:58Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T10:24:54Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
+| Cluster autoscaler plans node additions within headroom | `pass` | current 4, required 50, target max 678711, moves 25+4069 | Connect this planner to operator reconciliation status and real HPA/load metrics. |
 | 100M-memory capacity envelope is planned across a large cluster | `pass` | 100000000 memories, 128 nodes, RF 3, replica skew 1.09375, max storage/node 5.806214176118374 GB | Promote this envelope from deterministic planning to a real 100M service-backed Qdrant/pgvector/FAISS load run on sized hardware. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |
-| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.0037999707274138927 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
+| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.00890000956133008 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
 | Query-vector cache avoids repeated encoder work | `pass` | local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1 | Add service-mode vector-cache load evidence with a sentence-transformer encoder. |
 | Redis-compatible shared rate limiter works across workers | `pass` | workers 2, allowed 4, limited 1, shared True | Run the same shared limiter profile against a live Redis service in multi-worker API load tests. |
 | Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, predictive warmed 5, Memory OS hit True, invalidation True | Keep the real Redis multi-process API load workflow green. |
@@ -31,8 +32,8 @@ verdict, not a marketing claim.
 | Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, predictive warmed 5, expired 1, concepts 1, priority predictions 2, forgetting demotions 3 | Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |
-| Sustained HTTP cluster load survives failover and repair | `pass` | nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 221.50 ms | Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale. |
-| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.4084000140428543 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
+| Sustained HTTP cluster load survives failover and repair | `pass` | nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 320.65 ms | Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale. |
+| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.3216999941505492 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
 | Active-active sync and field-state CRDT converge | `pass` | delta sync True, CRDT idempotent True | Run active-active sync against independent persistent stores. |
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, precision@1 1.0 | Add real CLIP/audio embedding backends and larger multimodal retrieval tests. |

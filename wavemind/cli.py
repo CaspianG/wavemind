@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
-from .cluster import ClusterNode, build_cluster_plan
+from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
@@ -195,6 +195,24 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_plan.add_argument("--repair-include-expired", action="store_true")
     cluster_plan.add_argument("--repair-tag", action="append", default=[])
     cluster_plan.add_argument("--json", action="store_true")
+
+    cluster_autoscale = sub.add_parser(
+        "cluster-autoscale-plan",
+        help="Plan node additions and namespace movement for target cluster scale",
+    )
+    cluster_autoscale.add_argument("--namespace", action="append", default=[])
+    cluster_autoscale.add_argument("--namespace-prefix", default="tenant")
+    cluster_autoscale.add_argument("--namespace-count", type=int, default=0)
+    cluster_autoscale.add_argument("--node", action="append", required=True, help="node_id=host:port or node_id")
+    cluster_autoscale.add_argument("--replication-factor", type=int, default=3)
+    cluster_autoscale.add_argument("--target-memories", type=int, required=True)
+    cluster_autoscale.add_argument("--max-memories-per-node", type=int, default=1_000_000)
+    cluster_autoscale.add_argument("--headroom", type=float, default=0.70)
+    cluster_autoscale.add_argument("--node-prefix", default="node")
+    cluster_autoscale.add_argument("--address-template", default="http://{node_id}:8000")
+    cluster_autoscale.add_argument("--zone", action="append", default=[])
+    cluster_autoscale.add_argument("--max-moves", type=int, default=100)
+    cluster_autoscale.add_argument("--json", action="store_true")
 
     cluster_repair = sub.add_parser(
         "cluster-repair",
@@ -564,6 +582,28 @@ def print_architecture_advice(advice: dict[str, object]) -> None:
         print("next_commands:")
         for command in next_commands:
             print(f"- {command}")
+
+
+def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
+    print(f"status: {plan['status']}")
+    print(f"current_nodes: {len(plan['current_nodes'])}")
+    print(f"required_nodes: {plan['required_nodes']}")
+    print(f"additional_nodes: {plan['additional_nodes']}")
+    print(f"target_memories: {plan['target_memories']}")
+    print(f"max_memories_per_node: {plan['max_memories_per_node']}")
+    print(f"current_max_node_memories: {plan['current_max_node_memories']}")
+    print(f"target_max_node_memories: {plan['target_max_node_memories']}")
+    print(f"moves: {len(plan['moves'])}")
+    if plan.get("omitted_moves"):
+        print(f"omitted_moves: {plan['omitted_moves']}")
+    if plan.get("warnings"):
+        print("warnings:")
+        for warning in plan["warnings"]:
+            print(f"- {warning}")
+    if plan.get("actions"):
+        print("actions:")
+        for action in plan["actions"]:
+            print(f"- {action}")
 
 
 def print_quickstart() -> None:
@@ -1003,6 +1043,34 @@ def main(argv: list[str] | None = None) -> int:
                 print("warnings:")
                 for warning in plan.warnings:
                     print(f"- {warning}")
+        return 0
+
+    if args.command == "cluster-autoscale-plan":
+        namespaces = list(args.namespace)
+        namespaces.extend(
+            f"{args.namespace_prefix}:{index}"
+            for index in range(max(0, int(args.namespace_count)))
+        )
+        if not namespaces:
+            print("cluster-autoscale-plan requires --namespace or --namespace-count", file=sys.stderr)
+            return 2
+        plan = build_cluster_autoscale_plan(
+            namespaces=namespaces,
+            nodes=[_parse_cluster_node(value) for value in args.node],
+            replication_factor=args.replication_factor,
+            target_memories=args.target_memories,
+            max_memories_per_node=args.max_memories_per_node,
+            headroom=args.headroom,
+            node_prefix=args.node_prefix,
+            address_template=args.address_template,
+            zones=tuple(args.zone),
+            max_moves=args.max_moves,
+        )
+        payload = plan.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_cluster_autoscale_plan(payload)
         return 0
 
     if args.command == "cluster-repair":

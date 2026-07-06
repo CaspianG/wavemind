@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import asdict, dataclass
 from typing import Iterable
 
@@ -283,6 +284,68 @@ class ClusterPlan:
         }
 
 
+@dataclass(frozen=True)
+class NamespaceMove:
+    namespace: str
+    from_primary: str
+    to_primary: str
+    from_replicas: tuple[str, ...]
+    to_replicas: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "namespace": self.namespace,
+            "from_primary": self.from_primary,
+            "to_primary": self.to_primary,
+            "from_replicas": list(self.from_replicas),
+            "to_replicas": list(self.to_replicas),
+        }
+
+
+@dataclass(frozen=True)
+class ClusterAutoscalePlan:
+    status: str
+    current_nodes: tuple[ClusterNode, ...]
+    target_nodes: tuple[ClusterNode, ...]
+    replication_factor: int
+    namespace_count: int
+    target_memories: int
+    max_memories_per_node: int
+    headroom: float
+    required_nodes: int
+    additional_nodes: int
+    current_max_node_memories: int
+    target_max_node_memories: int
+    current_replica_skew: float
+    target_replica_skew: float
+    moves: tuple[NamespaceMove, ...]
+    omitted_moves: int = 0
+    warnings: tuple[str, ...] = ()
+    actions: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "current_nodes": [node.as_dict() for node in self.current_nodes],
+            "target_nodes": [node.as_dict() for node in self.target_nodes],
+            "replication_factor": self.replication_factor,
+            "namespace_count": self.namespace_count,
+            "target_memories": self.target_memories,
+            "max_memories_per_node": self.max_memories_per_node,
+            "headroom": self.headroom,
+            "required_nodes": self.required_nodes,
+            "additional_nodes": self.additional_nodes,
+            "current_max_node_memories": self.current_max_node_memories,
+            "target_max_node_memories": self.target_max_node_memories,
+            "current_replica_skew": self.current_replica_skew,
+            "target_replica_skew": self.target_replica_skew,
+            "moves": [move.as_dict() for move in self.moves],
+            "omitted_moves": self.omitted_moves,
+            "warnings": list(self.warnings),
+            "actions": list(self.actions),
+        }
+
+
 def build_cluster_plan(
     namespaces: Iterable[str],
     nodes: Iterable[ClusterNode | dict[str, object] | str],
@@ -320,6 +383,161 @@ def build_cluster_plan(
     )
 
 
+def build_cluster_autoscale_plan(
+    namespaces: Iterable[str],
+    nodes: Iterable[ClusterNode | dict[str, object] | str],
+    *,
+    replication_factor: int = 3,
+    target_memories: int,
+    max_memories_per_node: int = 1_000_000,
+    headroom: float = 0.70,
+    node_prefix: str = "node",
+    address_template: str = "http://{node_id}:8000",
+    zones: Iterable[str] = (),
+    max_moves: int = 100,
+) -> ClusterAutoscalePlan:
+    namespace_list = tuple(str(namespace) for namespace in namespaces)
+    if not namespace_list:
+        raise ValueError("At least one namespace is required")
+    current_nodes = tuple(_coerce_node(node) for node in nodes)
+    if not current_nodes:
+        raise ValueError("At least one cluster node is required")
+    if replication_factor <= 0:
+        raise ValueError("replication_factor must be positive")
+    if max_memories_per_node <= 0:
+        raise ValueError("max_memories_per_node must be positive")
+    if headroom <= 0 or headroom > 1:
+        raise ValueError("headroom must be in (0, 1]")
+    if max_moves < 0:
+        raise ValueError("max_moves cannot be negative")
+
+    target = max(0, int(target_memories))
+    effective_capacity = max(1.0, float(max_memories_per_node) * float(headroom))
+    required_nodes = max(
+        int(replication_factor),
+        math.ceil((target * int(replication_factor)) / effective_capacity),
+    )
+    required_nodes = max(required_nodes, len(current_nodes))
+    target_nodes = _extend_nodes(
+        current_nodes,
+        required_nodes=required_nodes,
+        node_prefix=node_prefix,
+        address_template=address_template,
+        zones=tuple(zones),
+    )
+
+    current_plan = build_cluster_plan(
+        namespaces=namespace_list,
+        nodes=current_nodes,
+        replication_factor=min(replication_factor, len(current_nodes)),
+    )
+    target_plan = build_cluster_plan(
+        namespaces=namespace_list,
+        nodes=target_nodes,
+        replication_factor=replication_factor,
+    )
+    current_memory_by_node = _estimated_node_memories(
+        current_plan.node_load,
+        namespace_count=len(namespace_list),
+        target_memories=target,
+    )
+    target_memory_by_node = _estimated_node_memories(
+        target_plan.node_load,
+        namespace_count=len(namespace_list),
+        target_memories=target,
+    )
+    current_max = max(current_memory_by_node.values(), default=0)
+    target_max = max(target_memory_by_node.values(), default=0)
+    while target_max > effective_capacity and len(target_nodes) < max(required_nodes * 4, required_nodes + 1):
+        required_nodes += 1
+        target_nodes = _extend_nodes(
+            current_nodes,
+            required_nodes=required_nodes,
+            node_prefix=node_prefix,
+            address_template=address_template,
+            zones=tuple(zones),
+        )
+        target_plan = build_cluster_plan(
+            namespaces=namespace_list,
+            nodes=target_nodes,
+            replication_factor=replication_factor,
+        )
+        target_memory_by_node = _estimated_node_memories(
+            target_plan.node_load,
+            namespace_count=len(namespace_list),
+            target_memories=target,
+        )
+        target_max = max(target_memory_by_node.values(), default=0)
+    current_skew = _load_skew(current_plan.node_load)
+    target_skew = _load_skew(target_plan.node_load)
+
+    current_by_namespace = {
+        placement.namespace: placement for placement in current_plan.placements
+    }
+    target_by_namespace = {
+        placement.namespace: placement for placement in target_plan.placements
+    }
+    all_moves = [
+        NamespaceMove(
+            namespace=namespace,
+            from_primary=current_by_namespace[namespace].primary,
+            to_primary=target_by_namespace[namespace].primary,
+            from_replicas=current_by_namespace[namespace].replicas,
+            to_replicas=target_by_namespace[namespace].replicas,
+        )
+        for namespace in namespace_list
+        if current_by_namespace[namespace].primary != target_by_namespace[namespace].primary
+        or current_by_namespace[namespace].replicas != target_by_namespace[namespace].replicas
+    ]
+    moves = tuple(all_moves[:max_moves])
+    omitted_moves = max(0, len(all_moves) - len(moves))
+
+    warnings: list[str] = []
+    actions: list[str] = []
+    additional_nodes = max(0, len(target_nodes) - len(current_nodes))
+    if len(current_nodes) < replication_factor:
+        warnings.append("current node count is below replication_factor")
+    if current_max > effective_capacity:
+        warnings.append("current placement exceeds per-node headroom")
+    if additional_nodes:
+        actions.append(f"Add {additional_nodes} node(s) before importing the target memory volume.")
+    if all_moves:
+        actions.append(
+            f"Move or repair {len(all_moves)} namespace placement(s) after the new node set is available."
+        )
+    actions.append("Run external HTTP cluster load with failover and repair before raising production traffic.")
+
+    if additional_nodes:
+        status = "scale_required"
+    elif current_max > effective_capacity or len(current_nodes) < replication_factor:
+        status = "action_required"
+    elif current_skew > 1.25:
+        status = "rebalance_recommended"
+    else:
+        status = "ok"
+
+    return ClusterAutoscalePlan(
+        status=status,
+        current_nodes=current_nodes,
+        target_nodes=target_nodes,
+        replication_factor=int(replication_factor),
+        namespace_count=len(namespace_list),
+        target_memories=target,
+        max_memories_per_node=int(max_memories_per_node),
+        headroom=float(headroom),
+        required_nodes=len(target_nodes),
+        additional_nodes=additional_nodes,
+        current_max_node_memories=int(math.ceil(current_max)),
+        target_max_node_memories=int(math.ceil(target_max)),
+        current_replica_skew=round(current_skew, 6),
+        target_replica_skew=round(target_skew, 6),
+        moves=moves,
+        omitted_moves=omitted_moves,
+        warnings=tuple(dict.fromkeys(warnings)),
+        actions=tuple(dict.fromkeys(actions)),
+    )
+
+
 def _coerce_node(node: ClusterNode | dict[str, object] | str) -> ClusterNode:
     if isinstance(node, ClusterNode):
         return node
@@ -331,6 +549,60 @@ def _coerce_node(node: ClusterNode | dict[str, object] | str) -> ClusterNode:
         zone=str(node["zone"]) if node.get("zone") is not None else None,
         weight=float(node.get("weight", 1.0)),
     )
+
+
+def _extend_nodes(
+    current_nodes: tuple[ClusterNode, ...],
+    *,
+    required_nodes: int,
+    node_prefix: str,
+    address_template: str,
+    zones: tuple[str, ...],
+) -> tuple[ClusterNode, ...]:
+    nodes = list(current_nodes)
+    used_ids = {node.id for node in nodes}
+    index = 0
+    while len(nodes) < required_nodes:
+        index += 1
+        node_id = f"{node_prefix}-{index}"
+        while node_id in used_ids:
+            index += 1
+            node_id = f"{node_prefix}-{index}"
+        used_ids.add(node_id)
+        zone = zones[(len(nodes)) % len(zones)] if zones else None
+        nodes.append(
+            ClusterNode(
+                id=node_id,
+                address=address_template.format(node_id=node_id, index=index),
+                zone=zone,
+            )
+        )
+    return tuple(nodes)
+
+
+def _estimated_node_memories(
+    node_load: dict[str, int],
+    *,
+    namespace_count: int,
+    target_memories: int,
+) -> dict[str, float]:
+    if namespace_count <= 0:
+        return {node_id: 0.0 for node_id in node_load}
+    memories_per_namespace = float(target_memories) / float(namespace_count)
+    return {
+        node_id: load * memories_per_namespace
+        for node_id, load in node_load.items()
+    }
+
+
+def _load_skew(node_load: dict[str, int]) -> float:
+    if not node_load:
+        return 1.0
+    values = list(node_load.values())
+    average = sum(values) / len(values) if values else 0.0
+    if average <= 0:
+        return 1.0
+    return max(values) / average
 
 
 def _place_namespace(
