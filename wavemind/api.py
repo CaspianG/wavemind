@@ -156,6 +156,21 @@ def _cache_from_env() -> HotMemoryCache | RedisHotMemoryCache | None:
     return HotMemoryCache(capacity=capacity, ttl_seconds=ttl_seconds)
 
 
+def _invalidate_cache(app: FastAPI, namespace: str | None) -> int:
+    cache = getattr(app.state, "cache", None)
+    if cache is None:
+        return 0
+    try:
+        if namespace is None:
+            size = cache.stats().size
+            cache.clear()
+            return size
+        return cache.invalidate_namespace(namespace)
+    except Exception:
+        logger.warning("failed to invalidate API cache namespace=%s", namespace, exc_info=True)
+        return 0
+
+
 def _metric_key(value: str) -> str:
     return "".join(char if char.isalnum() else "_" for char in value.lower()).strip("_")
 
@@ -580,7 +595,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 metadata=request.metadata,
                 priority=request.priority,
             )
-        logger.info("remembered id=%s namespace=%s", id, request.namespace)
+            invalidated = _invalidate_cache(app, request.namespace)
+        logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
         return RememberResponse(id=id)
 
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
@@ -635,7 +651,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 text=payload.text,
                 namespace=payload.namespace,
             )
-        logger.info("forgot deleted=%s namespace=%s", deleted, payload.namespace)
+            invalidated = _invalidate_cache(app, payload.namespace) if deleted else 0
+        logger.info("forgot deleted=%s namespace=%s cache_invalidated=%s", deleted, payload.namespace, invalidated)
         return ForgetResponse(deleted=deleted)
 
     @app.get("/stats", dependencies=[Depends(require_role("read"))])

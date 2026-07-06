@@ -147,6 +147,60 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
         mind.close()
 
 
+def test_fastapi_forget_invalidates_local_query_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-cache-invalidation.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        score_threshold=0.05,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            remembered = client.post(
+                "/remember",
+                json={"text": "cache invalidation target memory", "namespace": "tenant:cache"},
+            )
+            assert remembered.status_code == 200
+            memory_id = remembered.json()["id"]
+
+            first = client.post(
+                "/query",
+                json={
+                    "text": "cache invalidation target",
+                    "namespace": "tenant:cache",
+                    "top_k": 1,
+                },
+            )
+            assert first.status_code == 200
+            assert first.json()["results"][0]["id"] == memory_id
+
+            deleted = client.request(
+                "DELETE",
+                "/forget",
+                json={"id": memory_id, "namespace": "tenant:cache"},
+            )
+            assert deleted.status_code == 200
+            assert deleted.json()["deleted"] == 1
+
+            second = client.post(
+                "/query",
+                json={
+                    "text": "cache invalidation target",
+                    "namespace": "tenant:cache",
+                    "top_k": 1,
+                },
+            )
+            assert second.status_code == 200
+            assert second.json()["results"] == []
+    finally:
+        mind.close()
+
+
 def test_fastapi_consolidate_creates_durable_concept_memory(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api-consolidate.sqlite3",
@@ -440,6 +494,30 @@ def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
             assert query.status_code == 200
             assert query.json()["results"][0]["text"] == "redis warmed memory"
             assert any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
+
+            replacement = client.post(
+                "/remember",
+                json={"text": "redis replacement memory", "namespace": "tenant:redis"},
+            )
+            assert replacement.status_code == 200
+            assert not any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
+
+            refreshed = client.post(
+                "/query",
+                json={"text": "replacement memory", "namespace": "tenant:redis", "top_k": 1},
+            )
+            assert refreshed.status_code == 200
+            assert refreshed.json()["results"][0]["id"] == replacement.json()["id"]
+            assert any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
+
+            deleted = client.request(
+                "DELETE",
+                "/forget",
+                json={"id": replacement.json()["id"], "namespace": "tenant:redis"},
+            )
+            assert deleted.status_code == 200
+            assert deleted.json()["deleted"] == 1
+            assert not any(key.startswith("wm:test:tenant:redis:") for key in FakeRedisClient.values)
     finally:
         mind.close()
 
