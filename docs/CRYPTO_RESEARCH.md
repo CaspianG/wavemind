@@ -191,6 +191,13 @@ Follow-up target-price experiments:
   and improves MAE from `392.4` to `392.0` bps, RMSE from `612.6` to `610.9`
   bps, MAPE from `4.05%` to `4.04%`, and worst-slice MAPE from `22.39%` to
   `22.25%`. It disables itself on `1d`, where it did not beat robust.
+- `wavemind-relationship-field-target` was tested as a 4h repair layer that
+  mines fold-local OHLCV feature relationships. Direct relationship sign-flips
+  improved one full run but failed a shorter HYPE/SOL smoke slice, so they are
+  rejected. The safe sign-anchored version is reproducible but not a winner:
+  `0.591` direction hit and `392.5` bps MAE versus regime-policy `0.591` /
+  `392.0` bps. The result is kept as a research trail, not as the current best
+  model.
 
 Signal-quality frontier result:
 
@@ -739,9 +746,12 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 18. Done: perp signal-quality coverage frontier. The observed `0.80` target
     tier reaches `0.806` direction hit at `0.095` coverage, but the stricter
     slice-stable frontier currently finds no valid 60%+ tier.
-19. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
+19. Done: experimental 4h relationship-field repair. Direct sign-flips were
+    rejected after smoke failure; sign-anchored relationship magnitude was safe
+    but did not beat the current regime-policy winner.
+20. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
     promising, but 4h high-conviction perps fail and block broad robustness.
-20. Next: validate the market-field target on more exchanges, date ranges,
+21. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
 21. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,

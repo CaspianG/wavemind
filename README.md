@@ -430,6 +430,14 @@ the robust/perp direction, and it disables itself on the daily horizon. On the
 `4.04%`, and worst-slice MAPE from `22.39%` to `22.25%`. This is a small safe
 target-price improvement, not a breakthrough directional model.
 
+Rejected 4h repair experiment: `wavemind-relationship-field-target` mines
+fold-local OHLCV feature relationships for the 4h layer. Direct relationship
+sign-flips improved one full run but failed a shorter HYPE/SOL smoke slice, so
+they are not accepted. The safe sign-anchored version is reproducible but not a
+winner: `0.591` direction hit and `392.5` bps MAE versus regime-policy
+`0.591` / `392.0` bps. This keeps the research trail explicit without promoting
+an unstable model.
+
 The strongest current perpetual result is now measured as a coverage frontier,
 not a blanket accuracy claim:
 
@@ -630,11 +638,14 @@ Near-term execution plan:
 23. Done: perp signal-quality coverage frontier. The observed `0.80` target
     tier reaches `0.806` direction hit at `0.095` coverage, but the stricter
     slice-stable frontier currently finds no valid 60%+ tier.
-24. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
+24. Done: experimental 4h relationship-field repair. Direct sign-flips were
+    rejected after smoke failure; sign-anchored relationship magnitude was safe
+    but did not beat the current regime-policy winner.
+25. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
     promising, but 4h high-conviction perps fail and block broad robustness.
-25. Next: validate the market-field target on more exchanges, date ranges,
+26. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-26. Only after robustness holds, test signal construction and backtesting.
+27. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

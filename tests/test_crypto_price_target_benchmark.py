@@ -15,6 +15,8 @@ from benchmarks.crypto_price_target_benchmark import (
     _perp_field_value_from_features,
     _market_field_value_from_features,
     _regime_policy_bucket_keys,
+    _relationship_candidates_from_tokens,
+    _relationship_tokens,
     _robust_1h_target_value,
     _robust_1d_target_value,
     load_markets,
@@ -50,6 +52,7 @@ def test_price_target_benchmark_scores_future_price():
             "online-expert",
             "directional-head",
             "regime-policy",
+            "relationship-field",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -70,6 +73,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind online-expert target"]["queries"] == 24
     assert result_by_engine["WaveMind directional-head target"]["queries"] == 24
     assert result_by_engine["WaveMind regime-policy target"]["queries"] == 24
+    assert result_by_engine["WaveMind relationship-field target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["queries"] == 24
     assert result_by_engine["WaveMind ensemble target"]["queries"] == 24
     assert result_by_engine["WaveMind calibrated target"]["queries"] == 24
@@ -78,6 +82,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind online-expert target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind directional-head target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind regime-policy target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind relationship-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind market-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
@@ -89,6 +94,7 @@ def test_price_target_benchmark_scores_future_price():
     assert payload["event_metrics"][0]["predicted_direction"] in {"up", "down"}
     assert any("directional_head" in row for row in payload["by_market"])
     assert any("regime_target_policy" in row for row in payload["by_market"])
+    assert any("relationship_target_policy" in row for row in payload["by_market"])
 
     sampled = sampled_event_payload(payload, sample_size=5)
     assert sampled["event_metrics_total"] == len(payload["event_metrics"])
@@ -193,6 +199,42 @@ def test_regime_policy_falls_back_on_daily_horizon():
     assert result_by_engine["WaveMind robust target"]["queries"] == 8
     assert payload["by_market"][0]["regime_target_policy"]["enabled"] is False
     assert payload["by_market"][0]["regime_target_policy"]["note"] == "daily_horizon_requires_separate_policy"
+
+
+def test_relationship_field_falls_back_outside_four_hour():
+    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="1h", bars=180, seed=72)
+    windows = make_ohlcv_windows(
+        bars,
+        symbol="BTC/USDT",
+        timeframe="1h",
+        window=16,
+        horizon=24,
+        direction_threshold_bps=0.0,
+    )
+
+    payload = run_price_target_benchmark(
+        markets=[
+            {
+                "symbol": "BTC/USDT",
+                "timeframe": "1h",
+                "horizon": 24,
+                "bars": bars,
+                "windows": windows,
+                "source": "synthetic",
+            }
+        ],
+        engines=["relationship-field", "wavemind-robust-target"],
+        train_windows=95,
+        test_windows=8,
+        folds=1,
+        calibration_windows=48,
+    )
+
+    result_by_engine = {result["engine"]: result for result in payload["results"]}
+    assert result_by_engine["WaveMind relationship-field target"]["queries"] == 8
+    assert result_by_engine["WaveMind robust target"]["queries"] == 8
+    assert payload["by_market"][0]["relationship_target_policy"]["enabled"] is False
+    assert payload["by_market"][0]["relationship_target_policy"]["note"] == "relationship_field_currently_4h_only"
 
 
 def test_robust_1d_target_reduces_magnitude_in_high_risk_windows():
@@ -323,6 +365,25 @@ def test_regime_policy_bucket_keys_are_specific_then_broad():
     assert len(keys) == len(set(keys))
 
 
+def test_relationship_tokens_include_single_and_pair_candidates():
+    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="4h", bars=80, seed=75)
+    windows = make_ohlcv_windows(
+        bars,
+        symbol="BTC/USDT",
+        timeframe="4h",
+        window=16,
+        horizon=6,
+        direction_threshold_bps=0.0,
+    )
+
+    tokens = _relationship_tokens(windows[0])
+    candidates = _relationship_candidates_from_tokens(tokens)
+
+    assert any(token.startswith("rsi_bucket=") for token in tokens)
+    assert any("&" in candidate for candidate in candidates)
+    assert set(tokens).issubset(set(candidates))
+
+
 def test_cache_path_sanitizes_perpetual_symbols(tmp_path):
     path = _cache_path(tmp_path, "okx", "HYPE/USDT:USDT", "1h")
 
@@ -352,6 +413,7 @@ def test_price_target_markdown_and_cli(tmp_path):
             "online-expert",
             "directional-head",
             "regime-policy",
+            "relationship-field",
             "perp-field",
             "wavemind-robust-target",
             "wavemind-ensemble",

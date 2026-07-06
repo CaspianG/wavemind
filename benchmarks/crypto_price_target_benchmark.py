@@ -38,6 +38,17 @@ DEFAULT_TIMEFRAMES = ("1h", "4h", "1d")
 DEFAULT_HORIZONS = {"1h": 24, "4h": 6, "1d": 7}
 DEFAULT_EVENT_SAMPLE_SIZE = 240
 _ONLINE_EXPERT_CANDIDATE_CACHE: dict[tuple[object, ...], dict[str, float] | None] = {}
+RELATIONSHIP_FEATURE_KEYS = (
+    "trend",
+    "recent_trend",
+    "rsi_bucket",
+    "volatility_bucket",
+    "volume_bucket",
+    "close_position_bucket",
+    "drawdown_bucket",
+    "macd_bucket",
+    "bollinger_bucket",
+)
 
 
 @dataclass(frozen=True)
@@ -147,6 +158,22 @@ class RegimeTargetPolicyCalibration:
     note: str
 
 
+@dataclass(frozen=True)
+class RelationshipTargetPolicyCalibration:
+    enabled: bool
+    selected_by_relationship: dict[str, str]
+    relationship_support: dict[str, int]
+    relationship_validation_hit: dict[str, float]
+    relationship_validation_mae_bps: dict[str, float]
+    relationship_avg_return_bps: dict[str, float]
+    robust_validation_hit: float
+    robust_validation_mae_bps: float
+    policy_validation_hit: float
+    policy_validation_mae_bps: float
+    samples: int
+    note: str
+
+
 def run_price_target_benchmark(
     *,
     markets: list[dict],
@@ -214,6 +241,15 @@ def run_price_target_benchmark(
                 if "wavemind-regime-policy-target" in engine_keys
                 else _disabled_regime_target_policy("not_requested")
             )
+            fold_relationship_policy = (
+                _fit_relationship_target_policy(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=fold_calibration,
+                )
+                if "wavemind-relationship-field-target" in engine_keys
+                else _disabled_relationship_target_policy("not_requested")
+            )
             fold_events: list[PriceTargetEvent] = []
             for query in queries:
                 history = _mature_history(windows, current=query)
@@ -231,6 +267,7 @@ def run_price_target_benchmark(
                         directional_policy=fold_directional_policy,
                         directional_head=fold_directional_head,
                         regime_policy=fold_regime_policy,
+                        relationship_policy=fold_relationship_policy,
                     )
                     event = _price_target_event(
                         engine=_engine_name(engine_key),
@@ -257,6 +294,8 @@ def run_price_target_benchmark(
                     fold_metadata["directional_head"] = asdict(fold_directional_head)
                 if "wavemind-regime-policy-target" in engine_keys:
                     fold_metadata["regime_target_policy"] = asdict(fold_regime_policy)
+                if "wavemind-relationship-field-target" in engine_keys:
+                    fold_metadata["relationship_target_policy"] = asdict(fold_relationship_policy)
                 by_market.append(
                     _summarize_events(
                         engine_events,
@@ -421,6 +460,7 @@ def _predict_return(
     directional_policy: DirectionalPolicyCalibration,
     directional_head: DirectionalHeadCalibration,
     regime_policy: RegimeTargetPolicyCalibration,
+    relationship_policy: RelationshipTargetPolicyCalibration,
 ) -> tuple[float, int, str]:
     if engine_key == "wavemind-ensemble":
         components = _component_predictions(history, query, horizon=horizon)
@@ -455,6 +495,14 @@ def _predict_return(
             horizon=horizon,
             calibration=calibration,
             regime_policy=regime_policy,
+        )
+    if engine_key == "wavemind-relationship-field-target":
+        return _relationship_field_target_return(
+            history,
+            query,
+            horizon=horizon,
+            calibration=calibration,
+            relationship_policy=relationship_policy,
         )
     if engine_key == "wavemind-online-expert-target":
         return _online_expert_target_return(history, query, horizon=horizon, calibration=calibration)
@@ -1232,6 +1280,358 @@ def _online_expert_similarity_weight(
     if query.features.get("recent_trend") == window.features.get("recent_trend"):
         weight += 0.15
     return weight * (0.70 + 0.60 * age_rank)
+
+
+def _disabled_relationship_target_policy(note: str) -> RelationshipTargetPolicyCalibration:
+    return RelationshipTargetPolicyCalibration(
+        enabled=False,
+        selected_by_relationship={},
+        relationship_support={},
+        relationship_validation_hit={},
+        relationship_validation_mae_bps={},
+        relationship_avg_return_bps={},
+        robust_validation_hit=0.0,
+        robust_validation_mae_bps=math.inf,
+        policy_validation_hit=0.0,
+        policy_validation_mae_bps=math.inf,
+        samples=0,
+        note=note,
+    )
+
+
+def _fit_relationship_target_policy(
+    history: list[OHLCVWindow],
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> RelationshipTargetPolicyCalibration:
+    timeframe = str(history[-1].timeframe) if history else ""
+    if timeframe != "4h":
+        return _disabled_relationship_target_policy("relationship_field_currently_4h_only")
+    if len(history) < 96:
+        return _disabled_relationship_target_policy("insufficient_history")
+
+    rows: list[dict[str, object]] = []
+    start_index = max(32, len(history) - 80)
+    for index in range(start_index, len(history)):
+        prior = history[:index]
+        if len(prior) < 24:
+            continue
+        window = history[index]
+        features = _target_model_features(prior, window, horizon=horizon, calibration=calibration)
+        robust, _ = _robust_value_from_features(features, window.timeframe)
+        tokens = _relationship_tokens(window)
+        rows.append(
+            {
+                "tokens": tokens,
+                "relationships": _relationship_candidates_from_tokens(tokens),
+                "actual": float(window.future_return_bps),
+                "robust": float(robust),
+            }
+        )
+    if len(rows) < 64:
+        return _disabled_relationship_target_policy("insufficient_relationship_rows")
+
+    split = min(len(rows) - 24, max(40, int(len(rows) * 0.65)))
+    if split <= 0 or split >= len(rows):
+        return _disabled_relationship_target_policy("invalid_relationship_validation_split")
+    train_rows = rows[:split]
+    validation_rows = rows[split:]
+    min_support = max(18, int(len(train_rows) * 0.08))
+    min_validation_support = max(8, int(len(validation_rows) * 0.08))
+
+    relationships = _relationship_train_stats(train_rows, min_support=min_support)
+    selected: dict[str, str] = {}
+    support: dict[str, int] = {}
+    hit: dict[str, float] = {}
+    mae: dict[str, float] = {}
+    avg_return: dict[str, float] = {}
+    robust_stats = _relationship_policy_stats(validation_rows, {})
+    for relationship, stats in relationships.items():
+        if abs(stats["avg_return_bps"]) < 35.0:
+            continue
+        direction = "up" if stats["avg_return_bps"] >= 0.0 else "down"
+        validation = _relationship_validation_stats(validation_rows, relationship, direction, stats["avg_return_bps"])
+        if validation is None or validation["support"] < min_validation_support:
+            continue
+        hit_gain = validation["direction_hit"] - validation["robust_direction_hit"]
+        mae_ratio = validation["mae_bps"] / max(validation["robust_mae_bps"], 1e-9)
+        sign_preserved = validation["avg_return_bps"] * stats["avg_return_bps"] > 0.0
+        stable = _relationship_is_stable(validation_rows, relationship, direction, stats["avg_return_bps"])
+        if not sign_preserved or not stable:
+            continue
+        if not (
+            validation["direction_hit"] >= max(0.58, validation["robust_direction_hit"] + 0.06)
+            and mae_ratio <= 1.05
+            and hit_gain >= 0.03
+        ):
+            continue
+        selected[relationship] = direction
+        support[relationship] = int(validation["support"])
+        hit[relationship] = float(validation["direction_hit"])
+        mae[relationship] = float(validation["mae_bps"])
+        avg_return[relationship] = float(stats["avg_return_bps"])
+
+    if not selected:
+        return RelationshipTargetPolicyCalibration(
+            enabled=False,
+            selected_by_relationship={},
+            relationship_support={},
+            relationship_validation_hit={},
+            relationship_validation_mae_bps={},
+            relationship_avg_return_bps={},
+            samples=len(rows),
+            robust_validation_hit=float(robust_stats["robust_direction_hit"]),
+            robust_validation_mae_bps=float(robust_stats["robust_mae_bps"]),
+            policy_validation_hit=0.0,
+            policy_validation_mae_bps=math.inf,
+            note="no_relationship_passed_validation_gate",
+        )
+
+    policy_stats = _relationship_policy_stats(validation_rows, selected, avg_return_by_relationship=avg_return)
+    globally_better = (
+        policy_stats["policy_direction_hit"] >= policy_stats["robust_direction_hit"]
+        and policy_stats["policy_mae_bps"] <= policy_stats["robust_mae_bps"] * 0.995
+    )
+    if not globally_better:
+        return RelationshipTargetPolicyCalibration(
+            enabled=False,
+            selected_by_relationship={},
+            relationship_support={},
+            relationship_validation_hit={},
+            relationship_validation_mae_bps={},
+            relationship_avg_return_bps={},
+            robust_validation_hit=float(policy_stats["robust_direction_hit"]),
+            robust_validation_mae_bps=float(policy_stats["robust_mae_bps"]),
+            policy_validation_hit=float(policy_stats["policy_direction_hit"]),
+            policy_validation_mae_bps=float(policy_stats["policy_mae_bps"]),
+            samples=len(rows),
+            note=(
+                "relationship_policy_validation_not_better_than_robust:"
+                f"policy_hit={policy_stats['policy_direction_hit']:.3f}:"
+                f"robust_hit={policy_stats['robust_direction_hit']:.3f}:"
+                f"policy_mae={policy_stats['policy_mae_bps']:.1f}:"
+                f"robust_mae={policy_stats['robust_mae_bps']:.1f}"
+            ),
+        )
+
+    return RelationshipTargetPolicyCalibration(
+        enabled=True,
+        selected_by_relationship=selected,
+        relationship_support=support,
+        relationship_validation_hit=hit,
+        relationship_validation_mae_bps=mae,
+        relationship_avg_return_bps=avg_return,
+        robust_validation_hit=float(policy_stats["robust_direction_hit"]),
+        robust_validation_mae_bps=float(policy_stats["robust_mae_bps"]),
+        policy_validation_hit=float(policy_stats["policy_direction_hit"]),
+        policy_validation_mae_bps=float(policy_stats["policy_mae_bps"]),
+        samples=len(rows),
+        note="fold-local 4h relationship field fitted on matured pre-test history only",
+    )
+
+
+def _relationship_field_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    relationship_policy: RelationshipTargetPolicyCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    robust, robust_suffix = _robust_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    if not relationship_policy.enabled:
+        return robust, support, f"{robust_suffix}+relationship_field_disabled:{relationship_policy.note}"
+    selected = _relationship_selected_for_query(query, relationship_policy)
+    if selected is None:
+        return robust, support, f"{robust_suffix}+relationship_field_no_match"
+    relationship, direction = selected
+    avg_return = relationship_policy.relationship_avg_return_bps.get(relationship, robust)
+    magnitude = 0.70 * abs(robust) + 0.30 * min(abs(avg_return), max(abs(robust) * 1.5, 25.0))
+    value = math.copysign(max(magnitude, 1.0), robust)
+    method = (
+        "fold_local_relationship_field:"
+        f"{relationship}:direction={direction}:"
+        f"hit={relationship_policy.relationship_validation_hit.get(relationship, 0.0):.3f}:"
+        f"support={relationship_policy.relationship_support.get(relationship, 0)}:{robust_suffix}"
+    )
+    return _force_nonzero(value, fallback=robust), support, method
+
+
+def _relationship_train_stats(rows: list[dict[str, object]], *, min_support: int) -> dict[str, dict[str, float]]:
+    groups: dict[str, list[float]] = {}
+    for row in rows:
+        actual = float(row["actual"])
+        for relationship in row["relationships"]:
+            groups.setdefault(relationship, []).append(actual)
+    stats: dict[str, dict[str, float]] = {}
+    for relationship, actuals in groups.items():
+        if len(actuals) < int(min_support):
+            continue
+        avg = float(statistics.mean(actuals))
+        if abs(avg) < 1e-9:
+            continue
+        direction = "up" if avg >= 0.0 else "down"
+        stats[relationship] = {
+            "support": float(len(actuals)),
+            "avg_return_bps": avg,
+            "direction_hit": float(statistics.mean(1.0 if _signed_direction(value) == direction else 0.0 for value in actuals)),
+            "mae_bps": float(statistics.mean(abs(avg - value) for value in actuals)),
+        }
+    return stats
+
+
+def _relationship_validation_stats(
+    rows: list[dict[str, object]],
+    relationship: str,
+    direction: str,
+    avg_return_bps: float,
+) -> dict[str, float] | None:
+    matched = [row for row in rows if relationship in row["relationships"]]
+    if not matched:
+        return None
+    sign = 1.0 if direction == "up" else -1.0
+    predictions = [sign * max(abs(avg_return_bps), 1.0) for _ in matched]
+    robust_predictions = [float(row["robust"]) for row in matched]
+    actuals = [float(row["actual"]) for row in matched]
+    return {
+        "support": float(len(matched)),
+        "avg_return_bps": float(statistics.mean(actuals)),
+        "direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )),
+        "mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )),
+        "robust_direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+        "robust_mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+    }
+
+
+def _relationship_policy_stats(
+    rows: list[dict[str, object]],
+    selected_by_relationship: dict[str, str],
+    *,
+    avg_return_by_relationship: dict[str, float] | None = None,
+) -> dict[str, float]:
+    avg_return_by_relationship = avg_return_by_relationship or {}
+    policy_predictions = []
+    robust_predictions = []
+    actuals = []
+    for row in rows:
+        robust = float(row["robust"])
+        selected = _relationship_selected_for_tokens(row["relationships"], selected_by_relationship, candidates_precomputed=True)
+        if selected is None:
+            policy = robust
+        else:
+            relationship, direction = selected
+            avg_return = avg_return_by_relationship.get(relationship, robust)
+            magnitude = 0.70 * abs(robust) + 0.30 * min(abs(avg_return), max(abs(robust) * 1.5, 25.0))
+            policy = math.copysign(max(magnitude, 1.0), robust)
+        policy_predictions.append(policy)
+        robust_predictions.append(robust)
+        actuals.append(float(row["actual"]))
+    if not actuals:
+        return {
+            "policy_direction_hit": 0.0,
+            "policy_mae_bps": math.inf,
+            "robust_direction_hit": 0.0,
+            "robust_mae_bps": math.inf,
+        }
+    return {
+        "policy_direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(policy_predictions, actuals, strict=False)
+        )),
+        "policy_mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(policy_predictions, actuals, strict=False)
+        )),
+        "robust_direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+        "robust_mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+    }
+
+
+def _relationship_is_stable(
+    rows: list[dict[str, object]],
+    relationship: str,
+    direction: str,
+    avg_return_bps: float,
+) -> bool:
+    matched = [row for row in rows if relationship in row["relationships"]]
+    if len(matched) < 8:
+        return False
+    chunks = 2 if len(matched) < 24 else 3
+    chunk_size = max(1, math.ceil(len(matched) / chunks))
+    stable_chunks = 0
+    harmful_chunks = 0
+    for start in range(0, len(matched), chunk_size):
+        stats = _relationship_validation_stats(matched[start : start + chunk_size], relationship, direction, avg_return_bps)
+        if stats is None or stats["support"] < 3:
+            continue
+        if stats["direction_hit"] >= max(0.52, stats["robust_direction_hit"]):
+            stable_chunks += 1
+        if stats["direction_hit"] < stats["robust_direction_hit"] - 0.15:
+            harmful_chunks += 1
+    return harmful_chunks == 0 and stable_chunks >= max(1, chunks - 1)
+
+
+def _relationship_selected_for_query(
+    query: OHLCVWindow,
+    policy: RelationshipTargetPolicyCalibration,
+) -> tuple[str, str] | None:
+    return _relationship_selected_for_tokens(_relationship_tokens(query), policy.selected_by_relationship)
+
+
+def _relationship_selected_for_tokens(
+    tokens: object,
+    selected_by_relationship: dict[str, str],
+    *,
+    candidates_precomputed: bool = False,
+) -> tuple[str, str] | None:
+    relationship_candidates = tuple(str(token) for token in tokens) if candidates_precomputed else _relationship_candidates_from_tokens(tokens)
+    candidates = [
+        relationship
+        for relationship in relationship_candidates
+        if relationship in selected_by_relationship
+    ]
+    if not candidates:
+        return None
+    selected = max(candidates, key=lambda item: (item.count("&"), len(item), item))
+    return selected, selected_by_relationship[selected]
+
+
+def _relationship_candidates_from_tokens(tokens: object) -> tuple[str, ...]:
+    token_values = tuple(sorted(str(token) for token in tokens))
+    relationships = list(token_values)
+    for left_index, left in enumerate(token_values):
+        for right in token_values[left_index + 1 :]:
+            relationships.append(f"{left}&{right}")
+    return tuple(relationships)
+
+
+def _relationship_tokens(window: OHLCVWindow) -> tuple[str, ...]:
+    return tuple(
+        f"{key}={window.features[key]}"
+        for key in RELATIONSHIP_FEATURE_KEYS
+        if key in window.features and window.features[key] is not None
+    )
 
 
 def _directional_head_feature_values(features: dict[str, float], timeframe: str) -> dict[str, float]:
@@ -2378,6 +2778,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-regime-policy-target": "wavemind-regime-policy-target",
         "regime-policy": "wavemind-regime-policy-target",
         "regime-policy-target": "wavemind-regime-policy-target",
+        "wavemind-relationship-field": "wavemind-relationship-field-target",
+        "wavemind-relationship-field-target": "wavemind-relationship-field-target",
+        "relationship-field": "wavemind-relationship-field-target",
+        "relationship-field-target": "wavemind-relationship-field-target",
         "wavemind-online-expert": "wavemind-online-expert-target",
         "wavemind-online-expert-target": "wavemind-online-expert-target",
         "online-expert": "wavemind-online-expert-target",
@@ -2413,6 +2817,7 @@ def _engine_name(key: str) -> str:
         "wavemind-perp-field-target": "WaveMind perp field target",
         "wavemind-directional-head-target": "WaveMind directional-head target",
         "wavemind-regime-policy-target": "WaveMind regime-policy target",
+        "wavemind-relationship-field-target": "WaveMind relationship-field target",
         "wavemind-online-expert-target": "WaveMind online-expert target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
