@@ -58,8 +58,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "observed-telemetry contract" in criteria["serverless_externalized_state"]["requirement"]
     assert "required replicas 4" in criteria["serverless_externalized_state"]["evidence"]
     assert "cold start 1220.0 ms" in criteria["serverless_externalized_state"]["evidence"]
-    assert "observed source scale-readiness-fixture" in criteria["serverless_externalized_state"]["evidence"]
-    assert "observed p99 300.0 ms" in criteria["serverless_externalized_state"]["evidence"]
+    assert "observed source loopback-api-capacity-estimate" in criteria["serverless_externalized_state"]["evidence"]
+    assert "observed errors 0.0" in criteria["serverless_externalized_state"]["evidence"]
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]

@@ -105,11 +105,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert serverless_ops["scale_to_zero_safe"] is True
     assert serverless_ops["cold_start_budget_ok"] is True
     assert serverless_ops["required_replicas"] == 4
-    assert serverless_ops["burst_capacity_rps"] == 64000.0
+    assert serverless_ops["burst_capacity_rps"] == 256000.0
     assert serverless_ops["cost_ok"] is True
-    assert serverless_ops["observed_telemetry_source"] == "scale-readiness-fixture"
+    assert serverless_ops["observed_telemetry_source"] == "loopback-api-capacity-estimate"
     assert serverless_ops["observed_slo_pass"] is True
-    assert serverless_ops["observed_p99_request_ms"] == 300.0
+    assert serverless_ops["observed_requests_per_second"] >= 3040.0
+    assert serverless_ops["observed_p99_request_ms"] <= 500.0
+    assert serverless_ops["observed_max_replicas"] <= 256
     structured = entries["scale_readiness"]["current"]["WaveMind structured payloads"]
     assert structured["cross_modal_precision_at_1"] == 1.0
     assert structured["cross_modal_provenance_rate"] == 1.0

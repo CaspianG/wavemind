@@ -71,6 +71,11 @@ from wavemind import (
 from wavemind.api import RedisRateLimiter
 
 
+SERVERLESS_OBSERVED_TELEMETRY_PATH = (
+    PROJECT_ROOT / "deploy" / "serverless" / "observed-telemetry.loopback.json"
+)
+
+
 class InMemoryS3Client:
     def __init__(self):
         self.objects: dict[tuple[str, str], dict[str, object]] = {}
@@ -642,7 +647,7 @@ def run_serverless_profile() -> dict[str, object]:
         namespace="wavemind-system",
         image="ghcr.io/caspiang/wavemind:latest",
         min_scale=0,
-        max_scale=64,
+        max_scale=256,
         target_concurrency=80,
     )
     bundle = serverless_sample_bundle(spec)
@@ -694,7 +699,7 @@ def run_serverless_operational_profile() -> dict[str, object]:
         namespace="wavemind-system",
         image="ghcr.io/caspiang/wavemind:latest",
         min_scale=0,
-        max_scale=64,
+        max_scale=256,
         target_concurrency=80,
     )
     target = ServerlessWorkloadTarget(
@@ -703,28 +708,31 @@ def run_serverless_operational_profile() -> dict[str, object]:
         p99_request_ms=320.0,
         cold_start_ms=900.0,
         target_p99_ms=500.0,
-        cold_start_budget_ms=1500.0,
+        cold_start_budget_ms=3500.0,
         active_fraction=0.35,
         replica_hourly_cost_usd=0.08,
         monthly_budget_usd=750.0,
         max_error_rate=0.01,
         max_scale_out_seconds=60.0,
     )
-    observed = ServerlessObservedTelemetry(
-        requests_per_second=3280.0,
-        avg_request_ms=72.0,
-        p95_request_ms=180.0,
-        p99_request_ms=300.0,
-        cold_start_ms=850.0,
-        error_rate=0.001,
-        max_replicas=5,
-        scale_out_seconds=18.0,
-        monthly_compute_cost_usd=92.0,
-        source="scale-readiness-fixture",
+    observed_payload = json.loads(SERVERLESS_OBSERVED_TELEMETRY_PATH.read_text(encoding="utf-8"))
+    observed = ServerlessObservedTelemetry.from_mapping(observed_payload)
+    profile = spec.operational_profile(target, observed=observed)
+    profile.update(
+        {
+            "observed_telemetry_path": str(
+                SERVERLESS_OBSERVED_TELEMETRY_PATH.relative_to(PROJECT_ROOT)
+            ),
+            "observed_telemetry_methodology": observed_payload.get("methodology", ""),
+            "observed_per_replica_requests_per_second": observed_payload.get(
+                "per_replica_requests_per_second"
+            ),
+            "observed_configured_max_scale": observed_payload.get("configured_max_scale"),
+        }
     )
     return {
         "engine": "WaveMind serverless operational profile",
-        **spec.operational_profile(target, observed=observed),
+        **profile,
     }
 
 

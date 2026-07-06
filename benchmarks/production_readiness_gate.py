@@ -689,7 +689,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"observed p99 {serverless_ops.get('observed_p99_request_ms')} ms, "
                 f"observed errors {serverless_ops.get('observed_error_rate')}"
             ),
-            next_step="Run the same profile against a real Knative/KEDA cluster and replace the checked fixture with observed p95/p99/cold-start/error-rate metrics.",
+            next_step="Run the same profile against a real Knative/KEDA cluster and replace loopback telemetry with remote p95/p99/cold-start/error-rate/scale-out metrics.",
         ),
         _criterion(
             criterion_id="hot_cache_prewarm",

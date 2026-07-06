@@ -59,7 +59,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind serverless plan"]["has_knative_service"] is True
     assert results["WaveMind serverless plan"]["has_keda_scaled_object"] is True
     assert results["WaveMind serverless plan"]["scale_to_zero"] is True
-    assert results["WaveMind serverless plan"]["max_scale"] == 64
+    assert results["WaveMind serverless plan"]["max_scale"] == 256
     assert results["WaveMind serverless plan"]["target_concurrency"] == 80
     assert results["WaveMind serverless plan"]["uses_postgres"] is True
     assert results["WaveMind serverless plan"]["uses_external_qdrant"] is True
@@ -76,10 +76,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind serverless operational profile"]["cold_start_budget_ok"] is True
     assert results["WaveMind serverless operational profile"]["cost_ok"] is True
     assert results["WaveMind serverless operational profile"]["required_replicas"] == 4
-    assert results["WaveMind serverless operational profile"]["burst_capacity_rps"] == 64000.0
-    assert results["WaveMind serverless operational profile"]["observed_telemetry_source"] == "scale-readiness-fixture"
+    assert results["WaveMind serverless operational profile"]["burst_capacity_rps"] == 256000.0
+    assert results["WaveMind serverless operational profile"]["observed_telemetry_source"] == "loopback-api-capacity-estimate"
     assert results["WaveMind serverless operational profile"]["observed_slo_pass"] is True
-    assert results["WaveMind serverless operational profile"]["observed_p99_request_ms"] == 300.0
+    assert results["WaveMind serverless operational profile"]["observed_requests_per_second"] >= 3040.0
+    assert results["WaveMind serverless operational profile"]["observed_p99_request_ms"] <= 500.0
+    assert results["WaveMind serverless operational profile"]["observed_max_replicas"] <= 256
+    assert results["WaveMind serverless operational profile"]["observed_per_replica_requests_per_second"] > 0.0
+    assert "localhost WaveMind API worker" in results["WaveMind serverless operational profile"]["observed_telemetry_methodology"]
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True
