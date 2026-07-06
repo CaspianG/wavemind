@@ -1358,12 +1358,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     or {
                         "runner_ready": True,
                         "checked_in_result": False,
-                        "requires": "--node id=https://host for each real API node",
+                        "requires": "--nodes-file deploy/cluster/external-http-cluster.sample.json or --node id=https://host for each real API node",
                     }
                 ),
             },
             "target": "Run the same sustained mixed workload against remote service nodes and keep success_rate >= 1.0, failover_hit_rate >= 0.95, and p99 below the configured SLO before claiming external-cluster production readiness.",
-            "next_step": "Check in the first remote service-node artifact from a real multi-node deployment.",
+            "next_step": "Run from a real node manifest and check in the first remote service-node artifact from a multi-node deployment.",
         },
         {
             "id": "memory_competitor_adapter_profile",

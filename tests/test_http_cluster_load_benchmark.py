@@ -4,7 +4,12 @@ from collections import defaultdict
 
 import pytest
 
-from benchmarks.http_cluster_load_benchmark import parse_node_specs, run_from_args
+from benchmarks.http_cluster_load_benchmark import (
+    load_node_manifest,
+    parse_node_specs,
+    run_from_args,
+    validate_external_cluster_payload,
+)
 from benchmarks.scale_readiness_benchmark import run_sustained_http_cluster_workload
 from wavemind import ClusterNode, QueryResult
 
@@ -133,6 +138,36 @@ def test_parse_node_specs_rejects_duplicate_ids():
         parse_node_specs(["node-a=http://one.test", "node-a=http://two.test"])
 
 
+def test_load_node_manifest_supports_repeatable_service_runs(tmp_path):
+    manifest = tmp_path / "nodes.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema": "wavemind.external_http_cluster.v1",
+                "deployment_id": "staging-eu-2026-07-06",
+                "environment": "staging",
+                "source": "k8s-service",
+                "nodes": [
+                    {"id": "node-a", "url": "https://node-a.test", "zone": "eu-a"},
+                    {"id": "node-b", "address": "https://node-b.test", "zone": "eu-b"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = load_node_manifest(manifest)
+
+    assert payload["node_specs"] == [
+        "node-a=https://node-a.test",
+        "node-b=https://node-b.test",
+    ]
+    assert payload["zone_specs"] == ["node-a=eu-a", "node-b=eu-b"]
+    assert payload["deployment_id"] == "staging-eu-2026-07-06"
+    assert payload["environment"] == "staging"
+    assert payload["source"] == "k8s-service"
+
+
 def test_sustained_http_cluster_workload_reports_slo_ready_metrics():
     nodes = [
         ClusterNode(id="node-a", address="http://node-a.test", zone="zone-a"),
@@ -179,6 +214,7 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
             "node-c=http://node-c.test",
             "node-d=http://node-d.test",
         ],
+        nodes_file=None,
         zone=[],
         api_key=None,
         timeout=15.0,
@@ -187,6 +223,9 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
         read_quorum=1,
         read_fanout=None,
         namespace_prefix="tenant:test-cli",
+        deployment_id="test-deployment",
+        environment="test",
+        source="unit-test",
         namespace_count=2,
         memories_per_namespace=2,
         workers=2,
@@ -209,8 +248,120 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
     assert payload["scenario"]["name"] == "http_cluster_load"
     assert payload["scenario"]["node_count"] == 4
     assert payload["scenario"]["read_fanout"] == 3
+    assert payload["scenario"]["deployment_id"] == "test-deployment"
+    assert payload["scenario"]["environment"] == "test"
+    assert payload["scenario"]["source"] == "unit-test"
     result = payload["results"][0]
     assert result["engine"] == "WaveMind external HTTP cluster load"
     assert result["slo_pass"] is True
     output.write_text(json.dumps(payload), encoding="utf-8")
     assert json.loads(output.read_text(encoding="utf-8"))["results"][0]["slo_pass"] is True
+
+
+def test_http_cluster_load_cli_accepts_nodes_file(tmp_path):
+    manifest = tmp_path / "nodes.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "deployment_id": "manifest-deployment",
+                "environment": "staging",
+                "source": "manifest",
+                "nodes": [
+                    {"id": "node-a", "url": "http://node-a.test", "zone": "zone-a"},
+                    {"id": "node-b", "url": "http://node-b.test", "zone": "zone-b"},
+                    {"id": "node-c", "url": "http://node-c.test", "zone": "zone-c"},
+                    {"id": "node-d", "url": "http://node-d.test", "zone": "zone-a"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    args = argparse.Namespace(
+        node=[],
+        nodes_file=manifest,
+        zone=[],
+        api_key=None,
+        timeout=15.0,
+        replication_factor=3,
+        write_quorum=None,
+        read_quorum=1,
+        read_fanout=1,
+        namespace_prefix="tenant:test-manifest",
+        deployment_id=None,
+        environment=None,
+        source=None,
+        namespace_count=2,
+        memories_per_namespace=2,
+        workers=2,
+        min_success_rate=1.0,
+        min_failover_hit_rate=0.95,
+        p99_slo_ms=1000.0,
+        fail_on_slo=False,
+        output=tmp_path / "http_cluster_load.json",
+    )
+
+    from benchmarks import http_cluster_load_benchmark as benchmark
+
+    original_client = benchmark.HTTPNamespaceShardClient
+    benchmark.HTTPNamespaceShardClient = lambda **kwargs: FakeHTTPClusterClient()
+    try:
+        payload = run_from_args(args)
+    finally:
+        benchmark.HTTPNamespaceShardClient = original_client
+
+    assert payload["scenario"]["node_count"] == 4
+    assert payload["scenario"]["node_ids"] == ["node-a", "node-b", "node-c", "node-d"]
+    assert payload["scenario"]["zones"] == ["zone-a", "zone-b", "zone-c"]
+    assert payload["scenario"]["deployment_id"] == "manifest-deployment"
+    assert payload["scenario"]["environment"] == "staging"
+    assert payload["scenario"]["source"] == "manifest"
+
+
+def test_external_cluster_payload_validator_reports_missing_and_pass(tmp_path):
+    missing = validate_external_cluster_payload(None)
+    assert missing["status"] == "action_required"
+    assert "missing artifact" in missing["issues"]
+
+    args = argparse.Namespace(
+        node=[
+            "node-a=http://node-a.test",
+            "node-b=http://node-b.test",
+            "node-c=http://node-c.test",
+            "node-d=http://node-d.test",
+        ],
+        nodes_file=None,
+        zone=[],
+        api_key=None,
+        timeout=15.0,
+        replication_factor=3,
+        write_quorum=None,
+        read_quorum=1,
+        read_fanout=1,
+        namespace_prefix="tenant:test-validator",
+        deployment_id="validator-deployment",
+        environment="staging",
+        source="unit-test",
+        namespace_count=32,
+        memories_per_namespace=8,
+        workers=2,
+        min_success_rate=1.0,
+        min_failover_hit_rate=0.95,
+        p99_slo_ms=1000.0,
+        fail_on_slo=False,
+        output=tmp_path / "http_cluster_load.json",
+    )
+
+    from benchmarks import http_cluster_load_benchmark as benchmark
+
+    original_client = benchmark.HTTPNamespaceShardClient
+    benchmark.HTTPNamespaceShardClient = lambda **kwargs: FakeHTTPClusterClient()
+    try:
+        payload = run_from_args(args)
+    finally:
+        benchmark.HTTPNamespaceShardClient = original_client
+
+    evidence = validate_external_cluster_payload(payload)
+
+    assert evidence["status"] == "pass"
+    assert evidence["issues"] == []
+    assert "validator-deployment" in evidence["evidence"]

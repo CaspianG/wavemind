@@ -51,3 +51,4 @@ Missing commercial API credentials should not turn a core WaveMind readiness gat
 | evidence | status | result | next step |
 |---|---|---|---|
 | Mem0, Zep, and LangGraph adapter evidence | `action_required` | skipped: Zep | Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result. |
+| External HTTP service-node load evidence | `action_required` | no checked-in external HTTP cluster load result | Run external-http-cluster-load against real API nodes and upload or commit the resulting artifact. |

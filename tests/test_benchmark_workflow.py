@@ -33,6 +33,8 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "workflow_dispatch" in workflow
     assert "contents: write" in workflow
     assert "WAVEMIND_CLUSTER_NODES" in workflow
+    assert "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON" in workflow
+    assert "nodes_manifest_json" in workflow
     assert "re.split" in workflow
     assert r'[\n,;]+' in workflow
     assert "secrets.WAVEMIND_API_KEY" in workflow
@@ -43,9 +45,13 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "benchmarks/http_cluster_load_benchmark.py" in workflow
     assert "--read-quorum" in workflow
     assert "--read-fanout" in workflow
+    assert "--nodes-file" in workflow
+    assert "--deployment-id" in workflow
+    assert "--environment" in workflow
+    assert "--source" in workflow
     assert "benchmarks/http_cluster_load_results.json" in workflow
     assert "--fail-on-slo" in workflow
-    assert "external cluster load benchmark requires at least four nodes" in workflow
+    assert "external cluster load benchmark requires at least four nodes or nodes_manifest_json" in workflow
     assert "benchmarks/benchmark_registry.py" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T19:56:53Z",
-  "source_ref": "7e258beb3648",
+  "generated_at": "2026-07-06T20:19:02Z",
+  "source_ref": "185ed7006df2",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1401,11 +1401,11 @@
         "WaveMind external HTTP cluster load": {
           "runner_ready": true,
           "checked_in_result": false,
-          "requires": "--node id=https://host for each real API node"
+          "requires": "--nodes-file deploy/cluster/external-http-cluster.sample.json or --node id=https://host for each real API node"
         }
       },
       "target": "Run the same sustained mixed workload against remote service nodes and keep success_rate >= 1.0, failover_hit_rate >= 0.95, and p99 below the configured SLO before claiming external-cluster production readiness.",
-      "next_step": "Check in the first remote service-node artifact from a real multi-node deployment."
+      "next_step": "Run from a real node manifest and check in the first remote service-node artifact from a multi-node deployment."
     },
     {
       "id": "memory_competitor_adapter_profile",

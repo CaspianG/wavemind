@@ -1,0 +1,28 @@
+{
+  "schema": "wavemind.external_http_cluster.v1",
+  "deployment_id": "staging-eu-2026-07-06",
+  "environment": "staging",
+  "source": "kubernetes-service",
+  "nodes": [
+    {
+      "id": "node-a",
+      "url": "https://wm-a.example.com",
+      "zone": "eu-a"
+    },
+    {
+      "id": "node-b",
+      "url": "https://wm-b.example.com",
+      "zone": "eu-b"
+    },
+    {
+      "id": "node-c",
+      "url": "https://wm-c.example.com",
+      "zone": "eu-c"
+    },
+    {
+      "id": "node-d",
+      "url": "https://wm-d.example.com",
+      "zone": "eu-a"
+    }
+  ]
+}

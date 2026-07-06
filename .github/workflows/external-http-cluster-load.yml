@@ -4,8 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       nodes:
-        description: "WaveMind API nodes as id=https://host, separated by newlines, commas, or semicolons. Use at least four nodes."
-        required: true
+        description: "WaveMind API nodes as id=https://host, separated by newlines, commas, or semicolons. Use at least four nodes unless nodes_manifest_json is provided."
+        required: false
+        default: ""
+        type: string
+      nodes_manifest_json:
+        description: "Optional JSON node manifest with nodes[].id/url/zone plus deployment_id/environment/source."
+        required: false
+        default: ""
         type: string
       namespace_count:
         description: "Namespaces to exercise."
@@ -72,6 +78,7 @@ jobs:
       - name: Run external HTTP cluster load benchmark
         env:
           WAVEMIND_CLUSTER_NODES: ${{ inputs.nodes }}
+          WAVEMIND_CLUSTER_NODES_MANIFEST_JSON: ${{ inputs.nodes_manifest_json }}
           WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
           NAMESPACE_COUNT: ${{ inputs.namespace_count }}
           MEMORIES_PER_NAMESPACE: ${{ inputs.memories_per_namespace }}
@@ -86,14 +93,7 @@ jobs:
           import re
           import subprocess
           import sys
-
-          node_specs = [
-              item.strip()
-              for item in re.split(r"[\n,;]+", os.environ["WAVEMIND_CLUSTER_NODES"])
-              if item.strip()
-          ]
-          if len(node_specs) < 4:
-              raise SystemExit("external cluster load benchmark requires at least four nodes")
+          from pathlib import Path
 
           args = [
               sys.executable,
@@ -114,13 +114,30 @@ jobs:
               os.environ["P99_SLO_MS"],
               "--output",
               "benchmarks/http_cluster_load_results.json",
+              "--source",
+              "github-actions-workflow",
               "--fail-on-slo",
           ]
+          manifest_json = os.environ.get("WAVEMIND_CLUSTER_NODES_MANIFEST_JSON", "").strip()
+          if manifest_json:
+              manifest_path = Path("external-http-cluster.nodes.json")
+              manifest_path.write_text(manifest_json, encoding="utf-8")
+              args.extend(["--nodes-file", str(manifest_path)])
+          else:
+              node_specs = [
+                  item.strip()
+                  for item in re.split(r"[\n,;]+", os.environ["WAVEMIND_CLUSTER_NODES"])
+                  if item.strip()
+              ]
+              if len(node_specs) < 4:
+                  raise SystemExit("external cluster load benchmark requires at least four nodes or nodes_manifest_json")
+              args.extend(["--environment", "external"])
+              args.extend(["--deployment-id", f"github-actions-{os.environ.get('GITHUB_RUN_ID', 'manual')}"])
+              for spec in node_specs:
+                  args.extend(["--node", spec])
           api_key = os.environ.get("WAVEMIND_API_KEY")
           if api_key:
               args.extend(["--api-key", api_key])
-          for spec in node_specs:
-              args.extend(["--node", spec])
           subprocess.run(args, check=True)
           PY
 

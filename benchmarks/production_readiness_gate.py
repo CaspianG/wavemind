@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from benchmarks.http_cluster_load_benchmark import validate_external_cluster_payload
 from wavemind import advise_memory_architecture
 
 
@@ -76,6 +77,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
+        "external_http_cluster": _load_optional_json(benchmark_dir / "http_cluster_load_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
         "vectordbbench_dataset": _load_optional_json(benchmark_dir / "vectordbbench_dataset_manifest.json"),
     }
@@ -277,6 +279,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         for name in ("Mem0", "Zep", "LangGraph persistent memory")
         if competitors.get(name, {}).get("skipped")
     ]
+    external_cluster_evidence = validate_external_cluster_payload(
+        artifacts["external_http_cluster"]
+    )
     external_evidence = [
         {
             "id": "memory_competitor_adapters",
@@ -288,6 +293,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 else "skipped: " + ", ".join(skipped_competitors)
             ),
             "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result.",
+        },
+        {
+            "id": "external_http_cluster_load",
+            "title": "External HTTP service-node load evidence",
+            "status": external_cluster_evidence["status"],
+            "evidence": external_cluster_evidence["evidence"],
+            "next_step": external_cluster_evidence["next_step"],
         }
     ]
 

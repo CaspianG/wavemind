@@ -29,6 +29,7 @@ include examples/*.py
 recursive-include examples/observability *
 recursive-include examples/production-index-profile *
 recursive-include deploy/helm/wavemind *
+recursive-include deploy/cluster *
 recursive-include deploy/operator *
 recursive-include deploy/serverless *
 prune benchmarks/data

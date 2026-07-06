@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T19:56:55Z",
+  "generated_at": "2026-07-06T20:19:02Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -244,6 +244,13 @@
       "status": "action_required",
       "evidence": "skipped: Zep",
       "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result."
+    },
+    {
+      "id": "external_http_cluster_load",
+      "title": "External HTTP service-node load evidence",
+      "status": "action_required",
+      "evidence": "no checked-in external HTTP cluster load result",
+      "next_step": "Run external-http-cluster-load against real API nodes and upload or commit the resulting artifact."
     }
   ]
 }

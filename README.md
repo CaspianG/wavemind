@@ -614,11 +614,10 @@ External HTTP cluster load:
 
 ```sh
 python benchmarks/http_cluster_load_benchmark.py \
-  --node node-a=https://wm-a.example.com \
-  --node node-b=https://wm-b.example.com \
-  --node node-c=https://wm-c.example.com \
-  --node node-d=https://wm-d.example.com \
+  --nodes-file deploy/cluster/external-http-cluster.sample.json \
   --replication-factor 3 \
+  --read-quorum 1 \
+  --read-fanout 1 \
   --namespace-count 32 \
   --memories-per-namespace 8 \
   --workers 8 \
@@ -630,12 +629,17 @@ writes, normal queries, simulated node failover queries, missing-replica repair,
 replicated forget, delete suppression, p99 latency, and an explicit SLO verdict.
 Use this before claiming that a deployment is production-ready outside the
 local readiness smoke profile.
+`deploy/cluster/external-http-cluster.sample.json` defines the repeatable node
+manifest shape with deployment id, environment, source, node URLs, and zones.
+The production readiness gate treats `benchmarks/http_cluster_load_results.json`
+as non-gating external evidence and rejects sample/fixture sources.
 
 The same external-cluster profile can be started from GitHub Actions via
 `.github/workflows/external-http-cluster-load.yml`. Paste one `id=https://host`
-node per line, comma-separated, or semicolon-separated. Optionally set the
-`WAVEMIND_API_KEY` repository secret, and set `commit_results=true` only when
-the run should refresh the public benchmark artifacts in `main`.
+node per line, comma-separated, or semicolon-separated, or paste the node
+manifest JSON into `nodes_manifest_json`. Optionally set the `WAVEMIND_API_KEY`
+repository secret, and set `commit_results=true` only when the run should
+refresh the public benchmark artifacts in `main`.
 
 Cluster placement planning:
 
@@ -1466,9 +1470,9 @@ artifacts back to `main`.
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.
 External cluster benchmark refresh: `.github/workflows/external-http-cluster-load.yml`
-runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs and
-can commit `benchmarks/http_cluster_load_results.json` plus refreshed leaderboard
-artifacts when `commit_results=true`.
+runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs or a
+JSON node manifest and can commit `benchmarks/http_cluster_load_results.json`
+plus refreshed leaderboard artifacts when `commit_results=true`.
 
 Visual summary generated from the checked-in JSON results:
 
