@@ -131,6 +131,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
+    memory_os = scale.get("WaveMind Memory OS", {})
     sharding = scale.get("WaveMind distributed sharding", {})
     runtime = scale.get("WaveMind replicated runtime", {})
     active_active = scale.get("WaveMind active-active delta sync", {})
@@ -267,6 +268,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"p99 {hot_cache.get('p99_lookup_ms')} ms"
             ),
             next_step="Back the cache with Redis in a service-mode benchmark.",
+        ),
+        _criterion(
+            criterion_id="memory_os_worker",
+            title="Memory OS worker prewarms, consolidates, and cleans up",
+            status=(
+                "pass"
+                if memory_os.get("ok")
+                and int(memory_os.get("hot_queries", 0)) >= 2
+                and int(memory_os.get("prewarm_warmed", 0)) >= 2
+                and memory_os.get("prewarm_hit")
+                and int(memory_os.get("expired_purged", 0)) >= 1
+                and int(memory_os.get("concepts_created", 0)) >= 1
+                and memory_os.get("concept_recall")
+                else "fail"
+            ),
+            requirement="Background intelligence must turn audited hot queries into prewarm actions, clean expired memories, and consolidate active clusters into durable concept memories.",
+            evidence=(
+                f"hot queries {memory_os.get('hot_queries')}, "
+                f"prewarm {memory_os.get('prewarm_warmed')}, "
+                f"expired {memory_os.get('expired_purged')}, "
+                f"concepts {memory_os.get('concepts_created')}"
+            ),
+            next_step="Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction.",
         ),
         _criterion(
             criterion_id="distributed_repair_tombstones",

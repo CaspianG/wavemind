@@ -40,6 +40,15 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True
+    assert results["WaveMind Memory OS"]["ok"] is True
+    assert results["WaveMind Memory OS"]["hot_queries"] == 2
+    assert results["WaveMind Memory OS"]["prewarm_warmed"] == 2
+    assert results["WaveMind Memory OS"]["prewarm_hit"] is True
+    assert results["WaveMind Memory OS"]["expired_purged"] == 1
+    assert results["WaveMind Memory OS"]["concepts_created"] == 1
+    assert results["WaveMind Memory OS"]["concept_recall"] is True
+    assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
+    assert "consolidate_concepts" in results["WaveMind Memory OS"]["actions"]
     assert results["WaveMind distributed sharding"]["writes"] == 2
     assert results["WaveMind distributed sharding"]["recalled_after_primary_loss"] is True
     assert results["WaveMind distributed sharding"]["repair_missing_before"] is True

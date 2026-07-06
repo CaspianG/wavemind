@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T02:36:28Z",
+  "generated_at": "2026-07-06T03:01:49Z",
   "overall_status": "action_required",
-  "readiness_score": 0.9333333333333333,
+  "readiness_score": 0.9375,
   "summary": {
     "overall_status": "action_required",
-    "readiness_score": 0.9333333333333333,
-    "pass_count": 14,
+    "readiness_score": 0.9375,
+    "pass_count": 15,
     "action_required_count": 1,
     "fail_count": 0,
-    "total_criteria": 15
+    "total_criteria": 16
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T02:17:10Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T02:36:28Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -73,8 +73,16 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0021739999951364553 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0035999692045152187 ms",
       "next_step": "Back the cache with Redis in a service-mode benchmark."
+    },
+    {
+      "id": "memory_os_worker",
+      "title": "Memory OS worker prewarms, consolidates, and cleans up",
+      "status": "pass",
+      "requirement": "Background intelligence must turn audited hot queries into prewarm actions, clean expired memories, and consolidate active clusters into durable concept memories.",
+      "evidence": "hot queries 2, prewarm 2, expired 1, concepts 1",
+      "next_step": "Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction."
     },
     {
       "id": "distributed_repair_tombstones",
@@ -89,7 +97,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss and repair missing records plus tombstones.",
-      "evidence": "recall after loss True, repair copied 1, p99 0.7203679999960855 ms",
+      "evidence": "recall after loss True, repair copied 1, p99 2.2203000262379646 ms",
       "next_step": "Measure the same path under concurrent writes and reads."
     },
     {

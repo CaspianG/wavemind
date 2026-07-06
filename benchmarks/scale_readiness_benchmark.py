@@ -9,6 +9,8 @@ import time
 from io import BytesIO
 from pathlib import Path
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) in sys.path:
     sys.path.remove(str(PROJECT_ROOT))
@@ -22,6 +24,7 @@ from wavemind import (
     FieldStateCRDT,
     HashingTextEncoder,
     HotMemoryCache,
+    MemoryOSWorker,
     QueryResult,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
@@ -97,6 +100,22 @@ class InMemoryS3Client:
 
     def get_object(self, Bucket: str, Key: str) -> dict[str, object]:
         return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
+
+
+class MemoryOSEncoder:
+    vector_dim = 4
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        lowered = text.lower()
+        if any(token in lowered for token in ("rust", "compiler", "systems", "programming")):
+            return self._unit([1.0, 0.0, 0.0, 0.0])
+        if any(token in lowered for token in ("budget", "recall", "prewarm")):
+            return self._unit([0.0, 1.0, 0.0, 0.0])
+        return self._unit([0.0, 0.0, 1.0, 0.0])
+
+    def _unit(self, values: list[float]) -> np.ndarray:
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
 class LocalWaveMindServiceClient:
@@ -497,6 +516,82 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
         "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
         "p99_lookup_ms": percentile(latencies, 99),
     }
+
+
+def run_memory_os_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        memory = WaveMind(
+            db_path=Path(directory) / "memory-os.sqlite3",
+            encoder=MemoryOSEncoder(),
+            width=16,
+            height=16,
+            layers=1,
+            audit_queries=True,
+            graph_weight=1.0,
+            graph_steps=2,
+            graph_expand_k=10,
+            rerank_k=10,
+        )
+        cache = HotMemoryCache(capacity=16, ttl_seconds=120)
+        try:
+            memory.remember(
+                "User likes Rust systems programming",
+                namespace="tenant:os",
+                tags=["systems"],
+            )
+            memory.remember(
+                "User studies compiler internals",
+                namespace="tenant:os",
+                tags=["systems"],
+            )
+            memory.remember(
+                "budget recall should be prefetched",
+                namespace="tenant:os",
+                tags=["preference"],
+            )
+            memory.remember("expired memory os stale fact", namespace="tenant:os", ttl_seconds=-1)
+            memory.query("systems programming", namespace="tenant:os", top_k=1)
+            memory.query("systems programming", namespace="tenant:os", top_k=1)
+            memory.query("budget recall", namespace="tenant:os", top_k=1)
+            memory.query("budget recall", namespace="tenant:os", top_k=1)
+
+            started = time.perf_counter()
+            report = MemoryOSWorker(memory, cache).run_once(
+                namespace="tenant:os",
+                audit_limit=16,
+                max_hot_queries=8,
+                min_frequency=2,
+                top_k=1,
+                consolidate_steps=2,
+                min_concept_energy=0.01,
+                min_concept_size=2,
+                max_concepts=1,
+                memory_pressure_threshold=2,
+            )
+            elapsed_ms = (time.perf_counter() - started) * 1000.0
+            cached = cache.get("tenant:os", "budget recall", top_k=1)
+            concept_results = memory.query(
+                "systems programming",
+                namespace="tenant:os",
+                tags=["concept"],
+                top_k=1,
+            )
+            return {
+                "engine": "WaveMind Memory OS",
+                "ok": report.ok,
+                "hot_queries": len(report.hot_queries),
+                "prewarm_warmed": report.prewarm.warmed,
+                "prewarm_hit": bool(cached),
+                "expired_purged": report.expired_purged,
+                "concepts_created": report.concepts_created,
+                "concept_recall": bool(concept_results),
+                "index_rebuilt": report.index_rebuilt,
+                "actions": list(report.actions),
+                "recommendations": list(report.recommendations),
+                "run_ms": elapsed_ms,
+            }
+        finally:
+            memory.close()
 
 
 def run_distributed_sharding_profile() -> dict[str, object]:
@@ -1075,6 +1170,7 @@ def run_benchmark(
         ),
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
+        run_memory_os_profile(),
         run_distributed_sharding_profile(),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
@@ -1095,7 +1191,8 @@ def run_benchmark(
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. "
+                "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, "
+                "hot-cache behavior, and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -1150,6 +1247,11 @@ def main() -> int:
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")
             print(f"| hot cache | prewarm_hit | {result['prewarm_hit']} |")
+        elif result["engine"] == "WaveMind Memory OS":
+            print(f"| memory os | ok | {result['ok']} |")
+            print(f"| memory os | hot_queries | {result['hot_queries']} |")
+            print(f"| memory os | prewarm_warmed | {result['prewarm_warmed']} |")
+            print(f"| memory os | concepts_created | {result['concepts_created']} |")
         elif result["engine"] == "WaveMind distributed sharding":
             print(f"| distributed sharding | writes | {result['writes']} |")
             print(f"| distributed sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")

@@ -359,6 +359,61 @@ class CachePrewarmReport:
 
 
 @dataclass(frozen=True)
+class MemoryOSHotQuery:
+    namespace: str
+    query: str
+    frequency: int
+    last_seen: float
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MemoryOSReport:
+    namespace: str | None
+    scanned_events: int
+    hot_queries: tuple[MemoryOSHotQuery, ...] = ()
+    expired_purged: int = 0
+    consolidated_steps: int = 0
+    concepts_created: int = 0
+    concept_ids: tuple[int, ...] = ()
+    index_rebuilt: bool = False
+    cache_enabled: bool = False
+    cache_invalidated: int = 0
+    prewarm: CachePrewarmReport = field(default_factory=CachePrewarmReport)
+    stats_before: dict[str, object] = field(default_factory=dict)
+    stats_after: dict[str, object] = field(default_factory=dict)
+    actions: tuple[str, ...] = ()
+    recommendations: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        index_healthy = bool(self.stats_after.get("index_healthy", True))
+        return index_healthy and self.prewarm.ok
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "namespace": self.namespace,
+            "scanned_events": self.scanned_events,
+            "hot_queries": [query.as_dict() for query in self.hot_queries],
+            "expired_purged": self.expired_purged,
+            "consolidated_steps": self.consolidated_steps,
+            "concepts_created": self.concepts_created,
+            "concept_ids": list(self.concept_ids),
+            "index_rebuilt": self.index_rebuilt,
+            "cache_enabled": self.cache_enabled,
+            "cache_invalidated": self.cache_invalidated,
+            "prewarm": self.prewarm.as_dict(),
+            "stats_before": dict(self.stats_before),
+            "stats_after": dict(self.stats_after),
+            "actions": list(self.actions),
+            "recommendations": list(self.recommendations),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class DistributedRepairJobReport:
     namespaces: tuple[str, ...]
     repaired_total: int = 0
@@ -823,6 +878,260 @@ class CachePrewarmWorker:
             skipped=skipped,
             errors=errors,
         )
+
+
+class MemoryOSWorker:
+    """One-shot adaptive memory worker for production schedulers.
+
+    The worker turns query audit events into concrete maintenance actions:
+    expired-memory cleanup, optional field/concept consolidation, hot-query cache
+    prewarming, index repair, and operator-facing recommendations.
+    """
+
+    def __init__(
+        self,
+        memory: Any,
+        cache: HotMemoryCache | RedisHotMemoryCache | None = None,
+    ):
+        self.memory = memory
+        self.cache = cache
+
+    def run_once(
+        self,
+        *,
+        namespace: str | None = None,
+        audit_limit: int = 512,
+        max_hot_queries: int = 32,
+        min_frequency: int = 2,
+        top_k: int = 3,
+        min_score: float | None = None,
+        consolidate_steps: int = 10,
+        consolidate_concepts: bool = True,
+        concept_seed_text: str | None = None,
+        min_concept_energy: float = 0.02,
+        min_concept_size: int = 2,
+        max_concepts: int = 3,
+        concept_priority: float = 6.0,
+        rebuild_unhealthy_index: bool = True,
+        memory_pressure_threshold: int = 50_000,
+    ) -> MemoryOSReport:
+        stats_before = self._stats(namespace)
+        events = self._query_events(namespace=namespace, limit=audit_limit)
+        hot_queries = self._hot_queries(
+            events,
+            max_hot_queries=max_hot_queries,
+            min_frequency=min_frequency,
+        )
+        actions: list[str] = []
+
+        expired = 0
+        if hasattr(self.memory, "purge_expired"):
+            expired = int(self.memory.purge_expired())
+            if expired:
+                actions.append("purge_expired")
+
+        steps = max(0, int(consolidate_steps))
+        if steps and hasattr(self.memory, "consolidate"):
+            self.memory.consolidate(steps=steps)
+            actions.append("consolidate_field")
+
+        concepts: list[dict[str, object]] = []
+        seed_text = concept_seed_text
+        if seed_text is None and hot_queries:
+            seed_text = hot_queries[0].query
+        if consolidate_concepts and hasattr(self.memory, "consolidate_concepts"):
+            concepts = self.memory.consolidate_concepts(
+                namespace=namespace,
+                seed_text=seed_text,
+                min_energy=min_concept_energy,
+                min_size=min_concept_size,
+                max_concepts=max_concepts,
+                priority=concept_priority,
+            )
+            if concepts:
+                actions.append("consolidate_concepts")
+
+        index_rebuilt = False
+        if rebuild_unhealthy_index and hasattr(self.memory, "index_health"):
+            before_health = self.memory.index_health()
+            if not bool(before_health.get("healthy", True)) and hasattr(
+                self.memory, "ensure_index_health"
+            ):
+                self.memory.ensure_index_health(rebuild=True)
+                index_rebuilt = True
+                actions.append("rebuild_index")
+
+        invalidated = 0
+        if self.cache is not None and (expired or concepts):
+            if namespace is not None:
+                invalidated = self.cache.invalidate_namespace(namespace)
+            else:
+                invalidated = self.cache.stats().size
+                self.cache.clear()
+            if invalidated:
+                actions.append("invalidate_cache")
+
+        if self.cache is not None:
+            prewarm = CachePrewarmWorker(self.memory, self.cache).run_once(
+                namespace=namespace,
+                audit_limit=audit_limit,
+                max_queries=max_hot_queries,
+                min_frequency=min_frequency,
+                top_k=top_k,
+                min_score=min_score,
+            )
+            if prewarm.warmed:
+                actions.append("prewarm_cache")
+        else:
+            prewarm = CachePrewarmReport(
+                scanned_events=len(events),
+                candidates=len(hot_queries),
+                skipped=len(hot_queries),
+            )
+
+        stats_after = self._stats(namespace)
+        recommendations = self._recommendations(
+            namespace=namespace,
+            hot_queries=hot_queries,
+            prewarm=prewarm,
+            stats_after=stats_after,
+            memory_pressure_threshold=memory_pressure_threshold,
+        )
+        concept_ids = tuple(
+            int(concept["id"])
+            for concept in concepts
+            if concept.get("id") is not None
+        )
+        report = MemoryOSReport(
+            namespace=namespace,
+            scanned_events=len(events),
+            hot_queries=tuple(hot_queries),
+            expired_purged=expired,
+            consolidated_steps=steps,
+            concepts_created=len(concepts),
+            concept_ids=concept_ids,
+            index_rebuilt=index_rebuilt,
+            cache_enabled=self.cache is not None,
+            cache_invalidated=invalidated,
+            prewarm=prewarm,
+            stats_before=stats_before,
+            stats_after=stats_after,
+            actions=tuple(dict.fromkeys(actions)),
+            recommendations=tuple(recommendations),
+        )
+        self._log_report(report)
+        return report
+
+    def _query_events(self, *, namespace: str | None, limit: int) -> list[Any]:
+        if not hasattr(self.memory, "audit_events"):
+            return []
+        return list(
+            self.memory.audit_events(
+                namespace=namespace,
+                action="query",
+                limit=max(0, int(limit)),
+            )
+        )
+
+    def _hot_queries(
+        self,
+        events: Iterable[Any],
+        *,
+        max_hot_queries: int,
+        min_frequency: int,
+    ) -> list[MemoryOSHotQuery]:
+        counts: OrderedDict[tuple[str, str], int] = OrderedDict()
+        last_seen: dict[tuple[str, str], float] = {}
+        for event in events:
+            query = str((getattr(event, "metadata", {}) or {}).get("query") or "").strip()
+            if not query:
+                continue
+            event_namespace = getattr(event, "namespace", None) or "default"
+            key = (str(event_namespace), query)
+            counts[key] = counts.get(key, 0) + 1
+            last_seen[key] = max(float(getattr(event, "created_at", 0.0)), last_seen.get(key, 0.0))
+        rows = [
+            MemoryOSHotQuery(
+                namespace=key[0],
+                query=key[1],
+                frequency=frequency,
+                last_seen=last_seen.get(key, 0.0),
+            )
+            for key, frequency in counts.items()
+            if frequency >= max(1, int(min_frequency))
+        ]
+        rows.sort(key=lambda row: (-row.frequency, -row.last_seen, row.namespace, row.query))
+        return rows[: max(0, int(max_hot_queries))]
+
+    def _stats(self, namespace: str | None) -> dict[str, object]:
+        if not hasattr(self.memory, "stats"):
+            return {}
+        return dict(self.memory.stats(namespace=namespace))
+
+    def _recommendations(
+        self,
+        *,
+        namespace: str | None,
+        hot_queries: list[MemoryOSHotQuery],
+        prewarm: CachePrewarmReport,
+        stats_after: dict[str, object],
+        memory_pressure_threshold: int,
+    ) -> list[str]:
+        recommendations: list[str] = []
+        if hot_queries and self.cache is None:
+            recommendations.append(
+                "Enable RedisHotMemoryCache for shared hot-query prefetch across API workers."
+            )
+        if not hot_queries:
+            recommendations.append(
+                "Collect more audited query traffic before prewarming or consolidation decisions."
+            )
+        if self.cache is not None and hot_queries and prewarm.warmed == 0 and prewarm.skipped == 0:
+            recommendations.append(
+                "Inspect cache capacity and query audit filters; hot queries were found but none were warmed."
+            )
+        active = int(stats_after.get("active_memories", 0) or 0)
+        if active >= int(memory_pressure_threshold):
+            recommendations.append(
+                "Move this namespace to a persisted ANN backend and sharded deployment before further growth."
+            )
+        if int(stats_after.get("expired_memories", 0) or 0) > 0:
+            recommendations.append(
+                "Schedule MemoryOSWorker more frequently; expired memories remain after this run."
+            )
+        if not bool(stats_after.get("index_healthy", True)):
+            recommendations.append(
+                "Index health is still failing after Memory OS; rebuild or replace the vector backend."
+            )
+        if namespace is None and active >= int(memory_pressure_threshold):
+            recommendations.append(
+                "Evaluate per-namespace placement and tenant sharding before cluster-wide hot spots form."
+            )
+        if not recommendations:
+            recommendations.append("Memory OS run is healthy; keep the worker scheduled.")
+        return recommendations
+
+    def _log_report(self, report: MemoryOSReport) -> None:
+        store = getattr(self.memory, "store", None)
+        log_audit_event = getattr(store, "log_audit_event", None)
+        if not callable(log_audit_event):
+            return
+        try:
+            log_audit_event(
+                "memory_os",
+                namespace=report.namespace,
+                metadata={
+                    "hot_queries": len(report.hot_queries),
+                    "expired_purged": report.expired_purged,
+                    "concepts_created": report.concepts_created,
+                    "prewarm_warmed": report.prewarm.warmed,
+                    "index_rebuilt": report.index_rebuilt,
+                    "actions": list(report.actions),
+                    "ok": report.ok,
+                },
+            )
+        except Exception:
+            pass
 
 
 class DistributedRepairWorker:

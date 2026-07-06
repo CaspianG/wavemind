@@ -333,6 +333,54 @@ def test_fastapi_cache_prewarm_uses_query_audit_and_exposes_metrics(tmp_path, mo
         mind.close()
 
 
+def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.setenv("WAVEMIND_CACHE_TTL_SECONDS", "60")
+    mind = WaveMind(
+        db_path=tmp_path / "api-memory-os.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("memory os should prewarm hot budget recall", namespace="tenant:os")
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/memory-os/run",
+                json={
+                    "namespace": "tenant:os",
+                    "min_frequency": 2,
+                    "top_k": 1,
+                    "consolidate_steps": 0,
+                    "consolidate_concepts": False,
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            assert payload["ok"] is True
+            assert payload["cache_enabled"] is True
+            assert payload["hot_queries"][0]["query"] == "budget recall"
+            assert payload["prewarm"]["warmed"] == 1
+
+            query = client.post(
+                "/query",
+                json={"text": "budget recall", "namespace": "tenant:os", "top_k": 1},
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "memory os should prewarm hot budget recall"
+
+            metrics = client.get("/metrics")
+            assert "wavemind_api_memory_os_requests_total 1" in metrics.text
+    finally:
+        mind.close()
+
+
 def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
     class FakeRedisClient:
         values = {}

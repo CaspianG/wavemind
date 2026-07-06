@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T02:36:28Z",
-  "source_ref": "f2e52b79f1eb",
+  "generated_at": "2026-07-06T03:04:03Z",
+  "source_ref": "e33554abde9c",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -924,7 +924,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/scale_readiness_benchmark.py",
-      "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, hot-cache, and structured-payload retrieval checks.",
+      "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, Memory OS adaptive prewarm/consolidation, hot-cache, and structured-payload retrieval checks.",
       "competitors": [
         "Mem0",
         "Zep",
@@ -937,6 +937,8 @@
         "has_hpa",
         "scale_to_zero",
         "hit_rate",
+        "memory_os_ok",
+        "concepts_created",
         "precision@1",
         "p99_latency_ms"
       ],
@@ -953,7 +955,7 @@
           "kubernetes_manifest_kind": "StatefulSet",
           "kubernetes_repair_cronjob_kind": "CronJob",
           "kubernetes_repair_cronjob_namespaces": 4096,
-          "placement_ms": 32.18423400000603
+          "placement_ms": 61.430900008417666
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -962,7 +964,17 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.0021739999951364553
+          "p99_lookup_ms": 0.0035999692045152187
+        },
+        "WaveMind Memory OS": {
+          "ok": true,
+          "hot_queries": 2,
+          "prewarm_warmed": 2,
+          "prewarm_hit": true,
+          "expired_purged": 1,
+          "concepts_created": 1,
+          "concept_recall": true,
+          "run_ms": 84.1692999820225
         },
         "WaveMind Kubernetes operator": {
           "bundle_has_crd": true,
@@ -1013,7 +1025,7 @@
           "anti_entropy_worker_ok": true,
           "anti_entropy_worker_repaired_total": 1,
           "anti_entropy_worker_tombstone_deleted": 1,
-          "query_after_primary_loss_ms": 0.5417729999948051
+          "query_after_primary_loss_ms": 1.0796000133268535
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -1023,7 +1035,7 @@
           "recalled_after_node_loss": true,
           "repair_copied_records": 1,
           "tombstone_repair_deleted_records": 1,
-          "p99_query_after_loss_ms": 0.7203679999960855
+          "p99_query_after_loss_ms": 2.2203000262379646
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -1032,7 +1044,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 20.908321000000285
+          "sync_ms": 139.94339999044314
         },
         "WaveMind field-state CRDT": {
           "regions": 3,
@@ -1041,7 +1053,7 @@
           "tombstone_wins": true,
           "top_key_converged": true,
           "budget_activation": 5.0,
-          "merge_ms": 0.07525099999838858
+          "merge_ms": 0.09030004730448127
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -1055,18 +1067,18 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 17.813581999995165,
-          "restore_ms": 10.58754499999992
+          "snapshot_ms": 149.21539998613298,
+          "restore_ms": 81.64709998527542
         },
         "WaveMind structured payloads": {
           "queries": 4,
           "precision_at_1": 1.0,
-          "avg_latency_ms": 0.2687405000010301,
-          "p99_latency_ms": 0.32957700000224577
+          "avg_latency_ms": 0.7327500061364844,
+          "p99_latency_ms": 1.111400022637099
         }
       },
-      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, hot-cache behavior, and structured payload recall.",
-      "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
+      "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, Memory OS adaptive prewarm/consolidation, hot-cache behavior, and structured payload recall.",
+      "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, Redis-backed Memory OS profiles, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests."
     },
     {
       "id": "production_readiness_gate",
@@ -1074,7 +1086,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_readiness_results.json",
-      "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, distributed repair, active-active CRDT convergence, backups, structured payloads, competitor-adapter coverage, and 10M-load presence.",
+      "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, competitor-adapter coverage, and 10M-load presence.",
       "competitors": [],
       "metrics": [
         "readiness_score",
@@ -1086,12 +1098,12 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 0.9333333333333333,
+          "readiness_score": 0.9375,
           "overall_status": "action_required",
-          "pass_count": 14,
+          "pass_count": 15,
           "action_required_count": 1,
           "fail_count": 0,
-          "total_criteria": 15
+          "total_criteria": 16
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",

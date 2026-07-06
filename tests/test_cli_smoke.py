@@ -214,6 +214,53 @@ def test_cli_cache_prewarm_uses_audited_queries(tmp_path):
     assert payload["ok"] is True
 
 
+def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
+    db_path = tmp_path / "memory-os.sqlite3"
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "cli memory os prewarms budget recall",
+        "--namespace",
+        "ops",
+    )
+    for _ in range(2):
+        run_cli(
+            "--db",
+            str(db_path),
+            "--audit-queries",
+            "query",
+            "budget recall",
+            "--namespace",
+            "ops",
+            "--top-k",
+            "1",
+        )
+
+    result = run_cli(
+        "--db",
+        str(db_path),
+        "memory-os",
+        "--namespace",
+        "ops",
+        "--min-frequency",
+        "2",
+        "--top-k",
+        "1",
+        "--consolidate-steps",
+        "0",
+        "--no-consolidate-concepts",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["ok"] is True
+    assert payload["cache"] == "local"
+    assert payload["hot_queries"][0]["query"] == "budget recall"
+    assert payload["prewarm"]["warmed"] == 1
+    assert "prewarm_cache" in payload["actions"]
+
+
 def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
     seen = {}
 

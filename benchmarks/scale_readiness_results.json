@@ -5,7 +5,7 @@
     "namespace_count": 4096,
     "node_count": 4,
     "replication_factor": 2,
-    "description": "Deterministic scale-readiness profile for cluster placement, operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, node/zone loss simulation, quorum-replicated runtime behavior, service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention/DR-drill verification, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
+    "description": "Deterministic scale-readiness profile for cluster placement, operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, node/zone loss simulation, quorum-replicated runtime behavior, service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive restore, S3-compatible object-store upload/latest-metadata/download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, hot-cache behavior, and structured payload retrieval. This is not a 10M-vector database load test."
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 32.18423400000603,
+      "placement_ms": 61.430900008417666,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -84,8 +84,29 @@
       "evictions": 0,
       "prewarm_warmed": 1,
       "prewarm_hit": true,
-      "avg_lookup_ms": 0.0010420190000033358,
-      "p99_lookup_ms": 0.0021739999951364553
+      "avg_lookup_ms": 0.0016230998444370925,
+      "p99_lookup_ms": 0.0035999692045152187
+    },
+    {
+      "engine": "WaveMind Memory OS",
+      "ok": true,
+      "hot_queries": 2,
+      "prewarm_warmed": 2,
+      "prewarm_hit": true,
+      "expired_purged": 1,
+      "concepts_created": 1,
+      "concept_recall": true,
+      "index_rebuilt": false,
+      "actions": [
+        "purge_expired",
+        "consolidate_field",
+        "consolidate_concepts",
+        "prewarm_cache"
+      ],
+      "recommendations": [
+        "Move this namespace to a persisted ANN backend and sharded deployment before further growth."
+      ],
+      "run_ms": 84.1692999820225
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -116,8 +137,8 @@
       "anti_entropy_worker_ok": true,
       "anti_entropy_worker_repaired_total": 1,
       "anti_entropy_worker_tombstone_deleted": 1,
-      "write_ms": 34.26586800000564,
-      "query_after_primary_loss_ms": 0.5417729999948051
+      "write_ms": 167.96859999885783,
+      "query_after_primary_loss_ms": 1.0796000133268535
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -131,8 +152,8 @@
       "tombstone_suppressed_before_repair": true,
       "tombstone_suppressed_after_repair": true,
       "tombstone_repair_deleted_records": 1,
-      "avg_query_after_loss_ms": 0.7203679999960855,
-      "p99_query_after_loss_ms": 0.7203679999960855
+      "avg_query_after_loss_ms": 2.2203000262379646,
+      "p99_query_after_loss_ms": 2.2203000262379646
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -140,7 +161,7 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 20.908321000000285,
+      "sync_ms": 139.94339999044314,
       "suppressed_stale_import_after_delete": true,
       "tombstone_deleted_records": 3,
       "tombstone_converged": true
@@ -154,7 +175,7 @@
       "top_key_converged": true,
       "budget_activation": 5.0,
       "suppressed_report_activation": 0.75,
-      "merge_ms": 0.07525099999838858
+      "merge_ms": 0.09030004730448127
     },
     {
       "engine": "WaveMind replicated snapshot",
@@ -168,8 +189,8 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 17.813581999995165,
-      "restore_ms": 10.58754499999992,
+      "snapshot_ms": 149.21539998613298,
+      "restore_ms": 81.64709998527542,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
@@ -183,8 +204,8 @@
       ],
       "queries": 4,
       "precision_at_1": 1.0,
-      "avg_latency_ms": 0.2687405000010301,
-      "p99_latency_ms": 0.32957700000224577
+      "avg_latency_ms": 0.7327500061364844,
+      "p99_latency_ms": 1.111400022637099
     }
   ]
 }

@@ -22,6 +22,9 @@ from .jobs import (
     DistributedRepairJobReport,
     DistributedRepairWorker,
     HotMemoryCache,
+    MemoryOSHotQuery,
+    MemoryOSReport,
+    MemoryOSWorker,
     MemoryMaintenanceWorker,
     RedisHotMemoryCache,
     ReplicatedObjectStoreDrillReport,
@@ -98,7 +101,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.15"
+__version__ = "2.4.16"
 
 __all__ = [
     "FieldProjector",
@@ -126,6 +129,9 @@ __all__ = [
     "KubernetesApplyClient",
     "MemoryMaintenanceWorker",
     "MemoryFieldGraph",
+    "MemoryOSHotQuery",
+    "MemoryOSReport",
+    "MemoryOSWorker",
     "MemoryRecord",
     "MemoryPayload",
     "NamespaceShardRouter",

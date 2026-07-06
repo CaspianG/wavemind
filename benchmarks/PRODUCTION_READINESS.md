@@ -6,24 +6,25 @@ verdict, not a marketing claim.
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| readiness score | `0.933` |
-| passed criteria | `14` |
+| readiness score | `0.938` |
+| passed criteria | `15` |
 | action required | `1` |
 | failed criteria | `0` |
-| total criteria | `15` |
+| total criteria | `16` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T02:17:10Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T02:36:28Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |
-| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.0021739999951364553 ms | Back the cache with Redis in a service-mode benchmark. |
+| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.0035999692045152187 ms | Back the cache with Redis in a service-mode benchmark. |
+| Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, expired 1, concepts 1 | Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Run the same repair flow against real HTTP shard clients. |
-| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 0.7203679999960855 ms | Measure the same path under concurrent writes and reads. |
+| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 2.2203000262379646 ms | Measure the same path under concurrent writes and reads. |
 | Active-active sync and field-state CRDT converge | `pass` | delta sync True, CRDT idempotent True | Run active-active sync against independent persistent stores. |
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, precision@1 1.0 | Add real CLIP/audio embedding backends and larger multimodal retrieval tests. |

@@ -20,6 +20,7 @@ from .jobs import (
     DistributedRepairWorker,
     HotMemoryCache,
     MemoryMaintenanceWorker,
+    MemoryOSWorker,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
     RedisHotMemoryCache,
@@ -276,6 +277,39 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
     )
     cache_prewarm.add_argument("--json", action="store_true")
+
+    memory_os = sub.add_parser(
+        "memory-os",
+        help="Run one adaptive Memory OS maintenance and prefetch cycle",
+    )
+    memory_os.add_argument("--namespace")
+    memory_os.add_argument("--audit-limit", type=int, default=512)
+    memory_os.add_argument("--max-hot-queries", type=int, default=32)
+    memory_os.add_argument("--min-frequency", type=int, default=2)
+    memory_os.add_argument("--top-k", type=int, default=3)
+    memory_os.add_argument("--min-score", type=float)
+    memory_os.add_argument("--consolidate-steps", type=int, default=10)
+    memory_os.add_argument("--no-consolidate-concepts", action="store_true")
+    memory_os.add_argument("--concept-seed-text")
+    memory_os.add_argument("--min-concept-energy", type=float, default=0.02)
+    memory_os.add_argument("--min-concept-size", type=int, default=2)
+    memory_os.add_argument("--max-concepts", type=int, default=3)
+    memory_os.add_argument("--concept-priority", type=float, default=6.0)
+    memory_os.add_argument("--no-rebuild-index", action="store_true")
+    memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
+    memory_os.add_argument("--capacity", type=int, default=512)
+    memory_os.add_argument("--ttl-seconds", type=float, default=60.0)
+    memory_os.add_argument(
+        "--redis-url",
+        default=os.environ.get("WAVEMIND_REDIS_URL"),
+        help="Redis URL for a shared production cache. Defaults to WAVEMIND_REDIS_URL.",
+    )
+    memory_os.add_argument(
+        "--redis-prefix",
+        default=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
+    )
+    memory_os.add_argument("--no-cache", action="store_true")
+    memory_os.add_argument("--json", action="store_true")
 
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
@@ -1075,6 +1109,56 @@ def main(argv: list[str] | None = None) -> int:
             if not args.redis_url:
                 print(
                     "note: local cache is process-local; use --redis-url for production prewarm",
+                    file=sys.stderr,
+                )
+        return 0 if report.ok else 4
+
+    if args.command == "memory-os":
+        cache = None
+        if not args.no_cache:
+            if args.redis_url:
+                cache = RedisHotMemoryCache.from_url(
+                    args.redis_url,
+                    prefix=args.redis_prefix,
+                    ttl_seconds=args.ttl_seconds,
+                )
+            else:
+                cache = HotMemoryCache(
+                    capacity=args.capacity,
+                    ttl_seconds=args.ttl_seconds,
+                )
+        report = MemoryOSWorker(mind, cache).run_once(
+            namespace=args.namespace,
+            audit_limit=args.audit_limit,
+            max_hot_queries=args.max_hot_queries,
+            min_frequency=args.min_frequency,
+            top_k=args.top_k,
+            min_score=args.min_score,
+            consolidate_steps=args.consolidate_steps,
+            consolidate_concepts=not args.no_consolidate_concepts,
+            concept_seed_text=args.concept_seed_text,
+            min_concept_energy=args.min_concept_energy,
+            min_concept_size=args.min_concept_size,
+            max_concepts=args.max_concepts,
+            concept_priority=args.concept_priority,
+            rebuild_unhealthy_index=not args.no_rebuild_index,
+            memory_pressure_threshold=args.memory_pressure_threshold,
+        )
+        payload = report.as_dict()
+        payload["cache"] = (
+            "disabled"
+            if args.no_cache
+            else "redis"
+            if args.redis_url
+            else "local"
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_stats(payload)
+            if not args.redis_url and not args.no_cache:
+                print(
+                    "note: local cache is process-local; use --redis-url for production Memory OS prewarm",
                     file=sys.stderr,
                 )
         return 0 if report.ok else 4

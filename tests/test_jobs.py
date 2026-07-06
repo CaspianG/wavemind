@@ -3,6 +3,8 @@ import tarfile
 from io import BytesIO
 from pathlib import Path
 
+import numpy as np
+
 from wavemind import (
     CachePrewarmWorker,
     DistributedRepairWorker,
@@ -10,6 +12,7 @@ from wavemind import (
     HashingTextEncoder,
     HotMemoryCache,
     MemoryMaintenanceWorker,
+    MemoryOSWorker,
     QueryResult,
     RedisHotMemoryCache,
     ReplicatedObjectStoreDrillWorker,
@@ -19,6 +22,20 @@ from wavemind import (
     WaveMind,
     query_with_cache,
 )
+
+
+class SystemsEncoder:
+    vector_dim = 4
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        lowered = text.lower()
+        if any(token in lowered for token in ("rust", "compiler", "systems", "programming")):
+            return self._unit([1.0, 0.0, 0.0, 0.0])
+        return self._unit([0.0, 1.0, 0.0, 0.0])
+
+    def _unit(self, values):
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
 class FakeRedis:
@@ -329,6 +346,72 @@ def test_cache_prewarm_worker_warms_hot_queries_from_audit(tmp_path):
         assert report.warmed == 1
         assert cached is not None
         assert cached[0].text == "hot budget preference memory"
+    finally:
+        memory.close()
+
+
+def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os.sqlite3",
+        encoder=SystemsEncoder(),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+        graph_weight=1.0,
+        graph_steps=2,
+        graph_expand_k=10,
+        rerank_k=10,
+    )
+    cache = HotMemoryCache(capacity=8, ttl_seconds=60)
+    try:
+        memory.remember(
+            "User likes Rust systems programming",
+            namespace="agent",
+            tags=["systems"],
+        )
+        memory.remember(
+            "User studies compiler internals",
+            namespace="agent",
+            tags=["systems"],
+        )
+        memory.remember("expired stale note", namespace="agent", ttl_seconds=-1)
+        memory.query("systems programming", namespace="agent", top_k=1)
+        memory.query("systems programming", namespace="agent", top_k=1)
+
+        report = MemoryOSWorker(memory, cache).run_once(
+            namespace="agent",
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=2,
+            top_k=1,
+            consolidate_steps=2,
+            min_concept_energy=0.01,
+            min_concept_size=2,
+            max_concepts=1,
+            memory_pressure_threshold=2,
+        )
+        cached = cache.get("agent", "systems programming", top_k=1)
+        concept_results = memory.query(
+            "systems programming",
+            namespace="agent",
+            tags=["concept"],
+            top_k=1,
+        )
+        audit = memory.audit_events(namespace="agent", action="memory_os", limit=1)
+
+        assert report.ok
+        assert report.expired_purged == 1
+        assert report.hot_queries[0].query == "systems programming"
+        assert report.hot_queries[0].frequency >= 2
+        assert report.prewarm.warmed == 1
+        assert cached is not None
+        assert report.concepts_created == 1
+        assert concept_results
+        assert "prewarm_cache" in report.actions
+        assert "consolidate_concepts" in report.actions
+        assert any("persisted ANN backend" in item for item in report.recommendations)
+        assert audit and audit[0].metadata["ok"] is True
     finally:
         memory.close()
 

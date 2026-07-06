@@ -21,6 +21,7 @@ from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
     HotMemoryCache,
+    MemoryOSWorker,
     RedisHotMemoryCache,
     query_with_cache,
 )
@@ -327,6 +328,24 @@ class CachePrewarmResponse(BaseModel):
     skipped: int
     errors: dict[str, str]
     ok: bool
+
+
+class MemoryOSRequest(BaseModel):
+    namespace: str | None = None
+    audit_limit: int = Field(default=512, ge=0, le=10000)
+    max_hot_queries: int = Field(default=32, ge=0, le=1000)
+    min_frequency: int = Field(default=2, ge=1)
+    top_k: int = Field(default=3, ge=1, le=100)
+    min_score: float | None = None
+    consolidate_steps: int = Field(default=10, ge=0, le=10000)
+    consolidate_concepts: bool = True
+    concept_seed_text: str | None = None
+    min_concept_energy: float = Field(default=0.02, ge=0.0)
+    min_concept_size: int = Field(default=2, ge=2)
+    max_concepts: int = Field(default=3, ge=0, le=100)
+    concept_priority: float = Field(default=6.0, ge=0.0)
+    rebuild_unhealthy_index: bool = True
+    memory_pressure_threshold: int = Field(default=50000, ge=0)
 
 
 class ScalePlanResponse(BaseModel):
@@ -808,6 +827,28 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 min_score=request.min_score,
             )
         return CachePrewarmResponse(**report.as_dict())
+
+    @app.post("/memory-os/run", dependencies=[Depends(require_role("admin"))])
+    def memory_os_run(request: MemoryOSRequest):
+        with _api_operation(app, "memory_os"):
+            report = MemoryOSWorker(app.state.mind, app.state.cache).run_once(
+                namespace=request.namespace,
+                audit_limit=request.audit_limit,
+                max_hot_queries=request.max_hot_queries,
+                min_frequency=request.min_frequency,
+                top_k=request.top_k,
+                min_score=request.min_score,
+                consolidate_steps=request.consolidate_steps,
+                consolidate_concepts=request.consolidate_concepts,
+                concept_seed_text=request.concept_seed_text,
+                min_concept_energy=request.min_concept_energy,
+                min_concept_size=request.min_concept_size,
+                max_concepts=request.max_concepts,
+                concept_priority=request.concept_priority,
+                rebuild_unhealthy_index=request.rebuild_unhealthy_index,
+                memory_pressure_threshold=request.memory_pressure_threshold,
+            )
+        return report.as_dict()
 
     @app.get("/audit", response_model=AuditResponse, dependencies=[Depends(require_role("admin"))])
     def audit(
