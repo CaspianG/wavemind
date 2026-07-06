@@ -59,6 +59,10 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
         == "invalid_slo"
     )
     assert entries["production_load_qdrant_1m_ef_sweep"]["current"]["hnsw_ef=2048"]["slo_status"] == "fail"
+    assert entries["production_streaming_load_runner"]["status"] == "implemented"
+    streaming = entries["production_streaming_load_runner"]["current"]["WaveMind numpy-streaming"]
+    assert streaming["target_recall_at_k"] >= 0.95
+    assert streaming["slo_status"] in {"pass", "scale_required", "fail"}
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
     assert readiness["overall_status"] == "action_required"

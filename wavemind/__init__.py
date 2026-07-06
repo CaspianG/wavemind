@@ -98,7 +98,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.11"
+__version__ = "2.4.12"
 
 __all__ = [
     "FieldProjector",

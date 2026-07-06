@@ -37,6 +37,14 @@ jobs:
           python benchmarks/scale_readiness_benchmark.py \
             --simulated-memories 1000000 \
             --output benchmarks/scale_readiness_results.json
+          python benchmarks/production_streaming_load_benchmark.py \
+            --sizes 10000 \
+            --dim 128 \
+            --queries 50 \
+            --top-k 10 \
+            --batch-size 2000 \
+            --engines numpy-streaming \
+            --output benchmarks/production_streaming_load_smoke_results.json
           python benchmarks/production_readiness_gate.py \
             --output benchmarks/production_readiness_results.json \
             --markdown-output benchmarks/PRODUCTION_READINESS.md
@@ -58,6 +66,7 @@ jobs:
             tests/test_dynamic_memory_benchmark.py \
             tests/test_field_memory_dynamics_benchmark.py \
             tests/test_scale_readiness_benchmark.py \
+            tests/test_production_streaming_load_benchmark.py \
             tests/test_production_readiness_gate.py
 
       - name: Commit leaderboard update
@@ -84,5 +93,6 @@ jobs:
             benchmarks/dynamic_memory_results.json
             benchmarks/field_memory_dynamics_results.json
             benchmarks/scale_readiness_results.json
+            benchmarks/production_streaming_load_smoke_results.json
             benchmarks/production_readiness_results.json
             benchmarks/PRODUCTION_READINESS.md

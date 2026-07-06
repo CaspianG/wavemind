@@ -56,6 +56,8 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
             result,
             (
                 "recall_at_k",
+                "target_recall_at_k",
+                "target_recall_at_1",
                 "avg_latency_ms",
                 "p95_latency_ms",
                 "p99_latency_ms",
@@ -152,6 +154,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_tuned_results.json")
     production_load_faiss_1m_payload = _load_json(root / "benchmarks" / "production_load_faiss_1m_results.json")
     production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
+    production_streaming_payload = _load_json(root / "benchmarks" / "production_streaming_load_smoke_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
@@ -174,6 +177,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
     production_load_faiss_1m_results = _ann_latest_results(production_load_faiss_1m_payload)
     production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
+    production_streaming_results = _ann_latest_results(production_streaming_payload)
     scale_readiness_results = _engine_results(scale_readiness_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
@@ -762,6 +766,30 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "current": production_load_1m_ef_sweep_results,
             "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
             "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters; the current best recall setting still misses the p99 SLO.",
+        },
+        {
+            "id": "production_streaming_load_runner",
+            "name": "Production streaming load runner",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/production_streaming_load_benchmark.py",
+            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in smoke uses 10000 generated normalized 128-d vectors with source-id target recall.",
+            "competitors": ["FAISS persisted streaming", "Qdrant service streaming"],
+            "metrics": [
+                "target_recall@10",
+                "target_recall@1",
+                "avg_latency_ms",
+                "p95_latency_ms",
+                "p99_latency_ms",
+                "SLO status",
+                "required replicas",
+                "autoscaled QPS",
+                "compute cost / 1M queries",
+                "build_ms",
+            ],
+            "current": production_streaming_results,
+            "target": "Run the streaming profile at 10M and then 50M with FAISS persisted and Qdrant service backends on hardware sized for the index.",
+            "next_step": "Use this runner for the required 10M non-skipped SLO artifact; it avoids holding the full vector corpus or exact-neighbor matrix in RAM.",
         },
         {
             "id": "scale_readiness",

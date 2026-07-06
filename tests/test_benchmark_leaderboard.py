@@ -55,6 +55,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "dynamic_memory_benchmark.py" in workflow
     assert "field_memory_dynamics_benchmark.py" in workflow
     assert "scale_readiness_benchmark.py" in workflow
+    assert "production_streaming_load_benchmark.py" in workflow
     assert "production_readiness_gate.py" in workflow
     assert "benchmark_registry.py" in workflow
     assert "render_benchmark_report.py" in workflow
@@ -64,5 +65,6 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast" in workflow
     assert "benchmark_artifact_audit.json" in workflow
     assert "production_readiness_results.json" in workflow
+    assert "production_streaming_load_smoke_results.json" in workflow
     assert "PRODUCTION_READINESS.md" in workflow
     assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow

@@ -33,6 +33,8 @@ METRIC_LABELS = {
     "precision@3": "precision@3",
     "ndcg_at_k": "nDCG@k",
     "recall_at_k": "Recall@k",
+    "target_recall_at_k": "target recall@k",
+    "target_recall_at_1": "target recall@1",
     "evidence_recall_at_k": "evidence recall@k",
     "mrr_at_k": "MRR@k",
     "stale_suppression": "stale suppression",

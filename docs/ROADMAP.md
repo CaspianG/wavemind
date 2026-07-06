@@ -301,6 +301,9 @@ Enterprise requirements:
 - Clear the production readiness gate: live Zep service adapter run and a
   10M service-backed load profile. Mem0 and LangGraph already have checked-in
   local adapter results.
+- Use `benchmarks/production_streaming_load_benchmark.py` for the first
+  non-skipped 10M and 50M target-recall runs, so large-N profiles do not hold
+  the full vector corpus or exact-neighbor matrix in RAM.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

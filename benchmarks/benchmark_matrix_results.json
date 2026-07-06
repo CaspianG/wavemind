@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T01:10:32Z",
-  "source_ref": "47e4ed6ce49c",
+  "generated_at": "2026-07-06T01:31:02Z",
+  "source_ref": "95f59803262d",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -824,6 +824,50 @@
       },
       "target": "Find a setting that keeps recall@10 >= 0.95 while keeping p99 latency below 100 ms.",
       "next_step": "Repeat with 100+ queries and collection-level HNSW build parameters; the current best recall setting still misses the p99 SLO."
+    },
+    {
+      "id": "production_streaming_load_runner",
+      "name": "Production streaming load runner",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/production_streaming_load_benchmark.py",
+      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in smoke uses 10000 generated normalized 128-d vectors with source-id target recall.",
+      "competitors": [
+        "FAISS persisted streaming",
+        "Qdrant service streaming"
+      ],
+      "metrics": [
+        "target_recall@10",
+        "target_recall@1",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms",
+        "SLO status",
+        "required replicas",
+        "autoscaled QPS",
+        "compute cost / 1M queries",
+        "build_ms"
+      ],
+      "current": {
+        "WaveMind numpy-streaming": {
+          "recall_at_k": 1,
+          "target_recall_at_k": 1,
+          "target_recall_at_1": 1,
+          "avg_latency_ms": 0.32370600034482777,
+          "p95_latency_ms": 0.3920000162906945,
+          "p99_latency_ms": 0.9779000538401306,
+          "build_ms": 36.8531999993138,
+          "slo_status": "pass",
+          "slo_required_replicas": 1,
+          "slo_autoscaled_qps": 51898.945284004,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 0.6944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 182.50238418579102,
+          "estimated_storage_gb": 0.02384185791015625
+        }
+      },
+      "target": "Run the streaming profile at 10M and then 50M with FAISS persisted and Qdrant service backends on hardware sized for the index.",
+      "next_step": "Use this runner for the required 10M non-skipped SLO artifact; it avoids holding the full vector corpus or exact-neighbor matrix in RAM."
     },
     {
       "id": "scale_readiness",
