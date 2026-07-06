@@ -405,6 +405,14 @@ Optional pgvector environment variables:
 - `WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION` - optional HNSW build accuracy setting.
 - `WAVEMIND_PGVECTOR_EF_SEARCH` - optional per-query HNSW search depth. Increase
   it when pgvector is fast but recall is too low.
+- `WAVEMIND_PGVECTOR_ITERATIVE_SCAN=strict_order|relaxed_order|off` - optional
+  pgvector iterative HNSW scan mode for higher recall on newer pgvector builds.
+- `WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES` and
+  `WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER` - optional HNSW scan bounds for
+  production recall/latency tuning.
+- `WAVEMIND_PGVECTOR_EXACT=1` - force an exact scan for recall audits and
+  correctness-sensitive jobs. This is slower than HNSW, but it gives a direct
+  way to separate index approximation loss from WaveMind ranking behavior.
 
 If `WAVEMIND_PGVECTOR_DSN` is missing, WaveMind raises a clear error instead of
 silently falling back to another index backend.

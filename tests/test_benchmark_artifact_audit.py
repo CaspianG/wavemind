@@ -25,7 +25,11 @@ def test_benchmark_artifact_audit_accepts_checked_in_artifacts():
 
 def test_benchmark_artifact_audit_rejects_stale_matrix(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
-    shutil.copytree(project_root / "benchmarks", tmp_path / "benchmarks")
+    shutil.copytree(
+        project_root / "benchmarks",
+        tmp_path / "benchmarks",
+        ignore=shutil.ignore_patterns("data", ".field_memory_workdir", "__pycache__"),
+    )
     matrix_path = tmp_path / "benchmarks" / "benchmark_matrix_results.json"
     matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
     matrix["generated_at"] = "2026-01-01T00:00:00Z"

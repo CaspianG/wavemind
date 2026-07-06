@@ -297,6 +297,22 @@ def test_pgvector_rejects_invalid_hnsw_environment(monkeypatch):
         create_vector_index("pgvector", vector_dim=3)
 
 
+def test_pgvector_rejects_invalid_iterative_scan(monkeypatch):
+    class FakeConnection:
+        def execute(self, sql, params=None):
+            raise AssertionError("connection should not be opened")
+
+    fake_psycopg = SimpleNamespace(
+        connect=lambda dsn, autocommit=True: FakeConnection()
+    )
+    monkeypatch.setitem(sys.modules, "psycopg", fake_psycopg)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_DSN", "postgresql://example")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_ITERATIVE_SCAN", "maybe")
+
+    with pytest.raises(ValueError, match="WAVEMIND_PGVECTOR_ITERATIVE_SCAN"):
+        create_vector_index("pgvector", vector_dim=3)
+
+
 def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypatch):
     class FakeResult:
         def __init__(self, rows=None):
@@ -353,6 +369,10 @@ def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypat
     monkeypatch.setenv("WAVEMIND_PGVECTOR_HNSW_M", "32")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION", "256")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_EF_SEARCH", "400")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_ITERATIVE_SCAN", "strict_order")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES", "20000")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER", "4")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_EXACT", "1")
 
     index = create_vector_index("pgvector", vector_dim=3)
     index.add(42, np.array([1.0, 0.0, 0.0], dtype=np.float32))
@@ -372,6 +392,13 @@ def test_pgvector_index_uses_psycopg_connection_without_local_fallback(monkeypat
         for sql, _ in fake_connection.calls
     )
     assert any("SET hnsw.ef_search = 400" in sql for sql, _ in fake_connection.calls)
+    assert any("SET hnsw.iterative_scan = 'strict_order'" in sql for sql, _ in fake_connection.calls)
+    assert any("SET hnsw.max_scan_tuples = 20000" in sql for sql, _ in fake_connection.calls)
+    assert any("SET hnsw.scan_mem_multiplier = 4" in sql for sql, _ in fake_connection.calls)
+    assert any("SET enable_indexscan = off" in sql for sql, _ in fake_connection.calls)
+    assert any("SET enable_bitmapscan = off" in sql for sql, _ in fake_connection.calls)
+    assert any("SET enable_indexscan = on" in sql for sql, _ in fake_connection.calls)
+    assert any("SET enable_bitmapscan = on" in sql for sql, _ in fake_connection.calls)
     index.close()
     index.close()
     assert fake_connection.closed is True

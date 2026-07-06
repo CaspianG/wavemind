@@ -145,6 +145,13 @@ def _env_positive_int(name: str, default: int | None = None) -> int | None:
     return parsed
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return bool(default)
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 class NumpyVectorIndex:
     name = "numpy-exact"
 
@@ -615,6 +622,10 @@ class PgVectorIndex:
         hnsw_m: int | None = None,
         hnsw_ef_construction: int | None = None,
         ef_search: int | None = None,
+        exact_search: bool | None = None,
+        iterative_scan: str | None = None,
+        max_scan_tuples: int | None = None,
+        scan_mem_multiplier: int | None = None,
     ):
         self.vector_dim = int(vector_dim)
         self.dsn = dsn or os.environ.get("WAVEMIND_PGVECTOR_DSN")
@@ -638,12 +649,7 @@ class PgVectorIndex:
             "default",
         )
         if create_hnsw is None:
-            create_hnsw = os.environ.get("WAVEMIND_PGVECTOR_CREATE_HNSW", "0").lower() in {
-                "1",
-                "true",
-                "yes",
-                "on",
-            }
+            create_hnsw = _env_bool("WAVEMIND_PGVECTOR_CREATE_HNSW")
         self.create_hnsw = bool(create_hnsw)
         self.hnsw_m = hnsw_m or _env_positive_int("WAVEMIND_PGVECTOR_HNSW_M")
         self.hnsw_ef_construction = hnsw_ef_construction or _env_positive_int(
@@ -651,6 +657,28 @@ class PgVectorIndex:
         )
         self.ef_search = ef_search or _env_positive_int(
             "WAVEMIND_PGVECTOR_EF_SEARCH"
+        )
+        self.exact_search = (
+            _env_bool("WAVEMIND_PGVECTOR_EXACT")
+            if exact_search is None
+            else bool(exact_search)
+        )
+        self.iterative_scan = iterative_scan or os.environ.get(
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN"
+        )
+        if self.iterative_scan and self.iterative_scan not in {
+            "strict_order",
+            "relaxed_order",
+            "off",
+        }:
+            raise ValueError(
+                "WAVEMIND_PGVECTOR_ITERATIVE_SCAN must be strict_order, relaxed_order, or off"
+            )
+        self.max_scan_tuples = max_scan_tuples or _env_positive_int(
+            "WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES"
+        )
+        self.scan_mem_multiplier = scan_mem_multiplier or _env_positive_int(
+            "WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER"
         )
         self.conn = psycopg.connect(self.dsn, autocommit=True)
         self._closed = False
@@ -741,8 +769,7 @@ class PgVectorIndex:
     ) -> list[IndexResult]:
         if top_k <= 0:
             return []
-        if self.ef_search is not None:
-            self.conn.execute(f"SET hnsw.ef_search = {self.ef_search}")
+        self._apply_search_settings()
         query = _vector_literal(vector)
         params: list[object] = [query, self.collection]
         where = "collection = %s"
@@ -753,17 +780,40 @@ class PgVectorIndex:
             where += " AND memory_id = ANY(%s)"
             params.append(ids)
         params.extend([query, int(top_k)])
-        rows = self.conn.execute(
-            f"""
-            SELECT memory_id, 1.0 - (embedding <=> %s::vector) AS score
-            FROM {self.table}
-            WHERE {where}
-            ORDER BY embedding <=> %s::vector
-            LIMIT %s
-            """,
-            params,
-        ).fetchall()
-        return [IndexResult(int(row[0]), float(row[1])) for row in rows]
+        try:
+            rows = self.conn.execute(
+                f"""
+                SELECT memory_id, 1.0 - (embedding <=> %s::vector) AS score
+                FROM {self.table}
+                WHERE {where}
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+                """,
+                params,
+            ).fetchall()
+            return [IndexResult(int(row[0]), float(row[1])) for row in rows]
+        finally:
+            if self.exact_search:
+                self._restore_approximate_search_settings()
+
+    def _apply_search_settings(self) -> None:
+        if self.ef_search is not None:
+            self.conn.execute(f"SET hnsw.ef_search = {self.ef_search}")
+        if self.iterative_scan:
+            self.conn.execute(f"SET hnsw.iterative_scan = '{self.iterative_scan}'")
+        if self.max_scan_tuples is not None:
+            self.conn.execute(f"SET hnsw.max_scan_tuples = {self.max_scan_tuples}")
+        if self.scan_mem_multiplier is not None:
+            self.conn.execute(
+                f"SET hnsw.scan_mem_multiplier = {self.scan_mem_multiplier}"
+            )
+        if self.exact_search:
+            self.conn.execute("SET enable_indexscan = off")
+            self.conn.execute("SET enable_bitmapscan = off")
+
+    def _restore_approximate_search_settings(self) -> None:
+        self.conn.execute("SET enable_indexscan = on")
+        self.conn.execute("SET enable_bitmapscan = on")
 
     def __len__(self) -> int:
         return int(

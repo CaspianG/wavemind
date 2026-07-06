@@ -40,9 +40,11 @@ policy matters more than raw vector-database scale:
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
-- pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
-  The checked-in profile uses `ef_search=400`, which improves 50000-vector
-  recall but still misses the production recall target.
+- pgvector now exposes HNSW `m`, `ef_construction`, `ef_search`, iterative-scan
+  controls, scan bounds, and an explicit exact-search mode for recall audits.
+  The checked-in HNSW profile uses `ef_search=400`, which improves
+  50000-vector recall but still misses the production recall target; exact mode
+  is available to separate pgvector approximation loss from WaveMind ranking.
 - Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
   rebuild operations, and Prometheus-compatible index-health metrics.
 - `wavemind scale-plan`, `WaveMind.scale_plan()`, and `GET /scale-plan` are
