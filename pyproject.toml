@@ -24,6 +24,10 @@ sentence = [
 ml = [
   "sentence-transformers>=3",
 ]
+multimodal = [
+  "sentence-transformers>=3",
+  "Pillow>=10",
+]
 indexes = [
   "annoy>=1.17",
   "faiss-cpu>=1.8",

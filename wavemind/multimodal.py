@@ -5,7 +5,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Protocol, Sequence
+from typing import Any, Callable, Iterable, Protocol, Sequence
 
 import numpy as np
 
@@ -147,6 +147,92 @@ class PrecomputedCrossModalEncoder:
             "PrecomputedCrossModalEncoder requires `query_vector=` in "
             "CrossModalMemoryLayer.query()."
         )
+
+
+class SentenceTransformersCrossModalEncoder:
+    """Optional sentence-transformers backend for CLIP-style cross-modal memory."""
+
+    def __init__(
+        self,
+        model_name: str = "clip-ViT-B-32",
+        *,
+        model: Any | None = None,
+        vector_dim: int | None = None,
+        image_loader: Callable[[Path], Any] | None = None,
+        name: str | None = None,
+    ) -> None:
+        self.model_name = model_name
+        self.model = model if model is not None else self._load_model(model_name)
+        self.image_loader = image_loader
+        inferred_dim = vector_dim or self._infer_vector_dim()
+        if inferred_dim <= 0:
+            raise ValueError("vector_dim must be positive.")
+        self.vector_dim = int(inferred_dim)
+        self.name = name or f"sentence-transformers/{model_name}"
+
+    def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
+        explicit = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
+        if explicit is not None:
+            return explicit
+        model_input = self._payload_input(payload, descriptor)
+        return self._encode_one(model_input)
+
+    def encode_query(
+        self,
+        query: str,
+        *,
+        target_modality: str | None,
+        descriptor: str,
+    ) -> np.ndarray:
+        return self._encode_one(query or descriptor)
+
+    @staticmethod
+    def _load_model(model_name: str) -> Any:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise ImportError(
+                "SentenceTransformersCrossModalEncoder requires the optional "
+                "`wavemind[multimodal]` extra."
+            ) from exc
+        return SentenceTransformer(model_name)
+
+    def _infer_vector_dim(self) -> int:
+        getter = getattr(self.model, "get_sentence_embedding_dimension", None)
+        if callable(getter):
+            dim = getter()
+            if dim:
+                return int(dim)
+        vector = self._encode_raw("dimension probe")
+        return int(vector.shape[0])
+
+    def _payload_input(self, payload: MemoryPayload, descriptor: str) -> Any:
+        if normalize_modality(payload.kind) != "image":
+            return descriptor
+        path = _local_uri_path(payload.metadata.get("uri"))
+        if path is None:
+            return descriptor
+        loader = self.image_loader or _load_pillow_image
+        return loader(path)
+
+    def _encode_one(self, value: Any) -> np.ndarray:
+        return _normalize_vector(self._encode_raw(value), vector_dim=self.vector_dim)
+
+    def _encode_raw(self, value: Any) -> np.ndarray:
+        try:
+            encoded = self.model.encode(
+                [value],
+                convert_to_numpy=True,
+                normalize_embeddings=False,
+            )
+        except TypeError:
+            encoded = self.model.encode([value])
+        vector = np.asarray(encoded, dtype=np.float32)
+        if vector.ndim == 2:
+            if vector.shape[0] != 1:
+                raise ValueError("Expected one encoded vector.")
+            vector = vector[0]
+        return vector.astype(np.float32)
 
 
 class CrossModalMemoryLayer:
@@ -640,6 +726,25 @@ def _normalize_vector(
     if norm <= 1e-12:
         return vector.astype(np.float32)
     return (vector / norm).astype(np.float32)
+
+
+def _local_uri_path(value: Any) -> Path | None:
+    uri = str(value or "").strip()
+    if not uri or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", uri):
+        return None
+    path = Path(uri)
+    return path if path.exists() and path.is_file() else None
+
+
+def _load_pillow_image(path: Path) -> Any:
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise ImportError(
+            "Image payload encoding requires Pillow. Install `wavemind[multimodal]`."
+        ) from exc
+    with Image.open(path) as image:
+        return image.convert("RGB").copy()
 
 
 def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict[str, Any]:

@@ -19,6 +19,19 @@ def test_sentence_extra_is_available_for_install_scripts():
     assert '"sentence-transformers>=3"' in pyproject
 
 
+def test_multimodal_extra_installs_clip_image_dependencies():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    optional_requirements = Path("requirements-optional.txt").read_text(
+        encoding="utf-8"
+    )
+
+    assert "multimodal = [" in pyproject
+    assert '"sentence-transformers>=3"' in pyproject
+    assert '"Pillow>=10"' in pyproject
+    assert "sentence-transformers>=3" in optional_requirements
+    assert "Pillow>=10" in optional_requirements
+
+
 def test_benchmark_extra_installs_chroma():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 

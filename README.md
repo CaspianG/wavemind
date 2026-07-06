@@ -908,6 +908,33 @@ results = layer.query(
 )
 ```
 
+For a built-in CLIP-style image/text backend, install the multimodal extra:
+
+```sh
+python -m pip install "wavemind[multimodal]"
+```
+
+```python
+from wavemind import CrossModalMemoryLayer, SentenceTransformersCrossModalEncoder, WaveMind, image_payload
+
+memory = WaveMind()
+layer = CrossModalMemoryLayer(
+    memory,
+    cross_modal_encoder=SentenceTransformersCrossModalEncoder("clip-ViT-B-32"),
+)
+
+layer.remember(
+    image_payload("chart.png", caption="Q2 revenue chart"),
+    namespace="research",
+)
+results = layer.query("revenue chart", namespace="research", target_modality="image")
+```
+
+This backend loads local image files with Pillow and encodes text queries through
+the same sentence-transformers model. Remote assets, audio, video, and 3D
+payloads should either carry strong text descriptors or use the precomputed
+vector path until dedicated perception backends are benchmarked.
+
 Supported payload helpers:
 
 | helper | use case |
@@ -2097,11 +2124,11 @@ If you already use Chroma for local memory, see the practical migration guide:
   and avoids unnecessary FAISS rebuilds when the snapshot matches. FAISS itself
   is a single-node flat-index path; use `ReplicatedWaveMind` or external
   database/service replication when that is not enough.
-- The current cross-modal layer supports deterministic descriptor embeddings
-  and a strict precomputed-vector path for externally computed CLIP/audio/video/3D
-  embeddings. It validates storage/query API, persisted vectors,
-  target-modality routing, and provenance; it is not yet a built-in open-set
-  image/audio/video/3D perception model.
+- The current cross-modal layer supports deterministic descriptor embeddings,
+  a strict precomputed-vector path for externally computed CLIP/audio/video/3D
+  embeddings, and an optional sentence-transformers backend for CLIP-style local
+  image/text retrieval. Audio, video, and 3D perception still require external
+  embeddings or strong descriptors until dedicated backends are benchmarked.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision and must be benchmarked per workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
@@ -2147,9 +2174,9 @@ Longer-term direction:
   vector backends for production;
 - evolve `MemoryFieldGraph` from a regression-tested graph into a stronger
   field-memory model with excitation, inhibition, decay, and consolidation;
-- add built-in CLIP/audio/video/3D encoder backends on top of the existing
-  precomputed-vector contract while keeping the same provenance-preserving
-  payload API;
+- expand the built-in multimodal backend beyond CLIP-style local image/text
+  retrieval into benchmarked audio/video/3D encoders while keeping the same
+  provenance-preserving payload API;
 - build enterprise features only after benchmarked retrieval, latency, and
   answer-quality evidence are solid.
 

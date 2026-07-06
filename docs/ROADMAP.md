@@ -137,7 +137,9 @@ policy matters more than raw vector-database scale:
   persisted cross-modal vectors, target-modality routing,
   provenance-preserving recall across all seven payload types, and a strict
   precomputed-vector path for externally computed CLIP/audio/video/3D
-  embeddings.
+  embeddings. `SentenceTransformersCrossModalEncoder` adds an optional
+  CLIP-style local image/text backend without making sentence-transformers or
+  Pillow mandatory for the base install.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, quorum-replicated runtime behavior, cursor-based
   active-active namespace delta sync, field-only hotness delta sync,
@@ -401,8 +403,9 @@ Enterprise requirements:
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
-- Built-in multimodal encoders: CLIP-style image embeddings, audio embeddings,
-  video scene embeddings, and 3D descriptors behind the existing
+- Multimodal encoders: the optional sentence-transformers backend now covers
+  CLIP-style local image/text retrieval; next are benchmarked audio embeddings,
+  video scene embeddings, and 3D descriptors behind the same
   `CrossModalMemoryLayer` and `PrecomputedCrossModalEncoder` contracts.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
@@ -413,9 +416,9 @@ Enterprise requirements:
 - Clustered deployment mode.
 - Enterprise auth, RBAC, audit log, and encryption.
 - Hosted managed service.
-- Production-grade multimodal memory beyond deterministic descriptors: real
-  image/audio/video/3D encoders, larger public retrieval tests, and encoder
-  health monitoring.
+- Production-grade multimodal memory beyond deterministic descriptors:
+  benchmarked CLIP image/text runs, audio/video/3D encoders, larger public
+  retrieval tests, and encoder health monitoring.
 - Production-grade graph/field memory with measurable excitation,
   inhibition, decay, and consolidation behavior.
 

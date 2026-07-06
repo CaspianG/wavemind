@@ -6,6 +6,7 @@ from wavemind import (
     CrossModalMemoryLayer,
     HashingTextEncoder,
     PrecomputedCrossModalEncoder,
+    SentenceTransformersCrossModalEncoder,
     WaveMind,
     asset3d_payload,
     audio_payload,
@@ -22,6 +23,25 @@ def _one_hot(index: int, dim: int = 4) -> list[float]:
     vector = [0.0] * dim
     vector[index] = 1.0
     return vector
+
+
+class _FakeClipModel:
+    def get_sentence_embedding_dimension(self):
+        return 4
+
+    def encode(self, values, **kwargs):
+        vectors = []
+        for value in values:
+            text = str(value).lower()
+            if "image-object:chart.png" in text or "chart" in text or "visual" in text:
+                vectors.append(_one_hot(0))
+            elif "audio" in text or "call" in text:
+                vectors.append(_one_hot(1))
+            elif "video" in text:
+                vectors.append(_one_hot(2))
+            else:
+                vectors.append(_one_hot(3))
+        return np.asarray(vectors, dtype=np.float32)
 
 
 def test_structured_and_multimodal_payloads_are_queryable(tmp_path):
@@ -375,5 +395,83 @@ def test_cross_modal_query_vector_dimension_is_validated(tmp_path):
                 target_modality="image",
                 query_vector=[1.0, 0.0, 0.0],
             )
+    finally:
+        memory.close()
+
+
+def test_sentence_transformers_cross_modal_encoder_uses_local_image_loader(tmp_path):
+    image_path = tmp_path / "chart.png"
+    image_path.write_bytes(b"not-a-real-image-for-fake-loader")
+    memory = WaveMind(
+        db_path=tmp_path / "st-clip.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        encoder = SentenceTransformersCrossModalEncoder(
+            "fake-clip",
+            model=_FakeClipModel(),
+            image_loader=lambda path: f"image-object:{path.name}",
+        )
+        layer = CrossModalMemoryLayer(memory, cross_modal_encoder=encoder)
+        image_id = layer.remember(
+            image_payload(
+                image_path,
+                caption="generic local image payload",
+            ),
+            namespace="workspace",
+        )
+
+        results = layer.query(
+            "visual chart query",
+            namespace="workspace",
+            target_modality="image",
+            top_k=1,
+        )
+
+        assert results[0].id == image_id
+        assert results[0].metadata["cross_modal_encoder"] == "sentence-transformers/fake-clip"
+        assert results[0].metadata["cross_modal_embedding_dim"] == 4
+        assert results[0].metadata["cross_modal_vector"] == _one_hot(0)
+    finally:
+        memory.close()
+
+
+def test_sentence_transformers_cross_modal_encoder_uses_descriptor_for_remote_assets(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "st-remote.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        calls = []
+        encoder = SentenceTransformersCrossModalEncoder(
+            "fake-clip",
+            model=_FakeClipModel(),
+            image_loader=lambda path: calls.append(path) or f"image-object:{path.name}",
+        )
+        layer = CrossModalMemoryLayer(memory, cross_modal_encoder=encoder)
+        image_id = layer.remember(
+            image_payload(
+                "s3://bucket/chart.png",
+                caption="remote chart payload descriptor",
+            ),
+            namespace="workspace",
+        )
+
+        results = layer.query(
+            "chart",
+            namespace="workspace",
+            target_modality="image",
+            top_k=1,
+        )
+
+        assert results[0].id == image_id
+        assert calls == []
+        assert results[0].metadata["cross_modal_vector"] == _one_hot(0)
     finally:
         memory.close()

@@ -1,4 +1,5 @@
 sentence-transformers>=3
+Pillow>=10
 annoy>=1.17
 qdrant-client>=1.9
 # faiss-cpu is not reliably available on native Windows wheels.
