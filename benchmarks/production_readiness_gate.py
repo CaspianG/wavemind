@@ -396,17 +396,20 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and memory_os.get("prewarm_hit")
                 and int(memory_os.get("expired_purged", 0)) >= 1
                 and int(memory_os.get("concepts_created", 0)) >= 1
+                and int(memory_os.get("priority_predictions", 0)) >= 1
+                and float(memory_os.get("priority_boost_total", 0.0)) > 0.0
                 and memory_os.get("concept_recall")
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries into prewarm actions, clean expired memories, and consolidate active clusters into durable concept memories.",
+            requirement="Background intelligence must turn audited hot queries into prewarm actions, usage-pattern priority boosts, cleanup, and durable concept memories.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
                 f"expired {memory_os.get('expired_purged')}, "
-                f"concepts {memory_os.get('concepts_created')}"
+                f"concepts {memory_os.get('concepts_created')}, "
+                f"priority predictions {memory_os.get('priority_predictions')}"
             ),
-            next_step="Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction.",
+            next_step="Keep usage-pattern priority prediction green under Redis-backed service deployments.",
         ),
         _criterion(
             criterion_id="distributed_repair_tombstones",

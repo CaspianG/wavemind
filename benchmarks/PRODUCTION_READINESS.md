@@ -14,21 +14,21 @@ verdict, not a marketing claim.
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T06:02:08Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T06:43:08Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |
-| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.004699977580457926 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
+| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.005299982149153948 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
 | Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True | Keep the real Redis multi-process API load workflow green. |
 | API cache does not serve stale memory after mutations | `pass` | cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True | Keep the real Redis multi-process API load workflow green. |
 | Real Redis multi-process API load passes SLO | `pass` | workflow True, workers 2, success_rate 1.0, p99 71.7594539700039 ms, stale prevented True | Refresh redis_api_load_results.json from the CI artifact on every release candidate. |
-| Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, expired 1, concepts 1 | Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction. |
+| Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, expired 1, concepts 1, priority predictions 2 | Keep usage-pattern priority prediction green under Redis-backed service deployments. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |
-| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.449999981559813 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
+| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.5432999935001135 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
 | Active-active sync and field-state CRDT converge | `pass` | delta sync True, CRDT idempotent True | Run active-active sync against independent persistent stores. |
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, precision@1 1.0 | Add real CLIP/audio embedding backends and larger multimodal retrieval tests. |

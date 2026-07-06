@@ -378,6 +378,9 @@ class MemoryOSReport:
     consolidated_steps: int = 0
     concepts_created: int = 0
     concept_ids: tuple[int, ...] = ()
+    priority_predictions: int = 0
+    priority_boost_total: float = 0.0
+    priority_boosted_ids: tuple[int, ...] = ()
     index_rebuilt: bool = False
     cache_enabled: bool = False
     cache_invalidated: int = 0
@@ -401,6 +404,9 @@ class MemoryOSReport:
             "consolidated_steps": self.consolidated_steps,
             "concepts_created": self.concepts_created,
             "concept_ids": list(self.concept_ids),
+            "priority_predictions": self.priority_predictions,
+            "priority_boost_total": self.priority_boost_total,
+            "priority_boosted_ids": list(self.priority_boosted_ids),
             "index_rebuilt": self.index_rebuilt,
             "cache_enabled": self.cache_enabled,
             "cache_invalidated": self.cache_invalidated,
@@ -912,6 +918,10 @@ class MemoryOSWorker:
         min_concept_size: int = 2,
         max_concepts: int = 3,
         concept_priority: float = 6.0,
+        predict_priorities: bool = True,
+        max_priority_predictions: int = 16,
+        priority_boost_per_hit: float = 0.05,
+        max_priority_boost: float = 0.5,
         rebuild_unhealthy_index: bool = True,
         memory_pressure_threshold: int = 50_000,
     ) -> MemoryOSReport:
@@ -951,6 +961,20 @@ class MemoryOSWorker:
             if concepts:
                 actions.append("consolidate_concepts")
 
+        boosted_ids: tuple[int, ...] = ()
+        priority_boost_total = 0.0
+        if predict_priorities and hot_queries:
+            boosted_ids, priority_boost_total = self._predict_priorities(
+                hot_queries,
+                top_k=top_k,
+                min_score=min_score,
+                max_predictions=max_priority_predictions,
+                boost_per_hit=priority_boost_per_hit,
+                max_boost=max_priority_boost,
+            )
+            if boosted_ids:
+                actions.append("predict_priority")
+
         index_rebuilt = False
         if rebuild_unhealthy_index and hasattr(self.memory, "index_health"):
             before_health = self.memory.index_health()
@@ -962,7 +986,7 @@ class MemoryOSWorker:
                 actions.append("rebuild_index")
 
         invalidated = 0
-        if self.cache is not None and (expired or concepts):
+        if self.cache is not None and (expired or concepts or boosted_ids):
             if namespace is not None:
                 invalidated = self.cache.invalidate_namespace(namespace)
             else:
@@ -1010,6 +1034,9 @@ class MemoryOSWorker:
             consolidated_steps=steps,
             concepts_created=len(concepts),
             concept_ids=concept_ids,
+            priority_predictions=len(boosted_ids),
+            priority_boost_total=priority_boost_total,
+            priority_boosted_ids=boosted_ids,
             index_rebuilt=index_rebuilt,
             cache_enabled=self.cache is not None,
             cache_invalidated=invalidated,
@@ -1068,6 +1095,54 @@ class MemoryOSWorker:
             return {}
         return dict(self.memory.stats(namespace=namespace))
 
+    def _predict_priorities(
+        self,
+        hot_queries: list[MemoryOSHotQuery],
+        *,
+        top_k: int,
+        min_score: float | None,
+        max_predictions: int,
+        boost_per_hit: float,
+        max_boost: float,
+    ) -> tuple[tuple[int, ...], float]:
+        if not hasattr(self.memory, "query") or not hasattr(self.memory, "feedback"):
+            return (), 0.0
+        boosted: OrderedDict[int, float] = OrderedDict()
+        now = time.time()
+        for hot_query in hot_queries[: max(0, int(max_predictions))]:
+            age_seconds = max(0.0, now - float(hot_query.last_seen or now))
+            recency_weight = 1.0 / (1.0 + age_seconds / 86_400.0)
+            strength = min(
+                max(0.0, float(max_boost)),
+                max(0.0, float(boost_per_hit)) * max(1, int(hot_query.frequency)) * recency_weight,
+            )
+            if strength <= 0.0:
+                continue
+            try:
+                results = self.memory.query(
+                    hot_query.query,
+                    namespace=hot_query.namespace,
+                    top_k=max(1, int(top_k)),
+                    min_score=min_score,
+                )
+            except Exception:
+                continue
+            for result in results:
+                memory_id = int(getattr(result, "id"))
+                try:
+                    accepted = bool(
+                        self.memory.feedback(
+                            memory_id,
+                            useful=True,
+                            strength=strength,
+                        )
+                    )
+                except Exception:
+                    accepted = False
+                if accepted:
+                    boosted[memory_id] = boosted.get(memory_id, 0.0) + strength
+        return tuple(boosted.keys()), float(sum(boosted.values()))
+
     def _recommendations(
         self,
         *,
@@ -1124,6 +1199,8 @@ class MemoryOSWorker:
                     "hot_queries": len(report.hot_queries),
                     "expired_purged": report.expired_purged,
                     "concepts_created": report.concepts_created,
+                    "priority_predictions": report.priority_predictions,
+                    "priority_boost_total": report.priority_boost_total,
                     "prewarm_warmed": report.prewarm.warmed,
                     "index_rebuilt": report.index_rebuilt,
                     "actions": list(report.actions),

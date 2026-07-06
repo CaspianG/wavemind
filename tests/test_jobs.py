@@ -406,12 +406,55 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         assert report.hot_queries[0].frequency >= 2
         assert report.prewarm.warmed == 1
         assert cached is not None
+        assert report.priority_predictions >= 1
+        assert report.priority_boost_total > 0.0
+        assert "predict_priority" in report.actions
+        assert all(memory.store.get(id) is not None for id in report.priority_boosted_ids)
         assert report.concepts_created == 1
         assert concept_results
         assert "prewarm_cache" in report.actions
         assert "consolidate_concepts" in report.actions
         assert any("persisted ANN backend" in item for item in report.recommendations)
         assert audit and audit[0].metadata["ok"] is True
+        assert audit[0].metadata["priority_predictions"] >= 1
+    finally:
+        memory.close()
+
+
+def test_memory_os_worker_predicts_priority_from_hot_queries(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-priority.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        id = memory.remember("priority predictor should learn hot recall", namespace="agent")
+        memory.query("hot recall", namespace="agent", top_k=1)
+        memory.query("hot recall", namespace="agent", top_k=1)
+        before = memory.store.get(id).priority
+
+        report = MemoryOSWorker(memory).run_once(
+            namespace="agent",
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=2,
+            top_k=1,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            priority_boost_per_hit=0.25,
+            max_priority_boost=0.5,
+        )
+        after = memory.store.get(id).priority
+
+        assert report.ok
+        assert report.priority_boosted_ids == (id,)
+        assert report.priority_predictions == 1
+        assert report.priority_boost_total > 0.0
+        assert after > before
+        assert "predict_priority" in report.actions
     finally:
         memory.close()
 

@@ -637,8 +637,9 @@ wavemind replicated-drill --from s3://my-bucket/wavemind/prod --to ./state/drill
 The first command runs one deterministic memory pass: expired-memory purge,
 optional field/concept consolidation, and index-health repair. The `memory-os`
 command is the adaptive worker: it reads query audit events, identifies hot
-queries, warms Redis/local cache, purges expired memories, consolidates active
-clusters into durable concept memories, checks index health, and returns
+queries, warms Redis/local cache, predicts bounded priority boosts from usage
+patterns, purges expired memories, consolidates active clusters into durable
+concept memories, checks index health, and returns
 operator-facing recommendations. The cluster-repair command runs service-mode
 anti-entropy repair across WaveMind API nodes:
 missing replica records are copied back, and tombstoned stale records are

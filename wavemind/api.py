@@ -359,6 +359,10 @@ class MemoryOSRequest(BaseModel):
     min_concept_size: int = Field(default=2, ge=2)
     max_concepts: int = Field(default=3, ge=0, le=100)
     concept_priority: float = Field(default=6.0, ge=0.0)
+    predict_priorities: bool = True
+    max_priority_predictions: int = Field(default=16, ge=0, le=1000)
+    priority_boost_per_hit: float = Field(default=0.05, ge=0.0, le=10.0)
+    max_priority_boost: float = Field(default=0.5, ge=0.0, le=100.0)
     rebuild_unhealthy_index: bool = True
     memory_pressure_threshold: int = Field(default=50000, ge=0)
 
@@ -873,6 +877,10 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 min_concept_size=request.min_concept_size,
                 max_concepts=request.max_concepts,
                 concept_priority=request.concept_priority,
+                predict_priorities=request.predict_priorities,
+                max_priority_predictions=request.max_priority_predictions,
+                priority_boost_per_hit=request.priority_boost_per_hit,
+                max_priority_boost=request.max_priority_boost,
                 rebuild_unhealthy_index=request.rebuild_unhealthy_index,
                 memory_pressure_threshold=request.memory_pressure_threshold,
             )

@@ -295,6 +295,10 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os.add_argument("--min-concept-size", type=int, default=2)
     memory_os.add_argument("--max-concepts", type=int, default=3)
     memory_os.add_argument("--concept-priority", type=float, default=6.0)
+    memory_os.add_argument("--no-predict-priorities", action="store_true")
+    memory_os.add_argument("--max-priority-predictions", type=int, default=16)
+    memory_os.add_argument("--priority-boost-per-hit", type=float, default=0.05)
+    memory_os.add_argument("--max-priority-boost", type=float, default=0.5)
     memory_os.add_argument("--no-rebuild-index", action="store_true")
     memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
     memory_os.add_argument("--capacity", type=int, default=512)
@@ -1141,6 +1145,10 @@ def main(argv: list[str] | None = None) -> int:
             min_concept_size=args.min_concept_size,
             max_concepts=args.max_concepts,
             concept_priority=args.concept_priority,
+            predict_priorities=not args.no_predict_priorities,
+            max_priority_predictions=args.max_priority_predictions,
+            priority_boost_per_hit=args.priority_boost_per_hit,
+            max_priority_boost=args.max_priority_boost,
             rebuild_unhealthy_index=not args.no_rebuild_index,
             memory_pressure_threshold=args.memory_pressure_threshold,
         )

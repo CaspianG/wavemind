@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T06:32:49Z",
+  "generated_at": "2026-07-06T06:43:09Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T06:02:08Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T06:43:08Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -73,7 +73,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.004699977580457926 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.005299982149153948 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -104,9 +104,9 @@
       "id": "memory_os_worker",
       "title": "Memory OS worker prewarms, consolidates, and cleans up",
       "status": "pass",
-      "requirement": "Background intelligence must turn audited hot queries into prewarm actions, clean expired memories, and consolidate active clusters into durable concept memories.",
-      "evidence": "hot queries 2, prewarm 2, expired 1, concepts 1",
-      "next_step": "Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction."
+      "requirement": "Background intelligence must turn audited hot queries into prewarm actions, usage-pattern priority boosts, cleanup, and durable concept memories.",
+      "evidence": "hot queries 2, prewarm 2, expired 1, concepts 1, priority predictions 2",
+      "next_step": "Keep usage-pattern priority prediction green under Redis-backed service deployments."
     },
     {
       "id": "distributed_repair_tombstones",
@@ -129,7 +129,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.449999981559813 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.5432999935001135 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
