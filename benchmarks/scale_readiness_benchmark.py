@@ -694,6 +694,12 @@ def run_redis_cache_profile() -> dict[str, object]:
                 namespace=os_namespace,
                 tags=["preference"],
             )
+            memory.remember(
+                "unused redis memory os cold note",
+                namespace=os_namespace,
+                tags=["cold"],
+                priority=2.0,
+            )
             memory.remember("expired redis memory os stale fact", namespace=os_namespace, ttl_seconds=-1)
             memory.query("systems programming", namespace=os_namespace, top_k=1)
             memory.query("systems programming", namespace=os_namespace, top_k=1)
@@ -714,6 +720,9 @@ def run_redis_cache_profile() -> dict[str, object]:
                 min_concept_size=2,
                 max_concepts=1,
                 memory_pressure_threshold=2,
+                forgetting_min_age_seconds=0.0,
+                forgetting_priority_decay=0.10,
+                forgetting_max_access_count=0,
             )
             os_ms = (time.perf_counter() - os_started) * 1000.0
             started = time.perf_counter()
@@ -754,6 +763,8 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "memory_os_concepts_created": os_report.concepts_created,
                 "memory_os_priority_predictions": os_report.priority_predictions,
                 "memory_os_priority_boost_total": os_report.priority_boost_total,
+                "memory_os_forgetting_demotions": os_report.forgetting_demotions,
+                "memory_os_forgetting_decay_total": os_report.forgetting_decay_total,
                 "memory_os_cross_worker_hit": os_cross_worker_hit,
                 "memory_os_run_ms": os_ms,
                 "namespace_invalidation_removed": invalidation_removed_key,
@@ -906,6 +917,12 @@ def run_memory_os_profile() -> dict[str, object]:
                 namespace="tenant:os",
                 tags=["preference"],
             )
+            memory.remember(
+                "unused memory os cold note",
+                namespace="tenant:os",
+                tags=["cold"],
+                priority=2.0,
+            )
             memory.remember("expired memory os stale fact", namespace="tenant:os", ttl_seconds=-1)
             memory.query("systems programming", namespace="tenant:os", top_k=1)
             memory.query("systems programming", namespace="tenant:os", top_k=1)
@@ -924,6 +941,9 @@ def run_memory_os_profile() -> dict[str, object]:
                 min_concept_size=2,
                 max_concepts=1,
                 memory_pressure_threshold=2,
+                forgetting_min_age_seconds=0.0,
+                forgetting_priority_decay=0.10,
+                forgetting_max_access_count=0,
             )
             elapsed_ms = (time.perf_counter() - started) * 1000.0
             cached = cache.get("tenant:os", "budget recall", top_k=1)
@@ -944,6 +964,8 @@ def run_memory_os_profile() -> dict[str, object]:
                 "concept_recall": bool(concept_results),
                 "priority_predictions": report.priority_predictions,
                 "priority_boost_total": report.priority_boost_total,
+                "forgetting_demotions": report.forgetting_demotions,
+                "forgetting_decay_total": report.forgetting_decay_total,
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),
@@ -1757,7 +1779,7 @@ def run_benchmark(
                 "service-mode distributed namespace sharding, real HTTP shard transport, "
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, "
+                "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation/forgetting, "
                 "local and Redis-compatible hot-cache behavior, API cache mutation safety, "
                 "and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
@@ -1818,6 +1840,7 @@ def main() -> int:
             print(f"| redis hot cache | shared_cache_visible | {result['shared_cache_visible_across_clients']} |")
             print(f"| redis hot cache | cache_prewarm_warmed | {result['cache_prewarm_warmed']} |")
             print(f"| redis hot cache | memory_os_prewarm_warmed | {result['memory_os_prewarm_warmed']} |")
+            print(f"| redis hot cache | memory_os_forgetting_demotions | {result['memory_os_forgetting_demotions']} |")
             print(f"| redis hot cache | memory_os_cross_worker_hit | {result['memory_os_cross_worker_hit']} |")
             print(f"| redis hot cache | namespace_invalidation_removed | {result['namespace_invalidation_removed']} |")
         elif result["engine"] == "WaveMind API cache mutation safety":
@@ -1831,6 +1854,7 @@ def main() -> int:
             print(f"| memory os | hot_queries | {result['hot_queries']} |")
             print(f"| memory os | prewarm_warmed | {result['prewarm_warmed']} |")
             print(f"| memory os | concepts_created | {result['concepts_created']} |")
+            print(f"| memory os | forgetting_demotions | {result['forgetting_demotions']} |")
         elif result["engine"] == "WaveMind distributed sharding":
             print(f"| distributed sharding | writes | {result['writes']} |")
             print(f"| distributed sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")

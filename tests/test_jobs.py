@@ -459,6 +459,48 @@ def test_memory_os_worker_predicts_priority_from_hot_queries(tmp_path):
         memory.close()
 
 
+def test_memory_os_worker_demotes_cold_memories_from_usage_patterns(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-forgetting.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        hot_id = memory.remember("hot recall alpha memory", namespace="agent")
+        cold_id = memory.remember("unused cold beta memory", namespace="agent", priority=2.0)
+        memory.query("hot recall alpha", namespace="agent", top_k=1)
+        memory.query("hot recall alpha", namespace="agent", top_k=1)
+        cold_before = memory.store.get(cold_id).priority
+        hot_before = memory.store.get(hot_id).priority
+
+        report = MemoryOSWorker(memory).run_once(
+            namespace="agent",
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=2,
+            top_k=1,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            forgetting_min_age_seconds=0.0,
+            forgetting_priority_decay=0.25,
+            forgetting_max_access_count=0,
+        )
+
+        assert report.ok
+        assert cold_id in report.forgetting_demoted_ids
+        assert hot_id not in report.forgetting_demoted_ids
+        assert report.forgetting_demotions == 1
+        assert report.forgetting_decay_total > 0.0
+        assert memory.store.get(cold_id).priority < cold_before
+        assert memory.store.get(hot_id).priority >= hot_before
+        assert "adaptive_forgetting" in report.actions
+    finally:
+        memory.close()
+
+
 def test_distributed_repair_worker_repairs_service_mode_namespaces(tmp_path):
     client = LocalShardServiceClient(tmp_path / "services")
     memory = DistributedShardedWaveMind(

@@ -224,6 +224,14 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
         "--namespace",
         "ops",
     )
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "cli memory os demotes unused cold note",
+        "--namespace",
+        "ops",
+    )
     for _ in range(2):
         run_cli(
             "--db",
@@ -250,6 +258,8 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
         "--consolidate-steps",
         "0",
         "--no-consolidate-concepts",
+        "--forgetting-min-age-seconds",
+        "0",
         "--json",
     )
     payload = json.loads(result.stdout)
@@ -258,7 +268,9 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
     assert payload["cache"] == "local"
     assert payload["hot_queries"][0]["query"] == "budget recall"
     assert payload["prewarm"]["warmed"] == 1
+    assert payload["forgetting_demotions"] >= 1
     assert "prewarm_cache" in payload["actions"]
+    assert "adaptive_forgetting" in payload["actions"]
 
 
 def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):

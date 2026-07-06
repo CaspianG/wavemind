@@ -21,7 +21,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]
+    assert "adaptive forgetting" in criteria["memory_os_worker"]["requirement"]
     assert "priority predictions" in criteria["memory_os_worker"]["evidence"]
+    assert "forgetting demotions" in criteria["memory_os_worker"]["evidence"]
     assert criteria["redis_shared_cache_memory_os"]["status"] == "pass"
     assert "shareable across workers" in criteria["redis_shared_cache_memory_os"]["requirement"]
     assert criteria["api_cache_mutation_safety"]["status"] == "pass"

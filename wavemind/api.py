@@ -363,6 +363,12 @@ class MemoryOSRequest(BaseModel):
     max_priority_predictions: int = Field(default=16, ge=0, le=1000)
     priority_boost_per_hit: float = Field(default=0.05, ge=0.0, le=10.0)
     max_priority_boost: float = Field(default=0.5, ge=0.0, le=100.0)
+    adaptive_forgetting: bool = True
+    forgetting_min_age_seconds: float = Field(default=7 * 24 * 60 * 60, ge=0.0)
+    forgetting_max_memories: int = Field(default=32, ge=0, le=100000)
+    forgetting_max_access_count: int = Field(default=0, ge=0)
+    forgetting_priority_decay: float = Field(default=0.10, ge=0.0, le=10.0)
+    forgetting_min_priority: float = Field(default=0.0, ge=0.0, le=100.0)
     rebuild_unhealthy_index: bool = True
     memory_pressure_threshold: int = Field(default=50000, ge=0)
 
@@ -881,6 +887,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 max_priority_predictions=request.max_priority_predictions,
                 priority_boost_per_hit=request.priority_boost_per_hit,
                 max_priority_boost=request.max_priority_boost,
+                adaptive_forgetting=request.adaptive_forgetting,
+                forgetting_min_age_seconds=request.forgetting_min_age_seconds,
+                forgetting_max_memories=request.forgetting_max_memories,
+                forgetting_max_access_count=request.forgetting_max_access_count,
+                forgetting_priority_decay=request.forgetting_priority_decay,
+                forgetting_min_priority=request.forgetting_min_priority,
                 rebuild_unhealthy_index=request.rebuild_unhealthy_index,
                 memory_pressure_threshold=request.memory_pressure_threshold,
             )

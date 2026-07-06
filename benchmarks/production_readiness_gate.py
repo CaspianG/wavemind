@@ -398,18 +398,21 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(memory_os.get("concepts_created", 0)) >= 1
                 and int(memory_os.get("priority_predictions", 0)) >= 1
                 and float(memory_os.get("priority_boost_total", 0.0)) > 0.0
+                and int(memory_os.get("forgetting_demotions", 0)) >= 1
+                and float(memory_os.get("forgetting_decay_total", 0.0)) > 0.0
                 and memory_os.get("concept_recall")
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries into prewarm actions, usage-pattern priority boosts, cleanup, and durable concept memories.",
+            requirement="Background intelligence must turn audited hot queries into prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, and durable concept memories.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
                 f"expired {memory_os.get('expired_purged')}, "
                 f"concepts {memory_os.get('concepts_created')}, "
-                f"priority predictions {memory_os.get('priority_predictions')}"
+                f"priority predictions {memory_os.get('priority_predictions')}, "
+                f"forgetting demotions {memory_os.get('forgetting_demotions')}"
             ),
-            next_step="Keep usage-pattern priority prediction green under Redis-backed service deployments.",
+            next_step="Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments.",
         ),
         _criterion(
             criterion_id="distributed_repair_tombstones",

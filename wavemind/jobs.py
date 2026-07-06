@@ -381,6 +381,9 @@ class MemoryOSReport:
     priority_predictions: int = 0
     priority_boost_total: float = 0.0
     priority_boosted_ids: tuple[int, ...] = ()
+    forgetting_demotions: int = 0
+    forgetting_decay_total: float = 0.0
+    forgetting_demoted_ids: tuple[int, ...] = ()
     index_rebuilt: bool = False
     cache_enabled: bool = False
     cache_invalidated: int = 0
@@ -407,6 +410,9 @@ class MemoryOSReport:
             "priority_predictions": self.priority_predictions,
             "priority_boost_total": self.priority_boost_total,
             "priority_boosted_ids": list(self.priority_boosted_ids),
+            "forgetting_demotions": self.forgetting_demotions,
+            "forgetting_decay_total": self.forgetting_decay_total,
+            "forgetting_demoted_ids": list(self.forgetting_demoted_ids),
             "index_rebuilt": self.index_rebuilt,
             "cache_enabled": self.cache_enabled,
             "cache_invalidated": self.cache_invalidated,
@@ -922,6 +928,12 @@ class MemoryOSWorker:
         max_priority_predictions: int = 16,
         priority_boost_per_hit: float = 0.05,
         max_priority_boost: float = 0.5,
+        adaptive_forgetting: bool = True,
+        forgetting_min_age_seconds: float = 7 * 24 * 60 * 60,
+        forgetting_max_memories: int = 32,
+        forgetting_max_access_count: int = 0,
+        forgetting_priority_decay: float = 0.10,
+        forgetting_min_priority: float = 0.0,
         rebuild_unhealthy_index: bool = True,
         memory_pressure_threshold: int = 50_000,
     ) -> MemoryOSReport:
@@ -960,6 +972,11 @@ class MemoryOSWorker:
             )
             if concepts:
                 actions.append("consolidate_concepts")
+        concept_ids = tuple(
+            int(concept["id"])
+            for concept in concepts
+            if concept.get("id") is not None
+        )
 
         boosted_ids: tuple[int, ...] = ()
         priority_boost_total = 0.0
@@ -975,6 +992,21 @@ class MemoryOSWorker:
             if boosted_ids:
                 actions.append("predict_priority")
 
+        demoted_ids: tuple[int, ...] = ()
+        forgetting_decay_total = 0.0
+        if adaptive_forgetting:
+            demoted_ids, forgetting_decay_total = self._adaptive_forgetting(
+                namespace=namespace,
+                protected_ids=set(boosted_ids) | set(concept_ids),
+                min_age_seconds=forgetting_min_age_seconds,
+                max_memories=forgetting_max_memories,
+                max_access_count=forgetting_max_access_count,
+                priority_decay=forgetting_priority_decay,
+                min_priority=forgetting_min_priority,
+            )
+            if demoted_ids:
+                actions.append("adaptive_forgetting")
+
         index_rebuilt = False
         if rebuild_unhealthy_index and hasattr(self.memory, "index_health"):
             before_health = self.memory.index_health()
@@ -986,7 +1018,7 @@ class MemoryOSWorker:
                 actions.append("rebuild_index")
 
         invalidated = 0
-        if self.cache is not None and (expired or concepts or boosted_ids):
+        if self.cache is not None and (expired or concepts or boosted_ids or demoted_ids):
             if namespace is not None:
                 invalidated = self.cache.invalidate_namespace(namespace)
             else:
@@ -1021,11 +1053,6 @@ class MemoryOSWorker:
             stats_after=stats_after,
             memory_pressure_threshold=memory_pressure_threshold,
         )
-        concept_ids = tuple(
-            int(concept["id"])
-            for concept in concepts
-            if concept.get("id") is not None
-        )
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -1037,6 +1064,9 @@ class MemoryOSWorker:
             priority_predictions=len(boosted_ids),
             priority_boost_total=priority_boost_total,
             priority_boosted_ids=boosted_ids,
+            forgetting_demotions=len(demoted_ids),
+            forgetting_decay_total=forgetting_decay_total,
+            forgetting_demoted_ids=demoted_ids,
             index_rebuilt=index_rebuilt,
             cache_enabled=self.cache is not None,
             cache_invalidated=invalidated,
@@ -1143,6 +1173,74 @@ class MemoryOSWorker:
                     boosted[memory_id] = boosted.get(memory_id, 0.0) + strength
         return tuple(boosted.keys()), float(sum(boosted.values()))
 
+    def _adaptive_forgetting(
+        self,
+        *,
+        namespace: str | None,
+        protected_ids: set[int],
+        min_age_seconds: float,
+        max_memories: int,
+        max_access_count: int,
+        priority_decay: float,
+        min_priority: float,
+    ) -> tuple[tuple[int, ...], float]:
+        store = getattr(self.memory, "store", None)
+        list_records = getattr(store, "list", None)
+        if not callable(list_records) or not hasattr(self.memory, "feedback"):
+            return (), 0.0
+        decay = max(0.0, float(priority_decay))
+        if decay <= 0.0 or max_memories <= 0:
+            return (), 0.0
+        now = time.time()
+        try:
+            records = list_records(namespace=namespace, include_expired=False)
+        except Exception:
+            return (), 0.0
+        candidates = []
+        for record in records:
+            if record.id is None:
+                continue
+            memory_id = int(record.id)
+            if memory_id in protected_ids:
+                continue
+            if "concept" in set(record.tags):
+                continue
+            if int(record.access_count) > int(max_access_count):
+                continue
+            if float(record.priority) <= float(min_priority):
+                continue
+            age_seconds = now - float(record.updated_at)
+            if age_seconds < max(0.0, float(min_age_seconds)):
+                continue
+            candidates.append(record)
+        candidates.sort(
+            key=lambda record: (
+                int(record.access_count),
+                float(record.updated_at),
+                float(record.priority),
+                int(record.id or 0),
+            )
+        )
+        demoted: OrderedDict[int, float] = OrderedDict()
+        for record in candidates[: max(0, int(max_memories))]:
+            memory_id = int(record.id)
+            strength = min(decay, max(0.0, float(record.priority) - float(min_priority)))
+            if strength <= 0.0:
+                continue
+            try:
+                accepted = bool(
+                    self.memory.feedback(
+                        memory_id,
+                        useful=False,
+                        strength=strength,
+                    )
+                )
+            except Exception:
+                accepted = False
+            if accepted:
+                demoted[memory_id] = strength
+        return tuple(demoted.keys()), float(sum(demoted.values()))
+
     def _recommendations(
         self,
         *,
@@ -1201,6 +1299,8 @@ class MemoryOSWorker:
                     "concepts_created": report.concepts_created,
                     "priority_predictions": report.priority_predictions,
                     "priority_boost_total": report.priority_boost_total,
+                    "forgetting_demotions": report.forgetting_demotions,
+                    "forgetting_decay_total": report.forgetting_decay_total,
                     "prewarm_warmed": report.prewarm.warmed,
                     "index_rebuilt": report.index_rebuilt,
                     "actions": list(report.actions),

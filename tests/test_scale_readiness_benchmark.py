@@ -47,6 +47,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Redis hot cache"]["memory_os_prewarm_warmed"] >= 2
     assert results["WaveMind Redis hot cache"]["memory_os_priority_predictions"] >= 1
     assert results["WaveMind Redis hot cache"]["memory_os_priority_boost_total"] > 0.0
+    assert results["WaveMind Redis hot cache"]["memory_os_forgetting_demotions"] >= 1
+    assert results["WaveMind Redis hot cache"]["memory_os_forgetting_decay_total"] > 0.0
     assert results["WaveMind Redis hot cache"]["memory_os_cross_worker_hit"] is True
     assert results["WaveMind Redis hot cache"]["namespace_invalidation_removed"] is True
     assert results["WaveMind API cache mutation safety"]["first_query_cached"] is True
@@ -62,9 +64,12 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Memory OS"]["concepts_created"] == 1
     assert results["WaveMind Memory OS"]["priority_predictions"] >= 1
     assert results["WaveMind Memory OS"]["priority_boost_total"] > 0.0
+    assert results["WaveMind Memory OS"]["forgetting_demotions"] >= 1
+    assert results["WaveMind Memory OS"]["forgetting_decay_total"] > 0.0
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predict_priority" in results["WaveMind Memory OS"]["actions"]
+    assert "adaptive_forgetting" in results["WaveMind Memory OS"]["actions"]
     assert "consolidate_concepts" in results["WaveMind Memory OS"]["actions"]
     assert results["WaveMind distributed sharding"]["writes"] == 2
     assert results["WaveMind distributed sharding"]["recalled_after_primary_loss"] is True

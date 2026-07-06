@@ -299,6 +299,12 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os.add_argument("--max-priority-predictions", type=int, default=16)
     memory_os.add_argument("--priority-boost-per-hit", type=float, default=0.05)
     memory_os.add_argument("--max-priority-boost", type=float, default=0.5)
+    memory_os.add_argument("--no-adaptive-forgetting", action="store_true")
+    memory_os.add_argument("--forgetting-min-age-seconds", type=float, default=7 * 24 * 60 * 60)
+    memory_os.add_argument("--forgetting-max-memories", type=int, default=32)
+    memory_os.add_argument("--forgetting-max-access-count", type=int, default=0)
+    memory_os.add_argument("--forgetting-priority-decay", type=float, default=0.10)
+    memory_os.add_argument("--forgetting-min-priority", type=float, default=0.0)
     memory_os.add_argument("--no-rebuild-index", action="store_true")
     memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
     memory_os.add_argument("--capacity", type=int, default=512)
@@ -1149,6 +1155,12 @@ def main(argv: list[str] | None = None) -> int:
             max_priority_predictions=args.max_priority_predictions,
             priority_boost_per_hit=args.priority_boost_per_hit,
             max_priority_boost=args.max_priority_boost,
+            adaptive_forgetting=not args.no_adaptive_forgetting,
+            forgetting_min_age_seconds=args.forgetting_min_age_seconds,
+            forgetting_max_memories=args.forgetting_max_memories,
+            forgetting_max_access_count=args.forgetting_max_access_count,
+            forgetting_priority_decay=args.forgetting_priority_decay,
+            forgetting_min_priority=args.forgetting_min_priority,
             rebuild_unhealthy_index=not args.no_rebuild_index,
             memory_pressure_threshold=args.memory_pressure_threshold,
         )

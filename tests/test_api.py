@@ -401,6 +401,7 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
     )
     try:
         mind.remember("memory os should prewarm hot budget recall", namespace="tenant:os")
+        mind.remember("memory os should demote unused cold note", namespace="tenant:os")
         mind.query("budget recall", namespace="tenant:os", top_k=1)
         mind.query("budget recall", namespace="tenant:os", top_k=1)
 
@@ -413,6 +414,8 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
                     "top_k": 1,
                     "consolidate_steps": 0,
                     "consolidate_concepts": False,
+                    "forgetting_min_age_seconds": 0,
+                    "forgetting_priority_decay": 0.1,
                 },
             )
             assert response.status_code == 200
@@ -423,7 +426,10 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
             assert payload["prewarm"]["warmed"] == 1
             assert payload["priority_predictions"] >= 1
             assert payload["priority_boost_total"] > 0.0
+            assert payload["forgetting_demotions"] >= 1
+            assert payload["forgetting_decay_total"] > 0.0
             assert "predict_priority" in payload["actions"]
+            assert "adaptive_forgetting" in payload["actions"]
 
             query = client.post(
                 "/query",
