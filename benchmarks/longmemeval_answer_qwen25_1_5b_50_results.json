@@ -30,9 +30,12 @@
       "exact_match": 0.24,
       "contains_answer": 0.38,
       "token_f1": 0.33311619190404795,
+      "abstention_rate": 0.48,
+      "grounded_answer_rate": 0.52,
+      "unsupported_answer_rate": 0.0,
       "evidence_recall_at_k": 0.92,
-      "avg_retrieval_ms": 2.000100004952401,
-      "avg_generation_ms": 2153.0035440041684
+      "avg_retrieval_ms": 35.68520999280736,
+      "avg_generation_ms": 2177.6744239986874
     },
     {
       "engine": "Chroma static",
@@ -42,9 +45,12 @@
       "exact_match": 0.12,
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
+      "abstention_rate": 0.64,
+      "grounded_answer_rate": 0.36,
+      "unsupported_answer_rate": 0.0,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 7.05064800567925,
-      "avg_generation_ms": 2082.3815600026865
+      "avg_retrieval_ms": 4.414471993222833,
+      "avg_generation_ms": 1813.2704099989496
     },
     {
       "engine": "Qdrant static",
@@ -54,9 +60,12 @@
       "exact_match": 0.12,
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
+      "abstention_rate": 0.64,
+      "grounded_answer_rate": 0.36,
+      "unsupported_answer_rate": 0.0,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 100.19960600417107,
-      "avg_generation_ms": 758.1143879971933
+      "avg_retrieval_ms": 45.7092939899303,
+      "avg_generation_ms": 640.0379519956186
     }
   ],
   "metrics": {
@@ -67,9 +76,12 @@
     "exact_match": 0.24,
     "contains_answer": 0.38,
     "token_f1": 0.33311619190404795,
+    "abstention_rate": 0.48,
+    "grounded_answer_rate": 0.52,
+    "unsupported_answer_rate": 0.0,
     "evidence_recall_at_k": 0.92,
-    "avg_retrieval_ms": 2.000100004952401,
-    "avg_generation_ms": 2153.0035440041684
+    "avg_retrieval_ms": 35.68520999280736,
+    "avg_generation_ms": 2177.6744239986874
   },
   "examples": [
     {

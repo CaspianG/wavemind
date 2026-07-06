@@ -24,6 +24,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "improves final answers" in criteria["longmemeval_answer_quality"]["requirement"]
     assert "queries 50" in criteria["longmemeval_answer_quality"]["evidence"]
     assert "token F1 0.333" in criteria["longmemeval_answer_quality"]["evidence"]
+    assert "grounded 0.520" in criteria["longmemeval_answer_quality"]["evidence"]
+    assert "unsupported 0.000" in criteria["longmemeval_answer_quality"]["evidence"]
     assert "Chroma F1 0.170" in criteria["longmemeval_answer_quality"]["evidence"]
     assert "Qdrant F1 0.170" in criteria["longmemeval_answer_quality"]["evidence"]
     assert criteria["production_100k_slo_cost"]["status"] == "pass"

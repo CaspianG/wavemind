@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T21:05:44Z",
-  "source_ref": "a21ac928819b",
+  "generated_at": "2026-07-06T21:26:14Z",
+  "source_ref": "a55493566a19",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1595,8 +1595,11 @@
           "exact_match": 0.24,
           "contains_answer": 0.38,
           "token_f1": 0.33311619190404795,
-          "avg_retrieval_ms": 2.000100004952401,
-          "avg_generation_ms": 2153.0035440041684
+          "abstention_rate": 0.48,
+          "grounded_answer_rate": 0.52,
+          "unsupported_answer_rate": 0.0,
+          "avg_retrieval_ms": 35.68520999280736,
+          "avg_generation_ms": 2177.6744239986874
         },
         "Chroma static + qwen2.5:1.5b": {
           "queries": 50,
@@ -1604,8 +1607,11 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 7.05064800567925,
-          "avg_generation_ms": 2082.3815600026865
+          "abstention_rate": 0.64,
+          "grounded_answer_rate": 0.36,
+          "unsupported_answer_rate": 0.0,
+          "avg_retrieval_ms": 4.414471993222833,
+          "avg_generation_ms": 1813.2704099989496
         },
         "Qdrant static + qwen2.5:1.5b": {
           "queries": 50,
@@ -1613,12 +1619,15 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
-          "avg_retrieval_ms": 100.19960600417107,
-          "avg_generation_ms": 758.1143879971933
+          "abstention_rate": 0.64,
+          "grounded_answer_rate": 0.36,
+          "unsupported_answer_rate": 0.0,
+          "avg_retrieval_ms": 45.7092939899303,
+          "avg_generation_ms": 640.0379519956186
         }
       },
       "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
-      "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add faithfulness/abstention scoring."
+      "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add LLM-judge faithfulness scoring."
     },
     {
       "id": "beir",

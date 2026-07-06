@@ -37,6 +37,33 @@ from wavemind.encoders import create_text_encoder
 _NO_PROXY_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
+_ANSWER_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "i",
+    "in",
+    "is",
+    "it",
+    "my",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "was",
+    "were",
+    "with",
+}
+
+
 @dataclass(frozen=True)
 class AnswerMetrics:
     engine: str
@@ -46,6 +73,9 @@ class AnswerMetrics:
     exact_match: float
     contains_answer: float
     token_f1: float
+    abstention_rate: float
+    grounded_answer_rate: float
+    unsupported_answer_rate: float
     evidence_recall_at_k: float
     avg_retrieval_ms: float
     avg_generation_ms: float
@@ -55,6 +85,40 @@ def normalize_answer(text: str) -> str:
     text = text.lower()
     text = re.sub(r"[^a-z0-9а-яё]+", " ", text, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def is_generated_abstention(text: str) -> bool:
+    normalized = normalize_answer(text)
+    return normalized in {
+        "i don t know",
+        "unknown",
+        "not enough information",
+        "insufficient evidence",
+        "cannot determine",
+        "can t determine",
+        "not specified",
+    } or normalized.startswith("i don t know ")
+
+
+def answer_content_tokens(text: str) -> list[str]:
+    return [
+        token
+        for token in normalize_answer(text).split()
+        if token not in _ANSWER_STOPWORDS and (len(token) > 1 or token.isdigit())
+    ]
+
+
+def answer_grounded_in_context(prediction: str, contexts: list[str]) -> bool:
+    if is_generated_abstention(prediction):
+        return False
+    tokens = answer_content_tokens(prediction)
+    if not tokens:
+        return False
+    evidence_text = normalize_answer("\n".join(contexts))
+    if not evidence_text:
+        return False
+    hits = sum(1 for token in tokens if token in evidence_text)
+    return hits / len(tokens) >= 0.75
 
 
 def token_f1(prediction: str, expected: str) -> float:
@@ -460,6 +524,9 @@ def run_benchmark(
         exact_values: list[float] = []
         contains_values: list[float] = []
         f1_values: list[float] = []
+        abstention_values: list[float] = []
+        grounded_values: list[float] = []
+        unsupported_values: list[float] = []
         evidence_recalls: list[float] = []
         for query in dataset.queries:
             expected_answer = answers.get(query.id, "")
@@ -475,6 +542,11 @@ def run_benchmark(
                 raise ValueError("provider must be extractive or ollama")
             generation_latencies.append((time.perf_counter() - started) * 1000.0)
             generated[query.id] = answer
+            abstained = is_generated_abstention(answer)
+            grounded = answer_grounded_in_context(answer, contexts.get(query.id, []))
+            abstention_values.append(1.0 if abstained else 0.0)
+            grounded_values.append(1.0 if grounded else 0.0)
+            unsupported_values.append(1.0 if not abstained and not grounded else 0.0)
             if expected_answer:
                 normalized_prediction = normalize_answer(answer)
                 normalized_expected = normalize_answer(expected_answer)
@@ -494,6 +566,9 @@ def run_benchmark(
             exact_match=statistics.mean(exact_values) if exact_values else 0.0,
             contains_answer=statistics.mean(contains_values) if contains_values else 0.0,
             token_f1=statistics.mean(f1_values) if f1_values else 0.0,
+            abstention_rate=statistics.mean(abstention_values) if abstention_values else 0.0,
+            grounded_answer_rate=statistics.mean(grounded_values) if grounded_values else 0.0,
+            unsupported_answer_rate=statistics.mean(unsupported_values) if unsupported_values else 0.0,
             evidence_recall_at_k=statistics.mean(evidence_recalls) if evidence_recalls else 0.0,
             avg_retrieval_ms=statistics.mean(retrieval_latencies) if retrieval_latencies else 0.0,
             avg_generation_ms=statistics.mean(generation_latencies) if generation_latencies else 0.0,
@@ -536,8 +611,8 @@ def run_benchmark(
 
 
 def print_table(payload: dict[str, Any]) -> None:
-    print("| engine | provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | retrieval | generation |")
-    print("|---|---|---|---:|---:|---:|---:|---:|---:|---:|")
+    print("| engine | provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | grounded | unsupported | abstain | retrieval | generation |")
+    print("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for metrics in payload.get("results", [payload["metrics"]]):
         print(
             f"| {metrics['engine']} | "
@@ -548,6 +623,9 @@ def print_table(payload: dict[str, Any]) -> None:
             f"{metrics['exact_match']:.3f} | "
             f"{metrics['contains_answer']:.3f} | "
             f"{metrics['token_f1']:.3f} | "
+            f"{metrics['grounded_answer_rate']:.3f} | "
+            f"{metrics['unsupported_answer_rate']:.3f} | "
+            f"{metrics['abstention_rate']:.3f} | "
             f"{metrics['avg_retrieval_ms']:.2f} ms | "
             f"{metrics['avg_generation_ms']:.2f} ms |"
         )

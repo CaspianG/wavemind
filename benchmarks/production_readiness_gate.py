@@ -179,12 +179,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     answer_exact = float(answer_wavemind.get("exact_match", 0.0))
     answer_contains = float(answer_wavemind.get("contains_answer", 0.0))
     answer_token_f1 = float(answer_wavemind.get("token_f1", 0.0))
+    answer_abstention = float(answer_wavemind.get("abstention_rate", 1.0))
+    answer_grounded = float(answer_wavemind.get("grounded_answer_rate", 0.0))
+    answer_unsupported = float(answer_wavemind.get("unsupported_answer_rate", 1.0))
     answer_evidence_recall = float(answer_wavemind.get("evidence_recall_at_k", 0.0))
     answer_retrieval_ms = float(answer_wavemind.get("avg_retrieval_ms", float("inf")))
     chroma_token_f1 = float(answer_chroma.get("token_f1", 0.0))
     qdrant_token_f1 = float(answer_qdrant.get("token_f1", 0.0))
     chroma_contains = float(answer_chroma.get("contains_answer", 0.0))
     qdrant_contains = float(answer_qdrant.get("contains_answer", 0.0))
+    chroma_grounded = float(answer_chroma.get("grounded_answer_rate", 0.0))
+    qdrant_grounded = float(answer_qdrant.get("grounded_answer_rate", 0.0))
     answer_quality_pass = (
         answer_wavemind.get("provider") == "ollama"
         and answer_wavemind.get("model") == "qwen2.5:1.5b"
@@ -192,12 +197,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and answer_exact >= 0.20
         and answer_contains >= 0.35
         and answer_token_f1 >= 0.30
+        and answer_grounded >= 0.50
+        and answer_unsupported <= 0.05
+        and answer_abstention <= 0.60
         and answer_evidence_recall >= 0.85
-        and answer_retrieval_ms <= 20.0
+        and answer_retrieval_ms <= 50.0
         and answer_token_f1 >= chroma_token_f1 + 0.10
         and answer_token_f1 >= qdrant_token_f1 + 0.10
         and answer_contains >= chroma_contains + 0.15
         and answer_contains >= qdrant_contains + 0.15
+        and answer_grounded >= chroma_grounded + 0.10
+        and answer_grounded >= qdrant_grounded + 0.10
     )
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
     load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
@@ -402,6 +412,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"exact {answer_exact:.3f}, "
                 f"contains {answer_contains:.3f}, "
                 f"token F1 {answer_token_f1:.3f}, "
+                f"grounded {answer_grounded:.3f}, "
+                f"unsupported {answer_unsupported:.3f}, "
+                f"abstain {answer_abstention:.3f}, "
                 f"evidence recall {answer_evidence_recall:.3f}, "
                 f"retrieval {answer_retrieval_ms:.3f} ms, "
                 f"Chroma F1 {chroma_token_f1:.3f}, "

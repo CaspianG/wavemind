@@ -32,7 +32,13 @@ def write_longmemeval_fixture(path: Path) -> None:
 
 
 def test_answer_metrics_normalize_and_score_tokens():
-    from benchmarks.longmemeval_answer_benchmark import clean_generated_answer, normalize_answer, token_f1
+    from benchmarks.longmemeval_answer_benchmark import (
+        answer_grounded_in_context,
+        clean_generated_answer,
+        is_generated_abstention,
+        normalize_answer,
+        token_f1,
+    )
 
     assert normalize_answer("Business Administration!") == "business administration"
     assert token_f1("Business Administration", "Business Administration") == 1.0
@@ -40,6 +46,12 @@ def test_answer_metrics_normalize_and_score_tokens():
     assert token_f1("crypto trader", "Business Administration") == 0.0
     assert clean_generated_answer("Answer: Business Administration") == "Business Administration"
     assert clean_generated_answer("<think>hidden</think>\nFinal Answer: 2000 dollars") == "2000 dollars"
+    assert is_generated_abstention("I don't know.")
+    assert answer_grounded_in_context(
+        "Business Administration",
+        ["user: I graduated with a degree in Business Administration."],
+    )
+    assert not answer_grounded_in_context("Summer Vibes", ["user: I studied Business Administration."])
 
 
 def test_ollama_loopback_urls_bypass_system_proxy(monkeypatch):
@@ -126,6 +138,9 @@ def test_longmemeval_answer_cli_extractive_mode(tmp_path):
     assert payload["metrics"]["provider"] == "extractive"
     assert payload["metrics"]["engine"] == "WaveMind"
     assert payload["metrics"]["queries"] == 1
+    assert "abstention_rate" in payload["metrics"]
+    assert "grounded_answer_rate" in payload["metrics"]
+    assert "unsupported_answer_rate" in payload["metrics"]
     assert [result["engine"] for result in payload["results"]] == ["WaveMind", "Static vector"]
     assert payload["examples"][0]["prediction"]
     assert "Static vector" in payload["examples_by_engine"]

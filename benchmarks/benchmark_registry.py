@@ -134,6 +134,9 @@ def _answer_result_summaries(
                 "exact_match",
                 "contains_answer",
                 "token_f1",
+                "abstention_rate",
+                "grounded_answer_rate",
+                "unsupported_answer_rate",
                 "avg_retrieval_ms",
                 "avg_generation_ms",
             ),
@@ -1467,7 +1470,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "metrics": ["exact_match", "contains_answer", "token_f1", "evidence_recall@k"],
             "current": answer_results,
             "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",
-            "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add faithfulness/abstention scoring.",
+            "next_step": "Run all 470 non-abstention questions with a stronger local/API model and add LLM-judge faithfulness scoring.",
         },
     ]
 
