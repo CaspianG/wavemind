@@ -1172,8 +1172,9 @@ Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmark
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
-the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard,
-validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
+the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
+and `docs/assets/benchmark-summary.svg`, validates freshness with
+`benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
 artifacts back to `main`.
 

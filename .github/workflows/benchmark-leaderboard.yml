@@ -52,6 +52,8 @@ jobs:
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
           python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/render_benchmark_charts.py \
+            --output docs/assets/benchmark-summary.svg
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit.json
@@ -62,6 +64,7 @@ jobs:
             tests/test_benchmark_registry.py \
             tests/test_benchmark_report.py \
             tests/test_benchmark_leaderboard.py \
+            tests/test_benchmark_charts.py \
             tests/test_benchmark_artifact_audit.py \
             tests/test_dynamic_memory_benchmark.py \
             tests/test_field_memory_dynamics_benchmark.py \
@@ -71,13 +74,13 @@ jobs:
 
       - name: Commit leaderboard update
         run: |
-          if git diff --quiet -- benchmarks; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg; then
             echo "No benchmark changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add benchmarks
+          git add benchmarks docs/assets/benchmark-summary.svg
           git commit -m "Refresh benchmark leaderboard"
           git push
 
@@ -96,3 +99,4 @@ jobs:
             benchmarks/production_streaming_load_smoke_results.json
             benchmarks/production_readiness_results.json
             benchmarks/PRODUCTION_READINESS.md
+            docs/assets/benchmark-summary.svg

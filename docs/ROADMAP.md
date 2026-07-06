@@ -243,9 +243,9 @@ Priorities:
 - clear `good first issue` and `help wanted` labels;
 - GitHub Discussions for support and design proposals;
 - benchmark scripts that contributors can run locally;
-- weekly benchmark refresh that regenerates the matrix/report/leaderboard,
-  validates freshness, and writes a machine-readable artifact audit before
-  committing benchmark changes;
+- weekly benchmark refresh that regenerates the matrix/report/leaderboard and
+  SVG summary, validates freshness, and writes a machine-readable artifact audit
+  before committing benchmark changes;
 - Docker images for the API server and sidecar mode;
 - release automation, generated release-note categories, labels spec, and
   release checklist;
