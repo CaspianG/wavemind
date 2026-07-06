@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T23:14:17Z",
-  "source_ref": "0009bda2c4fe",
+  "generated_at": "2026-07-06T23:31:40Z",
+  "source_ref": "38287cd0d133",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1027,7 +1027,7 @@
           "kubernetes_manifest_kind": "StatefulSet",
           "kubernetes_repair_cronjob_kind": "CronJob",
           "kubernetes_repair_cronjob_namespaces": 4096,
-          "placement_ms": 89.78789998218417
+          "placement_ms": 71.75220001954585
         },
         "WaveMind cluster autoscaler": {
           "status": "scale_required",
@@ -1045,7 +1045,7 @@
           "move_sample": 25,
           "omitted_moves": 4069,
           "has_scale_action": true,
-          "plan_ms": 4214.869000017643
+          "plan_ms": 4378.761600004509
         },
         "WaveMind hot cache": {
           "queries": 2000,
@@ -1054,7 +1054,7 @@
           "evictions": 0,
           "prewarm_warmed": 1,
           "prewarm_hit": true,
-          "p99_lookup_ms": 0.003700028173625469
+          "p99_lookup_ms": 0.0030999071896076202
         },
         "WaveMind query vector cache": {
           "queries": 200,
@@ -1063,7 +1063,7 @@
           "redis_shared_across_workers": true,
           "redis_encode_calls": 1,
           "redis_reader_hits": 1,
-          "p99_local_query_ms": 0.4547999706119299
+          "p99_local_query_ms": 0.533499987795949
         },
         "WaveMind shared rate limiter": {
           "backend": "redis-compatible fixed window",
@@ -1073,7 +1073,7 @@
           "limited": 1,
           "shared_across_workers": true,
           "expire_seconds": 120,
-          "p99_check_ms": 0.05710008554160595
+          "p99_check_ms": 0.11369993444532156
         },
         "WaveMind Memory OS": {
           "ok": true,
@@ -1098,7 +1098,7 @@
             "multimodal-payloads"
           ],
           "architecture_next_commands": 10,
-          "run_ms": 230.89679994154721
+          "run_ms": 261.0622000647709
         },
         "WaveMind Redis hot cache": {
           "client": "redis-compatible",
@@ -1126,8 +1126,8 @@
           "memory_os_cross_worker_hit": true,
           "namespace_invalidation_removed": true,
           "redis_keys": 7,
-          "avg_lookup_ms": 0.09085005149245262,
-          "p99_lookup_ms": 0.13090006541460752
+          "avg_lookup_ms": 0.08430000161752105,
+          "p99_lookup_ms": 0.11740007903426886
         },
         "WaveMind sustained HTTP cluster load": {
           "nodes": 4,
@@ -1142,7 +1142,7 @@
           "delete_suppression_rate": 1.0,
           "repair_repaired_total": 1,
           "success_rate": 1.0,
-          "p99_operation_ms": 230.79760000109673
+          "p99_operation_ms": 294.703199993819
         },
         "WaveMind API cache mutation safety": {
           "client": "fastapi+redis-compatible-cache",
@@ -1152,8 +1152,8 @@
           "cache_invalidated_on_forget": true,
           "stale_prevented_after_forget": true,
           "old_recall_after_forget": true,
-          "avg_api_ms": 4.000266664661467,
-          "p99_api_ms": 4.927800036966801
+          "avg_api_ms": 5.471300023297469,
+          "p99_api_ms": 6.490500061772764
         },
         "WaveMind Kubernetes operator": {
           "bundle_has_crd": true,
@@ -1226,14 +1226,14 @@
           "cost_ok": true,
           "observed_telemetry_present": true,
           "observed_telemetry_source": "loopback-api-capacity-estimate",
-          "observed_requests_per_second": 36298.25,
-          "observed_measured_pool_requests_per_second": 567.16,
-          "observed_per_replica_requests_per_second": 141.79,
+          "observed_requests_per_second": 37328.613,
+          "observed_measured_pool_requests_per_second": 583.26,
+          "observed_per_replica_requests_per_second": 145.815,
           "observed_measured_replicas": 4,
-          "observed_p99_request_ms": 17.235,
-          "observed_cold_start_total_ms": 2312.987,
+          "observed_p99_request_ms": 17.039,
+          "observed_cold_start_total_ms": 2075.869,
           "observed_error_rate": 0.0,
-          "observed_max_replicas": 23,
+          "observed_max_replicas": 22,
           "observed_scale_out_seconds": 18.0,
           "observed_monthly_compute_cost_usd": null,
           "observed_slo_pass": true
@@ -1256,7 +1256,7 @@
           "anti_entropy_worker_ok": true,
           "anti_entropy_worker_repaired_total": 1,
           "anti_entropy_worker_tombstone_deleted": 1,
-          "query_after_primary_loss_ms": 1.0498999617993832
+          "query_after_primary_loss_ms": 1.3629000168293715
         },
         "WaveMind distributed HTTP sharding": {
           "nodes": 3,
@@ -1277,9 +1277,9 @@
           "concurrent_writes": 12,
           "concurrent_write_ok": true,
           "concurrent_query_hit_rate": 1.0,
-          "query_after_primary_loss_ms": 20.69779997691512,
-          "concurrent_ms": 957.8097000485286,
-          "repair_ms": 57.76800005696714
+          "query_after_primary_loss_ms": 19.54240002669394,
+          "concurrent_ms": 841.6394999949262,
+          "repair_ms": 52.958800108172
         },
         "WaveMind replicated runtime": {
           "nodes": 3,
@@ -1292,8 +1292,8 @@
           "concurrent_writes": 12,
           "concurrent_write_ok": true,
           "concurrent_query_hit_rate": 1.0,
-          "concurrent_ms": 941.875800024718,
-          "p99_query_after_loss_ms": 1.5762000111863017
+          "concurrent_ms": 1677.2664000745863,
+          "p99_query_after_loss_ms": 1.7544000875204802
         },
         "WaveMind active-active delta sync": {
           "regions": 2,
@@ -1302,7 +1302,7 @@
           "converged_after_bidirectional_sync": true,
           "suppressed_stale_import_after_delete": true,
           "tombstone_converged": true,
-          "sync_ms": 124.44719998165965
+          "sync_ms": 221.75270004663616
         },
         "WaveMind field-state CRDT": {
           "regions": 3,
@@ -1311,7 +1311,7 @@
           "tombstone_wins": true,
           "top_key_converged": true,
           "budget_activation": 5.0,
-          "merge_ms": 0.08839997462928295
+          "merge_ms": 0.12329989112913609
         },
         "WaveMind replicated snapshot": {
           "nodes": 3,
@@ -1325,8 +1325,8 @@
           "object_store_drill_ok": true,
           "restored_files": 3,
           "recalled_after_restore_node_loss": true,
-          "snapshot_ms": 137.6332000363618,
-          "restore_ms": 89.2155000474304
+          "snapshot_ms": 245.9470999892801,
+          "restore_ms": 131.95950002409518
         },
         "WaveMind structured payloads": {
           "queries": 7,
@@ -1340,12 +1340,12 @@
           "precomputed_vector_precision_at_1": 1.0,
           "precomputed_vector_embedding_dim": 4,
           "precomputed_vector_persisted_rate": 1.0,
-          "avg_latency_ms": 0.715328596665391,
-          "p99_latency_ms": 0.8898000232875347,
-          "cross_modal_avg_latency_ms": 2.7040142865319337,
-          "cross_modal_p99_latency_ms": 3.344800090417266,
-          "precomputed_vector_avg_latency_ms": 0.8636500278953463,
-          "precomputed_vector_p99_latency_ms": 1.0222999844700098
+          "avg_latency_ms": 1.782042855796005,
+          "p99_latency_ms": 2.7091000229120255,
+          "cross_modal_avg_latency_ms": 4.6996142981307845,
+          "cross_modal_p99_latency_ms": 5.998500040732324,
+          "precomputed_vector_avg_latency_ms": 1.178875012556091,
+          "precomputed_vector_p99_latency_ms": 1.380500034429133
         },
         "WaveMind 100M capacity envelope": {
           "target_memories": 100000000,
@@ -1361,7 +1361,7 @@
           "max_storage_per_node_gb": 5.806214176118374,
           "recommended_autoscaling_max_replicas": 192,
           "valid_capacity_plan": true,
-          "placement_ms": 10560.301100020297
+          "placement_ms": 14785.677899955772
         }
       },
       "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, cursor-based active-active sync, field-only hotness sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting with production architecture advice, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
@@ -1385,11 +1385,11 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 0.9666666666666667,
-          "overall_status": "fail",
-          "pass_count": 29,
+          "readiness_score": 1.0,
+          "overall_status": "pass",
+          "pass_count": 30,
           "action_required_count": 0,
-          "fail_count": 1,
+          "fail_count": 0,
           "total_criteria": 30
         }
       },

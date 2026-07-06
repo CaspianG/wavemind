@@ -35,6 +35,18 @@ Run the same profile with observed load-test telemetry:
 wavemind serverless-sample --operational-profile --observed-telemetry deploy/serverless/observed-telemetry.sample.json
 ```
 
+Measure observed telemetry from already-deployed API nodes:
+
+```sh
+python benchmarks/serverless_observed_telemetry_benchmark.py \
+  --node https://wm-a.example \
+  --node https://wm-b.example \
+  --api-key "$WAVEMIND_API_KEY" \
+  --seed-mode first \
+  --external-cold-start-ms 900 \
+  --output deploy/serverless/observed-telemetry.remote.json
+```
+
 The scale-readiness benchmark also runs a deterministic operational profile for
 this serverless shape. It checks:
 
@@ -50,10 +62,11 @@ this serverless shape. It checks:
 Current checked-in profile: 3200 requests/second, 80 ms average request time,
 320 ms warm p99, 900 ms cold start, 4 required warm replicas, 64000 burst RPS
 capacity, and an estimated `$81.76` monthly compute cost at the modeled active
-fraction. The checked-in observed telemetry uses a fixture source, not a live
-Knative/KEDA load test. Replace `observed-telemetry.sample.json` with exported
-k6, Prometheus, or load-generator metrics before making a live serverless SLO
-claim.
+fraction. The checked-in observed telemetry is a loopback API-replica capacity
+estimate, not a live Knative/KEDA load test. Replace it with a remote
+`observed-telemetry.remote.json` generated from deployed API nodes, or with
+exported k6, Prometheus, or load-generator metrics, before making a live
+serverless SLO claim.
 
 Required secrets:
 

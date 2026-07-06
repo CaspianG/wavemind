@@ -732,6 +732,10 @@ def run_serverless_operational_profile() -> dict[str, object]:
             ),
             "observed_measured_replicas": observed_payload.get("measured_replicas"),
             "observed_configured_max_scale": observed_payload.get("configured_max_scale"),
+            "observed_node_mode": observed_payload.get("node_mode", "unknown"),
+            "observed_external_node_count": observed_payload.get("external_node_count"),
+            "observed_seed_mode": observed_payload.get("seed_mode"),
+            "observed_cold_start_measured": observed_payload.get("cold_start_measured"),
         }
     )
     return {

@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`28/28` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`30/30` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -151,9 +151,11 @@ policy matters more than raw vector-database scale:
   loopback telemetry from a balanced pool of real local WaveMind HTTP API
   replicas with warmed hot-query cache. It records measured pool RPS,
   per-replica RPS, cold start, p95/p99, error rate, and the max-scale horizontal
-  capacity estimate. This is still not a real Knative/KEDA claim; the next step
-  is replacing loopback telemetry with exported remote cluster load-test
-  metrics.
+  capacity estimate. The same runner now also accepts repeated `--node`
+  HTTP/HTTPS API URLs, `--api-key`, `--seed-mode`, and an external cold-start
+  metric, so remote Knative/KEDA or managed serverless nodes can produce the
+  same telemetry contract. This is still not a real Knative/KEDA claim until a
+  remote artifact is checked in.
 - `HotMemoryCache`, `QueryVectorCache`, their Redis-backed variants,
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
