@@ -37,7 +37,10 @@
       "minReplicas": 3,
       "maxReplicas": 24,
       "targetCPUUtilizationPercentage": 70,
-      "targetMemoryUtilizationPercentage": 80
+      "targetMemoryUtilizationPercentage": 80,
+      "targetMemories": 10000000,
+      "maxMemoriesPerNode": 1000000,
+      "headroom": 0.7
     },
     "resources": {
       "requests": {

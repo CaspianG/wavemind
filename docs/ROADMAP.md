@@ -91,6 +91,10 @@ policy matters more than raw vector-database scale:
   operator Deployment, sample custom resource, deterministic reconciliation
   renderer, and an in-cluster loop that applies Services, StatefulSet, and
   repair CronJob resources.
+- The `WaveMindCluster` CRD is capacity-aware: `spec.autoscaling.targetMemories`
+  plus `maxMemoriesPerNode` and `headroom` use the autoscale planner during
+  reconciliation, raising StatefulSet replicas and HPA min/max replicas and
+  annotating resources with calculated capacity targets.
 - `deploy/serverless` and `wavemind serverless-sample` provide the first
   serverless deployment planner: a Knative scale-to-zero Service plus a valid
   KEDA Deployment/Service/ScaledObject profile. The profile requires external

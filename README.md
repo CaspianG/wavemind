@@ -546,7 +546,7 @@ Checked-in result:
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`, Kubernetes `StatefulSet` + repair `CronJob` covering `4096` namespaces. |
 | Cluster autoscaler | 10M target memories, RF=3, current nodes `4`, required nodes `50`, additional nodes `46`, target max node load `678711`, headroom pass `true`, namespace move sample `25` with `4069` omitted. |
-| Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, and repair `CronJob`; HPA min replicas `4`, max replicas `16`, CPU+memory metrics. |
+| Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, and repair `CronJob`; 10M capacity target raises StatefulSet/HPA to `34` replicas with target max node load `678711`, CPU+memory metrics. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`, query-audit prewarm warmed `1` hot query, prewarm hit `true`. |
 | Query-vector cache | 200 repeated queries, one local encoder call, local hit rate `0.995`, Redis-compatible cache shared across workers `true`. |
 | Shared rate limiter | Redis-compatible fixed-window limiter, 2 workers, 4 allowed requests, 1 limited request, shared enforcement `true`. |
@@ -664,6 +664,22 @@ bundle installs the CRD, RBAC, operator Deployment, and a sample cluster. The
 reconciler renders the concrete Service, headless Service, StatefulSet, and
 repair CronJob resources, and `wavemind operator-loop` can run in-cluster to
 keep those resources applied.
+
+The operator also accepts capacity targets. Add this to `spec.autoscaling` and
+the reconciler will raise the StatefulSet replicas and HPA min/max replicas to
+fit the target under the requested per-node headroom:
+
+```json
+{
+  "enabled": true,
+  "targetMemories": 10000000,
+  "maxMemoriesPerNode": 1000000,
+  "headroom": 0.7
+}
+```
+
+Rendered resources include `memory.wavemind.ai/capacity-*` annotations with the
+calculated replica count and target max node load.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
 

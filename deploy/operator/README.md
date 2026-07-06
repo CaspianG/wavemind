@@ -14,8 +14,33 @@ kubectl apply -f wavemind-resources.json
 
 `operator-bundle` emits the CRD, RBAC, operator Deployment, and a sample custom
 resource. `operator-reconcile` renders the concrete Kubernetes resources for a
-cluster: normal Service, headless Service, StatefulSet, and scheduled repair
-CronJob.
+cluster: normal Service, headless Service, StatefulSet, optional HPA, and
+scheduled repair CronJob.
+
+Capacity autoscaling is part of the custom resource. When
+`spec.autoscaling.targetMemories` is set, the reconciler uses WaveMind's
+cluster autoscale planner to raise the StatefulSet replica count and HPA
+min/max replicas until the target memory volume fits under the configured
+per-node headroom:
+
+```json
+{
+  "spec": {
+    "replicationFactor": 3,
+    "namespaceCount": 4096,
+    "autoscaling": {
+      "enabled": true,
+      "targetMemories": 10000000,
+      "maxMemoriesPerNode": 1000000,
+      "headroom": 0.7
+    }
+  }
+}
+```
+
+The rendered resources include `memory.wavemind.ai/capacity-*` annotations with
+the calculated replica count, target memory volume, headroom, and expected max
+node load.
 
 The in-cluster operator container runs:
 
@@ -24,4 +49,4 @@ wavemind operator-loop --namespace wavemind-system
 ```
 
 The loop lists `WaveMindCluster` resources and applies the reconciled Services,
-StatefulSet, and repair CronJob with Kubernetes server-side apply.
+StatefulSet, HPA, and repair CronJob with Kubernetes server-side apply.

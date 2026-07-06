@@ -529,6 +529,7 @@ def run_operator_profile(
     namespace_count: int,
     node_count: int,
     replication_factor: int,
+    target_memories: int,
 ) -> dict[str, object]:
     spec = WaveMindClusterSpec(
         name="wavemind",
@@ -543,6 +544,9 @@ def run_operator_profile(
         autoscaling_max_replicas=max(node_count * 4, node_count + 1),
         autoscaling_target_cpu_utilization=70,
         autoscaling_target_memory_utilization=80,
+        autoscaling_target_memories=target_memories,
+        autoscaling_max_memories_per_node=1_000_000,
+        autoscaling_headroom=0.70,
     )
     bundle = operator_bundle(namespace="wavemind-system", sample=spec)
     reconciled = operator_reconcile(spec.custom_resource())
@@ -553,6 +557,8 @@ def run_operator_profile(
     cronjob = next(resource for resource in resources if resource["kind"] == "CronJob")
     cronjob_container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
     hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
+    statefulset = next(resource for resource in resources if resource["kind"] == "StatefulSet")
+    capacity_annotations = dict(statefulset["metadata"].get("annotations") or {})
     return {
         "engine": "WaveMind Kubernetes operator",
         "bundle_resources": len(bundle["items"]),
@@ -567,6 +573,18 @@ def run_operator_profile(
         "headless_service": spec.headless_service_name in names,
         "autoscaling_min_replicas": hpa["spec"]["minReplicas"],
         "autoscaling_max_replicas": hpa["spec"]["maxReplicas"],
+        "statefulset_replicas": statefulset["spec"]["replicas"],
+        "capacity_target_memories": target_memories,
+        "capacity_required_replicas": int(
+            capacity_annotations.get("memory.wavemind.ai/capacity-required-replicas", 0)
+        ),
+        "capacity_target_max_node_memories": int(
+            capacity_annotations.get("memory.wavemind.ai/capacity-target-max-node-memories", 0)
+        ),
+        "capacity_headroom": float(
+            capacity_annotations.get("memory.wavemind.ai/capacity-headroom", 0)
+        ),
+        "capacity_annotations": capacity_annotations,
         "autoscaling_metrics": [
             metric["resource"]["name"]
             for metric in hpa["spec"]["metrics"]
@@ -2331,6 +2349,7 @@ def run_benchmark(
             namespace_count=namespace_count,
             node_count=node_count,
             replication_factor=replication_factor,
+            target_memories=max(simulated_memories * 10, 10_000_000),
         ),
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
@@ -2411,6 +2430,9 @@ def main() -> int:
             print(f"| operator | has_statefulset | {result['has_statefulset']} |")
             print(f"| operator | has_hpa | {result['has_hpa']} |")
             print(f"| operator | has_repair_cronjob | {result['has_repair_cronjob']} |")
+            print(f"| operator | statefulset_replicas | {result['statefulset_replicas']} |")
+            print(f"| operator | capacity_required_replicas | {result['capacity_required_replicas']} |")
+            print(f"| operator | capacity_target_max_node_memories | {result['capacity_target_max_node_memories']} |")
             print(f"| operator | autoscaling_max_replicas | {result['autoscaling_max_replicas']} |")
             print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
         elif result["engine"] == "WaveMind serverless plan":

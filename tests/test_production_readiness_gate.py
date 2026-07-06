@@ -24,6 +24,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["hundred_million_capacity_envelope"]["status"] == "pass"
     assert "100M-memory" in criteria["hundred_million_capacity_envelope"]["title"]
     assert "100000000 memories" in criteria["hundred_million_capacity_envelope"]["evidence"]
+    assert criteria["operator_autoscaling_repair"]["status"] == "pass"
+    assert "capacity-aware replica reconciliation" in criteria["operator_autoscaling_repair"]["requirement"]
+    assert "required" in criteria["operator_autoscaling_repair"]["evidence"]
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]

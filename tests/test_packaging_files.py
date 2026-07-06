@@ -204,6 +204,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("deploy/serverless/wavemind-serverless.sample.json").exists()
     assert "cluster-repair` CronJob" in readme
     assert "wavemind cluster-autoscale-plan" in readme
+    assert '"targetMemories": 10000000' in readme
+    assert "spec.autoscaling.targetMemories" in roadmap
     assert "wavemind scale-plan --target-memories 50000" in readme
     assert "wavemind advise --target-memories 2000000" in readme
     assert "--fail-on action_required" in readme

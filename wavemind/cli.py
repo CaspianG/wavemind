@@ -1443,6 +1443,9 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--autoscaling-max-replicas", type=int, default=12)
     parser.add_argument("--autoscaling-target-cpu", type=int, default=70)
     parser.add_argument("--autoscaling-target-memory", type=int)
+    parser.add_argument("--autoscaling-target-memories", type=int)
+    parser.add_argument("--autoscaling-max-memories-per-node", type=int, default=1_000_000)
+    parser.add_argument("--autoscaling-headroom", type=float, default=0.70)
 
 
 def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
@@ -1472,6 +1475,9 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         autoscaling_max_replicas=args.autoscaling_max_replicas,
         autoscaling_target_cpu_utilization=args.autoscaling_target_cpu,
         autoscaling_target_memory_utilization=args.autoscaling_target_memory,
+        autoscaling_target_memories=args.autoscaling_target_memories,
+        autoscaling_max_memories_per_node=args.autoscaling_max_memories_per_node,
+        autoscaling_headroom=args.autoscaling_headroom,
     )
 
 

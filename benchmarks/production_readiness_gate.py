@@ -366,12 +366,21 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 if operator.get("bundle_has_crd")
                 and operator.get("has_hpa")
                 and operator.get("has_repair_cronjob")
+                and int(operator.get("statefulset_replicas", 0))
+                == int(operator.get("capacity_required_replicas", -1))
+                and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
                 else "fail"
             ),
-            requirement="Operator output must include CRD, StatefulSet, Service, HPA, and scheduled repair.",
+            requirement=(
+                "Operator output must include CRD, StatefulSet, Service, HPA, "
+                "scheduled repair, and capacity-aware replica reconciliation."
+            ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
-                f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}"
+                f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}, "
+                f"replicas {operator.get('statefulset_replicas')}, "
+                f"required {operator.get('capacity_required_replicas')}, "
+                f"target max {operator.get('capacity_target_max_node_memories')}"
             ),
             next_step="Run a real Kubernetes smoke deploy and collect HPA behavior under load.",
         ),

@@ -55,6 +55,9 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     spec_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"]
     assert "autoscaling" in spec_props
     assert "maxReplicas" in spec_props["autoscaling"]["properties"]
+    assert "targetMemories" in spec_props["autoscaling"]["properties"]
+    assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
+    assert "headroom" in spec_props["autoscaling"]["properties"]
 
 
 def test_operator_reconcile_renders_cluster_resources():
@@ -108,6 +111,35 @@ def test_operator_reconcile_renders_horizontal_pod_autoscaler_when_enabled():
     assert hpa["spec"]["maxReplicas"] == 24
     metric_names = [metric["resource"]["name"] for metric in hpa["spec"]["metrics"]]
     assert metric_names == ["cpu", "memory"]
+
+
+def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
+    spec = WaveMindClusterSpec(
+        name="wm-capacity",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=3,
+        namespace_count=4096,
+        autoscaling_enabled=True,
+        autoscaling_min_replicas=3,
+        autoscaling_max_replicas=24,
+        autoscaling_target_memories=10_000_000,
+        autoscaling_max_memories_per_node=1_000_000,
+        autoscaling_headroom=0.70,
+    )
+
+    payload = operator_reconcile(spec.custom_resource())
+    resources = {resource["kind"]: resource for resource in payload["items"]}
+    statefulset = resources["StatefulSet"]
+    hpa = resources["HorizontalPodAutoscaler"]
+    annotations = statefulset["metadata"]["annotations"]
+
+    assert statefulset["spec"]["replicas"] >= 43
+    assert hpa["spec"]["minReplicas"] == statefulset["spec"]["replicas"]
+    assert hpa["spec"]["maxReplicas"] >= statefulset["spec"]["replicas"]
+    assert annotations["memory.wavemind.ai/capacity-target-memories"] == "10000000"
+    assert int(annotations["memory.wavemind.ai/capacity-required-replicas"]) == statefulset["spec"]["replicas"]
+    assert int(annotations["memory.wavemind.ai/capacity-target-max-node-memories"]) <= 700_000
 
 
 def test_operator_bundle_contains_crd_rbac_deployment_and_sample():

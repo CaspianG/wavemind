@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .cluster import ClusterNode, build_cluster_plan
+from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 
 
 API_GROUP = "memory.wavemind.ai"
@@ -51,6 +51,9 @@ class WaveMindClusterSpec:
     autoscaling_max_replicas: int = 12
     autoscaling_target_cpu_utilization: int = 70
     autoscaling_target_memory_utilization: int | None = None
+    autoscaling_target_memories: int | None = None
+    autoscaling_max_memories_per_node: int = 1_000_000
+    autoscaling_headroom: float = 0.70
     resources: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -64,8 +67,6 @@ class WaveMindClusterSpec:
             raise ValueError("replicas must be positive")
         if self.replication_factor <= 0:
             raise ValueError("replication_factor must be positive")
-        if self.replication_factor > self.replicas:
-            raise ValueError("replication_factor cannot exceed replicas")
         if self.namespace_count < 0:
             raise ValueError("namespace_count cannot be negative")
         if self.service_port <= 0:
@@ -82,6 +83,35 @@ class WaveMindClusterSpec:
             1 <= self.autoscaling_target_memory_utilization <= 100
         ):
             raise ValueError("autoscaling_target_memory_utilization must be between 1 and 100")
+        if self.autoscaling_target_memories is not None:
+            if self.autoscaling_target_memories < 0:
+                raise ValueError("autoscaling_target_memories cannot be negative")
+            if self.namespace_count <= 0:
+                raise ValueError("namespace_count must be positive when target memories are set")
+            if self.autoscaling_max_memories_per_node <= 0:
+                raise ValueError("autoscaling_max_memories_per_node must be positive")
+            if self.autoscaling_headroom <= 0 or self.autoscaling_headroom > 1:
+                raise ValueError("autoscaling_headroom must be in (0, 1]")
+            required_replicas = self._capacity_required_replicas(
+                seed_replicas=max(
+                    self.replicas,
+                    self.replication_factor,
+                    self.autoscaling_min_replicas,
+                )
+            )
+            object.__setattr__(self, "replicas", max(self.replicas, required_replicas))
+            object.__setattr__(
+                self,
+                "autoscaling_min_replicas",
+                max(self.autoscaling_min_replicas, required_replicas),
+            )
+            object.__setattr__(
+                self,
+                "autoscaling_max_replicas",
+                max(self.autoscaling_max_replicas, required_replicas),
+            )
+        if self.replication_factor > self.replicas:
+            raise ValueError("replication_factor cannot exceed replicas")
 
     @classmethod
     def from_custom_resource(cls, resource: dict[str, Any]) -> "WaveMindClusterSpec":
@@ -125,6 +155,9 @@ class WaveMindClusterSpec:
             autoscaling_target_memory_utilization=_optional_int(
                 autoscaling.get("targetMemoryUtilizationPercentage")
             ),
+            autoscaling_target_memories=_optional_int(autoscaling.get("targetMemories")),
+            autoscaling_max_memories_per_node=int(autoscaling.get("maxMemoriesPerNode", 1_000_000)),
+            autoscaling_headroom=float(autoscaling.get("headroom", 0.70)),
             resources=dict(spec.get("resources") or {}),
         )
 
@@ -189,6 +222,24 @@ class WaveMindClusterSpec:
                     self.autoscaling_target_memory_utilization
                 )
             spec["autoscaling"] = autoscaling
+        if self.autoscaling_target_memories is not None:
+            autoscaling = dict(spec.get("autoscaling") or {})
+            autoscaling.update(
+                {
+                    "enabled": self.autoscaling_enabled,
+                    "minReplicas": self.autoscaling_min_replicas,
+                    "maxReplicas": self.autoscaling_max_replicas,
+                    "targetCPUUtilizationPercentage": self.autoscaling_target_cpu_utilization,
+                    "targetMemories": self.autoscaling_target_memories,
+                    "maxMemoriesPerNode": self.autoscaling_max_memories_per_node,
+                    "headroom": self.autoscaling_headroom,
+                }
+            )
+            if self.autoscaling_target_memory_utilization is not None:
+                autoscaling["targetMemoryUtilizationPercentage"] = (
+                    self.autoscaling_target_memory_utilization
+                )
+            spec["autoscaling"] = autoscaling
         if self.redis_url:
             spec["cache"]["redisUrl"] = self.redis_url
         if self.auth_secret:
@@ -219,6 +270,24 @@ class WaveMindClusterSpec:
         if self.repair_enabled and self.namespace_count:
             resources.append(self._repair_cronjob())
         return resources
+
+    def capacity_autoscale_plan(self):
+        if self.autoscaling_target_memories is None:
+            return None
+        return build_cluster_autoscale_plan(
+            namespaces=self.namespaces,
+            nodes=self.nodes,
+            replication_factor=self.replication_factor,
+            target_memories=self.autoscaling_target_memories,
+            max_memories_per_node=self.autoscaling_max_memories_per_node,
+            headroom=self.autoscaling_headroom,
+            node_prefix=self.name,
+            address_template=(
+                f"http://{{node_id}}.{self.headless_service_name}."
+                f"{self.namespace}.svc.cluster.local:{self.service_port}"
+            ),
+            max_moves=25,
+        )
 
     def as_resource_list(self, resources: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
         return {
@@ -261,6 +330,7 @@ class WaveMindClusterSpec:
                 "name": name,
                 "namespace": self.namespace,
                 "labels": labels,
+                "annotations": self._capacity_annotations(),
             },
             "spec": spec,
         }
@@ -322,6 +392,7 @@ class WaveMindClusterSpec:
                 "name": self.name,
                 "namespace": self.namespace,
                 "labels": labels,
+                "annotations": self._capacity_annotations(),
             },
             "spec": {
                 "serviceName": self.headless_service_name,
@@ -397,6 +468,7 @@ class WaveMindClusterSpec:
                 "name": self.name,
                 "namespace": self.namespace,
                 "labels": labels,
+                "annotations": self._capacity_annotations(),
             },
             "spec": {
                 "scaleTargetRef": {
@@ -408,6 +480,47 @@ class WaveMindClusterSpec:
                 "maxReplicas": self.autoscaling_max_replicas,
                 "metrics": metrics,
             },
+        }
+
+    def _capacity_required_replicas(self, *, seed_replicas: int) -> int:
+        if self.autoscaling_target_memories is None:
+            return self.replicas
+        seed_nodes = tuple(
+            ClusterNode(
+                id=f"{self.name}-{index}",
+                address=(
+                    f"http://{self.name}-{index}.{self.headless_service_name}."
+                    f"{self.namespace}.svc.cluster.local:{self.service_port}"
+                ),
+            )
+            for index in range(seed_replicas)
+        )
+        plan = build_cluster_autoscale_plan(
+            namespaces=self.namespaces,
+            nodes=seed_nodes,
+            replication_factor=self.replication_factor,
+            target_memories=self.autoscaling_target_memories,
+            max_memories_per_node=self.autoscaling_max_memories_per_node,
+            headroom=self.autoscaling_headroom,
+            node_prefix=self.name,
+            address_template=(
+                f"http://{{node_id}}.{self.headless_service_name}."
+                f"{self.namespace}.svc.cluster.local:{self.service_port}"
+            ),
+            max_moves=0,
+        )
+        return plan.required_nodes
+
+    def _capacity_annotations(self) -> dict[str, str]:
+        if self.autoscaling_target_memories is None:
+            return {}
+        plan = self.capacity_autoscale_plan()
+        assert plan is not None
+        return {
+            "memory.wavemind.ai/capacity-target-memories": str(self.autoscaling_target_memories),
+            "memory.wavemind.ai/capacity-required-replicas": str(plan.required_nodes),
+            "memory.wavemind.ai/capacity-target-max-node-memories": str(plan.target_max_node_memories),
+            "memory.wavemind.ai/capacity-headroom": str(self.autoscaling_headroom),
         }
 
 
@@ -469,6 +582,13 @@ def custom_resource_definition() -> dict[str, Any]:
                                                     "type": "integer",
                                                     "minimum": 1,
                                                     "maximum": 100,
+                                                },
+                                                "targetMemories": {"type": "integer", "minimum": 0},
+                                                "maxMemoriesPerNode": {"type": "integer", "minimum": 1},
+                                                "headroom": {
+                                                    "type": "number",
+                                                    "exclusiveMinimum": 0,
+                                                    "maximum": 1,
                                                 },
                                             },
                                         },
