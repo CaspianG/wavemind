@@ -138,9 +138,12 @@ def test_longmemeval_answer_cli_extractive_mode(tmp_path):
     assert payload["metrics"]["provider"] == "extractive"
     assert payload["metrics"]["engine"] == "WaveMind"
     assert payload["metrics"]["queries"] == 1
+    assert "answered_rate" in payload["metrics"]
     assert "abstention_rate" in payload["metrics"]
     assert "grounded_answer_rate" in payload["metrics"]
+    assert "supported_answer_rate" in payload["metrics"]
     assert "unsupported_answer_rate" in payload["metrics"]
+    assert "faithfulness_rate" in payload["metrics"]
     assert [result["engine"] for result in payload["results"]] == ["WaveMind", "Static vector"]
     assert payload["examples"][0]["prediction"]
     assert "Static vector" in payload["examples_by_engine"]

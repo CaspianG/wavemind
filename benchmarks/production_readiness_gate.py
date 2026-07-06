@@ -179,9 +179,12 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     answer_exact = float(answer_wavemind.get("exact_match", 0.0))
     answer_contains = float(answer_wavemind.get("contains_answer", 0.0))
     answer_token_f1 = float(answer_wavemind.get("token_f1", 0.0))
+    answer_answered = float(answer_wavemind.get("answered_rate", 0.0))
     answer_abstention = float(answer_wavemind.get("abstention_rate", 1.0))
     answer_grounded = float(answer_wavemind.get("grounded_answer_rate", 0.0))
+    answer_supported = float(answer_wavemind.get("supported_answer_rate", 0.0))
     answer_unsupported = float(answer_wavemind.get("unsupported_answer_rate", 1.0))
+    answer_faithfulness = float(answer_wavemind.get("faithfulness_rate", 0.0))
     answer_evidence_recall = float(answer_wavemind.get("evidence_recall_at_k", 0.0))
     answer_retrieval_ms = float(answer_wavemind.get("avg_retrieval_ms", float("inf")))
     chroma_token_f1 = float(answer_chroma.get("token_f1", 0.0))
@@ -197,8 +200,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and answer_exact >= 0.20
         and answer_contains >= 0.35
         and answer_token_f1 >= 0.30
+        and answer_answered >= 0.35
         and answer_grounded >= 0.50
+        and answer_supported >= 0.95
         and answer_unsupported <= 0.05
+        and answer_faithfulness >= 0.95
         and answer_abstention <= 0.60
         and answer_evidence_recall >= 0.85
         and answer_retrieval_ms <= 50.0
@@ -412,8 +418,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"exact {answer_exact:.3f}, "
                 f"contains {answer_contains:.3f}, "
                 f"token F1 {answer_token_f1:.3f}, "
+                f"answered {answer_answered:.3f}, "
                 f"grounded {answer_grounded:.3f}, "
+                f"supported {answer_supported:.3f}, "
                 f"unsupported {answer_unsupported:.3f}, "
+                f"faithful {answer_faithfulness:.3f}, "
                 f"abstain {answer_abstention:.3f}, "
                 f"evidence recall {answer_evidence_recall:.3f}, "
                 f"retrieval {answer_retrieval_ms:.3f} ms, "

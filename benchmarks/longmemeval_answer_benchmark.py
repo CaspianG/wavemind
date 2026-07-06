@@ -73,9 +73,12 @@ class AnswerMetrics:
     exact_match: float
     contains_answer: float
     token_f1: float
+    answered_rate: float
     abstention_rate: float
     grounded_answer_rate: float
+    supported_answer_rate: float
     unsupported_answer_rate: float
+    faithfulness_rate: float
     evidence_recall_at_k: float
     avg_retrieval_ms: float
     avg_generation_ms: float
@@ -524,9 +527,12 @@ def run_benchmark(
         exact_values: list[float] = []
         contains_values: list[float] = []
         f1_values: list[float] = []
+        answered_values: list[float] = []
         abstention_values: list[float] = []
         grounded_values: list[float] = []
+        supported_answer_values: list[float] = []
         unsupported_values: list[float] = []
+        faithfulness_values: list[float] = []
         evidence_recalls: list[float] = []
         for query in dataset.queries:
             expected_answer = answers.get(query.id, "")
@@ -544,9 +550,14 @@ def run_benchmark(
             generated[query.id] = answer
             abstained = is_generated_abstention(answer)
             grounded = answer_grounded_in_context(answer, contexts.get(query.id, []))
+            answered_values.append(0.0 if abstained else 1.0)
             abstention_values.append(1.0 if abstained else 0.0)
             grounded_values.append(1.0 if grounded else 0.0)
-            unsupported_values.append(1.0 if not abstained and not grounded else 0.0)
+            if not abstained:
+                supported_answer_values.append(1.0 if grounded else 0.0)
+            unsupported = not abstained and not grounded
+            unsupported_values.append(1.0 if unsupported else 0.0)
+            faithfulness_values.append(0.0 if unsupported else 1.0)
             if expected_answer:
                 normalized_prediction = normalize_answer(answer)
                 normalized_expected = normalize_answer(expected_answer)
@@ -566,9 +577,12 @@ def run_benchmark(
             exact_match=statistics.mean(exact_values) if exact_values else 0.0,
             contains_answer=statistics.mean(contains_values) if contains_values else 0.0,
             token_f1=statistics.mean(f1_values) if f1_values else 0.0,
+            answered_rate=statistics.mean(answered_values) if answered_values else 0.0,
             abstention_rate=statistics.mean(abstention_values) if abstention_values else 0.0,
             grounded_answer_rate=statistics.mean(grounded_values) if grounded_values else 0.0,
+            supported_answer_rate=statistics.mean(supported_answer_values) if supported_answer_values else 0.0,
             unsupported_answer_rate=statistics.mean(unsupported_values) if unsupported_values else 0.0,
+            faithfulness_rate=statistics.mean(faithfulness_values) if faithfulness_values else 0.0,
             evidence_recall_at_k=statistics.mean(evidence_recalls) if evidence_recalls else 0.0,
             avg_retrieval_ms=statistics.mean(retrieval_latencies) if retrieval_latencies else 0.0,
             avg_generation_ms=statistics.mean(generation_latencies) if generation_latencies else 0.0,
@@ -611,8 +625,8 @@ def run_benchmark(
 
 
 def print_table(payload: dict[str, Any]) -> None:
-    print("| engine | provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | grounded | unsupported | abstain | retrieval | generation |")
-    print("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    print("| engine | provider | model | queries | evidence recall@k | exact match | contains answer | token F1 | answered | grounded | supported answers | unsupported | faithful | abstain | retrieval | generation |")
+    print("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for metrics in payload.get("results", [payload["metrics"]]):
         print(
             f"| {metrics['engine']} | "
@@ -623,8 +637,11 @@ def print_table(payload: dict[str, Any]) -> None:
             f"{metrics['exact_match']:.3f} | "
             f"{metrics['contains_answer']:.3f} | "
             f"{metrics['token_f1']:.3f} | "
+            f"{metrics['answered_rate']:.3f} | "
             f"{metrics['grounded_answer_rate']:.3f} | "
+            f"{metrics['supported_answer_rate']:.3f} | "
             f"{metrics['unsupported_answer_rate']:.3f} | "
+            f"{metrics['faithfulness_rate']:.3f} | "
             f"{metrics['abstention_rate']:.3f} | "
             f"{metrics['avg_retrieval_ms']:.2f} ms | "
             f"{metrics['avg_generation_ms']:.2f} ms |"

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T21:26:16Z",
+  "generated_at": "2026-07-06T21:43:16Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T21:26:14Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T21:43:12Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -33,7 +33,7 @@
       "title": "LongMemEval answer generation beats static RAG baselines",
       "status": "pass",
       "requirement": "A real local LLM answer-generation run must show WaveMind improves final answers, not only retrieval: 50+ LongMemEval questions, stronger answer accuracy/F1 than Chroma and Qdrant static RAG, high evidence recall, and bounded retrieval latency.",
-      "evidence": "ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, grounded 0.520, unsupported 0.000, abstain 0.480, evidence recall 0.920, retrieval 35.685 ms, Chroma F1 0.170, Qdrant F1 0.170",
+      "evidence": "ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170",
       "next_step": "Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring."
     },
     {

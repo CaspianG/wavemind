@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T21:26:14Z",
-  "source_ref": "a55493566a19",
+  "generated_at": "2026-07-06T21:43:12Z",
+  "source_ref": "64b0f4e6e080",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1595,11 +1595,14 @@
           "exact_match": 0.24,
           "contains_answer": 0.38,
           "token_f1": 0.33311619190404795,
+          "answered_rate": 0.52,
           "abstention_rate": 0.48,
           "grounded_answer_rate": 0.52,
+          "supported_answer_rate": 1.0,
           "unsupported_answer_rate": 0.0,
-          "avg_retrieval_ms": 35.68520999280736,
-          "avg_generation_ms": 2177.6744239986874
+          "faithfulness_rate": 1.0,
+          "avg_retrieval_ms": 36.586015997454524,
+          "avg_generation_ms": 2159.6820139931515
         },
         "Chroma static + qwen2.5:1.5b": {
           "queries": 50,
@@ -1607,11 +1610,14 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
+          "answered_rate": 0.36,
           "abstention_rate": 0.64,
           "grounded_answer_rate": 0.36,
+          "supported_answer_rate": 1.0,
           "unsupported_answer_rate": 0.0,
-          "avg_retrieval_ms": 4.414471993222833,
-          "avg_generation_ms": 1813.2704099989496
+          "faithfulness_rate": 1.0,
+          "avg_retrieval_ms": 4.254314003046602,
+          "avg_generation_ms": 1816.4578620018438
         },
         "Qdrant static + qwen2.5:1.5b": {
           "queries": 50,
@@ -1619,11 +1625,14 @@
           "exact_match": 0.12,
           "contains_answer": 0.16,
           "token_f1": 0.16987761787761788,
+          "answered_rate": 0.36,
           "abstention_rate": 0.64,
           "grounded_answer_rate": 0.36,
+          "supported_answer_rate": 1.0,
           "unsupported_answer_rate": 0.0,
-          "avg_retrieval_ms": 45.7092939899303,
-          "avg_generation_ms": 640.0379519956186
+          "faithfulness_rate": 1.0,
+          "avg_retrieval_ms": 47.764961989596486,
+          "avg_generation_ms": 627.6277820020914
         }
       },
       "target": "Move from lightweight local smoke runs to full LongMemEval-S answer generation with stronger local and API models, then compare against Chroma/Qdrant RAG.",

@@ -30,12 +30,15 @@
       "exact_match": 0.24,
       "contains_answer": 0.38,
       "token_f1": 0.33311619190404795,
+      "answered_rate": 0.52,
       "abstention_rate": 0.48,
       "grounded_answer_rate": 0.52,
+      "supported_answer_rate": 1.0,
       "unsupported_answer_rate": 0.0,
+      "faithfulness_rate": 1.0,
       "evidence_recall_at_k": 0.92,
-      "avg_retrieval_ms": 35.68520999280736,
-      "avg_generation_ms": 2177.6744239986874
+      "avg_retrieval_ms": 36.586015997454524,
+      "avg_generation_ms": 2159.6820139931515
     },
     {
       "engine": "Chroma static",
@@ -45,12 +48,15 @@
       "exact_match": 0.12,
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
+      "answered_rate": 0.36,
       "abstention_rate": 0.64,
       "grounded_answer_rate": 0.36,
+      "supported_answer_rate": 1.0,
       "unsupported_answer_rate": 0.0,
+      "faithfulness_rate": 1.0,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 4.414471993222833,
-      "avg_generation_ms": 1813.2704099989496
+      "avg_retrieval_ms": 4.254314003046602,
+      "avg_generation_ms": 1816.4578620018438
     },
     {
       "engine": "Qdrant static",
@@ -60,12 +66,15 @@
       "exact_match": 0.12,
       "contains_answer": 0.16,
       "token_f1": 0.16987761787761788,
+      "answered_rate": 0.36,
       "abstention_rate": 0.64,
       "grounded_answer_rate": 0.36,
+      "supported_answer_rate": 1.0,
       "unsupported_answer_rate": 0.0,
+      "faithfulness_rate": 1.0,
       "evidence_recall_at_k": 0.6,
-      "avg_retrieval_ms": 45.7092939899303,
-      "avg_generation_ms": 640.0379519956186
+      "avg_retrieval_ms": 47.764961989596486,
+      "avg_generation_ms": 627.6277820020914
     }
   ],
   "metrics": {
@@ -76,12 +85,15 @@
     "exact_match": 0.24,
     "contains_answer": 0.38,
     "token_f1": 0.33311619190404795,
+    "answered_rate": 0.52,
     "abstention_rate": 0.48,
     "grounded_answer_rate": 0.52,
+    "supported_answer_rate": 1.0,
     "unsupported_answer_rate": 0.0,
+    "faithfulness_rate": 1.0,
     "evidence_recall_at_k": 0.92,
-    "avg_retrieval_ms": 35.68520999280736,
-    "avg_generation_ms": 2177.6744239986874
+    "avg_retrieval_ms": 36.586015997454524,
+    "avg_generation_ms": 2159.6820139931515
   },
   "examples": [
     {
