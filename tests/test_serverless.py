@@ -9,6 +9,7 @@ import pytest
 from wavemind import (
     __version__,
     SecretEnvRef,
+    ServerlessObservedTelemetry,
     ServerlessWorkloadTarget,
     WaveMindServerlessSpec,
     serverless_sample_bundle,
@@ -133,6 +134,92 @@ def test_serverless_operational_profile_checks_scale_slo_and_cost():
     assert profile["monthly_compute_cost_usd"] < 82
 
 
+def test_serverless_operational_profile_accepts_observed_telemetry():
+    spec = WaveMindServerlessSpec(
+        min_scale=0,
+        max_scale=64,
+        target_concurrency=80,
+    )
+    profile = spec.operational_profile(
+        ServerlessWorkloadTarget(
+            requests_per_second=3200,
+            avg_request_ms=80,
+            p99_request_ms=320,
+            cold_start_ms=900,
+            target_p99_ms=500,
+            cold_start_budget_ms=1500,
+            max_error_rate=0.01,
+            max_scale_out_seconds=60,
+        ),
+        observed=ServerlessObservedTelemetry(
+            requests_per_second=3280,
+            avg_request_ms=72,
+            p95_request_ms=180,
+            p99_request_ms=300,
+            cold_start_ms=850,
+            error_rate=0.001,
+            max_replicas=5,
+            scale_out_seconds=18,
+            monthly_compute_cost_usd=92.0,
+            source="k6-staging",
+        ),
+    )
+
+    assert profile["valid"] is True
+    assert profile["observed_telemetry_present"] is True
+    assert profile["observed_telemetry_source"] == "k6-staging"
+    assert profile["observed_slo_pass"] is True
+    assert profile["observed_traffic_ok"] is True
+    assert profile["observed_p99_ok"] is True
+    assert profile["observed_cold_start_budget_ok"] is True
+    assert profile["observed_error_rate_ok"] is True
+    assert profile["observed_scale_out_ok"] is True
+    assert profile["observed_capacity_ok"] is True
+    assert profile["observed_cost_ok"] is True
+
+
+def test_serverless_operational_profile_fails_on_observed_slo_regression():
+    spec = WaveMindServerlessSpec(
+        min_scale=0,
+        max_scale=4,
+        target_concurrency=80,
+    )
+    profile = spec.operational_profile(
+        ServerlessWorkloadTarget(
+            requests_per_second=3200,
+            avg_request_ms=80,
+            p99_request_ms=320,
+            cold_start_ms=900,
+            target_p99_ms=500,
+            cold_start_budget_ms=1500,
+            max_error_rate=0.01,
+            max_scale_out_seconds=60,
+        ),
+        observed=ServerlessObservedTelemetry(
+            requests_per_second=2800,
+            avg_request_ms=110,
+            p95_request_ms=520,
+            p99_request_ms=720,
+            cold_start_ms=1100,
+            error_rate=0.04,
+            max_replicas=6,
+            scale_out_seconds=95,
+            monthly_compute_cost_usd=900.0,
+            source="regression",
+        ),
+    )
+
+    assert profile["valid"] is False
+    assert profile["observed_slo_pass"] is False
+    assert profile["observed_traffic_ok"] is False
+    assert profile["observed_p99_ok"] is False
+    assert profile["observed_cold_start_budget_ok"] is False
+    assert profile["observed_error_rate_ok"] is False
+    assert profile["observed_scale_out_ok"] is False
+    assert profile["observed_capacity_ok"] is False
+    assert profile["observed_cost_ok"] is False
+
+
 def test_serverless_operational_profile_fails_without_shared_cache_or_capacity():
     unsafe = WaveMindServerlessSpec(
         min_scale=0,
@@ -166,6 +253,16 @@ def test_serverless_workload_target_validates_operational_inputs():
         ServerlessWorkloadTarget(active_fraction=1.5)
     with pytest.raises(ValueError, match="monthly_budget"):
         ServerlessWorkloadTarget(monthly_budget_usd=0)
+    with pytest.raises(ValueError, match="max_error_rate"):
+        ServerlessWorkloadTarget(max_error_rate=2)
+    with pytest.raises(ValueError, match="p99_request_ms"):
+        ServerlessObservedTelemetry(
+            requests_per_second=1,
+            avg_request_ms=1,
+            p95_request_ms=10,
+            p99_request_ms=5,
+            cold_start_ms=1,
+        )
 
 
 def test_serverless_cli_emits_bundle_and_readiness(tmp_path):
@@ -223,3 +320,38 @@ def test_serverless_cli_emits_bundle_and_readiness(tmp_path):
     assert operational["required_replicas"] == 4
     assert operational["burst_capacity_rps"] == 64000.0
     assert operational["cold_start_budget_ok"] is True
+
+    telemetry_file = tmp_path / "telemetry.json"
+    telemetry_file.write_text(
+        json.dumps(
+            {
+                "source": "k6-staging",
+                "requests_per_second": 3280,
+                "avg_request_ms": 72,
+                "p95_request_ms": 180,
+                "p99_request_ms": 300,
+                "cold_start_ms": 850,
+                "error_rate": 0.001,
+                "max_replicas": 5,
+                "scale_out_seconds": 18,
+                "monthly_compute_cost_usd": 92.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    observed = json.loads(
+        run_cli(
+            "serverless-sample",
+            "--operational-profile",
+            "--max-scale",
+            "64",
+            "--target-concurrency",
+            "80",
+            "--observed-telemetry",
+            str(telemetry_file),
+        ).stdout
+    )
+
+    assert observed["observed_telemetry_present"] is True
+    assert observed["observed_telemetry_source"] == "k6-staging"
+    assert observed["observed_slo_pass"] is True

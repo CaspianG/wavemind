@@ -533,12 +533,15 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and serverless_ops.get("scale_to_zero_safe")
                 and serverless_ops.get("cold_start_budget_ok")
                 and serverless_ops.get("cost_ok")
+                and serverless_ops.get("observed_telemetry_present")
+                and serverless_ops.get("observed_slo_pass")
                 else "fail"
             ),
             requirement=(
                 "Serverless mode must use external durable state, external vector "
                 "index, shared cache, valid KEDA scale target, scale-to-zero-safe "
-                "workers, and an operational SLO/cold-start/cost profile."
+                "workers, an operational SLO/cold-start/cost profile, and an "
+                "observed-telemetry contract for real cluster load tests."
             ),
             evidence=(
                 f"Postgres {serverless.get('uses_postgres')}, "
@@ -547,9 +550,12 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"required replicas {serverless_ops.get('required_replicas')}, "
                 f"burst rps {float(serverless_ops.get('burst_capacity_rps') or 0.0):.0f}, "
                 f"cold start {float(serverless_ops.get('cold_start_total_ms') or 0.0):.1f} ms, "
-                f"cost ${float(serverless_ops.get('monthly_compute_cost_usd') or 0.0):.2f}"
+                f"cost ${float(serverless_ops.get('monthly_compute_cost_usd') or 0.0):.2f}, "
+                f"observed source {serverless_ops.get('observed_telemetry_source')}, "
+                f"observed p99 {serverless_ops.get('observed_p99_request_ms')} ms, "
+                f"observed errors {serverless_ops.get('observed_error_rate')}"
             ),
-            next_step="Run the same profile against a real Knative/KEDA cluster and replace deterministic targets with observed p95/p99/cold-start metrics.",
+            next_step="Run the same profile against a real Knative/KEDA cluster and replace the checked fixture with observed p95/p99/cold-start/error-rate metrics.",
         ),
         _criterion(
             criterion_id="hot_cache_prewarm",

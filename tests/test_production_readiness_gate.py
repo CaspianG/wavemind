@@ -39,8 +39,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "control-plane True" in criteria["operator_autoscaling_repair"]["evidence"]
     assert criteria["serverless_externalized_state"]["status"] == "pass"
     assert "operational SLO/cold-start/cost profile" in criteria["serverless_externalized_state"]["requirement"]
+    assert "observed-telemetry contract" in criteria["serverless_externalized_state"]["requirement"]
     assert "required replicas 4" in criteria["serverless_externalized_state"]["evidence"]
     assert "cold start 1220.0 ms" in criteria["serverless_externalized_state"]["evidence"]
+    assert "observed source scale-readiness-fixture" in criteria["serverless_externalized_state"]["evidence"]
+    assert "observed p99 300.0 ms" in criteria["serverless_externalized_state"]["evidence"]
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]

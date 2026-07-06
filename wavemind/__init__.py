@@ -128,6 +128,7 @@ from .scale import (
 )
 from .serverless import (
     SecretEnvRef,
+    ServerlessObservedTelemetry,
     ServerlessWorkloadTarget,
     WaveMindServerlessSpec,
     serverless_sample_bundle,
@@ -241,6 +242,7 @@ __all__ = [
     "ScalePlan",
     "S3SnapshotStore",
     "SecretEnvRef",
+    "ServerlessObservedTelemetry",
     "ServerlessWorkloadTarget",
     "TextEncoder",
     "WaveField",

@@ -29,6 +29,12 @@ Run the operational preflight from the CLI:
 wavemind serverless-sample --operational-profile --max-scale 64 --target-concurrency 80
 ```
 
+Run the same profile with observed load-test telemetry:
+
+```sh
+wavemind serverless-sample --operational-profile --observed-telemetry deploy/serverless/observed-telemetry.sample.json
+```
+
 The scale-readiness benchmark also runs a deterministic operational profile for
 this serverless shape. It checks:
 
@@ -38,11 +44,16 @@ this serverless shape. It checks:
 - burst capacity against `maxScale` and `targetConcurrency`;
 - cold-start budget;
 - estimated monthly compute cost.
+- optional observed p99, cold-start, error-rate, scale-out, capacity, and cost
+  telemetry from a real Knative/KEDA load test.
 
 Current checked-in profile: 3200 requests/second, 80 ms average request time,
 320 ms warm p99, 900 ms cold start, 4 required warm replicas, 64000 burst RPS
 capacity, and an estimated `$81.76` monthly compute cost at the modeled active
-fraction. This is an operational preflight, not a live Knative/KEDA load test.
+fraction. The checked-in observed telemetry uses a fixture source, not a live
+Knative/KEDA load test. Replace `observed-telemetry.sample.json` with exported
+k6, Prometheus, or load-generator metrics before making a live serverless SLO
+claim.
 
 Required secrets:
 

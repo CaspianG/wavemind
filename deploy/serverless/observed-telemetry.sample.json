@@ -1,0 +1,12 @@
+{
+  "source": "k6-staging",
+  "requests_per_second": 3280,
+  "avg_request_ms": 72,
+  "p95_request_ms": 180,
+  "p99_request_ms": 300,
+  "cold_start_ms": 850,
+  "error_rate": 0.001,
+  "max_replicas": 5,
+  "scale_out_seconds": 18,
+  "monthly_compute_cost_usd": 92.0
+}

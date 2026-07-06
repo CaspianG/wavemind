@@ -140,6 +140,12 @@ policy matters more than raw vector-database scale:
   rate, required replicas, burst capacity, external state, scale-to-zero safety,
   cold-start budget, and estimated monthly compute cost. This is still a
   preflight, not observed Knative/KEDA runtime telemetry.
+- `ServerlessObservedTelemetry` and `wavemind serverless-sample
+  --operational-profile --observed-telemetry <json>` define the real-cluster
+  telemetry contract. The profile now fails when observed RPS, p99,
+  cold-start, error-rate, scale-out lag, max replicas, or cost miss the target.
+  The checked-in benchmark uses a fixture source; the next step is replacing it
+  with exported Knative/KEDA load-test metrics.
 - `HotMemoryCache`, `QueryVectorCache`, their Redis-backed variants,
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
@@ -414,8 +420,8 @@ Enterprise requirements:
 - Graph memory v2 with incremental edge updates.
 - Background worker for decay, consolidation, graph updates, and scheduled
   backups.
-- Harden the Knative/KEDA serverless path by replacing deterministic
-  operational-profile inputs with observed real-cluster p95/p99/cold-start
+- Harden the Knative/KEDA serverless path by replacing the checked-in observed
+  telemetry fixture with real-cluster p95/p99/cold-start/error-rate/scale-out
   telemetry, then add managed-control-plane docs.
 - Observability: richer Prometheus metrics, trace dashboards, and durable
   latency histograms beyond the current process-local API latency gauges.

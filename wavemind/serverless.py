@@ -33,6 +33,8 @@ class ServerlessWorkloadTarget:
     active_fraction: float = 0.35
     replica_hourly_cost_usd: float = 0.08
     monthly_budget_usd: float = 750.0
+    max_error_rate: float = 0.01
+    max_scale_out_seconds: float = 60.0
 
     def __post_init__(self) -> None:
         if self.requests_per_second <= 0:
@@ -53,6 +55,84 @@ class ServerlessWorkloadTarget:
             raise ValueError("replica_hourly_cost_usd cannot be negative")
         if self.monthly_budget_usd <= 0:
             raise ValueError("monthly_budget_usd must be positive")
+        if not 0.0 <= self.max_error_rate <= 1.0:
+            raise ValueError("max_error_rate must be between 0 and 1")
+        if self.max_scale_out_seconds < 0:
+            raise ValueError("max_scale_out_seconds cannot be negative")
+
+
+@dataclass(frozen=True)
+class ServerlessObservedTelemetry:
+    """Observed load-test telemetry for the serverless operational profile."""
+
+    requests_per_second: float
+    avg_request_ms: float
+    p95_request_ms: float
+    p99_request_ms: float
+    cold_start_ms: float
+    error_rate: float = 0.0
+    max_replicas: int = 1
+    scale_out_seconds: float = 0.0
+    monthly_compute_cost_usd: float | None = None
+    source: str = "manual"
+
+    def __post_init__(self) -> None:
+        if self.requests_per_second <= 0:
+            raise ValueError("observed requests_per_second must be positive")
+        if self.avg_request_ms <= 0:
+            raise ValueError("observed avg_request_ms must be positive")
+        if self.p95_request_ms <= 0:
+            raise ValueError("observed p95_request_ms must be positive")
+        if self.p99_request_ms <= 0:
+            raise ValueError("observed p99_request_ms must be positive")
+        if self.p99_request_ms < self.p95_request_ms:
+            raise ValueError("observed p99_request_ms must be >= p95_request_ms")
+        if self.cold_start_ms < 0:
+            raise ValueError("observed cold_start_ms cannot be negative")
+        if not 0.0 <= self.error_rate <= 1.0:
+            raise ValueError("observed error_rate must be between 0 and 1")
+        if self.max_replicas <= 0:
+            raise ValueError("observed max_replicas must be positive")
+        if self.scale_out_seconds < 0:
+            raise ValueError("observed scale_out_seconds cannot be negative")
+        if self.monthly_compute_cost_usd is not None and self.monthly_compute_cost_usd < 0:
+            raise ValueError("observed monthly_compute_cost_usd cannot be negative")
+        if not self.source.strip():
+            raise ValueError("observed source must not be empty")
+
+    @classmethod
+    def from_mapping(cls, payload: dict[str, Any]) -> "ServerlessObservedTelemetry":
+        def pick(name: str, *aliases: str, default: Any = None) -> Any:
+            for key in (name, *aliases):
+                if key in payload:
+                    return payload[key]
+            if default is not None:
+                return default
+            raise ValueError(f"observed telemetry missing {name}")
+
+        monthly_cost = payload.get(
+            "monthly_compute_cost_usd",
+            payload.get("monthly_cost_usd"),
+        )
+        return cls(
+            requests_per_second=float(pick("requests_per_second", "rps", "observed_rps")),
+            avg_request_ms=float(pick("avg_request_ms", "avg_ms", "observed_avg_request_ms")),
+            p95_request_ms=float(pick("p95_request_ms", "p95_ms", "observed_p95_request_ms")),
+            p99_request_ms=float(pick("p99_request_ms", "p99_ms", "observed_p99_request_ms")),
+            cold_start_ms=float(pick("cold_start_ms", "cold_ms", "observed_cold_start_ms")),
+            error_rate=float(pick("error_rate", "observed_error_rate", default=0.0)),
+            max_replicas=int(pick("max_replicas", "observed_max_replicas", default=1)),
+            scale_out_seconds=float(
+                pick("scale_out_seconds", "observed_scale_out_seconds", default=0.0)
+            ),
+            monthly_compute_cost_usd=(
+                None if monthly_cost is None else round(float(monthly_cost), 2)
+            ),
+            source=str(payload.get("source", "manual")),
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -294,6 +374,7 @@ class WaveMindServerlessSpec:
     def operational_profile(
         self,
         target: ServerlessWorkloadTarget | None = None,
+        observed: ServerlessObservedTelemetry | None = None,
     ) -> dict[str, Any]:
         target = target or ServerlessWorkloadTarget()
         readiness = self.readiness_report()
@@ -333,14 +414,30 @@ class WaveMindServerlessSpec:
         )
         monthly_compute_cost_usd = round(active_compute_cost + idle_compute_cost, 2)
         cost_ok = monthly_compute_cost_usd <= target.monthly_budget_usd
-        valid = bool(
+        deterministic_valid = bool(
             external_state_ok
             and scale_out_possible
             and warm_p99_ok
             and cold_start_budget_ok
             and cost_ok
         )
-        return {
+        observed_profile = (
+            _serverless_observed_profile(
+                target=target,
+                observed=observed,
+                max_scale=self.max_scale,
+            )
+            if observed is not None
+            else {}
+        )
+        valid = bool(
+            deterministic_valid
+            and (
+                not observed_profile
+                or observed_profile["observed_slo_pass"]
+            )
+        )
+        payload = {
             "mode": "serverless-operational",
             "valid": valid,
             "slo_pass": valid,
@@ -370,8 +467,12 @@ class WaveMindServerlessSpec:
             "replica_hourly_cost_usd": target.replica_hourly_cost_usd,
             "monthly_compute_cost_usd": monthly_compute_cost_usd,
             "monthly_budget_usd": target.monthly_budget_usd,
+            "max_error_rate": target.max_error_rate,
+            "max_scale_out_seconds": target.max_scale_out_seconds,
             "cost_ok": cost_ok,
         }
+        payload.update(observed_profile)
+        return payload
 
     def _labels(self, *, component: str = "serverless-api") -> dict[str, str]:
         return {
@@ -384,6 +485,56 @@ class WaveMindServerlessSpec:
 
 def serverless_sample_bundle(spec: WaveMindServerlessSpec | None = None) -> dict[str, Any]:
     return (spec or WaveMindServerlessSpec()).resource_list()
+
+
+def _serverless_observed_profile(
+    *,
+    target: ServerlessWorkloadTarget,
+    observed: ServerlessObservedTelemetry,
+    max_scale: int,
+) -> dict[str, Any]:
+    cold_start_total_ms = observed.cold_start_ms + observed.p99_request_ms
+    observed_traffic_ok = observed.requests_per_second >= target.requests_per_second * 0.95
+    observed_p99_ok = observed.p99_request_ms <= target.target_p99_ms
+    observed_cold_start_budget_ok = cold_start_total_ms <= target.cold_start_budget_ms
+    observed_error_rate_ok = observed.error_rate <= target.max_error_rate
+    observed_scale_out_ok = observed.scale_out_seconds <= target.max_scale_out_seconds
+    observed_capacity_ok = observed.max_replicas <= max_scale
+    observed_cost_ok = (
+        observed.monthly_compute_cost_usd is None
+        or observed.monthly_compute_cost_usd <= target.monthly_budget_usd
+    )
+    observed_slo_pass = bool(
+        observed_traffic_ok
+        and observed_p99_ok
+        and observed_cold_start_budget_ok
+        and observed_error_rate_ok
+        and observed_scale_out_ok
+        and observed_capacity_ok
+        and observed_cost_ok
+    )
+    return {
+        "observed_telemetry_present": True,
+        "observed_telemetry_source": observed.source,
+        "observed_requests_per_second": observed.requests_per_second,
+        "observed_avg_request_ms": observed.avg_request_ms,
+        "observed_p95_request_ms": observed.p95_request_ms,
+        "observed_p99_request_ms": observed.p99_request_ms,
+        "observed_cold_start_ms": observed.cold_start_ms,
+        "observed_cold_start_total_ms": cold_start_total_ms,
+        "observed_error_rate": observed.error_rate,
+        "observed_max_replicas": observed.max_replicas,
+        "observed_scale_out_seconds": observed.scale_out_seconds,
+        "observed_monthly_compute_cost_usd": observed.monthly_compute_cost_usd,
+        "observed_traffic_ok": observed_traffic_ok,
+        "observed_p99_ok": observed_p99_ok,
+        "observed_cold_start_budget_ok": observed_cold_start_budget_ok,
+        "observed_error_rate_ok": observed_error_rate_ok,
+        "observed_scale_out_ok": observed_scale_out_ok,
+        "observed_capacity_ok": observed_capacity_ok,
+        "observed_cost_ok": observed_cost_ok,
+        "observed_slo_pass": observed_slo_pass,
+    }
 
 
 def _secret_key_ref(ref: SecretEnvRef) -> dict[str, Any]:

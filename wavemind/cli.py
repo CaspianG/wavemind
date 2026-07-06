@@ -15,7 +15,12 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
-from .serverless import SecretEnvRef, ServerlessWorkloadTarget, WaveMindServerlessSpec
+from .serverless import (
+    SecretEnvRef,
+    ServerlessObservedTelemetry,
+    ServerlessWorkloadTarget,
+    WaveMindServerlessSpec,
+)
 from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
@@ -342,6 +347,12 @@ def build_parser() -> argparse.ArgumentParser:
     serverless_sample.add_argument("--active-fraction", type=float, default=0.35)
     serverless_sample.add_argument("--replica-hourly-cost-usd", type=float, default=0.08)
     serverless_sample.add_argument("--monthly-budget-usd", type=float, default=750.0)
+    serverless_sample.add_argument("--max-error-rate", type=float, default=0.01)
+    serverless_sample.add_argument("--max-scale-out-seconds", type=float, default=60.0)
+    serverless_sample.add_argument(
+        "--observed-telemetry",
+        help="JSON file, or '-', with observed Knative/KEDA load-test telemetry.",
+    )
     serverless_sample.add_argument("--json", action="store_true")
     serverless_sample.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
 
@@ -1292,7 +1303,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "serverless-sample":
         spec = _serverless_spec_from_args(args)
         if args.operational_profile:
-            payload = spec.operational_profile(_serverless_workload_target_from_args(args))
+            payload = spec.operational_profile(
+                _serverless_workload_target_from_args(args),
+                observed=_serverless_observed_telemetry_from_args(args),
+            )
         elif args.readiness:
             payload = spec.readiness_report()
         else:
@@ -1724,7 +1738,17 @@ def _serverless_workload_target_from_args(args: argparse.Namespace) -> Serverles
         active_fraction=args.active_fraction,
         replica_hourly_cost_usd=args.replica_hourly_cost_usd,
         monthly_budget_usd=args.monthly_budget_usd,
+        max_error_rate=args.max_error_rate,
+        max_scale_out_seconds=args.max_scale_out_seconds,
     )
+
+
+def _serverless_observed_telemetry_from_args(
+    args: argparse.Namespace,
+) -> ServerlessObservedTelemetry | None:
+    if not args.observed_telemetry:
+        return None
+    return ServerlessObservedTelemetry.from_mapping(_read_json_file(args.observed_telemetry))
 
 
 def _read_json_file(path: str) -> dict[str, object]:

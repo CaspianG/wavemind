@@ -62,6 +62,7 @@ from wavemind import (
     sync_namespace_delta,
     table_payload,
     video_payload,
+    ServerlessObservedTelemetry,
     ServerlessWorkloadTarget,
     WaveMindClusterSpec,
     WaveMindServerlessSpec,
@@ -706,10 +707,24 @@ def run_serverless_operational_profile() -> dict[str, object]:
         active_fraction=0.35,
         replica_hourly_cost_usd=0.08,
         monthly_budget_usd=750.0,
+        max_error_rate=0.01,
+        max_scale_out_seconds=60.0,
+    )
+    observed = ServerlessObservedTelemetry(
+        requests_per_second=3280.0,
+        avg_request_ms=72.0,
+        p95_request_ms=180.0,
+        p99_request_ms=300.0,
+        cold_start_ms=850.0,
+        error_rate=0.001,
+        max_replicas=5,
+        scale_out_seconds=18.0,
+        monthly_compute_cost_usd=92.0,
+        source="scale-readiness-fixture",
     )
     return {
         "engine": "WaveMind serverless operational profile",
-        **spec.operational_profile(target),
+        **spec.operational_profile(target, observed=observed),
     }
 
 
@@ -2734,6 +2749,7 @@ def main() -> int:
             print(f"| serverless ops | burst_capacity_rps | {result['burst_capacity_rps']:.0f} |")
             print(f"| serverless ops | cold_start_budget_ok | {result['cold_start_budget_ok']} |")
             print(f"| serverless ops | monthly_compute_cost_usd | {result['monthly_compute_cost_usd']:.2f} |")
+            print(f"| serverless ops | observed_slo_pass | {result.get('observed_slo_pass')} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")
