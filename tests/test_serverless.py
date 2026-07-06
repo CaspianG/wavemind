@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from wavemind import SecretEnvRef, WaveMindServerlessSpec, serverless_sample_bundle
+from wavemind import __version__, SecretEnvRef, WaveMindServerlessSpec, serverless_sample_bundle
 
 
 def run_cli(*args):
@@ -36,7 +36,7 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
     spec = WaveMindServerlessSpec(
         name="wm-serverless",
         namespace="memory",
-        image="ghcr.io/caspiang/wavemind:2.4.17",
+        image=f"ghcr.io/caspiang/wavemind:{__version__}",
         min_scale=0,
         max_scale=50,
         target_concurrency=80,
