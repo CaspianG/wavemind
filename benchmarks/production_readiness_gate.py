@@ -69,6 +69,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
+        "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
     }
 
@@ -89,6 +90,20 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "image: redis:7-alpine" in full_check_workflow
         and "benchmarks/redis_api_load_benchmark.py" in full_check_workflow
         and "--fail-on-slo" in full_check_workflow
+    )
+    redis_api_load = artifacts["redis_api_load"]
+    redis_api_load_pass = (
+        redis_api_load_ci_configured
+        and redis_api_load.get("ok")
+        and redis_api_load.get("shared_cache_visible_across_processes")
+        and redis_api_load.get("shared_fresh_cache_visible_across_processes")
+        and redis_api_load.get("cache_invalidated_on_remember")
+        and redis_api_load.get("stale_prevented_after_remember")
+        and redis_api_load.get("cache_invalidated_on_forget")
+        and redis_api_load.get("stale_prevented_after_forget")
+        and float(redis_api_load.get("success_rate", 0.0)) >= 1.0
+        and float(redis_api_load.get("p99_latency_ms", float("inf"))) <= 1000.0
+        and int(redis_api_load.get("workers", 0)) >= 2
     )
     audit = artifacts["audit"]
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
@@ -354,19 +369,21 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         ),
         _criterion(
             criterion_id="real_redis_api_load_ci",
-            title="Real Redis multi-process API load is enforced in CI",
-            status="pass" if redis_api_load_ci_configured else "fail",
+            title="Real Redis multi-process API load passes SLO",
+            status="pass" if redis_api_load_pass else "fail",
             requirement=(
                 "CI must start a real Redis service, launch multiple uvicorn "
                 "workers, verify cross-process cache visibility, and fail on "
                 "stale-cache or p99 SLO regression."
             ),
             evidence=(
-                f"runner {redis_api_load_script_exists}, "
                 f"workflow {redis_api_load_ci_configured}, "
-                "service redis:7-alpine"
+                f"workers {redis_api_load.get('workers')}, "
+                f"success_rate {redis_api_load.get('success_rate')}, "
+                f"p99 {redis_api_load.get('p99_latency_ms')} ms, "
+                f"stale prevented {redis_api_load.get('stale_prevented_after_forget')}"
             ),
-            next_step="Upload and inspect redis-api-load-results artifacts on every release candidate.",
+            next_step="Refresh redis_api_load_results.json from the CI artifact on every release candidate.",
         ),
         _criterion(
             criterion_id="memory_os_worker",

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T06:23:59Z",
+  "generated_at": "2026-07-06T06:32:49Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -94,11 +94,11 @@
     },
     {
       "id": "real_redis_api_load_ci",
-      "title": "Real Redis multi-process API load is enforced in CI",
+      "title": "Real Redis multi-process API load passes SLO",
       "status": "pass",
       "requirement": "CI must start a real Redis service, launch multiple uvicorn workers, verify cross-process cache visibility, and fail on stale-cache or p99 SLO regression.",
-      "evidence": "runner True, workflow True, service redis:7-alpine",
-      "next_step": "Upload and inspect redis-api-load-results artifacts on every release candidate."
+      "evidence": "workflow True, workers 2, success_rate 1.0, p99 71.7594539700039 ms, stale prevented True",
+      "next_step": "Refresh redis_api_load_results.json from the CI artifact on every release candidate."
     },
     {
       "id": "memory_os_worker",
