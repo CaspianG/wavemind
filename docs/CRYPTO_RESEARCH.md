@@ -157,7 +157,7 @@ python benchmarks/crypto_price_target_benchmark.py \
   --exchange okx \
   --symbols HYPE/USDT:USDT XRP/USDT:USDT ZEC/USDT:USDT SOL/USDT:USDT \
   --timeframes 1h 4h \
-  --engines wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
+  --engines wavemind-regime-policy-target wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
   --bars 1200
 ```
 
@@ -165,6 +165,7 @@ Checked-in result:
 
 | engine | queries | direction hit | MAE return | MAPE | worst slice hit |
 |---|---:|---:|---:|---:|---:|
+| WaveMind regime-policy target | 2880 | 0.591 | 392.0 bps | 4.04% | 0.411 |
 | WaveMind perp field target | 2880 | 0.591 | 392.4 bps | 4.05% | 0.411 |
 | WaveMind market-field target | 2880 | 0.436 | 466.6 bps | 4.78% | 0.000 |
 | WaveMind robust target | 2880 | 0.591 | 392.4 bps | 4.05% | 0.411 |
@@ -182,6 +183,14 @@ Follow-up target-price experiments:
 - `wavemind-online-expert-target` was tested as a query-local expert selector.
   It was too unstable across HYPE/ZEC and is not part of the default benchmark.
   This is treated as a negative result, not a production upgrade.
+- `wavemind-regime-policy-target` is the latest guarded target-price layer. It
+  uses fold-local regime buckets only as a magnitude overlay and keeps the
+  robust/perp sign anchor. Direct bucket switching and inverted candidates were
+  tested and rejected because they improved validation slices but damaged
+  future HYPE/ZEC/SOL slices. The guarded overlay keeps direction hit at `0.591`
+  and improves MAE from `392.4` to `392.0` bps, RMSE from `612.6` to `610.9`
+  bps, MAPE from `4.05%` to `4.04%`, and worst-slice MAPE from `22.39%` to
+  `22.25%`. It disables itself on `1d`, where it did not beat robust.
 
 Signal-quality result:
 
@@ -193,7 +202,8 @@ Signal-quality result:
 Interpretation: the 87.2% result is a real but narrow large-move directional
 edge. It does not mean the system has a universal 80-90% target-price forecast.
 The 7d perpetual check remains weak: 240 daily walk-forward predictions,
-direction hit `0.533`, MAPE `8.45%`.
+direction hit `0.533`, MAPE `8.45%`. The regime-policy overlay falls back to
+robust on this horizon until a dedicated daily policy proves itself.
 
 ## Confidence And Calibration
 
@@ -715,13 +725,17 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 16. Done: signal-quality benchmark separates always-on target forecasts from
     trade-quality research tiers. The strict calm-consensus tier reaches
     `0.750` direction hit on 216 walk-forward events at `0.025` coverage.
-17. Next: expand consensus-edge coverage without dropping below 0.70 direction
+17. Done: guarded perp regime-policy magnitude overlay. Direct regime switching
+    and inverted candidates failed transfer tests, but the final sign-anchored
+    overlay keeps 1h/4h perpetual direction hit at `0.591` and lowers MAE from
+    `392.4` to `392.0` bps. The layer is disabled on 1d.
+18. Next: expand consensus-edge coverage without dropping below 0.70 direction
     hit, and fix the weak symbol/timeframe/fold slices.
-18. Next: validate the market-field target on more exchanges, date ranges,
+19. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-19. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+20. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-20. Add signal construction only after retrieval quality is stable.
-21. Publish results separately from the main README to avoid confusing memory
+21. Add signal construction only after retrieval quality is stable.
+22. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

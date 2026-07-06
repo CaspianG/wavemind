@@ -14,6 +14,7 @@ from benchmarks.crypto_price_target_benchmark import (
     _directional_head_feature_values,
     _perp_field_value_from_features,
     _market_field_value_from_features,
+    _regime_policy_bucket_keys,
     _robust_1h_target_value,
     _robust_1d_target_value,
     load_markets,
@@ -48,6 +49,7 @@ def test_price_target_benchmark_scores_future_price():
             "wavemind-market-field-target",
             "online-expert",
             "directional-head",
+            "regime-policy",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -67,6 +69,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind market-field target"]["queries"] == 24
     assert result_by_engine["WaveMind online-expert target"]["queries"] == 24
     assert result_by_engine["WaveMind directional-head target"]["queries"] == 24
+    assert result_by_engine["WaveMind regime-policy target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["queries"] == 24
     assert result_by_engine["WaveMind ensemble target"]["queries"] == 24
     assert result_by_engine["WaveMind calibrated target"]["queries"] == 24
@@ -74,6 +77,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind robust target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind online-expert target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind directional-head target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind regime-policy target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind market-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
@@ -84,6 +88,7 @@ def test_price_target_benchmark_scores_future_price():
     assert payload["event_metrics"][0]["actual_price"] > 0.0
     assert payload["event_metrics"][0]["predicted_direction"] in {"up", "down"}
     assert any("directional_head" in row for row in payload["by_market"])
+    assert any("regime_target_policy" in row for row in payload["by_market"])
 
     sampled = sampled_event_payload(payload, sample_size=5)
     assert sampled["event_metrics_total"] == len(payload["event_metrics"])
@@ -152,6 +157,42 @@ def test_learned_price_target_alias_runs_with_safe_fallback():
     assert result_by_engine["WaveMind robust target"]["queries"] == 8
     assert result_by_engine["WaveMind learned target"]["mean_abs_return_error_bps"] >= 0.0
     assert payload["by_market"][0]["target_model"]["note"]
+
+
+def test_regime_policy_falls_back_on_daily_horizon():
+    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="1d", bars=180, seed=71)
+    windows = make_ohlcv_windows(
+        bars,
+        symbol="BTC/USDT",
+        timeframe="1d",
+        window=16,
+        horizon=7,
+        direction_threshold_bps=0.0,
+    )
+
+    payload = run_price_target_benchmark(
+        markets=[
+            {
+                "symbol": "BTC/USDT",
+                "timeframe": "1d",
+                "horizon": 7,
+                "bars": bars,
+                "windows": windows,
+                "source": "synthetic",
+            }
+        ],
+        engines=["regime-policy", "wavemind-robust-target"],
+        train_windows=95,
+        test_windows=8,
+        folds=1,
+        calibration_windows=48,
+    )
+
+    result_by_engine = {result["engine"]: result for result in payload["results"]}
+    assert result_by_engine["WaveMind regime-policy target"]["queries"] == 8
+    assert result_by_engine["WaveMind robust target"]["queries"] == 8
+    assert payload["by_market"][0]["regime_target_policy"]["enabled"] is False
+    assert payload["by_market"][0]["regime_target_policy"]["note"] == "daily_horizon_requires_separate_policy"
 
 
 def test_robust_1d_target_reduces_magnitude_in_high_risk_windows():
@@ -264,6 +305,24 @@ def test_directional_head_features_include_signals_and_agreements():
     assert values["support_signed_wave"] == 2.0
 
 
+def test_regime_policy_bucket_keys_are_specific_then_broad():
+    features = {
+        "trend_code": 1.0,
+        "recent_trend_code": -1.0,
+        "rsi": 72.0,
+        "volatility_bps": 250.0,
+        "drawdown_bps": -320.0,
+        "close_position": 0.9,
+        "range_compression": 0.6,
+    }
+
+    keys = _regime_policy_bucket_keys(features, "4h")
+
+    assert keys[0] == "tf=4h|trend=up|recent=down|rsi=overbought|vol=high|dd=pullback|close=high"
+    assert keys[-1] == "tf=4h|vol=high"
+    assert len(keys) == len(set(keys))
+
+
 def test_cache_path_sanitizes_perpetual_symbols(tmp_path):
     path = _cache_path(tmp_path, "okx", "HYPE/USDT:USDT", "1h")
 
@@ -292,6 +351,7 @@ def test_price_target_markdown_and_cli(tmp_path):
             "wavemind-market-field-target",
             "online-expert",
             "directional-head",
+            "regime-policy",
             "perp-field",
             "wavemind-robust-target",
             "wavemind-ensemble",
@@ -330,6 +390,7 @@ def test_price_target_markdown_and_cli(tmp_path):
     assert payload["results"][0]["engine"] == "WaveMind market-field target"
     assert any(result["engine"] == "WaveMind online-expert target" for result in payload["results"])
     assert any(result["engine"] == "WaveMind directional-head target" for result in payload["results"])
+    assert any(result["engine"] == "WaveMind regime-policy target" for result in payload["results"])
     assert any(result["engine"] == "WaveMind perp field target" for result in payload["results"])
     assert payload["event_metrics_total"] >= len(payload["event_metrics"])
     assert "event_metrics_truncated" in payload

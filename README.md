@@ -97,6 +97,10 @@ Implemented in this branch:
   HYPE/XRP/ZEC/SOL USDT perpetual signal-quality tiers.
 - `benchmarks/crypto_perp_7d_price_target_results.json` and `.md` - OKX
   HYPE/XRP/ZEC/SOL 7d perpetual target-price check with 240 daily bars.
+- `benchmarks/crypto_perp_regime_policy_results.json` and `.md` - OKX
+  HYPE/XRP/ZEC/SOL 1h/4h perpetual regime-policy magnitude-overlay check.
+- `benchmarks/crypto_perp_7d_regime_policy_results.json` and `.md` - guarded
+  7d check where regime-policy falls back to robust on the daily horizon.
 - `benchmarks/crypto_perp_current_forecast_24h.json` / `.md` and
   `benchmarks/crypto_perp_current_forecast_7d.json` / `.md` - current OKX
   perpetual research forecast snapshots.
@@ -390,7 +394,7 @@ python benchmarks/crypto_price_target_benchmark.py \
   --exchange okx \
   --symbols HYPE/USDT:USDT XRP/USDT:USDT ZEC/USDT:USDT SOL/USDT:USDT \
   --timeframes 1h 4h \
-  --engines wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
+  --engines wavemind-regime-policy-target wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
   --bars 1200
 ```
 
@@ -399,6 +403,7 @@ walk-forward predictions.
 
 | engine | direction hit | MAE return | MAPE | worst slice hit |
 |---|---:|---:|---:|---:|
+| WaveMind regime-policy target | 0.591 | 392.0 bps | 4.04% | 0.411 |
 | WaveMind perp field target | 0.591 | 392.4 bps | 4.05% | 0.411 |
 | WaveMind market-field target | 0.436 | 466.6 bps | 4.78% | 0.000 |
 | WaveMind robust target | 0.591 | 392.4 bps | 4.05% | 0.411 |
@@ -417,6 +422,14 @@ not beat the current perp/robust target on the full HYPE/XRP/ZEC/SOL perpetual
 set: `0.580` direction hit, `393.1 bps` MAE, `4.05%` MAPE. The production-safe
 benchmark winner therefore remains `wavemind-perp-field-target`.
 
+Newer target-price iteration: `wavemind-regime-policy-target` uses fold-local
+regime buckets only as a bounded magnitude overlay. It is not allowed to flip
+the robust/perp direction, and it disables itself on the daily horizon. On the
+1h/4h perpetual check it keeps direction hit at `0.591` while reducing MAE from
+`392.4` to `392.0` bps, RMSE from `612.6` to `610.9` bps, MAPE from `4.05%` to
+`4.04%`, and worst-slice MAPE from `22.39%` to `22.25%`. This is a small safe
+target-price improvement, not a breakthrough directional model.
+
 The strongest current perpetual result is narrower:
 
 | tier | selected | coverage | direction hit | MAPE |
@@ -428,7 +441,8 @@ This is a real 80%+ directional edge, but only on a low-coverage large-move 1h
 subset. It is not a precise target-price model and not a claim that every
 coin/timeframe reaches 80-90% accuracy. The current 7d perpetual check is much
 weaker: `0.533` direction hit and `8.45%` MAPE on 240 daily walk-forward
-predictions.
+predictions. The regime-policy overlay is disabled on 1d because it did not
+improve the daily validation profile.
 
 ## Signal Quality Benchmark
 
@@ -603,11 +617,15 @@ Near-term execution plan:
 21. Done: signal-quality benchmark separates always-on target forecasts from
     trade-quality research tiers. The strict calm-consensus tier reaches
     `0.750` direction hit on 216 walk-forward events at `0.025` coverage.
-22. Next: expand consensus-edge coverage without dropping below 0.70 direction
+22. Done: guarded perp regime-policy magnitude overlay. Direct regime switching
+    and inverted candidates failed transfer tests, but the final sign-anchored
+    overlay keeps 1h/4h perpetual direction hit at `0.591` and lowers MAE from
+    `392.4` to `392.0` bps. The layer is disabled on 1d.
+23. Next: expand consensus-edge coverage without dropping below 0.70 direction
     hit, and fix the weak symbol/timeframe/fold slices.
-23. Next: validate the market-field target on more exchanges, date ranges,
+24. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-24. Only after robustness holds, test signal construction and backtesting.
+25. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

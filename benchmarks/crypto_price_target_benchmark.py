@@ -133,6 +133,20 @@ class DirectionalHeadCalibration:
     note: str
 
 
+@dataclass(frozen=True)
+class RegimeTargetPolicyCalibration:
+    enabled: bool
+    default_candidate: str
+    selected_by_bucket: dict[str, str]
+    bucket_samples: dict[str, int]
+    bucket_validation_direction_hit: dict[str, float]
+    bucket_validation_mae_bps: dict[str, float]
+    bucket_robust_direction_hit: dict[str, float]
+    bucket_robust_mae_bps: dict[str, float]
+    samples: int
+    note: str
+
+
 def run_price_target_benchmark(
     *,
     markets: list[dict],
@@ -191,6 +205,15 @@ def run_price_target_benchmark(
                 if "wavemind-directional-head-target" in engine_keys
                 else _disabled_directional_head("not_requested")
             )
+            fold_regime_policy = (
+                _fit_regime_target_policy(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=fold_calibration,
+                )
+                if "wavemind-regime-policy-target" in engine_keys
+                else _disabled_regime_target_policy("not_requested")
+            )
             fold_events: list[PriceTargetEvent] = []
             for query in queries:
                 history = _mature_history(windows, current=query)
@@ -207,6 +230,7 @@ def run_price_target_benchmark(
                         target_model=fold_target_model,
                         directional_policy=fold_directional_policy,
                         directional_head=fold_directional_head,
+                        regime_policy=fold_regime_policy,
                     )
                     event = _price_target_event(
                         engine=_engine_name(engine_key),
@@ -231,6 +255,8 @@ def run_price_target_benchmark(
                     fold_metadata["directional_policy"] = asdict(fold_directional_policy)
                 if "wavemind-directional-head-target" in engine_keys:
                     fold_metadata["directional_head"] = asdict(fold_directional_head)
+                if "wavemind-regime-policy-target" in engine_keys:
+                    fold_metadata["regime_target_policy"] = asdict(fold_regime_policy)
                 by_market.append(
                     _summarize_events(
                         engine_events,
@@ -394,6 +420,7 @@ def _predict_return(
     target_model: TargetModelCalibration,
     directional_policy: DirectionalPolicyCalibration,
     directional_head: DirectionalHeadCalibration,
+    regime_policy: RegimeTargetPolicyCalibration,
 ) -> tuple[float, int, str]:
     if engine_key == "wavemind-ensemble":
         components = _component_predictions(history, query, horizon=horizon)
@@ -420,6 +447,14 @@ def _predict_return(
             horizon=horizon,
             calibration=calibration,
             directional_head=directional_head,
+        )
+    if engine_key == "wavemind-regime-policy-target":
+        return _regime_policy_target_return(
+            history,
+            query,
+            horizon=horizon,
+            calibration=calibration,
+            regime_policy=regime_policy,
         )
     if engine_key == "wavemind-online-expert-target":
         return _online_expert_target_return(history, query, horizon=horizon, calibration=calibration)
@@ -1431,6 +1466,476 @@ def _fit_directional_policy(
     )
 
 
+def _disabled_regime_target_policy(note: str) -> RegimeTargetPolicyCalibration:
+    return RegimeTargetPolicyCalibration(
+        enabled=False,
+        default_candidate="robust",
+        selected_by_bucket={},
+        bucket_samples={},
+        bucket_validation_direction_hit={},
+        bucket_validation_mae_bps={},
+        bucket_robust_direction_hit={},
+        bucket_robust_mae_bps={},
+        samples=0,
+        note=note,
+    )
+
+
+def _fit_regime_target_policy(
+    history: list[OHLCVWindow],
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> RegimeTargetPolicyCalibration:
+    if len(history) < 72:
+        return _disabled_regime_target_policy("insufficient_history")
+    timeframe = str(history[-1].timeframe) if history else ""
+    if timeframe == "1d":
+        return _disabled_regime_target_policy("daily_horizon_requires_separate_policy")
+    rows: list[dict[str, object]] = []
+    for index in range(32, len(history)):
+        prior = history[:index]
+        if len(prior) < 24:
+            continue
+        window = history[index]
+        features = _target_model_features(prior, window, horizon=horizon, calibration=calibration)
+        rows.append(
+            {
+                "bucket_keys": _regime_policy_bucket_keys(features, window.timeframe),
+                "candidates": _directional_candidate_values(features, window.timeframe),
+                "actual": float(window.future_return_bps),
+            }
+        )
+    min_samples = _regime_policy_min_samples(timeframe)
+    if len(rows) < min_samples:
+        return _disabled_regime_target_policy("insufficient_calibration_samples")
+
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        for key in row["bucket_keys"]:
+            grouped.setdefault(str(key), []).append(row)
+
+    selected_by_bucket: dict[str, str] = {}
+    bucket_samples: dict[str, int] = {}
+    bucket_hit: dict[str, float] = {}
+    bucket_mae: dict[str, float] = {}
+    bucket_robust_hit: dict[str, float] = {}
+    bucket_robust_mae: dict[str, float] = {}
+    for key, bucket_rows in sorted(grouped.items(), key=lambda item: (-len(str(item[0]).split("|")), item[0])):
+        if len(bucket_rows) < min_samples:
+            continue
+        selection = _select_regime_policy_candidate(bucket_rows, timeframe=timeframe)
+        if selection is None or selection["selected"] == "robust":
+            continue
+        selected_by_bucket[key] = str(selection["selected"])
+        bucket_samples[key] = int(selection["samples"])
+        bucket_hit[key] = float(selection["direction_hit"])
+        bucket_mae[key] = float(selection["mae_bps"])
+        bucket_robust_hit[key] = float(selection["robust_direction_hit"])
+        bucket_robust_mae[key] = float(selection["robust_mae_bps"])
+
+    if not selected_by_bucket:
+        return RegimeTargetPolicyCalibration(
+            enabled=False,
+            default_candidate="robust",
+            selected_by_bucket={},
+            bucket_samples={},
+            bucket_validation_direction_hit={},
+            bucket_validation_mae_bps={},
+            bucket_robust_direction_hit={},
+            bucket_robust_mae_bps={},
+            samples=len(rows),
+            note="no_regime_bucket_beat_robust_validation_gate",
+        )
+    safety = _regime_policy_safety_stats(rows, selected_by_bucket, timeframe=timeframe)
+    if safety is None:
+        return _disabled_regime_target_policy("invalid_global_safety_validation")
+    globally_better = (
+        safety["policy_direction_hit"] >= safety["robust_direction_hit"] + 0.025
+        and safety["policy_mae_bps"] <= safety["robust_mae_bps"] * 0.98
+    )
+    chunk_stable = _regime_policy_is_globally_stable(rows, selected_by_bucket, timeframe=timeframe)
+    if not (globally_better and chunk_stable):
+        disabled = _disabled_regime_target_policy(
+            "global_policy_validation_not_better_than_robust:"
+            f"policy_hit={safety['policy_direction_hit']:.3f}:"
+            f"robust_hit={safety['robust_direction_hit']:.3f}:"
+            f"policy_mae={safety['policy_mae_bps']:.1f}:"
+            f"robust_mae={safety['robust_mae_bps']:.1f}"
+        )
+        return RegimeTargetPolicyCalibration(
+            enabled=False,
+            default_candidate=disabled.default_candidate,
+            selected_by_bucket={},
+            bucket_samples={},
+            bucket_validation_direction_hit={},
+            bucket_validation_mae_bps={},
+            bucket_robust_direction_hit={},
+            bucket_robust_mae_bps={},
+            samples=len(rows),
+            note=disabled.note,
+        )
+    return RegimeTargetPolicyCalibration(
+        enabled=True,
+        default_candidate="robust",
+        selected_by_bucket=selected_by_bucket,
+        bucket_samples=bucket_samples,
+        bucket_validation_direction_hit=bucket_hit,
+        bucket_validation_mae_bps=bucket_mae,
+        bucket_robust_direction_hit=bucket_robust_hit,
+        bucket_robust_mae_bps=bucket_robust_mae,
+        samples=len(rows),
+        note="fold-local regime bucket selector fitted on matured pre-test history only",
+    )
+
+
+def _regime_policy_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    regime_policy: RegimeTargetPolicyCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    candidates = _directional_candidate_values(features, query.timeframe)
+    robust, robust_suffix = _robust_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    selected = regime_policy.default_candidate
+    selected_bucket = "default"
+    if regime_policy.enabled:
+        for key in _regime_policy_bucket_keys(features, query.timeframe):
+            if key in regime_policy.selected_by_bucket:
+                selected = regime_policy.selected_by_bucket[key]
+                selected_bucket = key
+                break
+    if selected not in candidates:
+        return robust, support, f"{robust_suffix}+regime_policy_fallback:missing_candidate"
+    candidate_value = _force_nonzero(candidates[selected], fallback=robust)
+    if selected_bucket == "default":
+        value = robust
+        blend_weight = 0.0
+    else:
+        hit = regime_policy.bucket_validation_direction_hit.get(selected_bucket, 0.0)
+        robust_hit = regime_policy.bucket_robust_direction_hit.get(selected_bucket, 0.0)
+        mae = regime_policy.bucket_validation_mae_bps.get(selected_bucket, math.inf)
+        robust_mae = regime_policy.bucket_robust_mae_bps.get(selected_bucket, math.inf)
+        mae_ratio = mae / max(robust_mae, 1e-9)
+        blend_weight = 0.25
+        if hit >= robust_hit + 0.10 and mae_ratio <= 0.92:
+            blend_weight = 0.40
+        elif hit >= robust_hit + 0.06 and mae_ratio <= 0.96:
+            blend_weight = 0.32
+        magnitude = (1.0 - blend_weight) * abs(robust) + blend_weight * abs(candidate_value)
+        value = math.copysign(magnitude, robust)
+    hit = regime_policy.bucket_validation_direction_hit.get(selected_bucket, 0.0)
+    robust_hit = regime_policy.bucket_robust_direction_hit.get(selected_bucket, 0.0)
+    method = (
+        "fold_local_regime_policy:"
+        f"{selected}:bucket={selected_bucket}:"
+        f"magnitude_weight={blend_weight:.2f}:hit={hit:.3f}:robust_hit={robust_hit:.3f}:{robust_suffix}"
+    )
+    return _force_nonzero(value, fallback=robust), support, method
+
+
+def _select_regime_policy_candidate(rows: list[dict[str, object]], *, timeframe: str) -> dict[str, object] | None:
+    min_validation = max(10, _regime_policy_min_samples(timeframe) // 3)
+    split = min(len(rows) - min_validation, max(min_validation, int(len(rows) * 0.65)))
+    if split <= 0 or split >= len(rows):
+        return None
+    validation_rows = rows[split:]
+    robust_stats = _regime_policy_candidate_stats(validation_rows, "robust")
+    if robust_stats is None:
+        return None
+    robust_hit = robust_stats["direction_hit"]
+    robust_mae = robust_stats["mae_bps"]
+    candidate_names = sorted({
+        name
+        for row in validation_rows
+        for name in dict(row["candidates"]).keys()
+        if name not in {"naive", "inv_naive", "robust"}
+        and not name.startswith("inv_")
+    })
+    best: tuple[tuple[float, float, float, str], str, dict[str, float]] | None = None
+    for name in candidate_names:
+        stats = _regime_policy_candidate_stats(validation_rows, name)
+        if stats is None:
+            continue
+        if not _regime_policy_candidate_is_stable(validation_rows, name, robust_hit=robust_hit, robust_mae=robust_mae):
+            continue
+        hit_gain = stats["direction_hit"] - robust_hit
+        mae_ratio = stats["mae_bps"] / max(robust_mae, 1e-9)
+        lower_error_gate = hit_gain >= 0.04 and mae_ratio <= 0.92
+        high_hit_gate = stats["direction_hit"] >= max(0.62, robust_hit + 0.10) and mae_ratio <= 1.02
+        worst_slice_repair_gate = robust_hit < 0.48 and stats["direction_hit"] >= 0.56 and mae_ratio <= 0.98
+        if not (lower_error_gate or high_hit_gate or worst_slice_repair_gate):
+            continue
+        score = (
+            stats["direction_hit"] - 0.35 * max(0.0, mae_ratio - 1.0),
+            -mae_ratio,
+            hit_gain,
+            name,
+        )
+        if best is None or score > best[0]:
+            best = (score, name, stats)
+    if best is None:
+        return None
+    _, selected, stats = best
+    return {
+        "selected": selected,
+        "samples": len(validation_rows),
+        "direction_hit": stats["direction_hit"],
+        "mae_bps": stats["mae_bps"],
+        "robust_direction_hit": robust_hit,
+        "robust_mae_bps": robust_mae,
+    }
+
+
+def _regime_policy_candidate_is_stable(
+    rows: list[dict[str, object]],
+    candidate: str,
+    *,
+    robust_hit: float,
+    robust_mae: float,
+) -> bool:
+    if len(rows) < 12:
+        return False
+    chunk_count = 3 if len(rows) >= 30 else 2
+    chunk_size = max(1, math.ceil(len(rows) / chunk_count))
+    stable_chunks = 0
+    harmful_chunks = 0
+    evaluated = 0
+    for start in range(0, len(rows), chunk_size):
+        chunk = rows[start : start + chunk_size]
+        if len(chunk) < 4:
+            continue
+        stats = _regime_policy_candidate_stats(chunk, candidate)
+        robust_stats = _regime_policy_candidate_stats(chunk, "robust")
+        if stats is None or robust_stats is None:
+            continue
+        evaluated += 1
+        if stats["direction_hit"] >= max(0.52, robust_stats["direction_hit"] + 0.02) and stats["mae_bps"] <= robust_stats["mae_bps"] * 1.05:
+            stable_chunks += 1
+        if stats["direction_hit"] < robust_stats["direction_hit"] - 0.10 or stats["mae_bps"] > robust_stats["mae_bps"] * 1.25:
+            harmful_chunks += 1
+    if evaluated == 0 or harmful_chunks > 0:
+        return False
+    if robust_hit >= 0.68 and stable_chunks < max(2, evaluated):
+        return False
+    if robust_mae <= 1e-9:
+        return False
+    return stable_chunks >= max(1, evaluated - 1)
+
+
+def _regime_policy_candidate_stats(rows: list[dict[str, object]], candidate: str) -> dict[str, float] | None:
+    predictions = []
+    actuals = []
+    for row in rows:
+        candidates = dict(row["candidates"])
+        if candidate not in candidates:
+            continue
+        predictions.append(float(candidates[candidate]))
+        actuals.append(float(row["actual"]))
+    if not predictions:
+        return None
+    return {
+        "direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )),
+        "mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )),
+    }
+
+
+def _regime_policy_safety_stats(
+    rows: list[dict[str, object]],
+    selected_by_bucket: dict[str, str],
+    *,
+    timeframe: str,
+) -> dict[str, float] | None:
+    min_validation = max(12, _regime_policy_min_samples(timeframe) // 2)
+    split = min(len(rows) - min_validation, max(min_validation, int(len(rows) * 0.65)))
+    if split <= 0 or split >= len(rows):
+        return None
+    validation_rows = rows[split:]
+    return _regime_policy_prediction_stats(validation_rows, selected_by_bucket)
+
+
+def _regime_policy_prediction_stats(
+    rows: list[dict[str, object]],
+    selected_by_bucket: dict[str, str],
+) -> dict[str, float] | None:
+    robust_predictions = []
+    policy_predictions = []
+    actuals = []
+    for row in rows:
+        candidates = dict(row["candidates"])
+        robust = candidates.get("robust")
+        if robust is None:
+            continue
+        selected = _regime_policy_selected_candidate_for_keys(row["bucket_keys"], selected_by_bucket)
+        policy_value = candidates.get(selected, robust)
+        robust_predictions.append(float(robust))
+        policy_predictions.append(float(policy_value))
+        actuals.append(float(row["actual"]))
+    if not actuals:
+        return None
+    return {
+        "robust_direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+        "policy_direction_hit": float(statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(policy_predictions, actuals, strict=False)
+        )),
+        "robust_mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(robust_predictions, actuals, strict=False)
+        )),
+        "policy_mae_bps": float(statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(policy_predictions, actuals, strict=False)
+        )),
+    }
+
+
+def _regime_policy_is_globally_stable(
+    rows: list[dict[str, object]],
+    selected_by_bucket: dict[str, str],
+    *,
+    timeframe: str,
+) -> bool:
+    min_validation = max(12, _regime_policy_min_samples(timeframe) // 2)
+    split = min(len(rows) - min_validation, max(min_validation, int(len(rows) * 0.65)))
+    if split <= 0 or split >= len(rows):
+        return False
+    validation_rows = rows[split:]
+    chunk_count = 3 if len(validation_rows) >= 36 else 2
+    chunk_size = max(1, math.ceil(len(validation_rows) / chunk_count))
+    stable_chunks = 0
+    harmful_chunks = 0
+    evaluated = 0
+    for start in range(0, len(validation_rows), chunk_size):
+        stats = _regime_policy_prediction_stats(validation_rows[start : start + chunk_size], selected_by_bucket)
+        if stats is None:
+            continue
+        evaluated += 1
+        if (
+            stats["policy_direction_hit"] >= stats["robust_direction_hit"] + 0.015
+            and stats["policy_mae_bps"] <= stats["robust_mae_bps"] * 1.01
+        ):
+            stable_chunks += 1
+        if (
+            stats["policy_direction_hit"] < stats["robust_direction_hit"] - 0.04
+            or stats["policy_mae_bps"] > stats["robust_mae_bps"] * 1.10
+        ):
+            harmful_chunks += 1
+    return evaluated > 0 and harmful_chunks == 0 and stable_chunks >= max(1, evaluated - 1)
+
+
+def _regime_policy_selected_candidate_for_keys(keys: object, selected_by_bucket: dict[str, str]) -> str:
+    for key in keys:
+        if str(key) in selected_by_bucket:
+            return selected_by_bucket[str(key)]
+    return "robust"
+
+
+def _regime_policy_bucket_keys(features: dict[str, float], timeframe: str) -> tuple[str, ...]:
+    trend = _code_bucket(features.get("trend_code", 0.0))
+    recent = _code_bucket(features.get("recent_trend_code", 0.0))
+    rsi = _rsi_bucket(features.get("rsi", 50.0))
+    volatility = _volatility_bucket(features.get("volatility_bps", 0.0))
+    drawdown = _drawdown_bucket(features.get("drawdown_bps", 0.0))
+    close = _close_position_bucket(features.get("close_position", 0.5))
+    compression = _compression_bucket(features.get("range_compression", 1.0))
+    return (
+        f"tf={timeframe}|trend={trend}|recent={recent}|rsi={rsi}|vol={volatility}|dd={drawdown}|close={close}",
+        f"tf={timeframe}|trend={trend}|recent={recent}|rsi={rsi}|vol={volatility}|dd={drawdown}",
+        f"tf={timeframe}|trend={trend}|recent={recent}|rsi={rsi}|vol={volatility}",
+        f"tf={timeframe}|trend={trend}|recent={recent}|vol={volatility}|compression={compression}",
+        f"tf={timeframe}|trend={trend}|rsi={rsi}|dd={drawdown}",
+        f"tf={timeframe}|rsi={rsi}|vol={volatility}|close={close}",
+        f"tf={timeframe}|trend={trend}|recent={recent}",
+        f"tf={timeframe}|trend={trend}|vol={volatility}",
+        f"tf={timeframe}|trend={trend}",
+        f"tf={timeframe}|vol={volatility}",
+    )
+
+
+def _regime_policy_min_samples(timeframe: str) -> int:
+    if timeframe == "1d":
+        return 24
+    if timeframe == "4h":
+        return 36
+    return 42
+
+
+def _code_bucket(value: object) -> str:
+    numeric = _finite_float(value)
+    if numeric > 0.25:
+        return "up"
+    if numeric < -0.25:
+        return "down"
+    return "flat"
+
+
+def _rsi_bucket(value: object) -> str:
+    rsi = _finite_float(value, default=50.0)
+    if rsi < 30.0:
+        return "oversold"
+    if rsi < 45.0:
+        return "soft"
+    if rsi <= 55.0:
+        return "neutral"
+    if rsi <= 70.0:
+        return "firm"
+    return "overbought"
+
+
+def _volatility_bucket(value: object) -> str:
+    volatility = abs(_finite_float(value))
+    if volatility < 80.0:
+        return "low"
+    if volatility < 180.0:
+        return "medium"
+    if volatility < 360.0:
+        return "high"
+    return "extreme"
+
+
+def _drawdown_bucket(value: object) -> str:
+    drawdown = _finite_float(value)
+    if drawdown < -600.0:
+        return "deep"
+    if drawdown < -250.0:
+        return "pullback"
+    if drawdown < -60.0:
+        return "shallow"
+    return "none"
+
+
+def _close_position_bucket(value: object) -> str:
+    close = _finite_float(value, default=0.5)
+    if close < 0.25:
+        return "low"
+    if close > 0.75:
+        return "high"
+    return "middle"
+
+
+def _compression_bucket(value: object) -> str:
+    compression = _finite_float(value, default=1.0)
+    if compression < 0.70:
+        return "compressed"
+    if compression > 1.35:
+        return "expanded"
+    return "normal"
+
+
 def _robust_1h_target_value(
     *,
     calibrated_wave: float,
@@ -1869,6 +2374,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-directional-head-target": "wavemind-directional-head-target",
         "directional-head": "wavemind-directional-head-target",
         "directional-head-target": "wavemind-directional-head-target",
+        "wavemind-regime-policy": "wavemind-regime-policy-target",
+        "wavemind-regime-policy-target": "wavemind-regime-policy-target",
+        "regime-policy": "wavemind-regime-policy-target",
+        "regime-policy-target": "wavemind-regime-policy-target",
         "wavemind-online-expert": "wavemind-online-expert-target",
         "wavemind-online-expert-target": "wavemind-online-expert-target",
         "online-expert": "wavemind-online-expert-target",
@@ -1903,6 +2412,7 @@ def _engine_name(key: str) -> str:
         "wavemind-market-field-target": "WaveMind market-field target",
         "wavemind-perp-field-target": "WaveMind perp field target",
         "wavemind-directional-head-target": "WaveMind directional-head target",
+        "wavemind-regime-policy-target": "WaveMind regime-policy target",
         "wavemind-online-expert-target": "WaveMind online-expert target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
