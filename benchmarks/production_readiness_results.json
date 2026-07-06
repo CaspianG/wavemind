@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T05:15:43Z",
+  "generated_at": "2026-07-06T05:31:16Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 16,
+    "pass_count": 17,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 16
+    "total_criteria": 17
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T05:15:41Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T05:31:15Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -73,8 +73,16 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0031999661587178707 ms",
-      "next_step": "Back the cache with Redis in a service-mode benchmark."
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.004200031980872154 ms",
+      "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
+    },
+    {
+      "id": "redis_shared_cache_memory_os",
+      "title": "Redis-compatible shared cache and Memory OS prewarm work",
+      "status": "pass",
+      "requirement": "Production cache must be shareable across workers, support query-audit prewarm, support Memory OS prewarm, and invalidate a namespace after memory changes.",
+      "evidence": "shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True",
+      "next_step": "Run the same Redis cache profile against a real Redis service under multi-process API load."
     },
     {
       "id": "memory_os_worker",
@@ -105,7 +113,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.5524000045843422 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.2823999859392643 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

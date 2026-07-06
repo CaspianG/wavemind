@@ -7,25 +7,26 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `16` |
+| passed criteria | `17` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `16` |
+| total criteria | `17` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T05:15:41Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T05:31:15Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |
-| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.0031999661587178707 ms | Back the cache with Redis in a service-mode benchmark. |
+| Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.004200031980872154 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
+| Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True | Run the same Redis cache profile against a real Redis service under multi-process API load. |
 | Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, expired 1, concepts 1 | Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |
-| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.5524000045843422 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
+| Runtime replica quorum survives node loss | `pass` | recall after loss True, repair copied 1, p99 1.2823999859392643 ms, concurrent hit rate 1.0 | Extend the same replicated runtime profile to remote service nodes and sustained load. |
 | Active-active sync and field-state CRDT converge | `pass` | delta sync True, CRDT idempotent True | Run active-active sync against independent persistent stores. |
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, precision@1 1.0 | Add real CLIP/audio embedding backends and larger multimodal retrieval tests. |
