@@ -40,6 +40,13 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True
+    assert results["WaveMind Redis hot cache"]["shared_cache_visible_across_clients"] is True
+    assert results["WaveMind Redis hot cache"]["cache_prewarm_warmed"] == 1
+    assert results["WaveMind Redis hot cache"]["cache_prewarm_cross_worker_hit"] is True
+    assert results["WaveMind Redis hot cache"]["memory_os_ok"] is True
+    assert results["WaveMind Redis hot cache"]["memory_os_prewarm_warmed"] >= 2
+    assert results["WaveMind Redis hot cache"]["memory_os_cross_worker_hit"] is True
+    assert results["WaveMind Redis hot cache"]["namespace_invalidation_removed"] is True
     assert results["WaveMind Memory OS"]["ok"] is True
     assert results["WaveMind Memory OS"]["hot_queries"] == 2
     assert results["WaveMind Memory OS"]["prewarm_warmed"] == 2

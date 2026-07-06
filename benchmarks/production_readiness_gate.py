@@ -131,6 +131,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
+    redis_cache = scale.get("WaveMind Redis hot cache", {})
     memory_os = scale.get("WaveMind Memory OS", {})
     sharding = scale.get("WaveMind distributed sharding", {})
     http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
@@ -281,7 +282,34 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"prewarm hit {hot_cache.get('prewarm_hit')}, "
                 f"p99 {hot_cache.get('p99_lookup_ms')} ms"
             ),
-            next_step="Back the cache with Redis in a service-mode benchmark.",
+            next_step="Keep local cache prewarm green while Redis carries multi-worker production cache evidence.",
+        ),
+        _criterion(
+            criterion_id="redis_shared_cache_memory_os",
+            title="Redis-compatible shared cache and Memory OS prewarm work",
+            status=(
+                "pass"
+                if redis_cache.get("shared_cache_visible_across_clients")
+                and redis_cache.get("cache_prewarm_cross_worker_hit")
+                and redis_cache.get("memory_os_ok")
+                and int(redis_cache.get("memory_os_prewarm_warmed", 0)) >= 2
+                and redis_cache.get("memory_os_cross_worker_hit")
+                and redis_cache.get("namespace_invalidation_removed")
+                else "fail"
+            ),
+            requirement=(
+                "Production cache must be shareable across workers, support "
+                "query-audit prewarm, support Memory OS prewarm, and invalidate "
+                "a namespace after memory changes."
+            ),
+            evidence=(
+                f"shared {redis_cache.get('shared_cache_visible_across_clients')}, "
+                f"prewarm hit {redis_cache.get('cache_prewarm_cross_worker_hit')}, "
+                f"Memory OS warmed {redis_cache.get('memory_os_prewarm_warmed')}, "
+                f"Memory OS hit {redis_cache.get('memory_os_cross_worker_hit')}, "
+                f"invalidation {redis_cache.get('namespace_invalidation_removed')}"
+            ),
+            next_step="Run the same Redis cache profile against a real Redis service under multi-process API load.",
         ),
         _criterion(
             criterion_id="memory_os_worker",

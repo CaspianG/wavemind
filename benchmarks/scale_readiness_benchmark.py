@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import socket
 import statistics
@@ -32,6 +33,7 @@ from wavemind import (
     HotMemoryCache,
     MemoryOSWorker,
     QueryResult,
+    RedisHotMemoryCache,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
     ReplicatedSnapshotWorker,
@@ -106,6 +108,31 @@ class InMemoryS3Client:
 
     def get_object(self, Bucket: str, Key: str) -> dict[str, object]:
         return {"Body": BytesIO(self.objects[(Bucket, Key)]["Body"])}
+
+
+class RedisLikeCacheClient:
+    """Small Redis-compatible client for deterministic shared-cache profiles."""
+
+    def __init__(self):
+        self.items: dict[str, str] = {}
+        self.expirations: dict[str, int | None] = {}
+
+    def get(self, key: str):
+        return self.items.get(key)
+
+    def set(self, key: str, value: str, ex: int | None = None):
+        self.items[key] = value
+        self.expirations[key] = ex
+
+    def scan_iter(self, match: str):
+        for key in list(self.items):
+            if fnmatch.fnmatch(key, match):
+                yield key
+
+    def delete(self, *keys: str):
+        for key in keys:
+            self.items.pop(key, None)
+            self.expirations.pop(key, None)
 
 
 class MemoryOSEncoder:
@@ -603,6 +630,142 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
         "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
         "p99_lookup_ms": percentile(latencies, 99),
     }
+
+
+def run_redis_cache_profile() -> dict[str, object]:
+    client = RedisLikeCacheClient()
+    writer_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
+    reader_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
+    latencies: list[float] = []
+
+    with tempfile.TemporaryDirectory() as directory:
+        memory = WaveMind(
+            db_path=Path(directory) / "redis-cache.sqlite3",
+            encoder=MemoryOSEncoder(),
+            width=16,
+            height=16,
+            layers=1,
+            audit_queries=True,
+            graph_weight=1.0,
+            graph_steps=2,
+            graph_expand_k=10,
+            rerank_k=10,
+        )
+        try:
+            namespace = "tenant:redis-cache"
+            memory.remember("redis shared cache keeps hot budget recall", namespace=namespace)
+            memory.query("budget recall", namespace=namespace, top_k=1)
+            memory.query("budget recall", namespace=namespace, top_k=1)
+            prewarm = CachePrewarmWorker(memory, writer_cache).run_once(
+                namespace=namespace,
+                audit_limit=16,
+                max_queries=4,
+                min_frequency=2,
+                top_k=1,
+            )
+            started = time.perf_counter()
+            shared_results = query_with_cache(
+                memory,
+                reader_cache,
+                "budget recall",
+                namespace=namespace,
+                top_k=1,
+            )
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            shared_hit = (
+                bool(shared_results)
+                and shared_results[0].text == "redis shared cache keeps hot budget recall"
+                and reader_cache.stats().hits >= 1
+            )
+
+            os_namespace = "tenant:redis-os"
+            memory.remember(
+                "User likes Rust systems programming",
+                namespace=os_namespace,
+                tags=["systems"],
+            )
+            memory.remember(
+                "User studies compiler internals",
+                namespace=os_namespace,
+                tags=["systems"],
+            )
+            memory.remember(
+                "budget recall should be prefetched",
+                namespace=os_namespace,
+                tags=["preference"],
+            )
+            memory.remember("expired redis memory os stale fact", namespace=os_namespace, ttl_seconds=-1)
+            memory.query("systems programming", namespace=os_namespace, top_k=1)
+            memory.query("systems programming", namespace=os_namespace, top_k=1)
+            memory.query("budget recall", namespace=os_namespace, top_k=1)
+            memory.query("budget recall", namespace=os_namespace, top_k=1)
+
+            os_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
+            os_reader_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
+            os_started = time.perf_counter()
+            os_report = MemoryOSWorker(memory, os_cache).run_once(
+                namespace=os_namespace,
+                audit_limit=16,
+                max_hot_queries=8,
+                min_frequency=2,
+                top_k=1,
+                consolidate_steps=2,
+                min_concept_energy=0.01,
+                min_concept_size=2,
+                max_concepts=1,
+                memory_pressure_threshold=2,
+            )
+            os_ms = (time.perf_counter() - os_started) * 1000.0
+            started = time.perf_counter()
+            os_cached = query_with_cache(
+                memory,
+                os_reader_cache,
+                "budget recall",
+                namespace=os_namespace,
+                top_k=1,
+            )
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            os_cross_worker_hit = (
+                bool(os_cached)
+                and os_cached[0].text == "budget recall should be prefetched"
+                and os_reader_cache.stats().hits >= 1
+            )
+
+            invalidated = writer_cache.invalidate_namespace(namespace)
+            invalidation_removed_key = invalidated >= 1 and reader_cache.get(
+                namespace,
+                "budget recall",
+                top_k=1,
+            ) is None
+
+            stats = writer_cache.stats()
+            reader_stats = reader_cache.stats()
+            os_stats = os_cache.stats()
+            os_reader_stats = os_reader_cache.stats()
+            return {
+                "engine": "WaveMind Redis hot cache",
+                "client": "redis-compatible",
+                "shared_cache_visible_across_clients": shared_hit,
+                "cache_prewarm_warmed": prewarm.warmed,
+                "cache_prewarm_cross_worker_hit": shared_hit,
+                "memory_os_ok": os_report.ok,
+                "memory_os_hot_queries": len(os_report.hot_queries),
+                "memory_os_prewarm_warmed": os_report.prewarm.warmed,
+                "memory_os_concepts_created": os_report.concepts_created,
+                "memory_os_cross_worker_hit": os_cross_worker_hit,
+                "memory_os_run_ms": os_ms,
+                "namespace_invalidation_removed": invalidation_removed_key,
+                "redis_keys": len(client.items),
+                "writer_hits": stats.hits,
+                "writer_misses": stats.misses,
+                "reader_hits": reader_stats.hits,
+                "os_hits": os_stats.hits,
+                "os_reader_hits": os_reader_stats.hits,
+                "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
+                "p99_lookup_ms": percentile(latencies, 99),
+            }
+        finally:
+            memory.close()
 
 
 def run_memory_os_profile() -> dict[str, object]:
@@ -1460,6 +1623,7 @@ def run_benchmark(
         ),
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
+        run_redis_cache_profile(),
         run_memory_os_profile(),
         run_distributed_sharding_profile(),
         run_distributed_http_sharding_profile(),
@@ -1484,7 +1648,7 @@ def run_benchmark(
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, "
-                "hot-cache behavior, and structured payload retrieval. "
+                "local and Redis-compatible hot-cache behavior, and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -1539,6 +1703,12 @@ def main() -> int:
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")
             print(f"| hot cache | prewarm_hit | {result['prewarm_hit']} |")
+        elif result["engine"] == "WaveMind Redis hot cache":
+            print(f"| redis hot cache | shared_cache_visible | {result['shared_cache_visible_across_clients']} |")
+            print(f"| redis hot cache | cache_prewarm_warmed | {result['cache_prewarm_warmed']} |")
+            print(f"| redis hot cache | memory_os_prewarm_warmed | {result['memory_os_prewarm_warmed']} |")
+            print(f"| redis hot cache | memory_os_cross_worker_hit | {result['memory_os_cross_worker_hit']} |")
+            print(f"| redis hot cache | namespace_invalidation_removed | {result['namespace_invalidation_removed']} |")
         elif result["engine"] == "WaveMind Memory OS":
             print(f"| memory os | ok | {result['ok']} |")
             print(f"| memory os | hot_queries | {result['hot_queries']} |")
