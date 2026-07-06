@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`23/23` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`24/24` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -66,6 +66,10 @@ policy matters more than raw vector-database scale:
 - `wavemind scale-plan`, `WaveMind.scale_plan()`, and `GET /scale-plan` are
   available as deployment guardrails: they map current and target memory counts
   to a scale tier, status, recommended index, warnings, and concrete actions.
+- `wavemind advise`, `advise_memory_architecture()`, and
+  `GET /architecture/advice` turn live stats plus target scale into an operator
+  checklist for ANN/service index selection, sharding, cache, DR drills,
+  observability, load tests, replication capacity, and multimodal readiness.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,

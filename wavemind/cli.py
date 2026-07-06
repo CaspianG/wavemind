@@ -12,6 +12,7 @@ from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
+from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
 from .serverless import SecretEnvRef, WaveMindServerlessSpec
 from .importers import import_path
@@ -149,6 +150,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero when scale status reaches this threshold",
     )
     scale_plan.add_argument("--json", action="store_true")
+
+    advise = sub.add_parser(
+        "advise",
+        help="Recommend production memory architecture from live stats and target scale",
+    )
+    advise.add_argument("--namespace")
+    advise.add_argument("--current-memories", type=int)
+    advise.add_argument("--target-memories", type=int)
+    advise.add_argument("--target-p99-ms", type=float, default=100.0)
+    advise.add_argument("--observed-p99-ms", type=float)
+    advise.add_argument("--namespace-count", type=int)
+    advise.add_argument("--node-count", type=int)
+    advise.add_argument("--replication-factor", type=int, default=3)
+    advise.add_argument("--target-qps", type=float, default=100.0)
+    advise.add_argument(
+        "--deployment",
+        choices=["local", "staging", "production"],
+        default="local",
+    )
+    advise.add_argument("--multimodal", action="store_true")
+    advise.add_argument(
+        "--fail-on",
+        choices=["watch", "action_required", "architecture_required"],
+        help="Exit non-zero when advice status reaches this threshold",
+    )
+    advise.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -515,6 +542,30 @@ def print_scale_plan(plan: dict[str, object]) -> None:
             print(f"- {item}")
 
 
+def print_architecture_advice(advice: dict[str, object]) -> None:
+    print(f"status: {advice['status']}")
+    print(f"production_ready: {str(advice['production_ready']).lower()}")
+    print(f"deployment: {advice['deployment']}")
+    print(f"current_memories: {advice['current_memories']}")
+    print(f"target_memories: {advice['target_memories']}")
+    print(f"index: {advice['index']}")
+    print(f"target_p99_ms: {advice['target_p99_ms']}")
+    observed = advice.get("observed_p99_ms")
+    if observed is not None:
+        print(f"observed_p99_ms: {observed}")
+    recommendations = advice.get("recommendations") or []
+    if recommendations:
+        print("recommendations:")
+        for recommendation in recommendations:
+            print(f"- [{recommendation['severity']}] {recommendation['title']}")
+            print(f"  action: {recommendation['action']}")
+    next_commands = advice.get("next_commands") or []
+    if next_commands:
+        print("next_commands:")
+        for command in next_commands:
+            print(f"- {command}")
+
+
 def print_quickstart() -> None:
     print(
         """WaveMind quickstart
@@ -848,6 +899,66 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(plan, ensure_ascii=False, indent=2))
         else:
             print_scale_plan(plan)
+        return 3 if failed_threshold else 0
+
+    if args.command == "advise":
+        current_memories = args.current_memories
+        vector_dim = 768 if args.encoder == "sentence" else 384
+        index_name = args.index
+        mind = None
+        try:
+            if current_memories is None:
+                mind = make_mind(args)
+                stats = mind.stats(namespace=args.namespace)
+                plan_obj = mind.scale_plan(
+                    target_memories=args.target_memories,
+                    namespace=args.namespace,
+                    latency_target_ms=min(args.target_p99_ms, 100.0),
+                )
+            else:
+                stats = {
+                    "active_memories": current_memories,
+                    "total_memories": current_memories,
+                    "expired_memories": 0,
+                    "audit_events": 0,
+                    "index": index_name,
+                    "index_healthy": True,
+                    "vector_dim": vector_dim,
+                }
+                plan_obj = build_scale_plan(
+                    current_memories=current_memories,
+                    target_memories=args.target_memories,
+                    index=index_name,
+                    vector_dim=vector_dim,
+                    namespace=args.namespace,
+                    latency_target_ms=min(args.target_p99_ms, 100.0),
+                )
+            advice_obj = advise_memory_architecture(
+                stats,
+                scale_plan=plan_obj,
+                namespace=args.namespace,
+                target_memories=args.target_memories,
+                target_p99_ms=args.target_p99_ms,
+                observed_p99_ms=args.observed_p99_ms,
+                namespace_count=args.namespace_count,
+                node_count=args.node_count,
+                replication_factor=args.replication_factor,
+                target_qps=args.target_qps,
+                deployment=args.deployment,
+                multimodal=args.multimodal,
+            )
+            advice = advice_obj.as_dict()
+            failed_threshold = (
+                args.fail_on is not None
+                and advice_status_meets_or_exceeds(advice_obj.status, args.fail_on)
+            )
+        finally:
+            if mind is not None:
+                mind.close()
+        if args.json:
+            print(json.dumps(advice, ensure_ascii=False, indent=2))
+        else:
+            print_architecture_advice(advice)
         return 3 if failed_threshold else 0
 
     if args.command == "cluster-plan":

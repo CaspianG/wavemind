@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T09:58:58Z",
+  "generated_at": "2026-07-06T10:24:40Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 23,
+    "pass_count": 24,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 23
+    "total_criteria": 24
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T09:57:09Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T09:58:58Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -195,6 +195,14 @@
       "requirement": "A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
       "evidence": "WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo",
       "next_step": "Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available."
+    },
+    {
+      "id": "architecture_advisor_preflight",
+      "title": "Architecture advisor blocks unsafe large production growth",
+      "status": "pass",
+      "requirement": "Advisor must convert live stats plus 10M production targets into service-index, namespace-sharding, load-test, production-controls, and multimodal readiness actions.",
+      "evidence": "status architecture_required, recommendations capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 10",
+      "next_step": "Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks."
     }
   ],
   "external_evidence": [

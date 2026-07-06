@@ -16,6 +16,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from . import __version__
+from .advisor import advise_memory_architecture
 from .cluster import ClusterNode, build_cluster_plan
 from .core import WaveMind
 from .encoders import create_text_encoder
@@ -518,6 +519,35 @@ class ScalePlanResponse(BaseModel):
     actions: list[str]
 
 
+class ArchitectureRecommendationResponse(BaseModel):
+    id: str
+    severity: str
+    title: str
+    rationale: str
+    action: str
+    commands: list[str]
+    docs: list[str]
+
+
+class ArchitectureAdviceResponse(BaseModel):
+    status: str
+    production_ready: bool
+    deployment: str
+    namespace: str | None
+    current_memories: int
+    target_memories: int
+    index: str
+    vector_dim: int
+    target_p99_ms: float
+    observed_p99_ms: float | None
+    namespace_count: int | None
+    node_count: int | None
+    replication_factor: int
+    scale_plan: dict[str, Any]
+    recommendations: list[ArchitectureRecommendationResponse]
+    next_commands: list[str]
+
+
 class ClusterPlanNodeRequest(BaseModel):
     id: str
     address: str
@@ -904,6 +934,51 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             latency_target_ms=latency_target_ms,
         )
         return ScalePlanResponse(**plan.as_dict())
+
+    @app.get(
+        "/architecture/advice",
+        response_model=ArchitectureAdviceResponse,
+        dependencies=[Depends(require_role("read"))],
+    )
+    @app.get(
+        "/advise",
+        response_model=ArchitectureAdviceResponse,
+        dependencies=[Depends(require_role("read"))],
+        include_in_schema=False,
+    )
+    def architecture_advice(
+        namespace: str | None = None,
+        target_memories: int | None = Query(default=None, ge=0),
+        target_p99_ms: float = Query(default=100.0, gt=0),
+        observed_p99_ms: float | None = Query(default=None, ge=0),
+        namespace_count: int | None = Query(default=None, ge=0),
+        node_count: int | None = Query(default=None, ge=0),
+        replication_factor: int = Query(default=3, ge=1),
+        target_qps: float = Query(default=100.0, gt=0),
+        deployment: str = Query(default="local", pattern="^(local|staging|production)$"),
+        multimodal: bool = False,
+    ) -> ArchitectureAdviceResponse:
+        stats = app.state.mind.stats(namespace=namespace)
+        plan = app.state.mind.scale_plan(
+            target_memories=target_memories,
+            namespace=namespace,
+            latency_target_ms=min(target_p99_ms, 100.0),
+        )
+        advice = advise_memory_architecture(
+            stats,
+            scale_plan=plan,
+            namespace=namespace,
+            target_memories=target_memories,
+            target_p99_ms=target_p99_ms,
+            observed_p99_ms=observed_p99_ms,
+            namespace_count=namespace_count,
+            node_count=node_count,
+            replication_factor=replication_factor,
+            target_qps=target_qps,
+            deployment=deployment,
+            multimodal=multimodal,
+        )
+        return ArchitectureAdviceResponse(**advice.as_dict())
 
     @app.post("/cluster-plan", dependencies=[Depends(require_role("read"))])
     def cluster_plan(request: ClusterPlanRequest):

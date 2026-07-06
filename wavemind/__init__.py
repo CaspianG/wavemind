@@ -8,6 +8,12 @@ from .encoders import (
     create_text_encoder,
 )
 from .field_graph import MemoryFieldGraph
+from .advisor import (
+    MemoryArchitectureAdvice,
+    MemoryArchitectureRecommendation,
+    advice_status_meets_or_exceeds,
+    advise_memory_architecture,
+)
 from .field_crdt import (
     FieldStateCRDT,
     FieldStateDelta,
@@ -133,6 +139,8 @@ __all__ = [
     "HTTPNamespaceShardClient",
     "KubernetesApplyClient",
     "MemoryMaintenanceWorker",
+    "MemoryArchitectureAdvice",
+    "MemoryArchitectureRecommendation",
     "MemoryFieldGraph",
     "MemoryOSHotQuery",
     "MemoryOSReport",
@@ -184,6 +192,8 @@ __all__ = [
     "WriteQuorumError",
     "__version__",
     "audio_payload",
+    "advice_status_meets_or_exceeds",
+    "advise_memory_architecture",
     "build_scale_plan",
     "build_cluster_plan",
     "create_memory_store",

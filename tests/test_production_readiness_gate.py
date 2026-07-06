@@ -52,6 +52,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "concurrent hit rate" in criteria["replicated_runtime_loss"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert criteria["ten_million_load_profile"]["status"] == "pass"
+    assert criteria["architecture_advisor_preflight"]["status"] == "pass"
+    assert "10M production targets" in criteria["architecture_advisor_preflight"]["requirement"]
     assert payload["external_evidence"][0]["id"] == "memory_competitor_adapters"
     assert payload["external_evidence"][0]["status"] == "action_required"
 
@@ -81,7 +83,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 23
+    assert payload["summary"]["total_criteria"] == 24
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "Query-vector cache avoids repeated encoder work" in report
@@ -90,4 +92,5 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "API cache does not serve stale memory after mutations" in report
     assert "Real Redis multi-process API load passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report
+    assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report

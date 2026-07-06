@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from wavemind import advise_memory_architecture
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -175,6 +180,37 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     field_crdt = scale.get("WaveMind field-state CRDT", {})
     snapshot = scale.get("WaveMind replicated snapshot", {})
     payloads = scale.get("WaveMind structured payloads", {})
+    advisor = advise_memory_architecture(
+        {
+            "active_memories": 1_000_000,
+            "total_memories": 1_000_000,
+            "expired_memories": 0,
+            "audit_events": 128,
+            "index": "faiss-persisted",
+            "index_healthy": True,
+            "vector_dim": 384,
+        },
+        target_memories=10_000_000,
+        namespace_count=4096,
+        node_count=4,
+        replication_factor=3,
+        deployment="production",
+        observed_p99_ms=float(load_10m.get("p99_latency_ms", 60.13) or 60.13),
+        target_p99_ms=100.0,
+        target_qps=100.0,
+        multimodal=True,
+    )
+    advisor_ids = {recommendation.id for recommendation in advisor.recommendations}
+    advisor_pass = (
+        advisor.status == "architecture_required"
+        and "service-index" in advisor_ids
+        and "namespace-sharding" in advisor_ids
+        and "capacity-envelope" in advisor_ids
+        and "production-controls" in advisor_ids
+        and "load-test" in advisor_ids
+        and "multimodal-payloads" in advisor_ids
+        and any("http_cluster_load_benchmark.py" in command for command in advisor.next_commands)
+    )
 
     skipped_competitors = [
         name
@@ -665,6 +701,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 else "no production_load_10m or production_streaming_load_ivfpq_10m non-skipped SLO row"
             ),
             next_step="Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available.",
+        ),
+        _criterion(
+            criterion_id="architecture_advisor_preflight",
+            title="Architecture advisor blocks unsafe large production growth",
+            status="pass" if advisor_pass else "fail",
+            requirement="Advisor must convert live stats plus 10M production targets into service-index, namespace-sharding, load-test, production-controls, and multimodal readiness actions.",
+            evidence=(
+                f"status {advisor.status}, "
+                f"recommendations {', '.join(sorted(advisor_ids))}, "
+                f"commands {len(advisor.next_commands)}"
+            ),
+            next_step="Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks.",
         ),
     ]
 
