@@ -1896,6 +1896,93 @@ def run_multimodal_profile() -> dict[str, object]:
             memory.close()
 
 
+def run_100m_capacity_profile() -> dict[str, object]:
+    target_memories = 100_000_000
+    namespace_count = 32_768
+    node_count = 128
+    replication_factor = 3
+    vector_dim = 384
+    payload_kb = 2.0
+    vector_dtype_bytes = 1
+    memory_payload_bytes = payload_kb * 1024.0
+    vector_bytes = vector_dim * vector_dtype_bytes
+    logical_storage_gb = target_memories * (memory_payload_bytes + vector_bytes) / float(1024**3)
+    replicated_storage_gb = logical_storage_gb * replication_factor
+    nodes = [
+        ClusterNode(
+            id=f"node-{index:03d}",
+            address=f"https://wavemind-{index:03d}.internal",
+            zone=f"zone-{index % 8}",
+        )
+        for index in range(node_count)
+    ]
+    namespaces = [f"tenant:{index:06d}" for index in range(namespace_count)]
+    started = time.perf_counter()
+    plan = build_cluster_plan(
+        namespaces=namespaces,
+        nodes=nodes,
+        replication_factor=replication_factor,
+    )
+    placement_ms = (time.perf_counter() - started) * 1000.0
+    quorum = plan.quorum_report()
+    primary_load = list(plan.primary_load.values())
+    replica_load = list(plan.node_load.values())
+    avg_primary_load = statistics.mean(primary_load)
+    avg_replica_load = statistics.mean(replica_load)
+    max_primary_load = max(primary_load)
+    max_replica_load = max(replica_load)
+    min_primary_load = min(primary_load)
+    min_replica_load = min(replica_load)
+    max_memory_per_node = (
+        max_replica_load / max(1, namespace_count) * target_memories
+    )
+    avg_memory_per_node = target_memories * replication_factor / node_count
+    max_storage_per_node_gb = replicated_storage_gb * max_replica_load / sum(replica_load)
+    primary_skew = max_primary_load / max(avg_primary_load, 1.0)
+    replica_skew = max_replica_load / max(avg_replica_load, 1.0)
+    recommended_autoscaling_max_replicas = max(
+        node_count,
+        int(np.ceil(node_count * 1.5)),
+    )
+    return {
+        "engine": "WaveMind 100M capacity envelope",
+        "target_memories": target_memories,
+        "namespace_count": namespace_count,
+        "node_count": node_count,
+        "zones": len({node.zone for node in nodes}),
+        "replication_factor": replication_factor,
+        "write_quorum": quorum["write_quorum"],
+        "read_quorum": quorum["read_quorum"],
+        "node_loss_min_availability": quorum["node_loss_min_availability"],
+        "zone_loss_min_availability": quorum["zone_loss_min_availability"],
+        "logical_storage_gb": logical_storage_gb,
+        "replicated_storage_gb": replicated_storage_gb,
+        "max_storage_per_node_gb": max_storage_per_node_gb,
+        "avg_memory_per_node": avg_memory_per_node,
+        "max_memory_per_node": max_memory_per_node,
+        "primary_load_min": min_primary_load,
+        "primary_load_max": max_primary_load,
+        "primary_load_skew": primary_skew,
+        "replica_load_min": min_replica_load,
+        "replica_load_max": max_replica_load,
+        "replica_load_skew": replica_skew,
+        "recommended_autoscaling_max_replicas": recommended_autoscaling_max_replicas,
+        "placement_ms": placement_ms,
+        "valid_capacity_plan": (
+            quorum["node_loss_min_availability"] == 1.0
+            and quorum["zone_loss_min_availability"] == 1.0
+            and replica_skew <= 1.25
+            and primary_skew <= 1.25
+            and max_storage_per_node_gb <= 256.0
+        ),
+        "scope": (
+            "Deterministic 100M-memory capacity envelope. This proves shard "
+            "placement, replication overhead, storage envelope, and failure-domain "
+            "availability; it is not a 100M vector-query latency benchmark."
+        ),
+    }
+
+
 def run_benchmark(
     *,
     simulated_memories: int = 1_000_000,
@@ -1931,6 +2018,7 @@ def run_benchmark(
         run_field_crdt_profile(),
         run_replicated_snapshot_profile(),
         run_multimodal_profile(),
+        run_100m_capacity_profile(),
     ]
     return {
         "scenario": {
@@ -1950,7 +2038,7 @@ def run_benchmark(
                 "Redis-compatible shared rate limiting, Memory OS adaptive "
                 "prewarm/consolidation/forgetting, local and Redis-compatible "
                 "hot-cache behavior, API cache mutation safety, and structured "
-                "payload retrieval. "
+                "payload retrieval, plus a deterministic 100M-memory capacity envelope. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -2077,6 +2165,10 @@ def main() -> int:
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
         elif result["engine"] == "WaveMind structured payloads":
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
+        elif result["engine"] == "WaveMind 100M capacity envelope":
+            print(f"| 100M capacity | valid_capacity_plan | {result['valid_capacity_plan']} |")
+            print(f"| 100M capacity | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")
+            print(f"| 100M capacity | max_storage_per_node_gb | {result['max_storage_per_node_gb']:.2f} |")
     print(f"\nWrote {args.output}")
     return 0
 

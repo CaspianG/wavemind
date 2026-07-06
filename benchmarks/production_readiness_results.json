@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T07:56:49Z",
+  "generated_at": "2026-07-06T08:33:07Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 21,
+    "pass_count": 22,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 21
+    "total_criteria": 22
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T07:46:58Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T08:33:05Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -53,6 +53,14 @@
       "next_step": "Validate the same placement under live multi-node service load."
     },
     {
+      "id": "hundred_million_capacity_envelope",
+      "title": "100M-memory capacity envelope is planned across a large cluster",
+      "status": "pass",
+      "requirement": "The production plan must include a deterministic 100M-memory capacity envelope with 100+ nodes, RF=3, node/zone-loss availability, balanced placement, and bounded per-node storage.",
+      "evidence": "100000000 memories, 128 nodes, RF 3, replica skew 1.09375, max storage/node 5.806214176118374 GB",
+      "next_step": "Promote this envelope from deterministic planning to a real 100M service-backed Qdrant/pgvector/FAISS load run on sized hardware."
+    },
+    {
       "id": "operator_autoscaling_repair",
       "title": "Kubernetes operator bundle includes HPA and repair job",
       "status": "pass",
@@ -73,7 +81,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.00400003045797348 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -145,7 +153,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.4960000407882035 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.6519000055268407 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

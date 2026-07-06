@@ -36,10 +36,15 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`21/21` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`22/22` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
+- The scale-readiness profile now includes a deterministic 100M-memory capacity
+  envelope: 32768 namespace buckets, 128 nodes, 8 zones, replication factor 3,
+  node/zone-loss availability `1.000`, bounded placement skew, and bounded
+  per-node storage. This is capacity planning evidence, not a 100M latency
+  benchmark.
 - pgvector now exposes HNSW `m`, `ef_construction`, `ef_search`, iterative-scan
   controls, scan bounds, and an explicit exact-search mode for recall audits.
   The checked-in HNSW profile uses `ef_search=400`, which improves

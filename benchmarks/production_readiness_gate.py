@@ -158,6 +158,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     competitors = _engine_results(artifacts["competitors"])
 
     cluster = scale.get("WaveMind cluster planner", {})
+    capacity_100m = scale.get("WaveMind 100M capacity envelope", {})
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
@@ -263,6 +264,36 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"namespaces {cluster.get('namespaces')}"
             ),
             next_step="Validate the same placement under live multi-node service load.",
+        ),
+        _criterion(
+            criterion_id="hundred_million_capacity_envelope",
+            title="100M-memory capacity envelope is planned across a large cluster",
+            status=(
+                "pass"
+                if capacity_100m.get("valid_capacity_plan")
+                and capacity_100m.get("target_memories") == 100_000_000
+                and int(capacity_100m.get("node_count", 0)) >= 100
+                and capacity_100m.get("node_loss_min_availability") == 1.0
+                and capacity_100m.get("zone_loss_min_availability") == 1.0
+                and float(capacity_100m.get("replica_load_skew", 99.0)) <= 1.25
+                else "action_required"
+            ),
+            requirement=(
+                "The production plan must include a deterministic 100M-memory "
+                "capacity envelope with 100+ nodes, RF=3, node/zone-loss "
+                "availability, balanced placement, and bounded per-node storage."
+            ),
+            evidence=(
+                f"{capacity_100m.get('target_memories')} memories, "
+                f"{capacity_100m.get('node_count')} nodes, "
+                f"RF {capacity_100m.get('replication_factor')}, "
+                f"replica skew {capacity_100m.get('replica_load_skew')}, "
+                f"max storage/node {capacity_100m.get('max_storage_per_node_gb')} GB"
+            ),
+            next_step=(
+                "Promote this envelope from deterministic planning to a real "
+                "100M service-backed Qdrant/pgvector/FAISS load run on sized hardware."
+            ),
         ),
         _criterion(
             criterion_id="operator_autoscaling_repair",

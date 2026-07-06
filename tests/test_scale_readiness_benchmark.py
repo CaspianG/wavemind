@@ -144,4 +144,11 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind replicated snapshot"]["restored_files"] == 3
     assert results["WaveMind replicated snapshot"]["recalled_after_restore_node_loss"] is True
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
+    assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
+    assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3
+    assert results["WaveMind 100M capacity envelope"]["node_loss_min_availability"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["zone_loss_min_availability"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["replica_load_skew"] <= 1.25
+    assert results["WaveMind 100M capacity envelope"]["valid_capacity_plan"] is True
     assert payload["scenario"]["simulated_memories"] == 100_000
