@@ -1221,7 +1221,7 @@ Current read:
 | Streaming production load | `benchmarks/production_streaming_load_benchmark.py` generates and inserts vectors in batches, stores only query source vectors outside the index, and measures target-recall, p99, SLO, and cost. The checked-in 10M compressed FAISS IVF-PQ run reaches target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status; the 100k smoke reaches `0.960`, p99 `1.10 ms`; the 10k smoke reaches `1.000`, p99 `0.98 ms`. | This is the first real 10M production-scale artifact. It is a compressed target-recall profile, not exact-neighbor recall and not yet a Qdrant/pgvector 10M service comparison. |
 | Scale readiness | Deterministic 1M-memory simulation validates 4096 namespace placements over 4 nodes with replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, Kubernetes `StatefulSet`, `HorizontalPodAutoscaler`, repair `CronJob`, operator-style `WaveMindCluster` reconciliation for `4096` namespaces, hot-cache hit rate `0.920`, query-audit prewarm warmed `1` query with prewarm hit `true`, service-mode distributed sharding recall after primary loss, service-mode repair copied `1` missing replica record with recall after repair `true`, service-mode tombstone suppression before repair `true`, tombstone repair deleted `1` stale replica record, suppression after repair `true`, anti-entropy worker repaired `1` missing record and deleted `1` stale tombstone record, quorum-replicated runtime recall after node loss, missing-record repair, tombstone repair, active-active namespace delta sync, field-state CRDT convergence/idempotency/tombstone-wins, checksummed replicated snapshot/restore, offsite mirror verification, portable archive verification, S3-compatible upload/latest-metadata/download/retention verification, object-store DR drill `true`, and structured payload precision@1 `1.000`. | This proves routing, Kubernetes deployment/operator/HPA/repair manifests, service-mode repair, tombstone-aware delete repair, anti-entropy background repair, cache prewarm, cache, payload, distributed sharding, replicated-runtime, namespace-delta, distributed field-state convergence, offsite/archive/object-store backup lifecycle, and restore-drill foundations. |
 | Production readiness gate | Current gate score is `0.933`: `14/15` criteria pass, `1` requires action, `0` fail. The remaining action-required item is the live Zep service adapter run. | This keeps production claims honest. WaveMind has a real production foundation and a checked-in 10M compressed FAISS profile, but complete readiness is not claimed until this gate reaches `1.000`. |
-| Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00`. Mem0 runs locally with Qdrant + FastEmbed and reaches `0.80`, `1.00`, stale suppression `0.60`. LangGraph persistent SQLite reaches `0.80`, `1.00`, stale suppression `1.00`. Zep has a live `zep-python` adapter path and is skipped only until `ZEP_API_URL` or `ZEP_API_KEY` points at a real Zep service. | This prevents fake competitor claims while still checking real installed competitors when they are available. |
+| Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00`. Mem0 runs locally with Qdrant + FastEmbed and reaches `0.80`, `1.00`, stale suppression `0.60`. LangGraph persistent SQLite reaches `0.80`, `1.00`, stale suppression `1.00`. Zep has live adapter paths for the current `zep-cloud` Graph API and legacy/OSS-compatible `zep-python`; it is skipped only until `ZEP_API_URL` or `ZEP_API_KEY` points at a real Zep service. | This prevents fake competitor claims while still checking real installed competitors when they are available. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
 
 ### Real Benchmark Matrix
@@ -1633,16 +1633,17 @@ is configured.
 python benchmarks/memory_competitor_benchmark.py --engines wavemind mem0 zep langgraph
 ```
 
-For a live Zep run, install `zep-python` and set either `ZEP_API_URL` for an
-on-prem/OSS-compatible service or `ZEP_API_KEY` for a configured Zep endpoint.
-The benchmark creates temporary sessions and deletes them after the run.
+For a live Zep run, install `zep-cloud` for the current Zep Cloud Graph API
+or `zep-python` for a legacy/OSS-compatible Zep service, then set either
+`ZEP_API_URL` or `ZEP_API_KEY`. The benchmark creates temporary graphs/sessions
+and deletes them after the run.
 
 | engine | precision@1 | precision@3 | stale suppression | avg latency |
 |---|---:|---:|---:|---:|
-| WaveMind | 0.80 | 1.00 | 1.00 | 0.58 ms |
-| Mem0 | 0.80 | 1.00 | 0.60 | 11.03 ms |
+| WaveMind | 0.80 | 1.00 | 1.00 | 1.37 ms |
+| Mem0 | 0.80 | 1.00 | 0.60 | 25.92 ms |
 | Zep | skipped | - | - | - |
-| LangGraph persistent memory | 0.80 | 1.00 | 1.00 | 0.78 ms |
+| LangGraph persistent memory | 0.80 | 1.00 | 1.00 | 1.75 ms |
 
 ### Current Local Runs
 

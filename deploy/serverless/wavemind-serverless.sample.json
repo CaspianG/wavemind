@@ -37,7 +37,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.4.14",
+                "image": "ghcr.io/caspiang/wavemind:2.4.15",
                 "ports": [
                   {
                     "name": "http1",
@@ -159,7 +159,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.4.14",
+                "image": "ghcr.io/caspiang/wavemind:2.4.15",
                 "ports": [
                   {
                     "name": "http1",

@@ -81,6 +81,65 @@ def test_zep_live_adapter_with_fake_client():
     assert fake.closed is True
 
 
+def test_zep_cloud_graph_adapter_with_fake_client():
+    from benchmarks.memory_competitor_benchmark import CHECKS, run_zep
+
+    class FakeGraph:
+        def __init__(self):
+            self.graphs = {}
+            self.deleted = []
+
+        def create(self, *, graph_id, name, description):
+            self.graphs[graph_id] = []
+
+        def add(self, *, graph_id, data, type, metadata, source_description):
+            self.graphs[graph_id].append({"data": data, "metadata": metadata})
+
+        def search(self, *, graph_id, query, limit, scope):
+            expected = {
+                "current city": ["new_city"],
+                "current job": ["new_role"],
+                "budget": ["budget"],
+                "assistant answer": ["style"],
+                "temporary login token": ["active_token"],
+                "blue-114": [],
+            }
+            wanted = []
+            for needle, ids in expected.items():
+                if needle in query:
+                    wanted = ids
+                    break
+            episodes = [
+                item
+                for item in self.graphs[graph_id]
+                if item["metadata"]["benchmark_id"] in wanted
+            ]
+            return {"episodes": episodes[:limit]}
+
+        def delete(self, graph_id):
+            self.deleted.append(graph_id)
+
+    class FakeClient:
+        def __init__(self):
+            self.graph = FakeGraph()
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    fake = FakeClient()
+    result = run_zep(client_factory=lambda: fake)
+
+    assert result["engine"] == "Zep"
+    assert result["configured"] is True
+    assert result["backend"].startswith("zep-cloud graph")
+    assert result["precision_at_1"] == 1.0
+    assert result["precision_at_3"] == 1.0
+    assert result["stale_suppression"] == 1.0
+    assert len(fake.graph.deleted) >= len({check.namespace for check in CHECKS})
+    assert fake.closed is True
+
+
 def test_memory_competitor_cli_writes_json(tmp_path):
     output = tmp_path / "memory-competitors.json"
     project_root = Path(__file__).resolve().parents[1]

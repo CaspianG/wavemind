@@ -18,8 +18,8 @@
       "precision_at_1": 0.8,
       "precision_at_3": 1.0,
       "stale_suppression": 1.0,
-      "avg_latency_ms": 0.5816333189917108,
-      "p95_latency_ms": 1.1291999835520983,
+      "avg_latency_ms": 1.3735333244161059,
+      "p95_latency_ms": 3.328200022224337,
       "checks": 6
     },
     {
@@ -27,8 +27,8 @@
       "precision_at_1": 0.8,
       "precision_at_3": 1.0,
       "stale_suppression": 0.6,
-      "avg_latency_ms": 11.033299990231171,
-      "p95_latency_ms": 12.601699971128255,
+      "avg_latency_ms": 25.918149990805734,
+      "p95_latency_ms": 43.352299951948225,
       "checks": 6,
       "configured": true,
       "backend": "local qdrant path + fastembed, infer=False"
@@ -43,8 +43,8 @@
       "precision_at_1": 0.8,
       "precision_at_3": 1.0,
       "stale_suppression": 1.0,
-      "avg_latency_ms": 0.7750000125573328,
-      "p95_latency_ms": 1.0982000385411084,
+      "avg_latency_ms": 1.74608332842278,
+      "p95_latency_ms": 3.606499987654388,
       "checks": 6,
       "configured": true,
       "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
