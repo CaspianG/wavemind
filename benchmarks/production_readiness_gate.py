@@ -68,6 +68,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
     benchmark_dir = root / "benchmarks"
     return {
         "audit": _load_json(benchmark_dir / "benchmark_artifact_audit.json"),
+        "agent_coherence": _load_json(benchmark_dir / "agent_coherence_results.json"),
         "load_100k": _load_json(benchmark_dir / "production_load_qdrant_100k_tuned_results.json"),
         "load_1m": _load_json(benchmark_dir / "production_load_qdrant_1m_tuned_results.json"),
         "load_1m_faiss": _load_json(benchmark_dir / "production_load_faiss_1m_results.json"),
@@ -148,6 +149,27 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and float(local_http_cluster.get("p99_operation_ms", float("inf"))) <= 1000.0
     )
     audit = artifacts["audit"]
+    agent_coherence = _engine_results(artifacts["agent_coherence"])
+    agent_wavemind = agent_coherence.get("WaveMind", {})
+    agent_static = agent_coherence.get("Static vector", {})
+    agent_chroma = agent_coherence.get("Chroma static", {})
+    agent_success = float(agent_wavemind.get("task_success_rate", 0.0))
+    static_success = float(agent_static.get("task_success_rate", 0.0))
+    chroma_success = float(agent_chroma.get("task_success_rate", 0.0))
+    agent_stale_error = float(agent_wavemind.get("stale_error_rate", 1.0))
+    agent_context_saved = float(agent_wavemind.get("context_budget_saved", 0.0))
+    agent_coherent_turn_rate = float(agent_wavemind.get("coherent_turn_rate", 0.0))
+    agent_latency = float(agent_wavemind.get("avg_latency_ms", float("inf")))
+    agent_quality_pass = (
+        agent_success >= 0.85
+        and float(agent_wavemind.get("decision_success_at_1", 0.0)) >= 0.75
+        and agent_stale_error <= 0.05
+        and agent_context_saved >= 0.85
+        and agent_coherent_turn_rate >= 0.60
+        and agent_latency <= 10.0
+        and agent_success >= static_success + 0.20
+        and agent_success >= chroma_success + 0.20
+    )
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
     load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
     load_1m_faiss = _size_results(artifacts["load_1m_faiss"]).get("WaveMind faiss-persisted", {})
@@ -311,6 +333,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement="Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
             evidence=f"audit status {audit.get('status')}, generated_at {audit.get('generated_at')}",
             next_step="Keep the benchmark refresh workflow green and block stale artifacts before release.",
+        ),
+        _criterion(
+            criterion_id="agent_coherence_quality",
+            title="Agent coherence benchmark proves behavioral lift",
+            status="pass" if agent_quality_pass else "fail",
+            requirement=(
+                "Dynamic memory must improve agent task success, avoid stale "
+                "facts, preserve coherent task runs, and save prompt context "
+                "against static vector and Chroma-static baselines."
+            ),
+            evidence=(
+                f"WaveMind success {agent_success:.3f}, "
+                f"Chroma static {chroma_success:.3f}, "
+                f"Static vector {static_success:.3f}, "
+                f"stale error {agent_stale_error:.3f}, "
+                f"context saved {agent_context_saved:.3f}, "
+                f"coherent turn rate {agent_coherent_turn_rate:.3f}, "
+                f"avg latency {agent_latency:.3f} ms"
+            ),
+            next_step=(
+                "Keep agent-behavior quality gated in CI and extend it with "
+                "LLM answer-quality runs on LoCoMo/LongMemEval."
+            ),
         ),
         _criterion(
             criterion_id="production_100k_slo_cost",

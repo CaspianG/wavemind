@@ -15,6 +15,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert payload["summary"]["action_required_count"] == 0
     assert payload["summary"]["fail_count"] == 0
     assert payload["overall_status"] == "pass"
+    assert criteria["agent_coherence_quality"]["status"] == "pass"
+    assert "agent task success" in criteria["agent_coherence_quality"]["requirement"]
+    assert "Chroma static" in criteria["agent_coherence_quality"]["evidence"]
+    assert "stale error 0.000" in criteria["agent_coherence_quality"]["evidence"]
+    assert "context saved 0.931" in criteria["agent_coherence_quality"]["evidence"]
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
     assert criteria["production_1m_slo"]["status"] == "pass"
     assert criteria["production_1m_query_depth"]["status"] == "pass"
@@ -125,8 +130,9 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 28
+    assert payload["summary"]["total_criteria"] == 29
     assert "# WaveMind Production Readiness Gate" in report
+    assert "Agent coherence benchmark proves behavioral lift" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "VectorDBBench custom dataset export is reproducible" in report
     assert "Cluster autoscaler plans node additions within headroom" in report

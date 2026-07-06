@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T20:37:27Z",
+  "generated_at": "2026-07-06T20:56:46Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 28,
+    "pass_count": 29,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 28
+    "total_criteria": 29
   },
   "criteria": [
     {
@@ -17,8 +17,16 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T20:37:23Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T20:56:44Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
+    },
+    {
+      "id": "agent_coherence_quality",
+      "title": "Agent coherence benchmark proves behavioral lift",
+      "status": "pass",
+      "requirement": "Dynamic memory must improve agent task success, avoid stale facts, preserve coherent task runs, and save prompt context against static vector and Chroma-static baselines.",
+      "evidence": "WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms",
+      "next_step": "Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval."
     },
     {
       "id": "production_100k_slo_cost",

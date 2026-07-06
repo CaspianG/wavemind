@@ -7,14 +7,15 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `28` |
+| passed criteria | `29` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `28` |
+| total criteria | `29` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T20:37:23Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T20:56:44Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
