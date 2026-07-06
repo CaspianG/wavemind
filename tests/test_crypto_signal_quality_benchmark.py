@@ -60,6 +60,14 @@ def test_signal_quality_benchmark_builds_fixed_tiers():
     assert payload["event_metrics"][0]["predicted_direction"] in {"up", "down"}
     assert payload["event_metrics"][0]["agreement"] >= 0.0
     assert payload["event_metrics"][0]["strength"] >= 0.0
+    assert payload["coverage_frontier"]
+    assert {row["target_direction_hit"] for row in payload["coverage_frontier"]} >= {0.60, 0.70, 0.75, 0.80}
+    assert all(row["confidence_is_probability"] is False for row in payload["coverage_frontier"])
+    assert all("thresholds" in row for row in payload["coverage_frontier"])
+    assert payload["slice_stable_frontier"]
+    assert all(row["confidence_is_probability"] is False for row in payload["slice_stable_frontier"])
+    assert all("market_slice_coverage" in row for row in payload["slice_stable_frontier"])
+    assert payload["coverage_frontier_by_timeframe"]
 
     sampled = sampled_signal_quality_payload(payload, sample_size=3)
     assert sampled["event_metrics_total"] == len(payload["event_metrics"])
@@ -122,4 +130,6 @@ def test_signal_quality_markdown_and_cli(tmp_path):
     assert "WaveMind Crypto Signal Quality Benchmark" in markdown
     assert "not financial advice" in markdown.lower()
     assert "not a calibrated probability" in markdown
+    assert "Coverage Frontier" in markdown
+    assert "Slice-Stable Frontier" in markdown
     assert render_markdown(payload).startswith("# WaveMind Crypto Signal Quality Benchmark")

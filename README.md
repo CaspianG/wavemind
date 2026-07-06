@@ -430,19 +430,25 @@ the robust/perp direction, and it disables itself on the daily horizon. On the
 `4.04%`, and worst-slice MAPE from `22.39%` to `22.25%`. This is a small safe
 target-price improvement, not a breakthrough directional model.
 
-The strongest current perpetual result is narrower:
+The strongest current perpetual result is now measured as a coverage frontier,
+not a blanket accuracy claim:
 
-| tier | selected | coverage | direction hit | MAPE |
-|---|---:|---:|---:|---:|
-| all_forecasts | 2880 | 1.000 | 0.591 | 4.05% |
-| large_move_directional_edge | 39 | 0.014 | 0.872 | 10.53% |
+| target hit | selected | coverage | observed hit | worst slice hit | MAPE |
+|---:|---:|---:|---:|---:|---:|
+| 0.70 | 1236 | 0.429 | 0.701 | 0.000 | 3.93% |
+| 0.75 | 702 | 0.244 | 0.751 | 0.176 | 2.93% |
+| 0.80 | 273 | 0.095 | 0.806 | 0.000 | 2.79% |
+| 0.85 | 34 | 0.012 | 0.882 | 0.000 | 4.59% |
 
-This is a real 80%+ directional edge, but only on a low-coverage large-move 1h
-subset. It is not a precise target-price model and not a claim that every
-coin/timeframe reaches 80-90% accuracy. The current 7d perpetual check is much
-weaker: `0.533` direction hit and `8.45%` MAPE on 240 daily walk-forward
-predictions. The regime-policy overlay is disabled on 1d because it did not
-improve the daily validation profile.
+This is real walk-forward evidence for selective high-hit regimes, but it is
+not yet a universal 80-90% system. The stricter slice-stable frontier, which
+requires at least 75% market-slice coverage and worst-slice direction hit >=
+0.50, currently finds no valid 60%+ tier. The weak point is clear: 1h
+high-conviction perps are useful (`0.724` hit at `0.781` coverage), while 4h
+high-conviction perps fail (`0.391` hit at `0.032` coverage). The current 7d
+perpetual check is also weaker: `0.533` direction hit and `8.45%` MAPE on 240
+daily walk-forward predictions. The regime-policy overlay is disabled on 1d
+because it did not improve the daily validation profile.
 
 ## Signal Quality Benchmark
 
@@ -621,11 +627,14 @@ Near-term execution plan:
     and inverted candidates failed transfer tests, but the final sign-anchored
     overlay keeps 1h/4h perpetual direction hit at `0.591` and lowers MAE from
     `392.4` to `392.0` bps. The layer is disabled on 1d.
-23. Next: expand consensus-edge coverage without dropping below 0.70 direction
-    hit, and fix the weak symbol/timeframe/fold slices.
-24. Next: validate the market-field target on more exchanges, date ranges,
+23. Done: perp signal-quality coverage frontier. The observed `0.80` target
+    tier reaches `0.806` direction hit at `0.095` coverage, but the stricter
+    slice-stable frontier currently finds no valid 60%+ tier.
+24. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
+    promising, but 4h high-conviction perps fail and block broad robustness.
+25. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-25. Only after robustness holds, test signal construction and backtesting.
+26. Only after robustness holds, test signal construction and backtesting.
 
 ## Core Project
 

@@ -38,6 +38,7 @@ from benchmarks.crypto_price_target_benchmark import (  # noqa: E402
 
 
 COMPONENT_NAMES = ("raw_wave", "calibrated_wave", "momentum", "regime", "historical", "naive")
+FRONTIER_TARGET_HITS = (0.60, 0.70, 0.75, 0.80, 0.85)
 
 
 @dataclass(frozen=True)
@@ -195,6 +196,17 @@ def run_signal_quality_benchmark(
         for tier in tiers
         for timeframe in sorted({event.timeframe for event in events})
     ]
+    coverage_frontier = _coverage_frontier(events)
+    slice_stable_frontier = _coverage_frontier(
+        events,
+        min_worst_slice_hit=0.50,
+        min_market_slice_coverage=0.75,
+    )
+    coverage_frontier_by_timeframe = [
+        row | {"timeframe": timeframe}
+        for timeframe in sorted({event.timeframe for event in events})
+        for row in _coverage_frontier([event for event in events if event.timeframe == timeframe], min_selected=8)
+    ]
     return {
         "scenario": {
             "name": "crypto_signal_quality_walk_forward",
@@ -227,6 +239,9 @@ def run_signal_quality_benchmark(
         "tiers": [asdict(tier) for tier in tiers],
         "results": tier_results,
         "by_tier_timeframe": by_tier_timeframe,
+        "coverage_frontier": coverage_frontier,
+        "slice_stable_frontier": slice_stable_frontier,
+        "coverage_frontier_by_timeframe": coverage_frontier_by_timeframe,
         "event_metrics": [asdict(event) for event in events],
     }
 
@@ -285,8 +300,44 @@ def render_markdown(payload: dict) -> str:
             "others should also improve target error. A high tier with tiny coverage is evidence of selective edge, "
             "not a standalone trading system.",
             "",
+            "## Coverage Frontier",
+            "",
+            "Best observed coverage at each minimum historical direction-hit target. This is a diagnostic frontier, "
+            "not a calibrated probability and not a forward guarantee.",
+            "",
+            "| target hit | status | selected | coverage | direction hit | worst slice hit | MAPE | thresholds |",
+            "|---:|---|---:|---:|---:|---:|---:|---|",
         ]
     )
+    for row in payload.get("coverage_frontier", []):
+        lines.append(
+            "| "
+            f"{row['target_direction_hit']:.2f} | {row['status']} | {row['selected_queries']} | "
+            f"{row['coverage']:.3f} | {row['direction_hit_rate']:.3f} | "
+            f"{row['worst_slice_direction_hit_rate']:.3f} | {row['mape_pct']:.2f}% | "
+            f"{_format_frontier_thresholds(row.get('thresholds') or {})} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Slice-Stable Frontier",
+            "",
+            "Same search, but each selected policy must cover at least 75% of market slices and keep worst-slice "
+            "direction hit at or above 0.50. This is the stricter test for broad usefulness.",
+            "",
+            "| target hit | status | selected | coverage | slice coverage | direction hit | worst slice hit | MAPE | thresholds |",
+            "|---:|---|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for row in payload.get("slice_stable_frontier", []):
+        lines.append(
+            "| "
+            f"{row['target_direction_hit']:.2f} | {row['status']} | {row['selected_queries']} | "
+            f"{row['coverage']:.3f} | {row.get('market_slice_coverage', 0.0):.3f} | "
+            f"{row['direction_hit_rate']:.3f} | {row['worst_slice_direction_hit_rate']:.3f} | "
+            f"{row['mape_pct']:.2f}% | {_format_frontier_thresholds(row.get('thresholds') or {})} |"
+        )
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -535,6 +586,196 @@ def _select_tier(events: list[SignalQualityEvent], tier: SignalTier) -> list[Sig
             continue
         selected.append(event)
     return selected
+
+
+def _coverage_frontier(
+    events: list[SignalQualityEvent],
+    *,
+    target_hits: Iterable[float] = FRONTIER_TARGET_HITS,
+    min_selected: int = 20,
+    min_worst_slice_hit: float | None = None,
+    min_market_slice_coverage: float = 0.0,
+) -> list[dict]:
+    candidates: list[dict] = []
+    total_queries = len(events)
+    if not events:
+        return [_empty_frontier_row(target) for target in target_hits]
+
+    total_market_slices = _total_market_slices(events)
+    agreement_grid = (0.0, 0.125, 0.25, 0.5, 0.625, 0.75, 0.875, 1.0)
+    strength_grid = (0.0, 0.25, 0.50, 0.75, 1.0, 1.5, 2.0)
+    magnitude_grid = (0.0, 25.0, 50.0, 100.0, 150.0, 200.0, 300.0, 400.0, 600.0)
+    volatility_grid: tuple[float | None, ...] = (None, 100.0, 150.0, 200.0, 250.0, 300.0, 400.0)
+
+    for min_agreement in agreement_grid:
+        for min_strength in strength_grid:
+            for min_magnitude_bps in magnitude_grid:
+                for max_volatility_bps in volatility_grid:
+                    tier = SignalTier(
+                        name="frontier_candidate",
+                        min_agreement=min_agreement,
+                        min_strength=min_strength,
+                        min_magnitude_bps=min_magnitude_bps,
+                        max_volatility_bps=max_volatility_bps,
+                    )
+                    selected = _select_tier(events, tier)
+                    if len(selected) < min_selected:
+                        continue
+                    summary = _frontier_candidate_summary(
+                        selected,
+                        tier=tier,
+                        total_queries=total_queries,
+                        total_market_slices=total_market_slices,
+                    )
+                    if min_worst_slice_hit is not None and summary["worst_slice_direction_hit_rate"] < float(min_worst_slice_hit):
+                        continue
+                    if summary["market_slice_coverage"] < float(min_market_slice_coverage):
+                        continue
+                    candidates.append(
+                        summary
+                        | {
+                            "thresholds": {
+                                "min_agreement": min_agreement,
+                                "min_strength": min_strength,
+                                "min_magnitude_bps": min_magnitude_bps,
+                                "max_volatility_bps": max_volatility_bps,
+                            }
+                        }
+                    )
+
+    rows: list[dict] = []
+    for target_hit in target_hits:
+        eligible = [
+            candidate
+            for candidate in candidates
+            if candidate["direction_hit_rate"] >= float(target_hit)
+        ]
+        if not eligible:
+            rows.append(_empty_frontier_row(float(target_hit)))
+            continue
+        best = max(
+            eligible,
+            key=lambda candidate: (
+                candidate["coverage"],
+                candidate.get("worst_slice_direction_hit_rate", 0.0),
+                candidate["direction_hit_rate"],
+                -candidate["mape_pct"],
+            ),
+        )
+        rows.append(
+            {
+                "target_direction_hit": float(target_hit),
+                "status": "found",
+                "selected_queries": best["selected_queries"],
+                "total_queries": best["total_queries"],
+                "coverage": best["coverage"],
+                "direction_hit_rate": best["direction_hit_rate"],
+                "worst_slice_direction_hit_rate": best.get("worst_slice_direction_hit_rate", 0.0),
+                "covered_market_slices": best.get("covered_market_slices", 0),
+                "total_market_slices": best.get("total_market_slices", 0),
+                "market_slice_coverage": best.get("market_slice_coverage", 0.0),
+                "mape_pct": best["mape_pct"],
+                "mean_abs_return_error_bps": best["mean_abs_return_error_bps"],
+                "thresholds": best["thresholds"],
+                "confidence_is_probability": False,
+                "note": "Observed threshold frontier on the benchmark events; not a calibrated probability.",
+            }
+        )
+    return rows
+
+
+def _frontier_candidate_summary(
+    events: list[SignalQualityEvent],
+    *,
+    tier: SignalTier,
+    total_queries: int,
+    total_market_slices: int | None = None,
+) -> dict:
+    selected_queries = len(events)
+    if not events:
+        return {
+            "selected_queries": 0,
+            "total_queries": int(total_queries),
+            "coverage": 0.0,
+            "direction_hit_rate": 0.0,
+            "worst_slice_direction_hit_rate": 0.0,
+            "covered_market_slices": 0,
+            "total_market_slices": int(total_market_slices or 0),
+            "market_slice_coverage": 0.0,
+            "mape_pct": 0.0,
+            "mean_abs_return_error_bps": 0.0,
+        }
+    slice_hits: dict[tuple[str, str, int], list[float]] = {}
+    direction_hit_sum = 0.0
+    error_sum = 0.0
+    mape_sum = 0.0
+    for event in events:
+        direction_hit_sum += float(event.direction_hit)
+        error_sum += float(event.abs_return_error_bps)
+        mape_sum += float(event.abs_pct_error)
+        slice_hits.setdefault((event.symbol, event.timeframe, event.fold_index), []).append(float(event.direction_hit))
+    worst_slice = min(
+        (sum(hits) / max(1, len(hits)) for hits in slice_hits.values()),
+        default=0.0,
+    )
+    total_slices = int(total_market_slices if total_market_slices is not None else len(slice_hits))
+    return {
+        "tier": tier.name,
+        "selected_queries": selected_queries,
+        "total_queries": int(total_queries),
+        "coverage": selected_queries / max(1, int(total_queries)),
+        "direction_hit_rate": direction_hit_sum / selected_queries,
+        "worst_slice_direction_hit_rate": worst_slice,
+        "covered_market_slices": len(slice_hits),
+        "total_market_slices": total_slices,
+        "market_slice_coverage": len(slice_hits) / max(1, total_slices),
+        "mape_pct": mape_sum / selected_queries,
+        "mean_abs_return_error_bps": error_sum / selected_queries,
+    }
+
+
+def _total_market_slices(events: list[SignalQualityEvent]) -> int:
+    return len({(event.symbol, event.timeframe, event.fold_index) for event in events})
+
+
+def _empty_frontier_row(target_hit: float) -> dict:
+    return {
+        "target_direction_hit": float(target_hit),
+        "status": "not_found",
+        "selected_queries": 0,
+        "total_queries": 0,
+        "coverage": 0.0,
+        "direction_hit_rate": 0.0,
+        "worst_slice_direction_hit_rate": 0.0,
+        "covered_market_slices": 0,
+        "total_market_slices": 0,
+        "market_slice_coverage": 0.0,
+        "mape_pct": 0.0,
+        "mean_abs_return_error_bps": 0.0,
+        "thresholds": {
+            "min_agreement": 0.0,
+            "min_strength": 0.0,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": None,
+        },
+        "confidence_is_probability": False,
+        "note": "No threshold set reached this hit-rate target with the minimum selected sample.",
+    }
+
+
+def _format_frontier_volatility(value: float | None) -> str:
+    if value is None:
+        return "inf"
+    return f"{float(value):.0f}bps"
+
+
+def _format_frontier_thresholds(thresholds: dict) -> str:
+    return (
+        f"agreement>={thresholds.get('min_agreement', 0.0):.3f}, "
+        f"strength>={thresholds.get('min_strength', 0.0):.3f}, "
+        f"magnitude>={thresholds.get('min_magnitude_bps', 0.0):.0f}bps, "
+        f"vol<={_format_frontier_volatility(thresholds.get('max_volatility_bps'))}"
+    )
 
 
 def _price_event_from_quality(event: SignalQualityEvent) -> PriceTargetEvent:
