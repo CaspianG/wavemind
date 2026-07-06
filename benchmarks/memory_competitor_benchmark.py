@@ -64,7 +64,10 @@ CHECKS: tuple[QueryCheck, ...] = (
 
 
 def _module_available(name: str) -> bool:
-    return importlib.util.find_spec(name) is not None
+    try:
+        return importlib.util.find_spec(name) is not None
+    except ModuleNotFoundError:
+        return False
 
 
 def _compute_metrics(engine: str, rankings: dict[str, list[str]], latencies_ms: list[float]) -> dict[str, Any]:
