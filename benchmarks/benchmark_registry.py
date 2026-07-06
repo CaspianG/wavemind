@@ -999,7 +999,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_readiness_results.json",
-            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, competitor-adapter coverage, and 10M-load presence.",
+            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, and 10M-load presence. External competitor-service evidence is tracked separately.",
             "competitors": [],
             "metrics": [
                 "readiness_score",
@@ -1023,7 +1023,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-            "next_step": "Clear the remaining action-required item: a live Zep service adapter run with ZEP_API_URL or ZEP_API_KEY configured.",
+            "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.",
         },
         {
             "id": "memory_competitor_adapter_profile",

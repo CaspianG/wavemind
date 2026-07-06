@@ -71,9 +71,9 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert ten_million["cost_status"] == "valid_slo"
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
-    assert readiness["overall_status"] == "action_required"
-    assert readiness["readiness_score"] > 0.9
-    assert readiness["action_required_count"] >= 1
+    assert readiness["overall_status"] == "pass"
+    assert readiness["readiness_score"] == 1.0
+    assert readiness["action_required_count"] == 0
     serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True

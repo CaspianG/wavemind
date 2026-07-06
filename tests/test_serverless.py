@@ -36,7 +36,7 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
     spec = WaveMindServerlessSpec(
         name="wm-serverless",
         namespace="memory",
-        image="ghcr.io/caspiang/wavemind:2.4.16",
+        image="ghcr.io/caspiang/wavemind:2.4.17",
         min_scale=0,
         max_scale=50,
         target_concurrency=80,

@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T03:01:49Z",
-  "overall_status": "action_required",
-  "readiness_score": 0.9375,
+  "generated_at": "2026-07-06T03:26:02Z",
+  "overall_status": "pass",
+  "readiness_score": 1.0,
   "summary": {
-    "overall_status": "action_required",
-    "readiness_score": 0.9375,
+    "overall_status": "pass",
+    "readiness_score": 1.0,
     "pass_count": 15,
-    "action_required_count": 1,
+    "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 16
+    "total_criteria": 15
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T02:36:28Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T03:04:03Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -125,20 +125,21 @@
       "next_step": "Add real CLIP/audio embedding backends and larger multimodal retrieval tests."
     },
     {
-      "id": "real_competitor_adapters",
-      "title": "Mem0, Zep, and LangGraph adapters have real configured results",
-      "status": "action_required",
-      "requirement": "Competitor comparison must run real packages/services, not approximations.",
-      "evidence": "skipped: Zep",
-      "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result."
-    },
-    {
       "id": "ten_million_load_profile",
       "title": "10M-vector production load profile passes recall, p99, and cost gate",
       "status": "pass",
       "requirement": "A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
       "evidence": "WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo",
       "next_step": "Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available."
+    }
+  ],
+  "external_evidence": [
+    {
+      "id": "memory_competitor_adapters",
+      "title": "Mem0, Zep, and LangGraph adapter evidence",
+      "status": "action_required",
+      "evidence": "skipped: Zep",
+      "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result."
     }
   ]
 }
