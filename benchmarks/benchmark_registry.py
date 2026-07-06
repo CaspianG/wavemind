@@ -929,6 +929,24 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "p99_lookup_ms",
                     ),
                 ),
+                "WaveMind sustained HTTP cluster load": _metric_summary(
+                    scale_readiness_results.get("WaveMind sustained HTTP cluster load"),
+                    (
+                        "nodes",
+                        "namespaces",
+                        "replication_factor",
+                        "writes",
+                        "queries",
+                        "failover_queries",
+                        "write_success_rate",
+                        "query_hit_rate",
+                        "failover_hit_rate",
+                        "delete_suppression_rate",
+                        "repair_repaired_total",
+                        "success_rate",
+                        "p99_operation_ms",
+                    ),
+                ),
                 "WaveMind API cache mutation safety": _metric_summary(
                     scale_readiness_results.get("WaveMind API cache mutation safety"),
                     (
@@ -1114,7 +1132,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
+            "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
             "next_step": "Move from deterministic 100M capacity planning to service-backed 100M Qdrant/pgvector/FAISS load tests on sized hardware.",
         },
         {

@@ -122,6 +122,19 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind distributed HTTP sharding"]["concurrent_writes"] == 12
     assert results["WaveMind distributed HTTP sharding"]["concurrent_write_ok"] is True
     assert results["WaveMind distributed HTTP sharding"]["concurrent_query_hit_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["nodes"] == 4
+    assert results["WaveMind sustained HTTP cluster load"]["replication_factor"] == 3
+    assert results["WaveMind sustained HTTP cluster load"]["write_success_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["query_hit_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["failover_hit_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["forget_success_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["delete_suppression_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["repair_missing_before"] is True
+    assert results["WaveMind sustained HTTP cluster load"]["repair_ok"] is True
+    assert results["WaveMind sustained HTTP cluster load"]["repair_repaired_total"] >= 1
+    assert results["WaveMind sustained HTTP cluster load"]["repaired_replica"] is True
+    assert results["WaveMind sustained HTTP cluster load"]["success_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["p99_operation_ms"] < 1000.0
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True

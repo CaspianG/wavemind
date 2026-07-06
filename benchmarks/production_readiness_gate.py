@@ -169,6 +169,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     memory_os = scale.get("WaveMind Memory OS", {})
     sharding = scale.get("WaveMind distributed sharding", {})
     http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
+    sustained_http_cluster = scale.get("WaveMind sustained HTTP cluster load", {})
     runtime = scale.get("WaveMind replicated runtime", {})
     active_active = scale.get("WaveMind active-active delta sync", {})
     field_crdt = scale.get("WaveMind field-state CRDT", {})
@@ -543,6 +544,42 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"concurrent hit rate {http_sharding.get('concurrent_query_hit_rate')}"
             ),
             next_step="Extend the same HTTP shard profile to remote service nodes and sustained load.",
+        ),
+        _criterion(
+            criterion_id="sustained_http_cluster_load",
+            title="Sustained HTTP cluster load survives failover and repair",
+            status=(
+                "pass"
+                if int(sustained_http_cluster.get("nodes", 0)) >= 4
+                and int(sustained_http_cluster.get("replication_factor", 0)) >= 3
+                and float(sustained_http_cluster.get("write_success_rate", 0.0)) >= 1.0
+                and float(sustained_http_cluster.get("query_hit_rate", 0.0)) >= 1.0
+                and float(sustained_http_cluster.get("failover_hit_rate", 0.0)) >= 1.0
+                and float(sustained_http_cluster.get("forget_success_rate", 0.0)) >= 1.0
+                and float(sustained_http_cluster.get("delete_suppression_rate", 0.0)) >= 1.0
+                and sustained_http_cluster.get("repair_ok")
+                and int(sustained_http_cluster.get("repair_repaired_total", 0)) >= 1
+                and sustained_http_cluster.get("repaired_replica")
+                and float(sustained_http_cluster.get("success_rate", 0.0)) >= 1.0
+                and float(sustained_http_cluster.get("p99_operation_ms", float("inf"))) <= 1000.0
+                else "fail"
+            ),
+            requirement=(
+                "The HTTP cluster path must survive a mixed write/query/failover/"
+                "repair/forget workload across multiple namespaces and real API nodes."
+            ),
+            evidence=(
+                f"nodes {sustained_http_cluster.get('nodes')}, "
+                f"writes {sustained_http_cluster.get('writes')}, "
+                f"queries {sustained_http_cluster.get('queries')}, "
+                f"failover hit {sustained_http_cluster.get('failover_hit_rate')}, "
+                f"success {sustained_http_cluster.get('success_rate')}, "
+                f"p99 {float(sustained_http_cluster.get('p99_operation_ms', float('inf'))):.2f} ms"
+            ),
+            next_step=(
+                "Repeat this profile against remote service nodes and larger "
+                "namespace counts before claiming full distributed production scale."
+            ),
         ),
         _criterion(
             criterion_id="replicated_runtime_loss",
