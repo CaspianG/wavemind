@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T06:02:07Z",
+  "generated_at": "2026-07-06T06:23:59Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 18,
+    "pass_count": 19,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 18
+    "total_criteria": 19
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T06:02:06Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T06:02:08Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -82,7 +82,7 @@
       "status": "pass",
       "requirement": "Production cache must be shareable across workers, support query-audit prewarm, support Memory OS prewarm, and invalidate a namespace after memory changes.",
       "evidence": "shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True",
-      "next_step": "Run the same Redis cache profile against a real Redis service under multi-process API load."
+      "next_step": "Keep the real Redis multi-process API load workflow green."
     },
     {
       "id": "api_cache_mutation_safety",
@@ -90,7 +90,15 @@
       "status": "pass",
       "requirement": "FastAPI workers must invalidate shared query cache on remember and forget so mutations cannot leave stale cached recall.",
       "evidence": "cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True",
-      "next_step": "Repeat with a real Redis service and multiple uvicorn worker processes."
+      "next_step": "Keep the real Redis multi-process API load workflow green."
+    },
+    {
+      "id": "real_redis_api_load_ci",
+      "title": "Real Redis multi-process API load is enforced in CI",
+      "status": "pass",
+      "requirement": "CI must start a real Redis service, launch multiple uvicorn workers, verify cross-process cache visibility, and fail on stale-cache or p99 SLO regression.",
+      "evidence": "runner True, workflow True, service redis:7-alpine",
+      "next_step": "Upload and inspect redis-api-load-results artifacts on every release candidate."
     },
     {
       "id": "memory_os_worker",

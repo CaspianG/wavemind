@@ -7,14 +7,14 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `18` |
+| passed criteria | `19` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `18` |
+| total criteria | `19` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T06:02:06Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T06:02:08Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
@@ -22,8 +22,9 @@ verdict, not a marketing claim.
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
 | Serverless plan externalizes state and validates KEDA target | `pass` | Postgres True, Qdrant True, Redis True | Run service-backed KEDA/Knative load tests instead of manifest-only checks. |
 | Hot cache and query-audit prewarm work | `pass` | hit rate 0.92, prewarm hit True, p99 0.004699977580457926 ms | Keep local cache prewarm green while Redis carries multi-worker production cache evidence. |
-| Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True | Run the same Redis cache profile against a real Redis service under multi-process API load. |
-| API cache does not serve stale memory after mutations | `pass` | cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True | Repeat with a real Redis service and multiple uvicorn worker processes. |
+| Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, Memory OS hit True, invalidation True | Keep the real Redis multi-process API load workflow green. |
+| API cache does not serve stale memory after mutations | `pass` | cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True | Keep the real Redis multi-process API load workflow green. |
+| Real Redis multi-process API load is enforced in CI | `pass` | runner True, workflow True, service redis:7-alpine | Upload and inspect redis-api-load-results artifacts on every release candidate. |
 | Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, expired 1, concepts 1 | Run Memory OS against Redis-backed service deployments and add usage-pattern priority prediction. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |

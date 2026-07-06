@@ -670,6 +670,12 @@ For multiple API workers, use a shared Redis cache:
 WAVEMIND_REDIS_URL=redis://localhost:6379/0 WAVEMIND_AUDIT_QUERIES=1 wavemind serve
 ```
 
+To verify the live multi-process cache path against a real Redis service:
+
+```sh
+python benchmarks/redis_api_load_benchmark.py --redis-url redis://localhost:6379/0 --workers 2 --requests 40 --fail-on-slo
+```
+
 For production workers, enable query audit and prewarm the cache from repeated
 real queries:
 

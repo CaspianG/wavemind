@@ -73,8 +73,23 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
     }
 
 
+def _read_optional_text(path: Path) -> str:
+    if not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
+
+
 def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     artifacts = _load_artifacts(root)
+    full_check_workflow = _read_optional_text(root / ".github" / "workflows" / "full-check.yml")
+    redis_api_load_script_exists = (root / "benchmarks" / "redis_api_load_benchmark.py").exists()
+    redis_api_load_ci_configured = (
+        redis_api_load_script_exists
+        and "redis-api-load:" in full_check_workflow
+        and "image: redis:7-alpine" in full_check_workflow
+        and "benchmarks/redis_api_load_benchmark.py" in full_check_workflow
+        and "--fail-on-slo" in full_check_workflow
+    )
     audit = artifacts["audit"]
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
     load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
@@ -310,7 +325,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"Memory OS hit {redis_cache.get('memory_os_cross_worker_hit')}, "
                 f"invalidation {redis_cache.get('namespace_invalidation_removed')}"
             ),
-            next_step="Run the same Redis cache profile against a real Redis service under multi-process API load.",
+            next_step="Keep the real Redis multi-process API load workflow green.",
         ),
         _criterion(
             criterion_id="api_cache_mutation_safety",
@@ -335,7 +350,23 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"forget invalidation {api_cache_mutations.get('cache_invalidated_on_forget')}, "
                 f"forget stale prevented {api_cache_mutations.get('stale_prevented_after_forget')}"
             ),
-            next_step="Repeat with a real Redis service and multiple uvicorn worker processes.",
+            next_step="Keep the real Redis multi-process API load workflow green.",
+        ),
+        _criterion(
+            criterion_id="real_redis_api_load_ci",
+            title="Real Redis multi-process API load is enforced in CI",
+            status="pass" if redis_api_load_ci_configured else "fail",
+            requirement=(
+                "CI must start a real Redis service, launch multiple uvicorn "
+                "workers, verify cross-process cache visibility, and fail on "
+                "stale-cache or p99 SLO regression."
+            ),
+            evidence=(
+                f"runner {redis_api_load_script_exists}, "
+                f"workflow {redis_api_load_ci_configured}, "
+                "service redis:7-alpine"
+            ),
+            next_step="Upload and inspect redis-api-load-results artifacts on every release candidate.",
         ),
         _criterion(
             criterion_id="memory_os_worker",

@@ -114,6 +114,48 @@ jobs:
             benchmarks/agent_memory_ci_results.json
             benchmarks/dynamic_memory_ci_results.json
 
+  redis-api-load:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Redis benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,redis]"
+
+      - name: Run real Redis multi-process API load profile
+        run: |
+          python benchmarks/redis_api_load_benchmark.py \
+            --redis-url redis://127.0.0.1:6379/0 \
+            --workers 2 \
+            --requests 40 \
+            --output benchmarks/redis_api_load_ci_results.json \
+            --fail-on-slo \
+            --min-success-rate 1.0 \
+            --max-p99-ms 1000
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: redis-api-load-results
+          path: benchmarks/redis_api_load_ci_results.json
+
   docker:
     runs-on: ubuntu-latest
 
