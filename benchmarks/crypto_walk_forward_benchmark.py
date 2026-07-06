@@ -959,6 +959,142 @@ class WaveMindMicrostructureEngine(MarketEngine):
         )
 
 
+class WaveMindPerpTrendFieldEngine(MarketEngine):
+    name = "WaveMind perp trend-field"
+
+    def __init__(
+        self,
+        *,
+        min_support: int = 18,
+        min_test_support: int = 6,
+        validation_holdout: float = 0.35,
+        opposition_confidence: float = 0.30,
+        opposition_edge_bps: float = 100.0,
+        min_expected_edge_bps: float = -20.0,
+        max_drawdown_bps: float = 0.0,
+        round_trip_cost_bps: float = 30.0,
+    ):
+        self.base = TrendPersistenceEngine()
+        self.records: list[OHLCVWindow] = []
+        self.return_history: list[float] = []
+        self.relationship_history: dict[tuple[str, ...], list[tuple[int, float]]] = {}
+        self.signal_relationship_history: dict[tuple[str, ...], list[float]] = {}
+        self.pending_predictions: dict[str, tuple[str, tuple[tuple[str, ...], ...]]] = {}
+        self.realized_signal_nets: list[float] = []
+        self.min_support = int(min_support)
+        self.min_test_support = int(min_test_support)
+        self.validation_holdout = float(validation_holdout)
+        self.opposition_confidence = float(opposition_confidence)
+        self.opposition_edge_bps = float(opposition_edge_bps)
+        self.min_expected_edge_bps = float(min_expected_edge_bps)
+        self.max_drawdown_bps = float(max_drawdown_bps)
+        self.round_trip_cost_bps = float(round_trip_cost_bps)
+
+    def add(self, window: OHLCVWindow) -> None:
+        pending = self.pending_predictions.pop(window.id, None)
+        if pending is not None:
+            predicted_direction, relationships = pending
+            realized_net = _net_return_bps(
+                predicted_direction=predicted_direction,
+                actual_return_bps=window.future_return_bps,
+                round_trip_cost_bps=self.round_trip_cost_bps,
+            )
+            self.realized_signal_nets.append(realized_net)
+            for relationship in relationships:
+                self.signal_relationship_history.setdefault(relationship, []).append(realized_net)
+        index = len(self.records)
+        self.records.append(window)
+        self.return_history.append(float(window.future_return_bps))
+        for relationship in _relationship_candidates(_regime_signature_from_window(window)):
+            self.relationship_history.setdefault(relationship, []).append((index, float(window.future_return_bps)))
+        self.base.add(window)
+
+    def query(self, window: OHLCVWindow, *, top_k: int) -> Prediction:
+        if self.max_drawdown_bps > 0.0 and _max_drawdown_bps(self.realized_signal_nets) >= self.max_drawdown_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=0.0,
+                analogues=[],
+                filtered=True,
+                filter_reason="perp_trend_drawdown_circuit_breaker",
+            )
+        base = self.base.query(window, top_k=top_k)
+        candidate_direction = base.direction
+        if candidate_direction not in {"up", "down"}:
+            return base
+
+        relationships = _relationship_candidates(_regime_signature_from_window(window))
+        signal_memory = _relationship_signal_memory(
+            self.signal_relationship_history,
+            relationships,
+            min_support=max(4, self.min_test_support),
+        )
+        if signal_memory["support"] >= max(10, self.min_test_support) and (
+            signal_memory["avg_net_bps"] < -self.opposition_edge_bps
+            or (
+                signal_memory["hit_rate"] < self.opposition_confidence
+                and signal_memory["avg_net_bps"] < -20.0
+            )
+        ):
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=base.latency_ms,
+                analogues=base.analogues,
+                confidence=max(0.0, min(1.0, signal_memory["hit_rate"])),
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason=(
+                    "perp_trend_negative_self_memory:"
+                    f"support={int(signal_memory['support'])},"
+                    f"hit={signal_memory['hit_rate']:.3f},"
+                    f"net={signal_memory['avg_net_bps']:.2f}"
+                ),
+                analogue_agreement=max(0.0, min(1.0, signal_memory["hit_rate"])),
+                regime_agreement=max(0.0, min(1.0, signal_memory["support"] / 24.0)),
+            )
+
+        expected_return = base.expected_return_bps
+        confidence = max(0.35, min(1.0, signal_memory["hit_rate"] if signal_memory["support"] else 0.5))
+        if signal_memory["support"] >= max(10, self.min_test_support) and signal_memory["avg_net_bps"] > 0.0:
+            expected_return = math.copysign(
+                max(abs(base.expected_return_bps), signal_memory["avg_net_bps"] + self.round_trip_cost_bps),
+                base.expected_return_bps,
+            )
+            confidence = max(float(base.confidence), signal_memory["hit_rate"])
+        edge = _directional_edge_after_cost_bps(
+            candidate_direction,
+            expected_return,
+            round_trip_cost_bps=self.round_trip_cost_bps,
+        )
+        if edge < self.min_expected_edge_bps:
+            return Prediction(
+                direction="flat",
+                expected_return_bps=0.0,
+                latency_ms=base.latency_ms,
+                analogues=base.analogues,
+                confidence=confidence,
+                raw_direction=candidate_direction,
+                filtered=True,
+                filter_reason="perp_trend_low_expected_edge",
+                analogue_agreement=confidence,
+                regime_agreement=max(0.0, min(1.0, signal_memory["support"] / 24.0)),
+            )
+
+        self.pending_predictions[window.id] = (candidate_direction, relationships)
+        return Prediction(
+            direction=candidate_direction,
+            expected_return_bps=expected_return,
+            latency_ms=base.latency_ms,
+            analogues=base.analogues,
+            confidence=confidence,
+            raw_direction=base.raw_direction or candidate_direction,
+            analogue_agreement=confidence,
+            regime_agreement=max(0.0, min(1.0, signal_memory["support"] / 24.0)),
+        )
+
+
 class WaveMindDailyTrendMemoryEngine(MarketEngine):
     name = "WaveMind daily trend-memory"
 
@@ -1217,14 +1353,22 @@ class WaveMindTimeframePolicyEngine(MarketEngine):
         self.apply_policy_veto = True
         self.child: MarketEngine | None = None
         if timeframe == "1h":
-            self.child = WaveMindMicrostructureEngine(
-                min_support=adaptive_min_support,
-                min_test_support=adaptive_min_test_support,
-                validation_holdout=adaptive_validation_holdout,
-                performance_lookback=adaptive_performance_lookback,
-                min_recent_edge_bps=adaptive_min_recent_edge_bps,
-                round_trip_cost_bps=round_trip_cost_bps,
-            )
+            if ":" in symbol:
+                self.child = WaveMindPerpTrendFieldEngine(
+                    min_support=max(18, int(adaptive_min_support * 0.75)),
+                    min_test_support=max(6, int(adaptive_min_test_support * 0.75)),
+                    validation_holdout=adaptive_validation_holdout,
+                    round_trip_cost_bps=round_trip_cost_bps,
+                )
+            else:
+                self.child = WaveMindMicrostructureEngine(
+                    min_support=adaptive_min_support,
+                    min_test_support=adaptive_min_test_support,
+                    validation_holdout=adaptive_validation_holdout,
+                    performance_lookback=adaptive_performance_lookback,
+                    min_recent_edge_bps=adaptive_min_recent_edge_bps,
+                    round_trip_cost_bps=round_trip_cost_bps,
+                )
         elif timeframe == "4h":
             self.child = WaveMindAdaptiveFieldEngine(
                 encoder,
@@ -2355,6 +2499,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "risk-overlay",
                     "trend-risk",
                     "microstructure",
+                    "perp-trend-field",
                     "daily-trend-memory",
                     "timeframe-policy",
                     "adaptive-field",
@@ -2378,6 +2523,7 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
                     "risk-overlay",
                     "trend-risk",
                     "microstructure",
+                    "perp-trend-field",
                     "daily-trend-memory",
                     "timeframe-policy",
                     "adaptive-field",
@@ -2415,6 +2561,9 @@ def _normalize_engines(engines: Iterable[str]) -> list[str]:
         "wavemind-trend-risk",
         "microstructure",
         "wavemind-microstructure",
+        "perp-trend-field",
+        "wavemind-perp-trend-field",
+        "perp-trend",
         "daily-trend-memory",
         "wavemind-daily-trend-memory",
         "daily-memory",
@@ -2595,6 +2744,13 @@ def _create_engine(
             validation_holdout=adaptive_validation_holdout,
             round_trip_cost_bps=round_trip_cost_bps,
         )
+    if engine_key in {"perp-trend-field", "wavemind-perp-trend-field", "perp-trend"}:
+        return WaveMindPerpTrendFieldEngine(
+            min_support=max(18, int(adaptive_min_support * 0.75)),
+            min_test_support=max(6, int(adaptive_min_test_support * 0.75)),
+            validation_holdout=adaptive_validation_holdout,
+            round_trip_cost_bps=round_trip_cost_bps,
+        )
     if engine_key in {"daily-trend-memory", "wavemind-daily-trend-memory", "daily-memory"}:
         return WaveMindDailyTrendMemoryEngine(
             min_support=max(18, int(adaptive_min_support * 0.75)),
@@ -2687,6 +2843,9 @@ def _engine_display_name(engine_key: str) -> str:
         "wavemind-trend-risk": "WaveMind trend-risk",
         "microstructure": "WaveMind microstructure",
         "wavemind-microstructure": "WaveMind microstructure",
+        "perp-trend-field": "WaveMind perp trend-field",
+        "wavemind-perp-trend-field": "WaveMind perp trend-field",
+        "perp-trend": "WaveMind perp trend-field",
         "daily-trend-memory": "WaveMind daily trend-memory",
         "wavemind-daily-trend-memory": "WaveMind daily trend-memory",
         "daily-memory": "WaveMind daily trend-memory",
@@ -3055,6 +3214,25 @@ def _relationship_candidates(tokens: Iterable[str]) -> list[tuple[str, ...]]:
     candidates = [(token,) for token in unique]
     candidates.extend(tuple(sorted(pair)) for pair in itertools.combinations(unique, 2))
     return candidates
+
+
+def _relationship_signal_memory(
+    relationship_history: dict[tuple[str, ...], list[float]],
+    relationships: Iterable[tuple[str, ...]],
+    *,
+    min_support: int,
+    lookback: int = 80,
+) -> dict[str, float]:
+    values: list[float] = []
+    for relationship in relationships:
+        values.extend(relationship_history.get(relationship, [])[-lookback:])
+    if len(values) < int(min_support):
+        return {"support": float(len(values)), "hit_rate": 0.0, "avg_net_bps": 0.0}
+    return {
+        "support": float(len(values)),
+        "hit_rate": float(statistics.mean(1.0 if value > 0.0 else 0.0 for value in values)),
+        "avg_net_bps": float(statistics.mean(values)),
+    }
 
 
 def _local_regime_reliability(

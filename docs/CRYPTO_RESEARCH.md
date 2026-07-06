@@ -441,6 +441,26 @@ drawdown (`3250.2` vs `3780.2`) versus raw TA. On the additional five-asset
 check it keeps the improvement (`6.44` vs `3.11` bps) and cuts worst-slice loss
 from `-51.68` to `-25.45` bps.
 
+1h perpetual self-feedback check on HYPE/XRP/ZEC/SOL, 4 folds x 90 windows:
+
+| engine | queries | active d1 | signal rate | sized net bps | active net bps | profit factor | max DD bps | +slices | worst slice | large FP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WaveMind perp trend-field | 1440 | 0.527 | 0.342 | 17.41 | 50.84 | 1.572 | 10706.5 | 7/16 | -27.06 | 0.270 |
+| Trend persistence | 1440 | 0.508 | 0.592 | 19.02 | 32.15 | 1.353 | 11059.8 | 10/16 | -70.39 | 0.418 |
+| WaveMind microstructure | 1440 | 0.430 | 0.099 | -4.81 | -48.78 | 0.619 | 7983.3 | 2/16 | -22.70 | 0.031 |
+| TA rules | 1440 | 0.408 | 0.476 | -32.54 | -68.30 | 0.534 | 51865.0 | 4/16 | -248.52 | 0.182 |
+| Naive last-regime | 1440 | 0.468 | 0.852 | 3.73 | 4.38 | 1.043 | 16477.9 | 6/16 | -104.78 | 0.607 |
+
+Perpetuals need their own 1h layer. The new `WaveMind perp trend-field` starts
+from trend persistence, then stores whether its own matured signals made money
+after fees/slippage in matching relationship regimes. That self-feedback raises
+active direction accuracy (`0.527` vs `0.508`), active net per signal (`50.84`
+vs `32.15` bps), profit factor (`1.572` vs `1.353`), worst-slice loss
+(`-27.06` vs `-70.39` bps), and large false positives (`0.270` vs `0.418`)
+versus raw trend persistence. It gives up some average net (`17.41` vs `19.02`
+bps/query), so this is a risk-adjusted perp upgrade rather than a universal
+price predictor.
+
 Timeframe-aware BTC/ETH/SOL check after TA conflict veto, local regime
 reliability, event-level 1h falling-knife guards, 1h late-breakout guards, 4h
 exhaustion guards, and a live drawdown circuit breaker:
@@ -749,13 +769,20 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 19. Done: experimental 4h relationship-field repair. Direct sign-flips were
     rejected after smoke failure; sign-anchored relationship magnitude was safe
     but did not beat the current regime-policy winner.
-20. Next: build a dedicated 4h/slice-stable policy. The current 1h layer is
-    promising, but 4h high-conviction perps fail and block broad robustness.
-21. Next: validate the market-field target on more exchanges, date ranges,
+20. Done: dedicated 1h perpetual trend-field with self-feedback. On
+    HYPE/XRP/ZEC/SOL OKX perps it improves active direction accuracy from
+    `0.508` to `0.527`, active net per signal from `32.15` to `50.84` bps,
+    profit factor from `1.353` to `1.572`, worst-slice loss from `-70.39` to
+    `-27.06` bps, and large false positives from `0.418` to `0.270` versus raw
+    trend persistence.
+21. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+    perp layer is risk-adjusted progress, but 4h high-conviction perps still
+    block broad robustness.
+22. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-21. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+23. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-21. Add signal construction only after retrieval quality is stable.
-22. Publish results separately from the main README to avoid confusing memory
+24. Add signal construction only after retrieval quality is stable.
+25. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

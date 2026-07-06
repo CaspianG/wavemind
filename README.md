@@ -438,6 +438,16 @@ winner: `0.591` direction hit and `392.5` bps MAE versus regime-policy
 `0.591` / `392.0` bps. This keeps the research trail explicit without promoting
 an unstable model.
 
+The latest 1h perpetual signal layer is separate from the target-price model.
+`WaveMind perp trend-field` starts with trend persistence, then uses
+self-feedback from its own matured signals in matching relationship regimes.
+On HYPE/XRP/ZEC/SOL OKX perps it improves active direction accuracy (`0.527`
+vs `0.508`), active net per signal (`50.84` vs `32.15` bps), profit factor
+(`1.572` vs `1.353`), worst-slice loss (`-27.06` vs `-70.39` bps), and large
+false positives (`0.270` vs `0.418`) versus raw trend persistence. It gives up
+some average net (`17.41` vs `19.02` bps/query), so the result is a
+risk-adjusted perp upgrade, not a universal price predictor.
+
 The strongest current perpetual result is now measured as a coverage frontier,
 not a blanket accuracy claim:
 

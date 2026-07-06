@@ -20,6 +20,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
             "risk-overlay",
             "trend-risk",
             "microstructure",
+            "perp-trend-field",
             "timeframe-policy",
             "adaptive-field",
             "regime-gated",
@@ -58,6 +59,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
         "WaveMind risk-overlay",
         "WaveMind trend-risk",
         "WaveMind microstructure",
+        "WaveMind perp trend-field",
         "WaveMind timeframe policy",
         "WaveMind adaptive-field",
         "WaveMind regime-gated",
@@ -83,6 +85,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "filtered_rate" in result_by_engine["WaveMind risk-overlay"]
     assert "filtered_rate" in result_by_engine["WaveMind trend-risk"]
     assert "filtered_rate" in result_by_engine["WaveMind microstructure"]
+    assert "filtered_rate" in result_by_engine["WaveMind perp trend-field"]
     assert "filtered_rate" in result_by_engine["WaveMind timeframe policy"]
     assert "filtered_rate" in result_by_engine["WaveMind adaptive-field"]
     assert "filtered_rate" in result_by_engine["WaveMind 4h profile"]
@@ -95,6 +98,7 @@ def test_crypto_walk_forward_runs_core_engines(tmp_path):
     assert "slice_positive_rate" in result_by_engine["WaveMind adaptive-field"]
     assert "worst_market_slice_sized_net_bps" in result_by_engine["WaveMind adaptive-field"]
     assert 0.0 <= result_by_engine["WaveMind microstructure"]["signal_rate"] <= 1.0
+    assert 0.0 <= result_by_engine["WaveMind perp trend-field"]["signal_rate"] <= 1.0
     assert 0.0 <= result_by_engine["WaveMind timeframe policy"]["signal_rate"] <= 1.0
     assert 0.0 <= result_by_engine["WaveMind field"]["avg_position_size"] <= 1.0
     assert "avg_net_return_bps" in result_by_engine["OHLCV shape kNN"]
@@ -381,6 +385,7 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
             "risk-overlay",
             "trend-risk",
             "microstructure",
+            "perp-trend-field",
             "timeframe-policy",
             "adaptive-field",
             "regime-gated",
@@ -423,11 +428,12 @@ def test_crypto_walk_forward_cli_writes_json_and_html(tmp_path):
     assert payload["results"][2]["engine"] == "WaveMind risk-overlay"
     assert payload["results"][3]["engine"] == "WaveMind trend-risk"
     assert payload["results"][4]["engine"] == "WaveMind microstructure"
-    assert payload["results"][5]["engine"] == "WaveMind timeframe policy"
-    assert payload["results"][6]["engine"] == "WaveMind adaptive-field"
-    assert payload["results"][7]["engine"] == "WaveMind regime-gated"
-    assert payload["results"][8]["engine"] == "WaveMind calibrated"
-    assert payload["results"][9]["engine"] == "WaveMind field-off"
+    assert payload["results"][5]["engine"] == "WaveMind perp trend-field"
+    assert payload["results"][6]["engine"] == "WaveMind timeframe policy"
+    assert payload["results"][7]["engine"] == "WaveMind adaptive-field"
+    assert payload["results"][8]["engine"] == "WaveMind regime-gated"
+    assert payload["results"][9]["engine"] == "WaveMind calibrated"
+    assert payload["results"][10]["engine"] == "WaveMind field-off"
     assert "event_metrics" in payload
     assert payload["event_metrics"][0]["fold_index"] == 0
     assert payload["event_metrics"][0]["fold_start"] == 40
@@ -645,6 +651,21 @@ def test_timeframe_policy_vetoes_ta_conflict():
     assert prediction.filter_reason == "ta_conflict"
     assert prediction.candidate_direction == "up"
     assert prediction.candidate_expected_return_bps == 120.0
+
+
+def test_timeframe_policy_uses_perp_trend_field_for_one_hour_perpetuals(tmp_path):
+    from benchmarks.crypto_walk_forward_benchmark import WaveMindPerpTrendFieldEngine, WaveMindTimeframePolicyEngine
+    from wavemind.encoders import create_text_encoder
+
+    engine = WaveMindTimeframePolicyEngine(
+        create_text_encoder(kind="hash", vector_dim=32),
+        symbol="HYPE/USDT:USDT",
+        timeframe="1h",
+        temp_root=tmp_path,
+        memory_store="memory",
+    )
+
+    assert isinstance(engine.child, WaveMindPerpTrendFieldEngine)
 
 
 def test_timeframe_policy_drawdown_circuit_breaker_skips_child():
