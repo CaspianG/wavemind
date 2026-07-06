@@ -45,6 +45,8 @@ def test_architecture_advisor_requires_service_index_and_sharding():
         namespace_count=4096,
         node_count=2,
         replication_factor=3,
+        read_quorum=1,
+        read_fanout=3,
         deployment="production",
         observed_p99_ms=180.0,
         target_p99_ms=100.0,
@@ -55,13 +57,42 @@ def test_architecture_advisor_requires_service_index_and_sharding():
 
     assert advice.status == "architecture_required"
     assert payload["production_ready"] is False
+    assert payload["read_quorum"] == 1
+    assert payload["read_fanout"] == 3
     assert "ann-candidate-index" in ids
+    assert "bounded-read-fanout" in ids
     assert "service-index" in ids
     assert "namespace-sharding" in ids
     assert "replication-capacity" in ids
     assert "latency-slo" in ids
     assert "multimodal-payloads" in ids
     assert any("http_cluster_load_benchmark.py" in command for command in advice.next_commands)
+    assert any("--read-fanout 1" in command for command in advice.next_commands)
+
+
+def test_architecture_advisor_rejects_impossible_read_fanout():
+    advice = advise_memory_architecture(
+        {
+            "active_memories": 1000,
+            "total_memories": 1000,
+            "expired_memories": 0,
+            "audit_events": 1,
+            "index": "faiss-persisted",
+            "index_healthy": True,
+            "vector_dim": 384,
+        },
+        target_memories=1000,
+        replication_factor=2,
+        read_quorum=1,
+        read_fanout=3,
+        deployment="staging",
+    )
+    ids = {item.id for item in advice.recommendations}
+
+    assert advice.status == "architecture_required"
+    assert advice.replication_factor == 2
+    assert advice.read_fanout == 3
+    assert "invalid-read-quorum" in ids
 
 
 def test_architecture_advisor_flags_unhealthy_index_and_expired_pressure():
@@ -98,6 +129,10 @@ def test_cli_advise_json_and_fail_on_threshold(tmp_path):
         "4096",
         "--node-count",
         "2",
+        "--read-quorum",
+        "1",
+        "--read-fanout",
+        "3",
         "--deployment",
         "production",
         "--fail-on",
@@ -108,7 +143,10 @@ def test_cli_advise_json_and_fail_on_threshold(tmp_path):
 
     assert result.returncode == 3
     assert payload["status"] == "architecture_required"
+    assert payload["read_quorum"] == 1
+    assert payload["read_fanout"] == 3
     assert payload["scale_plan"]["tier"] == "million-plus"
+    assert any(item["id"] == "bounded-read-fanout" for item in payload["recommendations"])
     assert any(item["id"] == "namespace-sharding" for item in payload["recommendations"])
 
 
@@ -130,6 +168,8 @@ def test_api_architecture_advice_uses_live_stats(tmp_path):
                     "target_memories": 2_000_000,
                     "namespace_count": 4096,
                     "node_count": 2,
+                    "read_quorum": 1,
+                    "read_fanout": 3,
                     "deployment": "production",
                     "multimodal": "true",
                 },
@@ -141,8 +181,11 @@ def test_api_architecture_advice_uses_live_stats(tmp_path):
     assert response.status_code == 200
     assert payload["current_memories"] == 1
     assert payload["target_memories"] == 2_000_000
+    assert payload["read_quorum"] == 1
+    assert payload["read_fanout"] == 3
     assert payload["status"] == "architecture_required"
     ids = {item["id"] for item in payload["recommendations"]}
+    assert "bounded-read-fanout" in ids
     assert "namespace-sharding" in ids
     assert "production-controls" in ids
     assert "multimodal-payloads" in ids

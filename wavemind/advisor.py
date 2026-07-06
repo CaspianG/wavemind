@@ -49,6 +49,8 @@ class MemoryArchitectureAdvice:
     namespace_count: int | None
     node_count: int | None
     replication_factor: int
+    read_quorum: int
+    read_fanout: int
     scale_plan: dict[str, object]
     recommendations: tuple[MemoryArchitectureRecommendation, ...]
     next_commands: tuple[str, ...]
@@ -81,6 +83,8 @@ def advise_memory_architecture(
     namespace_count: int | None = None,
     node_count: int | None = None,
     replication_factor: int = 3,
+    read_quorum: int = 1,
+    read_fanout: int | None = None,
     target_qps: float = 100.0,
     deployment: str = "local",
     multimodal: bool = False,
@@ -93,6 +97,13 @@ def advise_memory_architecture(
     deployment_name = (deployment or "local").lower()
     target = max(current, int(target_memories if target_memories is not None else current))
     target_p99 = float(target_p99_ms)
+    effective_replication_factor = max(1, int(replication_factor))
+    effective_read_quorum = max(1, int(read_quorum))
+    effective_read_fanout = (
+        effective_replication_factor
+        if read_fanout is None
+        else max(1, int(read_fanout))
+    )
 
     plan_dict: dict[str, Any]
     if scale_plan is None:
@@ -176,6 +187,52 @@ def advise_memory_architecture(
             ("docs/BENCHMARK_BRIEF.md",),
         )
 
+    if (
+        effective_read_quorum > effective_replication_factor
+        or effective_read_fanout > effective_replication_factor
+    ):
+        add(
+            "invalid-read-quorum",
+            "architecture_required",
+            "Fix invalid read quorum and fanout",
+            "Read quorum and read fanout must stay inside the configured replication factor.",
+            "Set read quorum and read fanout to values between 1 and the replication factor before production.",
+            (
+                f"wavemind advise --replication-factor {effective_replication_factor} --read-quorum 1 --read-fanout 1 --json",
+            ),
+        )
+    elif effective_read_fanout < effective_read_quorum:
+        add(
+            "invalid-read-fanout",
+            "architecture_required",
+            "Increase read fanout to satisfy read quorum",
+            "The cluster cannot reach read quorum when read fanout is smaller than read quorum.",
+            "Use read_fanout >= read_quorum, then rerun the local HTTP cluster smoke gate.",
+            (
+                f"python benchmarks/local_http_cluster_smoke.py --replication-factor {effective_replication_factor} --read-quorum {effective_read_quorum} --read-fanout {effective_read_quorum} --fail-on-slo",
+            ),
+        )
+    elif effective_read_fanout > effective_read_quorum and (
+        target_qps >= 100
+        or target > SINGLE_NODE_ANN_LIMIT
+        or (observed_p99_ms is not None and float(observed_p99_ms) > target_p99)
+    ):
+        add(
+            "bounded-read-fanout",
+            "action_required",
+            "Bound read fanout for the hot path",
+            (
+                f"Read fanout {effective_read_fanout} queries more replicas than "
+                f"read quorum {effective_read_quorum}, increasing p99 latency under load."
+            ),
+            "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+            (
+                f"python benchmarks/local_http_cluster_smoke.py --replication-factor {effective_replication_factor} --read-quorum {effective_read_quorum} --read-fanout {effective_read_quorum} --fail-on-slo",
+                f"python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor {effective_replication_factor} --read-quorum {effective_read_quorum} --read-fanout {effective_read_quorum} --fail-on-slo",
+            ),
+            ("docs/BENCHMARK_BRIEF.md",),
+        )
+
     if target > SINGLE_NODE_ANN_LIMIT:
         add(
             "service-index",
@@ -199,7 +256,7 @@ def advise_memory_architecture(
             "Plan namespace placement across nodes, use quorum replication, and schedule anti-entropy repair.",
             (
                 "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --kubernetes --repair-cronjob --json",
-                "wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor 3 --json",
+                f"wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor {effective_replication_factor} --read-quorum {effective_read_quorum} --read-fanout {effective_read_quorum} --json",
             ),
             ("deploy/operator", "deploy/helm/wavemind"),
         )
@@ -258,15 +315,15 @@ def advise_memory_architecture(
             ("benchmarks/PRODUCTION_READINESS.md", "docs/OBSERVABILITY.md"),
         )
 
-    if deployment_name in {"production", "prod"} and (node_count or 0) < replication_factor:
+    if deployment_name in {"production", "prod"} and (node_count or 0) < effective_replication_factor:
         add(
             "replication-capacity",
             "architecture_required",
             "Add enough nodes for replication",
-            f"Replication factor {replication_factor} requires at least {replication_factor} available nodes.",
+            f"Replication factor {effective_replication_factor} requires at least {effective_replication_factor} available nodes.",
             "Provision enough API nodes before enabling quorum writes.",
             (
-                f"wavemind cluster-plan --namespace-count {namespace_count or 128} --node node-a --node node-b --node node-c --replication-factor {replication_factor} --json",
+                f"wavemind cluster-plan --namespace-count {namespace_count or 128} --node node-a --node node-b --node node-c --replication-factor {effective_replication_factor} --json",
             ),
         )
 
@@ -278,7 +335,7 @@ def advise_memory_architecture(
             f"Target QPS {float(target_qps):.1f} needs p99, failover, delete suppression, and repair evidence.",
             "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
             (
-                "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f fail_on_slo=true",
+                f"gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor={effective_replication_factor} -f read_quorum={effective_read_quorum} -f read_fanout={effective_read_quorum} -f fail_on_slo=true",
             ),
             (".github/workflows/external-http-cluster-load.yml",),
         )
@@ -341,7 +398,9 @@ def advise_memory_architecture(
         observed_p99_ms=observed_p99_ms,
         namespace_count=namespace_count,
         node_count=node_count,
-        replication_factor=max(1, int(replication_factor)),
+        replication_factor=effective_replication_factor,
+        read_quorum=effective_read_quorum,
+        read_fanout=effective_read_fanout,
         scale_plan=dict(plan_dict),
         recommendations=tuple(recommendations),
         next_commands=next_commands,

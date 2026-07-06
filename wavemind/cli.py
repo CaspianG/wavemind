@@ -163,6 +163,8 @@ def build_parser() -> argparse.ArgumentParser:
     advise.add_argument("--namespace-count", type=int)
     advise.add_argument("--node-count", type=int)
     advise.add_argument("--replication-factor", type=int, default=3)
+    advise.add_argument("--read-quorum", type=int, default=1)
+    advise.add_argument("--read-fanout", type=int)
     advise.add_argument("--target-qps", type=float, default=100.0)
     advise.add_argument(
         "--deployment",
@@ -225,6 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_repair.add_argument("--replication-factor", type=int, default=2)
     cluster_repair.add_argument("--write-quorum", type=int)
     cluster_repair.add_argument("--read-quorum", type=int, default=1)
+    cluster_repair.add_argument("--read-fanout", type=int)
     cluster_repair.add_argument(
         "--api-key",
         default=os.environ.get("WAVEMIND_API_KEY"),
@@ -567,6 +570,9 @@ def print_architecture_advice(advice: dict[str, object]) -> None:
     print(f"current_memories: {advice['current_memories']}")
     print(f"target_memories: {advice['target_memories']}")
     print(f"index: {advice['index']}")
+    print(f"replication_factor: {advice['replication_factor']}")
+    print(f"read_quorum: {advice['read_quorum']}")
+    print(f"read_fanout: {advice['read_fanout']}")
     print(f"target_p99_ms: {advice['target_p99_ms']}")
     observed = advice.get("observed_p99_ms")
     if observed is not None:
@@ -983,6 +989,8 @@ def main(argv: list[str] | None = None) -> int:
                 namespace_count=args.namespace_count,
                 node_count=args.node_count,
                 replication_factor=args.replication_factor,
+                read_quorum=args.read_quorum,
+                read_fanout=args.read_fanout,
                 target_qps=args.target_qps,
                 deployment=args.deployment,
                 multimodal=args.multimodal,
@@ -1088,6 +1096,7 @@ def main(argv: list[str] | None = None) -> int:
             replication_factor=args.replication_factor,
             write_quorum=args.write_quorum,
             read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
             client=client,
         )
         report = DistributedRepairWorker(memory).run_once(

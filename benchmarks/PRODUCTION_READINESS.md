@@ -39,7 +39,7 @@ verdict, not a marketing claim.
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, video, 3d, graph, precision@1 1.0 | Add real CLIP/audio/video/3D embedding backends and larger multimodal retrieval tests. |
 | 10M-vector production load profile passes recall, p99, and cost gate | `pass` | WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo | Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available. |
-| Architecture advisor blocks unsafe large production growth | `pass` | status architecture_required, recommendations capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 10 | Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks. |
+| Architecture advisor blocks unsafe large production growth | `pass` | status architecture_required, recommendations bounded-read-fanout, capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 12 | Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks. |
 
 ## Non-Gating External Evidence
 

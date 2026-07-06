@@ -36,7 +36,13 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "re.split" in workflow
     assert r'[\n,;]+' in workflow
     assert "secrets.WAVEMIND_API_KEY" in workflow
+    assert "read_quorum:" in workflow
+    assert "read_fanout:" in workflow
+    assert "READ_QUORUM" in workflow
+    assert "READ_FANOUT" in workflow
     assert "benchmarks/http_cluster_load_benchmark.py" in workflow
+    assert "--read-quorum" in workflow
+    assert "--read-fanout" in workflow
     assert "benchmarks/http_cluster_load_results.json" in workflow
     assert "--fail-on-slo" in workflow
     assert "external cluster load benchmark requires at least four nodes" in workflow

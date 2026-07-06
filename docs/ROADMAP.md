@@ -74,7 +74,8 @@ policy matters more than raw vector-database scale:
 - `wavemind advise`, `advise_memory_architecture()`, and
   `GET /architecture/advice` turn live stats plus target scale into an operator
   checklist for ANN/service index selection, sharding, cache, DR drills,
-  observability, load tests, replication capacity, and multimodal readiness.
+  observability, load tests, replication capacity, read-quorum/fanout tuning,
+  and multimodal readiness.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,

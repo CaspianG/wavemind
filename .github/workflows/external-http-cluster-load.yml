@@ -27,6 +27,16 @@ on:
         required: true
         default: "3"
         type: string
+      read_quorum:
+        description: "Minimum successful replica reads per query."
+        required: true
+        default: "1"
+        type: string
+      read_fanout:
+        description: "Replica reads attempted per query. Use 1 for quorum-sized hot-path reads."
+        required: true
+        default: "1"
+        type: string
       p99_slo_ms:
         description: "Maximum p99 operation latency."
         required: true
@@ -67,6 +77,8 @@ jobs:
           MEMORIES_PER_NAMESPACE: ${{ inputs.memories_per_namespace }}
           WORKERS: ${{ inputs.workers }}
           REPLICATION_FACTOR: ${{ inputs.replication_factor }}
+          READ_QUORUM: ${{ inputs.read_quorum }}
+          READ_FANOUT: ${{ inputs.read_fanout }}
           P99_SLO_MS: ${{ inputs.p99_slo_ms }}
         run: |
           python - <<'PY'
@@ -94,6 +106,10 @@ jobs:
               os.environ["WORKERS"],
               "--replication-factor",
               os.environ["REPLICATION_FACTOR"],
+              "--read-quorum",
+              os.environ["READ_QUORUM"],
+              "--read-fanout",
+              os.environ["READ_FANOUT"],
               "--p99-slo-ms",
               os.environ["P99_SLO_MS"],
               "--output",

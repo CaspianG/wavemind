@@ -292,12 +292,14 @@ def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
             replication_factor,
             write_quorum,
             read_quorum,
+            read_fanout,
             client,
         ):
             seen["nodes"] = nodes
             seen["replication_factor"] = replication_factor
             seen["write_quorum"] = write_quorum
             seen["read_quorum"] = read_quorum
+            seen["read_fanout"] = read_fanout
             seen["client"] = client
 
     class FakeReport:
@@ -358,6 +360,8 @@ def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
             "2",
             "--read-quorum",
             "1",
+            "--read-fanout",
+            "1",
             "--api-key",
             "secret",
             "--timeout",
@@ -384,6 +388,7 @@ def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
     assert seen["replication_factor"] == 2
     assert seen["write_quorum"] == 2
     assert seen["read_quorum"] == 1
+    assert seen["read_fanout"] == 1
     assert seen["namespaces"] == ("tenant:a", "tenant:0", "tenant:1")
     assert seen["limit"] == 99
     assert seen["include_expired"] is True

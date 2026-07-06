@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T12:20:15Z",
+  "generated_at": "2026-07-06T12:40:42Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -217,7 +217,7 @@
       "title": "Architecture advisor blocks unsafe large production growth",
       "status": "pass",
       "requirement": "Advisor must convert live stats plus 10M production targets into service-index, namespace-sharding, load-test, production-controls, and multimodal readiness actions.",
-      "evidence": "status architecture_required, recommendations capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 10",
+      "evidence": "status architecture_required, recommendations bounded-read-fanout, capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 12",
       "next_step": "Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks."
     }
   ],

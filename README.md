@@ -479,16 +479,18 @@ curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
 For a concrete operator checklist, use the architecture advisor:
 
 ```sh
-wavemind advise --target-memories 2000000 --namespace-count 4096 --deployment production --json
+wavemind advise --target-memories 2000000 --namespace-count 4096 --deployment production --replication-factor 3 --read-quorum 1 --read-fanout 1 --json
 ```
 
 It combines live `stats()`, `scale-plan`, p99 targets, namespace count,
 replication settings, and multimodal needs into actionable recommendations:
 candidate index, sharding, cache, DR drill, observability, and external cluster
-load checks. The same advice is available through HTTP:
+load checks. For latency-sensitive hot paths, keep `read_fanout` near
+`read_quorum`; wider fanout reads more replicas and should be justified by the
+HTTP cluster load benchmark. The same advice is available through HTTP:
 
 ```sh
-curl "http://127.0.0.1:8000/architecture/advice?target_memories=2000000&namespace_count=4096&deployment=production"
+curl "http://127.0.0.1:8000/architecture/advice?target_memories=2000000&namespace_count=4096&deployment=production&replication_factor=3&read_quorum=1&read_fanout=1"
 ```
 
 Use `--fail-on action_required` in CI when a deployment must not proceed until
@@ -746,7 +748,7 @@ Maintenance workers:
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
 wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --min-frequency 2 --max-hot-queries 32 --json
-wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --api-key "$WAVEMIND_API_KEY" --json
+wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --json
 wavemind cluster-plan --namespace-count 4096 --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --repair-cronjob --repair-api-key-secret wavemind-api-key --json
 wavemind replicated-snapshot --root ./state/replicas --node node-a --node node-b --node node-c --out ./backups/replicated --offsite ./offsite/replicated --archive ./archives/replicated --s3 s3://my-bucket/wavemind/prod --keep-last 7 --s3-keep-last 30 --json
 wavemind replicated-drill --from s3://my-bucket/wavemind/prod --to ./state/drill-restore --query "short support replies" --expect-text "Tenant A prefers short support replies." --json

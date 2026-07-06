@@ -543,6 +543,8 @@ class ArchitectureAdviceResponse(BaseModel):
     namespace_count: int | None
     node_count: int | None
     replication_factor: int
+    read_quorum: int
+    read_fanout: int
     scale_plan: dict[str, Any]
     recommendations: list[ArchitectureRecommendationResponse]
     next_commands: list[str]
@@ -969,6 +971,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         namespace_count: int | None = Query(default=None, ge=0),
         node_count: int | None = Query(default=None, ge=0),
         replication_factor: int = Query(default=3, ge=1),
+        read_quorum: int = Query(default=1, ge=1),
+        read_fanout: int | None = Query(default=None, ge=1),
         target_qps: float = Query(default=100.0, gt=0),
         deployment: str = Query(default="local", pattern="^(local|staging|production)$"),
         multimodal: bool = False,
@@ -989,6 +993,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             namespace_count=namespace_count,
             node_count=node_count,
             replication_factor=replication_factor,
+            read_quorum=read_quorum,
+            read_fanout=read_fanout,
             target_qps=target_qps,
             deployment=deployment,
             multimodal=multimodal,
