@@ -118,9 +118,14 @@ policy matters more than raw vector-database scale:
 - The `WaveMindCluster` CRD now exposes a `status` subresource. `wavemind
   operator-status`, `operator_status()`, and the in-cluster operator loop can
   produce and patch Kubernetes-style conditions for resources, capacity,
-  autoscaling, and scheduled repair. The production readiness gate now requires
-  status phase `Ready` and all four operator conditions before the operator
-  criterion passes.
+  autoscaling, scheduled repair, and control-plane safety. The production
+  readiness gate now requires status phase `Ready`, `ControlPlaneReady`, and all
+  operator readiness conditions before the operator criterion passes.
+- The `WaveMindCluster` CRD now includes `spec.controlPlane.consensus`. Operator
+  status embeds the same majority leader lease/config revision safety profile
+  used by the standalone `wavemind control-plane-consensus` gate, so production
+  config changes are blocked unless stale leaders, stale revisions, and
+  minority partitions are rejected.
 - The `WaveMindCluster` CRD is capacity-aware: `spec.autoscaling.targetMemories`
   plus `maxMemoriesPerNode` and `headroom` use the autoscale planner during
   reconciliation, raising StatefulSet replicas and HPA min/max replicas and

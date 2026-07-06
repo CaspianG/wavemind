@@ -17,6 +17,29 @@ resource. `operator-reconcile` renders the concrete Kubernetes resources for a
 cluster: normal Service, headless Service, StatefulSet, optional HPA, and
 scheduled repair CronJob.
 
+Production control-plane safety is part of the custom resource. By default,
+`spec.controlPlane.consensus.enabled` is true. Operator status only reports the
+cluster as ready when the consensus preflight proves that config changes require
+a majority leader lease, monotonic config revisions, stale-leader rejection,
+stale-revision rejection, and minority-partition rejection:
+
+```json
+{
+  "spec": {
+    "controlPlane": {
+      "consensus": {
+        "enabled": true,
+        "leaseTtlSeconds": 30.0,
+        "configRevision": 0
+      }
+    }
+  }
+}
+```
+
+The generated status includes a `ControlPlaneReady` condition and a
+`status.controlPlane.profile` object with the deterministic safety evidence.
+
 Capacity autoscaling is part of the custom resource. When
 `spec.autoscaling.targetMemories` is set, the reconciler uses WaveMind's
 cluster autoscale planner to raise the StatefulSet replica count and HPA

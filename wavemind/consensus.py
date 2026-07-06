@@ -273,82 +273,130 @@ class ControlPlaneConsensus:
             self._lease = None
 
 
-def run_control_plane_consensus_profile() -> dict[str, object]:
+def run_control_plane_consensus_profile(
+    nodes: Iterable[ClusterNode | dict[str, object] | str] | None = None,
+    *,
+    membership_nodes: Iterable[ClusterNode | dict[str, object] | str] | None = None,
+    lease_ttl_seconds: float = 10.0,
+    config_revision: int = 0,
+) -> dict[str, object]:
     """Run a deterministic consensus safety profile for readiness gates."""
 
-    consensus = ControlPlaneConsensus(
-        [
-            {"id": "node-a", "address": "https://wm-a.internal", "zone": "zone-a"},
-            {"id": "node-b", "address": "https://wm-b.internal", "zone": "zone-b"},
-            {"id": "node-c", "address": "https://wm-c.internal", "zone": "zone-c"},
-        ],
-        lease_ttl_seconds=10.0,
+    initial_nodes = tuple(
+        _coerce_node(node)
+        for node in (
+            nodes
+            if nodes is not None
+            else [
+                {"id": "node-a", "address": "https://wm-a.internal", "zone": "zone-a"},
+                {"id": "node-b", "address": "https://wm-b.internal", "zone": "zone-b"},
+                {"id": "node-c", "address": "https://wm-c.internal", "zone": "zone-c"},
+            ]
+        )
     )
-    lease = consensus.acquire_leader_lease("node-a", now=100.0)
+    next_nodes = tuple(
+        _coerce_node(node)
+        for node in (
+            membership_nodes
+            if membership_nodes is not None
+            else (
+                initial_nodes
+                if nodes is not None
+                else [
+                    {"id": "node-a", "address": "https://wm-a.internal", "zone": "zone-a"},
+                    {"id": "node-b", "address": "https://wm-b.internal", "zone": "zone-b"},
+                    {"id": "node-c", "address": "https://wm-c.internal", "zone": "zone-c"},
+                    {"id": "node-d", "address": "https://wm-d.internal", "zone": "zone-d"},
+                    {"id": "node-e", "address": "https://wm-e.internal", "zone": "zone-e"},
+                ]
+            )
+        )
+    )
+    if len(initial_nodes) < 3:
+        return {
+            "engine": "WaveMind control-plane consensus",
+            "voters_initial": len(initial_nodes),
+            "voters_after_membership": len(next_nodes),
+            "majority_initial": len(initial_nodes) // 2 + 1,
+            "majority_after_membership": len(next_nodes) // 2 + 1,
+            "ok": False,
+            "error": "at least three voters are required for production control-plane safety",
+        }
+
+    base_time = 100.0
+    commit_time = base_time + 0.1
+    stale_leader_time = base_time + 0.2
+    stale_revision_time = base_time + 0.3
+    minority_time = base_time + 0.4
+    next_leader_time = base_time + lease_ttl_seconds + 0.1
+    membership_time = next_leader_time + 0.1
+
+    consensus = ControlPlaneConsensus(
+        initial_nodes,
+        lease_ttl_seconds=lease_ttl_seconds,
+        config_revision=config_revision,
+    )
+    first_leader = initial_nodes[0].id
+    second_leader = initial_nodes[1].id
+    lease = consensus.acquire_leader_lease(first_leader, now=base_time)
     first = consensus.commit_config_change(
-        leader_id="node-a",
+        leader_id=first_leader,
         change_type="autoscale",
-        payload={"target_replicas": 5},
-        expected_revision=0,
-        now=101.0,
+        payload={"target_replicas": max(3, len(initial_nodes))},
+        expected_revision=config_revision,
+        now=commit_time,
     )
 
     stale_leader_blocked = False
     try:
-        consensus.acquire_leader_lease("node-b", now=102.0)
+        consensus.acquire_leader_lease(second_leader, now=stale_leader_time)
     except ConsensusLeaseError:
         stale_leader_blocked = True
 
     stale_revision_blocked = False
     try:
         consensus.commit_config_change(
-            leader_id="node-a",
+            leader_id=first_leader,
             change_type="autoscale",
-            payload={"target_replicas": 6},
-            expected_revision=0,
-            now=103.0,
+            payload={"target_replicas": max(3, len(initial_nodes)) + 1},
+            expected_revision=config_revision,
+            now=stale_revision_time,
         )
     except ConsensusRevisionError:
         stale_revision_blocked = True
 
-    consensus.set_node_available("node-b", False)
-    consensus.set_node_available("node-c", False)
+    for node in initial_nodes[1:]:
+        consensus.set_node_available(node.id, False)
     minority_blocked = False
     try:
         consensus.commit_config_change(
-            leader_id="node-a",
+            leader_id=first_leader,
             change_type="autoscale",
-            payload={"target_replicas": 7},
-            expected_revision=1,
-            now=104.0,
+            payload={"target_replicas": max(3, len(initial_nodes)) + 2},
+            expected_revision=config_revision + 1,
+            now=minority_time,
         )
     except ConsensusQuorumError:
         minority_blocked = True
 
-    consensus.set_node_available("node-b", True)
-    consensus.set_node_available("node-c", True)
-    new_lease = consensus.acquire_leader_lease("node-b", now=111.0)
+    for node in initial_nodes[1:]:
+        consensus.set_node_available(node.id, True)
+    new_lease = consensus.acquire_leader_lease(second_leader, now=next_leader_time)
     membership = consensus.commit_config_change(
-        leader_id="node-b",
+        leader_id=second_leader,
         change_type="membership",
-        payload={
-            "nodes": [
-                {"id": "node-a", "address": "https://wm-a.internal", "zone": "zone-a"},
-                {"id": "node-b", "address": "https://wm-b.internal", "zone": "zone-b"},
-                {"id": "node-c", "address": "https://wm-c.internal", "zone": "zone-c"},
-                {"id": "node-d", "address": "https://wm-d.internal", "zone": "zone-d"},
-                {"id": "node-e", "address": "https://wm-e.internal", "zone": "zone-e"},
-            ]
-        },
-        expected_revision=1,
-        now=112.0,
+        payload={"nodes": [node.as_dict() for node in next_nodes]},
+        expected_revision=config_revision + 1,
+        now=membership_time,
     )
 
+    revisions = [entry.revision for entry in consensus.log]
+    expected_revisions = [config_revision + 1, config_revision + 2]
     return {
         "engine": "WaveMind control-plane consensus",
-        "voters_initial": 3,
+        "voters_initial": len(initial_nodes),
         "voters_after_membership": len(consensus.nodes),
-        "majority_initial": 2,
+        "majority_initial": len(initial_nodes) // 2 + 1,
         "majority_after_membership": consensus.majority,
         "lease_term": lease.term,
         "new_leader_term": new_lease.term,
@@ -361,7 +409,7 @@ def run_control_plane_consensus_profile() -> dict[str, object]:
         "membership_committed": membership.committed,
         "membership_ack_count": membership.quorum_size,
         "monotonic_terms": new_lease.term > lease.term,
-        "monotonic_revisions": [entry.revision for entry in consensus.log] == [1, 2],
+        "monotonic_revisions": revisions == expected_revisions,
         "ok": (
             first.committed
             and membership.committed
@@ -369,10 +417,9 @@ def run_control_plane_consensus_profile() -> dict[str, object]:
             and stale_revision_blocked
             and minority_blocked
             and new_lease.term > lease.term
-            and [entry.revision for entry in consensus.log] == [1, 2]
+            and revisions == expected_revisions
         ),
     }
-
 
 def _coerce_node(node: ClusterNode | dict[str, object] | str) -> ClusterNode:
     if isinstance(node, ClusterNode):

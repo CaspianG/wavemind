@@ -617,6 +617,10 @@ def run_operator_profile(
         "status_capacity_within_headroom": status["capacity"]["withinHeadroom"],
         "status_degraded_nodes": status["degradedNodes"],
         "status_unavailable_nodes": status["unavailableNodes"],
+        "control_plane_ready": status["controlPlane"]["ready"],
+        "control_plane_voters": status["controlPlane"]["profile"]["voters_initial"],
+        "control_plane_final_revision": status["controlPlane"]["profile"]["final_revision"],
+        "control_plane_minority_blocked": status["controlPlane"]["profile"]["minority_commit_blocked"],
         "status_conditions_true": [
             key for key, value in sorted(conditions.items()) if value == "True"
         ],
@@ -2684,6 +2688,9 @@ def main() -> int:
             print(f"| operator | statefulset_replicas | {result['statefulset_replicas']} |")
             print(f"| operator | capacity_required_replicas | {result['capacity_required_replicas']} |")
             print(f"| operator | capacity_target_max_node_memories | {result['capacity_target_max_node_memories']} |")
+            print(f"| operator | control_plane_ready | {result['control_plane_ready']} |")
+            print(f"| operator | control_plane_voters | {result['control_plane_voters']} |")
+            print(f"| operator | control_plane_minority_blocked | {result['control_plane_minority_blocked']} |")
             print(f"| operator | autoscaling_max_replicas | {result['autoscaling_max_replicas']} |")
             print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
         elif result["engine"] == "WaveMind serverless plan":

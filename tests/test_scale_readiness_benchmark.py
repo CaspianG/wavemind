@@ -43,9 +43,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Kubernetes operator"]["status_required_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["status_capacity_within_headroom"] is True
     assert results["WaveMind Kubernetes operator"]["status_degraded_nodes"] == 0
+    assert results["WaveMind Kubernetes operator"]["control_plane_ready"] is True
+    assert results["WaveMind Kubernetes operator"]["control_plane_voters"] >= 3
+    assert results["WaveMind Kubernetes operator"]["control_plane_final_revision"] == 2
+    assert results["WaveMind Kubernetes operator"]["control_plane_minority_blocked"] is True
     assert set(results["WaveMind Kubernetes operator"]["status_conditions_true"]) == {
         "AutoscalingReady",
         "CapacityPlanned",
+        "ControlPlaneReady",
         "RepairScheduled",
         "ResourcesReady",
     }

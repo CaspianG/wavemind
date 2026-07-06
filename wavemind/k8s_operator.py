@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
+from .consensus import run_control_plane_consensus_profile
 
 
 API_GROUP = "memory.wavemind.ai"
@@ -46,6 +47,9 @@ class WaveMindClusterSpec:
     repair_enabled: bool = True
     repair_schedule: str = "*/15 * * * *"
     repair_limit: int = 1000
+    control_plane_consensus_enabled: bool = True
+    control_plane_lease_ttl_seconds: float = 30.0
+    control_plane_config_revision: int = 0
     autoscaling_enabled: bool = False
     autoscaling_min_replicas: int = 3
     autoscaling_max_replicas: int = 12
@@ -73,6 +77,10 @@ class WaveMindClusterSpec:
             raise ValueError("service_port must be positive")
         if self.repair_limit <= 0:
             raise ValueError("repair_limit must be positive")
+        if self.control_plane_lease_ttl_seconds <= 0:
+            raise ValueError("control_plane_lease_ttl_seconds must be positive")
+        if self.control_plane_config_revision < 0:
+            raise ValueError("control_plane_config_revision cannot be negative")
         if self.autoscaling_min_replicas <= 0:
             raise ValueError("autoscaling_min_replicas must be positive")
         if self.autoscaling_max_replicas < self.autoscaling_min_replicas:
@@ -121,6 +129,8 @@ class WaveMindClusterSpec:
         cache = dict(spec.get("cache") or {})
         auth = dict(spec.get("auth") or {})
         repair = dict(spec.get("repair") or {})
+        control_plane = dict(spec.get("controlPlane") or {})
+        consensus = dict(control_plane.get("consensus") or {})
         autoscaling = dict(spec.get("autoscaling") or {})
         persistence = dict(spec.get("persistence") or {})
         service = dict(spec.get("service") or {})
@@ -148,6 +158,9 @@ class WaveMindClusterSpec:
             repair_enabled=bool(repair.get("enabled", True)),
             repair_schedule=str(repair.get("schedule", "*/15 * * * *")),
             repair_limit=int(repair.get("limit", 1000)),
+            control_plane_consensus_enabled=bool(consensus.get("enabled", True)),
+            control_plane_lease_ttl_seconds=float(consensus.get("leaseTtlSeconds", 30.0)),
+            control_plane_config_revision=int(consensus.get("configRevision", 0)),
             autoscaling_enabled=bool(autoscaling.get("enabled", False)),
             autoscaling_min_replicas=int(autoscaling.get("minReplicas", spec.get("replicas", 3))),
             autoscaling_max_replicas=int(autoscaling.get("maxReplicas", max(12, int(spec.get("replicas", 3))))),
@@ -208,6 +221,13 @@ class WaveMindClusterSpec:
                 "enabled": self.repair_enabled,
                 "schedule": self.repair_schedule,
                 "limit": self.repair_limit,
+            },
+            "controlPlane": {
+                "consensus": {
+                    "enabled": self.control_plane_consensus_enabled,
+                    "leaseTtlSeconds": self.control_plane_lease_ttl_seconds,
+                    "configRevision": self.control_plane_config_revision,
+                }
             },
         }
         if self.autoscaling_enabled:
@@ -288,6 +308,24 @@ class WaveMindClusterSpec:
             ),
             max_moves=25,
         )
+
+    def control_plane_consensus_report(self) -> dict[str, object]:
+        if not self.control_plane_consensus_enabled:
+            return {
+                "enabled": False,
+                "ready": False,
+                "reason": "Consensus disabled",
+            }
+        profile = run_control_plane_consensus_profile(
+            self.nodes,
+            lease_ttl_seconds=self.control_plane_lease_ttl_seconds,
+            config_revision=self.control_plane_config_revision,
+        )
+        return {
+            "enabled": True,
+            "ready": bool(profile.get("ok")),
+            "profile": profile,
+        }
 
     def as_resource_list(self, resources: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
         return {
@@ -568,6 +606,25 @@ def custom_resource_definition() -> dict[str, Any]:
                                         "cache": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "auth": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "repair": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "controlPlane": {
+                                            "type": "object",
+                                            "properties": {
+                                                "consensus": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "enabled": {"type": "boolean"},
+                                                        "leaseTtlSeconds": {
+                                                            "type": "number",
+                                                            "exclusiveMinimum": 0,
+                                                        },
+                                                        "configRevision": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                        },
+                                                    },
+                                                }
+                                            },
+                                        },
                                         "autoscaling": {
                                             "type": "object",
                                             "properties": {
@@ -800,7 +857,15 @@ def operator_status(
         )
     )
     repair_ready = bool(spec.repair_enabled and spec.namespace_count > 0)
-    ready = resources_ready and capacity_ready and autoscaling_ready and repair_ready
+    control_plane = spec.control_plane_consensus_report()
+    control_plane_ready = bool(control_plane.get("ready"))
+    ready = (
+        resources_ready
+        and capacity_ready
+        and autoscaling_ready
+        and repair_ready
+        and control_plane_ready
+    )
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     conditions = [
@@ -844,6 +909,16 @@ def operator_status(
             ),
             timestamp,
         ),
+        _operator_condition(
+            "ControlPlaneReady",
+            control_plane_ready,
+            "ConsensusLeaseSafe" if control_plane_ready else "ConsensusBlocked",
+            (
+                f"enabled={control_plane.get('enabled')}; "
+                f"ready={control_plane_ready}"
+            ),
+            timestamp,
+        ),
     ]
     actions: list[str] = []
     if not resources_ready:
@@ -858,6 +933,8 @@ def operator_status(
         actions.append("Run cluster-health and cluster-repair before declaring the cluster ready.")
     if not repair_ready:
         actions.append("Enable scheduled cluster repair for replicated namespace deployments.")
+    if not control_plane_ready:
+        actions.append("Enable and pass control-plane consensus safety before applying production config changes.")
     if not actions:
         actions.append("Cluster status is ready; keep readiness, repair, and load gates scheduled.")
 
@@ -887,6 +964,7 @@ def operator_status(
             "maxReplicas": spec.autoscaling_max_replicas,
             "hpaDesiredReplicas": hpa_desired_replicas,
         },
+        "controlPlane": control_plane,
         "conditions": conditions,
         "actions": actions,
         "lastTransitionTime": timestamp,

@@ -487,10 +487,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(operator.get("status_required_replicas", 0))
                 == int(operator.get("statefulset_replicas", -1))
                 and operator.get("status_capacity_within_headroom")
+                and operator.get("control_plane_ready")
+                and int(operator.get("control_plane_voters", 0)) >= 3
+                and operator.get("control_plane_minority_blocked")
                 and set(operator.get("status_conditions_true", []))
                 == {
                     "AutoscalingReady",
                     "CapacityPlanned",
+                    "ControlPlaneReady",
                     "RepairScheduled",
                     "ResourcesReady",
                 }
@@ -499,7 +503,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement=(
                 "Operator output must include CRD, StatefulSet, Service, HPA, "
                 "scheduled repair, capacity-aware replica reconciliation, and "
-                "status conditions for readiness/autoscaling/capacity/repair."
+                "status conditions for readiness/autoscaling/capacity/repair plus "
+                "control-plane consensus safety."
             ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
@@ -507,9 +512,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"replicas {operator.get('statefulset_replicas')}, "
                 f"required {operator.get('capacity_required_replicas')}, "
                 f"target max {operator.get('capacity_target_max_node_memories')}, "
-                f"status {operator.get('status_phase')}"
+                f"status {operator.get('status_phase')}, "
+                f"control-plane {operator.get('control_plane_ready')}"
             ),
-            next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA and pod metrics.",
+            next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics.",
         ),
         _criterion(
             criterion_id="serverless_externalized_state",

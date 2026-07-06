@@ -159,6 +159,36 @@ def test_control_plane_consensus_profile_is_release_gate_ready():
     assert payload["monotonic_revisions"] is True
 
 
+def test_control_plane_consensus_profile_uses_supplied_cluster_nodes():
+    payload = run_control_plane_consensus_profile(
+        [
+            {"id": "wm-0", "address": "http://wm-0.internal"},
+            {"id": "wm-1", "address": "http://wm-1.internal"},
+            {"id": "wm-2", "address": "http://wm-2.internal"},
+            {"id": "wm-3", "address": "http://wm-3.internal"},
+        ],
+        lease_ttl_seconds=15,
+        config_revision=7,
+    )
+
+    assert payload["ok"] is True
+    assert payload["voters_initial"] == 4
+    assert payload["voters_after_membership"] == 4
+    assert payload["majority_initial"] == 3
+    assert payload["majority_after_membership"] == 3
+    assert payload["first_revision"] == 8
+    assert payload["final_revision"] == 9
+    assert payload["minority_commit_blocked"] is True
+
+
+def test_control_plane_consensus_profile_rejects_tiny_cluster_for_production():
+    payload = run_control_plane_consensus_profile(["wm-0", "wm-1"])
+
+    assert payload["ok"] is False
+    assert payload["voters_initial"] == 2
+    assert "at least three voters" in payload["error"]
+
+
 def test_cli_control_plane_consensus_outputs_json():
     result = run_cli("control-plane-consensus", "--json")
     payload = json.loads(result.stdout)

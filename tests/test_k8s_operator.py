@@ -67,9 +67,14 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert crd["spec"]["names"]["kind"] == "WaveMindCluster"
     spec_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"]
     assert "autoscaling" in spec_props
+    assert "controlPlane" in spec_props
     status_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["status"]
     assert crd["spec"]["versions"][0]["subresources"] == {"status": {}}
     assert status_props["x-kubernetes-preserve-unknown-fields"] is True
+    consensus_props = spec_props["controlPlane"]["properties"]["consensus"]["properties"]
+    assert "enabled" in consensus_props
+    assert "leaseTtlSeconds" in consensus_props
+    assert "configRevision" in consensus_props
     assert "maxReplicas" in spec_props["autoscaling"]["properties"]
     assert "targetMemories" in spec_props["autoscaling"]["properties"]
     assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
@@ -100,6 +105,8 @@ def test_operator_reconcile_renders_cluster_resources():
     repair_args = resources["CronJob"]["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["args"]
     assert repair_args.count("--namespace") == 4
     assert "wm-prod-0=http://wm-prod-0.wm-prod-headless.wavemind-system.svc.cluster.local:8000" in repair_args
+    assert payload["operatorStatus"]["controlPlane"]["ready"] is True
+    assert payload["operatorStatus"]["controlPlane"]["profile"]["voters_initial"] == 3
 
 
 def test_operator_reconcile_renders_horizontal_pod_autoscaler_when_enabled():
@@ -166,7 +173,10 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
         "CapacityPlanned",
         "AutoscalingReady",
         "RepairScheduled",
+        "ControlPlaneReady",
     }
+    assert payload["operatorStatus"]["controlPlane"]["ready"] is True
+    assert payload["operatorStatus"]["controlPlane"]["profile"]["minority_commit_blocked"] is True
 
 
 def test_operator_status_reports_degraded_capacity_and_repair_actions():
@@ -206,8 +216,29 @@ def test_operator_status_reports_degraded_capacity_and_repair_actions():
     assert conditions["ResourcesReady"]["status"] == "False"
     assert conditions["CapacityPlanned"]["status"] == "True"
     assert conditions["RepairScheduled"]["status"] == "False"
+    assert conditions["ControlPlaneReady"]["status"] == "True"
     assert any("Run cluster-health" in action for action in status["actions"])
     assert any("Enable scheduled cluster repair" in action for action in status["actions"])
+
+
+def test_operator_status_marks_control_plane_disabled_as_not_ready():
+    spec = WaveMindClusterSpec(
+        name="wm-no-consensus",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=3,
+        namespace_count=16,
+        control_plane_consensus_enabled=False,
+    )
+
+    status = operator_status(spec.custom_resource())
+    conditions = {condition["type"]: condition for condition in status["conditions"]}
+
+    assert status["ready"] is False
+    assert status["controlPlane"]["enabled"] is False
+    assert status["controlPlane"]["ready"] is False
+    assert conditions["ControlPlaneReady"]["status"] == "False"
+    assert any("control-plane consensus" in action for action in status["actions"])
 
 
 def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
@@ -327,6 +358,7 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     )
 
     assert sample_payload["kind"] == "WaveMindCluster"
+    assert sample_payload["spec"]["controlPlane"]["consensus"]["enabled"] is True
     assert {item["kind"] for item in reconciled["items"]} == {
         "Service",
         "StatefulSet",

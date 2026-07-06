@@ -1579,6 +1579,9 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repair-schedule", default="*/15 * * * *")
     parser.add_argument("--repair-limit", type=int, default=1000)
     parser.add_argument("--no-repair", action="store_true")
+    parser.add_argument("--no-control-plane-consensus", action="store_true")
+    parser.add_argument("--control-plane-lease-ttl-seconds", type=float, default=30.0)
+    parser.add_argument("--control-plane-config-revision", type=int, default=0)
     parser.add_argument("--autoscaling", action="store_true")
     parser.add_argument("--autoscaling-min-replicas", type=int, default=3)
     parser.add_argument("--autoscaling-max-replicas", type=int, default=12)
@@ -1611,6 +1614,9 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         repair_enabled=not args.no_repair,
         repair_schedule=args.repair_schedule,
         repair_limit=args.repair_limit,
+        control_plane_consensus_enabled=not args.no_control_plane_consensus,
+        control_plane_lease_ttl_seconds=args.control_plane_lease_ttl_seconds,
+        control_plane_config_revision=args.control_plane_config_revision,
         autoscaling_enabled=args.autoscaling,
         autoscaling_min_replicas=args.autoscaling_min_replicas,
         autoscaling_max_replicas=args.autoscaling_max_replicas,

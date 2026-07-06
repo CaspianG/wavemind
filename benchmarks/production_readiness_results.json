@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T17:18:05Z",
+  "generated_at": "2026-07-06T17:50:44Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -88,9 +88,9 @@
       "id": "operator_autoscaling_repair",
       "title": "Kubernetes operator bundle includes HPA and repair job",
       "status": "pass",
-      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, and status conditions for readiness/autoscaling/capacity/repair.",
-      "evidence": "CRD True, HPA True, repair True, replicas 34, required 34, target max 678711, status Ready",
-      "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA and pod metrics."
+      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, and status conditions for readiness/autoscaling/capacity/repair plus control-plane consensus safety.",
+      "evidence": "CRD True, HPA True, repair True, replicas 34, required 34, target max 678711, status Ready, control-plane True",
+      "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
     },
     {
       "id": "serverless_externalized_state",
@@ -105,7 +105,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0030999653972685337 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.018599967006593943 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -185,7 +185,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 225.08 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 441.52 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -193,7 +193,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 2.0684999763034284 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 2.6709000230766833 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
