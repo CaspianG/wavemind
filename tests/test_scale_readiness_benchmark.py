@@ -46,6 +46,11 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind query vector cache"]["redis_shared_across_workers"] is True
     assert results["WaveMind query vector cache"]["redis_encode_calls"] == 1
     assert results["WaveMind query vector cache"]["redis_reader_hits"] == 1
+    assert results["WaveMind shared rate limiter"]["shared_across_workers"] is True
+    assert results["WaveMind shared rate limiter"]["workers"] == 2
+    assert results["WaveMind shared rate limiter"]["allowed"] == 4
+    assert results["WaveMind shared rate limiter"]["limited"] == 1
+    assert results["WaveMind shared rate limiter"]["expire_seconds"] == 120
     assert results["WaveMind Redis hot cache"]["shared_cache_visible_across_clients"] is True
     assert results["WaveMind Redis hot cache"]["cache_prewarm_warmed"] == 1
     assert results["WaveMind Redis hot cache"]["cache_prewarm_cross_worker_hit"] is True

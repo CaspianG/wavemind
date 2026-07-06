@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`20/20` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`21/21` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -88,8 +88,8 @@ policy matters more than raw vector-database scale:
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
-  prewarm, query-vector cache, hot-cache behavior, API cache mutation safety, and
-  structured-payload retrieval.
+  prewarm, query-vector cache, Redis-compatible shared rate limiting, hot-cache
+  behavior, API cache mutation safety, and structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
@@ -99,7 +99,8 @@ policy matters more than raw vector-database scale:
   process-local API latency/failure metrics, optional OpenTelemetry traces, and
   local Prometheus/OTEL Collector alert examples now cover the first
   observability layer.
-- API key roles and opt-in rate limiting are available for FastAPI deployments.
+- API key roles, opt-in in-process rate limiting, and Redis-compatible shared
+  rate limiting are available for FastAPI deployments.
 - SQLite backup, timestamped retention, restore, admin-only HTTP backup,
   replicated snapshot/restore, offsite-mirrored snapshot jobs, and verified
   `.tar.gz` snapshot archives with S3-compatible upload, latest-archive lookup,

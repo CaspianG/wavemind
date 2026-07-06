@@ -57,6 +57,7 @@ from wavemind import (
     WaveMindServerlessSpec,
     stable_memory_key,
 )
+from wavemind.api import RedisRateLimiter
 
 
 class InMemoryS3Client:
@@ -136,6 +137,14 @@ class RedisLikeCacheClient:
         for key in keys:
             self.items.pop(key, None)
             self.expirations.pop(key, None)
+
+    def incr(self, key: str):
+        self.items[key] = str(int(self.items.get(key, "0")) + 1)
+        return int(self.items[key])
+
+    def expire(self, key: str, seconds: int):
+        self.expirations[key] = int(seconds)
+        return True
 
 
 class MemoryOSEncoder:
@@ -736,6 +745,56 @@ def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
         finally:
             local_memory.close()
             redis_memory.close()
+
+
+class _RateLimitClient:
+    host = "127.0.0.1"
+
+
+class _RateLimitRequest:
+    def __init__(self, api_key: str | None = None):
+        self.headers = {"x-api-key": api_key} if api_key else {}
+        self.client = _RateLimitClient()
+
+
+def run_shared_rate_limit_profile() -> dict[str, object]:
+    client = RedisLikeCacheClient()
+    writer = RedisRateLimiter(
+        client,
+        requests_per_minute=4,
+        prefix="wm:rate-scale",
+    )
+    reader = RedisRateLimiter(
+        client,
+        requests_per_minute=4,
+        prefix="wm:rate-scale",
+    )
+    latencies: list[float] = []
+    decisions: list[bool] = []
+    for index in range(5):
+        limiter = writer if index % 2 == 0 else reader
+        started = time.perf_counter()
+        decisions.append(limiter.allow(_RateLimitRequest(api_key="shared-worker-key")))
+        latencies.append((time.perf_counter() - started) * 1000.0)
+    writer_stats = writer.stats()
+    reader_stats = reader.stats()
+    return {
+        "engine": "WaveMind shared rate limiter",
+        "backend": "redis-compatible fixed window",
+        "workers": 2,
+        "limit_per_minute": 4,
+        "requests": len(decisions),
+        "allowed": sum(1 for decision in decisions if decision),
+        "limited": sum(1 for decision in decisions if not decision),
+        "shared_across_workers": decisions == [True, True, True, True, False],
+        "redis_keys": len(client.items),
+        "expire_seconds": next(iter(client.expirations.values()), None),
+        "writer_allowed": writer_stats.allowed,
+        "reader_allowed": reader_stats.allowed,
+        "reader_limited": reader_stats.limited,
+        "avg_check_ms": statistics.mean(latencies),
+        "p99_check_ms": percentile(latencies, 99),
+    }
 
 
 def run_redis_cache_profile() -> dict[str, object]:
@@ -1861,6 +1920,7 @@ def run_benchmark(
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_query_vector_cache_profile(),
+        run_shared_rate_limit_profile(),
         run_redis_cache_profile(),
         run_api_cache_mutation_profile(),
         run_memory_os_profile(),
@@ -1887,9 +1947,10 @@ def run_benchmark(
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, query-vector cache, "
-                "Memory OS adaptive prewarm/consolidation/forgetting, local and "
-                "Redis-compatible hot-cache behavior, API cache mutation safety, "
-                "and structured payload retrieval. "
+                "Redis-compatible shared rate limiting, Memory OS adaptive "
+                "prewarm/consolidation/forgetting, local and Redis-compatible "
+                "hot-cache behavior, API cache mutation safety, and structured "
+                "payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -1948,6 +2009,10 @@ def main() -> int:
             print(f"| query vector cache | local_encode_calls | {result['local_encode_calls']} |")
             print(f"| query vector cache | local_hit_rate | {result['local_hit_rate']:.3f} |")
             print(f"| query vector cache | redis_shared_across_workers | {result['redis_shared_across_workers']} |")
+        elif result["engine"] == "WaveMind shared rate limiter":
+            print(f"| shared rate limiter | shared_across_workers | {result['shared_across_workers']} |")
+            print(f"| shared rate limiter | allowed | {result['allowed']} |")
+            print(f"| shared rate limiter | limited | {result['limited']} |")
         elif result["engine"] == "WaveMind Redis hot cache":
             print(f"| redis hot cache | shared_cache_visible | {result['shared_cache_visible_across_clients']} |")
             print(f"| redis hot cache | cache_prewarm_warmed | {result['cache_prewarm_warmed']} |")

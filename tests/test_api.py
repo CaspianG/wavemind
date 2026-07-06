@@ -872,3 +872,71 @@ def test_fastapi_rate_limit_is_opt_in(tmp_path, monkeypatch):
             assert limited.json()["detail"] == "Rate limit exceeded"
     finally:
         mind.close()
+
+
+def test_fastapi_rate_limit_can_use_shared_redis_from_env(tmp_path, monkeypatch):
+    class FakeRedisClient:
+        values = {}
+        expirations = {}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert url == "redis://rate.test/0"
+            assert decode_responses is True
+            return cls()
+
+        def incr(self, key):
+            self.values[key] = int(self.values.get(key, 0)) + 1
+            return self.values[key]
+
+        def expire(self, key, seconds):
+            self.expirations[key] = seconds
+            return True
+
+    fake_redis_module = types.SimpleNamespace(Redis=FakeRedisClient)
+    monkeypatch.setitem(sys.modules, "redis", fake_redis_module)
+    monkeypatch.delenv("WAVEMIND_READ_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_WRITE_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_ADMIN_KEYS", raising=False)
+    monkeypatch.delenv("WAVEMIND_API_KEYS", raising=False)
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_PER_MINUTE", "2")
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_REDIS_URL", "redis://rate.test/0")
+    monkeypatch.setenv("WAVEMIND_RATE_LIMIT_REDIS_PREFIX", "wm:rate")
+
+    mind_a = WaveMind(
+        db_path=tmp_path / "rate-a.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    mind_b = WaveMind(
+        db_path=tmp_path / "rate-b.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        app_a = create_app(mind=mind_a)
+        app_b = create_app(mind=mind_b)
+        with TestClient(app_a) as client_a, TestClient(app_b) as client_b:
+            assert client_a.get("/stats").status_code == 200
+            assert client_b.get("/stats").status_code == 200
+            limited = client_b.get("/stats")
+
+            assert limited.status_code == 429
+            assert limited.json()["detail"] == "Rate limit exceeded"
+            assert len(FakeRedisClient.values) == 1
+            assert next(iter(FakeRedisClient.values.values())) == 3
+            assert next(iter(FakeRedisClient.expirations.values())) == 120
+
+        stats_a = app_a.state.rate_limiter.stats()
+        stats_b = app_b.state.rate_limiter.stats()
+        assert stats_a.shared is True
+        assert stats_b.shared is True
+        assert stats_a.backend == "redis"
+        assert stats_b.limited == 1
+    finally:
+        mind_a.close()
+        mind_b.close()

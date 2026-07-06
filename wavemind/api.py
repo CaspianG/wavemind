@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import time
 from collections import deque
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
 from typing import Any, Iterator
@@ -34,6 +36,18 @@ from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
 
 logger = logging.getLogger("wavemind.api")
 ROLE_LEVELS = {"read": 1, "write": 2, "admin": 3}
+
+
+@dataclass(frozen=True)
+class RateLimitStats:
+    allowed: int
+    limited: int
+    backend: str
+    shared: bool
+
+    @property
+    def total(self) -> int:
+        return self.allowed + self.limited
 
 
 class APIAuth:
@@ -81,6 +95,8 @@ class InMemoryRateLimiter:
         self.requests_per_minute = max(0, int(requests_per_minute))
         self._hits: dict[str, deque[float]] = {}
         self._lock = Lock()
+        self._allowed = 0
+        self._limited = 0
 
     @classmethod
     def from_env(cls) -> "InMemoryRateLimiter | None":
@@ -101,9 +117,86 @@ class InMemoryRateLimiter:
             while hits and hits[0] <= cutoff:
                 hits.popleft()
             if len(hits) >= self.requests_per_minute:
+                self._limited += 1
                 return False
             hits.append(now)
+            self._allowed += 1
             return True
+
+    def stats(self) -> RateLimitStats:
+        with self._lock:
+            return RateLimitStats(
+                allowed=self._allowed,
+                limited=self._limited,
+                backend="memory",
+                shared=False,
+            )
+
+
+class RedisRateLimiter:
+    def __init__(
+        self,
+        client: Any,
+        requests_per_minute: int,
+        *,
+        prefix: str = "wavemind:rate",
+        fail_open: bool = False,
+    ):
+        self.client = client
+        self.requests_per_minute = max(0, int(requests_per_minute))
+        self.prefix = prefix.rstrip(":")
+        self.fail_open = bool(fail_open)
+        self._lock = Lock()
+        self._allowed = 0
+        self._limited = 0
+
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        requests_per_minute: int,
+        *,
+        prefix: str = "wavemind:rate",
+        fail_open: bool = False,
+    ) -> "RedisRateLimiter":
+        import redis  # type: ignore
+
+        return cls(
+            redis.Redis.from_url(url, decode_responses=True),
+            requests_per_minute,
+            prefix=prefix,
+            fail_open=fail_open,
+        )
+
+    def allow(self, request: Request) -> bool:
+        if self.requests_per_minute <= 0:
+            return True
+        window = int(time.time() // 60)
+        identity = hashlib.sha256(_rate_limit_key(request).encode("utf-8")).hexdigest()
+        key = f"{self.prefix}:{window}:{identity}"
+        try:
+            count = int(self.client.incr(key))
+            if count == 1:
+                self.client.expire(key, 120)
+            allowed = count <= self.requests_per_minute
+        except Exception:
+            logger.warning("Redis rate limiter failed", exc_info=True)
+            allowed = self.fail_open
+        with self._lock:
+            if allowed:
+                self._allowed += 1
+            else:
+                self._limited += 1
+        return allowed
+
+    def stats(self) -> RateLimitStats:
+        with self._lock:
+            return RateLimitStats(
+                allowed=self._allowed,
+                limited=self._limited,
+                backend="redis",
+                shared=True,
+            )
 
 
 class APIOperationMetrics:
@@ -172,6 +265,23 @@ def _vector_cache_from_env() -> QueryVectorCache | RedisQueryVectorCache | None:
     if capacity <= 0:
         return None
     return QueryVectorCache(capacity=capacity, ttl_seconds=ttl_seconds)
+
+
+def _rate_limiter_from_env() -> InMemoryRateLimiter | RedisRateLimiter | None:
+    raw_limit = os.environ.get("WAVEMIND_RATE_LIMIT_PER_MINUTE", "0")
+    limit = int(raw_limit or "0")
+    if limit <= 0:
+        return None
+    redis_url = os.environ.get("WAVEMIND_RATE_LIMIT_REDIS_URL")
+    if redis_url:
+        return RedisRateLimiter.from_url(
+            redis_url,
+            limit,
+            prefix=os.environ.get("WAVEMIND_RATE_LIMIT_REDIS_PREFIX", "wavemind:rate"),
+            fail_open=os.environ.get("WAVEMIND_RATE_LIMIT_FAIL_OPEN", "0").lower()
+            in {"1", "true", "yes", "on"},
+        )
+    return InMemoryRateLimiter(limit)
 
 
 def _invalidate_cache(app: FastAPI, namespace: str | None) -> int:
@@ -564,7 +674,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         app.state.observability["fastapi_instrumented"] = False
     app.state.mind = mind or build_default_mind()
     app.state.auth = APIAuth.from_env()
-    app.state.rate_limiter = InMemoryRateLimiter.from_env()
+    app.state.rate_limiter = _rate_limiter_from_env()
     app.state.cache = _cache_from_env()
     app.state.vector_cache = _vector_cache_from_env()
     app.state.operation_lock = (
@@ -874,6 +984,16 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                     "vector_cache_size": vector_cache_stats.size,
                     "vector_cache_capacity": vector_cache_stats.capacity,
                     "vector_cache_hit_rate": vector_cache_stats.hit_rate,
+                }
+            )
+        if app.state.rate_limiter is not None:
+            rate_limit_stats = app.state.rate_limiter.stats()
+            operation_metrics.update(
+                {
+                    "rate_limit_allowed_total": rate_limit_stats.allowed,
+                    "rate_limit_limited_total": rate_limit_stats.limited,
+                    "rate_limit_total": rate_limit_stats.total,
+                    "rate_limit_shared": 1 if rate_limit_stats.shared else 0,
                 }
             )
         return PlainTextResponse(

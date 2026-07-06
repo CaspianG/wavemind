@@ -27,6 +27,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["query_vector_cache"]["status"] == "pass"
     assert "encoded query vectors" in criteria["query_vector_cache"]["requirement"]
     assert "local encode calls 1" in criteria["query_vector_cache"]["evidence"]
+    assert criteria["shared_rate_limiter"]["status"] == "pass"
+    assert "one shared request budget" in criteria["shared_rate_limiter"]["requirement"]
+    assert "limited 1" in criteria["shared_rate_limiter"]["evidence"]
     assert criteria["redis_shared_cache_memory_os"]["status"] == "pass"
     assert "shareable across workers" in criteria["redis_shared_cache_memory_os"]["requirement"]
     assert criteria["api_cache_mutation_safety"]["status"] == "pass"
@@ -69,10 +72,11 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 20
+    assert payload["summary"]["total_criteria"] == 21
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "Query-vector cache avoids repeated encoder work" in report
+    assert "Redis-compatible shared rate limiter works across workers" in report
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report
     assert "API cache does not serve stale memory after mutations" in report
     assert "Real Redis multi-process API load passes SLO" in report

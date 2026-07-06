@@ -162,6 +162,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
     query_vector_cache = scale.get("WaveMind query vector cache", {})
+    shared_rate_limiter = scale.get("WaveMind shared rate limiter", {})
     redis_cache = scale.get("WaveMind Redis hot cache", {})
     api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
     memory_os = scale.get("WaveMind Memory OS", {})
@@ -338,6 +339,30 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"Redis encode calls {query_vector_cache.get('redis_encode_calls')}"
             ),
             next_step="Add service-mode vector-cache load evidence with a sentence-transformer encoder.",
+        ),
+        _criterion(
+            criterion_id="shared_rate_limiter",
+            title="Redis-compatible shared rate limiter works across workers",
+            status=(
+                "pass"
+                if shared_rate_limiter.get("shared_across_workers")
+                and int(shared_rate_limiter.get("workers", 0)) >= 2
+                and int(shared_rate_limiter.get("allowed", 0)) == 4
+                and int(shared_rate_limiter.get("limited", 0)) == 1
+                and int(shared_rate_limiter.get("expire_seconds", 0)) == 120
+                else "fail"
+            ),
+            requirement=(
+                "Production API workers must enforce one shared request budget "
+                "through Redis instead of separate per-process in-memory buckets."
+            ),
+            evidence=(
+                f"workers {shared_rate_limiter.get('workers')}, "
+                f"allowed {shared_rate_limiter.get('allowed')}, "
+                f"limited {shared_rate_limiter.get('limited')}, "
+                f"shared {shared_rate_limiter.get('shared_across_workers')}"
+            ),
+            next_step="Run the same shared limiter profile against a live Redis service in multi-worker API load tests.",
         ),
         _criterion(
             criterion_id="redis_shared_cache_memory_os",
