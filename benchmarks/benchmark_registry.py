@@ -1008,7 +1008,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-            "next_step": "Clear the remaining action-required item: a live Zep service adapter run with a dedicated service/API key and cleanup policy.",
+            "next_step": "Clear the remaining action-required item: a live Zep service adapter run with ZEP_API_URL or ZEP_API_KEY configured.",
         },
         {
             "id": "memory_competitor_adapter_profile",
@@ -1028,7 +1028,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "Zep": memory_competitor_results.get("Zep"),
                 "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
             },
-            "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once a dedicated service/API key and cleanup policy are configured.",
+            "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once ZEP_API_URL or ZEP_API_KEY is configured.",
             "next_step": "Add documented setup commands for the live Zep adapter and keep Mem0/LangGraph local adapters in the release test profile.",
         },
         {

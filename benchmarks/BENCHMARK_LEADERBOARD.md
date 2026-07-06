@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-06T02:02:40Z` from `8b5936014ec8`.
+Last refresh: `2026-07-06T02:17:10Z` from `589e38af5fac`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -25,7 +25,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production streaming load runner | production-scale | Recall@k | 10k smoke / WaveMind numpy-streaming: 1 / 0.324 ms | - | WaveMind-only check; production SLO pass: 10k smoke / WaveMind numpy-streaming; cost: 10k smoke / WaveMind numpy-streaming $0.69/1M queries |
 | Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.269 ms | - | WaveMind-only check |
 | Production readiness gate | production-scale | readiness score | WaveMind production readiness: 0.933 / - | - | WaveMind-only check |
-| Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.832 ms | LangGraph persistent memory: 0.8 / 0.866 ms | Quality tie; comparable latency |
+| Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.582 ms | LangGraph persistent memory: 0.8 / 0.775 ms | Quality tie; WaveMind faster |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 
 ## Reading Rules

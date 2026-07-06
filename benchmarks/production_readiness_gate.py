@@ -365,7 +365,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 if not skipped_competitors
                 else "skipped: " + ", ".join(skipped_competitors)
             ),
-            next_step="Configure a dedicated Zep service/API key with cleanup policy and check in the live Zep adapter result.",
+            next_step="Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

@@ -10,10 +10,11 @@ import statistics
 import sys
 import tempfile
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -250,15 +251,115 @@ def _mem0_benchmark_ids(response: Any) -> list[str]:
     return ids
 
 
-def run_zep() -> dict[str, Any]:
-    if not (_module_available("zep_cloud") or _module_available("zep_python")):
-        return skipped_result("Zep", "Install the Zep client package and set ZEP_API_KEY or ZEP_API_URL.")
-    if not (os.environ.get("ZEP_API_KEY") or os.environ.get("ZEP_API_URL")):
-        return skipped_result("Zep", "Set ZEP_API_KEY or ZEP_API_URL to run the Zep adapter profile.")
-    return skipped_result(
-        "Zep",
-        "Zep credentials are present, but this profile needs a dedicated Zep service/session cleanup policy before writing live benchmark data.",
-    )
+def run_zep(
+    top_k: int = 3,
+    client_factory: Callable[[], Any] | None = None,
+    message_factory: Callable[..., Any] | None = None,
+) -> dict[str, Any]:
+    api_url = os.environ.get("ZEP_API_URL")
+    api_key = os.environ.get("ZEP_API_KEY")
+    if client_factory is None:
+        if not _module_available("zep_python"):
+            return skipped_result("Zep", 'Install the Zep OSS SDK to run this adapter profile: pip install "zep-python"')
+        if not (api_url or api_key):
+            return skipped_result("Zep", "Set ZEP_API_URL or ZEP_API_KEY to run the Zep adapter profile.")
+        try:
+            from zep_python.client import Zep
+            from zep_python.types.message import Message
+        except Exception as exc:
+            return skipped_result("Zep", f"Import zep-python failed: {exc}")
+        client_factory = lambda: Zep(base_url=api_url, api_key=api_key, timeout=float(os.environ.get("ZEP_TIMEOUT", "60")))
+        message_factory = Message
+    if message_factory is None:
+        message_factory = lambda **kwargs: kwargs
+
+    client = client_factory()
+    session_prefix = f"wavemind-benchmark-{uuid.uuid4().hex}"
+    sessions = {
+        namespace: f"{session_prefix}-{namespace}"
+        for namespace in sorted({fact.namespace for fact in FACTS} | {check.namespace for check in CHECKS})
+    }
+    active_facts = [
+        fact
+        for fact in FACTS
+        if fact.ttl_seconds != 0 and fact.id not in {"old_city", "old_role"}
+    ]
+    try:
+        for namespace, session_id in sessions.items():
+            client.memory.add_session(
+                session_id=session_id,
+                user_id=namespace,
+                metadata={"benchmark": "wavemind-memory-competitor"},
+            )
+        for fact in active_facts:
+            client.memory.add(
+                sessions[fact.namespace],
+                messages=[
+                    message_factory(
+                        role="user",
+                        role_type="user",
+                        content=fact.text,
+                        metadata={
+                            "benchmark_id": fact.id,
+                            "namespace": fact.namespace,
+                            "priority": fact.priority,
+                        },
+                    )
+                ],
+            )
+
+        rankings: dict[str, list[str]] = {}
+        latencies: list[float] = []
+        for check in CHECKS:
+            started = time.perf_counter()
+            response = client.memory.search_sessions(
+                session_ids=[sessions[check.namespace]],
+                text=check.query,
+                limit=top_k,
+                search_scope="messages",
+                search_type="similarity",
+            )
+            latencies.append((time.perf_counter() - started) * 1000.0)
+            rankings[check.id] = _zep_benchmark_ids(response)
+    except Exception as exc:
+        return skipped_result("Zep", f"Zep live adapter failed: {type(exc).__name__}: {exc}")
+    finally:
+        for session_id in sessions.values():
+            try:
+                client.memory.delete(session_id)
+            except Exception:
+                pass
+        close = getattr(client, "close", None)
+        if callable(close):
+            close()
+
+    result = _compute_metrics("Zep", rankings, latencies)
+    result["configured"] = True
+    result["backend"] = "zep-python live service; benchmark session cleanup"
+    return result
+
+
+def _zep_benchmark_ids(response: Any) -> list[str]:
+    rows = _value(response, "results") or []
+    ids: list[str] = []
+    for row in rows:
+        message = _value(row, "message")
+        summary = _value(row, "summary")
+        fact = _value(row, "fact")
+        for payload in (message, summary, fact):
+            metadata = _value(payload, "metadata") or {}
+            if isinstance(metadata, dict) and metadata.get("benchmark_id"):
+                ids.append(str(metadata["benchmark_id"]))
+                break
+    return ids
+
+
+def _value(obj: Any, name: str) -> Any:
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
 
 
 def run_langgraph(top_k: int = 3) -> dict[str, Any]:
@@ -319,7 +420,7 @@ def run_benchmark(engines: Iterable[str], top_k: int = 3) -> dict[str, Any]:
     runners = {
         "wavemind": lambda: run_wavemind(top_k=top_k),
         "mem0": lambda: run_mem0(top_k=top_k),
-        "zep": run_zep,
+        "zep": lambda: run_zep(top_k=top_k),
         "langgraph": lambda: run_langgraph(top_k=top_k),
         "langgraph-persistent": lambda: run_langgraph(top_k=top_k),
     }

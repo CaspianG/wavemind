@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T02:02:40Z",
-  "source_ref": "8b5936014ec8",
+  "generated_at": "2026-07-06T02:17:10Z",
+  "source_ref": "589e38af5fac",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1095,7 +1095,7 @@
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-      "next_step": "Clear the remaining action-required item: a live Zep service adapter run with a dedicated service/API key and cleanup policy."
+      "next_step": "Clear the remaining action-required item: a live Zep service adapter run with ZEP_API_URL or ZEP_API_KEY configured."
     },
     {
       "id": "memory_competitor_adapter_profile",
@@ -1120,16 +1120,16 @@
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 0.8319666764388481,
-          "p95_latency_ms": 1.242700032889843
+          "avg_latency_ms": 0.5816333189917108,
+          "p95_latency_ms": 1.1291999835520983
         },
         "Mem0": {
           "engine": "Mem0",
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 0.6,
-          "avg_latency_ms": 12.22609999240376,
-          "p95_latency_ms": 17.347100016195327,
+          "avg_latency_ms": 11.033299990231171,
+          "p95_latency_ms": 12.601699971128255,
           "checks": 6,
           "configured": true,
           "backend": "local qdrant path + fastembed, infer=False"
@@ -1137,21 +1137,21 @@
         "Zep": {
           "engine": "Zep",
           "skipped": true,
-          "reason": "Set ZEP_API_KEY or ZEP_API_URL to run the Zep adapter profile."
+          "reason": "Set ZEP_API_URL or ZEP_API_KEY to run the Zep adapter profile."
         },
         "LangGraph persistent memory": {
           "engine": "LangGraph persistent memory",
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 0.8662666465776662,
-          "p95_latency_ms": 1.1901999823749065,
+          "avg_latency_ms": 0.7750000125573328,
+          "p95_latency_ms": 1.0982000385411084,
           "checks": 6,
           "configured": true,
           "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
         }
       },
-      "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once a dedicated service/API key and cleanup policy are configured.",
+      "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once ZEP_API_URL or ZEP_API_KEY is configured.",
       "next_step": "Add documented setup commands for the live Zep adapter and keep Mem0/LangGraph local adapters in the release test profile."
     },
     {

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T02:02:40Z",
+  "generated_at": "2026-07-06T02:17:10Z",
   "overall_status": "action_required",
   "readiness_score": 0.9333333333333333,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T02:02:39Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T02:16:21Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -122,7 +122,7 @@
       "status": "action_required",
       "requirement": "Competitor comparison must run real packages/services, not approximations.",
       "evidence": "skipped: Zep",
-      "next_step": "Configure a dedicated Zep service/API key with cleanup policy and check in the live Zep adapter result."
+      "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result."
     },
     {
       "id": "ten_million_load_profile",
