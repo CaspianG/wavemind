@@ -209,6 +209,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
 
     cluster = scale.get("WaveMind cluster planner", {})
     cluster_autoscaler = scale.get("WaveMind cluster autoscaler", {})
+    control_plane = scale.get("WaveMind control-plane consensus", {})
     capacity_100m = scale.get("WaveMind 100M capacity envelope", {})
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
@@ -404,6 +405,39 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"moves {cluster_autoscaler.get('move_sample')}+{cluster_autoscaler.get('omitted_moves')}"
             ),
             next_step="Connect this planner to operator reconciliation status and real HPA/load metrics.",
+        ),
+        _criterion(
+            criterion_id="control_plane_consensus",
+            title="Control-plane consensus blocks split-brain config changes",
+            status=(
+                "pass"
+                if control_plane.get("ok")
+                and control_plane.get("stale_leader_blocked")
+                and control_plane.get("stale_revision_blocked")
+                and control_plane.get("minority_commit_blocked")
+                and control_plane.get("membership_committed")
+                and control_plane.get("monotonic_terms")
+                and control_plane.get("monotonic_revisions")
+                and int(control_plane.get("final_revision", 0)) >= 2
+                else "fail"
+            ),
+            requirement=(
+                "Cluster membership and operator config changes must require "
+                "a majority leadership lease, reject stale leaders, reject stale "
+                "config revisions, and block minority partitions."
+            ),
+            evidence=(
+                f"voters {control_plane.get('voters_initial')} -> "
+                f"{control_plane.get('voters_after_membership')}, "
+                f"term {control_plane.get('lease_term')} -> "
+                f"{control_plane.get('new_leader_term')}, "
+                f"revision {control_plane.get('final_revision')}, "
+                f"minority blocked {control_plane.get('minority_commit_blocked')}"
+            ),
+            next_step=(
+                "Wrap the same majority lease/revision contract around remote "
+                "operator membership changes."
+            ),
         ),
         _criterion(
             criterion_id="hundred_million_capacity_envelope",

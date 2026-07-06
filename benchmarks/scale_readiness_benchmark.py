@@ -57,6 +57,7 @@ from wavemind import (
     query_with_cache,
     query_with_vector_cache,
     remember_payload,
+    run_control_plane_consensus_profile,
     serverless_sample_bundle,
     sync_namespace_delta,
     table_payload,
@@ -2588,6 +2589,7 @@ def run_benchmark(
             replication_factor=replication_factor,
             target_memories=max(simulated_memories * 10, 10_000_000),
         ),
+        run_control_plane_consensus_profile(),
         run_operator_profile(
             namespace_count=namespace_count,
             node_count=node_count,
@@ -2621,6 +2623,7 @@ def run_benchmark(
             "description": (
                 "Deterministic scale-readiness profile for cluster placement, "
                 "cluster autoscale planning, "
+                "control-plane majority lease/config revision safety, "
                 "operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, real HTTP shard transport, "
@@ -2667,6 +2670,11 @@ def main() -> int:
             print(f"| cluster | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")
             zone_loss = result["zone_loss_min_availability"]
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
+        elif result["engine"] == "WaveMind control-plane consensus":
+            print(f"| control-plane consensus | ok | {result['ok']} |")
+            print(f"| control-plane consensus | final_revision | {result['final_revision']} |")
+            print(f"| control-plane consensus | minority_commit_blocked | {result['minority_commit_blocked']} |")
+            print(f"| control-plane consensus | stale_leader_blocked | {result['stale_leader_blocked']} |")
         elif result["engine"] == "WaveMind Kubernetes operator":
             print(f"| operator | bundle_has_crd | {result['bundle_has_crd']} |")
             print(f"| operator | bundle_has_operator_deployment | {result['bundle_has_operator_deployment']} |")

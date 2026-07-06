@@ -24,6 +24,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["cluster_autoscale_planner"]["status"] == "pass"
     assert "required node count" in criteria["cluster_autoscale_planner"]["requirement"]
+    assert criteria["control_plane_consensus"]["status"] == "pass"
+    assert "majority leadership lease" in criteria["control_plane_consensus"]["requirement"]
+    assert "minority blocked True" in criteria["control_plane_consensus"]["evidence"]
     assert criteria["hundred_million_capacity_envelope"]["status"] == "pass"
     assert "100M-memory" in criteria["hundred_million_capacity_envelope"]["title"]
     assert "100000000 memories" in criteria["hundred_million_capacity_envelope"]["evidence"]
@@ -111,11 +114,12 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 27
+    assert payload["summary"]["total_criteria"] == 28
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "VectorDBBench custom dataset export is reproducible" in report
     assert "Cluster autoscaler plans node additions within headroom" in report
+    assert "Control-plane consensus blocks split-brain config changes" in report
     assert "Query-vector cache avoids repeated encoder work" in report
     assert "Redis-compatible shared rate limiter works across workers" in report
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report

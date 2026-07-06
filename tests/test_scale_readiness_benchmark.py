@@ -19,6 +19,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind cluster autoscaler"]["required_nodes"] > 3
     assert results["WaveMind cluster autoscaler"]["target_within_headroom"] is True
     assert results["WaveMind cluster autoscaler"]["has_scale_action"] is True
+    assert results["WaveMind control-plane consensus"]["ok"] is True
+    assert results["WaveMind control-plane consensus"]["stale_leader_blocked"] is True
+    assert results["WaveMind control-plane consensus"]["stale_revision_blocked"] is True
+    assert results["WaveMind control-plane consensus"]["minority_commit_blocked"] is True
+    assert results["WaveMind control-plane consensus"]["membership_committed"] is True
+    assert results["WaveMind control-plane consensus"]["monotonic_terms"] is True
+    assert results["WaveMind control-plane consensus"]["monotonic_revisions"] is True
+    assert results["WaveMind control-plane consensus"]["final_revision"] == 2
     assert results["WaveMind Kubernetes operator"]["bundle_has_crd"] is True
     assert results["WaveMind Kubernetes operator"]["bundle_has_operator_deployment"] is True
     assert results["WaveMind Kubernetes operator"]["has_service"] is True

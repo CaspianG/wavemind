@@ -8,6 +8,17 @@ from .cluster import (
     build_cluster_autoscale_plan,
     build_cluster_plan,
 )
+from .consensus import (
+    ConsensusCommitResult,
+    ConsensusError,
+    ConsensusLeaseError,
+    ConsensusQuorumError,
+    ConsensusRevisionError,
+    ControlPlaneConsensus,
+    ControlPlaneLogEntry,
+    LeaderLease,
+    run_control_plane_consensus_profile,
+)
 from .encoders import (
     FieldProjector,
     HashingTextEncoder,
@@ -136,7 +147,7 @@ from .storage import (
     create_memory_store,
 )
 
-__version__ = "2.4.21"
+__version__ = "2.4.22"
 
 __all__ = [
     "FieldProjector",
@@ -148,6 +159,13 @@ __all__ = [
     "ClusterAutoscalePlan",
     "ClusterNode",
     "ClusterPlan",
+    "ConsensusCommitResult",
+    "ConsensusError",
+    "ConsensusLeaseError",
+    "ConsensusQuorumError",
+    "ConsensusRevisionError",
+    "ControlPlaneConsensus",
+    "ControlPlaneLogEntry",
     "AuditEvent",
     "CachePrewarmReport",
     "CachePrewarmWorker",
@@ -163,6 +181,7 @@ __all__ = [
     "HotMemoryCache",
     "HTTPNamespaceShardClient",
     "KubernetesApplyClient",
+    "LeaderLease",
     "MemoryMaintenanceWorker",
     "MemoryArchitectureAdvice",
     "MemoryArchitectureRecommendation",
@@ -253,6 +272,7 @@ __all__ = [
     "query_with_cache",
     "query_with_vector_cache",
     "remember_payload",
+    "run_control_plane_consensus_profile",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",
     "stable_memory_key",

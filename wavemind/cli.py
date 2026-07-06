@@ -10,6 +10,7 @@ from pathlib import Path
 from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
+from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
@@ -216,6 +217,12 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_autoscale.add_argument("--zone", action="append", default=[])
     cluster_autoscale.add_argument("--max-moves", type=int, default=100)
     cluster_autoscale.add_argument("--json", action="store_true")
+
+    control_plane_consensus = sub.add_parser(
+        "control-plane-consensus",
+        help="Run the deterministic control-plane majority/lease safety profile",
+    )
+    control_plane_consensus.add_argument("--json", action="store_true")
 
     cluster_repair = sub.add_parser(
         "cluster-repair",
@@ -1133,6 +1140,20 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_cluster_autoscale_plan(payload)
         return 0
+
+    if args.command == "control-plane-consensus":
+        payload = run_control_plane_consensus_profile()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"ok: {payload['ok']}")
+            print(f"voters: {payload['voters_initial']} -> {payload['voters_after_membership']}")
+            print(f"term: {payload['lease_term']} -> {payload['new_leader_term']}")
+            print(f"revision: {payload['final_revision']}")
+            print(f"minority_commit_blocked: {payload['minority_commit_blocked']}")
+            print(f"stale_leader_blocked: {payload['stale_leader_blocked']}")
+            print(f"stale_revision_blocked: {payload['stale_revision_blocked']}")
+        return 0 if payload["ok"] else 4
 
     if args.command == "cluster-repair":
         namespaces = list(args.namespace)

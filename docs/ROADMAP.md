@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`27/27` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`28/28` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -98,6 +98,12 @@ policy matters more than raw vector-database scale:
   `POST /cluster-autoscale-plan`: it maps target memories, replication factor,
   per-node capacity, and headroom into required node count, future nodes,
   bounded per-node load, and namespace movement actions.
+- Control-plane config safety is available through `ControlPlaneConsensus` and
+  `wavemind control-plane-consensus`: cluster membership/operator changes can
+  be guarded by a majority leadership lease, monotonic terms, monotonic config
+  revisions, stale-leader rejection, stale-revision rejection, and
+  minority-partition rejection. This is a deterministic Raft-like safety
+  preflight for config changes, not a full networked Raft log.
 - A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
   storage, and scheduled `cluster-repair` CronJob.
@@ -141,7 +147,8 @@ policy matters more than raw vector-database scale:
   CLIP-style local image/text backend without making sentence-transformers or
   Pillow mandatory for the base install.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
-  namespace placement, quorum-replicated runtime behavior, cursor-based
+  namespace placement, control-plane majority lease/config revision safety,
+  quorum-replicated runtime behavior, cursor-based
   active-active namespace delta sync, field-only hotness delta sync,
   service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, real HTTP shard transport,

@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T16:40:08Z",
+  "generated_at": "2026-07-06T17:18:05Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 27,
+    "pass_count": 28,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 27
+    "total_criteria": 28
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T16:14:25Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T16:40:08Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -69,6 +69,14 @@
       "next_step": "Connect this planner to operator reconciliation status and real HPA/load metrics."
     },
     {
+      "id": "control_plane_consensus",
+      "title": "Control-plane consensus blocks split-brain config changes",
+      "status": "pass",
+      "requirement": "Cluster membership and operator config changes must require a majority leadership lease, reject stale leaders, reject stale config revisions, and block minority partitions.",
+      "evidence": "voters 3 -> 5, term 1 -> 2, revision 2, minority blocked True",
+      "next_step": "Wrap the same majority lease/revision contract around remote operator membership changes."
+    },
+    {
       "id": "hundred_million_capacity_envelope",
       "title": "100M-memory capacity envelope is planned across a large cluster",
       "status": "pass",
@@ -97,7 +105,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.021200045011937618 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0030999653972685337 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -177,7 +185,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 217.35 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 225.08 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -185,7 +193,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.6263999859802425 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 2.0684999763034284 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
