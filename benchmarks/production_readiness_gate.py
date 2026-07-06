@@ -132,6 +132,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
     redis_cache = scale.get("WaveMind Redis hot cache", {})
+    api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
     memory_os = scale.get("WaveMind Memory OS", {})
     sharding = scale.get("WaveMind distributed sharding", {})
     http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
@@ -310,6 +311,31 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"invalidation {redis_cache.get('namespace_invalidation_removed')}"
             ),
             next_step="Run the same Redis cache profile against a real Redis service under multi-process API load.",
+        ),
+        _criterion(
+            criterion_id="api_cache_mutation_safety",
+            title="API cache does not serve stale memory after mutations",
+            status=(
+                "pass"
+                if api_cache_mutations.get("first_query_cached")
+                and api_cache_mutations.get("cache_invalidated_on_remember")
+                and api_cache_mutations.get("stale_prevented_after_remember")
+                and api_cache_mutations.get("cache_invalidated_on_forget")
+                and api_cache_mutations.get("stale_prevented_after_forget")
+                else "fail"
+            ),
+            requirement=(
+                "FastAPI workers must invalidate shared query cache on remember "
+                "and forget so mutations cannot leave stale cached recall."
+            ),
+            evidence=(
+                f"cached {api_cache_mutations.get('first_query_cached')}, "
+                f"remember invalidation {api_cache_mutations.get('cache_invalidated_on_remember')}, "
+                f"remember stale prevented {api_cache_mutations.get('stale_prevented_after_remember')}, "
+                f"forget invalidation {api_cache_mutations.get('cache_invalidated_on_forget')}, "
+                f"forget stale prevented {api_cache_mutations.get('stale_prevented_after_forget')}"
+            ),
+            next_step="Repeat with a real Redis service and multiple uvicorn worker processes.",
         ),
         _criterion(
             criterion_id="memory_os_worker",

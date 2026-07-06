@@ -768,6 +768,111 @@ def run_redis_cache_profile() -> dict[str, object]:
             memory.close()
 
 
+def run_api_cache_mutation_profile() -> dict[str, object]:
+    from fastapi.testclient import TestClient
+
+    from wavemind.api import create_app
+
+    client = RedisLikeCacheClient()
+    latencies: list[float] = []
+
+    with tempfile.TemporaryDirectory() as directory:
+        memory = WaveMind(
+            db_path=Path(directory) / "api-cache-mutations.sqlite3",
+            encoder=MemoryOSEncoder(),
+            width=16,
+            height=16,
+            layers=1,
+            priority_weight=2.0,
+            graph_weight=0.0,
+            rerank_k=10,
+        )
+        app = create_app(mind=memory)
+        app.state.cache = RedisHotMemoryCache(client, prefix="wm:api", ttl_seconds=120)
+        namespace = "tenant:api-cache"
+        try:
+            with TestClient(app) as api:
+                old_response = api.post(
+                    "/remember",
+                    json={
+                        "text": "old API cache budget recall",
+                        "namespace": namespace,
+                        "priority": 1.0,
+                    },
+                )
+                old_response.raise_for_status()
+                old_id = old_response.json()["id"]
+
+                started = time.perf_counter()
+                first_query = api.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": namespace, "top_k": 1},
+                )
+                first_query.raise_for_status()
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                first_results = first_query.json()["results"]
+                cache_keys_after_first_query = len(client.items)
+
+                fresh_response = api.post(
+                    "/remember",
+                    json={
+                        "text": "fresh API cache budget recall",
+                        "namespace": namespace,
+                        "priority": 10.0,
+                    },
+                )
+                fresh_response.raise_for_status()
+                fresh_id = fresh_response.json()["id"]
+                cache_keys_after_remember = len(client.items)
+
+                started = time.perf_counter()
+                second_query = api.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": namespace, "top_k": 1},
+                )
+                second_query.raise_for_status()
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                second_results = second_query.json()["results"]
+                cache_keys_after_second_query = len(client.items)
+
+                delete_response = api.request(
+                    "DELETE",
+                    "/forget",
+                    json={"id": fresh_id, "namespace": namespace},
+                )
+                delete_response.raise_for_status()
+                cache_keys_after_forget = len(client.items)
+
+                started = time.perf_counter()
+                third_query = api.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": namespace, "top_k": 3},
+                )
+                third_query.raise_for_status()
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                third_results = third_query.json()["results"]
+
+                stale_prevented_after_remember = bool(second_results) and second_results[0]["id"] == fresh_id
+                stale_prevented_after_forget = all(result["id"] != fresh_id for result in third_results)
+                old_recall_after_forget = any(result["id"] == old_id for result in third_results)
+                return {
+                    "engine": "WaveMind API cache mutation safety",
+                    "client": "fastapi+redis-compatible-cache",
+                    "first_query_cached": cache_keys_after_first_query >= 1
+                    and bool(first_results)
+                    and first_results[0]["id"] == old_id,
+                    "cache_invalidated_on_remember": cache_keys_after_remember == 0,
+                    "stale_prevented_after_remember": stale_prevented_after_remember,
+                    "cache_invalidated_on_forget": cache_keys_after_forget == 0,
+                    "stale_prevented_after_forget": stale_prevented_after_forget,
+                    "old_recall_after_forget": old_recall_after_forget,
+                    "avg_api_ms": statistics.mean(latencies) if latencies else 0.0,
+                    "p99_api_ms": percentile(latencies, 99),
+                }
+        finally:
+            memory.close()
+
+
 def run_memory_os_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -1624,6 +1729,7 @@ def run_benchmark(
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_redis_cache_profile(),
+        run_api_cache_mutation_profile(),
         run_memory_os_profile(),
         run_distributed_sharding_profile(),
         run_distributed_http_sharding_profile(),
@@ -1648,7 +1754,8 @@ def run_benchmark(
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, "
-                "local and Redis-compatible hot-cache behavior, and structured payload retrieval. "
+                "local and Redis-compatible hot-cache behavior, API cache mutation safety, "
+                "and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
         },
@@ -1709,6 +1816,12 @@ def main() -> int:
             print(f"| redis hot cache | memory_os_prewarm_warmed | {result['memory_os_prewarm_warmed']} |")
             print(f"| redis hot cache | memory_os_cross_worker_hit | {result['memory_os_cross_worker_hit']} |")
             print(f"| redis hot cache | namespace_invalidation_removed | {result['namespace_invalidation_removed']} |")
+        elif result["engine"] == "WaveMind API cache mutation safety":
+            print(f"| api cache mutation safety | first_query_cached | {result['first_query_cached']} |")
+            print(f"| api cache mutation safety | cache_invalidated_on_remember | {result['cache_invalidated_on_remember']} |")
+            print(f"| api cache mutation safety | stale_prevented_after_remember | {result['stale_prevented_after_remember']} |")
+            print(f"| api cache mutation safety | cache_invalidated_on_forget | {result['cache_invalidated_on_forget']} |")
+            print(f"| api cache mutation safety | stale_prevented_after_forget | {result['stale_prevented_after_forget']} |")
         elif result["engine"] == "WaveMind Memory OS":
             print(f"| memory os | ok | {result['ok']} |")
             print(f"| memory os | hot_queries | {result['hot_queries']} |")
