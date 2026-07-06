@@ -335,17 +335,20 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and http_sharding.get("repair_ok")
                 and http_sharding.get("recalled_after_repair")
                 and http_sharding.get("tombstone_suppressed_after_repair")
+                and http_sharding.get("concurrent_write_ok")
+                and float(http_sharding.get("concurrent_query_hit_rate", 0.0)) >= 1.0
                 and int(http_sharding.get("tombstone_repair_deleted_records", 0)) >= 1
                 else "fail"
             ),
-            requirement="Real localhost API shard nodes must pass quorum write, failover query, missing-replica repair, proxy-safe HTTP transport, and tombstone cleanup.",
+            requirement="Real localhost API shard nodes must pass quorum write, failover query, missing-replica repair, proxy-safe HTTP transport, tombstone cleanup, and concurrent namespace traffic.",
             evidence=(
                 f"proxy bypass {http_sharding.get('proxy_bypass_default')}, "
                 f"failover {http_sharding.get('recalled_after_primary_loss')}, "
                 f"repair {http_sharding.get('repair_repaired_total')}, "
-                f"tombstone deleted {http_sharding.get('tombstone_repair_deleted_records')}"
+                f"tombstone deleted {http_sharding.get('tombstone_repair_deleted_records')}, "
+                f"concurrent hit rate {http_sharding.get('concurrent_query_hit_rate')}"
             ),
-            next_step="Extend the same HTTP shard profile with concurrent readers/writers and remote service nodes.",
+            next_step="Extend the same HTTP shard profile to remote service nodes and sustained load.",
         ),
         _criterion(
             criterion_id="replicated_runtime_loss",

@@ -2,6 +2,7 @@ import socket
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -187,5 +188,38 @@ def test_distributed_http_cluster_tombstone_repair_deletes_stale_replica(tmp_pat
             )
             assert after.status_code == 200
             assert after.json()["records"] == []
+    finally:
+        _stop_api_nodes(nodes)
+
+
+def test_distributed_http_cluster_handles_concurrent_namespace_traffic(tmp_path):
+    nodes = [_start_api_node(tmp_path, node_id) for node_id in ("node-a", "node-b", "node-c")]
+    memory = _cluster(nodes, replication_factor=3)
+    namespace = "tenant:http-concurrent"
+    texts = [
+        f"http concurrent tenant memory item {index:02d}"
+        for index in range(12)
+    ]
+
+    try:
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            writes = list(pool.map(lambda text: memory.remember(text, namespace=namespace), texts))
+
+        assert len(writes) == len(texts)
+        assert all(write.ok for write in writes)
+        assert all(len(write.writes) == 3 for write in writes)
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            hits = list(
+                pool.map(
+                    lambda text: any(
+                        result.text == text
+                        for result in memory.query(text, namespace=namespace, top_k=3)
+                    ),
+                    texts,
+                )
+            )
+
+        assert all(hits)
     finally:
         _stop_api_nodes(nodes)

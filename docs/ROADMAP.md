@@ -79,7 +79,7 @@ policy matters more than raw vector-database scale:
   namespace placement, quorum-replicated runtime behavior, active-active
   namespace delta sync, service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, real HTTP shard transport,
-  and tombstone-aware delete
+  concurrent namespace traffic, and tombstone-aware delete
   repair, anti-entropy background repair through `DistributedRepairWorker`
   and `wavemind cluster-repair`, Kubernetes CronJob generation for scheduled
   repair, checksummed replicated snapshot/restore with offsite and

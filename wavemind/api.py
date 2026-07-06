@@ -411,8 +411,13 @@ class FeedbackRequest(BaseModel):
 def _api_operation(app: FastAPI, operation: str) -> Iterator[None]:
     started = time.perf_counter()
     failed = False
+    lock = getattr(app.state, "operation_lock", None)
     try:
-        yield
+        if lock is None:
+            yield
+        else:
+            with lock:
+                yield
     except Exception:
         failed = True
         raise
@@ -518,6 +523,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
     app.state.cache = _cache_from_env()
+    app.state.operation_lock = (
+        None
+        if os.environ.get("WAVEMIND_API_SERIALIZE_OPERATIONS", "1").lower()
+        in {"0", "false", "no", "off"}
+        else Lock()
+    )
     app.state.operation_metrics = APIOperationMetrics(
         max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
     )

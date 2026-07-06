@@ -496,7 +496,8 @@ class DistributedShardedWaveMind:
         if len(writes) < self.write_quorum:
             raise DistributedWriteQuorumError(
                 f"Write quorum {self.write_quorum} was not reached for "
-                f"namespace {namespace!r}; successful writes: {len(writes)}"
+                f"namespace {namespace!r}; successful writes: {len(writes)}; "
+                f"failures: {failed}"
             )
         return DistributedWriteResult(
             namespace=namespace,

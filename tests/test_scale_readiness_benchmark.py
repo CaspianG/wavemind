@@ -80,6 +80,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind distributed HTTP sharding"]["tombstone_repair_deleted_records"] == 1
     assert results["WaveMind distributed HTTP sharding"]["tombstone_stale_records_after_repair"] == 0
     assert results["WaveMind distributed HTTP sharding"]["tombstone_suppressed_after_repair"] is True
+    assert results["WaveMind distributed HTTP sharding"]["concurrent_writes"] == 12
+    assert results["WaveMind distributed HTTP sharding"]["concurrent_write_ok"] is True
+    assert results["WaveMind distributed HTTP sharding"]["concurrent_query_hit_rate"] == 1.0
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True

@@ -603,6 +603,36 @@ def test_fastapi_version_matches_package_version():
         mind.close()
 
 
+def test_fastapi_serializes_operations_by_default_and_allows_opt_out(monkeypatch):
+    monkeypatch.delenv("WAVEMIND_API_SERIALIZE_OPERATIONS", raising=False)
+    locked_mind = WaveMind(
+        db_path=None,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        locked_app = create_app(mind=locked_mind)
+        assert locked_app.state.operation_lock is not None
+    finally:
+        locked_mind.close()
+
+    monkeypatch.setenv("WAVEMIND_API_SERIALIZE_OPERATIONS", "0")
+    unlocked_mind = WaveMind(
+        db_path=None,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=16),
+    )
+    try:
+        unlocked_app = create_app(mind=unlocked_mind)
+        assert unlocked_app.state.operation_lock is None
+    finally:
+        unlocked_mind.close()
+
+
 def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_READ_KEYS", "read-key")
     monkeypatch.setenv("WAVEMIND_WRITE_KEYS", "write-key")

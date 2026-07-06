@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -929,6 +930,37 @@ def run_distributed_http_sharding_profile() -> dict[str, object]:
                 str(by_id[missed_delete]["address"]),
                 namespace=tombstone_namespace,
             )
+            concurrent_namespace = "tenant:http-distributed-concurrent"
+            concurrent_texts = [
+                f"http concurrent tenant memory item {index:02d}"
+                for index in range(12)
+            ]
+            concurrent_started = time.perf_counter()
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                concurrent_writes = list(
+                    pool.map(
+                        lambda item: tombstone_memory.remember(
+                            item,
+                            namespace=concurrent_namespace,
+                        ),
+                        concurrent_texts,
+                    )
+                )
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                concurrent_hits = list(
+                    pool.map(
+                        lambda item: any(
+                            result.text == item
+                            for result in tombstone_memory.query(
+                                item,
+                                namespace=concurrent_namespace,
+                                top_k=3,
+                            )
+                        ),
+                        concurrent_texts,
+                    )
+                )
+            concurrent_ms = (time.perf_counter() - concurrent_started) * 1000.0
 
             return {
                 "engine": "WaveMind distributed HTTP sharding",
@@ -956,6 +988,10 @@ def run_distributed_http_sharding_profile() -> dict[str, object]:
                     )
                     == []
                 ),
+                "concurrent_writes": len(concurrent_writes),
+                "concurrent_write_ok": all(write.ok for write in concurrent_writes),
+                "concurrent_query_hit_rate": sum(1 for hit in concurrent_hits if hit) / len(concurrent_hits),
+                "concurrent_ms": concurrent_ms,
                 "write_ms": write_ms,
                 "query_after_primary_loss_ms": query_after_primary_loss_ms,
                 "repair_ms": repair_ms,
@@ -1479,6 +1515,8 @@ def main() -> int:
             print(f"| distributed HTTP sharding | recalled_after_repair | {result['recalled_after_repair']} |")
             print(f"| distributed HTTP sharding | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
             print(f"| distributed HTTP sharding | tombstone_suppressed_after_repair | {result['tombstone_suppressed_after_repair']} |")
+            print(f"| distributed HTTP sharding | concurrent_write_ok | {result['concurrent_write_ok']} |")
+            print(f"| distributed HTTP sharding | concurrent_query_hit_rate | {result['concurrent_query_hit_rate']:.3f} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
