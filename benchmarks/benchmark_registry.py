@@ -74,6 +74,13 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
     return summaries
 
 
+def _prefixed_ann_results(label: str, payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    return {
+        f"{label} / {engine}": summary
+        for engine, summary in _ann_latest_results(payload).items()
+    }
+
+
 def _qdrant_ef_sweep_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -155,6 +162,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_faiss_1m_payload = _load_json(root / "benchmarks" / "production_load_faiss_1m_results.json")
     production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
     production_streaming_payload = _load_json(root / "benchmarks" / "production_streaming_load_smoke_results.json")
+    production_streaming_ivfpq_100k_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_100k_results.json")
+    production_streaming_ivfpq_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_1m_results.json")
+    production_streaming_ivfpq_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_10m_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
@@ -177,7 +187,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
     production_load_faiss_1m_results = _ann_latest_results(production_load_faiss_1m_payload)
     production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
-    production_streaming_results = _ann_latest_results(production_streaming_payload)
+    production_streaming_results = {
+        **_prefixed_ann_results("10k smoke", production_streaming_payload),
+        **_prefixed_ann_results("100k compressed", production_streaming_ivfpq_100k_payload),
+        **_prefixed_ann_results("1M compressed", production_streaming_ivfpq_1m_payload),
+        **_prefixed_ann_results("10M compressed", production_streaming_ivfpq_10m_payload),
+    }
     scale_readiness_results = _engine_results(scale_readiness_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
@@ -773,8 +788,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_streaming_load_benchmark.py",
-            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in smoke uses 10000 generated normalized 128-d vectors with source-id target recall.",
-            "competitors": ["FAISS persisted streaming", "Qdrant service streaming"],
+            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles.",
+            "competitors": ["FAISS persisted streaming", "FAISS IVF-PQ persisted streaming", "Qdrant service streaming"],
             "metrics": [
                 "target_recall@10",
                 "target_recall@1",
@@ -788,8 +803,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "build_ms",
             ],
             "current": production_streaming_results,
-            "target": "Run the streaming profile at 10M and then 50M with FAISS persisted and Qdrant service backends on hardware sized for the index.",
-            "next_step": "Use this runner for the required 10M non-skipped SLO artifact; it avoids holding the full vector corpus or exact-neighbor matrix in RAM.",
+            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, then repeat at 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
+            "next_step": "Run the same streaming profile at 50M, and add service-backed Qdrant/pgvector 10M artifacts for broader production evidence.",
         },
         {
             "id": "scale_readiness",
@@ -993,7 +1008,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-            "next_step": "Clear the two current action-required items: a live Zep service adapter run and a 10M service-backed load profile.",
+            "next_step": "Clear the remaining action-required item: a live Zep service adapter run with a dedicated service/API key and cleanup policy.",
         },
         {
             "id": "memory_competitor_adapter_profile",

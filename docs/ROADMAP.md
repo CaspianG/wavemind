@@ -33,9 +33,12 @@ policy matters more than raw vector-database scale:
   Persisted FAISS reaches `recall@10 1.000`, p99 `57.71 ms` at 1M, and an
   estimated `$4.17` per 1M queries with 6 replicas for 100 qps. Tuned 1M
   Qdrant reaches `recall@10 0.984` but still misses the p99 gate at `137.86 ms`.
+- The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
+  target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current gate is `0.867` (`13/15` pass, `2` action
-  required, `0` fail), so complete million-plus readiness is not claimed yet.
+  production verdict. The current gate is `0.933` (`14/15` pass, `1` action
+  required, `0` fail), so complete readiness is not claimed until the live Zep
+  service adapter profile is configured and checked in.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
   recall but still misses the production recall target.
@@ -298,12 +301,13 @@ Enterprise requirements:
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
-- Clear the production readiness gate: live Zep service adapter run and a
-  10M service-backed load profile. Mem0 and LangGraph already have checked-in
-  local adapter results.
-- Use `benchmarks/production_streaming_load_benchmark.py` for the first
-  non-skipped 10M and 50M target-recall runs, so large-N profiles do not hold
-  the full vector corpus or exact-neighbor matrix in RAM.
+- Clear the final production readiness gate item: a live Zep service adapter
+  run. Mem0 and LangGraph already have checked-in local adapter results, and
+  the 10M compressed FAISS IVF-PQ load profile is checked in.
+- Use `benchmarks/production_streaming_load_benchmark.py` for the next 50M
+  target-recall run and for Qdrant/pgvector 10M service-backed profiles, so
+  large-N profiles do not hold the full vector corpus or exact-neighbor matrix
+  in RAM.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

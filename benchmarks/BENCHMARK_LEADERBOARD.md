@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-06T01:31:02Z` from `95f59803262d`.
+Last refresh: `2026-07-06T02:02:40Z` from `8b5936014ec8`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -22,9 +22,9 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production load profile 100k | production-scale | Recall@k | WaveMind pgvector: 0.736 / 17.8 ms | Qdrant service: 1 / 10.3 ms | Baseline leads on quality; production SLO pass: Qdrant service; cost: Qdrant service $1.39/1M queries |
 | Production load profile 1M | production-scale | Recall@k | WaveMind faiss-persisted: 1 / 39.1 ms | Qdrant service: 0.984 / 82.6 ms | WaveMind leads on quality; production SLO needs scale: WaveMind faiss-persisted; cost: WaveMind faiss-persisted $4.17/1M queries |
 | Qdrant 1M HNSW ef sweep | production-scale | Recall@k | - | hnsw_ef=2048: 0.977 / 64.8 ms | No WaveMind result; production SLO miss; cost if SLO fixed: hnsw_ef=512 $4.86/1M queries |
-| Production streaming load runner | production-scale | Recall@k | WaveMind numpy-streaming: 1 / 0.324 ms | - | WaveMind-only check; production SLO pass: WaveMind numpy-streaming; cost: WaveMind numpy-streaming $0.69/1M queries |
+| Production streaming load runner | production-scale | Recall@k | 10k smoke / WaveMind numpy-streaming: 1 / 0.324 ms | - | WaveMind-only check; production SLO pass: 10k smoke / WaveMind numpy-streaming; cost: 10k smoke / WaveMind numpy-streaming $0.69/1M queries |
 | Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 0.269 ms | - | WaveMind-only check |
-| Production readiness gate | production-scale | readiness score | WaveMind production readiness: 0.867 / - | - | WaveMind-only check |
+| Production readiness gate | production-scale | readiness score | WaveMind production readiness: 0.933 / - | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 0.832 ms | LangGraph persistent memory: 0.8 / 0.866 ms | Quality tie; comparable latency |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 

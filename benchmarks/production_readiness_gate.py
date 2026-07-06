@@ -67,6 +67,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_1m_faiss": _load_json(benchmark_dir / "production_load_faiss_1m_results.json"),
         "load_1m_ef": _load_json(benchmark_dir / "production_load_qdrant_1m_ef_sweep_results.json"),
         "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
+        "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
     }
@@ -78,9 +79,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
     load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
     load_1m_faiss = _size_results(artifacts["load_1m_faiss"]).get("WaveMind faiss-persisted", {})
+    load_10m_payloads = [
+        artifacts["load_10m"],
+        artifacts["load_10m_streaming"],
+    ]
     load_10m_candidates = [
         result
-        for size_result in artifacts["load_10m"].get("results", [])
+        for payload in load_10m_payloads
+        for size_result in payload.get("results", [])
         if int(size_result.get("vectors", 0)) >= 10_000_000
         for result in size_result.get("results", [])
         if not result.get("skipped")
@@ -371,9 +377,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"p99 {load_10m.get('p99_latency_ms')} ms, "
                 f"cost {load_10m.get('cost_status')}"
                 if load_10m
-                else "production_load_10m_results.json has no non-skipped 10M SLO row"
+                else "no production_load_10m or production_streaming_load_ivfpq_10m non-skipped SLO row"
             ),
-            next_step="Run 10M on larger hardware with FAISS/Qdrant/pgvector service profiles and check in the measured artifact.",
+            next_step="Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available.",
         ),
     ]
 

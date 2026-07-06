@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def test_streaming_load_numpy_smoke_and_slo():
     from benchmarks.production_streaming_load_benchmark import run_streaming_load
@@ -35,6 +37,7 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
     from benchmarks.production_streaming_load_benchmark import run_streaming_load
 
     monkeypatch.delenv("WAVEMIND_FAISS_PATH", raising=False)
+    monkeypatch.delenv("WAVEMIND_FAISS_IVFPQ_PATH", raising=False)
     monkeypatch.delenv("WAVEMIND_QDRANT_URL", raising=False)
 
     payload = run_streaming_load(
@@ -45,16 +48,51 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
         seed=3,
         noise=0.01,
         batch_size=32,
-        engines=["faiss-persisted", "qdrant-service"],
+        engines=["faiss-persisted", "faiss-ivfpq-persisted", "qdrant-service"],
     )
 
     rows = {row["engine"]: row for row in payload["results"][0]["results"]}
     assert rows["WaveMind faiss-persisted streaming"]["skipped"] is True
     assert "WAVEMIND_FAISS_PATH" in rows["WaveMind faiss-persisted streaming"]["reason"]
+    assert rows["WaveMind faiss-ivfpq-persisted streaming"]["skipped"] is True
+    assert "WAVEMIND_FAISS_IVFPQ_PATH" in rows["WaveMind faiss-ivfpq-persisted streaming"]["reason"]
     assert rows["Qdrant service streaming"]["skipped"] is True
     assert "WAVEMIND_QDRANT_URL" in rows["Qdrant service streaming"]["reason"]
     assert rows["WaveMind faiss-persisted streaming"]["slo_status"] == "skipped"
+    assert rows["WaveMind faiss-ivfpq-persisted streaming"]["cost_status"] == "skipped"
     assert rows["Qdrant service streaming"]["cost_status"] == "skipped"
+
+
+def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
+    pytest.importorskip("faiss")
+
+    from benchmarks.production_streaming_load_benchmark import run_streaming_load
+
+    index_path = tmp_path / "streaming-ivfpq.faiss"
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_PATH", str(index_path))
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NLIST", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_M", "2")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NBITS", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", "12000")
+
+    payload = run_streaming_load(
+        sizes=[1024],
+        dim=8,
+        query_count=16,
+        top_k=10,
+        seed=13,
+        noise=0.0,
+        batch_size=256,
+        engines=["faiss-ivfpq-persisted"],
+    )
+
+    row = payload["results"][0]["results"][0]
+    assert row["engine"] == "WaveMind faiss-ivfpq-persisted streaming"
+    assert row["faiss_index"] == "IndexIVFPQ"
+    assert row["target_recall_at_k"] >= 0.95
+    assert row["ivfpq_nprobe"] == 8
+    assert index_path.exists()
 
 
 def test_streaming_load_cli_writes_json(tmp_path):

@@ -59,6 +59,13 @@ def _optional_bool_env(name: str) -> bool | None:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def _int_env(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return int(default)
+    return int(value)
+
+
 def _without_none(values: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
@@ -171,6 +178,11 @@ def make_queries(
     return queries
 
 
+def training_sample(*, dim: int, seed: int, sample_size: int) -> np.ndarray:
+    rng = np.random.default_rng(seed + 7919)
+    return _normalize(rng.normal(size=(int(sample_size), int(dim))).astype(np.float32))
+
+
 def _metrics_from_hits(
     *,
     engine: str,
@@ -213,6 +225,13 @@ def skipped_result(engine: str, reason: str) -> dict[str, Any]:
         "skipped": True,
         "reason": reason,
     }
+
+
+def artifact_index_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT))
+    except ValueError:
+        return path.name
 
 
 def run_numpy_streaming(
@@ -335,8 +354,105 @@ def run_faiss_streaming(
         build_ms=build_ms,
         query_rows=rows,
         extra={
-            "index_path": str(output),
+            "index_path": artifact_index_path(output),
             "memory_mode": "streaming add_with_ids; query source vectors only",
+        },
+    )
+
+
+def run_faiss_ivfpq_streaming(
+    *,
+    count: int,
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+) -> dict[str, Any]:
+    path = os.environ.get("WAVEMIND_FAISS_IVFPQ_PATH") or os.environ.get("WAVEMIND_FAISS_PATH")
+    engine = "WaveMind faiss-ivfpq-persisted streaming"
+    if not path:
+        return skipped_result(engine, "Set WAVEMIND_FAISS_IVFPQ_PATH to run streaming FAISS IVF-PQ")
+    try:
+        import faiss
+    except ImportError as exc:
+        return skipped_result(engine, f"Install faiss-cpu: {exc}")
+
+    nlist = _int_env("WAVEMIND_FAISS_IVFPQ_NLIST", 4096)
+    pq_m = _int_env("WAVEMIND_FAISS_IVFPQ_M", 16)
+    nbits = _int_env("WAVEMIND_FAISS_IVFPQ_NBITS", 8)
+    nprobe = _int_env("WAVEMIND_FAISS_IVFPQ_NPROBE", min(64, nlist))
+    training_size = _int_env("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", max(100_000, nlist * 40))
+
+    if dim % pq_m != 0:
+        return skipped_result(engine, f"vector dim {dim} must be divisible by WAVEMIND_FAISS_IVFPQ_M={pq_m}")
+    if nlist <= 0 or pq_m <= 0 or nbits <= 0:
+        return skipped_result(engine, "IVF-PQ parameters nlist, M, and nbits must be positive")
+
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = {}
+    quantizer = faiss.IndexFlatIP(int(dim))
+    index = faiss.IndexIVFPQ(
+        quantizer,
+        int(dim),
+        int(nlist),
+        int(pq_m),
+        int(nbits),
+        faiss.METRIC_INNER_PRODUCT,
+    )
+    index.nprobe = int(min(max(1, nprobe), nlist))
+
+    started = time.perf_counter()
+    sample = training_sample(dim=dim, seed=seed + count, sample_size=training_size)
+    index.train(sample)
+    for ids, vectors, captured in iter_vector_batches(
+        count=count,
+        dim=dim,
+        seed=seed + count,
+        batch_size=batch_size,
+        source_ids=source_ids,
+    ):
+        index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+        source_vectors.update(captured)
+    output = Path(path).expanduser()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    faiss.write_index(index, str(output))
+    build_ms = (time.perf_counter() - started) * 1000.0
+
+    queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
+    rows: list[dict[str, Any]] = []
+    for source_id, query in queries:
+        started = time.perf_counter()
+        _, labels = index.search(query.reshape(1, -1).astype(np.float32), top_k)
+        latency_ms = (time.perf_counter() - started) * 1000.0
+        top = [int(id) for id in labels[0] if int(id) >= 0]
+        rows.append(
+            {
+                "source_id": int(source_id),
+                "target_hit": int(source_id) in top,
+                "target_hit_at_1": bool(top and top[0] == int(source_id)),
+                "latency_ms": latency_ms,
+            }
+        )
+    return _metrics_from_hits(
+        engine=engine,
+        vector_count=count,
+        dim=dim,
+        batch_size=batch_size,
+        top_k=top_k,
+        build_ms=build_ms,
+        query_rows=rows,
+        extra={
+            "index_path": artifact_index_path(output),
+            "memory_mode": "streaming IVF-PQ; compressed codes plus query source vectors only",
+            "faiss_index": "IndexIVFPQ",
+            "ivfpq_nlist": int(nlist),
+            "ivfpq_m": int(pq_m),
+            "ivfpq_nbits": int(nbits),
+            "ivfpq_nprobe": int(index.nprobe),
+            "ivfpq_training_size": int(training_size),
+            "compression_note": "approximate target-recall; tune nprobe/nlist/M for recall-latency tradeoff",
         },
     )
 
@@ -536,6 +652,8 @@ def run_size(
             results.append(run_numpy_streaming(**kwargs))
         elif key in {"faiss", "faiss-persisted", "faiss-streaming"}:
             results.append(run_faiss_streaming(**kwargs))
+        elif key in {"faiss-ivfpq", "faiss-ivfpq-persisted", "faiss-ivfpq-streaming"}:
+            results.append(run_faiss_ivfpq_streaming(**kwargs))
         elif key in {"qdrant", "qdrant-service", "qdrant-streaming"}:
             results.append(run_qdrant_streaming(**kwargs))
         else:
@@ -582,7 +700,8 @@ def run_streaming_load(
                 "Vectors are generated and inserted in batches. Quality is measured "
                 "as target-recall: whether a noisy copy of a known source vector "
                 "returns that source id in top-k. This is scalable to large N and "
-                "complements exact-neighbor benchmarks at smaller N."
+                "complements exact-neighbor benchmarks at smaller N. Use persisted "
+                "FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles."
             ),
             "sizes": size_list,
             "vector_dim": int(dim),
@@ -667,7 +786,7 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["numpy-streaming", "faiss-persisted", "qdrant-service"],
+        choices=["numpy-streaming", "faiss-persisted", "faiss-ivfpq-persisted", "qdrant-service"],
         default=["faiss-persisted", "qdrant-service"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/production_streaming_load_results.json"))

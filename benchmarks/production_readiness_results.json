@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T01:10:13Z",
+  "generated_at": "2026-07-06T02:02:40Z",
   "overall_status": "action_required",
-  "readiness_score": 0.8666666666666667,
+  "readiness_score": 0.9333333333333333,
   "summary": {
     "overall_status": "action_required",
-    "readiness_score": 0.8666666666666667,
-    "pass_count": 13,
-    "action_required_count": 2,
+    "readiness_score": 0.9333333333333333,
+    "pass_count": 14,
+    "action_required_count": 1,
     "fail_count": 0,
     "total_criteria": 15
   },
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T01:08:44Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T02:02:39Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -127,10 +127,10 @@
     {
       "id": "ten_million_load_profile",
       "title": "10M-vector production load profile passes recall, p99, and cost gate",
-      "status": "action_required",
+      "status": "pass",
       "requirement": "A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
-      "evidence": "production_load_10m_results.json has no non-skipped 10M SLO row",
-      "next_step": "Run 10M on larger hardware with FAISS/Qdrant/pgvector service profiles and check in the measured artifact."
+      "evidence": "WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo",
+      "next_step": "Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available."
     }
   ]
 }

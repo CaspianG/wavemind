@@ -11,8 +11,8 @@ def test_production_readiness_gate_reports_current_blockers():
     criteria = {row["id"]: row for row in payload["criteria"]}
 
     assert payload["schema"] == "wavemind.production_readiness.v1"
-    assert payload["summary"]["pass_count"] >= 13
-    assert payload["summary"]["action_required_count"] == 2
+    assert payload["summary"]["pass_count"] >= 14
+    assert payload["summary"]["action_required_count"] == 1
     assert payload["summary"]["fail_count"] == 0
     assert payload["overall_status"] == "action_required"
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
@@ -21,7 +21,7 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert criteria["real_competitor_adapters"]["status"] == "action_required"
-    assert criteria["ten_million_load_profile"]["status"] == "action_required"
+    assert criteria["ten_million_load_profile"]["status"] == "pass"
 
 
 def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):

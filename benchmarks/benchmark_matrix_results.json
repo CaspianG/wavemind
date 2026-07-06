@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T01:31:02Z",
-  "source_ref": "95f59803262d",
+  "generated_at": "2026-07-06T02:02:40Z",
+  "source_ref": "8b5936014ec8",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -831,9 +831,10 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in smoke uses 10000 generated normalized 128-d vectors with source-id target recall.",
+      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles.",
       "competitors": [
         "FAISS persisted streaming",
+        "FAISS IVF-PQ persisted streaming",
         "Qdrant service streaming"
       ],
       "metrics": [
@@ -849,7 +850,7 @@
         "build_ms"
       ],
       "current": {
-        "WaveMind numpy-streaming": {
+        "10k smoke / WaveMind numpy-streaming": {
           "recall_at_k": 1,
           "target_recall_at_k": 1,
           "target_recall_at_1": 1,
@@ -864,10 +865,58 @@
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_total_cost_at_target_qps_usd": 182.50238418579102,
           "estimated_storage_gb": 0.02384185791015625
+        },
+        "100k compressed / WaveMind faiss-ivfpq-persisted streaming": {
+          "recall_at_k": 0.96,
+          "target_recall_at_k": 0.96,
+          "target_recall_at_1": 0.96,
+          "avg_latency_ms": 0.4658439988270402,
+          "p95_latency_ms": 0.5424999981187284,
+          "p99_latency_ms": 1.1041999678127468,
+          "build_ms": 27322.110200009774,
+          "slo_status": "pass",
+          "slo_required_replicas": 1,
+          "slo_autoscaled_qps": 36063.57502146882,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 0.6944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 182.52384185791016,
+          "estimated_storage_gb": 0.2384185791015625
+        },
+        "1M compressed / WaveMind faiss-ivfpq-persisted streaming": {
+          "recall_at_k": 0.99,
+          "target_recall_at_k": 0.99,
+          "target_recall_at_1": 0.98,
+          "avg_latency_ms": 3.1770700024208054,
+          "p95_latency_ms": 4.126499989069998,
+          "p99_latency_ms": 4.992000001948327,
+          "build_ms": 67255.67959999898,
+          "slo_status": "pass",
+          "slo_required_replicas": 1,
+          "slo_autoscaled_qps": 5287.891040234884,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 0.6944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 182.73841857910156,
+          "estimated_storage_gb": 2.384185791015625
+        },
+        "10M compressed / WaveMind faiss-ivfpq-persisted streaming": {
+          "recall_at_k": 0.99,
+          "target_recall_at_k": 0.99,
+          "target_recall_at_1": 0.95,
+          "avg_latency_ms": 45.804024002864026,
+          "p95_latency_ms": 57.452900044154376,
+          "p99_latency_ms": 60.12930005090311,
+          "build_ms": 249349.61389994714,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 7,
+          "slo_autoscaled_qps": 366.78000166425403,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 4.861111111111111,
+          "monthly_total_cost_at_target_qps_usd": 1279.8841857910156,
+          "estimated_storage_gb": 23.84185791015625
         }
       },
-      "target": "Run the streaming profile at 10M and then 50M with FAISS persisted and Qdrant service backends on hardware sized for the index.",
-      "next_step": "Use this runner for the required 10M non-skipped SLO artifact; it avoids holding the full vector corpus or exact-neighbor matrix in RAM."
+      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, then repeat at 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
+      "next_step": "Run the same streaming profile at 50M, and add service-backed Qdrant/pgvector 10M artifacts for broader production evidence."
     },
     {
       "id": "scale_readiness",
@@ -1037,16 +1086,16 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 0.8666666666666667,
+          "readiness_score": 0.9333333333333333,
           "overall_status": "action_required",
-          "pass_count": 13,
-          "action_required_count": 2,
+          "pass_count": 14,
+          "action_required_count": 1,
           "fail_count": 0,
           "total_criteria": 15
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-      "next_step": "Clear the two current action-required items: a live Zep service adapter run and a 10M service-backed load profile."
+      "next_step": "Clear the remaining action-required item: a live Zep service adapter run with a dedicated service/API key and cleanup policy."
     },
     {
       "id": "memory_competitor_adapter_profile",
