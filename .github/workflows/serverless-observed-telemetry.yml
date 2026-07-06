@@ -1,0 +1,188 @@
+name: serverless-observed-telemetry
+
+on:
+  workflow_dispatch:
+    inputs:
+      nodes:
+        description: "WaveMind API node URLs, separated by newlines, commas, or semicolons."
+        required: true
+        type: string
+      requests:
+        description: "HTTP query requests to send across the node pool."
+        required: true
+        default: "240"
+        type: string
+      workers:
+        description: "Concurrent query workers."
+        required: true
+        default: "4"
+        type: string
+      seed_memories:
+        description: "Synthetic memories to seed before measuring."
+        required: true
+        default: "24"
+        type: string
+      seed_mode:
+        description: "Use all, first, or none. Use first when nodes share durable state."
+        required: true
+        default: "first"
+        type: string
+      max_scale:
+        description: "Configured serverless maxScale used for aggregate capacity estimate."
+        required: true
+        default: "256"
+        type: string
+      target_rps:
+        description: "Target RPS SLO."
+        required: true
+        default: "3200"
+        type: string
+      target_p99_ms:
+        description: "Target p99 latency SLO in milliseconds."
+        required: true
+        default: "500"
+        type: string
+      external_cold_start_ms:
+        description: "Measured or exported cold-start p99/maximum in milliseconds."
+        required: true
+        default: "900"
+        type: string
+      estimated_scale_out_seconds:
+        description: "Measured or exported scale-out lag in seconds."
+        required: true
+        default: "18"
+        type: string
+      commit_results:
+        description: "Commit remote telemetry and refreshed benchmark artifacts to main."
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  serverless-observed-telemetry:
+    runs-on: ubuntu-latest
+    env:
+      WAVEMIND_BENCHMARK_REFRESH_PROFILE: serverless-observed-telemetry
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Run remote serverless observed telemetry
+        env:
+          WAVEMIND_SERVERLESS_NODES: ${{ inputs.nodes }}
+          WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
+          REQUESTS: ${{ inputs.requests }}
+          WORKERS: ${{ inputs.workers }}
+          SEED_MEMORIES: ${{ inputs.seed_memories }}
+          SEED_MODE: ${{ inputs.seed_mode }}
+          MAX_SCALE: ${{ inputs.max_scale }}
+          TARGET_RPS: ${{ inputs.target_rps }}
+          TARGET_P99_MS: ${{ inputs.target_p99_ms }}
+          EXTERNAL_COLD_START_MS: ${{ inputs.external_cold_start_ms }}
+          ESTIMATED_SCALE_OUT_SECONDS: ${{ inputs.estimated_scale_out_seconds }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          import sys
+
+          node_urls = [
+              item.strip()
+              for item in re.split(r"[\n,;]+", os.environ["WAVEMIND_SERVERLESS_NODES"])
+              if item.strip()
+          ]
+          if not node_urls:
+              raise SystemExit("serverless observed telemetry requires at least one node URL")
+
+          args = [
+              sys.executable,
+              "benchmarks/serverless_observed_telemetry_benchmark.py",
+              "--requests",
+              os.environ["REQUESTS"],
+              "--workers",
+              os.environ["WORKERS"],
+              "--seed-memories",
+              os.environ["SEED_MEMORIES"],
+              "--seed-mode",
+              os.environ["SEED_MODE"],
+              "--max-scale",
+              os.environ["MAX_SCALE"],
+              "--target-rps",
+              os.environ["TARGET_RPS"],
+              "--target-p99-ms",
+              os.environ["TARGET_P99_MS"],
+              "--external-cold-start-ms",
+              os.environ["EXTERNAL_COLD_START_MS"],
+              "--estimated-scale-out-seconds",
+              os.environ["ESTIMATED_SCALE_OUT_SECONDS"],
+              "--source",
+              "github-actions-serverless-observed-telemetry",
+              "--output",
+              "deploy/serverless/observed-telemetry.remote.json",
+          ]
+          for url in node_urls:
+              args.extend(["--node", url])
+          api_key = os.environ.get("WAVEMIND_API_KEY")
+          if api_key:
+              args.extend(["--api-key", api_key])
+          subprocess.run(args, check=True)
+          PY
+
+      - name: Refresh benchmark report with remote serverless telemetry
+        run: |
+          python benchmarks/scale_readiness_benchmark.py \
+            --simulated-memories 1000000 \
+            --output benchmarks/scale_readiness_results.json
+          python benchmarks/benchmark_registry.py \
+            --output benchmarks/benchmark_matrix_results.json
+          python benchmarks/render_benchmark_report.py
+          python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/render_benchmark_charts.py \
+            --output docs/assets/benchmark-summary.svg
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit.json
+          python benchmarks/production_readiness_gate.py \
+            --output benchmarks/production_readiness_results.json \
+            --markdown-output benchmarks/PRODUCTION_READINESS.md
+
+      - name: Commit remote serverless telemetry result
+        if: ${{ inputs.commit_results }}
+        run: |
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg deploy/serverless/observed-telemetry.remote.json; then
+            echo "No benchmark changes."
+            exit 0
+          fi
+          git config user.name "CaspianG"
+          git config user.email "259116618+CaspianG@users.noreply.github.com"
+          git add benchmarks docs/assets/benchmark-summary.svg deploy/serverless/observed-telemetry.remote.json
+          git commit -m "Refresh remote serverless telemetry"
+          git push
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: serverless-observed-telemetry
+          path: |
+            deploy/serverless/observed-telemetry.remote.json
+            benchmarks/BENCHMARK_LEADERBOARD.md
+            benchmarks/BENCHMARK_REPORT.md
+            benchmarks/benchmark_artifact_audit.json
+            benchmarks/benchmark_matrix_results.json
+            benchmarks/production_readiness_results.json
+            benchmarks/PRODUCTION_READINESS.md
+            benchmarks/scale_readiness_results.json
+            docs/assets/benchmark-summary.svg

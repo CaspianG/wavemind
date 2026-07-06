@@ -71,9 +71,25 @@ from wavemind import (
 from wavemind.api import RedisRateLimiter
 
 
-SERVERLESS_OBSERVED_TELEMETRY_PATH = (
+SERVERLESS_LOOPBACK_OBSERVED_TELEMETRY_PATH = (
     PROJECT_ROOT / "deploy" / "serverless" / "observed-telemetry.loopback.json"
 )
+SERVERLESS_REMOTE_OBSERVED_TELEMETRY_PATH = (
+    PROJECT_ROOT / "deploy" / "serverless" / "observed-telemetry.remote.json"
+)
+
+
+def serverless_observed_telemetry_path() -> Path:
+    if SERVERLESS_REMOTE_OBSERVED_TELEMETRY_PATH.exists():
+        return SERVERLESS_REMOTE_OBSERVED_TELEMETRY_PATH
+    return SERVERLESS_LOOPBACK_OBSERVED_TELEMETRY_PATH
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path)
 
 
 class InMemoryS3Client:
@@ -715,14 +731,13 @@ def run_serverless_operational_profile() -> dict[str, object]:
         max_error_rate=0.01,
         max_scale_out_seconds=60.0,
     )
-    observed_payload = json.loads(SERVERLESS_OBSERVED_TELEMETRY_PATH.read_text(encoding="utf-8"))
+    observed_path = serverless_observed_telemetry_path()
+    observed_payload = json.loads(observed_path.read_text(encoding="utf-8"))
     observed = ServerlessObservedTelemetry.from_mapping(observed_payload)
     profile = spec.operational_profile(target, observed=observed)
     profile.update(
         {
-            "observed_telemetry_path": str(
-                SERVERLESS_OBSERVED_TELEMETRY_PATH.relative_to(PROJECT_ROOT)
-            ),
+            "observed_telemetry_path": display_path(observed_path),
             "observed_telemetry_methodology": observed_payload.get("methodology", ""),
             "observed_measured_pool_requests_per_second": observed_payload.get(
                 "measured_pool_requests_per_second"

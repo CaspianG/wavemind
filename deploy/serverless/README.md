@@ -47,6 +47,13 @@ python benchmarks/serverless_observed_telemetry_benchmark.py \
   --output deploy/serverless/observed-telemetry.remote.json
 ```
 
+The same remote measurement can be launched from GitHub Actions with
+`.github/workflows/serverless-observed-telemetry.yml`. Paste deployed API node
+URLs into the `nodes` input, set the `WAVEMIND_API_KEY` repository secret when
+auth is enabled, and set `commit_results=true` only when the remote result should
+replace loopback telemetry in the public readiness artifacts. Node URLs are not
+stored in the JSON result.
+
 The scale-readiness benchmark also runs a deterministic operational profile for
 this serverless shape. It checks:
 

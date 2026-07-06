@@ -65,6 +65,12 @@ policy matters more than raw vector-database scale:
   service-node profile from GitHub Actions using either newline/comma-separated
   nodes or `nodes_manifest_json`, upload the result, and optionally commit
   refreshed leaderboard artifacts once a real deployment is available.
+- `.github/workflows/serverless-observed-telemetry.yml` can run the serverless
+  observed-telemetry contract from GitHub Actions against deployed HTTP/HTTPS
+  API node URLs, upload `deploy/serverless/observed-telemetry.remote.json`, and
+  optionally commit refreshed leaderboard/readiness artifacts. The
+  scale-readiness profile prefers this remote artifact over loopback telemetry
+  when it exists.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
   envelope: 32768 namespace buckets, 128 nodes, 8 zones, replication factor 3,
   node/zone-loss availability `1.000`, bounded placement skew, and bounded

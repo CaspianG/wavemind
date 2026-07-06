@@ -47,7 +47,10 @@ The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 synchronization check for the generated benchmark artifacts.
 The weekly leaderboard workflow refreshes these artifacts, and `full-check` plus
 the release workflow block stale or unsynchronized public benchmark artifacts
-with `benchmarks/validate_benchmark_artifacts.py --max-age-days 8`.
+with `benchmarks/validate_benchmark_artifacts.py --max-age-days 8`. Remote
+serverless telemetry can be refreshed through
+`.github/workflows/serverless-observed-telemetry.yml`; when a real remote
+artifact is checked in, scale-readiness prefers it over loopback telemetry.
 
 ## What This Proves
 

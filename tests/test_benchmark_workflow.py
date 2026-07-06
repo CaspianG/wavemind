@@ -62,6 +62,38 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "actions/upload-artifact@v7" in workflow
 
 
+def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
+    workflow = Path(".github/workflows/serverless-observed-telemetry.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "workflow_dispatch" in workflow
+    assert "contents: write" in workflow
+    assert "WAVEMIND_SERVERLESS_NODES" in workflow
+    assert "secrets.WAVEMIND_API_KEY" in workflow
+    assert "benchmarks/serverless_observed_telemetry_benchmark.py" in workflow
+    assert "deploy/serverless/observed-telemetry.remote.json" in workflow
+    assert r'[\n,;]+' in workflow
+    assert "serverless observed telemetry requires at least one node URL" in workflow
+    assert "--node" in workflow
+    assert "--api-key" in workflow
+    assert "--seed-mode" in workflow
+    assert "--external-cold-start-ms" in workflow
+    assert "--estimated-scale-out-seconds" in workflow
+    assert "--source" in workflow
+    assert "github-actions-serverless-observed-telemetry" in workflow
+    assert "benchmarks/scale_readiness_benchmark.py" in workflow
+    assert "benchmarks/benchmark_registry.py" in workflow
+    assert "benchmarks/render_benchmark_report.py" in workflow
+    assert "benchmarks/render_benchmark_leaderboard.py" in workflow
+    assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
+    assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "if: ${{ inputs.commit_results }}" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg deploy/serverless/observed-telemetry.remote.json" in workflow
+    assert "actions/upload-artifact@v7" in workflow
+
+
 def test_full_check_blocks_stale_public_benchmark_artifacts():
     workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
 

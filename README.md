@@ -1479,6 +1479,13 @@ External cluster benchmark refresh: `.github/workflows/external-http-cluster-loa
 runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs or a
 JSON node manifest and can commit `benchmarks/http_cluster_load_results.json`
 plus refreshed leaderboard artifacts when `commit_results=true`.
+Remote serverless telemetry refresh: `.github/workflows/serverless-observed-telemetry.yml`
+runs `benchmarks/serverless_observed_telemetry_benchmark.py` against deployed
+HTTP/HTTPS API node URLs, uploads `deploy/serverless/observed-telemetry.remote.json`,
+and can commit the remote telemetry plus refreshed leaderboard/readiness
+artifacts when `commit_results=true`. When that remote file exists,
+`benchmarks/scale_readiness_benchmark.py` prefers it over the checked-in
+loopback telemetry.
 
 Visual summary generated from the checked-in JSON results:
 

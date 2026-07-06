@@ -1,7 +1,17 @@
-from benchmarks.scale_readiness_benchmark import run_benchmark
+import json
+
+from benchmarks import scale_readiness_benchmark
 
 
-def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
+run_benchmark = scale_readiness_benchmark.run_benchmark
+
+
+def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        scale_readiness_benchmark,
+        "SERVERLESS_REMOTE_OBSERVED_TELEMETRY_PATH",
+        tmp_path / "missing-remote-telemetry.json",
+    )
     payload = run_benchmark(
         simulated_memories=100_000,
         namespace_count=64,
@@ -78,6 +88,11 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind serverless operational profile"]["required_replicas"] == 4
     assert results["WaveMind serverless operational profile"]["burst_capacity_rps"] == 256000.0
     assert results["WaveMind serverless operational profile"]["observed_telemetry_source"] == "loopback-api-capacity-estimate"
+    assert results["WaveMind serverless operational profile"]["observed_telemetry_path"].endswith("observed-telemetry.loopback.json")
+    assert results["WaveMind serverless operational profile"]["observed_node_mode"] == "loopback"
+    assert results["WaveMind serverless operational profile"]["observed_external_node_count"] == 0
+    assert results["WaveMind serverless operational profile"]["observed_seed_mode"] == "all"
+    assert results["WaveMind serverless operational profile"]["observed_cold_start_measured"] is True
     assert results["WaveMind serverless operational profile"]["observed_slo_pass"] is True
     assert results["WaveMind serverless operational profile"]["observed_requests_per_second"] >= 3040.0
     assert results["WaveMind serverless operational profile"]["observed_p99_request_ms"] <= 500.0
@@ -268,3 +283,50 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind 100M capacity envelope"]["replica_load_skew"] <= 1.25
     assert results["WaveMind 100M capacity envelope"]["valid_capacity_plan"] is True
     assert payload["scenario"]["simulated_memories"] == 100_000
+
+
+def test_serverless_operational_profile_prefers_remote_observed_telemetry(
+    monkeypatch,
+    tmp_path,
+):
+    remote_path = tmp_path / "observed-telemetry.remote.json"
+    remote_path.write_text(
+        json.dumps(
+            {
+                "source": "github-actions-serverless-observed-telemetry",
+                "methodology": "Measured a balanced pool of user-supplied WaveMind API node URLs.",
+                "node_mode": "external",
+                "requests_per_second": 5000.0,
+                "measured_pool_requests_per_second": 1000.0,
+                "per_replica_requests_per_second": 500.0,
+                "avg_request_ms": 20.0,
+                "p95_request_ms": 40.0,
+                "p99_request_ms": 60.0,
+                "cold_start_ms": 900.0,
+                "error_rate": 0.0,
+                "max_replicas": 7,
+                "configured_max_scale": 256,
+                "scale_out_seconds": 18.0,
+                "measured_replicas": 2,
+                "external_node_count": 2,
+                "seed_mode": "first",
+                "cold_start_measured": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        scale_readiness_benchmark,
+        "SERVERLESS_REMOTE_OBSERVED_TELEMETRY_PATH",
+        remote_path,
+    )
+
+    profile = scale_readiness_benchmark.run_serverless_operational_profile()
+
+    assert profile["observed_telemetry_path"].endswith("observed-telemetry.remote.json")
+    assert profile["observed_telemetry_source"] == "github-actions-serverless-observed-telemetry"
+    assert profile["observed_node_mode"] == "external"
+    assert profile["observed_external_node_count"] == 2
+    assert profile["observed_seed_mode"] == "first"
+    assert profile["observed_cold_start_measured"] is False
+    assert profile["observed_slo_pass"] is True
