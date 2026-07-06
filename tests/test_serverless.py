@@ -194,3 +194,32 @@ def test_serverless_cli_emits_bundle_and_readiness(tmp_path):
     assert readiness["max_scale"] == 24
     assert readiness["uses_postgres"] is True
     assert readiness["valid_keda_scale_target"] is True
+
+    operational = json.loads(
+        run_cli(
+            "serverless-sample",
+            "--operational-profile",
+            "--max-scale",
+            "64",
+            "--target-concurrency",
+            "80",
+            "--target-rps",
+            "3200",
+            "--avg-request-ms",
+            "80",
+            "--p99-request-ms",
+            "320",
+            "--cold-start-ms",
+            "900",
+            "--target-p99-ms",
+            "500",
+            "--cold-start-budget-ms",
+            "1500",
+        ).stdout
+    )
+
+    assert operational["mode"] == "serverless-operational"
+    assert operational["slo_pass"] is True
+    assert operational["required_replicas"] == 4
+    assert operational["burst_capacity_rps"] == 64000.0
+    assert operational["cold_start_budget_ok"] is True

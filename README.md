@@ -759,6 +759,7 @@ Serverless deployment:
 ```sh
 wavemind serverless-sample --namespace wavemind-system --max-scale 64 --out deploy/serverless/wavemind-serverless.sample.json
 wavemind serverless-sample --readiness
+wavemind serverless-sample --operational-profile --max-scale 64 --target-concurrency 80
 ```
 
 `deploy/serverless` contains a stateless API worker plan with two profiles: a

@@ -331,7 +331,7 @@ class WaveMindServerlessSpec:
             * hours_per_month
             * (1.0 - target.active_fraction)
         )
-        monthly_compute_cost_usd = active_compute_cost + idle_compute_cost
+        monthly_compute_cost_usd = round(active_compute_cost + idle_compute_cost, 2)
         cost_ok = monthly_compute_cost_usd <= target.monthly_budget_usd
         valid = bool(
             external_state_ok

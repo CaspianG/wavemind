@@ -15,7 +15,7 @@ from .core import WaveMind
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
 from .scale import build_scale_plan, scale_status_meets_or_exceeds
-from .serverless import SecretEnvRef, WaveMindServerlessSpec
+from .serverless import SecretEnvRef, ServerlessWorkloadTarget, WaveMindServerlessSpec
 from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
@@ -330,7 +330,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_serverless_spec_args(serverless_sample)
     serverless_sample.add_argument("--no-keda", action="store_true")
-    serverless_sample.add_argument("--readiness", action="store_true")
+    serverless_mode = serverless_sample.add_mutually_exclusive_group()
+    serverless_mode.add_argument("--readiness", action="store_true")
+    serverless_mode.add_argument("--operational-profile", action="store_true")
+    serverless_sample.add_argument("--target-rps", type=float, default=3200.0)
+    serverless_sample.add_argument("--avg-request-ms", type=float, default=80.0)
+    serverless_sample.add_argument("--p99-request-ms", type=float, default=320.0)
+    serverless_sample.add_argument("--cold-start-ms", type=float, default=900.0)
+    serverless_sample.add_argument("--target-p99-ms", type=float, default=500.0)
+    serverless_sample.add_argument("--cold-start-budget-ms", type=float, default=1500.0)
+    serverless_sample.add_argument("--active-fraction", type=float, default=0.35)
+    serverless_sample.add_argument("--replica-hourly-cost-usd", type=float, default=0.08)
+    serverless_sample.add_argument("--monthly-budget-usd", type=float, default=750.0)
     serverless_sample.add_argument("--json", action="store_true")
     serverless_sample.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
 
@@ -1280,7 +1291,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "serverless-sample":
         spec = _serverless_spec_from_args(args)
-        payload = spec.readiness_report() if args.readiness else spec.resource_list(include_keda=not args.no_keda)
+        if args.operational_profile:
+            payload = spec.operational_profile(_serverless_workload_target_from_args(args))
+        elif args.readiness:
+            payload = spec.readiness_report()
+        else:
+            payload = spec.resource_list(include_keda=not args.no_keda)
         _emit_json(payload, out=args.out)
         return 0
 
@@ -1694,6 +1710,20 @@ def _serverless_spec_from_args(args: argparse.Namespace) -> WaveMindServerlessSp
         qdrant_api_key=qdrant_api_key,
         redis_url=None if args.no_redis else SecretEnvRef(args.redis_secret, args.redis_secret_key),
         api_keys=None if args.no_auth else SecretEnvRef(args.auth_secret, args.auth_secret_key),
+    )
+
+
+def _serverless_workload_target_from_args(args: argparse.Namespace) -> ServerlessWorkloadTarget:
+    return ServerlessWorkloadTarget(
+        requests_per_second=args.target_rps,
+        avg_request_ms=args.avg_request_ms,
+        p99_request_ms=args.p99_request_ms,
+        cold_start_ms=args.cold_start_ms,
+        target_p99_ms=args.target_p99_ms,
+        cold_start_budget_ms=args.cold_start_budget_ms,
+        active_fraction=args.active_fraction,
+        replica_hourly_cost_usd=args.replica_hourly_cost_usd,
+        monthly_budget_usd=args.monthly_budget_usd,
     )
 
 

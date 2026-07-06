@@ -23,6 +23,12 @@ Inspect readiness assumptions:
 wavemind serverless-sample --readiness
 ```
 
+Run the operational preflight from the CLI:
+
+```sh
+wavemind serverless-sample --operational-profile --max-scale 64 --target-concurrency 80
+```
+
 The scale-readiness benchmark also runs a deterministic operational profile for
 this serverless shape. It checks:
 
