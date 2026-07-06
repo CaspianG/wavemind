@@ -25,6 +25,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from wavemind import (
     CachePrewarmWorker,
     ClusterNode,
+    CrossModalMemoryLayer,
     DistributedRepairWorker,
     DistributedShardedWaveMind,
     FieldStateCRDT,
@@ -2274,9 +2275,9 @@ def run_multimodal_profile() -> dict[str, object]:
             layers=1,
         )
         try:
+            layer = CrossModalMemoryLayer(memory, vector_dim=64)
             expected = {
-                "enterprise expansion chart": remember_payload(
-                    memory,
+                "enterprise expansion chart": layer.remember(
                     image_payload(
                         "s3://demo/revenue-chart.png",
                         caption="enterprise expansion revenue chart",
@@ -2284,8 +2285,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "SSO audit log call": remember_payload(
-                    memory,
+                "SSO audit log call": layer.remember(
                     audio_payload(
                         "support-call.wav",
                         transcript="customer requested SSO and audit log export",
@@ -2293,8 +2293,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "ARR enterprise table": remember_payload(
-                    memory,
+                "ARR enterprise table": layer.remember(
                     table_payload(
                         [{"segment": "enterprise", "arr": 2000}],
                         title="ARR by segment",
@@ -2302,8 +2301,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "upgraded enterprise plan": remember_payload(
-                    memory,
+                "upgraded enterprise plan": layer.remember(
                     event_payload(
                         "account upgraded to enterprise plan",
                         actor="tenant:acme",
@@ -2312,8 +2310,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "memory graph stale fact suppression": remember_payload(
-                    memory,
+                "memory graph stale fact suppression": layer.remember(
                     video_payload(
                         "s3://demo/memory-field-demo.mp4",
                         summary="agent memory graph heatmap demo",
@@ -2324,8 +2321,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "warehouse robot arm picking": remember_payload(
-                    memory,
+                "warehouse robot arm picking": layer.remember(
                     asset3d_payload(
                         "s3://demo/robot-arm.glb",
                         description="3D robot arm for warehouse picking simulation",
@@ -2336,8 +2332,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
-                "trading agent uses WaveMind memory": remember_payload(
-                    memory,
+                "trading agent uses WaveMind memory": layer.remember(
                     graph_payload(
                         [
                             ("Andrey", "works_on", "trading agent"),
@@ -2358,13 +2353,45 @@ def run_multimodal_profile() -> dict[str, object]:
                 latencies.append((time.perf_counter() - started) * 1000.0)
                 if results and results[0].id == expected_id:
                     correct += 1
+            cross_modal_checks = [
+                ("visual chart for enterprise revenue expansion", "image", expected["enterprise expansion chart"]),
+                ("voice call where customer requested SSO audit logs", "audio", expected["SSO audit log call"]),
+                ("spreadsheet rows for enterprise ARR metrics", "table", expected["ARR enterprise table"]),
+                ("timeline event where account upgraded plan", "event", expected["upgraded enterprise plan"]),
+                ("video scene about stale fact suppression", "video", expected["memory graph stale fact suppression"]),
+                ("3D warehouse robot arm model", "3d", expected["warehouse robot arm picking"]),
+                ("knowledge graph relation trading agent uses memory", "graph", expected["trading agent uses WaveMind memory"]),
+            ]
+            cross_latencies = []
+            cross_correct = 0
+            provenance_complete = 0
+            for query, modality, expected_id in cross_modal_checks:
+                started = time.perf_counter()
+                results = layer.query(
+                    query,
+                    namespace="scale",
+                    target_modality=modality,
+                    top_k=1,
+                )
+                cross_latencies.append((time.perf_counter() - started) * 1000.0)
+                if results and results[0].id == expected_id:
+                    cross_correct += 1
+                if results and results[0].provenance.get("memory_id") == results[0].id:
+                    provenance_complete += 1
             return {
                 "engine": "WaveMind structured payloads",
                 "modalities": ["image", "audio", "table", "event", "video", "3d", "graph"],
                 "queries": len(expected),
                 "precision_at_1": correct / len(expected),
+                "cross_modal_queries": len(cross_modal_checks),
+                "cross_modal_precision_at_1": cross_correct / len(cross_modal_checks),
+                "cross_modal_target_modalities": [modality for _, modality, _ in cross_modal_checks],
+                "cross_modal_embedding_dim": layer.encoder.vector_dim,
+                "cross_modal_provenance_rate": provenance_complete / len(cross_modal_checks),
                 "avg_latency_ms": statistics.mean(latencies),
                 "p99_latency_ms": percentile(latencies, 99),
+                "cross_modal_avg_latency_ms": statistics.mean(cross_latencies),
+                "cross_modal_p99_latency_ms": percentile(cross_latencies, 99),
             }
         finally:
             memory.close()

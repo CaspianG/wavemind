@@ -850,6 +850,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             status=(
                 "pass"
                 if payloads.get("precision_at_1") == 1.0
+                and payloads.get("cross_modal_precision_at_1") == 1.0
+                and payloads.get("cross_modal_provenance_rate") == 1.0
+                and int(payloads.get("cross_modal_embedding_dim", 0)) >= 64
                 and {
                     "image",
                     "audio",
@@ -861,10 +864,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 }.issubset(set(payloads.get("modalities", [])))
                 else "fail"
             ),
-            requirement="Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable and retrievable through the same memory API.",
+            requirement=(
+                "Images, audio, video, 3D assets, tables, temporal events, "
+                "and graph facts must be storable, retrievable through the same "
+                "memory API, queryable through a shared cross-modal embedding "
+                "space, and returned with provenance."
+            ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
-                f"precision@1 {payloads.get('precision_at_1')}"
+                f"precision@1 {payloads.get('precision_at_1')}, "
+                f"cross-modal precision@1 {payloads.get('cross_modal_precision_at_1')}, "
+                f"provenance {payloads.get('cross_modal_provenance_rate')}"
             ),
             next_step="Add real CLIP/audio/video/3D embedding backends and larger multimodal retrieval tests.",
         ),

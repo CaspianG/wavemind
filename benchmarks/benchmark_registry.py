@@ -1163,8 +1163,14 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     (
                         "queries",
                         "precision_at_1",
+                        "cross_modal_queries",
+                        "cross_modal_precision_at_1",
+                        "cross_modal_embedding_dim",
+                        "cross_modal_provenance_rate",
                         "avg_latency_ms",
                         "p99_latency_ms",
+                        "cross_modal_avg_latency_ms",
+                        "cross_modal_p99_latency_ms",
                     ),
                 ),
                 "WaveMind 100M capacity envelope": _metric_summary(

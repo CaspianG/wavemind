@@ -86,6 +86,10 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True
     assert serverless["valid_keda_scale_target"] is True
+    structured = entries["scale_readiness"]["current"]["WaveMind structured payloads"]
+    assert structured["cross_modal_precision_at_1"] == 1.0
+    assert structured["cross_modal_provenance_rate"] == 1.0
+    assert structured["cross_modal_embedding_dim"] >= 64
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"

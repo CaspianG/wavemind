@@ -206,6 +206,19 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
         "graph",
     ]
     assert results["WaveMind structured payloads"]["queries"] == 7
+    assert results["WaveMind structured payloads"]["cross_modal_queries"] == 7
+    assert results["WaveMind structured payloads"]["cross_modal_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["cross_modal_embedding_dim"] == 64
+    assert results["WaveMind structured payloads"]["cross_modal_provenance_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["cross_modal_target_modalities"] == [
+        "image",
+        "audio",
+        "table",
+        "event",
+        "video",
+        "3d",
+        "graph",
+    ]
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
     assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3
