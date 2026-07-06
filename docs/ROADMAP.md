@@ -48,6 +48,9 @@ policy matters more than raw vector-database scale:
   for the same mixed workload. It takes real `--node id=https://host` API URLs,
   emits `slo_pass`, and is the next deployment gate before any external-cluster
   production claim.
+- `.github/workflows/external-http-cluster-load.yml` can run that remote
+  service-node profile from GitHub Actions, upload the result, and optionally
+  commit refreshed leaderboard artifacts once a real deployment is available.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
   envelope: 32768 namespace buckets, 128 nodes, 8 zones, replication factor 3,
   node/zone-loss availability `1.000`, bounded placement skew, and bounded

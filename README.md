@@ -582,6 +582,12 @@ replicated forget, delete suppression, p99 latency, and an explicit SLO verdict.
 Use this before claiming that a deployment is production-ready outside the
 local readiness smoke profile.
 
+The same external-cluster profile can be started from GitHub Actions via
+`.github/workflows/external-http-cluster-load.yml`. Paste one `id=https://host`
+node per line, comma-separated, or semicolon-separated. Optionally set the
+`WAVEMIND_API_KEY` repository secret, and set `commit_results=true` only when
+the run should refresh the public benchmark artifacts in `main`.
+
 Cluster placement planning:
 
 ```sh
@@ -1251,6 +1257,10 @@ and `docs/assets/benchmark-summary.svg`, validates freshness with
 `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
 artifacts back to `main`.
+External cluster benchmark refresh: `.github/workflows/external-http-cluster-load.yml`
+runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs and
+can commit `benchmarks/http_cluster_load_results.json` plus refreshed leaderboard
+artifacts when `commit_results=true`.
 
 Visual summary generated from the checked-in JSON results:
 
