@@ -308,9 +308,10 @@ Enterprise requirements:
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
 - Keep the production readiness gate at `1.000` while repeating larger
-  service-backed runs. Mem0 and LangGraph already have checked-in local adapter
-  results; a live Zep service adapter run remains external evidence to add when
-  `ZEP_API_URL` or `ZEP_API_KEY` is configured.
+  service-backed runs. Mem0, LangGraph, and a GraphRAG-style static graph
+  baseline already have checked-in local adapter results; a live Zep service
+  adapter run remains external evidence to add when `ZEP_API_URL` or
+  `ZEP_API_KEY` is configured.
 - Use `benchmarks/production_streaming_load_benchmark.py` for the next 50M
   target-recall run and for Qdrant/pgvector 10M service-backed profiles, so
   large-N profiles do not hold the full vector corpus or exact-neighbor matrix

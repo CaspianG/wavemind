@@ -8,7 +8,7 @@ from pathlib import Path
 def test_memory_competitor_profile_runs_wavemind_and_reports_missing_adapters():
     from benchmarks.memory_competitor_benchmark import run_benchmark
 
-    payload = run_benchmark(["wavemind", "mem0", "zep", "langgraph"])
+    payload = run_benchmark(["wavemind", "mem0", "zep", "langgraph", "graphrag"])
 
     assert payload["scenario"]["name"] == "memory_competitor_adapter_profile"
     results = {result["engine"]: result for result in payload["results"]}
@@ -17,6 +17,9 @@ def test_memory_competitor_profile_runs_wavemind_and_reports_missing_adapters():
     assert "Mem0" in results
     assert "Zep" in results
     assert "LangGraph persistent memory" in results
+    assert "GraphRAG static graph" in results
+    assert results["GraphRAG static graph"]["precision_at_3"] >= 0.8
+    assert results["GraphRAG static graph"]["stale_suppression"] >= 0.8
     assert results["Mem0"].get("skipped") in {True, None}
 
 
@@ -153,6 +156,7 @@ def test_memory_competitor_cli_writes_json(tmp_path):
             "--engines",
             "wavemind",
             "mem0",
+            "graphrag",
             "--output",
             str(output),
         ],
@@ -168,3 +172,4 @@ def test_memory_competitor_cli_writes_json(tmp_path):
     assert payload["scenario"]["checks"] == 6
     assert payload["results"][0]["engine"] == "WaveMind"
     assert payload["results"][1]["engine"] == "Mem0"
+    assert payload["results"][2]["engine"] == "GraphRAG static graph"

@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 import uuid
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -500,6 +501,88 @@ def run_langgraph(top_k: int = 3) -> dict[str, Any]:
     return result
 
 
+def run_graphrag(top_k: int = 3) -> dict[str, Any]:
+    active_facts = [
+        fact
+        for fact in FACTS
+        if fact.ttl_seconds != 0 and fact.id not in {"old_city", "old_role"}
+    ]
+    facts_by_namespace: dict[str, list[MemoryFact]] = defaultdict(list)
+    graph: dict[str, set[str]] = defaultdict(set)
+    fact_terms: dict[str, set[str]] = {}
+    for fact in active_facts:
+        facts_by_namespace[fact.namespace].append(fact)
+        terms = _graphrag_terms(fact.text)
+        fact_terms[fact.id] = terms
+        for term in terms:
+            graph[term].add(fact.id)
+
+    rankings: dict[str, list[str]] = {}
+    latencies: list[float] = []
+    for check in CHECKS:
+        started = time.perf_counter()
+        query_terms = _graphrag_terms(check.query)
+        expanded_fact_ids = {
+            fact_id
+            for term in query_terms
+            for fact_id in graph.get(term, set())
+        }
+        scored: list[tuple[float, str]] = []
+        for fact in facts_by_namespace.get(check.namespace, []):
+            terms = fact_terms[fact.id]
+            direct_overlap = len(query_terms & terms)
+            graph_overlap = 1 if fact.id in expanded_fact_ids else 0
+            if direct_overlap or graph_overlap:
+                score = direct_overlap + 0.25 * graph_overlap + 0.01 * fact.priority
+                scored.append((score, fact.id))
+        scored.sort(key=lambda item: (-item[0], item[1]))
+        rankings[check.id] = [fact_id for _, fact_id in scored[:top_k]]
+        latencies.append((time.perf_counter() - started) * 1000.0)
+
+    result = _compute_metrics("GraphRAG static graph", rankings, latencies)
+    result["configured"] = True
+    result["backend"] = "local lexical entity graph over active facts"
+    return result
+
+
+def _graphrag_terms(text: str) -> set[str]:
+    stopwords = {
+        "and",
+        "are",
+        "can",
+        "for",
+        "how",
+        "now",
+        "the",
+        "user",
+        "what",
+        "which",
+        "with",
+        "still",
+        "should",
+        "current",
+    }
+    tokens: set[str] = set()
+    current: list[str] = []
+    for char in text.lower():
+        if char.isalnum():
+            current.append(char)
+        elif current:
+            _add_graphrag_token(tokens, "".join(current), stopwords)
+            current = []
+    if current:
+        _add_graphrag_token(tokens, "".join(current), stopwords)
+    return tokens
+
+
+def _add_graphrag_token(tokens: set[str], token: str, stopwords: set[str]) -> None:
+    if len(token) < 3 or token in stopwords:
+        return
+    tokens.add(token)
+    if token.endswith("s") and len(token) > 4:
+        tokens.add(token[:-1])
+
+
 def run_benchmark(engines: Iterable[str], top_k: int = 3) -> dict[str, Any]:
     runners = {
         "wavemind": lambda: run_wavemind(top_k=top_k),
@@ -507,6 +590,7 @@ def run_benchmark(engines: Iterable[str], top_k: int = 3) -> dict[str, Any]:
         "zep": lambda: run_zep(top_k=top_k),
         "langgraph": lambda: run_langgraph(top_k=top_k),
         "langgraph-persistent": lambda: run_langgraph(top_k=top_k),
+        "graphrag": lambda: run_graphrag(top_k=top_k),
     }
     results = []
     for engine in engines:
@@ -519,9 +603,10 @@ def run_benchmark(engines: Iterable[str], top_k: int = 3) -> dict[str, Any]:
             "name": "memory_competitor_adapter_profile",
             "description": (
                 "Small dynamic-memory adapter profile for comparing WaveMind against "
-                "Mem0, Zep, and LangGraph persistent memory when those optional stacks "
-                "are installed and explicitly configured. Missing competitors are "
-                "reported as skipped instead of being approximated."
+                "Mem0, Zep, LangGraph persistent memory, and a local GraphRAG-style "
+                "static graph baseline when optional stacks are installed and explicitly "
+                "configured. Missing external competitors are reported as skipped "
+                "instead of being approximated."
             ),
             "facts": len(FACTS),
             "checks": len(CHECKS),
@@ -553,8 +638,8 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "mem0", "zep", "langgraph", "langgraph-persistent"],
-        default=["wavemind", "mem0", "zep", "langgraph"],
+        choices=["wavemind", "mem0", "zep", "langgraph", "langgraph-persistent", "graphrag"],
+        default=["wavemind", "mem0", "zep", "langgraph", "graphrag"],
     )
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/memory_competitor_results.json"))

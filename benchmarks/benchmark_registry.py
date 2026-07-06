@@ -1133,7 +1133,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "status": "implemented",
             "source": "benchmarks/memory_competitor_benchmark.py",
             "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
-            "competitors": ["Mem0", "Zep", "LangGraph persistent memory"],
+            "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG static graph"],
             "metrics": ["precision@1", "precision@3", "stale_suppression", "avg_latency_ms"],
             "current": {
                 "WaveMind": _metric_summary(
@@ -1143,9 +1143,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "Mem0": memory_competitor_results.get("Mem0"),
                 "Zep": memory_competitor_results.get("Zep"),
                 "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
+                "GraphRAG static graph": memory_competitor_results.get("GraphRAG static graph"),
             },
-            "target": "Keep Mem0 and LangGraph local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
-            "next_step": "Run the live Zep adapter against a configured service and keep Mem0/LangGraph local adapters in the release test profile.",
+            "target": "Keep Mem0, LangGraph, and GraphRAG-style local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
+            "next_step": "Run the live Zep adapter against a configured service and expand the GraphRAG baseline from this small static graph to a larger update/conflict workload.",
         },
         {
             "id": "longmemeval_answer_generation",

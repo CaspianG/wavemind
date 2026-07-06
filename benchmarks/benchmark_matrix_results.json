@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T07:46:58Z",
-  "source_ref": "fcc1483a3d87",
+  "generated_at": "2026-07-06T07:56:49Z",
+  "source_ref": "40e11cc6282f",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1205,7 +1205,8 @@
       "competitors": [
         "Mem0",
         "Zep",
-        "LangGraph persistent memory"
+        "LangGraph persistent memory",
+        "GraphRAG static graph"
       ],
       "metrics": [
         "precision@1",
@@ -1218,16 +1219,16 @@
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 1.3735333244161059,
-          "p95_latency_ms": 3.328200022224337
+          "avg_latency_ms": 3.087650014397999,
+          "p95_latency_ms": 3.733100020326674
         },
         "Mem0": {
           "engine": "Mem0",
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 0.6,
-          "avg_latency_ms": 25.918149990805734,
-          "p95_latency_ms": 43.352299951948225,
+          "avg_latency_ms": 9.986433326654756,
+          "p95_latency_ms": 11.011900031007826,
           "checks": 6,
           "configured": true,
           "backend": "local qdrant path + fastembed, infer=False"
@@ -1242,15 +1243,26 @@
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 1.74608332842278,
-          "p95_latency_ms": 3.606499987654388,
+          "avg_latency_ms": 0.750033330405131,
+          "p95_latency_ms": 1.3356999843381345,
           "checks": 6,
           "configured": true,
           "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
+        },
+        "GraphRAG static graph": {
+          "engine": "GraphRAG static graph",
+          "precision_at_1": 1.0,
+          "precision_at_3": 1.0,
+          "stale_suppression": 1.0,
+          "avg_latency_ms": 0.01306665944866836,
+          "p95_latency_ms": 0.01899997005239129,
+          "checks": 6,
+          "configured": true,
+          "backend": "local lexical entity graph over active facts"
         }
       },
-      "target": "Keep Mem0 and LangGraph local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
-      "next_step": "Run the live Zep adapter against a configured service and keep Mem0/LangGraph local adapters in the release test profile."
+      "target": "Keep Mem0, LangGraph, and GraphRAG-style local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
+      "next_step": "Run the live Zep adapter against a configured service and expand the GraphRAG baseline from this small static graph to a larger update/conflict workload."
     },
     {
       "id": "longmemeval_answer_generation",
