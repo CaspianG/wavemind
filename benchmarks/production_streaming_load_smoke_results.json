@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "production_streaming_load_profile",
-    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N.",
+    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",
     "sizes": [
       10000
     ],
@@ -34,16 +34,16 @@
     }
   },
   "preflight": {
-    "python": "3.13.3",
-    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.11.15",
+    "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39",
     "docker": {
       "available": true,
-      "server_version": "28.3.0"
+      "server_version": "28.0.4"
     },
     "modules": {
-      "faiss": true,
+      "faiss": false,
       "qdrant_client": true,
-      "psycopg": true,
+      "psycopg": false,
       "numpy": true
     },
     "environment": {
@@ -66,9 +66,9 @@
       "WAVEMIND_QDRANT_SHARD_NUMBER": null
     },
     "disk": {
-      "root": "C:\\",
-      "free_gb": 1.2,
-      "total_gb": 231.85
+      "root": "/",
+      "free_gb": 87.94,
+      "total_gb": 144.26
     }
   },
   "results": [
@@ -88,18 +88,18 @@
           "recall_at_k": 1,
           "target_recall_at_k": 1,
           "target_recall_at_1": 1,
-          "avg_latency_ms": 0.32370600034482777,
-          "p50_latency_ms": 0.3043999895453453,
-          "p95_latency_ms": 0.3920000162906945,
-          "p99_latency_ms": 0.9779000538401306,
-          "max_latency_ms": 0.9779000538401306,
-          "build_ms": 36.8531999993138,
+          "avg_latency_ms": 0.09846961999869563,
+          "p50_latency_ms": 0.08989799999881143,
+          "p95_latency_ms": 0.11572100000023511,
+          "p99_latency_ms": 0.45850499999744443,
+          "max_latency_ms": 0.45850499999744443,
+          "build_ms": 27.581636999997272,
           "queries": 50,
           "recall_definition": "source vector id appears in top_k for a noisy copy of that vector",
           "memory_mode": "stores full matrix; smoke/testing only",
           "slo_status": "pass",
           "slo_required_replicas": 1,
-          "slo_autoscaled_qps": 51898.945284004,
+          "slo_autoscaled_qps": 170610.9965715572,
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_storage_cost_usd": 0.002384185791015625,
@@ -115,14 +115,14 @@
           "target_p99_ms": 100.0,
           "target_qps": 100.0,
           "recall_at_k": 1.0,
-          "p99_latency_ms": 0.9779000538401306,
-          "avg_latency_ms": 0.32370600034482777,
-          "per_replica_qps_at_headroom": 2162.456053500167,
+          "p99_latency_ms": 0.45850499999744443,
+          "avg_latency_ms": 0.09846961999869563,
+          "per_replica_qps_at_headroom": 7108.791523814883,
           "current_replicas": 3,
-          "current_capacity_qps": 6487.3681605005,
+          "current_capacity_qps": 21326.37457144465,
           "required_replicas": 1,
           "autoscaling_max_replicas": 24,
-          "autoscaled_capacity_qps": 51898.945284004,
+          "autoscaled_capacity_qps": 170610.9965715572,
           "blocking_reasons": [],
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
