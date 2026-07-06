@@ -6,7 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from wavemind import __version__, SecretEnvRef, WaveMindServerlessSpec, serverless_sample_bundle
+from wavemind import (
+    __version__,
+    SecretEnvRef,
+    ServerlessWorkloadTarget,
+    WaveMindServerlessSpec,
+    serverless_sample_bundle,
+)
 
 
 def run_cli(*args):
@@ -89,6 +95,77 @@ def test_serverless_readiness_report_marks_scale_to_zero_safe():
     assert report["safe_for_pod_eviction"] is True
     assert report["valid_keda_scale_target"] is True
     assert report["keda_scale_target_kind"] == "Deployment"
+
+
+def test_serverless_operational_profile_checks_scale_slo_and_cost():
+    spec = WaveMindServerlessSpec(
+        min_scale=0,
+        max_scale=64,
+        target_concurrency=80,
+        redis_url=SecretEnvRef("redis", "url"),
+        api_keys=SecretEnvRef("auth", "api-keys"),
+    )
+    target = ServerlessWorkloadTarget(
+        requests_per_second=3200,
+        avg_request_ms=80,
+        p99_request_ms=320,
+        cold_start_ms=900,
+        target_p99_ms=500,
+        cold_start_budget_ms=1500,
+        active_fraction=0.35,
+        replica_hourly_cost_usd=0.08,
+        monthly_budget_usd=750,
+    )
+
+    profile = spec.operational_profile(target)
+
+    assert profile["mode"] == "serverless-operational"
+    assert profile["valid"] is True
+    assert profile["slo_pass"] is True
+    assert profile["external_state_ok"] is True
+    assert profile["scale_to_zero_safe"] is True
+    assert profile["scale_out_possible"] is True
+    assert profile["cold_start_budget_ok"] is True
+    assert profile["cost_ok"] is True
+    assert profile["required_replicas"] == 4
+    assert profile["warm_replicas"] == 4
+    assert profile["burst_capacity_rps"] == 64000.0
+    assert profile["monthly_compute_cost_usd"] < 82
+
+
+def test_serverless_operational_profile_fails_without_shared_cache_or_capacity():
+    unsafe = WaveMindServerlessSpec(
+        min_scale=0,
+        max_scale=2,
+        target_concurrency=80,
+        redis_url=None,
+    )
+
+    profile = unsafe.operational_profile(
+        ServerlessWorkloadTarget(
+            requests_per_second=3200,
+            avg_request_ms=80,
+            p99_request_ms=320,
+            cold_start_ms=900,
+            target_p99_ms=500,
+            cold_start_budget_ms=1500,
+        )
+    )
+
+    assert profile["valid"] is False
+    assert profile["uses_shared_cache"] is False
+    assert profile["external_state_ok"] is False
+    assert profile["scale_out_possible"] is False
+    assert profile["required_replicas"] == 4
+
+
+def test_serverless_workload_target_validates_operational_inputs():
+    with pytest.raises(ValueError, match="requests_per_second"):
+        ServerlessWorkloadTarget(requests_per_second=0)
+    with pytest.raises(ValueError, match="active_fraction"):
+        ServerlessWorkloadTarget(active_fraction=1.5)
+    with pytest.raises(ValueError, match="monthly_budget"):
+        ServerlessWorkloadTarget(monthly_budget_usd=0)
 
 
 def test_serverless_cli_emits_bundle_and_readiness(tmp_path):

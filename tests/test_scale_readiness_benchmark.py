@@ -69,6 +69,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind serverless plan"]["valid_keda_scale_target"] is True
     assert results["WaveMind serverless plan"]["env_has_postgres_dsn"] is True
     assert results["WaveMind serverless plan"]["env_has_qdrant_url"] is True
+    assert results["WaveMind serverless operational profile"]["slo_pass"] is True
+    assert results["WaveMind serverless operational profile"]["external_state_ok"] is True
+    assert results["WaveMind serverless operational profile"]["scale_out_possible"] is True
+    assert results["WaveMind serverless operational profile"]["scale_to_zero_safe"] is True
+    assert results["WaveMind serverless operational profile"]["cold_start_budget_ok"] is True
+    assert results["WaveMind serverless operational profile"]["cost_ok"] is True
+    assert results["WaveMind serverless operational profile"]["required_replicas"] == 4
+    assert results["WaveMind serverless operational profile"]["burst_capacity_rps"] == 64000.0
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True

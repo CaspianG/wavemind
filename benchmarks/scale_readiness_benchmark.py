@@ -62,6 +62,7 @@ from wavemind import (
     sync_namespace_delta,
     table_payload,
     video_payload,
+    ServerlessWorkloadTarget,
     WaveMindClusterSpec,
     WaveMindServerlessSpec,
     stable_memory_key,
@@ -683,6 +684,32 @@ def run_serverless_profile() -> dict[str, object]:
         "env_has_postgres_dsn": "WAVEMIND_POSTGRES_DSN" in env_names,
         "env_has_qdrant_url": "WAVEMIND_QDRANT_URL" in env_names,
         "env_has_redis_url": "WAVEMIND_REDIS_URL" in env_names,
+    }
+
+
+def run_serverless_operational_profile() -> dict[str, object]:
+    spec = WaveMindServerlessSpec(
+        name="wavemind-serverless",
+        namespace="wavemind-system",
+        image="ghcr.io/caspiang/wavemind:latest",
+        min_scale=0,
+        max_scale=64,
+        target_concurrency=80,
+    )
+    target = ServerlessWorkloadTarget(
+        requests_per_second=3200.0,
+        avg_request_ms=80.0,
+        p99_request_ms=320.0,
+        cold_start_ms=900.0,
+        target_p99_ms=500.0,
+        cold_start_budget_ms=1500.0,
+        active_fraction=0.35,
+        replica_hourly_cost_usd=0.08,
+        monthly_budget_usd=750.0,
+    )
+    return {
+        "engine": "WaveMind serverless operational profile",
+        **spec.operational_profile(target),
     }
 
 
@@ -2601,6 +2628,7 @@ def run_benchmark(
             target_memories=max(simulated_memories * 10, 10_000_000),
         ),
         run_serverless_profile(),
+        run_serverless_operational_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_query_vector_cache_profile(),
         run_shared_rate_limit_profile(),
@@ -2700,6 +2728,12 @@ def main() -> int:
             print(f"| serverless | max_scale | {result['max_scale']} |")
             print(f"| serverless | safe_for_pod_eviction | {result['safe_for_pod_eviction']} |")
             print(f"| serverless | valid_keda_scale_target | {result['valid_keda_scale_target']} |")
+        elif result["engine"] == "WaveMind serverless operational profile":
+            print(f"| serverless ops | slo_pass | {result['slo_pass']} |")
+            print(f"| serverless ops | required_replicas | {result['required_replicas']} |")
+            print(f"| serverless ops | burst_capacity_rps | {result['burst_capacity_rps']:.0f} |")
+            print(f"| serverless ops | cold_start_budget_ok | {result['cold_start_budget_ok']} |")
+            print(f"| serverless ops | monthly_compute_cost_usd | {result['monthly_compute_cost_usd']:.2f} |")
         elif result["engine"] == "WaveMind hot cache":
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")

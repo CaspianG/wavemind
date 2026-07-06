@@ -213,6 +213,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     capacity_100m = scale.get("WaveMind 100M capacity envelope", {})
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
+    serverless_ops = scale.get("WaveMind serverless operational profile", {})
     hot_cache = scale.get("WaveMind hot cache", {})
     query_vector_cache = scale.get("WaveMind query vector cache", {})
     shared_rate_limiter = scale.get("WaveMind shared rate limiter", {})
@@ -526,15 +527,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and serverless.get("uses_postgres")
                 and serverless.get("uses_external_qdrant")
                 and serverless.get("uses_shared_cache")
+                and serverless_ops.get("slo_pass")
+                and serverless_ops.get("external_state_ok")
+                and serverless_ops.get("scale_out_possible")
+                and serverless_ops.get("scale_to_zero_safe")
+                and serverless_ops.get("cold_start_budget_ok")
+                and serverless_ops.get("cost_ok")
                 else "fail"
             ),
-            requirement="Serverless mode must use external durable state, external vector index, and shared cache.",
+            requirement=(
+                "Serverless mode must use external durable state, external vector "
+                "index, shared cache, valid KEDA scale target, scale-to-zero-safe "
+                "workers, and an operational SLO/cold-start/cost profile."
+            ),
             evidence=(
                 f"Postgres {serverless.get('uses_postgres')}, "
                 f"Qdrant {serverless.get('uses_external_qdrant')}, "
-                f"Redis {serverless.get('uses_shared_cache')}"
+                f"Redis {serverless.get('uses_shared_cache')}, "
+                f"required replicas {serverless_ops.get('required_replicas')}, "
+                f"burst rps {float(serverless_ops.get('burst_capacity_rps') or 0.0):.0f}, "
+                f"cold start {float(serverless_ops.get('cold_start_total_ms') or 0.0):.1f} ms, "
+                f"cost ${float(serverless_ops.get('monthly_compute_cost_usd') or 0.0):.2f}"
             ),
-            next_step="Run service-backed KEDA/Knative load tests instead of manifest-only checks.",
+            next_step="Run the same profile against a real Knative/KEDA cluster and replace deterministic targets with observed p95/p99/cold-start metrics.",
         ),
         _criterion(
             criterion_id="hot_cache_prewarm",

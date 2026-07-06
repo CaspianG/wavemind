@@ -23,6 +23,21 @@ Inspect readiness assumptions:
 wavemind serverless-sample --readiness
 ```
 
+The scale-readiness benchmark also runs a deterministic operational profile for
+this serverless shape. It checks:
+
+- external Postgres, Qdrant, Redis, and API-key wiring;
+- scale-to-zero safety for stateless workers;
+- required replicas for a target request rate;
+- burst capacity against `maxScale` and `targetConcurrency`;
+- cold-start budget;
+- estimated monthly compute cost.
+
+Current checked-in profile: 3200 requests/second, 80 ms average request time,
+320 ms warm p99, 900 ms cold start, 4 required warm replicas, 64000 burst RPS
+capacity, and an estimated `$81.76` monthly compute cost at the modeled active
+fraction. This is an operational preflight, not a live Knative/KEDA load test.
+
 Required secrets:
 
 ```sh

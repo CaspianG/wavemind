@@ -86,6 +86,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True
     assert serverless["valid_keda_scale_target"] is True
+    serverless_ops = entries["scale_readiness"]["current"]["WaveMind serverless operational profile"]
+    assert serverless_ops["slo_pass"] is True
+    assert serverless_ops["external_state_ok"] is True
+    assert serverless_ops["scale_to_zero_safe"] is True
+    assert serverless_ops["cold_start_budget_ok"] is True
+    assert serverless_ops["required_replicas"] == 4
+    assert serverless_ops["burst_capacity_rps"] == 64000.0
+    assert serverless_ops["cost_ok"] is True
     structured = entries["scale_readiness"]["current"]["WaveMind structured payloads"]
     assert structured["cross_modal_precision_at_1"] == 1.0
     assert structured["cross_modal_provenance_rate"] == 1.0

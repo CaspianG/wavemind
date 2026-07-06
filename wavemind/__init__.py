@@ -126,7 +126,12 @@ from .scale import (
     evaluate_production_slo,
     scale_status_meets_or_exceeds,
 )
-from .serverless import SecretEnvRef, WaveMindServerlessSpec, serverless_sample_bundle
+from .serverless import (
+    SecretEnvRef,
+    ServerlessWorkloadTarget,
+    WaveMindServerlessSpec,
+    serverless_sample_bundle,
+)
 from .sharding import (
     DistributedForgetResult,
     DistributedReadQuorumError,
@@ -236,6 +241,7 @@ __all__ = [
     "ScalePlan",
     "S3SnapshotStore",
     "SecretEnvRef",
+    "ServerlessWorkloadTarget",
     "TextEncoder",
     "WaveField",
     "WaveMindClusterSpec",

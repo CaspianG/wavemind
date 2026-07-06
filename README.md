@@ -770,6 +770,12 @@ hot-query cache, and API keys are read from Kubernetes Secrets. This path is the
 current foundation for scale-to-zero and managed/serverless deployments; it is
 not a claim that WaveMind has a hosted control plane yet.
 
+The scale-readiness gate also runs a deterministic serverless operational
+profile: 3200 requests/second, 80 ms average request time, 320 ms warm p99,
+900 ms cold start, 4 required replicas, 64000 burst RPS capacity, cold-start
+budget pass, and estimated monthly compute cost `$81.76`. This proves the
+serverless assumptions before a live Knative/KEDA load test is available.
+
 Maintenance workers:
 
 ```sh
@@ -1509,6 +1515,11 @@ Current read:
 | Production readiness gate | Current WaveMind core gate score is `1.000`: `28/28` criteria pass, `0` require action, `0` fail. Live Zep competitor evidence is tracked separately and remains pending until a real `ZEP_API_URL` or `ZEP_API_KEY` is configured. | This keeps production claims honest without letting a missing commercial competitor credential block WaveMind's own readiness verdict. WaveMind has a real production foundation, a checked-in 10M compressed FAISS profile, a deterministic 100M capacity envelope, real local multi-process HTTP cluster smoke, VectorDBBench custom dataset export, architecture advisor preflight, cluster autoscale planning, and majority control-plane safety. |
 | Memory competitor adapters | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00`. Mem0 runs locally with Qdrant + FastEmbed and reaches `0.80`, `1.00`, stale suppression `0.60`. LangGraph persistent SQLite reaches `0.80`, `1.00`, stale suppression `1.00`. GraphRAG-style static graph reaches `1.00`, `1.00`, stale suppression `1.00` on this small static scenario. Zep has live adapter paths for the current `zep-cloud` Graph API and legacy/OSS-compatible `zep-python`; it is skipped only until `ZEP_API_URL` or `ZEP_API_KEY` points at a real Zep service. | This prevents fake competitor claims while still checking real installed competitors when they are available. |
 | LongMemEval local answer generation | With the same local Ollama `qwen2.5:1.5b`, WaveMind reaches `exact_match 0.240`, `contains_answer 0.380`, `token_f1 0.333`, and `evidence_recall@5 0.920`; Chroma and Qdrant static both reach `0.120`, `0.160`, `0.170`, and `0.600`. | This is the first checked-in end-to-end answer benchmark against Chroma/Qdrant. It is still a 50-question lightweight smoke run, not a full LongMemEval leaderboard score. |
+
+The serverless part of scale readiness now includes an operational preflight,
+not only manifests: target load, required replicas, burst capacity,
+scale-to-zero safety, cold-start budget, and modeled compute cost are checked
+by the production gate.
 
 ### Real Benchmark Matrix
 

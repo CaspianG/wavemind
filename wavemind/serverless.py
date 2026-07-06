@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import math
 from typing import Any
 
 
@@ -17,6 +18,41 @@ class SecretEnvRef:
 
     def as_dict(self) -> dict[str, str]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ServerlessWorkloadTarget:
+    """Operational target for a stateless serverless WaveMind deployment."""
+
+    requests_per_second: float = 3200.0
+    avg_request_ms: float = 80.0
+    p99_request_ms: float = 320.0
+    cold_start_ms: float = 900.0
+    target_p99_ms: float = 500.0
+    cold_start_budget_ms: float = 1500.0
+    active_fraction: float = 0.35
+    replica_hourly_cost_usd: float = 0.08
+    monthly_budget_usd: float = 750.0
+
+    def __post_init__(self) -> None:
+        if self.requests_per_second <= 0:
+            raise ValueError("requests_per_second must be positive")
+        if self.avg_request_ms <= 0:
+            raise ValueError("avg_request_ms must be positive")
+        if self.p99_request_ms <= 0:
+            raise ValueError("p99_request_ms must be positive")
+        if self.cold_start_ms < 0:
+            raise ValueError("cold_start_ms cannot be negative")
+        if self.target_p99_ms <= 0:
+            raise ValueError("target_p99_ms must be positive")
+        if self.cold_start_budget_ms <= 0:
+            raise ValueError("cold_start_budget_ms must be positive")
+        if not 0.0 <= self.active_fraction <= 1.0:
+            raise ValueError("active_fraction must be between 0 and 1")
+        if self.replica_hourly_cost_usd < 0:
+            raise ValueError("replica_hourly_cost_usd cannot be negative")
+        if self.monthly_budget_usd <= 0:
+            raise ValueError("monthly_budget_usd must be positive")
 
 
 @dataclass(frozen=True)
@@ -253,6 +289,88 @@ class WaveMindServerlessSpec:
             "keda_scale_target_kind": "Deployment",
             "keda_scale_target": self.keda_name,
             "valid_keda_scale_target": True,
+        }
+
+    def operational_profile(
+        self,
+        target: ServerlessWorkloadTarget | None = None,
+    ) -> dict[str, Any]:
+        target = target or ServerlessWorkloadTarget()
+        readiness = self.readiness_report()
+        avg_request_seconds = target.avg_request_ms / 1000.0
+        required_concurrency = target.requests_per_second * avg_request_seconds
+        required_replicas = max(1, math.ceil(required_concurrency / self.target_concurrency))
+        warm_replicas = max(self.min_scale, min(required_replicas, self.max_scale))
+        burst_capacity_rps = (
+            self.max_scale * self.target_concurrency / avg_request_seconds
+            if avg_request_seconds > 0
+            else 0.0
+        )
+        scale_out_possible = required_replicas <= self.max_scale
+        external_state_ok = bool(
+            readiness["uses_postgres"]
+            and readiness["uses_external_qdrant"]
+            and readiness["uses_shared_cache"]
+            and readiness["has_auth_secret"]
+            and readiness["safe_for_pod_eviction"]
+        )
+        warm_p99_ok = target.p99_request_ms <= target.target_p99_ms
+        cold_start_total_ms = target.cold_start_ms + target.p99_request_ms
+        cold_start_budget_ok = cold_start_total_ms <= target.cold_start_budget_ms
+        scale_to_zero_safe = bool(readiness["scale_to_zero"] and external_state_ok)
+        hours_per_month = 730.0
+        active_compute_cost = (
+            warm_replicas
+            * target.replica_hourly_cost_usd
+            * hours_per_month
+            * target.active_fraction
+        )
+        idle_compute_cost = (
+            self.min_scale
+            * target.replica_hourly_cost_usd
+            * hours_per_month
+            * (1.0 - target.active_fraction)
+        )
+        monthly_compute_cost_usd = active_compute_cost + idle_compute_cost
+        cost_ok = monthly_compute_cost_usd <= target.monthly_budget_usd
+        valid = bool(
+            external_state_ok
+            and scale_out_possible
+            and warm_p99_ok
+            and cold_start_budget_ok
+            and cost_ok
+        )
+        return {
+            "mode": "serverless-operational",
+            "valid": valid,
+            "slo_pass": valid,
+            "requests_per_second": target.requests_per_second,
+            "avg_request_ms": target.avg_request_ms,
+            "p99_request_ms": target.p99_request_ms,
+            "target_p99_ms": target.target_p99_ms,
+            "cold_start_ms": target.cold_start_ms,
+            "cold_start_total_ms": cold_start_total_ms,
+            "cold_start_budget_ms": target.cold_start_budget_ms,
+            "cold_start_budget_ok": cold_start_budget_ok,
+            "required_concurrency": required_concurrency,
+            "required_replicas": required_replicas,
+            "warm_replicas": warm_replicas,
+            "max_scale": self.max_scale,
+            "target_concurrency": self.target_concurrency,
+            "burst_capacity_rps": burst_capacity_rps,
+            "scale_out_possible": scale_out_possible,
+            "scale_to_zero_safe": scale_to_zero_safe,
+            "external_state_ok": external_state_ok,
+            "uses_postgres": readiness["uses_postgres"],
+            "uses_external_qdrant": readiness["uses_external_qdrant"],
+            "uses_shared_cache": readiness["uses_shared_cache"],
+            "has_auth_secret": readiness["has_auth_secret"],
+            "safe_for_pod_eviction": readiness["safe_for_pod_eviction"],
+            "active_fraction": target.active_fraction,
+            "replica_hourly_cost_usd": target.replica_hourly_cost_usd,
+            "monthly_compute_cost_usd": monthly_compute_cost_usd,
+            "monthly_budget_usd": target.monthly_budget_usd,
+            "cost_ok": cost_ok,
         }
 
     def _labels(self, *, component: str = "serverless-api") -> dict[str, str]:
