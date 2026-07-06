@@ -1,0 +1,46 @@
+{
+  "benchmark": "VectorDBBench custom dataset",
+  "status": "ready",
+  "created_at": "2026-07-06T15:09:03.572711+00:00",
+  "source": "WaveMind deterministic synthetic production vectors",
+  "metric": "cosine",
+  "schema": {
+    "train": {
+      "id": "int",
+      "vector": "list[float32]"
+    },
+    "test": {
+      "id": "int",
+      "vector": "list[float32]"
+    },
+    "neighbors": {
+      "id": "int",
+      "neighbors": "list[int]"
+    },
+    "scalar_labels": {
+      "id": "int",
+      "label": "str"
+    }
+  },
+  "dataset": {
+    "vectors": 10000,
+    "queries": 100,
+    "dim": 128,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.01,
+    "label_count": 16
+  },
+  "files": {
+    "train": "state/vectordbbench-wavemind/train.parquet",
+    "test": "state/vectordbbench-wavemind/test.parquet",
+    "neighbors": "state/vectordbbench-wavemind/neighbors.parquet",
+    "scalar_labels": "state/vectordbbench-wavemind/scalar_labels.parquet"
+  },
+  "output_dir": "state/vectordbbench-wavemind",
+  "reproduce": {
+    "generate": "python benchmarks/vectordbbench_dataset.py --vectors 10000 --queries 100 --dim 128 --top-k 10 --seed 42 --noise 0.01 --output-dir state/vectordbbench-wavemind",
+    "install": "pip install \"wavemind[bench]\"",
+    "run_with_vectordbbench": "Use train.parquet, test.parquet, neighbors.parquet, and scalar_labels.parquet as a VectorDBBench custom dataset."
+  }
+}

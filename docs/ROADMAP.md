@@ -36,10 +36,14 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`26/26` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`27/27` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
+- `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
+  with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
+  `scalar_labels.parquet`. This makes the public vector-database benchmark path
+  runner-ready without claiming an official VectorDBBench leaderboard score yet.
 - The scale-readiness profile now includes sustained mixed HTTP cluster load
   across 4 real localhost API nodes: quorum writes, normal queries, node
   failover queries, replicated deletes, missing-replica repair, and p99

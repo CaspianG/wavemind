@@ -7,17 +7,18 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `26` |
+| passed criteria | `27` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `26` |
+| total criteria | `27` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T14:32:16Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T15:12:48Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
+| VectorDBBench custom dataset export is reproducible | `pass` | status ready, vectors 10000, queries 100, files ['neighbors', 'scalar_labels', 'test', 'train'] | Run this custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Cluster autoscaler plans node additions within headroom | `pass` | current 4, required 50, target max 678711, moves 25+4069 | Connect this planner to operator reconciliation status and real HPA/load metrics. |
 | 100M-memory capacity envelope is planned across a large cluster | `pass` | 100000000 memories, 128 nodes, RF 3, replica skew 1.09375, max storage/node 5.806214176118374 GB | Promote this envelope from deterministic planning to a real 100M service-backed Qdrant/pgvector/FAISS load run on sized hardware. |

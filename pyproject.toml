@@ -48,6 +48,7 @@ bench = [
   "chromadb>=1.0",
   "qdrant-client>=1.9",
   "zep-cloud>=3.23",
+  "pyarrow>=15",
 ]
 langchain = [
   "langchain-classic>=1.0",

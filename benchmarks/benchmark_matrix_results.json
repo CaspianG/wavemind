@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T14:32:16Z",
-  "source_ref": "790710c601cc",
+  "generated_at": "2026-07-06T15:12:48Z",
+  "source_ref": "490141a1d885",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1276,10 +1276,10 @@
         "WaveMind production readiness": {
           "readiness_score": 1.0,
           "overall_status": "pass",
-          "pass_count": 26,
+          "pass_count": 27,
           "action_required_count": 0,
           "fail_count": 0,
-          "total_criteria": 26
+          "total_criteria": 27
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
@@ -1576,9 +1576,10 @@
       "id": "vectordbbench",
       "name": "VectorDBBench",
       "category": "vector-db",
-      "status": "planned",
+      "status": "runner-ready",
+      "source": "benchmarks/vectordbbench_dataset.py",
       "source_url": "https://github.com/zilliztech/VectorDBBench",
-      "dataset": "Vector database benchmark scenarios for insertion, search, filtered search, and cost/performance comparisons.",
+      "dataset": "VectorDBBench custom dataset export with train/test/neighbors/scalar-label parquet files. Checked-in manifest points to a reproducible 10000-vector, 100-query, 128-d cosine dataset.",
       "competitors": [
         "Chroma",
         "Qdrant",
@@ -1594,8 +1595,17 @@
         "load_time",
         "cost_performance"
       ],
-      "target": "Use this only after WaveMind has a production index path; current NumPy mode is not a fair vector database competitor.",
-      "next_step": "Add a WaveMind adapter or a methodology note that compares WaveMind as a memory layer above a vector database, not as a standalone cloud vector DB."
+      "current": {
+        "WaveMind custom dataset export": {
+          "status": "ready",
+          "vectors": 10000,
+          "queries": 100,
+          "dim": 128,
+          "top_k": 10
+        }
+      },
+      "target": "Use official VectorDBBench runs to compare WaveMind's production index paths without pretending NumPy local mode is a cloud vector database.",
+      "next_step": "Run the generated custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles."
     },
     {
       "id": "locomo_answer_generation",

@@ -18,6 +18,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
     assert criteria["production_1m_slo"]["status"] == "pass"
     assert criteria["production_1m_query_depth"]["status"] == "pass"
+    assert criteria["vectordbbench_custom_dataset"]["status"] == "pass"
+    assert "train/test/neighbors/scalar-label parquet" in criteria["vectordbbench_custom_dataset"]["requirement"]
+    assert "vectors 10000" in criteria["vectordbbench_custom_dataset"]["evidence"]
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["cluster_autoscale_planner"]["status"] == "pass"
     assert "required node count" in criteria["cluster_autoscale_planner"]["requirement"]
@@ -102,9 +105,10 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 26
+    assert payload["summary"]["total_criteria"] == 27
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
+    assert "VectorDBBench custom dataset export is reproducible" in report
     assert "Cluster autoscaler plans node additions within headroom" in report
     assert "Query-vector cache avoids repeated encoder work" in report
     assert "Redis-compatible shared rate limiter works across workers" in report

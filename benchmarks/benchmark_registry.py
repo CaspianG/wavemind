@@ -171,6 +171,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
+    vectordbbench_payload = _load_json(root / "benchmarks" / "vectordbbench_dataset_manifest.json")
 
     agent_results = _engine_results(agent_payload)
     dynamic_results = _engine_results(dynamic_payload)
@@ -204,6 +205,19 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         else {}
     )
     memory_competitor_results = _engine_results(memory_competitor_payload)
+    vectordbbench_summary = (
+        {
+            "WaveMind custom dataset export": {
+                "status": vectordbbench_payload.get("status"),
+                "vectors": vectordbbench_payload.get("dataset", {}).get("vectors"),
+                "queries": vectordbbench_payload.get("dataset", {}).get("queries"),
+                "dim": vectordbbench_payload.get("dataset", {}).get("dim"),
+                "top_k": vectordbbench_payload.get("dataset", {}).get("top_k"),
+            }
+        }
+        if vectordbbench_payload
+        else {}
+    )
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
@@ -1378,13 +1392,15 @@ PUBLIC_BENCHMARKS: list[dict[str, Any]] = [
         "id": "vectordbbench",
         "name": "VectorDBBench",
         "category": "vector-db",
-        "status": "planned",
+        "status": "runner-ready",
+        "source": "benchmarks/vectordbbench_dataset.py",
         "source_url": "https://github.com/zilliztech/VectorDBBench",
-        "dataset": "Vector database benchmark scenarios for insertion, search, filtered search, and cost/performance comparisons.",
+        "dataset": "VectorDBBench custom dataset export with train/test/neighbors/scalar-label parquet files. Checked-in manifest points to a reproducible 10000-vector, 100-query, 128-d cosine dataset.",
         "competitors": ["Chroma", "Qdrant", "Milvus", "Weaviate", "Pinecone", "FAISS"],
         "metrics": ["qps", "serial_latency_ms", "recall@k", "load_time", "cost_performance"],
-        "target": "Use this only after WaveMind has a production index path; current NumPy mode is not a fair vector database competitor.",
-        "next_step": "Add a WaveMind adapter or a methodology note that compares WaveMind as a memory layer above a vector database, not as a standalone cloud vector DB.",
+        "current": {},
+        "target": "Use official VectorDBBench runs to compare WaveMind's production index paths without pretending NumPy local mode is a cloud vector database.",
+        "next_step": "Run the generated custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles.",
     },
     {
         "id": "locomo_answer_generation",
@@ -1448,8 +1464,28 @@ def build_benchmark_matrix(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "Implemented entries are runnable from this repository. Planned entries are "
             "public benchmarks that require optional datasets, services, or heavier dependencies."
         ),
-        "benchmarks": _implemented_entries(root) + PUBLIC_BENCHMARKS,
+        "benchmarks": _implemented_entries(root) + _public_benchmarks(root),
     }
+
+
+def _public_benchmarks(root: Path) -> list[dict[str, Any]]:
+    entries = [dict(entry) for entry in PUBLIC_BENCHMARKS]
+    vectordbbench_payload = _load_json(root / "benchmarks" / "vectordbbench_dataset_manifest.json")
+    if vectordbbench_payload:
+        summary = {
+            "WaveMind custom dataset export": {
+                "status": vectordbbench_payload.get("status"),
+                "vectors": vectordbbench_payload.get("dataset", {}).get("vectors"),
+                "queries": vectordbbench_payload.get("dataset", {}).get("queries"),
+                "dim": vectordbbench_payload.get("dataset", {}).get("dim"),
+                "top_k": vectordbbench_payload.get("dataset", {}).get("top_k"),
+            }
+        }
+        for entry in entries:
+            if entry.get("id") == "vectordbbench":
+                entry["current"] = summary
+                break
+    return entries
 
 
 def _generated_at() -> str:

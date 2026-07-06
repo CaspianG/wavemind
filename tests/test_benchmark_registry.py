@@ -28,6 +28,9 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert entries["beir"]["status"] == "planned"
     assert entries["miracl_ru"]["category"] == "multilingual-retrieval"
     assert entries["vectordbbench"]["category"] == "vector-db"
+    assert entries["vectordbbench"]["status"] == "runner-ready"
+    assert entries["vectordbbench"]["current"]["WaveMind custom dataset export"]["status"] == "ready"
+    assert entries["vectordbbench"]["current"]["WaveMind custom dataset export"]["vectors"] == 10000
     assert entries["longmemeval_evidence_retrieval"]["status"] == "implemented"
     assert entries["ann_index_curve"]["status"] == "implemented"
     assert entries["production_load_profile_100k"]["status"] == "implemented"

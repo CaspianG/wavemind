@@ -77,6 +77,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
+        "vectordbbench_dataset": _load_optional_json(benchmark_dir / "vectordbbench_dataset_manifest.json"),
     }
 
 
@@ -195,6 +196,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     )
     scale = _engine_results(artifacts["scale"])
     competitors = _engine_results(artifacts["competitors"])
+    vectordbbench_dataset = artifacts["vectordbbench_dataset"]
+    vectordbbench_files = set((vectordbbench_dataset.get("files") or {}).keys())
+    vectordbbench_ready = (
+        vectordbbench_dataset.get("status") == "ready"
+        and int(vectordbbench_dataset.get("dataset", {}).get("vectors", 0)) >= 10_000
+        and int(vectordbbench_dataset.get("dataset", {}).get("queries", 0)) >= 100
+        and int(vectordbbench_dataset.get("dataset", {}).get("dim", 0)) >= 128
+        and int(vectordbbench_dataset.get("dataset", {}).get("top_k", 0)) >= 10
+        and {"train", "test", "neighbors", "scalar_labels"}.issubset(vectordbbench_files)
+    )
 
     cluster = scale.get("WaveMind cluster planner", {})
     cluster_autoscaler = scale.get("WaveMind cluster autoscaler", {})
@@ -331,6 +342,26 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement="Use at least 100 queries for checked-in 1M production claims.",
             evidence=f"current tuned 1M profile uses {load_1m_queries} queries",
             next_step="Keep 100+ query depth for all checked-in 1M production profiles.",
+        ),
+        _criterion(
+            criterion_id="vectordbbench_custom_dataset",
+            title="VectorDBBench custom dataset export is reproducible",
+            status="pass" if vectordbbench_ready else "action_required",
+            requirement=(
+                "A public vector-database comparison path must expose "
+                "train/test/neighbors/scalar-label parquet files for an official "
+                "VectorDBBench custom dataset run."
+            ),
+            evidence=(
+                f"status {vectordbbench_dataset.get('status')}, "
+                f"vectors {vectordbbench_dataset.get('dataset', {}).get('vectors')}, "
+                f"queries {vectordbbench_dataset.get('dataset', {}).get('queries')}, "
+                f"files {sorted(vectordbbench_files)}"
+            ),
+            next_step=(
+                "Run this custom dataset through official VectorDBBench targets "
+                "for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles."
+            ),
         ),
         _criterion(
             criterion_id="cluster_ha_placement",
