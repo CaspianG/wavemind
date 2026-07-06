@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import math
 import os
@@ -9,7 +10,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-from urllib.request import ProxyHandler, Request, build_opener
+from urllib.parse import urlparse
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) in sys.path:
@@ -39,16 +40,23 @@ def request_json(
     *,
     timeout: float = 5.0,
 ) -> dict[str, Any]:
-    data = None if payload is None else json.dumps(payload).encode("utf-8")
-    request = Request(
-        url,
-        data=data,
-        method=method,
-        headers={"Content-Type": "application/json"},
-    )
-    opener = build_opener(ProxyHandler({}))
-    with opener.open(request, timeout=timeout) as response:
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or not parsed.hostname:
+        raise ValueError(f"only http:// URLs are supported, got {url}")
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    connection = http.client.HTTPConnection(parsed.hostname, parsed.port or 80, timeout=timeout)
+    try:
+        path = parsed.path or "/"
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
+        connection.request(method, path, body=body, headers=headers)
+        response = connection.getresponse()
         raw = response.read().decode("utf-8")
+        if response.status >= 400:
+            raise RuntimeError(f"{method} {url} failed with HTTP {response.status}: {raw}")
+    finally:
+        connection.close()
     return json.loads(raw) if raw else {}
 
 
@@ -56,13 +64,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Measure one real WaveMind API worker under HTTP query load and emit "
-            "serverless observed telemetry. The aggregate RPS is calculated as "
-            "measured per-replica throughput multiplied by the configured "
-            "serverless max_scale, matching the Knative/KEDA capacity model."
+            "serverless observed telemetry. By default it starts a small pool "
+            "of real local API replicas, balances requests across them, and "
+            "calculates the aggregate RPS estimate from measured per-replica "
+            "throughput multiplied by max_scale."
         )
     )
     parser.add_argument("--requests", type=int, default=240)
-    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--replicas", type=int, default=4)
     parser.add_argument("--seed-memories", type=int, default=24)
     parser.add_argument("--cache-capacity", type=int, default=256)
     parser.add_argument("--vector-cache-capacity", type=int, default=256)
@@ -100,6 +110,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--requests must be positive")
     if args.workers <= 0:
         raise ValueError("--workers must be positive")
+    if args.replicas <= 0:
+        raise ValueError("--replicas must be positive")
     if args.seed_memories <= 0:
         raise ValueError("--seed-memories must be positive")
     if args.cache_capacity < 0:
@@ -108,6 +120,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--vector-cache-capacity cannot be negative")
     if args.max_scale <= 0:
         raise ValueError("--max-scale must be positive")
+    if args.replicas > args.max_scale:
+        raise ValueError("--replicas must be <= --max-scale")
     if args.target_rps <= 0:
         raise ValueError("--target-rps must be positive")
     if args.target_p99_ms <= 0:
@@ -153,40 +167,54 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
         os.environ["WAVEMIND_API_SERIALIZE_OPERATIONS"] = "1" if args.serialize_operations else "0"
         os.environ["WAVEMIND_CACHE_CAPACITY"] = str(args.cache_capacity)
         os.environ["WAVEMIND_VECTOR_CACHE_CAPACITY"] = str(args.vector_cache_capacity)
+        nodes = []
+        replica_cold_starts: list[float] = []
         try:
-            node = start_api_node(
-                root,
-                "node-000",
-                readiness_timeout_seconds=args.readiness_timeout,
-                capture_output=False,
-            )
+            for replica_index in range(args.replicas):
+                replica_started_at = time.perf_counter()
+                nodes.append(
+                    start_api_node(
+                        root,
+                        f"node-{replica_index:03d}",
+                        readiness_timeout_seconds=args.readiness_timeout,
+                        capture_output=False,
+                    )
+                )
+                replica_cold_starts.append((time.perf_counter() - replica_started_at) * 1000.0)
         finally:
             for env_name, previous_value in previous_env.items():
                 if previous_value is None:
                     os.environ.pop(env_name, None)
                 else:
                     os.environ[env_name] = previous_value
-        cold_start_ms = (time.perf_counter() - started_at) * 1000.0
+        pool_startup_ms = (time.perf_counter() - started_at) * 1000.0
+        cold_start_ms = max(replica_cold_starts) if replica_cold_starts else pool_startup_ms
         try:
-            texts = _seed_worker(
-                node.address,
-                namespace=args.namespace,
-                count=args.seed_memories,
-                timeout=args.request_timeout,
-            )
+            texts: list[str] = []
+            for replica_index, node in enumerate(nodes):
+                seeded_texts = _seed_worker(
+                    node.address,
+                    namespace=args.namespace,
+                    count=args.seed_memories,
+                    timeout=args.request_timeout,
+                )
+                if replica_index == 0:
+                    texts = seeded_texts
             warmup_queries = 0
             if not args.no_warm_cache and args.cache_capacity > 0:
-                for text in texts:
-                    request_json(
-                        "POST",
-                        f"{node.address}/query",
-                        {"text": text, "namespace": args.namespace, "top_k": 1},
-                        timeout=args.request_timeout,
-                    )
-                    warmup_queries += 1
+                for node in nodes:
+                    for text in texts:
+                        request_json(
+                            "POST",
+                            f"{node.address}/query",
+                            {"text": text, "namespace": args.namespace, "top_k": 1},
+                            timeout=args.request_timeout,
+                        )
+                        warmup_queries += 1
             latencies: list[float] = []
 
             def query_one(index: int) -> tuple[bool, bool, float]:
+                node = nodes[index % len(nodes)]
                 text = texts[index % len(texts)]
                 op_started = time.perf_counter()
                 try:
@@ -215,7 +243,8 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                     latencies.append(latency)
             elapsed_seconds = max(time.perf_counter() - load_started, 1e-9)
 
-            per_replica_rps = args.requests / elapsed_seconds
+            measured_pool_rps = args.requests / elapsed_seconds
+            per_replica_rps = measured_pool_rps / max(1, len(nodes))
             aggregate_rps = per_replica_rps * args.max_scale
             required_replicas = max(1, math.ceil(args.target_rps / max(per_replica_rps, 1e-9)))
             observed_replicas = min(args.max_scale, required_replicas)
@@ -236,17 +265,25 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
             return {
                 "source": args.source,
                 "methodology": (
-                    "Measured one real localhost WaveMind API worker under HTTP "
-                    "query load with warmed hot-query cache, then multiplied "
-                    "per-replica throughput by max_scale for the Knative/KEDA "
-                    "horizontal capacity estimate."
+                    "Measured a balanced pool of real localhost WaveMind API "
+                    "replicas under HTTP query load with warmed hot-query cache, "
+                    "then multiplied measured per-replica throughput by max_scale "
+                    "for the Knative/KEDA horizontal capacity estimate."
                 ),
                 "requests_per_second": round(aggregate_rps, 3),
+                "measured_pool_requests_per_second": round(measured_pool_rps, 3),
                 "per_replica_requests_per_second": round(per_replica_rps, 3),
                 "avg_request_ms": round(sum(latencies) / len(latencies), 3) if latencies else 0.0,
                 "p95_request_ms": round(p95_ms, 3),
                 "p99_request_ms": round(p99_ms, 3),
                 "cold_start_ms": round(cold_start_ms, 3),
+                "cold_start_avg_ms": round(
+                    sum(replica_cold_starts) / len(replica_cold_starts),
+                    3,
+                )
+                if replica_cold_starts
+                else round(pool_startup_ms, 3),
+                "cold_start_pool_startup_ms": round(pool_startup_ms, 3),
                 "cold_start_total_ms": round(cold_start_total_ms, 3),
                 "error_rate": round(error_rate, 6),
                 "max_replicas": int(observed_replicas),
@@ -258,6 +295,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                 "request_exceptions": int(request_exceptions),
                 "seed_memories": int(args.seed_memories),
                 "warmup_queries": int(warmup_queries),
+                "measured_replicas": int(len(nodes)),
                 "cache_capacity": int(args.cache_capacity),
                 "vector_cache_capacity": int(args.vector_cache_capacity),
                 "cache_prewarmed": bool(warmup_queries),
@@ -266,10 +304,11 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                 "target_rps": float(args.target_rps),
                 "target_p99_ms": float(args.target_p99_ms),
                 "cold_start_budget_ms": float(args.cold_start_budget_ms),
+                "horizontal_capacity_estimate": True,
                 "observed_slo_pass": observed_slo_pass,
             }
         finally:
-            stop_api_nodes([node])
+            stop_api_nodes(nodes)
 
 
 def main() -> int:
@@ -288,7 +327,9 @@ def main() -> int:
     print("| serverless observed telemetry | value |")
     print("|---|---:|")
     print(f"| aggregate_rps | {payload['requests_per_second']:.3f} |")
+    print(f"| measured_pool_rps | {payload['measured_pool_requests_per_second']:.3f} |")
     print(f"| per_replica_rps | {payload['per_replica_requests_per_second']:.3f} |")
+    print(f"| measured_replicas | {payload['measured_replicas']} |")
     print(f"| p99_request_ms | {payload['p99_request_ms']:.3f} |")
     print(f"| cold_start_ms | {payload['cold_start_ms']:.3f} |")
     print(f"| error_rate | {payload['error_rate']:.6f} |")

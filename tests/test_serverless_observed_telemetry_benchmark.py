@@ -47,15 +47,19 @@ def test_serverless_observed_telemetry_benchmark_emits_capacity(monkeypatch):
     assert started_nodes
     assert stopped_nodes
     assert payload["source"] == "loopback-api-capacity-estimate"
-    assert payload["methodology"].startswith("Measured one real localhost WaveMind API worker")
+    assert payload["methodology"].startswith("Measured a balanced pool")
     assert payload["requests"] == 12
     assert payload["successes"] == 12
     assert payload["failures"] == 0
     assert payload["request_exceptions"] == 0
-    assert payload["warmup_queries"] == 3
+    assert payload["measured_replicas"] == 4
+    assert len(started_nodes) == 4
+    assert payload["warmup_queries"] == 12
     assert payload["cache_prewarmed"] is True
     assert payload["operation_serialization"] is False
     assert payload["configured_max_scale"] == 4
+    assert payload["horizontal_capacity_estimate"] is True
+    assert payload["measured_pool_requests_per_second"] >= payload["per_replica_requests_per_second"]
     assert payload["requests_per_second"] >= payload["per_replica_requests_per_second"]
     assert payload["observed_slo_pass"] is True
 
@@ -65,6 +69,8 @@ def test_serverless_observed_telemetry_benchmark_emits_capacity(monkeypatch):
     [
         (["--requests", "0"], "--requests must be positive"),
         (["--workers", "0"], "--workers must be positive"),
+        (["--replicas", "0"], "--replicas must be positive"),
+        (["--replicas", "5", "--max-scale", "4"], "--replicas must be <= --max-scale"),
         (["--seed-memories", "0"], "--seed-memories must be positive"),
         (["--cache-capacity", "-1"], "--cache-capacity cannot be negative"),
         (["--vector-cache-capacity", "-1"], "--vector-cache-capacity cannot be negative"),

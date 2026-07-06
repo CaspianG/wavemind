@@ -112,6 +112,8 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert serverless_ops["observed_requests_per_second"] >= 3040.0
     assert serverless_ops["observed_p99_request_ms"] <= 500.0
     assert serverless_ops["observed_max_replicas"] <= 256
+    assert serverless_ops["observed_measured_replicas"] >= 4
+    assert serverless_ops["observed_measured_pool_requests_per_second"] > 0.0
     structured = entries["scale_readiness"]["current"]["WaveMind structured payloads"]
     assert structured["cross_modal_precision_at_1"] == 1.0
     assert structured["cross_modal_provenance_rate"] == 1.0

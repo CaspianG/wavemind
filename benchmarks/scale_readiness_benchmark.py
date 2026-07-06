@@ -724,9 +724,13 @@ def run_serverless_operational_profile() -> dict[str, object]:
                 SERVERLESS_OBSERVED_TELEMETRY_PATH.relative_to(PROJECT_ROOT)
             ),
             "observed_telemetry_methodology": observed_payload.get("methodology", ""),
+            "observed_measured_pool_requests_per_second": observed_payload.get(
+                "measured_pool_requests_per_second"
+            ),
             "observed_per_replica_requests_per_second": observed_payload.get(
                 "per_replica_requests_per_second"
             ),
+            "observed_measured_replicas": observed_payload.get("measured_replicas"),
             "observed_configured_max_scale": observed_payload.get("configured_max_scale"),
         }
     )

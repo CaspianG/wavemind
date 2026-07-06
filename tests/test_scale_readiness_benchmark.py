@@ -82,8 +82,10 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind serverless operational profile"]["observed_requests_per_second"] >= 3040.0
     assert results["WaveMind serverless operational profile"]["observed_p99_request_ms"] <= 500.0
     assert results["WaveMind serverless operational profile"]["observed_max_replicas"] <= 256
+    assert results["WaveMind serverless operational profile"]["observed_measured_replicas"] >= 4
+    assert results["WaveMind serverless operational profile"]["observed_measured_pool_requests_per_second"] > 0.0
     assert results["WaveMind serverless operational profile"]["observed_per_replica_requests_per_second"] > 0.0
-    assert "localhost WaveMind API worker" in results["WaveMind serverless operational profile"]["observed_telemetry_methodology"]
+    assert "balanced pool" in results["WaveMind serverless operational profile"]["observed_telemetry_methodology"]
     assert results["WaveMind hot cache"]["hit_rate"] > 0.0
     assert results["WaveMind hot cache"]["prewarm_warmed"] == 1
     assert results["WaveMind hot cache"]["prewarm_hit"] is True

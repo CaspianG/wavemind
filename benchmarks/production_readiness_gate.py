@@ -686,6 +686,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"cold start {float(serverless_ops.get('cold_start_total_ms') or 0.0):.1f} ms, "
                 f"cost ${float(serverless_ops.get('monthly_compute_cost_usd') or 0.0):.2f}, "
                 f"observed source {serverless_ops.get('observed_telemetry_source')}, "
+                f"observed replicas {serverless_ops.get('observed_measured_replicas')}, "
+                f"observed pool rps {serverless_ops.get('observed_measured_pool_requests_per_second')}, "
                 f"observed p99 {serverless_ops.get('observed_p99_request_ms')} ms, "
                 f"observed errors {serverless_ops.get('observed_error_rate')}"
             ),

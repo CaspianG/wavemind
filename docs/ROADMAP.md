@@ -148,9 +148,12 @@ policy matters more than raw vector-database scale:
   telemetry contract. The profile now fails when observed RPS, p99,
   cold-start, error-rate, scale-out lag, max replicas, or cost miss the target.
   `benchmarks/serverless_observed_telemetry_benchmark.py` now checks in measured
-  loopback telemetry from a real local WaveMind HTTP API worker with warmed
-  hot-query cache. This is still not a real Knative/KEDA claim; the next step is
-  replacing loopback telemetry with exported remote cluster load-test metrics.
+  loopback telemetry from a balanced pool of real local WaveMind HTTP API
+  replicas with warmed hot-query cache. It records measured pool RPS,
+  per-replica RPS, cold start, p95/p99, error rate, and the max-scale horizontal
+  capacity estimate. This is still not a real Knative/KEDA claim; the next step
+  is replacing loopback telemetry with exported remote cluster load-test
+  metrics.
 - `HotMemoryCache`, `QueryVectorCache`, their Redis-backed variants,
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
