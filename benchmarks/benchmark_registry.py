@@ -166,6 +166,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_ivfpq_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_1m_results.json")
     production_streaming_ivfpq_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_10m_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
+    external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
@@ -194,6 +195,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("10M compressed", production_streaming_ivfpq_10m_payload),
     }
     scale_readiness_results = _engine_results(scale_readiness_payload)
+    external_http_cluster_results = _engine_results(external_http_cluster_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
         if production_readiness_payload
@@ -1166,6 +1168,54 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
             "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.",
+        },
+        {
+            "id": "external_http_cluster_load_runner",
+            "name": "External HTTP cluster load runner",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/http_cluster_load_benchmark.py",
+            "dataset": "Real WaveMind HTTP API-node sustained workload: quorum writes, normal queries, simulated node failover queries, missing-replica repair, replicated forget, delete suppression, and SLO verdict over user-supplied node URLs.",
+            "competitors": ["WaveMind remote service nodes"],
+            "metrics": [
+                "success_rate",
+                "write_success_rate",
+                "query_hit_rate",
+                "failover_hit_rate",
+                "delete_suppression_rate",
+                "repair_repaired_total",
+                "p99_operation_ms",
+                "slo_pass",
+            ],
+            "current": {
+                "WaveMind external HTTP cluster load": (
+                    _metric_summary(
+                        external_http_cluster_results.get("WaveMind external HTTP cluster load"),
+                        (
+                            "nodes",
+                            "namespaces",
+                            "memories_per_namespace",
+                            "replication_factor",
+                            "workers",
+                            "success_rate",
+                            "write_success_rate",
+                            "query_hit_rate",
+                            "failover_hit_rate",
+                            "delete_suppression_rate",
+                            "repair_repaired_total",
+                            "p99_operation_ms",
+                            "slo_pass",
+                        ),
+                    )
+                    or {
+                        "runner_ready": True,
+                        "checked_in_result": False,
+                        "requires": "--node id=https://host for each real API node",
+                    }
+                ),
+            },
+            "target": "Run the same sustained mixed workload against remote service nodes and keep success_rate >= 1.0, failover_hit_rate >= 0.95, and p99 below the configured SLO before claiming external-cluster production readiness.",
+            "next_step": "Check in the first remote service-node artifact from a real multi-node deployment.",
         },
         {
             "id": "memory_competitor_adapter_profile",

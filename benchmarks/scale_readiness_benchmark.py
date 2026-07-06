@@ -1464,6 +1464,243 @@ def run_distributed_http_sharding_profile() -> dict[str, object]:
             _stop_api_nodes(nodes)
 
 
+def run_sustained_http_cluster_workload(
+    nodes: list[ClusterNode | dict[str, object] | str],
+    *,
+    client: HTTPNamespaceShardClient | None = None,
+    engine: str = "WaveMind sustained HTTP cluster load",
+    namespace_prefix: str = "tenant:sustained",
+    namespace_count: int = 4,
+    memories_per_namespace: int = 2,
+    replication_factor: int = 3,
+    write_quorum: int | None = None,
+    read_quorum: int = 1,
+    max_workers: int = 2,
+) -> dict[str, object]:
+    if namespace_count <= 0:
+        raise ValueError("namespace_count must be positive")
+    if memories_per_namespace < 2:
+        raise ValueError("memories_per_namespace must be at least 2")
+    if max_workers <= 0:
+        raise ValueError("max_workers must be positive")
+
+    client = client or HTTPNamespaceShardClient(timeout=15.0)
+    memory = DistributedShardedWaveMind(
+        nodes=nodes,
+        replication_factor=replication_factor,
+        write_quorum=write_quorum,
+        read_quorum=read_quorum,
+        client=client,
+    )
+    by_id = {node.id: node for node in memory.nodes}
+    namespaces = [f"{namespace_prefix}:{index:04d}" for index in range(namespace_count)]
+    texts = {
+        namespace: [
+            f"sustained cluster memory {namespace.rsplit(':', 1)[-1]} item {item:04d}"
+            for item in range(memories_per_namespace)
+        ]
+        for namespace in namespaces
+    }
+    write_latencies: list[float] = []
+    query_latencies: list[float] = []
+    failover_latencies: list[float] = []
+    repair_latencies: list[float] = []
+    forget_latencies: list[float] = []
+    errors: list[str] = []
+    started = time.perf_counter()
+
+    def _address(node_id: str) -> str:
+        return str(by_id[node_id].address)
+
+    def _rate(values: list[bool]) -> float:
+        return sum(1 for value in values if value) / len(values) if values else 0.0
+
+    write_tasks = [
+        (namespace, text)
+        for namespace in namespaces
+        for text in texts[namespace]
+    ]
+
+    def write_one(task: tuple[str, str]) -> bool:
+        namespace, text = task
+        op_started = time.perf_counter()
+        try:
+            result = memory.remember(text, namespace=namespace, tags=("sustained",))
+            return result.ok and len(result.writes) >= memory.write_quorum
+        except Exception as exc:  # pragma: no cover - service boundary
+            errors.append(f"write {namespace}: {exc}")
+            return False
+        finally:
+            write_latencies.append((time.perf_counter() - op_started) * 1000.0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        write_results = list(pool.map(write_one, write_tasks))
+
+    def query_one(task: tuple[str, str]) -> bool:
+        namespace, text = task
+        op_started = time.perf_counter()
+        try:
+            results = memory.query(text, namespace=namespace, top_k=3)
+            return any(result.text == text for result in results)
+        except Exception as exc:  # pragma: no cover - service boundary
+            errors.append(f"query {namespace}: {exc}")
+            return False
+        finally:
+            query_latencies.append((time.perf_counter() - op_started) * 1000.0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        query_results = list(pool.map(query_one, write_tasks))
+
+    failed_node = sorted(node.id for node in memory.nodes)[1]
+    memory.set_node_available(failed_node, False)
+
+    def failover_query_one(task: tuple[str, str]) -> bool:
+        namespace, text = task
+        op_started = time.perf_counter()
+        try:
+            results = memory.query(text, namespace=namespace, top_k=3)
+            return any(result.text == text for result in results)
+        except Exception as exc:  # pragma: no cover - service boundary
+            errors.append(f"failover query {namespace}: {exc}")
+            return False
+        finally:
+            failover_latencies.append((time.perf_counter() - op_started) * 1000.0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        failover_results = list(pool.map(failover_query_one, write_tasks))
+    memory.set_node_available(failed_node, True)
+
+    repair_namespace = namespaces[0]
+    repair_text = texts[repair_namespace][0]
+    missing_before_repair = False
+    repaired_replica = False
+    repair_ok = False
+    repair_repaired_total = 0
+    try:
+        repair_placement = memory.placement(repair_namespace)
+        missing_replica = next(
+            node for node in repair_placement.replicas if node != repair_placement.primary
+        )
+        client.forget(
+            _address(missing_replica),
+            namespace=repair_namespace,
+            text=repair_text,
+        )
+        missing_before_repair = not any(
+            record.get("text") == repair_text
+            for record in client.export_namespace(
+                _address(missing_replica),
+                namespace=repair_namespace,
+            )
+        )
+        repair_started = time.perf_counter()
+        repair_report = memory.repair_namespace(repair_namespace, tags=("sustained",))
+        repair_latencies.append((time.perf_counter() - repair_started) * 1000.0)
+        repair_ok = repair_report.ok
+        repair_repaired_total = repair_report.repaired_total
+        repaired_replica = any(
+            record.get("text") == repair_text
+            for record in client.export_namespace(
+                _address(missing_replica),
+                namespace=repair_namespace,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - service boundary
+        errors.append(f"repair {repair_namespace}: {exc}")
+
+    deleted_tasks = [(namespace, texts[namespace][-1]) for namespace in namespaces]
+
+    def forget_one(task: tuple[str, str]) -> bool:
+        namespace, text = task
+        op_started = time.perf_counter()
+        try:
+            result = memory.forget(namespace=namespace, text=text)
+            return result.deleted >= memory.write_quorum
+        except Exception as exc:  # pragma: no cover - service boundary
+            errors.append(f"forget {namespace}: {exc}")
+            return False
+        finally:
+            forget_latencies.append((time.perf_counter() - op_started) * 1000.0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        forget_results = list(pool.map(forget_one, deleted_tasks))
+
+    def deleted_stays_suppressed(task: tuple[str, str]) -> bool:
+        namespace, text = task
+        op_started = time.perf_counter()
+        try:
+            results = memory.query(text, namespace=namespace, top_k=3)
+            return all(result.text != text for result in results)
+        except Exception as exc:  # pragma: no cover - service boundary
+            errors.append(f"delete suppression {namespace}: {exc}")
+            return False
+        finally:
+            query_latencies.append((time.perf_counter() - op_started) * 1000.0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        deletion_suppression = list(pool.map(deleted_stays_suppressed, deleted_tasks))
+
+    elapsed_ms = (time.perf_counter() - started) * 1000.0
+    all_latencies = (
+        write_latencies
+        + query_latencies
+        + failover_latencies
+        + repair_latencies
+        + forget_latencies
+    )
+    successful_checks = (
+        sum(1 for ok in write_results if ok)
+        + sum(1 for ok in query_results if ok)
+        + sum(1 for ok in failover_results if ok)
+        + sum(1 for ok in forget_results if ok)
+        + sum(1 for ok in deletion_suppression if ok)
+        + int(missing_before_repair)
+        + int(repair_ok)
+        + int(repair_repaired_total >= 1)
+        + int(repaired_replica)
+    )
+    total_checks = (
+        len(write_results)
+        + len(query_results)
+        + len(failover_results)
+        + len(forget_results)
+        + len(deletion_suppression)
+        + 4
+    )
+    return {
+        "engine": engine,
+        "nodes": len(memory.nodes),
+        "namespaces": len(namespaces),
+        "memories_per_namespace": memories_per_namespace,
+        "replication_factor": memory.replication_factor,
+        "write_quorum": memory.write_quorum,
+        "read_quorum": memory.read_quorum,
+        "workers": max_workers,
+        "writes": len(write_results),
+        "queries": len(query_results),
+        "failover_queries": len(failover_results),
+        "forgets": len(forget_results),
+        "failed_node": failed_node,
+        "write_success_rate": _rate(write_results),
+        "query_hit_rate": _rate(query_results),
+        "failover_hit_rate": _rate(failover_results),
+        "forget_success_rate": _rate(forget_results),
+        "delete_suppression_rate": _rate(deletion_suppression),
+        "repair_missing_before": missing_before_repair,
+        "repair_ok": repair_ok,
+        "repair_repaired_total": repair_repaired_total,
+        "repaired_replica": repaired_replica,
+        "success_rate": successful_checks / total_checks if total_checks else 0.0,
+        "total_checks": total_checks,
+        "errors": errors[:20],
+        "error_count": len(errors),
+        "elapsed_ms": elapsed_ms,
+        "avg_operation_ms": statistics.mean(all_latencies) if all_latencies else 0.0,
+        "p95_operation_ms": percentile(all_latencies, 95),
+        "p99_operation_ms": percentile(all_latencies, 99),
+    }
+
+
 def run_sustained_http_cluster_load_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
@@ -1473,179 +1710,20 @@ def run_sustained_http_cluster_load_profile() -> dict[str, object]:
             _start_api_node(root, "node-c"),
             _start_api_node(root, "node-d"),
         ]
-        client = HTTPNamespaceShardClient(timeout=15.0)
-        memory = DistributedShardedWaveMind(
-            nodes=[
-                ClusterNode(id=node["id"], address=node["address"], zone=node["zone"])
-                for node in nodes
-            ],
-            replication_factor=3,
-            client=client,
-        )
-        by_id = {str(node["id"]): node for node in nodes}
-        namespaces = [f"tenant:sustained:{index:02d}" for index in range(4)]
-        texts = {
-            namespace: [
-                f"sustained cluster memory {namespace.rsplit(':', 1)[-1]} item {item:02d}"
-                for item in range(2)
-            ]
-            for namespace in namespaces
-        }
-        write_latencies: list[float] = []
-        query_latencies: list[float] = []
-        failover_latencies: list[float] = []
-        repair_latencies: list[float] = []
-        forget_latencies: list[float] = []
-        started = time.perf_counter()
         try:
-            write_tasks = [
-                (namespace, text)
-                for namespace in namespaces
-                for text in texts[namespace]
-            ]
-
-            def write_one(task: tuple[str, str]) -> bool:
-                namespace, text = task
-                op_started = time.perf_counter()
-                result = memory.remember(text, namespace=namespace, tags=("sustained",))
-                write_latencies.append((time.perf_counter() - op_started) * 1000.0)
-                return result.ok and len(result.writes) >= memory.write_quorum
-
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                write_results = list(pool.map(write_one, write_tasks))
-
-            def query_one(task: tuple[str, str]) -> bool:
-                namespace, text = task
-                op_started = time.perf_counter()
-                results = memory.query(text, namespace=namespace, top_k=3)
-                query_latencies.append((time.perf_counter() - op_started) * 1000.0)
-                return any(result.text == text for result in results)
-
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                query_results = list(pool.map(query_one, write_tasks))
-
-            failed_node = sorted(node.id for node in memory.nodes)[1]
-            memory.set_node_available(failed_node, False)
-
-            def failover_query_one(task: tuple[str, str]) -> bool:
-                namespace, text = task
-                op_started = time.perf_counter()
-                results = memory.query(text, namespace=namespace, top_k=3)
-                failover_latencies.append((time.perf_counter() - op_started) * 1000.0)
-                return any(result.text == text for result in results)
-
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                failover_results = list(pool.map(failover_query_one, write_tasks))
-            memory.set_node_available(failed_node, True)
-
-            repair_namespace = namespaces[0]
-            repair_text = texts[repair_namespace][0]
-            repair_placement = memory.placement(repair_namespace)
-            missing_replica = next(
-                node for node in repair_placement.replicas if node != repair_placement.primary
+            return run_sustained_http_cluster_workload(
+                [
+                    ClusterNode(id=node["id"], address=node["address"], zone=node["zone"])
+                    for node in nodes
+                ],
+                client=HTTPNamespaceShardClient(timeout=15.0),
+                engine="WaveMind sustained HTTP cluster load",
+                namespace_prefix="tenant:sustained",
+                namespace_count=4,
+                memories_per_namespace=2,
+                replication_factor=3,
+                max_workers=2,
             )
-            client.forget(
-                str(by_id[missing_replica]["address"]),
-                namespace=repair_namespace,
-                text=repair_text,
-            )
-            missing_before_repair = not any(
-                record.get("text") == repair_text
-                for record in client.export_namespace(
-                    str(by_id[missing_replica]["address"]),
-                    namespace=repair_namespace,
-                )
-            )
-            repair_started = time.perf_counter()
-            repair_report = memory.repair_namespace(repair_namespace, tags=("sustained",))
-            repair_latencies.append((time.perf_counter() - repair_started) * 1000.0)
-            repaired_replica = any(
-                record.get("text") == repair_text
-                for record in client.export_namespace(
-                    str(by_id[missing_replica]["address"]),
-                    namespace=repair_namespace,
-                )
-            )
-
-            deleted_tasks = [(namespace, texts[namespace][-1]) for namespace in namespaces]
-
-            def forget_one(task: tuple[str, str]) -> bool:
-                namespace, text = task
-                op_started = time.perf_counter()
-                result = memory.forget(namespace=namespace, text=text)
-                forget_latencies.append((time.perf_counter() - op_started) * 1000.0)
-                return result.deleted >= memory.write_quorum
-
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                forget_results = list(pool.map(forget_one, deleted_tasks))
-
-            def deleted_stays_suppressed(task: tuple[str, str]) -> bool:
-                namespace, text = task
-                op_started = time.perf_counter()
-                results = memory.query(text, namespace=namespace, top_k=3)
-                query_latencies.append((time.perf_counter() - op_started) * 1000.0)
-                return all(result.text != text for result in results)
-
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                deletion_suppression = list(pool.map(deleted_stays_suppressed, deleted_tasks))
-
-            elapsed_ms = (time.perf_counter() - started) * 1000.0
-            all_latencies = (
-                write_latencies
-                + query_latencies
-                + failover_latencies
-                + repair_latencies
-                + forget_latencies
-            )
-            successful_checks = (
-                sum(1 for ok in write_results if ok)
-                + sum(1 for ok in query_results if ok)
-                + sum(1 for ok in failover_results if ok)
-                + sum(1 for ok in forget_results if ok)
-                + sum(1 for ok in deletion_suppression if ok)
-                + int(missing_before_repair)
-                + int(repair_report.ok)
-                + int(repair_report.repaired_total >= 1)
-                + int(repaired_replica)
-            )
-            total_checks = (
-                len(write_results)
-                + len(query_results)
-                + len(failover_results)
-                + len(forget_results)
-                + len(deletion_suppression)
-                + 4
-            )
-            return {
-                "engine": "WaveMind sustained HTTP cluster load",
-                "nodes": len(nodes),
-                "namespaces": len(namespaces),
-                "replication_factor": memory.replication_factor,
-                "write_quorum": memory.write_quorum,
-                "read_quorum": memory.read_quorum,
-                "writes": len(write_results),
-                "queries": len(query_results),
-                "failover_queries": len(failover_results),
-                "forgets": len(forget_results),
-                "failed_node": failed_node,
-                "write_success_rate": sum(1 for ok in write_results if ok) / len(write_results),
-                "query_hit_rate": sum(1 for ok in query_results if ok) / len(query_results),
-                "failover_hit_rate": sum(1 for ok in failover_results if ok) / len(failover_results),
-                "forget_success_rate": sum(1 for ok in forget_results if ok) / len(forget_results),
-                "delete_suppression_rate": (
-                    sum(1 for ok in deletion_suppression if ok) / len(deletion_suppression)
-                ),
-                "repair_missing_before": missing_before_repair,
-                "repair_ok": repair_report.ok,
-                "repair_repaired_total": repair_report.repaired_total,
-                "repaired_replica": repaired_replica,
-                "success_rate": successful_checks / total_checks,
-                "total_checks": total_checks,
-                "elapsed_ms": elapsed_ms,
-                "avg_operation_ms": statistics.mean(all_latencies) if all_latencies else 0.0,
-                "p95_operation_ms": percentile(all_latencies, 95),
-                "p99_operation_ms": percentile(all_latencies, 99),
-            }
         finally:
             _stop_api_nodes(nodes)
 

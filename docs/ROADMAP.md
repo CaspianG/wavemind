@@ -44,6 +44,10 @@ policy matters more than raw vector-database scale:
   across 4 real localhost API nodes: quorum writes, normal queries, node
   failover queries, replicated deletes, missing-replica repair, and p99
   operation latency are all checked by the readiness gate.
+- `benchmarks/http_cluster_load_benchmark.py` is the remote service-node runner
+  for the same mixed workload. It takes real `--node id=https://host` API URLs,
+  emits `slo_pass`, and is the next deployment gate before any external-cluster
+  production claim.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
   envelope: 32768 namespace buckets, 128 nodes, 8 zones, replication factor 3,
   node/zone-loss availability `1.000`, bounded placement skew, and bounded

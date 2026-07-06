@@ -535,7 +535,7 @@ Checked-in result:
 | API cache mutation safety | FastAPI shared cache invalidates on `/remember` and `/forget`, preventing stale cached recall after memory mutations. |
 | Distributed sharding | 3 service nodes, replication factor 2, write quorum 2, writes `2`, recall after primary loss `true`, service-mode repair copied `1` missing record, recall after repair `true`, replicated forget deletes `2`, service-mode tombstone suppression before repair `true`, tombstone repair deleted `1` stale replica record, suppression after repair `true`, anti-entropy worker repaired `1` missing record and deleted `1` stale tombstone record, query-after-primary-loss `0.84 ms`. |
 | Distributed HTTP sharding | 3 real localhost API nodes, proxy bypass `true`, quorum writes `2`, recall after primary loss `true`, HTTP repair copied `1` missing record, recall after repair `true`, tombstone repair deleted `1` stale API record, suppression after repair `true`, concurrent writes `12`, concurrent query hit rate `1.000`. |
-| Sustained HTTP cluster load | 4 real localhost API nodes, RF=3, 8 quorum writes, 8 normal queries, 8 failover queries, 4 deletes, success rate `1.000`, failover hit rate `1.000`, delete suppression `1.000`, repair copied `1` missing replica, p99 operation `243.42 ms`. |
+| Sustained HTTP cluster load | 4 real localhost API nodes, RF=3, 8 quorum writes, 8 normal queries, 8 failover queries, 4 deletes, success rate `1.000`, failover hit rate `1.000`, delete suppression `1.000`, repair copied `1` missing replica, p99 operation `221.50 ms`. |
 | Replicated runtime | 3 physical WaveMind stores, replication factor 3, write quorum 2, node-loss recall `true`, repair copied `1` missing record, tombstone repair deleted `1` stale record, concurrent writes `12`, concurrent query hit rate `1.000`, p99 query-after-loss `1.18 ms`. |
 | Active-active delta sync | 2 regions, bidirectional convergence `true`, stale import suppressed after delete `true`, tombstone convergence `true`, sync `1142.8 ms`. |
 | Field-state CRDT | 3 regions, commutative convergence `true`, idempotent re-merge `true`, tombstone-wins `true`, top-key convergence `true`, merge `0.13 ms`. |
@@ -560,6 +560,27 @@ confirms recall still works from the remaining replicas.
 It is not a 10M-vector load test. Real 100k, 1M, and 10M latency claims should
 come from service-backed FAISS/Qdrant/pgvector load tests on production-like
 hardware.
+
+External HTTP cluster load:
+
+```sh
+python benchmarks/http_cluster_load_benchmark.py \
+  --node node-a=https://wm-a.example.com \
+  --node node-b=https://wm-b.example.com \
+  --node node-c=https://wm-c.example.com \
+  --node node-d=https://wm-d.example.com \
+  --replication-factor 3 \
+  --namespace-count 32 \
+  --memories-per-namespace 8 \
+  --workers 8 \
+  --fail-on-slo
+```
+
+This runs the same mixed workload against user-supplied API nodes: quorum
+writes, normal queries, simulated node failover queries, missing-replica repair,
+replicated forget, delete suppression, p99 latency, and an explicit SLO verdict.
+Use this before claiming that a deployment is production-ready outside the
+local readiness smoke profile.
 
 Cluster placement planning:
 
@@ -1300,6 +1321,7 @@ Current read:
 | Qdrant 1M HNSW ef sweep | One 1M Qdrant collection queried with multiple `hnsw_ef` values and the same SLO gate. | implemented | Qdrant service | Repeat with 100+ queries and collection-level HNSW build parameters; the current 100-query tuned Qdrant profile still misses p99 at 1M. |
 | Production streaming load runner | Memory-bounded large-N runner that generates and inserts vectors in batches and measures target-recall, p99, SLO, and cost without storing the full corpus or exact-neighbor matrix in RAM. | implemented | FAISS persisted / FAISS IVF-PQ persisted / Qdrant service streaming | Keep 10M compressed FAISS IVF-PQ above recall@10 `0.95` and p99 below `100 ms`, then repeat at 50M and add Qdrant/pgvector 10M service artifacts. |
 | Scale readiness profile | Cluster placement, node/zone-loss simulation, quorum report, Kubernetes StatefulSet, HPA, and repair CronJob manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, replica repair, tombstone-aware delete repair, anti-entropy repair worker, query-vector cache, Redis-compatible shared rate limiting, Memory OS adaptive prewarm/predictive prefetch/consolidation/forgetting, replicated runtime, active-active namespace delta sync, field-state CRDT convergence, replicated snapshot/restore with offsite, archive, object-store latest-metadata/download/retention/DR-drill verification, query-audit cache prewarm, Redis-compatible shared hot-cache behavior, namespace invalidation, API cache mutation safety, and structured/multimodal payload retrieval. | implemented | Mem0 / Zep / LangGraph persistent memory / GraphRAG target adapters | Keep quorum replication, distributed namespace routing, autoscaling manifests, scheduled repair, service-mode repair, HTTP shard transport, sustained mixed cluster load, tombstone-aware delete repair, anti-entropy background repair, query-vector cache, shared rate limiting, Memory OS prewarm/predictive prefetch/consolidation/forgetting, namespace-delta sync, field-state CRDT merge, repair, local and Redis cache prewarm, mutation-safe shared cache behavior, offsite/archive/object-store backup lifecycle, restore drills, and 10M compressed load tests green. |
+| External HTTP cluster load runner | `benchmarks/http_cluster_load_benchmark.py` runs the sustained mixed workload against user-supplied WaveMind API node URLs and reports success rate, failover hit rate, delete suppression, repair count, p99, and `slo_pass`. | implemented | WaveMind remote service nodes | Check in the first real remote service-node artifact, then use it as the deployment gate for production clusters. |
 | Production readiness gate | Machine-readable gate over production artifacts, with pass/action_required/fail criteria. | implemented | WaveMind-only gate | Reach `readiness_score 1.000` before claiming complete million-plus production readiness. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |
