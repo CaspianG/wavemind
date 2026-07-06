@@ -172,6 +172,17 @@ Checked-in result:
 | Historical mean baseline | 2880 | 0.511 | 406.9 bps | 4.21% | 0.078 |
 | Naive last-outcome baseline | 2880 | 0.570 | 522.0 bps | 5.31% | 0.300 |
 
+Follow-up target-price experiments:
+
+- `wavemind-directional-head-target` trains a fold-local ridge directional head
+  on matured history only, then requires multi-chunk validation stability before
+  it can override the robust target. It improved selected slices, but the full
+  1h/4h perpetual benchmark still stayed below the robust anchor: direction hit
+  `0.580`, MAE `393.1 bps`, MAPE `4.05%`, worst-slice hit `0.356`.
+- `wavemind-online-expert-target` was tested as a query-local expert selector.
+  It was too unstable across HYPE/ZEC and is not part of the default benchmark.
+  This is treated as a negative result, not a production upgrade.
+
 Signal-quality result:
 
 | tier | selected | coverage | direction hit | MAE return | MAPE |

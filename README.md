@@ -410,6 +410,13 @@ The perp field is intentionally conservative: it keeps the robust target unless
 a fold-local component clears a strict improvement guard on matured pre-test
 history. That prevents the selector from overfitting short validation windows.
 
+Latest research iteration: `wavemind-directional-head-target` adds a fold-local
+ridge directional head with multi-chunk validation gates. It improved some
+individual slices and finished above the simple momentum baseline, but it did
+not beat the current perp/robust target on the full HYPE/XRP/ZEC/SOL perpetual
+set: `0.580` direction hit, `393.1 bps` MAE, `4.05%` MAPE. The production-safe
+benchmark winner therefore remains `wavemind-perp-field-target`.
+
 The strongest current perpetual result is narrower:
 
 | tier | selected | coverage | direction hit | MAPE |

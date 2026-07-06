@@ -37,6 +37,7 @@ DEFAULT_SYMBOLS = ("BTC/USDT", "ETH/USDT", "SOL/USDT", "ADA/USDT", "XRP/USDT", "
 DEFAULT_TIMEFRAMES = ("1h", "4h", "1d")
 DEFAULT_HORIZONS = {"1h": 24, "4h": 6, "1d": 7}
 DEFAULT_EVENT_SAMPLE_SIZE = 240
+_ONLINE_EXPERT_CANDIDATE_CACHE: dict[tuple[object, ...], dict[str, float] | None] = {}
 
 
 @dataclass(frozen=True)
@@ -114,6 +115,24 @@ class DirectionalPolicyCalibration:
     note: str
 
 
+@dataclass(frozen=True)
+class DirectionalHeadCalibration:
+    enabled: bool
+    feature_names: tuple[str, ...]
+    means: tuple[float, ...]
+    scales: tuple[float, ...]
+    coefficients: tuple[float, ...]
+    intercept: float
+    alpha: float
+    margin: float
+    validation_direction_hit: float
+    validation_mae_bps: float
+    robust_validation_direction_hit: float
+    robust_validation_mae_bps: float
+    samples: int
+    note: str
+
+
 def run_price_target_benchmark(
     *,
     markets: list[dict],
@@ -162,6 +181,16 @@ def run_price_target_benchmark(
                 if "wavemind-perp-field-target" in engine_keys
                 else _default_directional_policy("not_requested")
             )
+            fold_directional_head = (
+                _fit_directional_head(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=fold_calibration,
+                    calibration_windows=calibration_windows,
+                )
+                if "wavemind-directional-head-target" in engine_keys
+                else _disabled_directional_head("not_requested")
+            )
             fold_events: list[PriceTargetEvent] = []
             for query in queries:
                 history = _mature_history(windows, current=query)
@@ -177,6 +206,7 @@ def run_price_target_benchmark(
                         ensemble=fold_ensemble,
                         target_model=fold_target_model,
                         directional_policy=fold_directional_policy,
+                        directional_head=fold_directional_head,
                     )
                     event = _price_target_event(
                         engine=_engine_name(engine_key),
@@ -199,6 +229,8 @@ def run_price_target_benchmark(
                     fold_metadata["target_model"] = asdict(fold_target_model)
                 if "wavemind-perp-field-target" in engine_keys:
                     fold_metadata["directional_policy"] = asdict(fold_directional_policy)
+                if "wavemind-directional-head-target" in engine_keys:
+                    fold_metadata["directional_head"] = asdict(fold_directional_head)
                 by_market.append(
                     _summarize_events(
                         engine_events,
@@ -361,6 +393,7 @@ def _predict_return(
     ensemble: EnsembleCalibration,
     target_model: TargetModelCalibration,
     directional_policy: DirectionalPolicyCalibration,
+    directional_head: DirectionalHeadCalibration,
 ) -> tuple[float, int, str]:
     if engine_key == "wavemind-ensemble":
         components = _component_predictions(history, query, horizon=horizon)
@@ -380,6 +413,16 @@ def _predict_return(
             calibration=calibration,
             directional_policy=directional_policy,
         )
+    if engine_key == "wavemind-directional-head-target":
+        return _directional_head_target_return(
+            history,
+            query,
+            horizon=horizon,
+            calibration=calibration,
+            directional_head=directional_head,
+        )
+    if engine_key == "wavemind-online-expert-target":
+        return _online_expert_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-learned-target":
         features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
         robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
@@ -512,6 +555,30 @@ TARGET_MODEL_FEATURES = (
     "trend_code",
     "recent_trend_code",
 )
+
+DIRECTIONAL_HEAD_EXTRA_FEATURES = (
+    "robust_target",
+    "market_field_target",
+    "abs_robust_target",
+    "abs_momentum",
+    "abs_regime",
+    "abs_historical",
+    "raw_wave_sign",
+    "calibrated_wave_sign",
+    "momentum_sign",
+    "regime_sign",
+    "historical_sign",
+    "robust_sign",
+    "market_field_sign",
+    "wave_market_agreement",
+    "momentum_regime_agreement",
+    "robust_momentum_agreement",
+    "rsi_signed_distance",
+    "rsi_abs_distance",
+    "volatility_range_ratio",
+    "support_signed_wave",
+)
+DIRECTIONAL_HEAD_FEATURES = TARGET_MODEL_FEATURES + DIRECTIONAL_HEAD_EXTRA_FEATURES
 
 
 def _disabled_target_model(note: str) -> TargetModelCalibration:
@@ -688,6 +755,500 @@ def _predict_target_model_from_array(model: TargetModelCalibration, row: np.ndar
     coefficients = np.array(model.coefficients, dtype=float)
     value = float(model.intercept_bps + np.dot((row - means) / scales, coefficients))
     return float(np.clip(value, -model.cap_abs_bps, model.cap_abs_bps))
+
+
+def _disabled_directional_head(note: str) -> DirectionalHeadCalibration:
+    return DirectionalHeadCalibration(
+        enabled=False,
+        feature_names=(),
+        means=(),
+        scales=(),
+        coefficients=(),
+        intercept=0.0,
+        alpha=0.0,
+        margin=0.0,
+        validation_direction_hit=0.0,
+        validation_mae_bps=math.inf,
+        robust_validation_direction_hit=0.0,
+        robust_validation_mae_bps=math.inf,
+        samples=0,
+        note=note,
+    )
+
+
+def _fit_directional_head(
+    history: list[OHLCVWindow],
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    calibration_windows: int,
+) -> DirectionalHeadCalibration:
+    if len(history) < 90:
+        return _disabled_directional_head("insufficient_history")
+    model_windows = len(history) - 32
+    if model_windows < 58:
+        return _disabled_directional_head("insufficient_model_window")
+    start = 32
+    rows: list[tuple[dict[str, float], float, float]] = []
+    for index in range(start, len(history)):
+        prior = history[:index]
+        if len(prior) < 24:
+            continue
+        features = _target_model_features(prior, history[index], horizon=horizon, calibration=calibration)
+        robust_value, _ = _robust_value_from_features(features, history[index].timeframe)
+        rows.append((
+            _directional_head_feature_values(features, history[index].timeframe),
+            float(history[index].future_return_bps),
+            float(robust_value),
+        ))
+    if len(rows) < 36:
+        return _disabled_directional_head("insufficient_calibration_samples")
+
+    names = DIRECTIONAL_HEAD_FEATURES
+    x_all = np.array([[features.get(name, 0.0) for name in names] for features, _, _ in rows], dtype=float)
+    y_sign_all = np.array([1.0 if actual >= 0.0 else -1.0 for _, actual, _ in rows], dtype=float)
+    actual_all = np.array([actual for _, actual, _ in rows], dtype=float)
+    robust_all = np.array([robust for _, _, robust in rows], dtype=float)
+    split = min(len(rows) - 12, max(24, int(len(rows) * 0.70)))
+    if split <= 0 or split >= len(rows):
+        return _disabled_directional_head("invalid_validation_split")
+
+    x_train = x_all[:split]
+    y_train = y_sign_all[:split]
+    x_val = x_all[split:]
+    actual_val = actual_all[split:]
+    robust_val = robust_all[split:]
+    robust_mae = float(np.mean(np.abs(robust_val - actual_val)))
+    robust_hit = float(np.mean([
+        1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+        for prediction, actual in zip(robust_val, actual_val, strict=False)
+    ]))
+
+    best: tuple[float, float, float, float, DirectionalHeadCalibration] | None = None
+    for alpha in (0.01, 0.1, 1.0, 10.0, 100.0):
+        train_model = _fit_ridge_directional_head(names, x_train, y_train, alpha=alpha, margin=0.0)
+        scores = np.array([_predict_directional_head_score_from_array(train_model, row) for row in x_val], dtype=float)
+        for margin in (0.0, 0.05, 0.10, 0.20, 0.35):
+            predicted = np.array(
+                [
+                    math.copysign(abs(robust), score if abs(score) >= margin else robust)
+                    for score, robust in zip(scores, robust_val, strict=False)
+                ],
+                dtype=float,
+            )
+            hit = float(np.mean([
+                1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+                for prediction, actual in zip(predicted, actual_val, strict=False)
+            ]))
+            mae = float(np.mean(np.abs(predicted - actual_val)))
+            candidate = DirectionalHeadCalibration(
+                enabled=True,
+                feature_names=train_model.feature_names,
+                means=train_model.means,
+                scales=train_model.scales,
+                coefficients=train_model.coefficients,
+                intercept=train_model.intercept,
+                alpha=float(alpha),
+                margin=float(margin),
+                validation_direction_hit=hit,
+                validation_mae_bps=mae,
+                robust_validation_direction_hit=robust_hit,
+                robust_validation_mae_bps=robust_mae,
+                samples=len(rows),
+                note="validation_candidate",
+            )
+            ranked = (-hit, mae / max(robust_mae, 1e-9), margin, float(alpha), candidate)
+            if best is None or ranked < best:
+                best = ranked
+
+    assert best is not None
+    _, validation_mae_ratio, _, _, best_candidate = best
+    validation_hit = float(best_candidate.validation_direction_hit)
+    validation_mae = float(best_candidate.validation_mae_bps)
+    hit_gain = validation_hit - robust_hit
+    acceptable_error = validation_mae_ratio <= 0.98 or (hit_gain >= 0.10 and validation_mae_ratio <= 1.02)
+    stability_metrics = _directional_head_stability_metrics(
+        names,
+        x_all,
+        y_sign_all,
+        actual_all,
+        robust_all,
+        alpha=best_candidate.alpha,
+        margin=best_candidate.margin,
+    )
+    stable_chunks = sum(
+        1
+        for metric in stability_metrics
+        if metric["hit"] >= max(0.52, metric["robust_hit"] + 0.02)
+        and metric["mae"] <= metric["robust_mae"] * 1.02
+    )
+    harmful_chunks = sum(
+        1
+        for metric in stability_metrics
+        if metric["hit"] < metric["robust_hit"] - 0.05 or metric["mae"] > metric["robust_mae"] * 1.20
+    )
+    stable_enough = stable_chunks >= 2 and harmful_chunks == 0
+    robust_already_stable = robust_hit >= 0.68 and validation_mae > robust_mae * 0.80
+    if not (validation_hit >= max(0.52, robust_hit + 0.025) and acceptable_error and stable_enough and not robust_already_stable):
+        disabled = _disabled_directional_head("validation_not_better_than_robust")
+        note = disabled.note
+        if not stable_enough:
+            note = f"validation_not_stable_across_chunks:{stable_chunks}/{len(stability_metrics)}"
+        elif robust_already_stable:
+            note = "robust_already_stable_on_validation"
+        return DirectionalHeadCalibration(
+            enabled=disabled.enabled,
+            feature_names=disabled.feature_names,
+            means=disabled.means,
+            scales=disabled.scales,
+            coefficients=disabled.coefficients,
+            intercept=disabled.intercept,
+            alpha=best_candidate.alpha,
+            margin=best_candidate.margin,
+            validation_direction_hit=validation_hit,
+            validation_mae_bps=validation_mae,
+            robust_validation_direction_hit=robust_hit,
+            robust_validation_mae_bps=robust_mae,
+            samples=len(rows),
+            note=note,
+        )
+
+    final_model = _fit_ridge_directional_head(names, x_all, y_sign_all, alpha=best_candidate.alpha, margin=best_candidate.margin)
+    return DirectionalHeadCalibration(
+        enabled=True,
+        feature_names=final_model.feature_names,
+        means=final_model.means,
+        scales=final_model.scales,
+        coefficients=final_model.coefficients,
+        intercept=final_model.intercept,
+        alpha=best_candidate.alpha,
+        margin=best_candidate.margin,
+        validation_direction_hit=validation_hit,
+        validation_mae_bps=validation_mae,
+        robust_validation_direction_hit=robust_hit,
+        robust_validation_mae_bps=robust_mae,
+        samples=len(rows),
+        note=f"fold-local directional head enabled after validation gate; stable_chunks={stable_chunks}/{len(stability_metrics)}",
+    )
+
+
+def _directional_head_stability_metrics(
+    feature_names: tuple[str, ...],
+    x_values: np.ndarray,
+    y_sign_values: np.ndarray,
+    actual_values: np.ndarray,
+    robust_values: np.ndarray,
+    *,
+    alpha: float,
+    margin: float,
+) -> list[dict[str, float]]:
+    count = len(actual_values)
+    ranges = [
+        (int(count * 0.45), int(count * 0.60)),
+        (int(count * 0.60), int(count * 0.80)),
+        (int(count * 0.80), count),
+    ]
+    metrics: list[dict[str, float]] = []
+    for start, end in ranges:
+        if start < 24 or end - start < 8:
+            continue
+        model = _fit_ridge_directional_head(
+            feature_names,
+            x_values[:start],
+            y_sign_values[:start],
+            alpha=alpha,
+            margin=margin,
+        )
+        scores = np.array([_predict_directional_head_score_from_array(model, row) for row in x_values[start:end]], dtype=float)
+        robust = robust_values[start:end]
+        actual = actual_values[start:end]
+        predicted = np.array(
+            [
+                math.copysign(abs(robust_value), score if abs(score) >= margin else robust_value)
+                for score, robust_value in zip(scores, robust, strict=False)
+            ],
+            dtype=float,
+        )
+        hit = float(np.mean([
+            1.0 if _signed_direction(prediction) == _signed_direction(observed) else 0.0
+            for prediction, observed in zip(predicted, actual, strict=False)
+        ]))
+        robust_hit = float(np.mean([
+            1.0 if _signed_direction(prediction) == _signed_direction(observed) else 0.0
+            for prediction, observed in zip(robust, actual, strict=False)
+        ]))
+        metrics.append(
+            {
+                "hit": hit,
+                "mae": float(np.mean(np.abs(predicted - actual))),
+                "robust_hit": robust_hit,
+                "robust_mae": float(np.mean(np.abs(robust - actual))),
+                "samples": float(end - start),
+            }
+        )
+    return metrics
+
+
+def _fit_ridge_directional_head(
+    feature_names: tuple[str, ...],
+    x_values: np.ndarray,
+    y_sign_values: np.ndarray,
+    *,
+    alpha: float,
+    margin: float,
+) -> DirectionalHeadCalibration:
+    means = x_values.mean(axis=0)
+    scales = x_values.std(axis=0)
+    scales = np.where(scales <= 1e-9, 1.0, scales)
+    centered = (x_values - means) / scales
+    intercept = float(y_sign_values.mean())
+    system = centered.T @ centered + float(alpha) * np.eye(centered.shape[1])
+    target = centered.T @ (y_sign_values - intercept)
+    try:
+        coefficients = np.linalg.solve(system, target)
+    except np.linalg.LinAlgError:
+        coefficients = np.linalg.pinv(system) @ target
+    return DirectionalHeadCalibration(
+        enabled=True,
+        feature_names=tuple(feature_names),
+        means=tuple(float(value) for value in means),
+        scales=tuple(float(value) for value in scales),
+        coefficients=tuple(float(value) for value in coefficients),
+        intercept=intercept,
+        alpha=float(alpha),
+        margin=float(margin),
+        validation_direction_hit=0.0,
+        validation_mae_bps=math.inf,
+        robust_validation_direction_hit=0.0,
+        robust_validation_mae_bps=math.inf,
+        samples=int(len(y_sign_values)),
+        note="ridge directional classifier",
+    )
+
+
+def _predict_directional_head_score(model: DirectionalHeadCalibration, features: dict[str, float], timeframe: str) -> float:
+    values = _directional_head_feature_values(features, timeframe)
+    row = np.array([values.get(name, 0.0) for name in model.feature_names], dtype=float)
+    return _predict_directional_head_score_from_array(model, row)
+
+
+def _predict_directional_head_score_from_array(model: DirectionalHeadCalibration, row: np.ndarray) -> float:
+    means = np.array(model.means, dtype=float)
+    scales = np.array(model.scales, dtype=float)
+    coefficients = np.array(model.coefficients, dtype=float)
+    return float(model.intercept + np.dot((row - means) / scales, coefficients))
+
+
+def _directional_head_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    directional_head: DirectionalHeadCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    if not directional_head.enabled:
+        return robust_value, support, f"{robust_suffix}+directional_head_disabled:{directional_head.note}"
+    score = _predict_directional_head_score(directional_head, features, query.timeframe)
+    sign_source = score if abs(score) >= directional_head.margin else robust_value
+    value = math.copysign(abs(robust_value), sign_source)
+    method = (
+        "fold_local_directional_head:"
+        f"hit={directional_head.validation_direction_hit:.3f}:"
+        f"robust_hit={directional_head.robust_validation_direction_hit:.3f}:"
+        f"margin={directional_head.margin:.2f}:{robust_suffix}"
+    )
+    return _force_nonzero(value, fallback=robust_value), support, method
+
+
+def _online_expert_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    candidates = _directional_candidate_values(features, query.timeframe)
+    robust, robust_suffix = _robust_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    stats = _online_expert_candidate_stats(history, query, horizon=horizon, calibration=calibration)
+    robust_stats = stats.get("robust")
+    if not stats or robust_stats is None or robust_stats["weight"] < 12.0:
+        return robust, support, f"{robust_suffix}+online_expert_disabled:insufficient_recent_stats"
+    robust_hit = robust_stats["hit"]
+    robust_mae = robust_stats["mae"]
+    eligible = []
+    for name, candidate_stats in stats.items():
+        if name not in candidates or name in {"naive", "inv_naive"}:
+            continue
+        hit = candidate_stats["hit"]
+        mae = candidate_stats["mae"]
+        weight = candidate_stats["weight"]
+        if weight < 20.0:
+            continue
+        hit_gate = max(0.62, robust_hit + 0.12)
+        error_gate = robust_mae * 0.92
+        if hit >= hit_gate and mae <= error_gate:
+            eligible.append((hit, -mae / max(robust_mae, 1e-9), weight, name))
+    if not eligible:
+        return robust, support, f"{robust_suffix}+online_expert_kept_robust:recent_hit={robust_hit:.3f}"
+    _, _, _, selected = max(eligible)
+    selected_stats = stats[selected]
+    value = _force_nonzero(candidates[selected], fallback=robust)
+    method = (
+        "online_expert_selector:"
+        f"{selected}:recent_hit={selected_stats['hit']:.3f}:"
+        f"robust_hit={robust_hit:.3f}:"
+        f"recent_mae={selected_stats['mae']:.1f}:{robust_suffix}"
+    )
+    return value, support, method
+
+
+def _online_expert_candidate_stats(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> dict[str, dict[str, float]]:
+    lookback = {"1h": 56, "4h": 48, "1d": 36}.get(query.timeframe, 48)
+    start = max(32, len(history) - lookback)
+    query_signature = set(_regime_signature_from_window(query))
+    totals: dict[str, dict[str, float]] = {}
+    for index in range(start, len(history)):
+        window = history[index]
+        weight = _online_expert_similarity_weight(query_signature, query, window, index=index, start=start, end=len(history))
+        if weight <= 0.0:
+            continue
+        candidates = _online_expert_cached_candidates(history, window, horizon=horizon, calibration=calibration)
+        if candidates is None:
+            continue
+        actual = float(window.future_return_bps)
+        for name, prediction in candidates.items():
+            bucket = totals.setdefault(name, {"weight": 0.0, "hit_weight": 0.0, "mae_weight": 0.0})
+            bucket["weight"] += weight
+            bucket["hit_weight"] += weight if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            bucket["mae_weight"] += weight * abs(float(prediction) - actual)
+    stats: dict[str, dict[str, float]] = {}
+    for name, bucket in totals.items():
+        weight = bucket["weight"]
+        if weight <= 0.0:
+            continue
+        stats[name] = {
+            "weight": float(weight),
+            "hit": float(bucket["hit_weight"] / weight),
+            "mae": float(bucket["mae_weight"] / weight),
+        }
+    return stats
+
+
+def _online_expert_cached_candidates(
+    history: list[OHLCVWindow],
+    window: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> dict[str, float] | None:
+    key = (
+        window.id,
+        int(horizon),
+        round(float(calibration.slope), 8),
+        round(float(calibration.intercept_bps), 8),
+        round(float(calibration.cap_abs_bps), 8),
+        int(calibration.samples),
+    )
+    if key in _ONLINE_EXPERT_CANDIDATE_CACHE:
+        return _ONLINE_EXPERT_CANDIDATE_CACHE[key]
+    prior = [
+        candidate
+        for candidate in history
+        if candidate.start_ts < window.start_ts and candidate.future_end_ts <= window.end_ts
+    ]
+    if len(prior) < 24:
+        _ONLINE_EXPERT_CANDIDATE_CACHE[key] = None
+        return None
+    features = _target_model_features(prior, window, horizon=horizon, calibration=calibration)
+    candidates = _directional_candidate_values(features, window.timeframe)
+    _ONLINE_EXPERT_CANDIDATE_CACHE[key] = candidates
+    return candidates
+
+
+def _online_expert_similarity_weight(
+    query_signature: set[str],
+    query: OHLCVWindow,
+    window: OHLCVWindow,
+    *,
+    index: int,
+    start: int,
+    end: int,
+) -> float:
+    window_signature = set(_regime_signature_from_window(window))
+    overlap = len(query_signature.intersection(window_signature))
+    if overlap <= 0:
+        return 0.35
+    age_rank = (index - start + 1) / max(1, end - start)
+    weight = 0.50 + 0.25 * min(overlap, 4)
+    if query.features.get("trend") == window.features.get("trend"):
+        weight += 0.20
+    if query.features.get("recent_trend") == window.features.get("recent_trend"):
+        weight += 0.15
+    return weight * (0.70 + 0.60 * age_rank)
+
+
+def _directional_head_feature_values(features: dict[str, float], timeframe: str) -> dict[str, float]:
+    values = {name: _finite_float(features.get(name, 0.0)) for name in TARGET_MODEL_FEATURES}
+    robust, _ = _robust_value_from_features(features, timeframe)
+    market_field, _ = _market_field_value_from_features(features, timeframe)
+    raw_wave = _finite_float(features.get("raw_wave", 0.0))
+    calibrated_wave = _finite_float(features.get("calibrated_wave", raw_wave))
+    momentum = _finite_float(features.get("momentum", calibrated_wave))
+    regime = _finite_float(features.get("regime", calibrated_wave))
+    historical = _finite_float(features.get("historical", calibrated_wave))
+    rsi = _finite_float(features.get("rsi", 50.0), default=50.0)
+    range_bps = abs(_finite_float(features.get("range_bps", 0.0)))
+    volatility_bps = abs(_finite_float(features.get("volatility_bps", 0.0)))
+    support_log = _finite_float(features.get("support_log", 0.0))
+    values.update(
+        {
+            "robust_target": robust,
+            "market_field_target": market_field,
+            "abs_robust_target": abs(robust),
+            "abs_momentum": abs(momentum),
+            "abs_regime": abs(regime),
+            "abs_historical": abs(historical),
+            "raw_wave_sign": _direction_sign_value(raw_wave),
+            "calibrated_wave_sign": _direction_sign_value(calibrated_wave),
+            "momentum_sign": _direction_sign_value(momentum),
+            "regime_sign": _direction_sign_value(regime),
+            "historical_sign": _direction_sign_value(historical),
+            "robust_sign": _direction_sign_value(robust),
+            "market_field_sign": _direction_sign_value(market_field),
+            "wave_market_agreement": 1.0 if _signed_direction(raw_wave) == _signed_direction(market_field) else -1.0,
+            "momentum_regime_agreement": 1.0 if _signed_direction(momentum) == _signed_direction(regime) else -1.0,
+            "robust_momentum_agreement": 1.0 if _signed_direction(robust) == _signed_direction(momentum) else -1.0,
+            "rsi_signed_distance": rsi - 50.0,
+            "rsi_abs_distance": abs(rsi - 50.0),
+            "volatility_range_ratio": volatility_bps / max(range_bps, 1.0),
+            "support_signed_wave": support_log * _direction_sign_value(raw_wave),
+        }
+    )
+    return values
+
+
+def _direction_sign_value(value: float) -> float:
+    return 1.0 if float(value) >= 0.0 else -1.0
+
+
+def _finite_float(value: object, *, default: float = 0.0) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return float(default)
+    return numeric if math.isfinite(numeric) else float(default)
 
 
 def _robust_value_from_features(features: dict[str, float], timeframe: str) -> tuple[float, str]:
@@ -1304,6 +1865,14 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-perp-field-target": "wavemind-perp-field-target",
         "perp-field": "wavemind-perp-field-target",
         "perp-field-target": "wavemind-perp-field-target",
+        "wavemind-directional-head": "wavemind-directional-head-target",
+        "wavemind-directional-head-target": "wavemind-directional-head-target",
+        "directional-head": "wavemind-directional-head-target",
+        "directional-head-target": "wavemind-directional-head-target",
+        "wavemind-online-expert": "wavemind-online-expert-target",
+        "wavemind-online-expert-target": "wavemind-online-expert-target",
+        "online-expert": "wavemind-online-expert-target",
+        "online-expert-target": "wavemind-online-expert-target",
         "wavemind-robust": "wavemind-robust-target",
         "wavemind-robust-target": "wavemind-robust-target",
         "robust": "wavemind-robust-target",
@@ -1333,6 +1902,8 @@ def _engine_name(key: str) -> str:
         "wavemind-ensemble": "WaveMind ensemble target",
         "wavemind-market-field-target": "WaveMind market-field target",
         "wavemind-perp-field-target": "WaveMind perp field target",
+        "wavemind-directional-head-target": "WaveMind directional-head target",
+        "wavemind-online-expert-target": "WaveMind online-expert target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
         "wavemind-calibrated": "WaveMind calibrated target",

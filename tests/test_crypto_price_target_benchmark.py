@@ -11,6 +11,7 @@ from benchmarks.crypto_price_target_benchmark import (
     _cache_path,
     _default_directional_policy,
     _directional_candidate_values,
+    _directional_head_feature_values,
     _perp_field_value_from_features,
     _market_field_value_from_features,
     _robust_1h_target_value,
@@ -45,6 +46,8 @@ def test_price_target_benchmark_scores_future_price():
         ],
         engines=[
             "wavemind-market-field-target",
+            "online-expert",
+            "directional-head",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -62,11 +65,15 @@ def test_price_target_benchmark_scores_future_price():
     result_by_engine = {result["engine"]: result for result in payload["results"]}
     assert payload["scenario"]["target"] == "predict future close price, not only up/down direction"
     assert result_by_engine["WaveMind market-field target"]["queries"] == 24
+    assert result_by_engine["WaveMind online-expert target"]["queries"] == 24
+    assert result_by_engine["WaveMind directional-head target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["queries"] == 24
     assert result_by_engine["WaveMind ensemble target"]["queries"] == 24
     assert result_by_engine["WaveMind calibrated target"]["queries"] == 24
     assert result_by_engine["WaveMind price target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind online-expert target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind directional-head target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind market-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
@@ -76,6 +83,7 @@ def test_price_target_benchmark_scores_future_price():
     assert payload["event_metrics"][0]["predicted_price"] > 0.0
     assert payload["event_metrics"][0]["actual_price"] > 0.0
     assert payload["event_metrics"][0]["predicted_direction"] in {"up", "down"}
+    assert any("directional_head" in row for row in payload["by_market"])
 
     sampled = sampled_event_payload(payload, sample_size=5)
     assert sampled["event_metrics_total"] == len(payload["event_metrics"])
@@ -233,6 +241,29 @@ def test_perp_field_uses_fold_local_selected_candidate():
     assert _directional_candidate_values(features, "1h")["inv_historical"] == -30.0
 
 
+def test_directional_head_features_include_signals_and_agreements():
+    features = {
+        "raw_wave": 80.0,
+        "calibrated_wave": 60.0,
+        "momentum": -50.0,
+        "regime": 40.0,
+        "historical": 30.0,
+        "naive": 20.0,
+        "support_log": 2.0,
+        "rsi": 72.0,
+        "range_bps": 200.0,
+        "volatility_bps": 50.0,
+    }
+
+    values = _directional_head_feature_values(features, "1h")
+
+    assert values["robust_sign"] in {-1.0, 1.0}
+    assert values["momentum_sign"] == -1.0
+    assert values["rsi_signed_distance"] == 22.0
+    assert values["volatility_range_ratio"] == 0.25
+    assert values["support_signed_wave"] == 2.0
+
+
 def test_cache_path_sanitizes_perpetual_symbols(tmp_path):
     path = _cache_path(tmp_path, "okx", "HYPE/USDT:USDT", "1h")
 
@@ -259,6 +290,8 @@ def test_price_target_markdown_and_cli(tmp_path):
             "4h",
             "--engines",
             "wavemind-market-field-target",
+            "online-expert",
+            "directional-head",
             "perp-field",
             "wavemind-robust-target",
             "wavemind-ensemble",
@@ -295,6 +328,8 @@ def test_price_target_markdown_and_cli(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     markdown = report.read_text(encoding="utf-8")
     assert payload["results"][0]["engine"] == "WaveMind market-field target"
+    assert any(result["engine"] == "WaveMind online-expert target" for result in payload["results"])
+    assert any(result["engine"] == "WaveMind directional-head target" for result in payload["results"])
     assert any(result["engine"] == "WaveMind perp field target" for result in payload["results"])
     assert payload["event_metrics_total"] >= len(payload["event_metrics"])
     assert "event_metrics_truncated" in payload
