@@ -63,11 +63,14 @@ from .k8s_operator import (
 )
 from .multimodal import (
     MemoryPayload,
+    asset3d_payload,
     audio_payload,
     event_payload,
+    graph_payload,
     image_payload,
     remember_payload,
     table_payload,
+    video_payload,
 )
 from .object_store import (
     ObjectStoreArchive,
@@ -201,6 +204,7 @@ __all__ = [
     "WaveMindServerlessSpec",
     "WriteQuorumError",
     "__version__",
+    "asset3d_payload",
     "audio_payload",
     "advice_status_meets_or_exceeds",
     "advise_memory_architecture",
@@ -213,6 +217,7 @@ __all__ = [
     "event_payload",
     "estimate_production_cost",
     "evaluate_production_slo",
+    "graph_payload",
     "image_payload",
     "kubernetes_resource_path",
     "operator_bundle",

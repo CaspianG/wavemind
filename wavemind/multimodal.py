@@ -59,6 +59,79 @@ def audio_payload(
     )
 
 
+def video_payload(
+    uri: str | Path,
+    *,
+    transcript: str | None = None,
+    summary: str,
+    scenes: Sequence[str] | None = None,
+    duration_seconds: float | None = None,
+    metadata: dict[str, Any] | None = None,
+    tags: Iterable[str] | None = None,
+) -> MemoryPayload:
+    payload_metadata = dict(metadata or {})
+    if duration_seconds is not None:
+        payload_metadata["duration_seconds"] = float(duration_seconds)
+    return _payload(
+        "video",
+        {
+            "summary": summary,
+            "transcript": transcript or "",
+            "scenes": json.dumps(list(scenes or ()), ensure_ascii=False),
+            "duration_seconds": "" if duration_seconds is None else str(float(duration_seconds)),
+            "uri": str(uri),
+        },
+        metadata=payload_metadata,
+        tags=tags,
+    )
+
+
+def asset3d_payload(
+    uri: str | Path,
+    *,
+    description: str,
+    format: str | None = None,
+    labels: Sequence[str] | None = None,
+    dimensions: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+    tags: Iterable[str] | None = None,
+) -> MemoryPayload:
+    return _payload(
+        "3d",
+        {
+            "description": description,
+            "format": format or "",
+            "labels": json.dumps(list(labels or ()), ensure_ascii=False),
+            "dimensions": json.dumps(dimensions or {}, ensure_ascii=False, sort_keys=True),
+            "uri": str(uri),
+        },
+        metadata=metadata,
+        tags=tags,
+    )
+
+
+def graph_payload(
+    triples: Sequence[tuple[str, str, str] | dict[str, Any]],
+    *,
+    title: str,
+    summary: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    tags: Iterable[str] | None = None,
+) -> MemoryPayload:
+    normalized = [_normalize_triple(triple) for triple in triples]
+    return _payload(
+        "graph",
+        {
+            "title": title,
+            "summary": summary or "",
+            "triples": json.dumps(normalized[:12], ensure_ascii=False, sort_keys=True),
+            "triple_count": str(len(normalized)),
+        },
+        metadata={**(metadata or {}), "triple_count": len(normalized)},
+        tags=tags,
+    )
+
+
 def table_payload(
     rows: Sequence[dict[str, Any]],
     *,
@@ -142,6 +215,20 @@ def _payload(
     return MemoryPayload(
         kind=kind,
         text=f"{kind} memory | {text}",
-        metadata={**(metadata or {}), **fields},
+        metadata={**fields, **(metadata or {})},
         tags=tuple(dict.fromkeys(tags or ())),
     )
+
+
+def _normalize_triple(triple: tuple[str, str, str] | dict[str, Any]) -> dict[str, str]:
+    if isinstance(triple, dict):
+        subject = triple.get("subject", triple.get("s", ""))
+        predicate = triple.get("predicate", triple.get("p", ""))
+        object_value = triple.get("object", triple.get("o", ""))
+    else:
+        subject, predicate, object_value = triple
+    return {
+        "subject": str(subject),
+        "predicate": str(predicate),
+        "object": str(object_value),
+    }

@@ -56,6 +56,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "concurrent read/write traffic" in criteria["replicated_runtime_loss"]["requirement"]
     assert "concurrent hit rate" in criteria["replicated_runtime_loss"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
+    assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "video" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "graph" in criteria["structured_multimodal_payloads"]["evidence"]
     assert criteria["ten_million_load_profile"]["status"] == "pass"
     assert criteria["architecture_advisor_preflight"]["status"] == "pass"
     assert "10M production targets" in criteria["architecture_advisor_preflight"]["requirement"]

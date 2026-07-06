@@ -170,6 +170,16 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind replicated snapshot"]["restored_files"] == 3
     assert results["WaveMind replicated snapshot"]["recalled_after_restore_node_loss"] is True
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["modalities"] == [
+        "image",
+        "audio",
+        "table",
+        "event",
+        "video",
+        "3d",
+        "graph",
+    ]
+    assert results["WaveMind structured payloads"]["queries"] == 7
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
     assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3

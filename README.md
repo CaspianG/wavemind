@@ -559,7 +559,7 @@ Checked-in result:
 | Active-active delta sync | 2 regions, bidirectional convergence `true`, stale import suppressed after delete `true`, tombstone convergence `true`, sync `1142.8 ms`. |
 | Field-state CRDT | 3 regions, commutative convergence `true`, idempotent re-merge `true`, tombstone-wins `true`, top-key convergence `true`, merge `0.13 ms`. |
 | Replicated snapshot job | 3 replica files, manifest checksum validation `true`, offsite mirror validation `true`, portable archive validation `true`, S3-compatible upload validation `true`, latest remote archive metadata validation `true`, remote archive download validation `true`, object-store DR drill `true`, object-store retention pruned `2`, archive restore `64.13 ms`. |
-| Structured payloads | image/audio/table/event retrieval, precision@1 `1.000`, p99 `1.10 ms`. |
+| Structured payloads | image/audio/video/3D/table/event/graph retrieval, precision@1 `1.000`, p99 `0.91 ms`. |
 | 100M capacity envelope | 100000000 target memories, 32768 deterministic namespace buckets, 128 nodes, 8 zones, replication factor 3, node-loss availability `1.000`, zone-loss availability `1.000`, replica-load skew `1.094`, max storage per node `5.81 GB`, valid capacity plan `true`. |
 
 This profile validates routing, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, and scheduled repair
@@ -805,8 +805,8 @@ requirements.
 ## Structured And Multimodal Memory
 
 WaveMind can store non-text memories as structured text plus metadata. This is
-useful for product events, tables, call transcripts, and image/audio captions
-while keeping the same query API.
+useful for product events, tables, call transcripts, images, videos, 3D assets,
+and knowledge graphs while keeping the same query API.
 
 ```python
 from wavemind import WaveMind, image_payload, remember_payload
@@ -826,8 +826,11 @@ Supported payload helpers:
 |---|---|
 | `image_payload()` | image URI plus caption or alt text |
 | `audio_payload()` | audio URI plus transcript or summary |
+| `video_payload()` | video URI plus transcript, scenes, duration, and summary |
+| `asset3d_payload()` | 3D model URI plus labels, dimensions, and format |
 | `table_payload()` | compact table preview with row count |
 | `event_payload()` | structured product, user, or system event |
+| `graph_payload()` | knowledge graph triples stored as queryable memory |
 
 ## Storage Backends
 

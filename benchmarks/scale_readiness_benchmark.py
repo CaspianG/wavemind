@@ -41,10 +41,12 @@ from wavemind import (
     ReplicatedSnapshotWorker,
     S3SnapshotStore,
     WaveMind,
+    asset3d_payload,
     audio_payload,
     build_cluster_autoscale_plan,
     build_cluster_plan,
     event_payload,
+    graph_payload,
     image_payload,
     kubernetes_resource_path,
     operator_bundle,
@@ -54,6 +56,7 @@ from wavemind import (
     remember_payload,
     serverless_sample_bundle,
     table_payload,
+    video_payload,
     WaveMindClusterSpec,
     WaveMindServerlessSpec,
     stable_memory_key,
@@ -2215,6 +2218,43 @@ def run_multimodal_profile() -> dict[str, object]:
                     ),
                     namespace="scale",
                 ),
+                "memory graph stale fact suppression": remember_payload(
+                    memory,
+                    video_payload(
+                        "s3://demo/memory-field-demo.mp4",
+                        summary="agent memory graph heatmap demo",
+                        transcript="the agent suppresses stale facts after user corrections",
+                        scenes=["memory graph heatmap", "stale fact suppression"],
+                        duration_seconds=38.0,
+                        tags=["video"],
+                    ),
+                    namespace="scale",
+                ),
+                "warehouse robot arm picking": remember_payload(
+                    memory,
+                    asset3d_payload(
+                        "s3://demo/robot-arm.glb",
+                        description="3D robot arm for warehouse picking simulation",
+                        format="glb",
+                        labels=["robot arm", "warehouse", "picking"],
+                        dimensions={"unit": "m", "height": 1.2},
+                        tags=["asset"],
+                    ),
+                    namespace="scale",
+                ),
+                "trading agent uses WaveMind memory": remember_payload(
+                    memory,
+                    graph_payload(
+                        [
+                            ("Andrey", "works_on", "trading agent"),
+                            ("trading agent", "uses", "WaveMind memory"),
+                        ],
+                        title="agent knowledge graph",
+                        summary="Andrey's trading agent uses WaveMind memory",
+                        tags=["graph"],
+                    ),
+                    namespace="scale",
+                ),
             }
             latencies = []
             correct = 0
@@ -2226,7 +2266,7 @@ def run_multimodal_profile() -> dict[str, object]:
                     correct += 1
             return {
                 "engine": "WaveMind structured payloads",
-                "modalities": ["image", "audio", "table", "event"],
+                "modalities": ["image", "audio", "table", "event", "video", "3d", "graph"],
                 "queries": len(expected),
                 "precision_at_1": correct / len(expected),
                 "avg_latency_ms": statistics.mean(latencies),

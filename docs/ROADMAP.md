@@ -106,8 +106,9 @@ policy matters more than raw vector-database scale:
   namespaces, encoded query vectors, query-audit-driven cache prewarm,
   predictive prefetch, TTL purge, field consolidation, concept consolidation, and index-health repair
   loops.
-- Structured payload helpers cover image captions, audio transcripts, tables,
-  and events while preserving modality metadata in the same memory API.
+- Structured payload helpers cover image captions, audio transcripts, video
+  transcripts/scenes, 3D asset descriptors, tables, events, and knowledge graph
+  triples while preserving modality metadata in the same memory API.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, quorum-replicated runtime behavior, active-active
   namespace delta sync, service-mode distributed namespace sharding with

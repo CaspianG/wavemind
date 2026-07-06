@@ -715,13 +715,26 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         _criterion(
             criterion_id="structured_multimodal_payloads",
             title="Structured and multimodal payload retrieval works",
-            status="pass" if payloads.get("precision_at_1") == 1.0 else "fail",
-            requirement="Images, audio, tables, and events must be storable and retrievable through the same memory API.",
+            status=(
+                "pass"
+                if payloads.get("precision_at_1") == 1.0
+                and {
+                    "image",
+                    "audio",
+                    "table",
+                    "event",
+                    "video",
+                    "3d",
+                    "graph",
+                }.issubset(set(payloads.get("modalities", [])))
+                else "fail"
+            ),
+            requirement="Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable and retrievable through the same memory API.",
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
                 f"precision@1 {payloads.get('precision_at_1')}"
             ),
-            next_step="Add real CLIP/audio embedding backends and larger multimodal retrieval tests.",
+            next_step="Add real CLIP/audio/video/3D embedding backends and larger multimodal retrieval tests.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",
