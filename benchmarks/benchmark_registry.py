@@ -812,7 +812,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, real HTTP shard transport, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache, API cache mutation safety, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, real HTTP shard transport, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, query-vector cache, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache, API cache mutation safety, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -820,6 +820,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "has_hpa",
                 "scale_to_zero",
                 "hit_rate",
+                "local_encode_calls",
+                "local_hit_rate",
+                "redis_shared_across_workers",
                 "shared_cache_visible_across_clients",
                 "memory_os_cross_worker_hit",
                 "stale_prevented_after_remember",
@@ -859,6 +862,18 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "prewarm_warmed",
                         "prewarm_hit",
                         "p99_lookup_ms",
+                    ),
+                ),
+                "WaveMind query vector cache": _metric_summary(
+                    scale_readiness_results.get("WaveMind query vector cache"),
+                    (
+                        "queries",
+                        "local_encode_calls",
+                        "local_hit_rate",
+                        "redis_shared_across_workers",
+                        "redis_encode_calls",
+                        "redis_reader_hits",
+                        "p99_local_query_ms",
                     ),
                 ),
                 "WaveMind Memory OS": _metric_summary(
@@ -1062,7 +1077,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, and structured payload recall.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, and structured payload recall.",
             "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, Redis-backed Memory OS profiles, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {
@@ -1071,7 +1086,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_readiness_results.json",
-            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, API cache mutation safety, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, and 10M-load presence. External competitor-service evidence is tracked separately.",
+            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, query-vector cache, API cache mutation safety, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, and 10M-load presence. External competitor-service evidence is tracked separately.",
             "competitors": [],
             "metrics": [
                 "readiness_score",

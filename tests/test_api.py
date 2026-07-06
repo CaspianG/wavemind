@@ -24,6 +24,23 @@ class ConsolidationEncoder:
         return vector / (float(np.linalg.norm(vector)) + 1e-9)
 
 
+class CountingEncoder:
+    vector_dim = 4
+
+    def __init__(self):
+        self.calls = 0
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        self.calls += 1
+        if "budget" in text.lower():
+            return self._unit([1.0, 0.0, 0.0, 0.0])
+        return self._unit([0.0, 1.0, 0.0, 0.0])
+
+    def _unit(self, values: list[float]) -> np.ndarray:
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
+
+
 def test_fastapi_remember_query_forget_and_stats(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api.sqlite3",
@@ -383,6 +400,42 @@ def test_fastapi_cache_prewarm_uses_query_audit_and_exposes_metrics(tmp_path, mo
             assert metrics.status_code == 200
             assert "wavemind_cache_hits_total 1" in metrics.text
             assert "wavemind_cache_size 1" in metrics.text
+    finally:
+        mind.close()
+
+
+def test_fastapi_query_vector_cache_reuses_encoder_output(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+    monkeypatch.delenv("WAVEMIND_VECTOR_CACHE_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_VECTOR_CACHE_CAPACITY", "8")
+    monkeypatch.setenv("WAVEMIND_VECTOR_CACHE_TTL_SECONDS", "60")
+    encoder = CountingEncoder()
+    mind = WaveMind(
+        db_path=tmp_path / "api-query-vector-cache.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=encoder,
+    )
+    try:
+        mind.remember("budget recall should use cached query vectors", namespace="tenant:qvec")
+        encoder.calls = 0
+        with TestClient(create_app(mind=mind)) as client:
+            for _ in range(2):
+                response = client.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": "tenant:qvec", "top_k": 1},
+                )
+                assert response.status_code == 200
+                assert response.json()["results"][0]["text"] == (
+                    "budget recall should use cached query vectors"
+                )
+
+            metrics = client.get("/metrics")
+            assert encoder.calls == 1
+            assert "wavemind_vector_cache_hits_total 1" in metrics.text
+            assert "wavemind_vector_cache_misses_total 1" in metrics.text
     finally:
         mind.close()
 

@@ -22,8 +22,11 @@ from .jobs import (
     CachePrewarmWorker,
     HotMemoryCache,
     MemoryOSWorker,
+    QueryVectorCache,
     RedisHotMemoryCache,
+    RedisQueryVectorCache,
     query_with_cache,
+    query_with_vector_cache,
 )
 from .observability import configure_observability, instrument_fastapi_app
 from .studio import STUDIO_HTML, field_heatmap, studio_snapshot
@@ -154,6 +157,21 @@ def _cache_from_env() -> HotMemoryCache | RedisHotMemoryCache | None:
     if capacity <= 0:
         return None
     return HotMemoryCache(capacity=capacity, ttl_seconds=ttl_seconds)
+
+
+def _vector_cache_from_env() -> QueryVectorCache | RedisQueryVectorCache | None:
+    redis_url = os.environ.get("WAVEMIND_VECTOR_CACHE_REDIS_URL")
+    ttl_seconds = float(os.environ.get("WAVEMIND_VECTOR_CACHE_TTL_SECONDS", "300") or "300")
+    if redis_url:
+        return RedisQueryVectorCache.from_url(
+            redis_url,
+            prefix=os.environ.get("WAVEMIND_VECTOR_CACHE_REDIS_PREFIX", "wavemind:qvec"),
+            ttl_seconds=ttl_seconds,
+        )
+    capacity = int(os.environ.get("WAVEMIND_VECTOR_CACHE_CAPACITY", "0") or "0")
+    if capacity <= 0:
+        return None
+    return QueryVectorCache(capacity=capacity, ttl_seconds=ttl_seconds)
 
 
 def _invalidate_cache(app: FastAPI, namespace: str | None) -> int:
@@ -548,6 +566,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     app.state.auth = APIAuth.from_env()
     app.state.rate_limiter = InMemoryRateLimiter.from_env()
     app.state.cache = _cache_from_env()
+    app.state.vector_cache = _vector_cache_from_env()
     app.state.operation_lock = (
         None
         if os.environ.get("WAVEMIND_API_SERIALIZE_OPERATIONS", "1").lower()
@@ -613,13 +632,24 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     def query(request: QueryRequest) -> QueryResponse:
         with _api_operation(app, "query"):
             if app.state.cache is None:
-                results = app.state.mind.query(
-                    request.text,
-                    namespace=request.namespace,
-                    top_k=request.top_k,
-                    tags=request.tags,
-                    min_score=request.min_score,
-                )
+                if app.state.vector_cache is None:
+                    results = app.state.mind.query(
+                        request.text,
+                        namespace=request.namespace,
+                        top_k=request.top_k,
+                        tags=request.tags,
+                        min_score=request.min_score,
+                    )
+                else:
+                    results = query_with_vector_cache(
+                        app.state.mind,
+                        app.state.vector_cache,
+                        request.text,
+                        namespace=request.namespace,
+                        top_k=request.top_k,
+                        tags=request.tags,
+                        min_score=request.min_score,
+                    )
             else:
                 results = query_with_cache(
                     app.state.mind,
@@ -629,6 +659,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                     top_k=request.top_k,
                     tags=request.tags,
                     min_score=request.min_score,
+                    vector_cache=app.state.vector_cache,
                 )
         return QueryResponse(
             results=[
@@ -831,6 +862,18 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                     "cache_size": cache_stats.size,
                     "cache_capacity": cache_stats.capacity,
                     "cache_hit_rate": cache_stats.hit_rate,
+                }
+            )
+        if app.state.vector_cache is not None:
+            vector_cache_stats = app.state.vector_cache.stats()
+            operation_metrics.update(
+                {
+                    "vector_cache_hits_total": vector_cache_stats.hits,
+                    "vector_cache_misses_total": vector_cache_stats.misses,
+                    "vector_cache_evictions_total": vector_cache_stats.evictions,
+                    "vector_cache_size": vector_cache_stats.size,
+                    "vector_cache_capacity": vector_cache_stats.capacity,
+                    "vector_cache_hit_rate": vector_cache_stats.hit_rate,
                 }
             )
         return PlainTextResponse(

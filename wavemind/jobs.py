@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
+import numpy as np
+
 from .core import QueryResult
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
 from .replication import ReplicatedWaveMind
@@ -36,6 +38,12 @@ class CacheStats:
 @dataclass
 class _CacheEntry:
     value: list[QueryResult]
+    expires_at: float
+
+
+@dataclass
+class _VectorCacheEntry:
+    vector: np.ndarray
     expires_at: float
 
 
@@ -286,6 +294,205 @@ class RedisHotMemoryCache:
         return f"{self.prefix}:{namespace}:{digest}"
 
 
+def query_vector_cache_key(encoder: Any) -> str:
+    """Stable cache namespace for a query encoder.
+
+    Query vectors are only reusable when the encoder implementation and vector
+    dimensionality match. Model-backed encoders also include their model name.
+    """
+
+    cls = encoder.__class__
+    parts = [
+        f"{cls.__module__}.{cls.__qualname__}",
+        f"dim={int(getattr(encoder, 'vector_dim', 0) or 0)}",
+    ]
+    model_name = getattr(encoder, "model_name", None)
+    if model_name:
+        parts.append(f"model={model_name}")
+    return "|".join(parts)
+
+
+class QueryVectorCache:
+    """Small in-process LRU cache for encoded query vectors."""
+
+    def __init__(self, capacity: int = 1024, ttl_seconds: float = 300.0):
+        if capacity <= 0:
+            raise ValueError("capacity must be positive")
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        self.capacity = int(capacity)
+        self.ttl_seconds = float(ttl_seconds)
+        self._items: OrderedDict[tuple[str, str], _VectorCacheEntry] = OrderedDict()
+        self._hits = 0
+        self._misses = 0
+        self._evictions = 0
+
+    def get(self, encoder_key: str, text: str) -> np.ndarray | None:
+        key = self._key(encoder_key, text)
+        entry = self._items.get(key)
+        now = time.time()
+        if entry is None or entry.expires_at <= now:
+            self._misses += 1
+            if entry is not None:
+                self._items.pop(key, None)
+            return None
+        self._hits += 1
+        self._items.move_to_end(key)
+        return np.asarray(entry.vector, dtype=np.float32).copy()
+
+    def put(self, encoder_key: str, text: str, vector: np.ndarray) -> None:
+        key = self._key(encoder_key, text)
+        self._items[key] = _VectorCacheEntry(
+            vector=np.asarray(vector, dtype=np.float32).copy(),
+            expires_at=time.time() + self.ttl_seconds,
+        )
+        self._items.move_to_end(key)
+        while len(self._items) > self.capacity:
+            self._items.popitem(last=False)
+            self._evictions += 1
+
+    def clear(self) -> None:
+        self._items.clear()
+
+    def stats(self) -> CacheStats:
+        return CacheStats(
+            hits=self._hits,
+            misses=self._misses,
+            evictions=self._evictions,
+            size=len(self._items),
+            capacity=self.capacity,
+        )
+
+    @staticmethod
+    def _key(encoder_key: str, text: str) -> tuple[str, str]:
+        return (str(encoder_key), str(text))
+
+
+class RedisQueryVectorCache:
+    """Redis-backed cache for encoded query vectors across API workers."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        prefix: str = "wavemind:qvec",
+        ttl_seconds: float = 300.0,
+    ):
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        self.client = client
+        self.prefix = prefix.rstrip(":")
+        self.ttl_seconds = float(ttl_seconds)
+        self._hits = 0
+        self._misses = 0
+        self._evictions = 0
+
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        *,
+        prefix: str = "wavemind:qvec",
+        ttl_seconds: float = 300.0,
+    ) -> "RedisQueryVectorCache":
+        try:
+            import redis
+        except ImportError as exc:
+            raise RuntimeError(
+                'Install Redis support with: pip install "wavemind[redis]"'
+            ) from exc
+        return cls(
+            redis.Redis.from_url(url, decode_responses=True),
+            prefix=prefix,
+            ttl_seconds=ttl_seconds,
+        )
+
+    def get(self, encoder_key: str, text: str) -> np.ndarray | None:
+        key = self._key(encoder_key, text)
+        raw = self.client.get(key)
+        if raw is None:
+            self._misses += 1
+            return None
+        self._hits += 1
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        payload = json.loads(str(raw))
+        return np.asarray(payload["vector"], dtype=np.float32)
+
+    def put(self, encoder_key: str, text: str, vector: np.ndarray) -> None:
+        key = self._key(encoder_key, text)
+        payload = {
+            "encoder": str(encoder_key),
+            "vector": np.asarray(vector, dtype=np.float32).tolist(),
+        }
+        self.client.set(
+            key,
+            json.dumps(payload, ensure_ascii=False, default=str),
+            ex=max(1, int(round(self.ttl_seconds))),
+        )
+
+    def clear(self) -> None:
+        keys = list(self.client.scan_iter(match=f"{self.prefix}:*"))
+        if keys:
+            self.client.delete(*keys)
+
+    def stats(self) -> CacheStats:
+        size = 0
+        try:
+            size = sum(1 for _ in self.client.scan_iter(match=f"{self.prefix}:*"))
+        except Exception:
+            size = 0
+        return CacheStats(
+            hits=self._hits,
+            misses=self._misses,
+            evictions=self._evictions,
+            size=size,
+            capacity=0,
+        )
+
+    def _key(self, encoder_key: str, text: str) -> str:
+        tail = (str(encoder_key), str(text))
+        digest = hashlib.sha256(
+            json.dumps(tail, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+        return f"{self.prefix}:{digest}"
+
+
+def _cached_query_vector(
+    memory: Any,
+    vector_cache: QueryVectorCache | RedisQueryVectorCache,
+    text: str,
+) -> np.ndarray:
+    encoder_key = query_vector_cache_key(memory.encoder)
+    query_vector = vector_cache.get(encoder_key, text)
+    if query_vector is not None:
+        return query_vector
+    query_vector = memory.encoder.encode_vector(text)
+    vector_cache.put(encoder_key, text, query_vector)
+    return np.asarray(query_vector, dtype=np.float32)
+
+
+def query_with_vector_cache(
+    memory: Any,
+    vector_cache: QueryVectorCache | RedisQueryVectorCache,
+    text: str,
+    *,
+    namespace: str = "default",
+    top_k: int = 3,
+    tags: Iterable[str] | None = None,
+    min_score: float | None = None,
+) -> list[QueryResult]:
+    query_vector = _cached_query_vector(memory, vector_cache, text)
+    return memory.query(
+        text,
+        namespace=namespace,
+        top_k=top_k,
+        tags=tags,
+        min_score=min_score,
+        query_vector=query_vector,
+    )
+
+
 def query_with_cache(
     memory: Any,
     cache: HotMemoryCache | RedisHotMemoryCache,
@@ -295,6 +502,7 @@ def query_with_cache(
     top_k: int = 3,
     tags: Iterable[str] | None = None,
     min_score: float | None = None,
+    vector_cache: QueryVectorCache | RedisQueryVectorCache | None = None,
 ) -> list[QueryResult]:
     cached = cache.get(
         namespace,
@@ -305,13 +513,24 @@ def query_with_cache(
     )
     if cached is not None:
         return cached
-    results = memory.query(
-        text,
-        namespace=namespace,
-        top_k=top_k,
-        tags=tags,
-        min_score=min_score,
-    )
+    if vector_cache is None:
+        results = memory.query(
+            text,
+            namespace=namespace,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
+    else:
+        results = query_with_vector_cache(
+            memory,
+            vector_cache,
+            text,
+            namespace=namespace,
+            top_k=top_k,
+            tags=tags,
+            min_score=min_score,
+        )
     cache.put(
         namespace,
         text,

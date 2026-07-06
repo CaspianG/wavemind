@@ -32,8 +32,10 @@ from wavemind import (
     HTTPNamespaceShardClient,
     HotMemoryCache,
     MemoryOSWorker,
+    QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
+    RedisQueryVectorCache,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
     ReplicatedSnapshotWorker,
@@ -47,6 +49,7 @@ from wavemind import (
     operator_bundle,
     operator_reconcile,
     query_with_cache,
+    query_with_vector_cache,
     remember_payload,
     serverless_sample_bundle,
     table_payload,
@@ -149,6 +152,15 @@ class MemoryOSEncoder:
     def _unit(self, values: list[float]) -> np.ndarray:
         vector = np.asarray(values, dtype=np.float32)
         return vector / (float(np.linalg.norm(vector)) + 1e-9)
+
+
+class CountingMemoryOSEncoder(MemoryOSEncoder):
+    def __init__(self):
+        self.calls = 0
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        self.calls += 1
+        return super().encode_vector(text)
 
 
 class LocalWaveMindServiceClient:
@@ -630,6 +642,100 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
         "avg_lookup_ms": statistics.mean(latencies) if latencies else 0.0,
         "p99_lookup_ms": percentile(latencies, 99),
     }
+
+
+def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
+    local_latencies: list[float] = []
+    redis_latencies: list[float] = []
+    client = RedisLikeCacheClient()
+    redis_writer = RedisQueryVectorCache(client, prefix="wm:qvec-scale", ttl_seconds=120)
+    redis_reader = RedisQueryVectorCache(client, prefix="wm:qvec-scale", ttl_seconds=120)
+
+    with tempfile.TemporaryDirectory() as directory:
+        local_encoder = CountingMemoryOSEncoder()
+        local_memory = WaveMind(
+            db_path=Path(directory) / "query-vector-local.sqlite3",
+            encoder=local_encoder,
+            width=16,
+            height=16,
+            layers=1,
+        )
+        redis_encoder = CountingMemoryOSEncoder()
+        redis_memory = WaveMind(
+            db_path=Path(directory) / "query-vector-redis.sqlite3",
+            encoder=redis_encoder,
+            width=16,
+            height=16,
+            layers=1,
+        )
+        try:
+            namespace = "tenant:qvec"
+            local_memory.remember("budget recall should reuse encoded query vectors", namespace=namespace)
+            redis_memory.remember("budget recall should reuse redis query vectors", namespace=namespace)
+
+            local_encoder.calls = 0
+            local_cache = QueryVectorCache(capacity=32, ttl_seconds=120)
+            for _ in range(max(1, int(queries))):
+                started = time.perf_counter()
+                query_with_vector_cache(
+                    local_memory,
+                    local_cache,
+                    "budget recall",
+                    namespace=namespace,
+                    top_k=1,
+                )
+                local_latencies.append((time.perf_counter() - started) * 1000.0)
+
+            redis_encoder.calls = 0
+            started = time.perf_counter()
+            writer_results = query_with_vector_cache(
+                redis_memory,
+                redis_writer,
+                "budget recall",
+                namespace=namespace,
+                top_k=1,
+            )
+            redis_latencies.append((time.perf_counter() - started) * 1000.0)
+            started = time.perf_counter()
+            reader_results = query_with_vector_cache(
+                redis_memory,
+                redis_reader,
+                "budget recall",
+                namespace=namespace,
+                top_k=1,
+            )
+            redis_latencies.append((time.perf_counter() - started) * 1000.0)
+
+            local_stats = local_cache.stats()
+            writer_stats = redis_writer.stats()
+            reader_stats = redis_reader.stats()
+            redis_cross_worker_hit = (
+                bool(writer_results)
+                and bool(reader_results)
+                and writer_results[0].text == reader_results[0].text
+                and reader_stats.hits >= 1
+                and redis_encoder.calls == 1
+            )
+            return {
+                "engine": "WaveMind query vector cache",
+                "queries": int(queries),
+                "local_encode_calls": local_encoder.calls,
+                "local_cache_hits": local_stats.hits,
+                "local_cache_misses": local_stats.misses,
+                "local_hit_rate": local_stats.hit_rate,
+                "redis_shared_across_workers": redis_cross_worker_hit,
+                "redis_encode_calls": redis_encoder.calls,
+                "redis_writer_misses": writer_stats.misses,
+                "redis_reader_hits": reader_stats.hits,
+                "redis_keys": len(client.items),
+                "avg_local_query_ms": statistics.mean(local_latencies) if local_latencies else 0.0,
+                "p99_local_query_ms": percentile(local_latencies, 99),
+                "avg_redis_query_ms": statistics.mean(redis_latencies) if redis_latencies else 0.0,
+                "p99_redis_query_ms": percentile(redis_latencies, 99),
+            }
+        finally:
+            local_memory.close()
+            redis_memory.close()
 
 
 def run_redis_cache_profile() -> dict[str, object]:
@@ -1754,6 +1860,7 @@ def run_benchmark(
         ),
         run_serverless_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
+        run_query_vector_cache_profile(),
         run_redis_cache_profile(),
         run_api_cache_mutation_profile(),
         run_memory_os_profile(),
@@ -1779,8 +1886,9 @@ def run_benchmark(
                 "service-mode distributed namespace sharding, real HTTP shard transport, "
                 "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation/forgetting, "
-                "local and Redis-compatible hot-cache behavior, API cache mutation safety, "
+                "download/retention/DR-drill verification, query-vector cache, "
+                "Memory OS adaptive prewarm/consolidation/forgetting, local and "
+                "Redis-compatible hot-cache behavior, API cache mutation safety, "
                 "and structured payload retrieval. "
                 "This is not a 10M-vector database load test."
             ),
@@ -1836,6 +1944,10 @@ def main() -> int:
             print(f"| hot cache | hit_rate | {result['hit_rate']:.3f} |")
             print(f"| hot cache | prewarm_warmed | {result['prewarm_warmed']} |")
             print(f"| hot cache | prewarm_hit | {result['prewarm_hit']} |")
+        elif result["engine"] == "WaveMind query vector cache":
+            print(f"| query vector cache | local_encode_calls | {result['local_encode_calls']} |")
+            print(f"| query vector cache | local_hit_rate | {result['local_hit_rate']:.3f} |")
+            print(f"| query vector cache | redis_shared_across_workers | {result['redis_shared_across_workers']} |")
         elif result["engine"] == "WaveMind Redis hot cache":
             print(f"| redis hot cache | shared_cache_visible | {result['shared_cache_visible_across_clients']} |")
             print(f"| redis hot cache | cache_prewarm_warmed | {result['cache_prewarm_warmed']} |")

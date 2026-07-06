@@ -13,14 +13,17 @@ from wavemind import (
     HotMemoryCache,
     MemoryMaintenanceWorker,
     MemoryOSWorker,
+    QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
+    RedisQueryVectorCache,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
     ReplicatedWaveMind,
     S3SnapshotStore,
     WaveMind,
     query_with_cache,
+    query_with_vector_cache,
 )
 
 
@@ -30,6 +33,24 @@ class SystemsEncoder:
     def encode_vector(self, text: str) -> np.ndarray:
         lowered = text.lower()
         if any(token in lowered for token in ("rust", "compiler", "systems", "programming")):
+            return self._unit([1.0, 0.0, 0.0, 0.0])
+        return self._unit([0.0, 1.0, 0.0, 0.0])
+
+    def _unit(self, values):
+        vector = np.asarray(values, dtype=np.float32)
+        return vector / (float(np.linalg.norm(vector)) + 1e-9)
+
+
+class CountingEncoder:
+    vector_dim = 4
+
+    def __init__(self):
+        self.calls = 0
+
+    def encode_vector(self, text: str) -> np.ndarray:
+        self.calls += 1
+        lowered = text.lower()
+        if "budget" in lowered:
             return self._unit([1.0, 0.0, 0.0, 0.0])
         return self._unit([0.0, 1.0, 0.0, 0.0])
 
@@ -252,6 +273,83 @@ def test_hot_memory_cache_evicts_least_recent_queries():
 
     assert cache.get("a", "one", top_k=1) is None
     assert cache.stats().evictions == 1
+
+
+def test_query_vector_cache_reuses_encoded_query_vectors(tmp_path):
+    encoder = CountingEncoder()
+    memory = WaveMind(
+        db_path=tmp_path / "query-vector-cache.sqlite3",
+        encoder=encoder,
+        width=16,
+        height=16,
+        layers=1,
+    )
+    vector_cache = QueryVectorCache(capacity=4, ttl_seconds=60)
+    try:
+        memory.remember("budget recall should be fast", namespace="tenant:a")
+        encoder.calls = 0
+
+        first = query_with_vector_cache(
+            memory,
+            vector_cache,
+            "budget recall",
+            namespace="tenant:a",
+            top_k=1,
+        )
+        second = query_with_vector_cache(
+            memory,
+            vector_cache,
+            "budget recall",
+            namespace="tenant:a",
+            top_k=1,
+        )
+
+        assert first[0].text == second[0].text
+        assert encoder.calls == 1
+        assert vector_cache.stats().misses == 1
+        assert vector_cache.stats().hits == 1
+    finally:
+        memory.close()
+
+
+def test_redis_query_vector_cache_is_shared_across_workers(tmp_path):
+    encoder = CountingEncoder()
+    client = FakeRedis()
+    writer_cache = RedisQueryVectorCache(client, prefix="wm:qvec", ttl_seconds=45)
+    reader_cache = RedisQueryVectorCache(client, prefix="wm:qvec", ttl_seconds=45)
+    memory = WaveMind(
+        db_path=tmp_path / "redis-query-vector-cache.sqlite3",
+        encoder=encoder,
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        memory.remember("budget recall should cross workers", namespace="tenant:a")
+        encoder.calls = 0
+
+        first = query_with_vector_cache(
+            memory,
+            writer_cache,
+            "budget recall",
+            namespace="tenant:a",
+            top_k=1,
+        )
+        second = query_with_vector_cache(
+            memory,
+            reader_cache,
+            "budget recall",
+            namespace="tenant:a",
+            top_k=1,
+        )
+
+        assert first[0].text == second[0].text
+        assert encoder.calls == 1
+        assert writer_cache.stats().misses == 1
+        assert reader_cache.stats().hits == 1
+        assert next(iter(client.expirations.values())) == 45
+    finally:
+        memory.close()
 
 
 def test_redis_hot_memory_cache_round_trips_query_results():

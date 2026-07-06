@@ -161,6 +161,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     operator = scale.get("WaveMind Kubernetes operator", {})
     serverless = scale.get("WaveMind serverless plan", {})
     hot_cache = scale.get("WaveMind hot cache", {})
+    query_vector_cache = scale.get("WaveMind query vector cache", {})
     redis_cache = scale.get("WaveMind Redis hot cache", {})
     api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
     memory_os = scale.get("WaveMind Memory OS", {})
@@ -314,6 +315,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"p99 {hot_cache.get('p99_lookup_ms')} ms"
             ),
             next_step="Keep local cache prewarm green while Redis carries multi-worker production cache evidence.",
+        ),
+        _criterion(
+            criterion_id="query_vector_cache",
+            title="Query-vector cache avoids repeated encoder work",
+            status=(
+                "pass"
+                if int(query_vector_cache.get("local_encode_calls", 999999)) == 1
+                and float(query_vector_cache.get("local_hit_rate", 0.0)) >= 0.95
+                and query_vector_cache.get("redis_shared_across_workers")
+                and int(query_vector_cache.get("redis_encode_calls", 999999)) == 1
+                else "fail"
+            ),
+            requirement=(
+                "Repeated hot queries must reuse encoded query vectors locally "
+                "and across Redis-backed workers before hitting the vector index."
+            ),
+            evidence=(
+                f"local encode calls {query_vector_cache.get('local_encode_calls')}, "
+                f"local hit rate {query_vector_cache.get('local_hit_rate')}, "
+                f"Redis shared {query_vector_cache.get('redis_shared_across_workers')}, "
+                f"Redis encode calls {query_vector_cache.get('redis_encode_calls')}"
+            ),
+            next_step="Add service-mode vector-cache load evidence with a sentence-transformer encoder.",
         ),
         _criterion(
             criterion_id="redis_shared_cache_memory_os",

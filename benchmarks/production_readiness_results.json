@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T07:05:32Z",
+  "generated_at": "2026-07-06T07:23:47Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 19,
+    "pass_count": 20,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 19
+    "total_criteria": 20
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T07:04:19Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T07:05:37Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -77,6 +77,14 @@
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
+      "id": "query_vector_cache",
+      "title": "Query-vector cache avoids repeated encoder work",
+      "status": "pass",
+      "requirement": "Repeated hot queries must reuse encoded query vectors locally and across Redis-backed workers before hitting the vector index.",
+      "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1",
+      "next_step": "Add service-mode vector-cache load evidence with a sentence-transformer encoder."
+    },
+    {
       "id": "redis_shared_cache_memory_os",
       "title": "Redis-compatible shared cache and Memory OS prewarm work",
       "status": "pass",
@@ -129,7 +137,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.2823999859392643 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.4322000206448138 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`18/18` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`20/20` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -69,10 +69,12 @@ policy matters more than raw vector-database scale:
   KEDA Deployment/Service/ScaledObject profile. The profile requires external
   Postgres for source-of-truth state, external Qdrant for candidate search,
   Redis for shared hot-query cache, and API keys from Kubernetes Secrets.
-- `HotMemoryCache`, `query_with_cache()`, `CachePrewarmWorker`, and
+- `HotMemoryCache`, `QueryVectorCache`, their Redis-backed variants,
+  `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
-  namespaces, query-audit-driven cache prewarm, TTL purge, field
-  consolidation, concept consolidation, and index-health repair loops.
+  namespaces, encoded query vectors, query-audit-driven cache prewarm, TTL
+  purge, field consolidation, concept consolidation, and index-health repair
+  loops.
 - Structured payload helpers cover image captions, audio transcripts, tables,
   and events while preserving modality metadata in the same memory API.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
@@ -86,7 +88,7 @@ policy matters more than raw vector-database scale:
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
-  prewarm, hot-cache behavior, API cache mutation safety, and
+  prewarm, query-vector cache, hot-cache behavior, API cache mutation safety, and
   structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.

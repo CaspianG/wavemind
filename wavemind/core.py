@@ -269,20 +269,24 @@ class WaveMind:
         top_k: int = 3,
         tags: Iterable[str] | None = None,
         min_score: float | None = None,
+        query_vector: np.ndarray | None = None,
     ) -> list[QueryResult]:
         allowed_ids = self._allowed_ids(namespace=namespace, tags=tags)
         if not allowed_ids:
             return []
 
-        with trace_span(
-            "wavemind.query.encode",
-            {
-                "wavemind.namespace": namespace,
-                "wavemind.top_k": int(top_k),
-                "wavemind.allowed_ids": len(allowed_ids),
-            },
-        ):
-            query_vector = self.encoder.encode_vector(text)
+        if query_vector is None:
+            with trace_span(
+                "wavemind.query.encode",
+                {
+                    "wavemind.namespace": namespace,
+                    "wavemind.top_k": int(top_k),
+                    "wavemind.allowed_ids": len(allowed_ids),
+                },
+            ):
+                query_vector = self.encoder.encode_vector(text)
+        else:
+            query_vector = np.asarray(query_vector, dtype=np.float32)
 
         vector_top_k = max(top_k, self.rerank_k)
         with trace_span(
