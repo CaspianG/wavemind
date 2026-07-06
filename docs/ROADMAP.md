@@ -134,8 +134,10 @@ policy matters more than raw vector-database scale:
   transcripts/scenes, 3D asset descriptors, tables, events, and knowledge graph
   triples while preserving modality metadata in the same memory API. The first
   `CrossModalMemoryLayer` adds deterministic shared descriptor embeddings,
-  target-modality routing, and provenance-preserving recall across all seven
-  payload types.
+  persisted cross-modal vectors, target-modality routing,
+  provenance-preserving recall across all seven payload types, and a strict
+  precomputed-vector path for externally computed CLIP/audio/video/3D
+  embeddings.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, quorum-replicated runtime behavior, cursor-based
   active-active namespace delta sync, field-only hotness delta sync,
@@ -149,8 +151,9 @@ policy matters more than raw vector-database scale:
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
   prewarm, predictive prefetch, query-vector cache, Redis-compatible shared rate limiting, hot-cache
-  behavior, API cache mutation safety, structured-payload retrieval, and
-  cross-modal target-modality/provenance checks.
+  behavior, API cache mutation safety, structured-payload retrieval,
+  cross-modal target-modality/provenance checks, and external precomputed-vector
+  compatibility checks.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,
@@ -398,9 +401,9 @@ Enterprise requirements:
   latency histograms beyond the current process-local API latency gauges.
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
-- Real multimodal encoders: CLIP-style image embeddings, audio embeddings,
+- Built-in multimodal encoders: CLIP-style image embeddings, audio embeddings,
   video scene embeddings, and 3D descriptors behind the existing
-  `CrossModalMemoryLayer` API.
+  `CrossModalMemoryLayer` and `PrecomputedCrossModalEncoder` contracts.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
 

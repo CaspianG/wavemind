@@ -33,6 +33,7 @@ from wavemind import (
     HTTPNamespaceShardClient,
     HotMemoryCache,
     MemoryOSWorker,
+    PrecomputedCrossModalEncoder,
     QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
@@ -2378,6 +2379,79 @@ def run_multimodal_profile() -> dict[str, object]:
                     cross_correct += 1
                 if results and results[0].provenance.get("memory_id") == results[0].id:
                     provenance_complete += 1
+            descriptor_records = memory.store.list(namespace="scale", tags=["multimodal"])
+            persisted_vectors = sum(
+                1
+                for record in descriptor_records
+                if isinstance(record.metadata.get("cross_modal_vector"), list)
+                and len(record.metadata["cross_modal_vector"]) == layer.vector_dim
+            )
+
+            precomputed_layer = CrossModalMemoryLayer(
+                memory,
+                cross_modal_encoder=PrecomputedCrossModalEncoder(
+                    vector_dim=4,
+                    name="external-precomputed",
+                ),
+            )
+            precomputed_expected = {
+                "image": precomputed_layer.remember(
+                    image_payload(
+                        "s3://demo/external-chart.png",
+                        caption="external image encoder result",
+                        metadata={"cross_modal_vector": [1.0, 0.0, 0.0, 0.0]},
+                    ),
+                    namespace="precomputed",
+                ),
+                "audio": precomputed_layer.remember(
+                    audio_payload(
+                        "s3://demo/external-call.wav",
+                        transcript="external audio encoder result",
+                        metadata={"cross_modal_vector": [0.0, 1.0, 0.0, 0.0]},
+                    ),
+                    namespace="precomputed",
+                ),
+                "video": precomputed_layer.remember(
+                    video_payload(
+                        "s3://demo/external-demo.mp4",
+                        summary="external video encoder result",
+                        metadata={"cross_modal_vector": [0.0, 0.0, 1.0, 0.0]},
+                    ),
+                    namespace="precomputed",
+                ),
+                "3d": precomputed_layer.remember(
+                    asset3d_payload(
+                        "s3://demo/external-asset.glb",
+                        description="external 3D encoder result",
+                        metadata={"cross_modal_vector": [0.0, 0.0, 0.0, 1.0]},
+                    ),
+                    namespace="precomputed",
+                ),
+            }
+            precomputed_checks = [
+                ("image", [1.0, 0.0, 0.0, 0.0]),
+                ("audio", [0.0, 1.0, 0.0, 0.0]),
+                ("video", [0.0, 0.0, 1.0, 0.0]),
+                ("3d", [0.0, 0.0, 0.0, 1.0]),
+            ]
+            precomputed_correct = 0
+            precomputed_persisted = 0
+            precomputed_latencies = []
+            for modality, query_vector in precomputed_checks:
+                started = time.perf_counter()
+                results = precomputed_layer.query(
+                    "external encoder query",
+                    namespace="precomputed",
+                    target_modality=modality,
+                    top_k=1,
+                    query_vector=query_vector,
+                )
+                precomputed_latencies.append((time.perf_counter() - started) * 1000.0)
+                if results and results[0].id == precomputed_expected[modality]:
+                    precomputed_correct += 1
+                if results and results[0].metadata.get("cross_modal_vector"):
+                    precomputed_persisted += 1
+
             return {
                 "engine": "WaveMind structured payloads",
                 "modalities": ["image", "audio", "table", "event", "video", "3d", "graph"],
@@ -2386,12 +2460,20 @@ def run_multimodal_profile() -> dict[str, object]:
                 "cross_modal_queries": len(cross_modal_checks),
                 "cross_modal_precision_at_1": cross_correct / len(cross_modal_checks),
                 "cross_modal_target_modalities": [modality for _, modality, _ in cross_modal_checks],
-                "cross_modal_embedding_dim": layer.encoder.vector_dim,
+                "cross_modal_embedding_dim": layer.vector_dim,
+                "cross_modal_vectors_persisted_rate": persisted_vectors / len(descriptor_records),
                 "cross_modal_provenance_rate": provenance_complete / len(cross_modal_checks),
+                "precomputed_vector_queries": len(precomputed_checks),
+                "precomputed_vector_precision_at_1": precomputed_correct / len(precomputed_checks),
+                "precomputed_vector_embedding_dim": precomputed_layer.vector_dim,
+                "precomputed_vector_persisted_rate": precomputed_persisted / len(precomputed_checks),
+                "precomputed_vector_target_modalities": [modality for modality, _ in precomputed_checks],
                 "avg_latency_ms": statistics.mean(latencies),
                 "p99_latency_ms": percentile(latencies, 99),
                 "cross_modal_avg_latency_ms": statistics.mean(cross_latencies),
                 "cross_modal_p99_latency_ms": percentile(cross_latencies, 99),
+                "precomputed_vector_avg_latency_ms": statistics.mean(precomputed_latencies),
+                "precomputed_vector_p99_latency_ms": percentile(precomputed_latencies, 99),
             }
         finally:
             memory.close()

@@ -5,7 +5,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Protocol, Sequence
 
 import numpy as np
 
@@ -68,13 +68,93 @@ class CrossModalQueryResult:
         }
 
 
+class CrossModalEncoder(Protocol):
+    name: str
+    vector_dim: int
+
+    def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
+        ...
+
+    def encode_query(
+        self,
+        query: str,
+        *,
+        target_modality: str | None,
+        descriptor: str,
+    ) -> np.ndarray:
+        ...
+
+
+class DescriptorCrossModalEncoder:
+    """Descriptor encoder used by default and as a compatibility baseline."""
+
+    name = "descriptor"
+
+    def __init__(
+        self,
+        encoder: TextEncoder | None = None,
+        *,
+        vector_dim: int = 128,
+    ) -> None:
+        self.encoder = encoder or HashingTextEncoder(vector_dim=vector_dim)
+        self.vector_dim = int(self.encoder.vector_dim)
+
+    def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
+        explicit = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
+        if explicit is not None:
+            return explicit
+        return _normalize_vector(self.encoder.encode_vector(descriptor), vector_dim=self.vector_dim)
+
+    def encode_query(
+        self,
+        query: str,
+        *,
+        target_modality: str | None,
+        descriptor: str,
+    ) -> np.ndarray:
+        return _normalize_vector(self.encoder.encode_vector(descriptor), vector_dim=self.vector_dim)
+
+
+class PrecomputedCrossModalEncoder:
+    """Strict encoder for externally computed CLIP/audio/video/3D vectors."""
+
+    name = "precomputed"
+
+    def __init__(self, *, vector_dim: int, name: str | None = None) -> None:
+        if vector_dim <= 0:
+            raise ValueError("vector_dim must be positive.")
+        self.vector_dim = int(vector_dim)
+        if name:
+            self.name = str(name)
+
+    def encode_payload(self, payload: MemoryPayload, descriptor: str) -> np.ndarray:
+        vector = cross_modal_vector_from_metadata(payload.metadata, vector_dim=self.vector_dim)
+        if vector is None:
+            raise ValueError(
+                "PrecomputedCrossModalEncoder requires payload metadata with "
+                "`cross_modal_vector`, `cross_modal_embedding`, `embedding`, or `vector`."
+            )
+        return vector
+
+    def encode_query(
+        self,
+        query: str,
+        *,
+        target_modality: str | None,
+        descriptor: str,
+    ) -> np.ndarray:
+        raise ValueError(
+            "PrecomputedCrossModalEncoder requires `query_vector=` in "
+            "CrossModalMemoryLayer.query()."
+        )
+
+
 class CrossModalMemoryLayer:
-    """Typed payload memory layer with a shared deterministic embedding space.
+    """Typed payload memory layer with a pluggable shared embedding space.
 
     The default encoder is intentionally local and deterministic. Production
-    deployments can pass a CLIP/audio/video/3D encoder that implements the same
-    TextEncoder interface while keeping the storage and provenance contract
-    stable.
+    deployments can pass a CLIP/audio/video/3D encoder that implements
+    CrossModalEncoder while keeping the storage and provenance contract stable.
     """
 
     def __init__(
@@ -82,13 +162,20 @@ class CrossModalMemoryLayer:
         memory: Any,
         *,
         encoder: TextEncoder | None = None,
+        cross_modal_encoder: CrossModalEncoder | None = None,
         vector_dim: int = 128,
         base_weight: float = 0.20,
         cross_modal_weight: float = 0.75,
         modality_weight: float = 0.05,
     ) -> None:
+        if cross_modal_encoder is not None and encoder is not None:
+            raise ValueError("Use either encoder or cross_modal_encoder, not both.")
         self.memory = memory
-        self.encoder = encoder or HashingTextEncoder(vector_dim=vector_dim)
+        self.cross_modal_encoder = cross_modal_encoder or DescriptorCrossModalEncoder(
+            encoder,
+            vector_dim=vector_dim,
+        )
+        self.vector_dim = int(self.cross_modal_encoder.vector_dim)
         self.base_weight = float(base_weight)
         self.cross_modal_weight = float(cross_modal_weight)
         self.modality_weight = float(modality_weight)
@@ -109,13 +196,17 @@ class CrossModalMemoryLayer:
             tags=payload.tags,
         )
         descriptor = cross_modal_descriptor(merged_payload)
+        vector = self.cross_modal_encoder.encode_payload(merged_payload, descriptor)
+        vector = _normalize_vector(vector, vector_dim=self.vector_dim)
         record_metadata = {
+            **merged_payload.metadata,
             "modality": merged_payload.kind,
             "source": "wavemind_cross_modal",
             "cross_modal_version": _CROSS_MODAL_VERSION,
+            "cross_modal_encoder": self.cross_modal_encoder.name,
             "cross_modal_descriptor": descriptor,
-            "cross_modal_embedding_dim": self.encoder.vector_dim,
-            **merged_payload.metadata,
+            "cross_modal_embedding_dim": self.vector_dim,
+            "cross_modal_vector": vector.astype(float).tolist(),
         }
         tags = tuple(dict.fromkeys((*merged_payload.tags, merged_payload.kind, "multimodal")))
         return int(
@@ -138,6 +229,7 @@ class CrossModalMemoryLayer:
         target_modality: str | None = None,
         candidate_k: int | None = None,
         min_score: float | None = None,
+        query_vector: Sequence[float] | np.ndarray | None = None,
     ) -> list[CrossModalQueryResult]:
         if top_k <= 0:
             return []
@@ -148,7 +240,15 @@ class CrossModalMemoryLayer:
             return []
 
         query_descriptor = cross_modal_query_descriptor(query, target_modality=modality)
-        query_vector = self.encoder.encode_vector(query_descriptor)
+        if query_vector is None:
+            encoded_query_vector = self.cross_modal_encoder.encode_query(
+                query,
+                target_modality=modality,
+                descriptor=query_descriptor,
+            )
+        else:
+            encoded_query_vector = np.asarray(query_vector, dtype=np.float32)
+        encoded_query_vector = _normalize_vector(encoded_query_vector, vector_dim=self.vector_dim)
         base_scores = self._base_scores(
             query,
             namespace=namespace,
@@ -163,8 +263,23 @@ class CrossModalMemoryLayer:
             descriptor = str(
                 record.metadata.get("cross_modal_descriptor") or record.text
             )
-            vector = self.encoder.encode_vector(descriptor)
-            cross_score = float(np.dot(query_vector, vector))
+            vector = cross_modal_vector_from_metadata(
+                record.metadata,
+                vector_dim=self.vector_dim,
+            )
+            if vector is None:
+                compatibility_payload = MemoryPayload(
+                    kind=str(record.metadata.get("modality") or ""),
+                    text=record.text,
+                    metadata=record.metadata,
+                    tags=record.tags,
+                )
+                vector = self.cross_modal_encoder.encode_payload(
+                    compatibility_payload,
+                    descriptor,
+                )
+                vector = _normalize_vector(vector, vector_dim=self.vector_dim)
+            cross_score = float(np.dot(encoded_query_vector, vector))
             record_modality = normalize_modality(record.metadata.get("modality", ""))
             modality_score = 1.0 if modality and record_modality == modality else 0.0
             base_score = _bounded_score(base_scores.get(int(record.id), 0.0))
@@ -451,6 +566,28 @@ def normalize_modality(value: Any) -> str:
     return aliases.get(text, text)
 
 
+def cross_modal_vector_from_metadata(
+    metadata: dict[str, Any],
+    *,
+    vector_dim: int | None = None,
+) -> np.ndarray | None:
+    for key in (
+        "cross_modal_vector",
+        "cross_modal_embedding",
+        "embedding",
+        "vector",
+    ):
+        if key not in metadata:
+            continue
+        value = metadata[key]
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        return _normalize_vector(value, vector_dim=vector_dim)
+    return None
+
+
 def _payload(
     kind: str,
     fields: dict[str, str],
@@ -483,6 +620,26 @@ def _bounded_score(value: float) -> float:
     if value <= -1.0 or value >= 1.0:
         return math.tanh(value)
     return float(value)
+
+
+def _normalize_vector(
+    value: Sequence[float] | np.ndarray,
+    *,
+    vector_dim: int | None = None,
+) -> np.ndarray:
+    vector = np.asarray(value, dtype=np.float32)
+    if vector.ndim != 1:
+        raise ValueError("Cross-modal vectors must be one-dimensional.")
+    if vector_dim is not None and int(vector.shape[0]) != int(vector_dim):
+        raise ValueError(
+            f"Cross-modal vector dimension {vector.shape[0]} does not match {vector_dim}."
+        )
+    if not np.all(np.isfinite(vector)):
+        raise ValueError("Cross-modal vectors must contain only finite values.")
+    norm = float(np.linalg.norm(vector))
+    if norm <= 1e-12:
+        return vector.astype(np.float32)
+    return (vector / norm).astype(np.float32)
 
 
 def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict[str, Any]:

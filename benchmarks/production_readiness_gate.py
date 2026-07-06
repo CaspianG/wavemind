@@ -852,7 +852,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 if payloads.get("precision_at_1") == 1.0
                 and payloads.get("cross_modal_precision_at_1") == 1.0
                 and payloads.get("cross_modal_provenance_rate") == 1.0
+                and payloads.get("cross_modal_vectors_persisted_rate") == 1.0
+                and payloads.get("precomputed_vector_precision_at_1") == 1.0
+                and payloads.get("precomputed_vector_persisted_rate") == 1.0
                 and int(payloads.get("cross_modal_embedding_dim", 0)) >= 64
+                and int(payloads.get("precomputed_vector_embedding_dim", 0)) >= 4
                 and {
                     "image",
                     "audio",
@@ -868,15 +872,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "Images, audio, video, 3D assets, tables, temporal events, "
                 "and graph facts must be storable, retrievable through the same "
                 "memory API, queryable through a shared cross-modal embedding "
-                "space, and returned with provenance."
+                "space, returned with provenance, and compatible with externally "
+                "computed multimodal vectors."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
                 f"precision@1 {payloads.get('precision_at_1')}, "
                 f"cross-modal precision@1 {payloads.get('cross_modal_precision_at_1')}, "
+                f"vectors persisted {payloads.get('cross_modal_vectors_persisted_rate')}, "
+                f"precomputed precision@1 {payloads.get('precomputed_vector_precision_at_1')}, "
                 f"provenance {payloads.get('cross_modal_provenance_rate')}"
             ),
-            next_step="Add real CLIP/audio/video/3D embedding backends and larger multimodal retrieval tests.",
+            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal retrieval tests.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

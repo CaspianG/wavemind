@@ -209,6 +209,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind structured payloads"]["cross_modal_queries"] == 7
     assert results["WaveMind structured payloads"]["cross_modal_precision_at_1"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_embedding_dim"] == 64
+    assert results["WaveMind structured payloads"]["cross_modal_vectors_persisted_rate"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_provenance_rate"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_target_modalities"] == [
         "image",
@@ -218,6 +219,16 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
         "video",
         "3d",
         "graph",
+    ]
+    assert results["WaveMind structured payloads"]["precomputed_vector_queries"] == 4
+    assert results["WaveMind structured payloads"]["precomputed_vector_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["precomputed_vector_embedding_dim"] == 4
+    assert results["WaveMind structured payloads"]["precomputed_vector_persisted_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["precomputed_vector_target_modalities"] == [
+        "image",
+        "audio",
+        "video",
+        "3d",
     ]
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128

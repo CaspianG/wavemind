@@ -1,6 +1,11 @@
+import pytest
+
+import numpy as np
+
 from wavemind import (
     CrossModalMemoryLayer,
     HashingTextEncoder,
+    PrecomputedCrossModalEncoder,
     WaveMind,
     asset3d_payload,
     audio_payload,
@@ -11,6 +16,12 @@ from wavemind import (
     table_payload,
     video_payload,
 )
+
+
+def _one_hot(index: int, dim: int = 4) -> list[float]:
+    vector = [0.0] * dim
+    vector[index] = 1.0
+    return vector
 
 
 def test_structured_and_multimodal_payloads_are_queryable(tmp_path):
@@ -238,3 +249,131 @@ def test_cross_modal_memory_layer_uses_persisted_payload_metadata(tmp_path):
         assert results[0].provenance["source"] == "wavemind_cross_modal"
     finally:
         second.close()
+
+
+def test_cross_modal_memory_layer_uses_precomputed_vectors_without_descriptor_fallback(tmp_path):
+    db_path = tmp_path / "precomputed-cross-modal.sqlite3"
+    first = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = CrossModalMemoryLayer(
+            first,
+            cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=4, name="test-clip"),
+        )
+        image_id = layer.remember(
+            image_payload(
+                "s3://bucket/revenue.png",
+                caption="generic image caption that should not drive ranking",
+                metadata={"cross_modal_vector": _one_hot(0)},
+                tags=["image"],
+            ),
+            namespace="workspace",
+        )
+        audio_id = layer.remember(
+            audio_payload(
+                "s3://bucket/revenue.wav",
+                transcript="generic audio transcript that should not drive ranking",
+                metadata={"cross_modal_vector": _one_hot(1)},
+                tags=["audio"],
+            ),
+            namespace="workspace",
+        )
+    finally:
+        first.close()
+
+    second = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = CrossModalMemoryLayer(
+            second,
+            cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=4, name="test-clip"),
+        )
+        image = layer.query(
+            "external clip vector query",
+            namespace="workspace",
+            target_modality="image",
+            top_k=1,
+            query_vector=np.asarray(_one_hot(0), dtype=np.float32),
+        )
+        audio = layer.query(
+            "external audio vector query",
+            namespace="workspace",
+            target_modality="audio",
+            top_k=1,
+            query_vector=_one_hot(1),
+        )
+
+        assert image[0].id == image_id
+        assert image[0].metadata["cross_modal_encoder"] == "test-clip"
+        assert image[0].metadata["cross_modal_embedding_dim"] == 4
+        assert image[0].metadata["cross_modal_vector"] == _one_hot(0)
+        assert audio[0].id == audio_id
+    finally:
+        second.close()
+
+
+def test_precomputed_cross_modal_encoder_requires_vectors(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "precomputed-required.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = CrossModalMemoryLayer(
+            memory,
+            cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=4),
+        )
+        with pytest.raises(ValueError, match="requires payload metadata"):
+            layer.remember(
+                image_payload(
+                    "s3://bucket/missing-vector.png",
+                    caption="no external embedding",
+                ),
+                namespace="workspace",
+            )
+    finally:
+        memory.close()
+
+
+def test_cross_modal_query_vector_dimension_is_validated(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "dimension-check.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = CrossModalMemoryLayer(
+            memory,
+            cross_modal_encoder=PrecomputedCrossModalEncoder(vector_dim=4),
+        )
+        layer.remember(
+            image_payload(
+                "s3://bucket/revenue.png",
+                caption="external image vector",
+                metadata={"cross_modal_vector": _one_hot(0)},
+            ),
+            namespace="workspace",
+        )
+        with pytest.raises(ValueError, match="does not match 4"):
+            layer.query(
+                "wrong vector dim",
+                namespace="workspace",
+                target_modality="image",
+                query_vector=[1.0, 0.0, 0.0],
+            )
+    finally:
+        memory.close()

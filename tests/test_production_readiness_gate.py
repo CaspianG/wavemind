@@ -72,9 +72,12 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "externally computed multimodal vectors" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "video" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "graph" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "cross-modal precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "vectors persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "precomputed precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert criteria["ten_million_load_profile"]["status"] == "pass"
     assert criteria["architecture_advisor_preflight"]["status"] == "pass"

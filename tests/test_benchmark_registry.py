@@ -90,6 +90,10 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert structured["cross_modal_precision_at_1"] == 1.0
     assert structured["cross_modal_provenance_rate"] == 1.0
     assert structured["cross_modal_embedding_dim"] >= 64
+    assert structured["cross_modal_vectors_persisted_rate"] == 1.0
+    assert structured["precomputed_vector_precision_at_1"] == 1.0
+    assert structured["precomputed_vector_persisted_rate"] == 1.0
+    assert structured["precomputed_vector_embedding_dim"] == 4
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"
