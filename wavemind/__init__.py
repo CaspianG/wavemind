@@ -80,6 +80,7 @@ from .object_store import (
     parse_object_store_uri,
 )
 from .replication import (
+    NamespaceDeltaSyncReport,
     ReadQuorumError,
     ReplicatedDeltaImportReport,
     ReplicatedRepairReport,
@@ -90,6 +91,7 @@ from .replication import (
     ReplicatedWriteResult,
     ReplicationError,
     WriteQuorumError,
+    sync_namespace_delta,
 )
 from .scale import (
     ProductionCostResult,
@@ -160,6 +162,7 @@ __all__ = [
     "MemoryRecord",
     "MemoryPayload",
     "NamespaceMove",
+    "NamespaceDeltaSyncReport",
     "NamespaceShardRouter",
     "ObjectStoreArchive",
     "ObjectStoreLocation",
@@ -232,5 +235,6 @@ __all__ = [
     "serverless_sample_bundle",
     "stable_memory_key",
     "stable_record_key",
+    "sync_namespace_delta",
     "table_payload",
 ]

@@ -55,6 +55,7 @@ from wavemind import (
     query_with_vector_cache,
     remember_payload,
     serverless_sample_bundle,
+    sync_namespace_delta,
     table_payload,
     video_payload,
     WaveMindClusterSpec,
@@ -1993,16 +1994,35 @@ def run_active_active_delta_profile() -> dict[str, object]:
             region_a.remember("region a billing preference", namespace=namespace)
             region_b.remember("region b support preference", namespace=namespace)
             sync_started = time.perf_counter()
-            import_b = region_b.import_namespace_delta(
-                region_a.export_namespace_delta(namespace)
-            )
-            import_a = region_a.import_namespace_delta(
-                region_b.export_namespace_delta(namespace)
-            )
+            sync_b = sync_namespace_delta(region_a, region_b, namespace)
+            sync_a = sync_namespace_delta(region_b, region_a, namespace)
             sync_ms = (time.perf_counter() - sync_started) * 1000.0
             converged = (
                 region_a.query("support preference", namespace=namespace, top_k=1)
                 and region_b.query("billing preference", namespace=namespace, top_k=1)
+            )
+
+            region_a.remember("region a latency preference", namespace=namespace)
+            incremental = sync_namespace_delta(
+                region_a,
+                region_b,
+                namespace,
+                since=sync_b.to_cursor,
+            )
+            incremental_converged = (
+                region_b.query("latency preference", namespace=namespace, top_k=1)[0].text
+                == "region a latency preference"
+            )
+            region_a.query("latency preference", namespace=namespace, top_k=1)
+            field_only_delta = region_a.export_namespace_delta(
+                namespace,
+                since=incremental.to_cursor,
+            )
+            field_only = sync_namespace_delta(
+                region_a,
+                region_b,
+                namespace,
+                since=incremental.to_cursor,
             )
 
             stale_delta = region_b.export_namespace_delta(namespace)
@@ -2022,9 +2042,18 @@ def run_active_active_delta_profile() -> dict[str, object]:
                 "engine": "WaveMind active-active delta sync",
                 "regions": 2,
                 "replication_factor_per_region": 3,
-                "records_imported": import_a.imported_records + import_b.imported_records,
+                "records_imported": sync_a.imported_records + sync_b.imported_records,
                 "converged_after_bidirectional_sync": bool(converged),
                 "sync_ms": sync_ms,
+                "incremental_from_cursor": sync_b.to_cursor,
+                "incremental_to_cursor": incremental.to_cursor,
+                "incremental_records_exported": incremental.exported_records,
+                "incremental_records_imported": incremental.imported_records,
+                "incremental_skipped_records": incremental.skipped_records,
+                "incremental_converged": incremental_converged,
+                "field_only_records_exported": len(field_only_delta["records"]),
+                "field_only_keys_exported": field_only.exported_field_keys,
+                "field_only_imported_records": field_only.imported_records,
                 "suppressed_stale_import_after_delete": suppressed_stale_import,
                 "tombstone_deleted_records": tombstone_report.deleted_records,
                 "tombstone_converged": tombstone_converged,

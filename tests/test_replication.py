@@ -8,6 +8,7 @@ from wavemind import (
     ReplicatedWaveMind,
     ReplicationError,
     WriteQuorumError,
+    sync_namespace_delta,
 )
 
 
@@ -260,6 +261,94 @@ def test_replicated_wavemind_namespace_delta_converges_two_regions(tmp_path):
         assert region_b.query("billing preference", namespace=namespace, top_k=1)[0].text == (
             "region a remembers billing preference"
         )
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_replicated_wavemind_exports_incremental_namespace_delta(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:incremental-delta"
+        region_a.remember("first active active memory", namespace=namespace)
+        first_sync = sync_namespace_delta(region_a, region_b, namespace)
+
+        region_a.remember("second active active memory", namespace=namespace)
+        incremental = region_a.export_namespace_delta(
+            namespace,
+            since=first_sync.to_cursor,
+        )
+        report = region_b.import_namespace_delta(incremental)
+
+        assert first_sync.exported_records == 1
+        assert first_sync.imported_records == 3
+        assert [record["text"] for record in incremental["records"]] == [
+            "second active active memory"
+        ]
+        assert report.imported_records == 3
+        assert region_b.query("first memory", namespace=namespace, top_k=1)[0].text == (
+            "first active active memory"
+        )
+        assert region_b.query("second memory", namespace=namespace, top_k=1)[0].text == (
+            "second active active memory"
+        )
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_replicated_wavemind_incremental_delta_carries_field_only_updates(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:incremental-field"
+        region_a.remember("incremental hot field memory", namespace=namespace)
+        first_sync = sync_namespace_delta(region_a, region_b, namespace)
+        replica_key = region_a.export_namespace_delta(namespace)["records"][0]["replica_key"]
+
+        for _ in range(3):
+            region_a.query("hot field memory", namespace=namespace, top_k=1)
+        incremental = region_a.export_namespace_delta(
+            namespace,
+            since=first_sync.to_cursor,
+        )
+        report = region_b.import_namespace_delta(incremental)
+
+        assert incremental["records"] == []
+        assert incremental["field_state"]["positive"][replica_key][region_a.field_actor] > 1.0
+        assert report.imported_records == 0
+        assert region_b.query("hot field memory", namespace=namespace, top_k=1)[0].metadata[
+            "_field_crdt_activation"
+        ] > 1.0
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_sync_namespace_delta_report_exposes_cursor_and_counts(tmp_path):
+    region_a = _region(tmp_path, "region-a", replication_factor=3)
+    region_b = _region(tmp_path, "region-b", replication_factor=3)
+    try:
+        namespace = "tenant:sync-report"
+        region_a.remember("sync report memory", namespace=namespace)
+
+        report = sync_namespace_delta(region_a, region_b, namespace)
+        second = sync_namespace_delta(
+            region_a,
+            region_b,
+            namespace,
+            since=report.to_cursor,
+        )
+
+        assert report.ok is True
+        assert report.from_cursor is None
+        assert report.to_cursor > 0.0
+        assert report.exported_records == 1
+        assert report.imported_records == 3
+        assert second.exported_records == 0
+        assert second.imported_records == 0
+        assert second.skipped_records == 0
     finally:
         region_a.close()
         region_b.close()

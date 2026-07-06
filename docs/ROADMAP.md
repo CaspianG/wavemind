@@ -117,8 +117,9 @@ policy matters more than raw vector-database scale:
   transcripts/scenes, 3D asset descriptors, tables, events, and knowledge graph
   triples while preserving modality metadata in the same memory API.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
-  namespace placement, quorum-replicated runtime behavior, active-active
-  namespace delta sync, service-mode distributed namespace sharding with
+  namespace placement, quorum-replicated runtime behavior, cursor-based
+  active-active namespace delta sync, field-only hotness delta sync,
+  service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, real HTTP shard transport,
   concurrent namespace traffic, and tombstone-aware delete
   repair, anti-entropy background repair through `DistributedRepairWorker`

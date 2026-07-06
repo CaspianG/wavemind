@@ -69,6 +69,43 @@ class ReplicatedDeltaImportReport:
 
 
 @dataclass(frozen=True)
+class NamespaceDeltaSyncReport:
+    namespace: str
+    from_cursor: float | None
+    to_cursor: float
+    exported_records: int
+    exported_tombstones: int
+    exported_field_keys: int
+    imported_records: int
+    skipped_records: int
+    deleted_records: int
+    imported_tombstones: int
+    has_more: bool
+    failed_nodes: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def ok(self) -> bool:
+        return not self.failed_nodes
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "namespace": self.namespace,
+            "from_cursor": self.from_cursor,
+            "to_cursor": self.to_cursor,
+            "exported_records": self.exported_records,
+            "exported_tombstones": self.exported_tombstones,
+            "exported_field_keys": self.exported_field_keys,
+            "imported_records": self.imported_records,
+            "skipped_records": self.skipped_records,
+            "deleted_records": self.deleted_records,
+            "imported_tombstones": self.imported_tombstones,
+            "has_more": self.has_more,
+            "failed_nodes": dict(self.failed_nodes),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class ReplicatedSnapshotReport:
     snapshot_path: Path
     nodes: tuple[str, ...]
@@ -199,6 +236,7 @@ class ReplicatedWaveMind:
         actor_seed = str(self.root_path.resolve())
         self.field_actor = hashlib.sha256(actor_seed.encode("utf-8")).hexdigest()[:16]
         self._field_states: dict[str, FieldStateCRDT] = {}
+        self._field_state_updated_at: dict[str, dict[str, float]] = {}
         self._operation_lock = RLock()
 
     @_synchronized_operation
@@ -244,6 +282,7 @@ class ReplicatedWaveMind:
                 amount=max(0.1, float(prepared_kwargs.get("priority", kwargs.get("priority", 1.0)))),
                 actor=self.field_actor,
             )
+            self._mark_field_state_changed(namespace, replica_key)
         return ReplicatedWriteResult(
             namespace=namespace,
             primary_node=placement.primary,
@@ -320,6 +359,7 @@ class ReplicatedWaveMind:
             replica_key = self._result_replica_key(result)
             if replica_key:
                 field_state.boost(replica_key, amount=0.05, actor=self.field_actor)
+                self._mark_field_state_changed(namespace, replica_key)
         return selected
 
     @_synchronized_operation
@@ -378,6 +418,7 @@ class ReplicatedWaveMind:
         field_state = self._field_state(namespace)
         for key in keys:
             field_state.tombstone(key, actor=self.field_actor, deleted_at=deleted_at)
+            self._mark_field_state_changed(namespace, key, changed_at=deleted_at)
         return ReplicatedWriteResult(
             namespace=namespace,
             primary_node=placement.primary,
@@ -464,20 +505,94 @@ class ReplicatedWaveMind:
         )
 
     @_synchronized_operation
-    def export_namespace_delta(self, namespace: str = "default") -> dict[str, Any]:
-        """Export active records and tombstones for active-active sync."""
+    def export_namespace_delta(
+        self,
+        namespace: str = "default",
+        *,
+        since: float | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """Export active records and tombstones for active-active sync.
+
+        ``since`` is an opaque timestamp cursor returned by a previous delta.
+        When set, only records, tombstones, and field-state keys changed after
+        that cursor are exported. This keeps multi-region sync bounded for
+        large namespaces while retaining the old full-delta behavior when no
+        cursor is supplied.
+        """
         placement = self.placement(namespace)
         tombstones = self._tombstone_state(namespace, placement)
         _source_node, records = self._source_records(namespace, placement, tombstones)
-        events = self._tombstone_events(namespace, placement)
+        records = sorted(
+            [
+                record
+                for record in records
+                if since is None or self._record_updated_at(record) > float(since)
+            ],
+            key=lambda record: (
+                self._record_updated_at(record),
+                self._record_replica_key(record),
+            ),
+        )
+        events = sorted(
+            [
+                event
+                for event in self._tombstone_events(namespace, placement)
+                if since is None or float(event.get("deleted_at", 0.0)) > float(since)
+            ],
+            key=lambda event: (
+                float(event.get("deleted_at", 0.0)),
+                str(event.get("operation_id", "")),
+            ),
+        )
+        has_more = False
+        if limit is not None:
+            limit = max(0, int(limit))
+            combined_size = len(records) + len(events)
+            has_more = combined_size > limit
+            if has_more:
+                remaining = limit
+                records = records[:remaining]
+                remaining -= len(records)
+                events = events[: max(0, remaining)]
+
+        changed_field_keys = {
+            key
+            for key, changed_at in self._field_state_changed_keys(namespace).items()
+            if since is None or changed_at > float(since)
+        }
+        changed_field_keys.update(self._record_replica_key(record) for record in records)
+        for event in events:
+            raw_keys = event.get("replica_keys", [])
+            if isinstance(raw_keys, list):
+                changed_field_keys.update(str(key) for key in raw_keys)
+
+        cursor_candidates = [float(since or 0.0)]
+        cursor_candidates.extend(self._record_updated_at(record) for record in records)
+        cursor_candidates.extend(float(event.get("deleted_at", 0.0)) for event in events)
+        cursor_candidates.extend(
+            changed_at
+            for key, changed_at in self._field_state_changed_keys(namespace).items()
+            if key in changed_field_keys
+        )
+        if not has_more:
+            cursor_candidates.append(time.time())
+        field_state = (
+            self.export_field_state_delta(namespace)
+            if since is None and not changed_field_keys
+            else self._field_state(namespace).delta(changed_field_keys)
+        )
         return {
             "format": "wavemind.namespace_delta.v1",
             "namespace": namespace,
             "created_at": time.time(),
+            "from_cursor": since,
+            "cursor": max(cursor_candidates),
+            "has_more": has_more,
             "replication_factor": self.replication_factor,
             "records": [self._record_to_delta(record) for record in records],
             "tombstones": events,
-            "field_state": self.export_field_state_delta(namespace).to_dict(),
+            "field_state": field_state.to_dict(),
         }
 
     @_synchronized_operation
@@ -494,7 +609,16 @@ class ReplicatedWaveMind:
         target_namespace = namespace or str(delta.get("namespace") or "default")
         payload = dict(delta)
         payload["namespace"] = target_namespace
-        return self._field_state(target_namespace).merge(payload)
+        report = self._field_state(target_namespace).merge(payload)
+        if report.changed:
+            keys = set()
+            for bucket in ("positive", "negative", "tombstones"):
+                raw_bucket = payload.get(bucket)
+                if isinstance(raw_bucket, dict):
+                    keys.update(str(key) for key in raw_bucket)
+            for key in keys:
+                self._mark_field_state_changed(target_namespace, key)
+        return report
 
     @_synchronized_operation
     def import_namespace_delta(
@@ -974,6 +1098,24 @@ class ReplicatedWaveMind:
             self._field_states[namespace] = state
         return state
 
+    def _mark_field_state_changed(
+        self,
+        namespace: str,
+        key: str,
+        *,
+        changed_at: float | None = None,
+    ) -> None:
+        key = str(key)
+        if not key:
+            return
+        namespace = str(namespace or "default")
+        changed_at = time.time() if changed_at is None else float(changed_at)
+        namespace_updates = self._field_state_updated_at.setdefault(namespace, {})
+        namespace_updates[key] = max(float(namespace_updates.get(key, 0.0)), changed_at)
+
+    def _field_state_changed_keys(self, namespace: str) -> dict[str, float]:
+        return dict(self._field_state_updated_at.get(str(namespace or "default"), {}))
+
     def _available_replicas(self, placement: NamespacePlacement) -> list[str]:
         return [
             node_id
@@ -1395,3 +1537,38 @@ class ReplicatedWaveMind:
             shutil.rmtree(path)
             deleted.append(path)
         return deleted
+
+
+def sync_namespace_delta(
+    source: ReplicatedWaveMind,
+    target: ReplicatedWaveMind,
+    namespace: str = "default",
+    *,
+    since: float | None = None,
+    limit: int | None = None,
+) -> NamespaceDeltaSyncReport:
+    """Copy one bounded active-active namespace delta from source to target."""
+
+    delta = source.export_namespace_delta(namespace, since=since, limit=limit)
+    import_report = target.import_namespace_delta(delta, namespace=namespace)
+    field_state = delta.get("field_state")
+    field_keys: set[str] = set()
+    if isinstance(field_state, dict):
+        for bucket in ("positive", "negative", "tombstones"):
+            raw_bucket = field_state.get(bucket)
+            if isinstance(raw_bucket, dict):
+                field_keys.update(str(key) for key in raw_bucket)
+    return NamespaceDeltaSyncReport(
+        namespace=namespace,
+        from_cursor=since,
+        to_cursor=float(delta.get("cursor", time.time())),
+        exported_records=len(delta.get("records", [])),
+        exported_tombstones=len(delta.get("tombstones", [])),
+        exported_field_keys=len(field_keys),
+        imported_records=import_report.imported_records,
+        skipped_records=import_report.skipped_records,
+        deleted_records=import_report.deleted_records,
+        imported_tombstones=import_report.imported_tombstones,
+        has_more=bool(delta.get("has_more", False)),
+        failed_nodes=dict(import_report.failed_nodes),
+    )

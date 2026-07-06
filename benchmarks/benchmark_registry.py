@@ -816,7 +816,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, cluster autoscale planning, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, real HTTP shard transport, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, query-vector cache, Redis-compatible shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache, API cache mutation safety, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, cluster autoscale planning, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, real HTTP shard transport, service-mode tombstone repair, anti-entropy repair worker, cursor-based active-active delta sync, field-only hotness delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, query-vector cache, Redis-compatible shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache, API cache mutation safety, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -1159,7 +1159,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
+            "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, cursor-based active-active sync, field-only hotness sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
             "next_step": "Move from deterministic 100M capacity planning to service-backed 100M Qdrant/pgvector/FAISS load tests on sized hardware.",
         },
         {
@@ -1168,7 +1168,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_readiness_results.json",
-            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, query-vector cache, shared rate limiting, API cache mutation safety, Memory OS adaptive worker, distributed repair, active-active CRDT convergence, backups, structured payloads, and 10M-load presence. External competitor-service evidence is tracked separately.",
+            "dataset": "Gate generated from checked-in benchmark artifacts: production load SLO/cost, cluster placement, Kubernetes/operator output, serverless state externalization, cache/prewarm, query-vector cache, shared rate limiting, API cache mutation safety, Memory OS adaptive worker, distributed repair, cursor-based active-active CRDT convergence, backups, structured payloads, and 10M-load presence. External competitor-service evidence is tracked separately.",
             "competitors": [],
             "metrics": [
                 "readiness_score",

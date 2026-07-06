@@ -736,18 +736,25 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             status=(
                 "pass"
                 if active_active.get("converged_after_bidirectional_sync")
+                and active_active.get("incremental_records_exported") == 1
+                and active_active.get("incremental_records_imported") >= 1
+                and active_active.get("incremental_converged")
+                and active_active.get("field_only_records_exported") == 0
+                and active_active.get("field_only_keys_exported", 0) >= 1
                 and active_active.get("tombstone_converged")
                 and field_crdt.get("commutative_convergence")
                 and field_crdt.get("idempotent_remerge")
                 and field_crdt.get("tombstone_wins")
                 else "fail"
             ),
-            requirement="Multi-region memory deltas and field state must converge without duplicate amplification.",
+            requirement="Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync.",
             evidence=(
                 f"delta sync {active_active.get('converged_after_bidirectional_sync')}, "
+                f"incremental records {active_active.get('incremental_records_exported')}, "
+                f"field-only keys {active_active.get('field_only_keys_exported')}, "
                 f"CRDT idempotent {field_crdt.get('idempotent_remerge')}"
             ),
-            next_step="Run active-active sync against independent persistent stores.",
+            next_step="Run cursor-based active-active sync against independent remote regions under sustained writes.",
         ),
         _criterion(
             criterion_id="backup_restore_dr",

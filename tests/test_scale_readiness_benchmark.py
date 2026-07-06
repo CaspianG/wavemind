@@ -151,6 +151,13 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind replicated runtime"]["concurrent_write_ok"] is True
     assert results["WaveMind replicated runtime"]["concurrent_query_hit_rate"] == 1.0
     assert results["WaveMind active-active delta sync"]["converged_after_bidirectional_sync"] is True
+    assert results["WaveMind active-active delta sync"]["incremental_records_exported"] == 1
+    assert results["WaveMind active-active delta sync"]["incremental_records_imported"] == 3
+    assert results["WaveMind active-active delta sync"]["incremental_skipped_records"] == 0
+    assert results["WaveMind active-active delta sync"]["incremental_converged"] is True
+    assert results["WaveMind active-active delta sync"]["field_only_records_exported"] == 0
+    assert results["WaveMind active-active delta sync"]["field_only_keys_exported"] >= 1
+    assert results["WaveMind active-active delta sync"]["field_only_imported_records"] == 0
     assert results["WaveMind active-active delta sync"]["suppressed_stale_import_after_delete"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_converged"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_deleted_records"] == 3

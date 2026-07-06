@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T12:57:28Z",
+  "generated_at": "2026-07-06T13:25:22Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -89,7 +89,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.006399990525096655 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -169,7 +169,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 200.44 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 216.35 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -177,16 +177,16 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.7460000235587358 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.8601000192575157 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
       "id": "active_active_field_crdt",
       "title": "Active-active sync and field-state CRDT converge",
       "status": "pass",
-      "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification.",
-      "evidence": "delta sync True, CRDT idempotent True",
-      "next_step": "Run active-active sync against independent persistent stores."
+      "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync.",
+      "evidence": "delta sync True, incremental records 1, field-only keys 1, CRDT idempotent True",
+      "next_step": "Run cursor-based active-active sync against independent remote regions under sustained writes."
     },
     {
       "id": "backup_restore_dr",
