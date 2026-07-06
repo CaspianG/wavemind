@@ -42,6 +42,9 @@ leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
 The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 `benchmarks/benchmark_artifact_audit.json` records the latest freshness and
 synchronization check for the generated benchmark artifacts.
+The weekly leaderboard workflow refreshes these artifacts, and `full-check` plus
+the release workflow block stale or unsynchronized public benchmark artifacts
+with `benchmarks/validate_benchmark_artifacts.py --max-age-days 8`.
 
 ## What This Proves
 

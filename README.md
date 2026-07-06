@@ -1313,6 +1313,9 @@ and `docs/assets/benchmark-summary.svg`, validates freshness with
 `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
 artifacts back to `main`.
+`full-check` and the release workflow also run the same freshness gate with
+`--max-age-days 8`, so stale or manually edited public benchmark artifacts block
+normal CI and package releases.
 External cluster benchmark refresh: `.github/workflows/external-http-cluster-load.yml`
 runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs and
 can commit `benchmarks/http_cluster_load_results.json` plus refreshed leaderboard

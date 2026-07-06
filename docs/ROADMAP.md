@@ -282,6 +282,8 @@ Priorities:
 - weekly benchmark refresh that regenerates the matrix/report/leaderboard and
   SVG summary, validates freshness, and writes a machine-readable artifact audit
   before committing benchmark changes;
+- `full-check` and release workflows block stale or unsynchronized public
+  benchmark artifacts with the same 8-day freshness gate;
 - Docker images for the API server and sidecar mode;
 - release automation, generated release-note categories, labels spec, and
   release checklist;

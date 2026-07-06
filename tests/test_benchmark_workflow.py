@@ -48,3 +48,27 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
     assert "actions/upload-artifact@v7" in workflow
+
+
+def test_full_check_blocks_stale_public_benchmark_artifacts():
+    workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
+
+    assert "benchmark-artifact-gate:" in workflow
+    assert "Block stale or unsynchronized public benchmark artifacts" in workflow
+    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
+    assert "--max-age-days 8" in workflow
+    assert "benchmarks/benchmark_artifact_audit_ci.json" in workflow
+    assert "benchmarks/production_readiness_gate.py" in workflow
+
+
+def test_release_blocks_stale_public_benchmark_artifacts():
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert "Validate benchmark freshness gate" in workflow
+    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
+    assert "--max-age-days 8" in workflow
+    assert "benchmarks/benchmark_artifact_audit_ci.json" in workflow
+    assert "benchmarks/production_readiness_gate.py" in workflow
+    assert workflow.index("Validate benchmark freshness gate") < workflow.index(
+        "Build and verify package"
+    )

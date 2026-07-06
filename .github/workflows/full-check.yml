@@ -114,6 +114,30 @@ jobs:
             benchmarks/agent_memory_ci_results.json
             benchmarks/dynamic_memory_ci_results.json
 
+  benchmark-artifact-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark gate dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Block stale or unsynchronized public benchmark artifacts
+        run: |
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit_ci.json
+          python benchmarks/production_readiness_gate.py \
+            --output /tmp/production_readiness_results.json \
+            --markdown-output /tmp/PRODUCTION_READINESS.md
+
   redis-api-load:
     runs-on: ubuntu-latest
 
