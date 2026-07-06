@@ -133,6 +133,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     hot_cache = scale.get("WaveMind hot cache", {})
     memory_os = scale.get("WaveMind Memory OS", {})
     sharding = scale.get("WaveMind distributed sharding", {})
+    http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
     runtime = scale.get("WaveMind replicated runtime", {})
     active_active = scale.get("WaveMind active-active delta sync", {})
     field_crdt = scale.get("WaveMind field-state CRDT", {})
@@ -322,7 +323,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"tombstone deleted {sharding.get('tombstone_repair_deleted_records')}, "
                 f"anti-entropy repaired {sharding.get('anti_entropy_worker_repaired_total')}"
             ),
-            next_step="Run the same repair flow against real HTTP shard clients.",
+            next_step="Keep the algorithm profile and real HTTP shard profile in sync.",
+        ),
+        _criterion(
+            criterion_id="distributed_http_shard_transport",
+            title="HTTP shard transport handles failover, repair, and tombstones",
+            status=(
+                "pass"
+                if http_sharding.get("proxy_bypass_default")
+                and http_sharding.get("recalled_after_primary_loss")
+                and http_sharding.get("repair_ok")
+                and http_sharding.get("recalled_after_repair")
+                and http_sharding.get("tombstone_suppressed_after_repair")
+                and int(http_sharding.get("tombstone_repair_deleted_records", 0)) >= 1
+                else "fail"
+            ),
+            requirement="Real localhost API shard nodes must pass quorum write, failover query, missing-replica repair, proxy-safe HTTP transport, and tombstone cleanup.",
+            evidence=(
+                f"proxy bypass {http_sharding.get('proxy_bypass_default')}, "
+                f"failover {http_sharding.get('recalled_after_primary_loss')}, "
+                f"repair {http_sharding.get('repair_repaired_total')}, "
+                f"tombstone deleted {http_sharding.get('tombstone_repair_deleted_records')}"
+            ),
+            next_step="Extend the same HTTP shard profile with concurrent readers/writers and remote service nodes.",
         ),
         _criterion(
             criterion_id="replicated_runtime_loss",

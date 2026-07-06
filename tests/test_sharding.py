@@ -7,6 +7,7 @@ from wavemind import (
     DistributedShardedWaveMind,
     DistributedWriteQuorumError,
     HashingTextEncoder,
+    HTTPNamespaceShardClient,
     DistributedRepairReport,
     NamespaceShardRouter,
     ShardedWaveMind,
@@ -182,6 +183,16 @@ def test_namespace_shard_router_is_stable_and_creates_safe_paths(tmp_path):
     assert router.shard_for("tenant:a") == router.shard_for("tenant:a")
     assert router.db_path("tenant:a").parent == tmp_path
     assert router.db_path("tenant:a").name.startswith("shard-")
+
+
+def test_http_namespace_shard_client_bypasses_proxy_env_by_default():
+    client = HTTPNamespaceShardClient()
+    trusted = HTTPNamespaceShardClient(trust_env=True)
+
+    assert client.trust_env is False
+    assert client._opener is not None
+    assert trusted.trust_env is True
+    assert trusted._opener is None
 
 
 def test_sharded_wavemind_routes_namespaces_to_isolated_databases(tmp_path):

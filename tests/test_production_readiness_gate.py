@@ -20,6 +20,7 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["production_1m_query_depth"]["status"] == "pass"
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["memory_os_worker"]["status"] == "pass"
+    assert criteria["distributed_http_shard_transport"]["status"] == "pass"
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert criteria["ten_million_load_profile"]["status"] == "pass"
     assert payload["external_evidence"][0]["id"] == "memory_competitor_adapters"
@@ -51,7 +52,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 15
+    assert payload["summary"]["total_criteria"] == 16
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "Non-Gating External Evidence" in report

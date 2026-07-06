@@ -812,7 +812,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/scale_readiness_benchmark.py",
-            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, Memory OS adaptive prewarm/consolidation, hot-cache, and structured-payload retrieval checks.",
+            "dataset": "Deterministic 1M-memory simulation for namespace placement, Kubernetes StatefulSet/CronJob/HPA generation, Knative/KEDA serverless plan generation, quorum runtime, service-mode replica repair, real HTTP shard transport, service-mode tombstone repair, anti-entropy repair worker, active-active delta sync, field-state CRDT convergence, replicated snapshot/offsite/archive restore, S3-compatible object-store upload verification, query-audit cache prewarm, Memory OS adaptive prewarm/consolidation, hot-cache, and structured-payload retrieval checks.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG"],
             "metrics": [
                 "node_loss_min_availability",
@@ -925,6 +925,28 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "query_after_primary_loss_ms",
                     ),
                 ),
+                "WaveMind distributed HTTP sharding": _metric_summary(
+                    scale_readiness_results.get("WaveMind distributed HTTP sharding"),
+                    (
+                        "nodes",
+                        "replication_factor",
+                        "write_quorum",
+                        "read_quorum",
+                        "proxy_bypass_default",
+                        "writes",
+                        "recalled_after_primary_loss",
+                        "repair_repaired_total",
+                        "repair_ok",
+                        "recalled_after_repair",
+                        "tombstone_missed_delete_replica_records",
+                        "tombstone_suppressed_before_repair",
+                        "tombstone_repair_deleted_records",
+                        "tombstone_stale_records_after_repair",
+                        "tombstone_suppressed_after_repair",
+                        "query_after_primary_loss_ms",
+                        "repair_ms",
+                    ),
+                ),
                 "WaveMind replicated runtime": _metric_summary(
                     scale_readiness_results.get("WaveMind replicated runtime"),
                     (
@@ -990,7 +1012,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, Memory OS adaptive prewarm/consolidation, hot-cache behavior, and structured payload recall.",
+            "target": "Prove the production foundation before heavier 100k, 1M, and 10M vector load tests: deterministic placement, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, active-active sync, field-state convergence, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, Memory OS adaptive prewarm/consolidation, hot-cache behavior, and structured payload recall.",
             "next_step": "Move from manifest generation to service-backed HPA/serverless load tests, Redis-backed Memory OS profiles, real cloud object-store disaster-recovery drills, and larger 10M candidate-index load tests.",
         },
         {

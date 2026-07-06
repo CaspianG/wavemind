@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T03:26:02Z",
+  "generated_at": "2026-07-06T04:07:22Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 15,
+    "pass_count": 16,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 15
+    "total_criteria": 16
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T03:04:03Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T04:07:21Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -73,7 +73,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0035999692045152187 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.00300002284348011 ms",
       "next_step": "Back the cache with Redis in a service-mode benchmark."
     },
     {
@@ -90,14 +90,22 @@
       "status": "pass",
       "requirement": "Replicated writes, missing-record repair, tombstone repair, and anti-entropy must all pass.",
       "evidence": "repair 1, tombstone deleted 1, anti-entropy repaired 1",
-      "next_step": "Run the same repair flow against real HTTP shard clients."
+      "next_step": "Keep the algorithm profile and real HTTP shard profile in sync."
+    },
+    {
+      "id": "distributed_http_shard_transport",
+      "title": "HTTP shard transport handles failover, repair, and tombstones",
+      "status": "pass",
+      "requirement": "Real localhost API shard nodes must pass quorum write, failover query, missing-replica repair, proxy-safe HTTP transport, and tombstone cleanup.",
+      "evidence": "proxy bypass True, failover True, repair 1, tombstone deleted 1",
+      "next_step": "Extend the same HTTP shard profile with concurrent readers/writers and remote service nodes."
     },
     {
       "id": "replicated_runtime_loss",
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss and repair missing records plus tombstones.",
-      "evidence": "recall after loss True, repair copied 1, p99 2.2203000262379646 ms",
+      "evidence": "recall after loss True, repair copied 1, p99 1.5302000101655722 ms",
       "next_step": "Measure the same path under concurrent writes and reads."
     },
     {

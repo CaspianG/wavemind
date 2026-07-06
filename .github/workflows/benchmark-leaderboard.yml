@@ -45,6 +45,15 @@ jobs:
             --batch-size 2000 \
             --engines numpy-streaming \
             --output benchmarks/production_streaming_load_smoke_results.json
+          python benchmarks/benchmark_registry.py \
+            --output benchmarks/benchmark_matrix_results.json
+          python benchmarks/render_benchmark_report.py
+          python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/render_benchmark_charts.py \
+            --output docs/assets/benchmark-summary.svg
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit.json
           python benchmarks/production_readiness_gate.py \
             --output benchmarks/production_readiness_results.json \
             --markdown-output benchmarks/PRODUCTION_READINESS.md

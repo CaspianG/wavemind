@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener, urlopen
 
 from .cluster import ClusterNode, NamespacePlacement, build_cluster_plan
 from .core import QueryResult, WaveMind
@@ -257,9 +257,12 @@ class HTTPNamespaceShardClient:
         *,
         api_key: str | None = None,
         timeout: float = 10.0,
+        trust_env: bool = False,
     ):
         self.api_key = api_key
         self.timeout = float(timeout)
+        self.trust_env = bool(trust_env)
+        self._opener = None if self.trust_env else build_opener(ProxyHandler({}))
 
     def remember(
         self,
@@ -392,7 +395,8 @@ class HTTPNamespaceShardClient:
         if self.api_key:
             request.add_header("Authorization", f"Bearer {self.api_key}")
         try:
-            with urlopen(request, timeout=self.timeout) as response:
+            open_request = urlopen if self._opener is None else self._opener.open
+            with open_request(request, timeout=self.timeout) as response:
                 raw = response.read().decode("utf-8")
         except HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")

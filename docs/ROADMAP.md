@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`15/15` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`16/16` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -78,7 +78,8 @@ policy matters more than raw vector-database scale:
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, quorum-replicated runtime behavior, active-active
   namespace delta sync, service-mode distributed namespace sharding with
-  primary-loss recall, missing-replica repair, and tombstone-aware delete
+  primary-loss recall, missing-replica repair, real HTTP shard transport,
+  and tombstone-aware delete
   repair, anti-entropy background repair through `DistributedRepairWorker`
   and `wavemind cluster-repair`, Kubernetes CronJob generation for scheduled
   repair, checksummed replicated snapshot/restore with offsite and

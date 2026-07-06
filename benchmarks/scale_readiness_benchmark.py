@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
 from io import BytesIO
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import ProxyHandler, Request, build_opener
 
 import numpy as np
 
@@ -23,6 +27,7 @@ from wavemind import (
     DistributedShardedWaveMind,
     FieldStateCRDT,
     HashingTextEncoder,
+    HTTPNamespaceShardClient,
     HotMemoryCache,
     MemoryOSWorker,
     QueryResult,
@@ -273,6 +278,87 @@ class LocalWaveMindServiceClient:
             )
             self.minds[address] = mind
         return mind
+
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def _start_api_node(root: Path, node_id: str) -> dict[str, object]:
+    port = _free_port()
+    db_path = root / f"{node_id}.sqlite3"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "--db",
+            str(db_path),
+            "--score-threshold",
+            "0.05",
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    node = {
+        "id": node_id,
+        "address": f"http://127.0.0.1:{port}",
+        "zone": f"zone-{node_id}",
+        "process": process,
+    }
+    _wait_api_node_ready(node)
+    return node
+
+
+def _wait_api_node_ready(node: dict[str, object]) -> None:
+    opener = build_opener(ProxyHandler({}))
+    deadline = time.time() + 20.0
+    last_error: object = None
+    process = node["process"]
+    assert isinstance(process, subprocess.Popen)
+    address = str(node["address"])
+    while time.time() < deadline:
+        if process.poll() is not None:
+            stdout, stderr = process.communicate(timeout=1)
+            raise RuntimeError(
+                f"{node['id']} exited before readiness with {process.returncode}\n"
+                f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+            )
+        try:
+            request = Request(f"{address}/stats", method="GET")
+            with opener.open(request, timeout=1) as response:
+                if response.status == 200:
+                    return
+        except (HTTPError, URLError, TimeoutError) as exc:
+            last_error = exc
+        time.sleep(0.2)
+    raise RuntimeError(f"{node['id']} did not become ready: {last_error}")
+
+
+def _stop_api_nodes(nodes: list[dict[str, object]]) -> None:
+    processes = [
+        node["process"]
+        for node in nodes
+        if isinstance(node.get("process"), subprocess.Popen)
+    ]
+    for process in processes:
+        if process.poll() is None:
+            process.kill()
+    for process in processes:
+        try:
+            process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            process.communicate(timeout=5)
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -756,6 +842,128 @@ def run_distributed_sharding_profile() -> dict[str, object]:
             client.close()
 
 
+def run_distributed_http_sharding_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        nodes = [
+            _start_api_node(root, "node-a"),
+            _start_api_node(root, "node-b"),
+            _start_api_node(root, "node-c"),
+        ]
+        client = HTTPNamespaceShardClient(timeout=5.0)
+        memory = DistributedShardedWaveMind(
+            nodes=[
+                ClusterNode(id=node["id"], address=node["address"], zone=node["zone"])
+                for node in nodes
+            ],
+            replication_factor=2,
+            client=client,
+        )
+        by_id = {str(node["id"]): node for node in nodes}
+        namespace = "tenant:http-distributed"
+        text = "http service shard keeps tenant memory"
+        try:
+            started = time.perf_counter()
+            write = memory.remember(text, namespace=namespace, tags=("ops",), priority=2.0)
+            write_ms = (time.perf_counter() - started) * 1000.0
+            placement = memory.placement(namespace)
+            memory.set_node_available(placement.primary, False)
+            query_started = time.perf_counter()
+            failover_results = memory.query("tenant memory", namespace=namespace, top_k=1)
+            query_after_primary_loss_ms = (time.perf_counter() - query_started) * 1000.0
+            recalled_after_primary_loss = bool(failover_results) and failover_results[0].text == text
+            memory.set_node_available(placement.primary, True)
+
+            stale_node = next(node for node in write.writes if node != write.primary_node)
+            client.forget(
+                str(by_id[stale_node]["address"]),
+                namespace=namespace,
+                text=text,
+            )
+            memory.set_node_available(write.primary_node, False)
+            missing_before_repair = memory.query("tenant memory", namespace=namespace, top_k=1) == []
+            memory.set_node_available(write.primary_node, True)
+
+            repair_started = time.perf_counter()
+            repair = memory.repair_namespace(namespace, tags=("ops",))
+            repair_ms = (time.perf_counter() - repair_started) * 1000.0
+            memory.set_node_available(write.primary_node, False)
+            repaired_results = memory.query("tenant memory", namespace=namespace, top_k=1)
+            recalled_after_repair = bool(repaired_results) and repaired_results[0].text == text
+            memory.set_node_available(write.primary_node, True)
+
+            tombstone_memory = DistributedShardedWaveMind(
+                nodes=[
+                    ClusterNode(id=node["id"], address=node["address"], zone=node["zone"])
+                    for node in nodes
+                ],
+                replication_factor=3,
+                client=client,
+            )
+            tombstone_namespace = "tenant:http-distributed-tombstone"
+            tombstone_text = "http service repair must not resurrect deleted memory"
+            tombstone_write = tombstone_memory.remember(
+                tombstone_text,
+                namespace=tombstone_namespace,
+            )
+            missed_delete = next(
+                node for node in tombstone_write.writes if node != tombstone_write.primary_node
+            )
+            tombstone_memory.set_node_available(missed_delete, False)
+            tombstone_memory.forget(namespace=tombstone_namespace, text=tombstone_text)
+            tombstone_memory.set_node_available(missed_delete, True)
+            stale_before = client.export_namespace(
+                str(by_id[missed_delete]["address"]),
+                namespace=tombstone_namespace,
+            )
+            tombstone_suppressed_before_repair = (
+                tombstone_memory.query(
+                    "resurrect deleted memory",
+                    namespace=tombstone_namespace,
+                    top_k=1,
+                )
+                == []
+            )
+            tombstone_repair = tombstone_memory.repair_namespace(tombstone_namespace)
+            stale_after = client.export_namespace(
+                str(by_id[missed_delete]["address"]),
+                namespace=tombstone_namespace,
+            )
+
+            return {
+                "engine": "WaveMind distributed HTTP sharding",
+                "nodes": len(nodes),
+                "replication_factor": tombstone_memory.replication_factor,
+                "write_quorum": tombstone_memory.write_quorum,
+                "read_quorum": tombstone_memory.read_quorum,
+                "proxy_bypass_default": client.trust_env is False,
+                "writes": len(write.writes),
+                "recalled_after_primary_loss": recalled_after_primary_loss,
+                "repair_missing_before": missing_before_repair,
+                "repair_ok": repair.ok,
+                "repair_repaired_total": repair.repaired_total,
+                "recalled_after_repair": recalled_after_repair,
+                "tombstone_missed_delete_replica_records": len(stale_before),
+                "tombstone_suppressed_before_repair": tombstone_suppressed_before_repair,
+                "tombstone_repair_canonical_records": tombstone_repair.canonical_records,
+                "tombstone_repair_deleted_records": tombstone_repair.tombstone_deleted,
+                "tombstone_stale_records_after_repair": len(stale_after),
+                "tombstone_suppressed_after_repair": (
+                    tombstone_memory.query(
+                        "resurrect deleted memory",
+                        namespace=tombstone_namespace,
+                        top_k=1,
+                    )
+                    == []
+                ),
+                "write_ms": write_ms,
+                "query_after_primary_loss_ms": query_after_primary_loss_ms,
+                "repair_ms": repair_ms,
+            }
+        finally:
+            _stop_api_nodes(nodes)
+
+
 def run_replication_runtime_profile() -> dict[str, object]:
     latencies: list[float] = []
     with tempfile.TemporaryDirectory() as directory:
@@ -1172,6 +1380,7 @@ def run_benchmark(
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_memory_os_profile(),
         run_distributed_sharding_profile(),
+        run_distributed_http_sharding_profile(),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
         run_field_crdt_profile(),
@@ -1189,7 +1398,8 @@ def run_benchmark(
                 "Deterministic scale-readiness profile for cluster placement, "
                 "operator-style Kubernetes reconciliation, serverless Knative/KEDA planning, "
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
-                "service-mode distributed namespace sharding, active-active delta sync, replicated snapshot/offsite/archive "
+                "service-mode distributed namespace sharding, real HTTP shard transport, "
+                "active-active delta sync, replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, Memory OS adaptive prewarm/consolidation, "
                 "hot-cache behavior, and structured payload retrieval. "
@@ -1262,6 +1472,13 @@ def main() -> int:
             print(f"| distributed sharding | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
             print(f"| distributed sharding | tombstone_suppressed_after_repair | {result['tombstone_suppressed_after_repair']} |")
             print(f"| distributed sharding | anti_entropy_worker_ok | {result['anti_entropy_worker_ok']} |")
+        elif result["engine"] == "WaveMind distributed HTTP sharding":
+            print(f"| distributed HTTP sharding | proxy_bypass_default | {result['proxy_bypass_default']} |")
+            print(f"| distributed HTTP sharding | recalled_after_primary_loss | {result['recalled_after_primary_loss']} |")
+            print(f"| distributed HTTP sharding | repair_repaired_total | {result['repair_repaired_total']} |")
+            print(f"| distributed HTTP sharding | recalled_after_repair | {result['recalled_after_repair']} |")
+            print(f"| distributed HTTP sharding | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
+            print(f"| distributed HTTP sharding | tombstone_suppressed_after_repair | {result['tombstone_suppressed_after_repair']} |")
         elif result["engine"] == "WaveMind replicated runtime":
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
