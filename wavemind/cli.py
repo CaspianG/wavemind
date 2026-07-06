@@ -380,6 +380,22 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os.add_argument("--predictive-terms-per-hot-query", type=int, default=3)
     memory_os.add_argument("--no-rebuild-index", action="store_true")
     memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
+    memory_os.add_argument("--no-architecture-advice", action="store_true")
+    memory_os.add_argument("--target-memories", type=int)
+    memory_os.add_argument("--target-p99-ms", type=float, default=100.0)
+    memory_os.add_argument("--observed-p99-ms", type=float)
+    memory_os.add_argument("--namespace-count", type=int)
+    memory_os.add_argument("--node-count", type=int)
+    memory_os.add_argument("--replication-factor", type=int, default=3)
+    memory_os.add_argument("--read-quorum", type=int, default=1)
+    memory_os.add_argument("--read-fanout", type=int)
+    memory_os.add_argument("--target-qps", type=float, default=100.0)
+    memory_os.add_argument(
+        "--deployment",
+        choices=["local", "staging", "production", "prod"],
+        default="local",
+    )
+    memory_os.add_argument("--multimodal", action="store_true")
     memory_os.add_argument("--capacity", type=int, default=512)
     memory_os.add_argument("--ttl-seconds", type=float, default=60.0)
     memory_os.add_argument(
@@ -1415,6 +1431,18 @@ def main(argv: list[str] | None = None) -> int:
             predictive_terms_per_hot_query=args.predictive_terms_per_hot_query,
             rebuild_unhealthy_index=not args.no_rebuild_index,
             memory_pressure_threshold=args.memory_pressure_threshold,
+            architecture_advice=not args.no_architecture_advice,
+            target_memories=args.target_memories,
+            target_p99_ms=args.target_p99_ms,
+            observed_p99_ms=args.observed_p99_ms,
+            namespace_count=args.namespace_count,
+            node_count=args.node_count,
+            replication_factor=args.replication_factor,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            target_qps=args.target_qps,
+            deployment=args.deployment,
+            multimodal=args.multimodal,
         )
         payload = report.as_dict()
         payload["cache"] = (

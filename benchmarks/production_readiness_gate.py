@@ -207,6 +207,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     redis_cache = scale.get("WaveMind Redis hot cache", {})
     api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
     memory_os = scale.get("WaveMind Memory OS", {})
+    redis_memory_os_advice_ids = set(
+        redis_cache.get("memory_os_architecture_recommendations", [])
+    )
+    memory_os_advice_ids = set(memory_os.get("architecture_advice_recommendation_ids", []))
+    memory_os_architecture_pass = (
+        memory_os.get("architecture_advice_status") == "architecture_required"
+        and {"service-index", "namespace-sharding", "production-controls"}.issubset(
+            memory_os_advice_ids
+        )
+        and "advise_architecture" in set(memory_os.get("actions", []))
+        and int(memory_os.get("architecture_next_commands", 0)) >= 1
+    )
     sharding = scale.get("WaveMind distributed sharding", {})
     http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
     sustained_http_cluster = scale.get("WaveMind sustained HTTP cluster load", {})
@@ -514,12 +526,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(redis_cache.get("memory_os_predictive_warmed", 0)) >= 1
                 and redis_cache.get("memory_os_cross_worker_hit")
                 and redis_cache.get("namespace_invalidation_removed")
+                and redis_cache.get("memory_os_architecture_advice_status")
+                == "architecture_required"
+                and {"namespace-sharding", "production-controls"}.issubset(
+                    redis_memory_os_advice_ids
+                )
                 else "fail"
             ),
             requirement=(
                 "Production cache must be shareable across workers, support "
-                "query-audit prewarm, support Memory OS prewarm, and invalidate "
-                "a namespace after memory changes."
+                "query-audit prewarm, support Memory OS prewarm, invalidate "
+                "a namespace after memory changes, and preserve architecture "
+                "advice for production-scale deployments."
             ),
             evidence=(
                 f"shared {redis_cache.get('shared_cache_visible_across_clients')}, "
@@ -527,7 +545,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"Memory OS warmed {redis_cache.get('memory_os_prewarm_warmed')}, "
                 f"predictive warmed {redis_cache.get('memory_os_predictive_warmed')}, "
                 f"Memory OS hit {redis_cache.get('memory_os_cross_worker_hit')}, "
-                f"invalidation {redis_cache.get('namespace_invalidation_removed')}"
+                f"invalidation {redis_cache.get('namespace_invalidation_removed')}, "
+                f"architecture {redis_cache.get('memory_os_architecture_advice_status')}"
             ),
             next_step="Keep the real Redis multi-process API load workflow green.",
         ),
@@ -615,9 +634,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(memory_os.get("forgetting_demotions", 0)) >= 1
                 and float(memory_os.get("forgetting_decay_total", 0.0)) > 0.0
                 and memory_os.get("concept_recall")
+                and memory_os_architecture_pass
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, and durable concept memories.",
+            requirement="Background intelligence must turn audited hot queries into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
@@ -625,7 +645,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"expired {memory_os.get('expired_purged')}, "
                 f"concepts {memory_os.get('concepts_created')}, "
                 f"priority predictions {memory_os.get('priority_predictions')}, "
-                f"forgetting demotions {memory_os.get('forgetting_demotions')}"
+                f"forgetting demotions {memory_os.get('forgetting_demotions')}, "
+                f"architecture {memory_os.get('architecture_advice_status')}"
             ),
             next_step="Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments.",
         ),

@@ -69,6 +69,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Redis hot cache"]["memory_os_priority_boost_total"] > 0.0
     assert results["WaveMind Redis hot cache"]["memory_os_forgetting_demotions"] >= 1
     assert results["WaveMind Redis hot cache"]["memory_os_forgetting_decay_total"] > 0.0
+    assert results["WaveMind Redis hot cache"]["memory_os_architecture_advice_status"] == "architecture_required"
+    assert "namespace-sharding" in results["WaveMind Redis hot cache"]["memory_os_architecture_recommendations"]
     assert results["WaveMind Redis hot cache"]["memory_os_cross_worker_hit"] is True
     assert results["WaveMind Redis hot cache"]["namespace_invalidation_removed"] is True
     assert results["WaveMind API cache mutation safety"]["first_query_cached"] is True
@@ -89,12 +91,17 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Memory OS"]["priority_boost_total"] > 0.0
     assert results["WaveMind Memory OS"]["forgetting_demotions"] >= 1
     assert results["WaveMind Memory OS"]["forgetting_decay_total"] > 0.0
+    assert results["WaveMind Memory OS"]["architecture_advice_status"] == "architecture_required"
+    assert "namespace-sharding" in results["WaveMind Memory OS"]["architecture_advice_recommendation_ids"]
+    assert "production-controls" in results["WaveMind Memory OS"]["architecture_advice_recommendation_ids"]
+    assert results["WaveMind Memory OS"]["architecture_next_commands"] >= 1
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predictive_prefetch" in results["WaveMind Memory OS"]["actions"]
     assert "predict_priority" in results["WaveMind Memory OS"]["actions"]
     assert "adaptive_forgetting" in results["WaveMind Memory OS"]["actions"]
     assert "consolidate_concepts" in results["WaveMind Memory OS"]["actions"]
+    assert "advise_architecture" in results["WaveMind Memory OS"]["actions"]
     assert results["WaveMind distributed sharding"]["writes"] == 2
     assert results["WaveMind distributed sharding"]["recalled_after_primary_loss"] is True
     assert results["WaveMind distributed sharding"]["repair_missing_before"] is True

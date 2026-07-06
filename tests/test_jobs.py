@@ -530,6 +530,52 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         memory.close()
 
 
+def test_memory_os_worker_embeds_architecture_advice_for_production_targets(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-architecture.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        memory.remember("architecture advisor memory", namespace="tenant:scale")
+
+        report = MemoryOSWorker(memory).run_once(
+            namespace="tenant:scale",
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            target_memories=2_000_000,
+            namespace_count=4096,
+            node_count=2,
+            replication_factor=3,
+            read_quorum=1,
+            read_fanout=1,
+            target_qps=250.0,
+            deployment="production",
+            multimodal=True,
+        )
+        advice = report.architecture_advice
+        recommendation_ids = {
+            item["id"]
+            for item in advice.get("recommendations", [])
+            if isinstance(item, dict)
+        }
+
+        assert report.ok
+        assert advice["status"] == "architecture_required"
+        assert advice["deployment"] == "production"
+        assert "advise_architecture" in report.actions
+        assert "namespace-sharding" in recommendation_ids
+        assert "service-index" in recommendation_ids
+        assert "production-controls" in recommendation_ids
+        assert "load-test" in recommendation_ids
+        assert any("Architecture advisor:" in item for item in report.recommendations)
+    finally:
+        memory.close()
+
+
 def test_memory_os_worker_predicts_priority_from_hot_queries(tmp_path):
     memory = WaveMind(
         db_path=tmp_path / "memory-os-priority.sqlite3",

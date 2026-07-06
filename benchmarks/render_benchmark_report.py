@@ -71,6 +71,11 @@ METRIC_LABELS = {
     "anti_entropy_worker_ok": "anti-entropy worker ok",
     "anti_entropy_worker_repaired_total": "anti-entropy repaired",
     "anti_entropy_worker_tombstone_deleted": "anti-entropy tombstone deleted",
+    "architecture_advice_status": "architecture advice",
+    "architecture_advice_recommendation_ids": "architecture ids",
+    "architecture_next_commands": "architecture commands",
+    "memory_os_architecture_advice_status": "Memory OS architecture advice",
+    "memory_os_architecture_recommendations": "Memory OS architecture ids",
 }
 
 

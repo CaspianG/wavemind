@@ -34,6 +34,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "priority predictions" in criteria["memory_os_worker"]["evidence"]
     assert "predictive warmed" in criteria["memory_os_worker"]["evidence"]
     assert "forgetting demotions" in criteria["memory_os_worker"]["evidence"]
+    assert "production architecture advice" in criteria["memory_os_worker"]["requirement"]
+    assert "architecture architecture_required" in criteria["memory_os_worker"]["evidence"]
     assert criteria["query_vector_cache"]["status"] == "pass"
     assert "encoded query vectors" in criteria["query_vector_cache"]["requirement"]
     assert "local encode calls 1" in criteria["query_vector_cache"]["evidence"]
@@ -42,7 +44,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "limited 1" in criteria["shared_rate_limiter"]["evidence"]
     assert criteria["redis_shared_cache_memory_os"]["status"] == "pass"
     assert "shareable across workers" in criteria["redis_shared_cache_memory_os"]["requirement"]
+    assert "architecture advice" in criteria["redis_shared_cache_memory_os"]["requirement"]
     assert "predictive warmed" in criteria["redis_shared_cache_memory_os"]["evidence"]
+    assert "architecture architecture_required" in criteria["redis_shared_cache_memory_os"]["evidence"]
     assert criteria["api_cache_mutation_safety"]["status"] == "pass"
     assert "cannot leave stale cached recall" in criteria["api_cache_mutation_safety"]["requirement"]
     assert criteria["real_redis_api_load_ci"]["status"] == "pass"

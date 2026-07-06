@@ -260,6 +260,15 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
         "--no-consolidate-concepts",
         "--forgetting-min-age-seconds",
         "0",
+        "--target-memories",
+        "2000000",
+        "--namespace-count",
+        "4096",
+        "--node-count",
+        "2",
+        "--deployment",
+        "production",
+        "--multimodal",
         "--json",
     )
     payload = json.loads(result.stdout)
@@ -274,6 +283,12 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
     assert "prewarm_cache" in payload["actions"]
     assert "predictive_prefetch" in payload["actions"]
     assert "adaptive_forgetting" in payload["actions"]
+    assert "advise_architecture" in payload["actions"]
+    advice = payload["architecture_advice"]
+    recommendation_ids = {item["id"] for item in advice["recommendations"]}
+    assert advice["status"] == "architecture_required"
+    assert "namespace-sharding" in recommendation_ids
+    assert "production-controls" in recommendation_ids
 
 
 def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):

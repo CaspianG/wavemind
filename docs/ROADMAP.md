@@ -77,6 +77,13 @@ policy matters more than raw vector-database scale:
   checklist for ANN/service index selection, sharding, cache, DR drills,
   observability, load tests, replication capacity, read-quorum/fanout tuning,
   and multimodal readiness.
+- `MemoryOSWorker`, `POST /memory-os/run`, and `wavemind memory-os` can now
+  embed that architecture-advisor output into the same adaptive maintenance
+  report that handles hot-query prewarm, priority prediction, adaptive
+  forgetting, TTL cleanup, and concept consolidation. The readiness gate now
+  fails if the checked-in Memory OS profile does not emit production-scale
+  service-index, namespace-sharding, production-controls, load-test, and
+  multimodal-readiness advice.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,
@@ -111,8 +118,8 @@ policy matters more than raw vector-database scale:
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, encoded query vectors, query-audit-driven cache prewarm,
-  predictive prefetch, TTL purge, field consolidation, concept consolidation, and index-health repair
-  loops.
+  predictive prefetch, TTL purge, field consolidation, concept consolidation,
+  architecture-advice reporting, and index-health repair loops.
 - Structured payload helpers cover image captions, audio transcripts, video
   transcripts/scenes, 3D asset descriptors, tables, events, and knowledge graph
   triples while preserving modality metadata in the same memory API.

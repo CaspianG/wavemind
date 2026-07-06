@@ -963,6 +963,15 @@ def run_redis_cache_profile() -> dict[str, object]:
                 forgetting_min_age_seconds=0.0,
                 forgetting_priority_decay=0.10,
                 forgetting_max_access_count=0,
+                target_memories=2_000_000,
+                namespace_count=4096,
+                node_count=2,
+                replication_factor=3,
+                read_quorum=1,
+                read_fanout=1,
+                target_qps=250.0,
+                deployment="production",
+                multimodal=True,
             )
             os_ms = (time.perf_counter() - os_started) * 1000.0
             started = time.perf_counter()
@@ -1007,6 +1016,12 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "memory_os_priority_boost_total": os_report.priority_boost_total,
                 "memory_os_forgetting_demotions": os_report.forgetting_demotions,
                 "memory_os_forgetting_decay_total": os_report.forgetting_decay_total,
+                "memory_os_architecture_advice_status": os_report.architecture_advice.get("status"),
+                "memory_os_architecture_recommendations": [
+                    item["id"]
+                    for item in os_report.architecture_advice.get("recommendations", [])
+                    if isinstance(item, dict) and "id" in item
+                ],
                 "memory_os_cross_worker_hit": os_cross_worker_hit,
                 "memory_os_run_ms": os_ms,
                 "namespace_invalidation_removed": invalidation_removed_key,
@@ -1186,6 +1201,15 @@ def run_memory_os_profile() -> dict[str, object]:
                 forgetting_min_age_seconds=0.0,
                 forgetting_priority_decay=0.10,
                 forgetting_max_access_count=0,
+                target_memories=2_000_000,
+                namespace_count=4096,
+                node_count=2,
+                replication_factor=3,
+                read_quorum=1,
+                read_fanout=1,
+                target_qps=250.0,
+                deployment="production",
+                multimodal=True,
             )
             elapsed_ms = (time.perf_counter() - started) * 1000.0
             cached = cache.get("tenant:os", "budget recall", top_k=1)
@@ -1211,6 +1235,15 @@ def run_memory_os_profile() -> dict[str, object]:
                 "priority_boost_total": report.priority_boost_total,
                 "forgetting_demotions": report.forgetting_demotions,
                 "forgetting_decay_total": report.forgetting_decay_total,
+                "architecture_advice_status": report.architecture_advice.get("status"),
+                "architecture_advice_recommendation_ids": [
+                    item["id"]
+                    for item in report.architecture_advice.get("recommendations", [])
+                    if isinstance(item, dict) and "id" in item
+                ],
+                "architecture_next_commands": len(
+                    report.architecture_advice.get("next_commands", [])
+                ),
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),

@@ -491,6 +491,11 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
                     "consolidate_concepts": False,
                     "forgetting_min_age_seconds": 0,
                     "forgetting_priority_decay": 0.1,
+                    "target_memories": 2000000,
+                    "namespace_count": 4096,
+                    "node_count": 2,
+                    "deployment": "production",
+                    "multimodal": True,
                 },
             )
             assert response.status_code == 200
@@ -508,6 +513,12 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
             assert "predict_priority" in payload["actions"]
             assert "predictive_prefetch" in payload["actions"]
             assert "adaptive_forgetting" in payload["actions"]
+            assert "advise_architecture" in payload["actions"]
+            advice = payload["architecture_advice"]
+            recommendation_ids = {item["id"] for item in advice["recommendations"]}
+            assert advice["status"] == "architecture_required"
+            assert "namespace-sharding" in recommendation_ids
+            assert "production-controls" in recommendation_ids
 
             query = client.post(
                 "/query",

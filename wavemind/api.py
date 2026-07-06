@@ -503,6 +503,18 @@ class MemoryOSRequest(BaseModel):
     predictive_terms_per_hot_query: int = Field(default=3, ge=0, le=50)
     rebuild_unhealthy_index: bool = True
     memory_pressure_threshold: int = Field(default=50000, ge=0)
+    architecture_advice: bool = True
+    target_memories: int | None = Field(default=None, ge=0)
+    target_p99_ms: float = Field(default=100.0, ge=0.0)
+    observed_p99_ms: float | None = Field(default=None, ge=0.0)
+    namespace_count: int | None = Field(default=None, ge=0)
+    node_count: int | None = Field(default=None, ge=0)
+    replication_factor: int = Field(default=3, ge=1)
+    read_quorum: int = Field(default=1, ge=1)
+    read_fanout: int | None = Field(default=None, ge=1)
+    target_qps: float = Field(default=100.0, ge=0.0)
+    deployment: str = "local"
+    multimodal: bool = False
 
 
 class ScalePlanResponse(BaseModel):
@@ -1194,6 +1206,18 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 predictive_terms_per_hot_query=request.predictive_terms_per_hot_query,
                 rebuild_unhealthy_index=request.rebuild_unhealthy_index,
                 memory_pressure_threshold=request.memory_pressure_threshold,
+                architecture_advice=request.architecture_advice,
+                target_memories=request.target_memories,
+                target_p99_ms=request.target_p99_ms,
+                observed_p99_ms=request.observed_p99_ms,
+                namespace_count=request.namespace_count,
+                node_count=request.node_count,
+                replication_factor=request.replication_factor,
+                read_quorum=request.read_quorum,
+                read_fanout=request.read_fanout,
+                target_qps=request.target_qps,
+                deployment=request.deployment,
+                multimodal=request.multimodal,
             )
         return report.as_dict()
 

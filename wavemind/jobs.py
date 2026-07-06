@@ -11,6 +11,7 @@ from typing import Any, Iterable
 
 import numpy as np
 
+from .advisor import MemoryArchitectureAdvice, advise_memory_architecture
 from .core import QueryResult
 from .encoders import is_stopword_token, normalize_token
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
@@ -638,6 +639,7 @@ class MemoryOSReport:
     )
     stats_before: dict[str, object] = field(default_factory=dict)
     stats_after: dict[str, object] = field(default_factory=dict)
+    architecture_advice: dict[str, object] = field(default_factory=dict)
     actions: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
 
@@ -668,6 +670,7 @@ class MemoryOSReport:
             "predictive_prefetch": self.predictive_prefetch.as_dict(),
             "stats_before": dict(self.stats_before),
             "stats_after": dict(self.stats_after),
+            "architecture_advice": dict(self.architecture_advice),
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
             "ok": self.ok,
@@ -1188,6 +1191,18 @@ class MemoryOSWorker:
         predictive_terms_per_hot_query: int = 3,
         rebuild_unhealthy_index: bool = True,
         memory_pressure_threshold: int = 50_000,
+        architecture_advice: bool = True,
+        target_memories: int | None = None,
+        target_p99_ms: float = 100.0,
+        observed_p99_ms: float | None = None,
+        namespace_count: int | None = None,
+        node_count: int | None = None,
+        replication_factor: int = 3,
+        read_quorum: int = 1,
+        read_fanout: int | None = None,
+        target_qps: float = 100.0,
+        deployment: str = "local",
+        multimodal: bool = False,
     ) -> MemoryOSReport:
         stats_before = self._stats(namespace)
         events = self._query_events(namespace=namespace, limit=audit_limit)
@@ -1317,6 +1332,28 @@ class MemoryOSWorker:
             stats_after=stats_after,
             memory_pressure_threshold=memory_pressure_threshold,
         )
+        architecture_payload: dict[str, object] = {}
+        if architecture_advice:
+            architecture = self._architecture_advice(
+                stats_after=stats_after,
+                namespace=namespace,
+                target_memories=target_memories,
+                target_p99_ms=target_p99_ms,
+                observed_p99_ms=observed_p99_ms,
+                namespace_count=namespace_count,
+                node_count=node_count,
+                replication_factor=replication_factor,
+                read_quorum=read_quorum,
+                read_fanout=read_fanout,
+                target_qps=target_qps,
+                deployment=deployment,
+                multimodal=multimodal,
+            )
+            architecture_payload = architecture.as_dict()
+            architecture_recommendations = self._architecture_recommendations(architecture)
+            if architecture_recommendations:
+                actions.append("advise_architecture")
+                recommendations.extend(architecture_recommendations)
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -1338,6 +1375,7 @@ class MemoryOSWorker:
             predictive_prefetch=predictive,
             stats_before=stats_before,
             stats_after=stats_after,
+            architecture_advice=architecture_payload,
             actions=tuple(dict.fromkeys(actions)),
             recommendations=tuple(recommendations),
         )
@@ -1680,6 +1718,54 @@ class MemoryOSWorker:
         if not recommendations:
             recommendations.append("Memory OS run is healthy; keep the worker scheduled.")
         return recommendations
+
+    def _architecture_advice(
+        self,
+        *,
+        stats_after: dict[str, object],
+        namespace: str | None,
+        target_memories: int | None,
+        target_p99_ms: float,
+        observed_p99_ms: float | None,
+        namespace_count: int | None,
+        node_count: int | None,
+        replication_factor: int,
+        read_quorum: int,
+        read_fanout: int | None,
+        target_qps: float,
+        deployment: str,
+        multimodal: bool,
+    ) -> MemoryArchitectureAdvice:
+        return advise_memory_architecture(
+            stats_after,
+            namespace=namespace,
+            target_memories=target_memories,
+            target_p99_ms=target_p99_ms,
+            observed_p99_ms=observed_p99_ms,
+            namespace_count=namespace_count,
+            node_count=node_count,
+            replication_factor=replication_factor,
+            read_quorum=read_quorum,
+            read_fanout=read_fanout,
+            target_qps=target_qps,
+            deployment=deployment,
+            multimodal=multimodal,
+        )
+
+    def _architecture_recommendations(
+        self,
+        advice: MemoryArchitectureAdvice,
+    ) -> list[str]:
+        rows = []
+        for recommendation in advice.recommendations:
+            if recommendation.severity == "ok":
+                continue
+            rows.append(
+                "Architecture advisor: "
+                f"[{recommendation.severity}] {recommendation.title} - "
+                f"{recommendation.action}"
+            )
+        return rows
 
     def _log_report(self, report: MemoryOSReport) -> None:
         store = getattr(self.memory, "store", None)
