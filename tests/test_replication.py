@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from wavemind import (
@@ -202,6 +204,39 @@ def test_replicated_wavemind_stores_stable_replica_metadata(tmp_path):
 
         assert len(keys) == 1
         assert len(operation_ids) == 1
+    finally:
+        memory.close()
+
+
+def test_replicated_wavemind_handles_concurrent_reads_and_writes(tmp_path):
+    memory = _cluster(tmp_path, replication_factor=3)
+    namespace = "tenant:concurrent"
+    texts = [f"concurrent replicated memory item {index:02d}" for index in range(16)]
+    try:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            writes = list(
+                pool.map(
+                    lambda text: memory.remember(text, namespace=namespace),
+                    texts,
+                )
+            )
+
+        assert len(writes) == len(texts)
+        assert all(write.ok for write in writes)
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            hits = list(
+                pool.map(
+                    lambda text: memory.query(text, namespace=namespace, top_k=1)[0].text
+                    == text,
+                    texts,
+                )
+            )
+
+        assert all(hits)
+        assert memory.stats(namespace=namespace)["replicated_active_memories"] == (
+            len(texts) * 3
+        )
     finally:
         memory.close()
 

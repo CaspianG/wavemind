@@ -10,7 +10,9 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path, PurePosixPath
+from threading import RLock
 from typing import Any, Iterable
 
 from .cluster import ClusterNode, NamespacePlacement, build_cluster_plan
@@ -136,6 +138,15 @@ _REPLICA_UPDATED_AT = "_wavemind_replica_updated_at"
 _TOMBSTONE_ACTION = "replicated_tombstone"
 
 
+def _synchronized_operation(method):
+    @wraps(method)
+    def wrapper(self: "ReplicatedWaveMind", *args: Any, **kwargs: Any):
+        with self._operation_lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
+
+
 class ReplicatedWaveMind:
     """Quorum-replicated namespace runtime over multiple WaveMind stores.
 
@@ -188,7 +199,9 @@ class ReplicatedWaveMind:
         actor_seed = str(self.root_path.resolve())
         self.field_actor = hashlib.sha256(actor_seed.encode("utf-8")).hexdigest()[:16]
         self._field_states: dict[str, FieldStateCRDT] = {}
+        self._operation_lock = RLock()
 
+    @_synchronized_operation
     def remember(
         self,
         text: str,
@@ -240,6 +253,7 @@ class ReplicatedWaveMind:
             write_quorum=self.write_quorum,
         )
 
+    @_synchronized_operation
     def query(
         self,
         text: str,
@@ -308,6 +322,7 @@ class ReplicatedWaveMind:
                 field_state.boost(replica_key, amount=0.05, actor=self.field_actor)
         return selected
 
+    @_synchronized_operation
     def forget(
         self,
         id: int | None = None,
@@ -372,6 +387,7 @@ class ReplicatedWaveMind:
             write_quorum=self.write_quorum,
         )
 
+    @_synchronized_operation
     def repair_namespace(self, namespace: str = "default") -> ReplicatedRepairReport:
         placement = self.placement(namespace)
         tombstones = self._tombstone_state(namespace, placement)
@@ -447,6 +463,7 @@ class ReplicatedWaveMind:
             failed_nodes=failed,
         )
 
+    @_synchronized_operation
     def export_namespace_delta(self, namespace: str = "default") -> dict[str, Any]:
         """Export active records and tombstones for active-active sync."""
         placement = self.placement(namespace)
@@ -463,10 +480,12 @@ class ReplicatedWaveMind:
             "field_state": self.export_field_state_delta(namespace).to_dict(),
         }
 
+    @_synchronized_operation
     def export_field_state_delta(self, namespace: str = "default") -> FieldStateDelta:
         """Export distributed field activation/suppression state."""
         return self._field_state(namespace).delta()
 
+    @_synchronized_operation
     def import_field_state_delta(
         self,
         delta: dict[str, Any],
@@ -477,6 +496,7 @@ class ReplicatedWaveMind:
         payload["namespace"] = target_namespace
         return self._field_state(target_namespace).merge(payload)
 
+    @_synchronized_operation
     def import_namespace_delta(
         self,
         delta: dict[str, Any],
@@ -592,6 +612,7 @@ class ReplicatedWaveMind:
             failed_nodes=failed,
         )
 
+    @_synchronized_operation
     def snapshot(
         self,
         destination: str | Path,
@@ -890,6 +911,7 @@ class ReplicatedWaveMind:
             replication_factor=self.replication_factor,
         ).placements[0]
 
+    @_synchronized_operation
     def set_node_available(self, node_id: str, available: bool) -> None:
         if node_id not in {node.id for node in self.nodes}:
             raise ValueError(f"Unknown replicated node: {node_id}")
@@ -900,6 +922,7 @@ class ReplicatedWaveMind:
             raise ValueError(f"Unknown replicated node: {node_id}")
         return self.root_path / self._safe_node_dir(node_id) / "wavemind.sqlite3"
 
+    @_synchronized_operation
     def stats(self, namespace: str | None = None) -> dict[str, Any]:
         node_payloads = {}
         total_active = 0
@@ -924,6 +947,7 @@ class ReplicatedWaveMind:
             "node_stats": node_payloads,
         }
 
+    @_synchronized_operation
     def close(self) -> None:
         for mind in self._minds.values():
             mind.close()

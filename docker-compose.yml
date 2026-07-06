@@ -4,7 +4,7 @@ services:
       context: .
       args:
         INSTALL_OPTIONAL: "false"
-    image: wavemind:2.4.18
+    image: wavemind:2.4.19
     restart: unless-stopped
     environment:
       WAVEMIND_DB: /data/wavemind.sqlite3

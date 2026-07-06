@@ -1091,6 +1091,46 @@ def run_replication_runtime_profile() -> dict[str, object]:
             finally:
                 tombstone.close()
 
+            concurrent = ReplicatedWaveMind(
+                root_path=Path(directory) / "concurrent",
+                nodes=[
+                    {"id": "node-a", "address": "127.0.0.1:8101", "zone": "zone-a"},
+                    {"id": "node-b", "address": "127.0.0.1:8102", "zone": "zone-b"},
+                    {"id": "node-c", "address": "127.0.0.1:8103", "zone": "zone-c"},
+                ],
+                replication_factor=3,
+                width=16,
+                height=16,
+                layers=1,
+                encoder=HashingTextEncoder(vector_dim=64),
+            )
+            try:
+                concurrent_namespace = "tenant:replicated-concurrent"
+                concurrent_texts = [
+                    f"replicated concurrent memory item {index:02d}"
+                    for index in range(12)
+                ]
+
+                def write_concurrent(text: str):
+                    return concurrent.remember(text, namespace=concurrent_namespace)
+
+                def query_concurrent(text: str) -> bool:
+                    results = concurrent.query(
+                        text,
+                        namespace=concurrent_namespace,
+                        top_k=1,
+                    )
+                    return bool(results) and results[0].text == text
+
+                concurrent_started = time.perf_counter()
+                with ThreadPoolExecutor(max_workers=6) as pool:
+                    concurrent_writes = list(pool.map(write_concurrent, concurrent_texts))
+                with ThreadPoolExecutor(max_workers=6) as pool:
+                    concurrent_hits = list(pool.map(query_concurrent, concurrent_texts))
+                concurrent_ms = (time.perf_counter() - concurrent_started) * 1000.0
+            finally:
+                concurrent.close()
+
             return {
                 "engine": "WaveMind replicated runtime",
                 "nodes": 3,
@@ -1103,6 +1143,12 @@ def run_replication_runtime_profile() -> dict[str, object]:
                 "tombstone_suppressed_before_repair": suppressed_before_repair,
                 "tombstone_suppressed_after_repair": suppressed_after_repair,
                 "tombstone_repair_deleted_records": tombstone_repair.deleted_records,
+                "concurrent_writes": len(concurrent_writes),
+                "concurrent_write_ok": all(write.ok for write in concurrent_writes),
+                "concurrent_query_hit_rate": (
+                    sum(1 for hit in concurrent_hits if hit) / len(concurrent_hits)
+                ),
+                "concurrent_ms": concurrent_ms,
                 "avg_query_after_loss_ms": statistics.mean(latencies),
                 "p99_query_after_loss_ms": percentile(latencies, 99),
             }
@@ -1521,6 +1567,8 @@ def main() -> int:
             print(f"| replicated runtime | recalled_after_node_loss | {result['recalled_after_node_loss']} |")
             print(f"| replicated runtime | repair_copied_records | {result['repair_copied_records']} |")
             print(f"| replicated runtime | tombstone_repair_deleted_records | {result['tombstone_repair_deleted_records']} |")
+            print(f"| replicated runtime | concurrent_write_ok | {result['concurrent_write_ok']} |")
+            print(f"| replicated runtime | concurrent_query_hit_rate | {result['concurrent_query_hit_rate']:.3f} |")
         elif result["engine"] == "WaveMind active-active delta sync":
             print(f"| active-active delta | converged | {result['converged_after_bidirectional_sync']} |")
             print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")

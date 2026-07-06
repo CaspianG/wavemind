@@ -358,15 +358,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 if runtime.get("recalled_after_node_loss")
                 and runtime.get("repair_copied_records", 0) >= 1
                 and runtime.get("tombstone_suppressed_after_repair")
+                and runtime.get("concurrent_write_ok")
+                and float(runtime.get("concurrent_query_hit_rate", 0.0)) >= 1.0
                 else "fail"
             ),
-            requirement="Quorum runtime must recall after node loss and repair missing records plus tombstones.",
+            requirement="Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
             evidence=(
                 f"recall after loss {runtime.get('recalled_after_node_loss')}, "
                 f"repair copied {runtime.get('repair_copied_records')}, "
-                f"p99 {runtime.get('p99_query_after_loss_ms')} ms"
+                f"p99 {runtime.get('p99_query_after_loss_ms')} ms, "
+                f"concurrent hit rate {runtime.get('concurrent_query_hit_rate')}"
             ),
-            next_step="Measure the same path under concurrent writes and reads.",
+            next_step="Extend the same replicated runtime profile to remote service nodes and sustained load.",
         ),
         _criterion(
             criterion_id="active_active_field_crdt",

@@ -21,6 +21,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert criteria["distributed_http_shard_transport"]["status"] == "pass"
+    assert criteria["replicated_runtime_loss"]["status"] == "pass"
+    assert "concurrent read/write traffic" in criteria["replicated_runtime_loss"]["requirement"]
+    assert "concurrent hit rate" in criteria["replicated_runtime_loss"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert criteria["ten_million_load_profile"]["status"] == "pass"
     assert payload["external_evidence"][0]["id"] == "memory_competitor_adapters"
