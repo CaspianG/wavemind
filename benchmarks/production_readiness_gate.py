@@ -69,6 +69,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
     return {
         "audit": _load_json(benchmark_dir / "benchmark_artifact_audit.json"),
         "agent_coherence": _load_json(benchmark_dir / "agent_coherence_results.json"),
+        "longmemeval_answer": _load_json(benchmark_dir / "longmemeval_answer_qwen25_1_5b_50_results.json"),
         "load_100k": _load_json(benchmark_dir / "production_load_qdrant_100k_tuned_results.json"),
         "load_1m": _load_json(benchmark_dir / "production_load_qdrant_1m_tuned_results.json"),
         "load_1m_faiss": _load_json(benchmark_dir / "production_load_faiss_1m_results.json"),
@@ -169,6 +170,34 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and agent_latency <= 10.0
         and agent_success >= static_success + 0.20
         and agent_success >= chroma_success + 0.20
+    )
+    answer_generation = _engine_results(artifacts["longmemeval_answer"])
+    answer_wavemind = answer_generation.get("WaveMind", {})
+    answer_chroma = answer_generation.get("Chroma static", {})
+    answer_qdrant = answer_generation.get("Qdrant static", {})
+    answer_queries = int(answer_wavemind.get("queries", 0))
+    answer_exact = float(answer_wavemind.get("exact_match", 0.0))
+    answer_contains = float(answer_wavemind.get("contains_answer", 0.0))
+    answer_token_f1 = float(answer_wavemind.get("token_f1", 0.0))
+    answer_evidence_recall = float(answer_wavemind.get("evidence_recall_at_k", 0.0))
+    answer_retrieval_ms = float(answer_wavemind.get("avg_retrieval_ms", float("inf")))
+    chroma_token_f1 = float(answer_chroma.get("token_f1", 0.0))
+    qdrant_token_f1 = float(answer_qdrant.get("token_f1", 0.0))
+    chroma_contains = float(answer_chroma.get("contains_answer", 0.0))
+    qdrant_contains = float(answer_qdrant.get("contains_answer", 0.0))
+    answer_quality_pass = (
+        answer_wavemind.get("provider") == "ollama"
+        and answer_wavemind.get("model") == "qwen2.5:1.5b"
+        and answer_queries >= 50
+        and answer_exact >= 0.20
+        and answer_contains >= 0.35
+        and answer_token_f1 >= 0.30
+        and answer_evidence_recall >= 0.85
+        and answer_retrieval_ms <= 20.0
+        and answer_token_f1 >= chroma_token_f1 + 0.10
+        and answer_token_f1 >= qdrant_token_f1 + 0.10
+        and answer_contains >= chroma_contains + 0.15
+        and answer_contains >= qdrant_contains + 0.15
     )
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
     load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
@@ -355,6 +384,32 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             next_step=(
                 "Keep agent-behavior quality gated in CI and extend it with "
                 "LLM answer-quality runs on LoCoMo/LongMemEval."
+            ),
+        ),
+        _criterion(
+            criterion_id="longmemeval_answer_quality",
+            title="LongMemEval answer generation beats static RAG baselines",
+            status="pass" if answer_quality_pass else "fail",
+            requirement=(
+                "A real local LLM answer-generation run must show WaveMind "
+                "improves final answers, not only retrieval: 50+ LongMemEval "
+                "questions, stronger answer accuracy/F1 than Chroma and Qdrant "
+                "static RAG, high evidence recall, and bounded retrieval latency."
+            ),
+            evidence=(
+                f"{answer_wavemind.get('provider')} {answer_wavemind.get('model')}, "
+                f"queries {answer_queries}, "
+                f"exact {answer_exact:.3f}, "
+                f"contains {answer_contains:.3f}, "
+                f"token F1 {answer_token_f1:.3f}, "
+                f"evidence recall {answer_evidence_recall:.3f}, "
+                f"retrieval {answer_retrieval_ms:.3f} ms, "
+                f"Chroma F1 {chroma_token_f1:.3f}, "
+                f"Qdrant F1 {qdrant_token_f1:.3f}"
+            ),
+            next_step=(
+                "Scale this from the checked 50-query local run to full "
+                "LongMemEval-S with stronger local/API models and faithfulness scoring."
             ),
         ),
         _criterion(

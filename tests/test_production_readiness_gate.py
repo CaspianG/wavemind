@@ -20,6 +20,12 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "Chroma static" in criteria["agent_coherence_quality"]["evidence"]
     assert "stale error 0.000" in criteria["agent_coherence_quality"]["evidence"]
     assert "context saved 0.931" in criteria["agent_coherence_quality"]["evidence"]
+    assert criteria["longmemeval_answer_quality"]["status"] == "pass"
+    assert "improves final answers" in criteria["longmemeval_answer_quality"]["requirement"]
+    assert "queries 50" in criteria["longmemeval_answer_quality"]["evidence"]
+    assert "token F1 0.333" in criteria["longmemeval_answer_quality"]["evidence"]
+    assert "Chroma F1 0.170" in criteria["longmemeval_answer_quality"]["evidence"]
+    assert "Qdrant F1 0.170" in criteria["longmemeval_answer_quality"]["evidence"]
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
     assert criteria["production_1m_slo"]["status"] == "pass"
     assert criteria["production_1m_query_depth"]["status"] == "pass"
@@ -130,9 +136,10 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 29
+    assert payload["summary"]["total_criteria"] == 30
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
+    assert "LongMemEval answer generation beats static RAG baselines" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "VectorDBBench custom dataset export is reproducible" in report
     assert "Cluster autoscaler plans node additions within headroom" in report

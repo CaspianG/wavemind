@@ -7,15 +7,16 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `29` |
+| passed criteria | `30` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `29` |
+| total criteria | `30` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T20:56:44Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T21:05:44Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
+| LongMemEval answer generation beats static RAG baselines | `pass` | ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, evidence recall 0.920, retrieval 2.000 ms, Chroma F1 0.170, Qdrant F1 0.170 | Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
