@@ -91,6 +91,15 @@ Implemented in this branch:
   and `.md` - 4h-only calibration report for BTC/ETH/SOL.
 - `benchmarks/crypto_confidence_calibration_okx_8asset_4h_timeframe_policy_results.json`
   and `.md` - 4h-only calibration report for the combined 8-asset check.
+- `benchmarks/crypto_perp_price_target_results.json` and `.md` - OKX
+  HYPE/XRP/ZEC/SOL USDT perpetual 24h price-target stress check.
+- `benchmarks/crypto_perp_signal_quality_results.json` and `.md` - OKX
+  HYPE/XRP/ZEC/SOL USDT perpetual signal-quality tiers.
+- `benchmarks/crypto_perp_7d_price_target_results.json` and `.md` - OKX
+  HYPE/XRP/ZEC/SOL 7d perpetual target-price check with 240 daily bars.
+- `benchmarks/crypto_perp_current_forecast_24h.json` / `.md` and
+  `benchmarks/crypto_perp_current_forecast_7d.json` / `.md` - current OKX
+  perpetual research forecast snapshots.
 - `benchmarks/crypto_relationships_okx_4h_results.json` - checked-in OKX 4h
   relationship-mining result.
 - `benchmarks/crypto_relationships_okx_4h_report.md` - readable relationship
@@ -368,6 +377,51 @@ real progress over the previous robust policy, but it is still research-grade:
 the aggregate hit rate improved, while worst-slice direction hit got worse. The
 next target is not a prettier table; it is raising worst-slice robustness without
 losing the aggregate edge.
+
+## Perpetual Futures Stress Check
+
+The branch now separately checks OKX USDT perpetuals. These are not the same
+market as the spot-style OKX benchmark above, and the spot market-field policy
+does not transfer cleanly.
+
+```sh
+python benchmarks/crypto_price_target_benchmark.py \
+  --dataset cached \
+  --exchange okx \
+  --symbols HYPE/USDT:USDT XRP/USDT:USDT ZEC/USDT:USDT SOL/USDT:USDT \
+  --timeframes 1h 4h \
+  --engines wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
+  --bars 1200
+```
+
+Checked-in result: HYPE/XRP/ZEC/SOL perpetuals, 1h/4h, 1200 bars, 2880
+walk-forward predictions.
+
+| engine | direction hit | MAE return | MAPE | worst slice hit |
+|---|---:|---:|---:|---:|
+| WaveMind perp field target | 0.591 | 392.4 bps | 4.05% | 0.411 |
+| WaveMind market-field target | 0.436 | 466.6 bps | 4.78% | 0.000 |
+| WaveMind robust target | 0.591 | 392.4 bps | 4.05% | 0.411 |
+| Momentum baseline | 0.564 | 409.2 bps | 4.21% | 0.267 |
+| Historical mean baseline | 0.511 | 406.9 bps | 4.21% | 0.078 |
+| Naive last-outcome baseline | 0.570 | 522.0 bps | 5.31% | 0.300 |
+
+The perp field is intentionally conservative: it keeps the robust target unless
+a fold-local component clears a strict improvement guard on matured pre-test
+history. That prevents the selector from overfitting short validation windows.
+
+The strongest current perpetual result is narrower:
+
+| tier | selected | coverage | direction hit | MAPE |
+|---|---:|---:|---:|---:|
+| all_forecasts | 2880 | 1.000 | 0.591 | 4.05% |
+| large_move_directional_edge | 39 | 0.014 | 0.872 | 10.53% |
+
+This is a real 80%+ directional edge, but only on a low-coverage large-move 1h
+subset. It is not a precise target-price model and not a claim that every
+coin/timeframe reaches 80-90% accuracy. The current 7d perpetual check is much
+weaker: `0.533` direction hit and `8.45%` MAPE on 240 daily walk-forward
+predictions.
 
 ## Signal Quality Benchmark
 

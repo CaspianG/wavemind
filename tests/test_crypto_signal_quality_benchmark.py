@@ -42,11 +42,13 @@ def test_signal_quality_benchmark_builds_fixed_tiers():
         folds=2,
         fold_stride=18,
         calibration_windows=24,
+        target_engine="perp-field",
     )
 
     results = {result["tier"]: result for result in payload["results"]}
     assert set(results) == {tier.name for tier in DEFAULT_SIGNAL_TIERS}
     assert payload["scenario"]["name"] == "crypto_signal_quality_walk_forward"
+    assert payload["scenario"]["target_engine"] == "perp-field"
     assert payload["scenario"]["confidence_is_probability"] is False
     assert results["all_forecasts"]["selected_queries"] == 24
     assert results["all_forecasts"]["coverage"] == 1.0
@@ -54,6 +56,7 @@ def test_signal_quality_benchmark_builds_fixed_tiers():
     assert 0.0 <= results["strong_trade_quality"]["direction_hit_rate"] <= 1.0
     assert results["strong_trade_quality"]["confidence_is_probability"] is False
     assert payload["event_metrics"][0]["confidence_is_probability"] is False
+    assert payload["event_metrics"][0]["engine"] == "WaveMind perp field target"
     assert payload["event_metrics"][0]["predicted_direction"] in {"up", "down"}
     assert payload["event_metrics"][0]["agreement"] >= 0.0
     assert payload["event_metrics"][0]["strength"] >= 0.0
@@ -96,6 +99,8 @@ def test_signal_quality_markdown_and_cli(tmp_path):
             "12",
             "--calibration-windows",
             "20",
+            "--target-engine",
+            "perp-field",
             "--output",
             str(output),
             "--report",

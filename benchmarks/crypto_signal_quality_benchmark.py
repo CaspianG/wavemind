@@ -19,12 +19,17 @@ from benchmarks.crypto_price_target_benchmark import (  # noqa: E402
     DEFAULT_SYMBOLS,
     DEFAULT_TIMEFRAMES,
     PriceTargetEvent,
+    _default_directional_policy,
+    _directional_candidate_values,
+    _fit_directional_policy,
     _fit_wave_calibration,
     _fold_starts,
     _force_nonzero,
     _market_field_value_from_features,
     _mature_history,
+    _perp_field_value_from_features,
     _price_target_event,
+    _robust_value_from_features,
     _signed_direction,
     _summarize_events,
     _target_model_features,
@@ -47,6 +52,7 @@ class SignalTier:
 
 @dataclass(frozen=True)
 class SignalQualityEvent:
+    engine: str
     symbol: str
     timeframe: str
     fold_index: int
@@ -101,6 +107,13 @@ DEFAULT_SIGNAL_TIERS: tuple[SignalTier, ...] = (
         description="High-conviction subset: fewer forecasts promoted to trade-quality.",
     ),
     SignalTier(
+        name="large_move_directional_edge",
+        min_agreement=0.125,
+        min_magnitude_bps=300.0,
+        max_volatility_bps=250.0,
+        description="Large predicted move diagnostic tier. Measures directional edge, not precise target-price quality.",
+    ),
+    SignalTier(
         name="consensus_edge",
         min_agreement=1.00,
         min_strength=0.50,
@@ -128,7 +141,9 @@ def run_signal_quality_benchmark(
     fold_stride: int | None = None,
     calibration_windows: int = 120,
     tiers: Iterable[SignalTier] = DEFAULT_SIGNAL_TIERS,
+    target_engine: str = "market-field",
 ) -> dict:
+    target_engine_key = _normalize_target_engine(target_engine)
     events: list[SignalQualityEvent] = []
     for market in markets:
         windows = list(market["windows"])
@@ -145,6 +160,16 @@ def run_signal_quality_benchmark(
                 horizon=int(market["horizon"]),
                 calibration_windows=calibration_windows,
             )
+            directional_policy = (
+                _fit_directional_policy(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=calibration,
+                    calibration_windows=calibration_windows,
+                )
+                if target_engine_key == "perp-field"
+                else _default_directional_policy("not_requested")
+            )
             for query in windows[fold_start : fold_start + test_windows]:
                 history = _mature_history(windows, current=query)
                 if len(history) < 4:
@@ -156,6 +181,8 @@ def run_signal_quality_benchmark(
                         horizon=int(market["horizon"]),
                         fold_index=fold_index,
                         calibration=calibration,
+                        target_engine=target_engine_key,
+                        directional_policy=directional_policy,
                     )
                 )
 
@@ -177,6 +204,7 @@ def run_signal_quality_benchmark(
             "folds": int(folds),
             "fold_stride": int(fold_stride) if fold_stride is not None else None,
             "calibration_windows": int(calibration_windows),
+            "target_engine": target_engine_key,
             "markets": [
                 {
                     "symbol": str(market["symbol"]),
@@ -253,8 +281,9 @@ def render_markdown(payload: dict) -> str:
     lines.extend(
         [
             "",
-            "Interpretation: higher tiers should improve direction hit and target error while reducing coverage. "
-            "A high tier with tiny coverage is evidence of selective edge, not a standalone trading system.",
+            "Interpretation: higher tiers are diagnostics, not guarantees. Some tiers optimize direction hit, "
+            "others should also improve target error. A high tier with tiny coverage is evidence of selective edge, "
+            "not a standalone trading system.",
             "",
         ]
     )
@@ -268,19 +297,37 @@ def _signal_quality_event(
     horizon: int,
     fold_index: int,
     calibration,
+    target_engine: str,
+    directional_policy,
 ) -> SignalQualityEvent:
     features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
-    predicted_return_bps, suffix = _market_field_value_from_features(features, query.timeframe)
+    if target_engine == "robust":
+        predicted_return_bps, suffix = _robust_value_from_features(features, query.timeframe)
+        engine_name = "WaveMind robust target"
+        method_prefix = "signal_quality_robust"
+    elif target_engine == "perp-field":
+        predicted_return_bps, suffix = _perp_field_value_from_features(features, query.timeframe, directional_policy)
+        engine_name = "WaveMind perp field target"
+        method_prefix = "signal_quality_perp"
+    else:
+        predicted_return_bps, suffix = _market_field_value_from_features(features, query.timeframe)
+        engine_name = "WaveMind market-field target"
+        method_prefix = "signal_quality"
     support = int(max(0.0, round(features.get("support_count", 0.0))))
     price_event = _price_target_event(
-        engine="WaveMind market-field target",
+        engine=engine_name,
         window=query,
         predicted_return_bps=predicted_return_bps,
         support=support,
-        method=f"signal_quality+{suffix}",
+        method=f"{method_prefix}+{suffix}",
         fold_index=fold_index,
     )
-    component_values = _policy_component_values(features, query.timeframe, predicted_return_bps)
+    component_values = _policy_component_values(
+        features,
+        query.timeframe,
+        predicted_return_bps,
+        target_engine=target_engine,
+    )
     predicted_direction = _signed_direction(predicted_return_bps)
     agreement = sum(1 for value in component_values.values() if _signed_direction(value) == predicted_direction) / len(component_values)
     volatility = abs(float(features.get("volatility_bps", 0.0)))
@@ -294,7 +341,25 @@ def _signal_quality_event(
     )
 
 
-def _policy_component_values(features: dict[str, float], timeframe: str, predicted_return_bps: float) -> dict[str, float]:
+def _policy_component_values(
+    features: dict[str, float],
+    timeframe: str,
+    predicted_return_bps: float,
+    *,
+    target_engine: str = "market-field",
+) -> dict[str, float]:
+    if target_engine == "perp-field":
+        candidates = _directional_candidate_values(features, timeframe)
+        return {
+            "selected_policy": predicted_return_bps,
+            "raw_wave": candidates["raw_wave"],
+            "calibrated_wave": candidates["calibrated_wave"],
+            "momentum": candidates["momentum"],
+            "regime": candidates["regime"],
+            "historical": candidates["historical"],
+            "robust": candidates["robust"],
+            "market_field": candidates["market_field"],
+        }
     raw_wave = _force_nonzero(float(features.get("raw_wave", 0.0)), fallback=predicted_return_bps)
     calibrated_wave = _force_nonzero(float(features.get("calibrated_wave", raw_wave)), fallback=predicted_return_bps)
     momentum = _force_nonzero(float(features.get("momentum", calibrated_wave)), fallback=predicted_return_bps)
@@ -328,6 +393,27 @@ def _policy_component_values(features: dict[str, float], timeframe: str, predict
     }
 
 
+def _normalize_target_engine(value: str) -> str:
+    key = value.strip().lower().replace("_", "-")
+    aliases = {
+        "robust": "robust",
+        "robust-target": "robust",
+        "wavemind-robust": "robust",
+        "wavemind-robust-target": "robust",
+        "market": "market-field",
+        "market-field": "market-field",
+        "wavemind-market-field": "market-field",
+        "perp": "perp-field",
+        "perp-field": "perp-field",
+        "perp-field-target": "perp-field",
+        "wavemind-perp-field": "perp-field",
+        "wavemind-perp-field-target": "perp-field",
+    }
+    if key not in aliases:
+        raise ValueError(f"Unknown signal-quality target engine {value!r}")
+    return aliases[key]
+
+
 def _quality_from_price_event(
     event: PriceTargetEvent,
     *,
@@ -337,6 +423,7 @@ def _quality_from_price_event(
     component_signs: dict[str, str],
 ) -> SignalQualityEvent:
     return SignalQualityEvent(
+        engine=event.engine,
         symbol=event.symbol,
         timeframe=event.timeframe,
         fold_index=event.fold_index,
@@ -390,7 +477,8 @@ def _summarize_signal_events(
     timeframe: str,
 ) -> dict:
     price_events = [_price_event_from_quality(event) for event in events]
-    summary = _summarize_events(price_events, engine="WaveMind market-field target", timeframe=timeframe)
+    engine = events[0].engine if events else "WaveMind market-field target"
+    summary = _summarize_events(price_events, engine=engine, timeframe=timeframe)
     return summary | {
         "tier": tier.name,
         "description": tier.description,
@@ -452,7 +540,7 @@ def _select_tier(events: list[SignalQualityEvent], tier: SignalTier) -> list[Sig
 def _price_event_from_quality(event: SignalQualityEvent) -> PriceTargetEvent:
     error = float(event.predicted_return_bps) - float(event.actual_return_bps)
     return PriceTargetEvent(
-        engine="WaveMind market-field target",
+        engine=event.engine,
         symbol=event.symbol,
         timeframe=event.timeframe,
         fold_index=event.fold_index,
@@ -490,6 +578,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--folds", type=int, default=4)
     parser.add_argument("--fold-stride", type=int, default=None)
     parser.add_argument("--calibration-windows", type=int, default=120)
+    parser.add_argument(
+        "--target-engine",
+        choices=["market-field", "perp-field", "robust"],
+        default="market-field",
+        help="Forecast engine used before signal-quality tiering.",
+    )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_signal_quality_results.json"))
     parser.add_argument("--report", type=Path, default=Path("benchmarks/crypto_signal_quality_report.md"))
@@ -515,6 +609,7 @@ def main() -> int:
         folds=args.folds,
         fold_stride=args.fold_stride,
         calibration_windows=args.calibration_windows,
+        target_engine=args.target_engine,
     )
     output_payload = sampled_signal_quality_payload(payload)
     args.output.parent.mkdir(parents=True, exist_ok=True)

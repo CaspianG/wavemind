@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import statistics
 import sys
 from dataclasses import asdict, dataclass
@@ -102,6 +103,17 @@ class TargetModelCalibration:
     note: str
 
 
+@dataclass(frozen=True)
+class DirectionalPolicyCalibration:
+    selected_candidate: str
+    validation_direction_hit: float
+    validation_mae_bps: float
+    samples: int
+    candidate_direction_hit: dict[str, float]
+    candidate_mae_bps: dict[str, float]
+    note: str
+
+
 def run_price_target_benchmark(
     *,
     markets: list[dict],
@@ -140,6 +152,16 @@ def run_price_target_benchmark(
                 if "wavemind-learned-target" in engine_keys
                 else _disabled_target_model("not_requested")
             )
+            fold_directional_policy = (
+                _fit_directional_policy(
+                    windows[:fold_start],
+                    horizon=int(market["horizon"]),
+                    calibration=fold_calibration,
+                    calibration_windows=calibration_windows,
+                )
+                if "wavemind-perp-field-target" in engine_keys
+                else _default_directional_policy("not_requested")
+            )
             fold_events: list[PriceTargetEvent] = []
             for query in queries:
                 history = _mature_history(windows, current=query)
@@ -154,6 +176,7 @@ def run_price_target_benchmark(
                         calibration=fold_calibration,
                         ensemble=fold_ensemble,
                         target_model=fold_target_model,
+                        directional_policy=fold_directional_policy,
                     )
                     event = _price_target_event(
                         engine=_engine_name(engine_key),
@@ -174,6 +197,8 @@ def run_price_target_benchmark(
                 }
                 if "wavemind-learned-target" in engine_keys:
                     fold_metadata["target_model"] = asdict(fold_target_model)
+                if "wavemind-perp-field-target" in engine_keys:
+                    fold_metadata["directional_policy"] = asdict(fold_directional_policy)
                 by_market.append(
                     _summarize_events(
                         engine_events,
@@ -335,6 +360,7 @@ def _predict_return(
     calibration: ReturnCalibration,
     ensemble: EnsembleCalibration,
     target_model: TargetModelCalibration,
+    directional_policy: DirectionalPolicyCalibration,
 ) -> tuple[float, int, str]:
     if engine_key == "wavemind-ensemble":
         components = _component_predictions(history, query, horizon=horizon)
@@ -346,6 +372,14 @@ def _predict_return(
         return _robust_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-market-field-target":
         return _market_field_target_return(history, query, horizon=horizon, calibration=calibration)
+    if engine_key == "wavemind-perp-field-target":
+        return _perp_field_target_return(
+            history,
+            query,
+            horizon=horizon,
+            calibration=calibration,
+            directional_policy=directional_policy,
+        )
     if engine_key == "wavemind-learned-target":
         features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
         robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
@@ -437,6 +471,20 @@ def _market_field_target_return(
     value, suffix = _market_field_value_from_features(features, query.timeframe)
     support = int(max(0.0, round(features.get("support_count", 0.0))))
     return value, support, f"timeframe_market_field_v1:{suffix}"
+
+
+def _perp_field_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    directional_policy: DirectionalPolicyCalibration,
+) -> tuple[float, int, str]:
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    value, suffix = _perp_field_value_from_features(features, query.timeframe, directional_policy)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    return value, support, f"fold_local_perp_field_v1:{suffix}"
 
 
 TARGET_MODEL_FEATURES = (
@@ -684,6 +732,142 @@ def _market_field_value_from_features(features: dict[str, float], timeframe: str
         return _force_nonzero(-historical, fallback=calibrated_wave), "daily_historical_reversion"
     robust, suffix = _robust_value_from_features(features, timeframe)
     return robust, f"robust_fallback:{suffix}"
+
+
+def _perp_field_value_from_features(
+    features: dict[str, float],
+    timeframe: str,
+    directional_policy: DirectionalPolicyCalibration,
+) -> tuple[float, str]:
+    candidates = _directional_candidate_values(features, timeframe)
+    selected = directional_policy.selected_candidate
+    if selected not in candidates:
+        robust, suffix = _robust_value_from_features(features, timeframe)
+        return _force_nonzero(robust, fallback=float(features.get("momentum", 1.0))), f"fallback:{suffix}"
+    value = _force_nonzero(candidates[selected], fallback=float(features.get("momentum", 1.0)))
+    note = (
+        f"{selected}:validation_hit={directional_policy.validation_direction_hit:.3f}:"
+        f"validation_mae={directional_policy.validation_mae_bps:.1f}"
+    )
+    return value, note
+
+
+def _directional_candidate_values(features: dict[str, float], timeframe: str) -> dict[str, float]:
+    raw_wave = _force_nonzero(float(features.get("raw_wave", 0.0)), fallback=float(features.get("naive", 1.0)))
+    calibrated_wave = _force_nonzero(float(features.get("calibrated_wave", raw_wave)), fallback=raw_wave)
+    momentum = _force_nonzero(float(features.get("momentum", calibrated_wave)), fallback=calibrated_wave)
+    regime = _force_nonzero(float(features.get("regime", calibrated_wave)), fallback=calibrated_wave)
+    historical = _force_nonzero(float(features.get("historical", calibrated_wave)), fallback=calibrated_wave)
+    naive = _force_nonzero(float(features.get("naive", momentum)), fallback=momentum)
+    robust, _ = _robust_value_from_features(features, timeframe)
+    market_field, _ = _market_field_value_from_features(features, timeframe)
+    base = {
+        "raw_wave": raw_wave,
+        "calibrated_wave": calibrated_wave,
+        "momentum": momentum,
+        "regime": regime,
+        "historical": historical,
+        "naive": naive,
+        "robust": _force_nonzero(robust, fallback=calibrated_wave),
+        "market_field": _force_nonzero(market_field, fallback=calibrated_wave),
+    }
+    inverted = {f"inv_{name}": -value for name, value in base.items()}
+    return base | inverted
+
+
+def _default_directional_policy(note: str) -> DirectionalPolicyCalibration:
+    return DirectionalPolicyCalibration(
+        selected_candidate="robust",
+        validation_direction_hit=0.0,
+        validation_mae_bps=math.inf,
+        samples=0,
+        candidate_direction_hit={},
+        candidate_mae_bps={},
+        note=note,
+    )
+
+
+def _fit_directional_policy(
+    history: list[OHLCVWindow],
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+    calibration_windows: int,
+) -> DirectionalPolicyCalibration:
+    if len(history) < max(40, calibration_windows // 2):
+        return _default_directional_policy("insufficient_history")
+    start = max(24, len(history) - calibration_windows)
+    rows: list[tuple[dict[str, float], float]] = []
+    for index in range(start, len(history)):
+        prior = history[:index]
+        if len(prior) < 16:
+            continue
+        features = _target_model_features(prior, history[index], horizon=horizon, calibration=calibration)
+        rows.append((_directional_candidate_values(features, history[index].timeframe), float(history[index].future_return_bps)))
+    if len(rows) < 12:
+        return _default_directional_policy("insufficient_calibration_samples")
+
+    names = sorted(
+        name
+        for name in {name for candidates, _ in rows for name in candidates}
+        if name not in {"naive", "inv_naive"}
+    )
+    candidate_hit: dict[str, float] = {}
+    candidate_mae: dict[str, float] = {}
+    candidate_magnitude: dict[str, float] = {}
+    for name in names:
+        predictions = [float(candidates[name]) for candidates, _ in rows if name in candidates]
+        actuals = [actual for candidates, actual in rows if name in candidates]
+        if not predictions:
+            continue
+        candidate_hit[name] = statistics.mean(
+            1.0 if _signed_direction(prediction) == _signed_direction(actual) else 0.0
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )
+        candidate_mae[name] = statistics.mean(
+            abs(prediction - actual)
+            for prediction, actual in zip(predictions, actuals, strict=False)
+        )
+        candidate_magnitude[name] = statistics.mean(abs(prediction) for prediction in predictions)
+
+    if not candidate_hit:
+        return _default_directional_policy("no_candidate_predictions")
+    robust_hit = candidate_hit.get("robust", -math.inf)
+    robust_mae = candidate_mae.get("robust", math.inf)
+    eligible = [
+        name
+        for name in candidate_hit
+        if candidate_hit[name] >= robust_hit + 0.10 and candidate_mae.get(name, math.inf) <= robust_mae * 0.85
+    ]
+    if eligible:
+        selected = max(
+            eligible,
+            key=lambda name: (
+                candidate_hit[name],
+                -candidate_mae.get(name, math.inf),
+                candidate_magnitude.get(name, 0.0),
+            ),
+        )
+        note = "fold-local component selector beat robust guard on matured pre-test history"
+    else:
+        selected = "robust" if "robust" in candidate_hit else max(
+            candidate_hit,
+            key=lambda name: (
+                candidate_hit[name],
+                -candidate_mae.get(name, math.inf),
+                candidate_magnitude.get(name, 0.0),
+            ),
+        )
+        note = "robust anchor kept because no component cleared fold-local improvement guard"
+    return DirectionalPolicyCalibration(
+        selected_candidate=selected,
+        validation_direction_hit=float(candidate_hit[selected]),
+        validation_mae_bps=float(candidate_mae[selected]),
+        samples=len(rows),
+        candidate_direction_hit={name: float(candidate_hit[name]) for name in sorted(candidate_hit)},
+        candidate_mae_bps={name: float(candidate_mae[name]) for name in sorted(candidate_mae)},
+        note=note,
+    )
 
 
 def _robust_1h_target_value(
@@ -1116,6 +1300,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-market-field-target": "wavemind-market-field-target",
         "market-field": "wavemind-market-field-target",
         "market-field-target": "wavemind-market-field-target",
+        "wavemind-perp-field": "wavemind-perp-field-target",
+        "wavemind-perp-field-target": "wavemind-perp-field-target",
+        "perp-field": "wavemind-perp-field-target",
+        "perp-field-target": "wavemind-perp-field-target",
         "wavemind-robust": "wavemind-robust-target",
         "wavemind-robust-target": "wavemind-robust-target",
         "robust": "wavemind-robust-target",
@@ -1144,6 +1332,7 @@ def _engine_name(key: str) -> str:
         "wavemind-target": "WaveMind price target",
         "wavemind-ensemble": "WaveMind ensemble target",
         "wavemind-market-field-target": "WaveMind market-field target",
+        "wavemind-perp-field-target": "WaveMind perp field target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
         "wavemind-calibrated": "WaveMind calibrated target",
@@ -1164,7 +1353,8 @@ def _normalize_symbol(symbol: str) -> str:
 
 
 def _cache_path(cache_dir: Path, exchange: str, symbol: str, timeframe: str) -> Path:
-    return cache_dir / exchange / f"{symbol.replace('/', '_')}_{timeframe}.csv"
+    safe_symbol = re.sub(r"[^A-Za-z0-9._-]+", "_", symbol).strip("_")
+    return cache_dir / exchange / f"{safe_symbol}_{timeframe}.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -1179,6 +1369,7 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         default=[
             "wavemind-market-field-target",
+            "wavemind-perp-field-target",
             "wavemind-robust-target",
             "wavemind-calibrated",
             "wavemind-target",

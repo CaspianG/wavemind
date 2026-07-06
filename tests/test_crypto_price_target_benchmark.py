@@ -8,6 +8,10 @@ from pathlib import Path
 
 from benchmarks.crypto_ohlcv import generate_synthetic_ohlcv, make_ohlcv_windows
 from benchmarks.crypto_price_target_benchmark import (
+    _cache_path,
+    _default_directional_policy,
+    _directional_candidate_values,
+    _perp_field_value_from_features,
     _market_field_value_from_features,
     _robust_1h_target_value,
     _robust_1d_target_value,
@@ -201,6 +205,41 @@ def test_market_field_value_uses_timeframe_specific_reversion():
     assert "daily_historical_reversion" in one_day_note
 
 
+def test_perp_field_uses_fold_local_selected_candidate():
+    features = {
+        "raw_wave": 80.0,
+        "calibrated_wave": 60.0,
+        "momentum": 50.0,
+        "regime": 40.0,
+        "historical": 30.0,
+        "naive": 20.0,
+    }
+    policy = _default_directional_policy("test")
+    policy = policy.__class__(
+        selected_candidate="inv_regime",
+        validation_direction_hit=0.72,
+        validation_mae_bps=123.0,
+        samples=42,
+        candidate_direction_hit={"inv_regime": 0.72},
+        candidate_mae_bps={"inv_regime": 123.0},
+        note="test",
+    )
+
+    value, note = _perp_field_value_from_features(features, "1h", policy)
+
+    assert value == -40.0
+    assert "inv_regime" in note
+    assert "validation_hit=0.720" in note
+    assert _directional_candidate_values(features, "1h")["inv_historical"] == -30.0
+
+
+def test_cache_path_sanitizes_perpetual_symbols(tmp_path):
+    path = _cache_path(tmp_path, "okx", "HYPE/USDT:USDT", "1h")
+
+    assert path.name == "HYPE_USDT_USDT_1h.csv"
+    assert ":" not in path.name
+
+
 def test_price_target_markdown_and_cli(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     output = tmp_path / "price-target.json"
@@ -220,6 +259,7 @@ def test_price_target_markdown_and_cli(tmp_path):
             "4h",
             "--engines",
             "wavemind-market-field-target",
+            "perp-field",
             "wavemind-robust-target",
             "wavemind-ensemble",
             "wavemind-calibrated",
@@ -255,6 +295,7 @@ def test_price_target_markdown_and_cli(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     markdown = report.read_text(encoding="utf-8")
     assert payload["results"][0]["engine"] == "WaveMind market-field target"
+    assert any(result["engine"] == "WaveMind perp field target" for result in payload["results"])
     assert payload["event_metrics_total"] >= len(payload["event_metrics"])
     assert "event_metrics_truncated" in payload
     assert "WaveMind Crypto Price Target Benchmark" in markdown

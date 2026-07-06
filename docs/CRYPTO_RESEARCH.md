@@ -141,6 +141,49 @@ walk-forward events. Coverage is low, so this is a research signal-quality
 breakthrough, not a standalone trading system. The next task is to expand
 coverage while preserving hit-rate and improving worst-slice behavior.
 
+## Perpetual Futures Stress Check
+
+OKX USDT perpetuals are validated separately from the spot-style OKX benchmark.
+The initial spot market-field policy failed on HYPE/XRP/ZEC/SOL perps, so the
+perp field now uses a conservative robust anchor and only switches components
+when a fold-local candidate clears a strict improvement guard on matured
+pre-test history.
+
+Runner:
+
+```sh
+python benchmarks/crypto_price_target_benchmark.py \
+  --dataset cached \
+  --exchange okx \
+  --symbols HYPE/USDT:USDT XRP/USDT:USDT ZEC/USDT:USDT SOL/USDT:USDT \
+  --timeframes 1h 4h \
+  --engines wavemind-perp-field-target wavemind-market-field-target wavemind-robust-target momentum regime-mean historical-mean naive-last \
+  --bars 1200
+```
+
+Checked-in result:
+
+| engine | queries | direction hit | MAE return | MAPE | worst slice hit |
+|---|---:|---:|---:|---:|---:|
+| WaveMind perp field target | 2880 | 0.591 | 392.4 bps | 4.05% | 0.411 |
+| WaveMind market-field target | 2880 | 0.436 | 466.6 bps | 4.78% | 0.000 |
+| WaveMind robust target | 2880 | 0.591 | 392.4 bps | 4.05% | 0.411 |
+| Momentum baseline | 2880 | 0.564 | 409.2 bps | 4.21% | 0.267 |
+| Historical mean baseline | 2880 | 0.511 | 406.9 bps | 4.21% | 0.078 |
+| Naive last-outcome baseline | 2880 | 0.570 | 522.0 bps | 5.31% | 0.300 |
+
+Signal-quality result:
+
+| tier | selected | coverage | direction hit | MAE return | MAPE |
+|---|---:|---:|---:|---:|---:|
+| all_forecasts | 2880 | 1.000 | 0.591 | 392.4 bps | 4.05% |
+| large_move_directional_edge | 39 | 0.014 | 0.872 | 771.2 bps | 10.53% |
+
+Interpretation: the 87.2% result is a real but narrow large-move directional
+edge. It does not mean the system has a universal 80-90% target-price forecast.
+The 7d perpetual check remains weak: 240 daily walk-forward predictions,
+direction hit `0.533`, MAPE `8.45%`.
+
 ## Confidence And Calibration
 
 The current forecast runner reports `evidence_strength`, not true confidence.
