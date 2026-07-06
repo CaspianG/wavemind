@@ -47,7 +47,7 @@ def test_vectordbbench_manifest_can_report_missing_parquet_engine(tmp_path, monk
 
 def test_vectordbbench_dataset_writes_parquet_when_pyarrow_is_available(tmp_path):
     pytest.importorskip("pyarrow")
-    pytest.importorskip("pandas")
+    pd = pytest.importorskip("pandas")
 
     from benchmarks.vectordbbench_dataset import generate_dataset
 
@@ -63,6 +63,8 @@ def test_vectordbbench_dataset_writes_parquet_when_pyarrow_is_available(tmp_path
     assert manifest["status"] == "ready"
     for key in ("train", "test", "neighbors", "scalar_labels"):
         assert Path(manifest["files"][key]).exists()
+    neighbors = pd.read_parquet(manifest["files"]["neighbors"])
+    assert "neighbors_id" in neighbors.columns
 
 
 def test_vectordbbench_dataset_cli_writes_manifest_without_parquet(tmp_path):

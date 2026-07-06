@@ -1,7 +1,7 @@
 {
   "benchmark": "VectorDBBench custom dataset",
   "status": "ready",
-  "created_at": "2026-07-06T15:09:03.572711+00:00",
+  "created_at": "2026-07-06T15:41:13.749570+00:00",
   "source": "WaveMind deterministic synthetic production vectors",
   "metric": "cosine",
   "schema": {
@@ -15,7 +15,7 @@
     },
     "neighbors": {
       "id": "int",
-      "neighbors": "list[int]"
+      "neighbors_id": "list[int]"
     },
     "scalar_labels": {
       "id": "int",

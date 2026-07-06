@@ -1782,7 +1782,8 @@ python benchmarks/vectordbbench_dataset.py --vectors 10000 --queries 100 --dim 1
 
 This writes the standard custom-dataset files used by VectorDBBench:
 `train.parquet`, `test.parquet`, `neighbors.parquet`, and
-`scalar_labels.parquet`. The parquet files are generated under `state/` so the
+`scalar_labels.parquet`; the ground-truth file uses the `neighbors_id` column.
+The parquet files are generated under `state/` so the
 repository does not carry bulky binary benchmark data; the checked-in manifest
 records the exact parameters and reproduction command.
 

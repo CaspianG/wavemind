@@ -51,7 +51,7 @@ def build_rows(
     neighbor_rows = [
         {
             "id": index + 1,
-            "neighbors": [int(value) for value in row],
+            "neighbors_id": [int(value) for value in row],
         }
         for index, row in enumerate(neighbors)
     ]
@@ -109,7 +109,7 @@ def build_manifest(
         "schema": {
             "train": {"id": "int", "vector": "list[float32]"},
             "test": {"id": "int", "vector": "list[float32]"},
-            "neighbors": {"id": "int", "neighbors": "list[int]"},
+            "neighbors": {"id": "int", "neighbors_id": "list[int]"},
             "scalar_labels": {"id": "int", "label": "str"},
         },
         "dataset": {
