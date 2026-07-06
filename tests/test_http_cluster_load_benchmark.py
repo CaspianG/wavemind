@@ -185,6 +185,7 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
         replication_factor=3,
         write_quorum=None,
         read_quorum=1,
+        read_fanout=None,
         namespace_prefix="tenant:test-cli",
         namespace_count=2,
         memories_per_namespace=2,
@@ -207,6 +208,7 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
 
     assert payload["scenario"]["name"] == "http_cluster_load"
     assert payload["scenario"]["node_count"] == 4
+    assert payload["scenario"]["read_fanout"] == 3
     result = payload["results"][0]
     assert result["engine"] == "WaveMind external HTTP cluster load"
     assert result["slo_pass"] is True

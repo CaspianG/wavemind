@@ -79,6 +79,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replication-factor", type=int, default=3)
     parser.add_argument("--write-quorum", type=int, default=None)
     parser.add_argument("--read-quorum", type=int, default=1)
+    parser.add_argument(
+        "--read-fanout",
+        type=int,
+        default=None,
+        help="Number of replicas queried per read. Defaults to all replicas.",
+    )
     parser.add_argument("--namespace-prefix", default=None)
     parser.add_argument("--namespace-count", type=int, default=32)
     parser.add_argument("--memories-per-namespace", type=int, default=8)
@@ -114,6 +120,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
         replication_factor=args.replication_factor,
         write_quorum=args.write_quorum,
         read_quorum=args.read_quorum,
+        read_fanout=args.read_fanout,
         max_workers=args.workers,
     )
     result["slo_min_success_rate"] = args.min_success_rate
@@ -133,6 +140,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
             if args.write_quorum is not None
             else args.replication_factor // 2 + 1,
             "read_quorum": args.read_quorum,
+            "read_fanout": args.read_fanout or args.replication_factor,
             "namespace_prefix": namespace_prefix,
             "namespace_count": args.namespace_count,
             "memories_per_namespace": args.memories_per_namespace,

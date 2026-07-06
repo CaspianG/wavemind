@@ -180,6 +180,39 @@ jobs:
           name: redis-api-load-results
           path: benchmarks/redis_api_load_ci_results.json
 
+  local-http-cluster-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run real local multi-node HTTP cluster smoke
+        run: |
+          python benchmarks/local_http_cluster_smoke.py \
+            --nodes 4 \
+            --replication-factor 3 \
+            --namespace-count 4 \
+            --memories-per-namespace 2 \
+            --workers 4 \
+            --timeout 3 \
+            --read-fanout 1 \
+            --fail-on-slo \
+            --output benchmarks/local_http_cluster_smoke_ci_results.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: local-http-cluster-smoke-results
+          path: benchmarks/local_http_cluster_smoke_ci_results.json
+
   docker:
     runs-on: ubuntu-latest
 

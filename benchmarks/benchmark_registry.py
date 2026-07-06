@@ -166,6 +166,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_ivfpq_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_1m_results.json")
     production_streaming_ivfpq_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_10m_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
+    local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
@@ -195,6 +196,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("10M compressed", production_streaming_ivfpq_10m_payload),
     }
     scale_readiness_results = _engine_results(scale_readiness_payload)
+    local_http_cluster_results = _engine_results(local_http_cluster_payload)
     external_http_cluster_results = _engine_results(external_http_cluster_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
@@ -1191,6 +1193,48 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
             "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.",
+        },
+        {
+            "id": "local_http_cluster_smoke",
+            "name": "Local HTTP cluster smoke",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/local_http_cluster_smoke.py",
+            "dataset": "Four real localhost WaveMind API processes with isolated SQLite stores. The workload checks quorum writes, normal queries, simulated node failover queries, missing-replica repair, replicated forget, delete suppression, p99, and SLO status.",
+            "competitors": ["WaveMind local API nodes"],
+            "metrics": [
+                "success_rate",
+                "write_success_rate",
+                "query_hit_rate",
+                "failover_hit_rate",
+                "delete_suppression_rate",
+                "repair_repaired_total",
+                "p99_operation_ms",
+                "slo_pass",
+            ],
+            "current": {
+                "WaveMind local HTTP cluster smoke": _metric_summary(
+                    local_http_cluster_results.get("WaveMind local HTTP cluster smoke"),
+                    (
+                        "nodes",
+                        "namespaces",
+                        "memories_per_namespace",
+                        "replication_factor",
+                        "read_fanout",
+                        "workers",
+                        "success_rate",
+                        "write_success_rate",
+                        "query_hit_rate",
+                        "failover_hit_rate",
+                        "delete_suppression_rate",
+                        "repair_repaired_total",
+                        "p99_operation_ms",
+                        "slo_pass",
+                    ),
+                ),
+            },
+            "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
+            "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware.",
         },
         {
             "id": "external_http_cluster_load_runner",

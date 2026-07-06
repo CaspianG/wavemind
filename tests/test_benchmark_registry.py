@@ -74,6 +74,11 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert readiness["overall_status"] == "pass"
     assert readiness["readiness_score"] == 1.0
     assert readiness["action_required_count"] == 0
+    assert entries["local_http_cluster_smoke"]["status"] == "implemented"
+    local_http = entries["local_http_cluster_smoke"]["current"]["WaveMind local HTTP cluster smoke"]
+    assert local_http["success_rate"] == 1.0
+    assert local_http["slo_pass"] is True
+    assert local_http["read_fanout"] == 1
     serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True

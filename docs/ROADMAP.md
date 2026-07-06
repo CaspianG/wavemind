@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`25/25` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`26/26` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -44,6 +44,11 @@ policy matters more than raw vector-database scale:
   across 4 real localhost API nodes: quorum writes, normal queries, node
   failover queries, replicated deletes, missing-replica repair, and p99
   operation latency are all checked by the readiness gate.
+- `benchmarks/local_http_cluster_smoke.py` is now a standalone CI gate for the
+  same service-mode path. It starts 4 real localhost API processes with isolated
+  SQLite stores, uses RF=3 and quorum-sized `read_fanout=1`, and currently
+  passes with success `1.000`, failover hit `1.000`, delete suppression `1.000`,
+  one repaired replica, and p99 `257.13 ms`.
 - `benchmarks/http_cluster_load_benchmark.py` is the remote service-node runner
   for the same mixed workload. It takes real `--node id=https://host` API URLs,
   emits `slo_pass`, and is the next deployment gate before any external-cluster

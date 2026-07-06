@@ -1549,6 +1549,7 @@ def run_sustained_http_cluster_workload(
     replication_factor: int = 3,
     write_quorum: int | None = None,
     read_quorum: int = 1,
+    read_fanout: int | None = None,
     max_workers: int = 2,
 ) -> dict[str, object]:
     if namespace_count <= 0:
@@ -1564,6 +1565,7 @@ def run_sustained_http_cluster_workload(
         replication_factor=replication_factor,
         write_quorum=write_quorum,
         read_quorum=read_quorum,
+        read_fanout=read_fanout,
         client=client,
     )
     by_id = {node.id: node for node in memory.nodes}
@@ -1749,6 +1751,7 @@ def run_sustained_http_cluster_workload(
         "replication_factor": memory.replication_factor,
         "write_quorum": memory.write_quorum,
         "read_quorum": memory.read_quorum,
+        "read_fanout": memory.read_fanout,
         "workers": max_workers,
         "writes": len(write_results),
         "queries": len(query_results),

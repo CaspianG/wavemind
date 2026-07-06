@@ -19,6 +19,7 @@ backups/
 logs/
 state/
 benchmarks/benchmark_artifact_audit_ci.json
+benchmarks/local_http_cluster_smoke_ci_results.json
 
 .env
 .env.*

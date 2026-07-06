@@ -425,6 +425,7 @@ class DistributedShardedWaveMind:
         replication_factor: int = 2,
         write_quorum: int | None = None,
         read_quorum: int = 1,
+        read_fanout: int | None = None,
         client: HTTPNamespaceShardClient | Any | None = None,
     ):
         plan = build_cluster_plan(
@@ -440,14 +441,25 @@ class DistributedShardedWaveMind:
             else int(write_quorum)
         )
         self.read_quorum = int(read_quorum)
+        self.read_fanout = (
+            self.replication_factor
+            if read_fanout is None
+            else int(read_fanout)
+        )
         if self.write_quorum <= 0:
             raise ValueError("write_quorum must be positive")
         if self.read_quorum <= 0:
             raise ValueError("read_quorum must be positive")
+        if self.read_fanout <= 0:
+            raise ValueError("read_fanout must be positive")
         if self.write_quorum > self.replication_factor:
             raise ValueError("write_quorum cannot exceed replication_factor")
         if self.read_quorum > self.replication_factor:
             raise ValueError("read_quorum cannot exceed replication_factor")
+        if self.read_fanout > self.replication_factor:
+            raise ValueError("read_fanout cannot exceed replication_factor")
+        if self.read_fanout < self.read_quorum:
+            raise ValueError("read_fanout cannot be smaller than read_quorum")
         self.client = client or HTTPNamespaceShardClient()
         self._available = {node.id: True for node in self.nodes}
         self._node_by_id = {node.id: node for node in self.nodes}
@@ -517,11 +529,12 @@ class DistributedShardedWaveMind:
         min_score: float | None = None,
     ) -> list[QueryResult]:
         placement = self.placement(namespace)
-        tombstones = self._tombstone_state(namespace, placement)
+        read_node_ids = self._read_node_ids(placement)
+        tombstones = self._tombstone_state(namespace, read_node_ids)
         successful_reads = 0
         failed: dict[str, str] = {}
         best_by_key: dict[tuple[str, str, tuple[str, ...]], QueryResult] = {}
-        for node_id in placement.replicas:
+        for node_id in read_node_ids:
             if not self._available.get(node_id, False):
                 failed[node_id] = "node unavailable"
                 continue
@@ -738,11 +751,20 @@ class DistributedShardedWaveMind:
             "replication_factor": self.replication_factor,
             "write_quorum": self.write_quorum,
             "read_quorum": self.read_quorum,
+            "read_fanout": self.read_fanout,
             "available_nodes": sum(1 for value in self._available.values() if value),
         }
 
     def _address(self, node_id: str) -> str:
         return self._node_by_id[node_id].address
+
+    def _read_node_ids(self, placement: NamespacePlacement) -> tuple[str, ...]:
+        available = [
+            node_id
+            for node_id in placement.replicas
+            if self._available.get(node_id, False)
+        ]
+        return tuple(available[: self.read_fanout])
 
     def _resolve_tombstone_targets(
         self,
@@ -782,11 +804,11 @@ class DistributedShardedWaveMind:
     def _tombstone_state(
         self,
         namespace: str,
-        placement: NamespacePlacement,
+        node_ids: tuple[str, ...],
     ) -> _ServiceTombstoneState:
         keys: set[str] = set()
         texts: set[str] = set()
-        for node_id in placement.replicas:
+        for node_id in node_ids:
             if not self._available.get(node_id, False):
                 continue
             try:

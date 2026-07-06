@@ -54,6 +54,10 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
     workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
 
     assert "benchmark-artifact-gate:" in workflow
+    assert "local-http-cluster-smoke:" in workflow
+    assert "benchmarks/local_http_cluster_smoke.py" in workflow
+    assert "--read-fanout 1" in workflow
+    assert "benchmarks/local_http_cluster_smoke_ci_results.json" in workflow
     assert "Block stale or unsynchronized public benchmark artifacts" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "--max-age-days 8" in workflow

@@ -48,6 +48,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["real_redis_api_load_ci"]["status"] == "pass"
     assert "multiple uvicorn workers" in criteria["real_redis_api_load_ci"]["requirement"]
     assert "success_rate 1.0" in criteria["real_redis_api_load_ci"]["evidence"]
+    assert criteria["real_local_http_cluster_ci"]["status"] == "pass"
+    assert "multiple real localhost WaveMind API processes" in criteria["real_local_http_cluster_ci"]["requirement"]
+    assert "slo True" in criteria["real_local_http_cluster_ci"]["evidence"]
     assert criteria["distributed_http_shard_transport"]["status"] == "pass"
     assert criteria["sustained_http_cluster_load"]["status"] == "pass"
     assert "mixed write/query/failover" in criteria["sustained_http_cluster_load"]["requirement"]
@@ -91,7 +94,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 25
+    assert payload["summary"]["total_criteria"] == 26
     assert "# WaveMind Production Readiness Gate" in report
     assert "100k service-backed load profile passes SLO and cost gate" in report
     assert "Cluster autoscaler plans node additions within headroom" in report
@@ -100,6 +103,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report
     assert "API cache does not serve stale memory after mutations" in report
     assert "Real Redis multi-process API load passes SLO" in report
+    assert "Real local HTTP cluster smoke passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report

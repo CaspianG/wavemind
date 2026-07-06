@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T11:54:49Z",
-  "source_ref": "da4ee366981a",
+  "generated_at": "2026-07-06T12:14:51Z",
+  "source_ref": "1089e3e7d270",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1249,6 +1249,47 @@
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
       "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile."
+    },
+    {
+      "id": "local_http_cluster_smoke",
+      "name": "Local HTTP cluster smoke",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/local_http_cluster_smoke.py",
+      "dataset": "Four real localhost WaveMind API processes with isolated SQLite stores. The workload checks quorum writes, normal queries, simulated node failover queries, missing-replica repair, replicated forget, delete suppression, p99, and SLO status.",
+      "competitors": [
+        "WaveMind local API nodes"
+      ],
+      "metrics": [
+        "success_rate",
+        "write_success_rate",
+        "query_hit_rate",
+        "failover_hit_rate",
+        "delete_suppression_rate",
+        "repair_repaired_total",
+        "p99_operation_ms",
+        "slo_pass"
+      ],
+      "current": {
+        "WaveMind local HTTP cluster smoke": {
+          "nodes": 4,
+          "namespaces": 4,
+          "memories_per_namespace": 2,
+          "replication_factor": 3,
+          "read_fanout": 1,
+          "workers": 4,
+          "success_rate": 1.0,
+          "write_success_rate": 1.0,
+          "query_hit_rate": 1.0,
+          "failover_hit_rate": 1.0,
+          "delete_suppression_rate": 1.0,
+          "repair_repaired_total": 1,
+          "p99_operation_ms": 257.1266000159085,
+          "slo_pass": true
+        }
+      },
+      "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
+      "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware."
     },
     {
       "id": "external_http_cluster_load_runner",

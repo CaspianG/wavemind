@@ -7,14 +7,14 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `25` |
+| passed criteria | `26` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `25` |
+| total criteria | `26` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T11:32:59Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T12:14:51Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
@@ -29,6 +29,7 @@ verdict, not a marketing claim.
 | Redis-compatible shared cache and Memory OS prewarm work | `pass` | shared True, prewarm hit True, Memory OS warmed 2, predictive warmed 5, Memory OS hit True, invalidation True | Keep the real Redis multi-process API load workflow green. |
 | API cache does not serve stale memory after mutations | `pass` | cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True | Keep the real Redis multi-process API load workflow green. |
 | Real Redis multi-process API load passes SLO | `pass` | workflow True, workers 2, success_rate 1.0, p99 71.7594539700039 ms, stale prevented True | Refresh redis_api_load_results.json from the CI artifact on every release candidate. |
+| Real local HTTP cluster smoke passes SLO | `pass` | workflow True, nodes 4, read_fanout 1, success 1.0, failover 1.0, repair 1, p99 257.1266000159085 ms, slo True | Refresh local_http_cluster_smoke_results.json from CI on every release candidate. |
 | Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, predictive warmed 5, expired 1, concepts 1, priority predictions 2, forgetting demotions 3 | Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |

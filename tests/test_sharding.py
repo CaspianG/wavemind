@@ -280,6 +280,44 @@ def test_distributed_sharded_wavemind_routes_to_replicas_and_reads_after_primary
         client.close()
 
 
+def test_distributed_sharded_wavemind_read_fanout_limits_service_reads(tmp_path):
+    class CountingClient(LocalWaveMindServiceClient):
+        def __init__(self, tmp_path):
+            super().__init__(tmp_path)
+            self.query_addresses = []
+            self.state_addresses = []
+
+        def query(self, address, **kwargs):
+            self.query_addresses.append(address)
+            return super().query(address, **kwargs)
+
+        def export_namespace_state(self, address, **kwargs):
+            self.state_addresses.append(address)
+            return super().export_namespace_state(address, **kwargs)
+
+    client = CountingClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        read_quorum=1,
+        read_fanout=1,
+        client=client,
+    )
+    try:
+        namespace = "tenant:read-fanout"
+        memory.remember("read fanout should avoid extra replica reads", namespace=namespace)
+        placement = memory.placement(namespace)
+
+        results = memory.query("extra replica reads", namespace=namespace, top_k=1)
+
+        assert results[0].text == "read fanout should avoid extra replica reads"
+        assert client.query_addresses == [placement.replicas[0]]
+        assert client.state_addresses == [placement.replicas[0]]
+        assert memory.stats()["read_fanout"] == 1
+    finally:
+        client.close()
+
+
 def test_distributed_sharded_wavemind_enforces_write_quorum(tmp_path):
     client = LocalWaveMindServiceClient(tmp_path / "services")
     memory = DistributedShardedWaveMind(

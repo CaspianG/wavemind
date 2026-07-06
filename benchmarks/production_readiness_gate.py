@@ -75,6 +75,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
+        "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
     }
 
@@ -109,6 +110,34 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and float(redis_api_load.get("success_rate", 0.0)) >= 1.0
         and float(redis_api_load.get("p99_latency_ms", float("inf"))) <= 1000.0
         and int(redis_api_load.get("workers", 0)) >= 2
+    )
+    local_http_cluster_script_exists = (root / "benchmarks" / "local_http_cluster_smoke.py").exists()
+    local_http_cluster_ci_configured = (
+        local_http_cluster_script_exists
+        and "local-http-cluster-smoke:" in full_check_workflow
+        and "benchmarks/local_http_cluster_smoke.py" in full_check_workflow
+        and "--fail-on-slo" in full_check_workflow
+    )
+    local_http_cluster = _engine_results(artifacts["local_http_cluster"]).get(
+        "WaveMind local HTTP cluster smoke",
+        {},
+    )
+    local_http_cluster_pass = (
+        local_http_cluster_ci_configured
+        and int(local_http_cluster.get("nodes", 0)) >= 4
+        and int(local_http_cluster.get("replication_factor", 0)) >= 3
+        and int(local_http_cluster.get("read_fanout", 0)) == 1
+        and float(local_http_cluster.get("success_rate", 0.0)) >= 1.0
+        and float(local_http_cluster.get("write_success_rate", 0.0)) >= 1.0
+        and float(local_http_cluster.get("query_hit_rate", 0.0)) >= 1.0
+        and float(local_http_cluster.get("failover_hit_rate", 0.0)) >= 1.0
+        and float(local_http_cluster.get("forget_success_rate", 0.0)) >= 1.0
+        and float(local_http_cluster.get("delete_suppression_rate", 0.0)) >= 1.0
+        and local_http_cluster.get("repair_ok")
+        and int(local_http_cluster.get("repair_repaired_total", 0)) >= 1
+        and local_http_cluster.get("repaired_replica")
+        and local_http_cluster.get("slo_pass")
+        and float(local_http_cluster.get("p99_operation_ms", float("inf"))) <= 1000.0
     )
     audit = artifacts["audit"]
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
@@ -539,6 +568,27 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"stale prevented {redis_api_load.get('stale_prevented_after_forget')}"
             ),
             next_step="Refresh redis_api_load_results.json from the CI artifact on every release candidate.",
+        ),
+        _criterion(
+            criterion_id="real_local_http_cluster_ci",
+            title="Real local HTTP cluster smoke passes SLO",
+            status="pass" if local_http_cluster_pass else "fail",
+            requirement=(
+                "CI must start multiple real localhost WaveMind API processes "
+                "with isolated SQLite stores and run the sustained HTTP cluster "
+                "workload through the same service-mode client used for remote nodes."
+            ),
+            evidence=(
+                f"workflow {local_http_cluster_ci_configured}, "
+                f"nodes {local_http_cluster.get('nodes')}, "
+                f"read_fanout {local_http_cluster.get('read_fanout')}, "
+                f"success {local_http_cluster.get('success_rate')}, "
+                f"failover {local_http_cluster.get('failover_hit_rate')}, "
+                f"repair {local_http_cluster.get('repair_repaired_total')}, "
+                f"p99 {local_http_cluster.get('p99_operation_ms')} ms, "
+                f"slo {local_http_cluster.get('slo_pass')}"
+            ),
+            next_step="Refresh local_http_cluster_smoke_results.json from CI on every release candidate.",
         ),
         _criterion(
             criterion_id="memory_os_worker",
