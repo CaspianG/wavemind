@@ -1418,6 +1418,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                             "namespaces",
                             "memories_per_namespace",
                             "replication_factor",
+                            "read_fanout",
                             "workers",
                             "success_rate",
                             "write_success_rate",
@@ -1436,8 +1437,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     }
                 ),
             },
-            "target": "Run the same sustained mixed workload against remote service nodes and keep success_rate >= 1.0, failover_hit_rate >= 0.95, and p99 below the configured SLO before claiming external-cluster production readiness.",
-            "next_step": "Run from a real node manifest and check in the first remote service-node artifact from a multi-node deployment.",
+            "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
+            "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment.",
         },
         {
             "id": "memory_competitor_adapter_profile",

@@ -281,6 +281,7 @@ def validate_external_cluster_payload(
         f"nodes {scenario.get('node_count')}, "
         f"deployment {scenario.get('deployment_id')}, "
         f"environment {scenario.get('environment')}, "
+        f"source {scenario.get('source')}, "
         f"namespaces {scenario.get('namespace_count')}, "
         f"success {result.get('success_rate')}, "
         f"failover {result.get('failover_hit_rate')}, "
@@ -292,7 +293,11 @@ def validate_external_cluster_payload(
         "status": status,
         "evidence": evidence if not issues else f"{evidence}; issues: {', '.join(issues)}",
         "next_step": (
-            "Keep the external service-node run current for release candidates."
+            (
+                "Replace this loopback service-node run with a remote Kubernetes/serverless node manifest run."
+                if str(scenario.get("environment") or "").lower() == "local-loopback"
+                else "Keep the external service-node run current for release candidates."
+            )
             if status == "pass"
             else "Regenerate the artifact from a real external cluster run that meets the SLO contract."
         ),

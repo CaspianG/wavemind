@@ -65,6 +65,7 @@ def start_api_node(
     host: str = "127.0.0.1",
     port: int | None = None,
     readiness_timeout_seconds: float = 20.0,
+    capture_output: bool = True,
 ) -> LocalAPINode:
     port = free_port() if port is None else int(port)
     db_path = root / f"{node_id}.sqlite3"
@@ -87,8 +88,8 @@ def start_api_node(
         ],
         cwd=PROJECT_ROOT,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE if capture_output else subprocess.DEVNULL,
+        stderr=subprocess.PIPE if capture_output else subprocess.DEVNULL,
         text=True,
         encoding="utf-8",
     )

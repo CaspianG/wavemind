@@ -1,0 +1,70 @@
+{
+  "scenario": {
+    "name": "http_cluster_load",
+    "node_count": 4,
+    "node_ids": [
+      "node-000",
+      "node-001",
+      "node-002",
+      "node-003"
+    ],
+    "zones": [
+      "zone-0",
+      "zone-1",
+      "zone-2"
+    ],
+    "replication_factor": 3,
+    "write_quorum": 2,
+    "read_quorum": 1,
+    "read_fanout": 1,
+    "namespace_prefix": "tenant:external-loopback:2026-07-07",
+    "namespace_count": 32,
+    "memories_per_namespace": 8,
+    "workers": 8,
+    "deployment_id": "loopback-2026-07-07",
+    "environment": "local-loopback",
+    "source": "loopback-api-processes",
+    "description": "External HTTP cluster-load runner executed against real localhost WaveMind API processes. This proves the service-node transport, workload contract, SLO validation, repair, failover, and delete suppression path without requiring remote Kubernetes.",
+    "started_api_processes": 4,
+    "loopback_duration_ms": 27636.12937927246
+  },
+  "results": [
+    {
+      "engine": "WaveMind external HTTP cluster load",
+      "nodes": 4,
+      "namespaces": 32,
+      "memories_per_namespace": 8,
+      "replication_factor": 3,
+      "write_quorum": 2,
+      "read_quorum": 1,
+      "read_fanout": 1,
+      "workers": 8,
+      "writes": 256,
+      "queries": 256,
+      "failover_queries": 256,
+      "forgets": 32,
+      "failed_node": "node-001",
+      "write_success_rate": 1.0,
+      "query_hit_rate": 1.0,
+      "failover_hit_rate": 1.0,
+      "forget_success_rate": 1.0,
+      "delete_suppression_rate": 1.0,
+      "repair_missing_before": true,
+      "repair_ok": true,
+      "repair_repaired_total": 1,
+      "repaired_replica": true,
+      "success_rate": 1.0,
+      "total_checks": 836,
+      "errors": [],
+      "error_count": 0,
+      "elapsed_ms": 19331.503299996257,
+      "avg_operation_ms": 180.84490300342887,
+      "p95_operation_ms": 548.6601000884548,
+      "p99_operation_ms": 739.9693999905139,
+      "slo_min_success_rate": 1.0,
+      "slo_min_failover_hit_rate": 0.95,
+      "slo_p99_ms": 1000.0,
+      "slo_pass": true
+    }
+  ]
+}

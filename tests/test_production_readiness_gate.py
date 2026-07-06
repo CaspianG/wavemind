@@ -112,8 +112,10 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "10M production targets" in criteria["architecture_advisor_preflight"]["requirement"]
     external = {row["id"]: row for row in payload["external_evidence"]}
     assert external["memory_competitor_adapters"]["status"] == "action_required"
-    assert external["external_http_cluster_load"]["status"] == "action_required"
-    assert "no checked-in external HTTP cluster load result" in external["external_http_cluster_load"]["evidence"]
+    assert external["external_http_cluster_load"]["status"] == "pass"
+    assert "deployment loopback-2026-07-07" in external["external_http_cluster_load"]["evidence"]
+    assert "environment local-loopback" in external["external_http_cluster_load"]["evidence"]
+    assert "namespaces 32" in external["external_http_cluster_load"]["evidence"]
 
 
 def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):

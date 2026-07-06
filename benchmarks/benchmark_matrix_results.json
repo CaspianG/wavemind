@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T21:43:12Z",
-  "source_ref": "64b0f4e6e080",
+  "generated_at": "2026-07-06T22:24:58Z",
+  "source_ref": "eb71adcc243c",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1456,13 +1456,24 @@
       ],
       "current": {
         "WaveMind external HTTP cluster load": {
-          "runner_ready": true,
-          "checked_in_result": false,
-          "requires": "--nodes-file deploy/cluster/external-http-cluster.sample.json or --node id=https://host for each real API node"
+          "nodes": 4,
+          "namespaces": 32,
+          "memories_per_namespace": 8,
+          "replication_factor": 3,
+          "read_fanout": 1,
+          "workers": 8,
+          "success_rate": 1.0,
+          "write_success_rate": 1.0,
+          "query_hit_rate": 1.0,
+          "failover_hit_rate": 1.0,
+          "delete_suppression_rate": 1.0,
+          "repair_repaired_total": 1,
+          "p99_operation_ms": 739.9693999905139,
+          "slo_pass": true
         }
       },
-      "target": "Run the same sustained mixed workload against remote service nodes and keep success_rate >= 1.0, failover_hit_rate >= 0.95, and p99 below the configured SLO before claiming external-cluster production readiness.",
-      "next_step": "Run from a real node manifest and check in the first remote service-node artifact from a multi-node deployment."
+      "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
+      "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment."
     },
     {
       "id": "memory_competitor_adapter_profile",

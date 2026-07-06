@@ -87,6 +87,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert local_http["success_rate"] == 1.0
     assert local_http["slo_pass"] is True
     assert local_http["read_fanout"] == 1
+    external_http = entries["external_http_cluster_load_runner"]["current"][
+        "WaveMind external HTTP cluster load"
+    ]
+    assert external_http["success_rate"] == 1.0
+    assert external_http["failover_hit_rate"] == 1.0
+    assert external_http["slo_pass"] is True
+    assert external_http["namespaces"] == 32
+    assert external_http["read_fanout"] == 1
     serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True

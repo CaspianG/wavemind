@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T21:43:16Z",
+  "generated_at": "2026-07-06T22:25:02Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T21:43:12Z",
+      "evidence": "audit status pass, generated_at 2026-07-06T22:24:58Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -264,9 +264,9 @@
     {
       "id": "external_http_cluster_load",
       "title": "External HTTP service-node load evidence",
-      "status": "action_required",
-      "evidence": "no checked-in external HTTP cluster load result",
-      "next_step": "Run external-http-cluster-load against real API nodes and upload or commit the resulting artifact."
+      "status": "pass",
+      "evidence": "nodes 4, deployment loopback-2026-07-07, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 739.9693999905139 ms",
+      "next_step": "Replace this loopback service-node run with a remote Kubernetes/serverless node manifest run."
     }
   ]
 }
