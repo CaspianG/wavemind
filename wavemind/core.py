@@ -960,12 +960,27 @@ class WaveMind:
         return allowed
 
     def _refresh_field_magnitude(self) -> None:
-        self._field_magnitude = np.sum(np.abs(self.field.state), axis=2)
-        self._field_magnitude_norm = float(np.linalg.norm(self._field_magnitude))
+        self._field_magnitude = np.nan_to_num(
+            np.sum(np.abs(self.field.state), axis=2, dtype=np.float64),
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0,
+        )
+        norm = float(np.linalg.norm(self._field_magnitude))
+        self._field_magnitude_norm = norm if np.isfinite(norm) else 0.0
 
     def _field_resonance(self, pattern: np.ndarray) -> float:
-        denom = (self._field_magnitude_norm * float(np.linalg.norm(pattern))) + 1e-9
-        return float(np.dot(self._field_magnitude.ravel(), pattern.ravel()) / denom)
+        field = self._field_magnitude.astype(np.float64, copy=False).ravel()
+        pat = np.nan_to_num(
+            pattern.astype(np.float64, copy=False).ravel(),
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0,
+        )
+        pattern_norm = float(np.linalg.norm(pat))
+        denom = (self._field_magnitude_norm * pattern_norm) + 1e-9
+        score = float(np.dot(field, pat) / denom)
+        return score if np.isfinite(score) else 0.0
 
     def _effective_field_weight(self, allowed_count: int) -> float:
         if self.field_disable_after > 0 and allowed_count > self.field_disable_after:

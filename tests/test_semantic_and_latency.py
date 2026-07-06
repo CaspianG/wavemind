@@ -1,5 +1,6 @@
 import statistics
 import time
+import warnings
 
 import numpy as np
 
@@ -196,3 +197,25 @@ def test_field_weight_is_disabled_above_capacity_threshold(tmp_path):
 
     assert mind._effective_field_weight(allowed_count=1) == 0.5
     assert mind._effective_field_weight(allowed_count=2) == 0.0
+
+
+def test_field_magnitude_refresh_is_numerically_stable_for_large_values(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "field-numeric-stability.sqlite3",
+        width=8,
+        height=8,
+        layers=2,
+        encoder=FlatSemanticEncoder(),
+        index_kind="numpy",
+    )
+    try:
+        mind.field.state.fill(np.finfo(np.float32).max / 4)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            mind._refresh_field_magnitude()
+            score = mind._field_resonance(np.ones((8, 8), dtype=np.float32))
+
+        assert np.isfinite(mind._field_magnitude_norm)
+        assert np.isfinite(score)
+    finally:
+        mind.close()
