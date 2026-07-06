@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-06T20:19:02Z",
-  "source_ref": "185ed7006df2",
+  "generated_at": "2026-07-06T20:37:23Z",
+  "source_ref": "47dd18288636",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -37,6 +37,63 @@
       },
       "target": "Match Chroma precision@1 on static recall, beat it on precision@3, and keep avg latency below 5 ms at 200 memories.",
       "next_step": "Run the same benchmark with sentence-transformers and a FAISS-backed candidate index."
+    },
+    {
+      "id": "agent_coherence_quality",
+      "name": "Agent coherence and token savings",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/agent_coherence_benchmark.py",
+      "dataset": "500-memory long user history with corrections, TTL, namespace isolation, project recall, and repeated personalization tasks",
+      "competitors": [
+        "Static vector",
+        "Chroma static"
+      ],
+      "metrics": [
+        "task_success_rate",
+        "decision_success_at_1",
+        "stale_error_rate",
+        "context_budget_saved",
+        "coherent_turns",
+        "avg_latency_ms"
+      ],
+      "current": {
+        "WaveMind": {
+          "task_success_rate": 0.9166666666666666,
+          "decision_success_at_1": 0.8333333333333334,
+          "stale_error_rate": 0,
+          "namespace_leak_rate": 0,
+          "context_budget_saved": 0.9308855291576674,
+          "coherent_turns": 9,
+          "coherent_turn_rate": 0.75,
+          "avg_latency_ms": 2.983625017805025,
+          "p95_latency_ms": 5.801200051791966
+        },
+        "Static vector": {
+          "task_success_rate": 0.3333333333333333,
+          "decision_success_at_1": 0.3333333333333333,
+          "stale_error_rate": 0.7272727272727273,
+          "namespace_leak_rate": 0,
+          "context_budget_saved": 0.9223206971028525,
+          "coherent_turns": 1,
+          "coherent_turn_rate": 0.08333333333333333,
+          "avg_latency_ms": 0.7857499779978147,
+          "p95_latency_ms": 1.0001999326050282
+        },
+        "Chroma static": {
+          "task_success_rate": 0.4166666666666667,
+          "decision_success_at_1": 0.4166666666666667,
+          "stale_error_rate": 0.18181818181818182,
+          "namespace_leak_rate": 0,
+          "context_budget_saved": 0.9129366202427944,
+          "coherent_turns": 3,
+          "coherent_turn_rate": 0.25,
+          "avg_latency_ms": 3.6366000034225485,
+          "p95_latency_ms": 10.993700008839369
+        }
+      },
+      "target": "Show that dynamic memory improves agent behavior, not only retrieval: higher task success, fewer stale errors, longer coherent runs, and compact context.",
+      "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks."
     },
     {
       "id": "dynamic_memory_policy",

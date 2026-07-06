@@ -27,6 +27,8 @@ def test_benchmark_report_renderer_writes_status_report(tmp_path):
     assert "Last refresh:" in report
     assert "## Completed Runs" in report
     assert "## Public Benchmark Roadmap" in report
+    assert "Agent coherence and token savings" in report
+    assert "task success" in report
     assert "VectorDBBench" in report
     assert "LoCoMo evidence retrieval runner" in report
     assert "Production index profile" in report

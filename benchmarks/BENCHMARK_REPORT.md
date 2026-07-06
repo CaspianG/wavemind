@@ -1,7 +1,7 @@
 # WaveMind Benchmark Report
 
 This report is generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-06T20:19:02Z` from `185ed7006df2`.
+Last refresh: `2026-07-06T20:37:23Z` from `47dd18288636`.
 It separates completed local runs from runner-ready public benchmarks and planned external evaluations.
 
 Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.
@@ -11,6 +11,7 @@ Planned rows are not claimed wins. They are the public proof path WaveMind must 
 | benchmark | category | status | current result | next step |
 |---|---|---|---|---|
 | Agent user-memory retrieval | agent-memory | implemented | WaveMind: precision@1 0.82, precision@3 0.90, avg latency 2.25, p95 latency 6.89<br>Chroma: precision@1 0.82, precision@3 0.88, avg latency 0.93, p95 latency 1.09 | Run the same benchmark with sentence-transformers and a FAISS-backed candidate index. |
+| Agent coherence and token savings | agent-memory | implemented | WaveMind: task success 0.92, top-1 decision 0.83, stale error rate 0, namespace leak rate 0, context saved 0.93, coherent turns 9, coherent turn rate 0.75, avg latency 2.98, p95 latency 5.80<br>Static vector: task success 0.33, top-1 decision 0.33, stale error rate 0.73, namespace leak rate 0, context saved 0.92, coherent turns 1, coherent turn rate 0.08, avg latency 0.79, p95 latency 1.00<br>Chroma static: task success 0.42, top-1 decision 0.42, stale error rate 0.18, namespace leak rate 0, context saved 0.91, coherent turns 3, coherent turn rate 0.25, avg latency 3.64, p95 latency 11.0 | Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks. |
 | Dynamic memory policy | agent-memory | implemented | WaveMind: precision@1 1.00, precision@3 1.00, stale suppression 1.00, avg latency 3.92, p95 latency 4.13<br>Chroma static: precision@1 0.57, precision@3 1.00, stale suppression 0.00, avg latency 1.66, p95 latency 5.83 | Add Chroma metadata-policy and Qdrant payload-filter baselines so the comparison is not only static-vector search. |
 | Field memory graph dynamics | agent-memory | implemented | WaveMind graph: precision@1 1.00, precision@3 1.00, stale suppression 1.00, concept formation 1.00, concept consolidation 1.00, decay ratio 0.81, avg latency 0.33<br>WaveMind static: precision@1 0.20, precision@3 1.00, stale suppression 0.20, concept formation 0.00, concept consolidation 0.00, decay ratio 0.00, avg latency 0.21 | Make MemoryFieldGraph incremental and evaluate conflict/update behavior on public long-memory datasets. |
 | WaveMind capacity curve | capacity | implemented | static_agent_memory: 3 points, last p@1 0.94, avg 13.7 ms<br>dynamic_agent_memory: 3 points, last p@1 1.00, avg 48.4 ms | Move candidate generation to FAISS/Annoy and limit wave-field reranking to the top candidate set. |

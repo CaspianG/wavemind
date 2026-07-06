@@ -27,6 +27,12 @@ def fmt(value: Any) -> str:
 
 
 METRIC_LABELS = {
+    "task_success_rate": "task success",
+    "decision_success_at_1": "top-1 decision",
+    "stale_error_rate": "stale error rate",
+    "namespace_leak_rate": "namespace leak rate",
+    "coherent_turns": "coherent turns",
+    "coherent_turn_rate": "coherent turn rate",
     "precision_at_1": "precision@1",
     "precision_at_3": "precision@3",
     "precision@1": "precision@1",

@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 QUALITY_METRIC_ORDER = (
+    "task_success_rate",
     "evidence_recall_at_k",
     "precision_at_1",
     "precision@1",
@@ -44,6 +45,10 @@ METRIC_LABELS = {
     "suppression_rate": "stale suppression",
     "direction_accuracy_at_1": "direction@1",
     "avg_latency_ms": "avg latency",
+    "task_success_rate": "task success",
+    "decision_success_at_1": "top-1 decision",
+    "stale_error_rate": "stale error rate",
+    "coherent_turn_rate": "coherent turn rate",
 }
 
 

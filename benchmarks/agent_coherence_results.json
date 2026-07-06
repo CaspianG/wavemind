@@ -1,0 +1,96 @@
+{
+  "schema": "wavemind.agent_coherence_benchmark.v1",
+  "scenario": {
+    "name": "agent_coherence",
+    "memories": 500,
+    "tasks": 12,
+    "top_k": 5,
+    "categories": [
+      "correction",
+      "namespace",
+      "personalization",
+      "profile",
+      "project",
+      "ttl"
+    ],
+    "description": "Agent task simulation over long user history. It measures whether retrieved memory lets an agent choose the correct personalized action while suppressing stale facts and saving context tokens."
+  },
+  "embedding": {
+    "kind": "hash",
+    "class": "HashingTextEncoder",
+    "cached": true,
+    "vector_dim": 384,
+    "note": "All engines receive embeddings from the same WaveMind encoder."
+  },
+  "results": [
+    {
+      "engine": "WaveMind",
+      "task_success_rate": 0.9166666666666666,
+      "decision_success_at_1": 0.8333333333333334,
+      "stale_error_rate": 0,
+      "namespace_leak_rate": 0,
+      "coherent_turns": 9,
+      "coherent_turn_rate": 0.75,
+      "context_tokens_returned": 928,
+      "full_context_tokens": 13427,
+      "context_budget_saved": 0.9308855291576674,
+      "category_success": {
+        "correction": 1.0,
+        "namespace": 1.0,
+        "personalization": 0.5,
+        "profile": 1.0,
+        "project": 1.0,
+        "ttl": 1.0
+      },
+      "avg_latency_ms": 2.983625017805025,
+      "p95_latency_ms": 5.801200051791966,
+      "tasks": 12
+    },
+    {
+      "engine": "Static vector",
+      "task_success_rate": 0.3333333333333333,
+      "decision_success_at_1": 0.3333333333333333,
+      "stale_error_rate": 0.7272727272727273,
+      "namespace_leak_rate": 0,
+      "coherent_turns": 1,
+      "coherent_turn_rate": 0.08333333333333333,
+      "context_tokens_returned": 1043,
+      "full_context_tokens": 13427,
+      "context_budget_saved": 0.9223206971028525,
+      "category_success": {
+        "correction": 0.0,
+        "namespace": 1.0,
+        "personalization": 0.5,
+        "profile": 1.0,
+        "project": 0.0,
+        "ttl": 0.0
+      },
+      "avg_latency_ms": 0.7857499779978147,
+      "p95_latency_ms": 1.0001999326050282,
+      "tasks": 12
+    },
+    {
+      "engine": "Chroma static",
+      "task_success_rate": 0.4166666666666667,
+      "decision_success_at_1": 0.4166666666666667,
+      "stale_error_rate": 0.18181818181818182,
+      "namespace_leak_rate": 0,
+      "coherent_turns": 3,
+      "coherent_turn_rate": 0.25,
+      "context_tokens_returned": 1169,
+      "full_context_tokens": 13427,
+      "context_budget_saved": 0.9129366202427944,
+      "category_success": {
+        "correction": 0.3333333333333333,
+        "namespace": 0.5,
+        "personalization": 0.0,
+        "profile": 1.0,
+        "project": 0.5,
+        "ttl": 0.5
+      },
+      "avg_latency_ms": 3.6366000034225485,
+      "p95_latency_ms": 10.993700008839369,
+      "tasks": 12
+    }
+  ]
+}

@@ -143,6 +143,7 @@ def _answer_result_summaries(
 
 def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     agent_payload = _load_json(root / "benchmarks" / "agent_memory_results.json")
+    agent_coherence_payload = _load_json(root / "benchmarks" / "agent_coherence_results.json")
     dynamic_payload = _load_json(root / "benchmarks" / "dynamic_memory_results.json")
     field_payload = _load_json(root / "benchmarks" / "field_memory_dynamics_results.json")
     capacity_payload = _load_json(root / "benchmarks" / "wavemind_capacity_results.json")
@@ -174,6 +175,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     vectordbbench_payload = _load_json(root / "benchmarks" / "vectordbbench_dataset_manifest.json")
 
     agent_results = _engine_results(agent_payload)
+    agent_coherence_results = _engine_results(agent_coherence_payload)
     dynamic_results = _engine_results(dynamic_payload)
     long_memory_results = _engine_results(long_memory_payload)
     open_retrieval_results = _engine_results(open_retrieval_payload)
@@ -248,6 +250,72 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Match Chroma precision@1 on static recall, beat it on precision@3, and keep avg latency below 5 ms at 200 memories.",
             "next_step": "Run the same benchmark with sentence-transformers and a FAISS-backed candidate index.",
+        },
+        {
+            "id": "agent_coherence_quality",
+            "name": "Agent coherence and token savings",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/agent_coherence_benchmark.py",
+            "dataset": "500-memory long user history with corrections, TTL, namespace isolation, project recall, and repeated personalization tasks",
+            "competitors": ["Static vector", "Chroma static"],
+            "metrics": [
+                "task_success_rate",
+                "decision_success_at_1",
+                "stale_error_rate",
+                "context_budget_saved",
+                "coherent_turns",
+                "avg_latency_ms",
+            ],
+            "current": {
+                "WaveMind": _metric_summary(
+                    agent_coherence_results.get("WaveMind"),
+                    (
+                        "task_success_rate",
+                        "decision_success_at_1",
+                        "stale_error_rate",
+                        "namespace_leak_rate",
+                        "context_budget_saved",
+                        "coherent_turns",
+                        "coherent_turn_rate",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Static vector": _metric_summary(
+                    agent_coherence_results.get("Static vector"),
+                    (
+                        "task_success_rate",
+                        "decision_success_at_1",
+                        "stale_error_rate",
+                        "namespace_leak_rate",
+                        "context_budget_saved",
+                        "coherent_turns",
+                        "coherent_turn_rate",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+                "Chroma static": _metric_summary(
+                    agent_coherence_results.get("Chroma static"),
+                    (
+                        "task_success_rate",
+                        "decision_success_at_1",
+                        "stale_error_rate",
+                        "namespace_leak_rate",
+                        "context_budget_saved",
+                        "coherent_turns",
+                        "coherent_turn_rate",
+                        "avg_latency_ms",
+                        "p95_latency_ms",
+                    ),
+                ),
+            },
+            "target": (
+                "Show that dynamic memory improves agent behavior, not only retrieval: "
+                "higher task success, fewer stale errors, longer coherent runs, and compact context."
+            ),
+            "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks.",
         },
         {
             "id": "dynamic_memory_policy",

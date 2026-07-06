@@ -16,6 +16,11 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert isinstance(payload["source_ref"], str)
     assert payload["refresh_profile"]
     assert entries["agent_memory_static_chroma"]["status"] == "implemented"
+    assert entries["agent_coherence_quality"]["status"] == "implemented"
+    assert entries["agent_coherence_quality"]["current"]["WaveMind"]["task_success_rate"] >= 0.8
+    assert entries["agent_coherence_quality"]["current"]["WaveMind"]["stale_error_rate"] == 0.0
+    assert entries["agent_coherence_quality"]["current"]["Static vector"]["stale_error_rate"] > 0.0
+    assert "Chroma static" in entries["agent_coherence_quality"]["competitors"]
     assert entries["dynamic_memory_policy"]["status"] == "implemented"
     assert entries["field_memory_dynamics"]["status"] == "implemented"
     assert entries["long_memory_evidence_synthetic"]["status"] == "implemented"

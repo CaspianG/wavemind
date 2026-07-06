@@ -28,6 +28,10 @@ jobs:
 
       - name: Refresh fast benchmark artifacts
         run: |
+          python benchmarks/agent_coherence_benchmark.py \
+            --engines wavemind static chroma \
+            --memories 500 \
+            --output benchmarks/agent_coherence_results.json
           python benchmarks/dynamic_memory_benchmark.py \
             --engines wavemind chroma \
             --memories 200 \
@@ -75,6 +79,7 @@ jobs:
             tests/test_benchmark_leaderboard.py \
             tests/test_benchmark_charts.py \
             tests/test_benchmark_artifact_audit.py \
+            tests/test_agent_coherence_benchmark.py \
             tests/test_dynamic_memory_benchmark.py \
             tests/test_field_memory_dynamics_benchmark.py \
             tests/test_http_cluster_load_benchmark.py \
@@ -101,6 +106,7 @@ jobs:
           path: |
             benchmarks/BENCHMARK_LEADERBOARD.md
             benchmarks/BENCHMARK_REPORT.md
+            benchmarks/agent_coherence_results.json
             benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
             benchmarks/dynamic_memory_results.json

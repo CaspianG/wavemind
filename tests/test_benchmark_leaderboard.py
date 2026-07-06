@@ -27,6 +27,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "Last refresh:" in leaderboard
     assert "| benchmark | category | primary metric |" in leaderboard
     assert "Dynamic memory policy" in leaderboard
+    assert "Agent coherence and token savings" in leaderboard
+    assert "task success" in leaderboard
     assert "Chroma static" in leaderboard
     assert "WaveMind leads on quality" in leaderboard
     assert "Quality tie; WaveMind slower" in leaderboard
@@ -52,6 +54,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "schedule:" in workflow
     assert "workflow_dispatch:" in workflow
     assert "contents: write" in workflow
+    assert "agent_coherence_benchmark.py" in workflow
+    assert "benchmarks/agent_coherence_results.json" in workflow
+    assert "tests/test_agent_coherence_benchmark.py" in workflow
     assert "dynamic_memory_benchmark.py" in workflow
     assert "field_memory_dynamics_benchmark.py" in workflow
     assert "scale_readiness_benchmark.py" in workflow

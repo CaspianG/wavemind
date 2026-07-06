@@ -4,6 +4,7 @@ from pathlib import Path
 def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     brief = Path("docs/BENCHMARK_BRIEF.md").read_text(encoding="utf-8")
     artifacts = [
+        "benchmarks/agent_coherence_results.json",
         "benchmarks/dynamic_memory_results.json",
         "benchmarks/locomo_sentence_evidence_results.json",
         "benchmarks/longmemeval_evidence_results.json",
@@ -13,6 +14,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/production_index_profile_results.json",
     ]
     commands = [
+        "python benchmarks/agent_coherence_benchmark.py",
         "python benchmarks/dynamic_memory_benchmark.py",
         "python benchmarks/locomo_memory_benchmark.py",
         "python benchmarks/longmemeval_memory_benchmark.py",
