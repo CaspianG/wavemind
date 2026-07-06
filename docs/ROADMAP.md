@@ -79,8 +79,8 @@ policy matters more than raw vector-database scale:
 - `HotMemoryCache`, `QueryVectorCache`, their Redis-backed variants,
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
-  namespaces, encoded query vectors, query-audit-driven cache prewarm, TTL
-  purge, field consolidation, concept consolidation, and index-health repair
+  namespaces, encoded query vectors, query-audit-driven cache prewarm,
+  predictive prefetch, TTL purge, field consolidation, concept consolidation, and index-health repair
   loops.
 - Structured payload helpers cover image captions, audio transcripts, tables,
   and events while preserving modality metadata in the same memory API.
@@ -95,7 +95,7 @@ policy matters more than raw vector-database scale:
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
-  prewarm, query-vector cache, Redis-compatible shared rate limiting, hot-cache
+  prewarm, predictive prefetch, query-vector cache, Redis-compatible shared rate limiting, hot-cache
   behavior, API cache mutation safety, and structured-payload retrieval.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.

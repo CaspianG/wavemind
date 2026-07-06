@@ -12,6 +12,7 @@ from typing import Any, Iterable
 import numpy as np
 
 from .core import QueryResult
+from .encoders import is_stopword_token, normalize_token
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
 from .replication import ReplicatedWaveMind
 
@@ -578,6 +579,31 @@ class CachePrewarmReport:
 
 
 @dataclass(frozen=True)
+class PredictivePrefetchReport:
+    scanned_hot_queries: int = 0
+    generated_queries: int = 0
+    warmed: int = 0
+    skipped: int = 0
+    errors: dict[str, str] = field(default_factory=dict)
+    queries: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "scanned_hot_queries": self.scanned_hot_queries,
+            "generated_queries": self.generated_queries,
+            "warmed": self.warmed,
+            "skipped": self.skipped,
+            "errors": dict(self.errors),
+            "queries": list(self.queries),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class MemoryOSHotQuery:
     namespace: str
     query: str
@@ -607,6 +633,9 @@ class MemoryOSReport:
     cache_enabled: bool = False
     cache_invalidated: int = 0
     prewarm: CachePrewarmReport = field(default_factory=CachePrewarmReport)
+    predictive_prefetch: PredictivePrefetchReport = field(
+        default_factory=PredictivePrefetchReport
+    )
     stats_before: dict[str, object] = field(default_factory=dict)
     stats_after: dict[str, object] = field(default_factory=dict)
     actions: tuple[str, ...] = ()
@@ -615,7 +644,7 @@ class MemoryOSReport:
     @property
     def ok(self) -> bool:
         index_healthy = bool(self.stats_after.get("index_healthy", True))
-        return index_healthy and self.prewarm.ok
+        return index_healthy and self.prewarm.ok and self.predictive_prefetch.ok
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -636,6 +665,7 @@ class MemoryOSReport:
             "cache_enabled": self.cache_enabled,
             "cache_invalidated": self.cache_invalidated,
             "prewarm": self.prewarm.as_dict(),
+            "predictive_prefetch": self.predictive_prefetch.as_dict(),
             "stats_before": dict(self.stats_before),
             "stats_after": dict(self.stats_after),
             "actions": list(self.actions),
@@ -1153,6 +1183,9 @@ class MemoryOSWorker:
         forgetting_max_access_count: int = 0,
         forgetting_priority_decay: float = 0.10,
         forgetting_min_priority: float = 0.0,
+        predictive_prefetch: bool = True,
+        max_predictive_queries: int = 16,
+        predictive_terms_per_hot_query: int = 3,
         rebuild_unhealthy_index: bool = True,
         memory_pressure_threshold: int = 50_000,
     ) -> MemoryOSReport:
@@ -1264,6 +1297,18 @@ class MemoryOSWorker:
                 skipped=len(hot_queries),
             )
 
+        predictive = PredictivePrefetchReport(scanned_hot_queries=len(hot_queries))
+        if predictive_prefetch and self.cache is not None and hot_queries:
+            predictive = self._predictive_prefetch(
+                hot_queries,
+                top_k=top_k,
+                min_score=min_score,
+                max_queries=max_predictive_queries,
+                terms_per_hot_query=predictive_terms_per_hot_query,
+            )
+            if predictive.warmed:
+                actions.append("predictive_prefetch")
+
         stats_after = self._stats(namespace)
         recommendations = self._recommendations(
             namespace=namespace,
@@ -1290,6 +1335,7 @@ class MemoryOSWorker:
             cache_enabled=self.cache is not None,
             cache_invalidated=invalidated,
             prewarm=prewarm,
+            predictive_prefetch=predictive,
             stats_before=stats_before,
             stats_after=stats_after,
             actions=tuple(dict.fromkeys(actions)),
@@ -1460,6 +1506,138 @@ class MemoryOSWorker:
                 demoted[memory_id] = strength
         return tuple(demoted.keys()), float(sum(demoted.values()))
 
+    def _predictive_prefetch(
+        self,
+        hot_queries: list[MemoryOSHotQuery],
+        *,
+        top_k: int,
+        min_score: float | None,
+        max_queries: int,
+        terms_per_hot_query: int,
+    ) -> PredictivePrefetchReport:
+        if self.cache is None or not hasattr(self.memory, "query"):
+            return PredictivePrefetchReport(scanned_hot_queries=len(hot_queries))
+
+        max_queries = max(0, int(max_queries))
+        terms_per_hot_query = max(0, int(terms_per_hot_query))
+        if max_queries <= 0 or terms_per_hot_query <= 0:
+            return PredictivePrefetchReport(scanned_hot_queries=len(hot_queries))
+
+        planned: OrderedDict[tuple[str, str], None] = OrderedDict()
+        errors: dict[str, str] = {}
+        for hot_query in hot_queries:
+            if len(planned) >= max_queries:
+                break
+            try:
+                results = self.memory.query(
+                    hot_query.query,
+                    namespace=hot_query.namespace,
+                    top_k=max(1, int(top_k)),
+                    min_score=min_score,
+                )
+            except Exception as exc:  # pragma: no cover - defensive job boundary
+                errors[f"{hot_query.namespace}:{hot_query.query}"] = str(exc)
+                continue
+            for query in self._neighbor_queries(
+                hot_query,
+                results,
+                terms_per_hot_query=terms_per_hot_query,
+            ):
+                if len(planned) >= max_queries:
+                    break
+                planned[(hot_query.namespace, query)] = None
+
+        warmed = 0
+        skipped = 0
+        warmed_queries: list[str] = []
+        for namespace, query in planned:
+            existing = self.cache.get(
+                namespace,
+                query,
+                top_k=top_k,
+                min_score=min_score,
+            )
+            if existing is not None:
+                skipped += 1
+                continue
+            try:
+                results = self.memory.query(
+                    query,
+                    namespace=namespace,
+                    top_k=max(1, int(top_k)),
+                    min_score=min_score,
+                )
+                self.cache.put(
+                    namespace,
+                    query,
+                    results,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+                warmed += 1
+                warmed_queries.append(query)
+            except Exception as exc:  # pragma: no cover - defensive job boundary
+                errors[f"{namespace}:{query}"] = str(exc)
+
+        return PredictivePrefetchReport(
+            scanned_hot_queries=len(hot_queries),
+            generated_queries=len(planned),
+            warmed=warmed,
+            skipped=skipped,
+            errors=errors,
+            queries=tuple(warmed_queries),
+        )
+
+    def _neighbor_queries(
+        self,
+        hot_query: MemoryOSHotQuery,
+        results: Iterable[QueryResult],
+        *,
+        terms_per_hot_query: int,
+    ) -> list[str]:
+        base_tokens = self._query_tokens(hot_query.query)
+        term_counts: OrderedDict[str, int] = OrderedDict()
+        for result in results:
+            for term in self._result_terms(result):
+                if term in base_tokens:
+                    continue
+                term_counts[term] = term_counts.get(term, 0) + 1
+        ordered_terms = sorted(
+            term_counts.items(),
+            key=lambda item: (-item[1], item[0]),
+        )
+        queries: list[str] = []
+        base = " ".join(base_tokens) or hot_query.query.strip()
+        for term, _count in ordered_terms[:terms_per_hot_query]:
+            queries.append(f"{base} {term}".strip())
+        return queries
+
+    def _query_tokens(self, text: str) -> tuple[str, ...]:
+        tokens: list[str] = []
+        for raw in str(text).split():
+            token = normalize_token(raw)
+            if not token or is_stopword_token(token):
+                continue
+            if token not in tokens:
+                tokens.append(token)
+        return tuple(tokens)
+
+    def _result_terms(self, result: QueryResult) -> tuple[str, ...]:
+        parts: list[str] = [result.text]
+        parts.extend(str(tag) for tag in result.tags)
+        for key, value in (result.metadata or {}).items():
+            if key in {"source", "kind", "type", "topic", "category"}:
+                parts.append(str(value))
+        terms: list[str] = []
+        for part in parts:
+            for raw in str(part).replace("_", " ").replace("-", " ").split():
+                token = normalize_token(raw)
+                if len(token) < 3 or is_stopword_token(token):
+                    continue
+                if token not in terms:
+                    terms.append(token)
+        return tuple(terms)
+
     def _recommendations(
         self,
         *,
@@ -1521,6 +1699,8 @@ class MemoryOSWorker:
                     "forgetting_demotions": report.forgetting_demotions,
                     "forgetting_decay_total": report.forgetting_decay_total,
                     "prewarm_warmed": report.prewarm.warmed,
+                    "predictive_prefetch_generated": report.predictive_prefetch.generated_queries,
+                    "predictive_prefetch_warmed": report.predictive_prefetch.warmed,
                     "index_rebuilt": report.index_rebuilt,
                     "actions": list(report.actions),
                     "ok": report.ok,

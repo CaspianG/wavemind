@@ -404,6 +404,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and redis_cache.get("cache_prewarm_cross_worker_hit")
                 and redis_cache.get("memory_os_ok")
                 and int(redis_cache.get("memory_os_prewarm_warmed", 0)) >= 2
+                and int(redis_cache.get("memory_os_predictive_generated", 0)) >= 1
+                and int(redis_cache.get("memory_os_predictive_warmed", 0)) >= 1
                 and redis_cache.get("memory_os_cross_worker_hit")
                 and redis_cache.get("namespace_invalidation_removed")
                 else "fail"
@@ -417,6 +419,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"shared {redis_cache.get('shared_cache_visible_across_clients')}, "
                 f"prewarm hit {redis_cache.get('cache_prewarm_cross_worker_hit')}, "
                 f"Memory OS warmed {redis_cache.get('memory_os_prewarm_warmed')}, "
+                f"predictive warmed {redis_cache.get('memory_os_predictive_warmed')}, "
                 f"Memory OS hit {redis_cache.get('memory_os_cross_worker_hit')}, "
                 f"invalidation {redis_cache.get('namespace_invalidation_removed')}"
             ),
@@ -474,6 +477,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(memory_os.get("hot_queries", 0)) >= 2
                 and int(memory_os.get("prewarm_warmed", 0)) >= 2
                 and memory_os.get("prewarm_hit")
+                and int(memory_os.get("predictive_prefetch_generated", 0)) >= 1
+                and int(memory_os.get("predictive_prefetch_warmed", 0)) >= 1
                 and int(memory_os.get("expired_purged", 0)) >= 1
                 and int(memory_os.get("concepts_created", 0)) >= 1
                 and int(memory_os.get("priority_predictions", 0)) >= 1
@@ -483,10 +488,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and memory_os.get("concept_recall")
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries into prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, and durable concept memories.",
+            requirement="Background intelligence must turn audited hot queries into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, and durable concept memories.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
+                f"predictive warmed {memory_os.get('predictive_prefetch_warmed')}, "
                 f"expired {memory_os.get('expired_purged')}, "
                 f"concepts {memory_os.get('concepts_created')}, "
                 f"priority predictions {memory_os.get('priority_predictions')}, "

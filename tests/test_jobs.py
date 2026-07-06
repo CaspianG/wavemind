@@ -504,6 +504,15 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         assert report.hot_queries[0].frequency >= 2
         assert report.prewarm.warmed == 1
         assert cached is not None
+        assert report.predictive_prefetch.generated_queries >= 1
+        assert report.predictive_prefetch.warmed >= 1
+        assert report.predictive_prefetch.queries
+        predictive_cached = cache.get(
+            "agent",
+            report.predictive_prefetch.queries[0],
+            top_k=1,
+        )
+        assert predictive_cached is not None
         assert report.priority_predictions >= 1
         assert report.priority_boost_total > 0.0
         assert "predict_priority" in report.actions
@@ -511,10 +520,12 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         assert report.concepts_created == 1
         assert concept_results
         assert "prewarm_cache" in report.actions
+        assert "predictive_prefetch" in report.actions
         assert "consolidate_concepts" in report.actions
         assert any("persisted ANN backend" in item for item in report.recommendations)
         assert audit and audit[0].metadata["ok"] is True
         assert audit[0].metadata["priority_predictions"] >= 1
+        assert audit[0].metadata["predictive_prefetch_warmed"] >= 1
     finally:
         memory.close()
 

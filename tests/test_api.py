@@ -477,11 +477,14 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
             assert payload["cache_enabled"] is True
             assert payload["hot_queries"][0]["query"] == "budget recall"
             assert payload["prewarm"]["warmed"] == 1
+            assert payload["predictive_prefetch"]["generated_queries"] >= 1
+            assert payload["predictive_prefetch"]["warmed"] >= 1
             assert payload["priority_predictions"] >= 1
             assert payload["priority_boost_total"] > 0.0
             assert payload["forgetting_demotions"] >= 1
             assert payload["forgetting_decay_total"] > 0.0
             assert "predict_priority" in payload["actions"]
+            assert "predictive_prefetch" in payload["actions"]
             assert "adaptive_forgetting" in payload["actions"]
 
             query = client.post(

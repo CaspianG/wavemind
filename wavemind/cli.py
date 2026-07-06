@@ -305,6 +305,9 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os.add_argument("--forgetting-max-access-count", type=int, default=0)
     memory_os.add_argument("--forgetting-priority-decay", type=float, default=0.10)
     memory_os.add_argument("--forgetting-min-priority", type=float, default=0.0)
+    memory_os.add_argument("--no-predictive-prefetch", action="store_true")
+    memory_os.add_argument("--max-predictive-queries", type=int, default=16)
+    memory_os.add_argument("--predictive-terms-per-hot-query", type=int, default=3)
     memory_os.add_argument("--no-rebuild-index", action="store_true")
     memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
     memory_os.add_argument("--capacity", type=int, default=512)
@@ -1161,6 +1164,9 @@ def main(argv: list[str] | None = None) -> int:
             forgetting_max_access_count=args.forgetting_max_access_count,
             forgetting_priority_decay=args.forgetting_priority_decay,
             forgetting_min_priority=args.forgetting_min_priority,
+            predictive_prefetch=not args.no_predictive_prefetch,
+            max_predictive_queries=args.max_predictive_queries,
+            predictive_terms_per_hot_query=args.predictive_terms_per_hot_query,
             rebuild_unhealthy_index=not args.no_rebuild_index,
             memory_pressure_threshold=args.memory_pressure_threshold,
         )

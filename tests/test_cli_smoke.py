@@ -268,8 +268,11 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
     assert payload["cache"] == "local"
     assert payload["hot_queries"][0]["query"] == "budget recall"
     assert payload["prewarm"]["warmed"] == 1
+    assert payload["predictive_prefetch"]["generated_queries"] >= 1
+    assert payload["predictive_prefetch"]["warmed"] >= 1
     assert payload["forgetting_demotions"] >= 1
     assert "prewarm_cache" in payload["actions"]
+    assert "predictive_prefetch" in payload["actions"]
     assert "adaptive_forgetting" in payload["actions"]
 
 
