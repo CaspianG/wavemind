@@ -60,6 +60,7 @@ from .k8s_operator import (
     operator_bundle,
     operator_loop,
     operator_reconcile,
+    operator_status,
 )
 from .multimodal import (
     MemoryPayload,
@@ -226,6 +227,7 @@ __all__ = [
     "operator_bundle",
     "operator_loop",
     "operator_reconcile",
+    "operator_status",
     "parse_object_store_uri",
     "query_vector_cache_key",
     "query_with_cache",

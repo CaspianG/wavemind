@@ -51,6 +51,7 @@ from wavemind import (
     kubernetes_resource_path,
     operator_bundle,
     operator_reconcile,
+    operator_status,
     query_with_cache,
     query_with_vector_cache,
     remember_payload,
@@ -553,7 +554,23 @@ def run_operator_profile(
         autoscaling_headroom=0.70,
     )
     bundle = operator_bundle(namespace="wavemind-system", sample=spec)
-    reconciled = operator_reconcile(spec.custom_resource())
+    custom_resource = spec.custom_resource()
+    reconciled = operator_reconcile(custom_resource)
+    status = operator_status(
+        custom_resource,
+        observed={
+            "readyReplicas": spec.replicas,
+            "currentReplicas": spec.replicas,
+            "currentMemories": target_memories,
+            "degradedNodes": 0,
+            "unavailableNodes": 0,
+            "hpaDesiredReplicas": spec.replicas,
+        },
+    )
+    conditions = {
+        condition["type"]: condition["status"]
+        for condition in status["conditions"]
+    }
     resources = list(reconciled["items"])
     kinds = [str(resource["kind"]) for resource in resources]
     names = [str(resource["metadata"]["name"]) for resource in resources]
@@ -589,6 +606,18 @@ def run_operator_profile(
             capacity_annotations.get("memory.wavemind.ai/capacity-headroom", 0)
         ),
         "capacity_annotations": capacity_annotations,
+        "status_ready": status["ready"],
+        "status_phase": status["phase"],
+        "status_ready_replicas": status["readyReplicas"],
+        "status_desired_replicas": status["desiredReplicas"],
+        "status_required_replicas": status["capacity"]["requiredReplicas"],
+        "status_capacity_within_headroom": status["capacity"]["withinHeadroom"],
+        "status_degraded_nodes": status["degradedNodes"],
+        "status_unavailable_nodes": status["unavailableNodes"],
+        "status_conditions_true": [
+            key for key, value in sorted(conditions.items()) if value == "True"
+        ],
+        "status_action_count": len(status["actions"]),
         "autoscaling_metrics": [
             metric["resource"]["name"]
             for metric in hpa["spec"]["metrics"]

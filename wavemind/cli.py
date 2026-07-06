@@ -32,6 +32,7 @@ from .k8s_operator import (
     operator_bundle,
     operator_loop,
     operator_reconcile,
+    operator_status,
 )
 from .object_store import S3SnapshotStore
 from .replication import ReplicatedWaveMind
@@ -291,6 +292,20 @@ def build_parser() -> argparse.ArgumentParser:
     operator_reconcile_cmd.add_argument("--file", required=True, help="WaveMindCluster JSON file or '-' for stdin")
     operator_reconcile_cmd.add_argument("--json", action="store_true")
     operator_reconcile_cmd.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
+
+    operator_status_cmd = sub.add_parser(
+        "operator-status",
+        help="Render WaveMindCluster status conditions from a custom resource",
+    )
+    operator_status_cmd.add_argument("--file", required=True, help="WaveMindCluster JSON file or '-' for stdin")
+    operator_status_cmd.add_argument("--ready-replicas", type=int)
+    operator_status_cmd.add_argument("--current-replicas", type=int)
+    operator_status_cmd.add_argument("--hpa-desired-replicas", type=int)
+    operator_status_cmd.add_argument("--current-memories", type=int)
+    operator_status_cmd.add_argument("--degraded-nodes", type=int)
+    operator_status_cmd.add_argument("--unavailable-nodes", type=int)
+    operator_status_cmd.add_argument("--json", action="store_true")
+    operator_status_cmd.add_argument("--out", help="Write UTF-8 JSON to this file instead of stdout")
 
     operator_loop_cmd = sub.add_parser(
         "operator-loop",
@@ -1221,6 +1236,16 @@ def main(argv: list[str] | None = None) -> int:
         _emit_json(operator_reconcile(_read_json_file(args.file)), out=args.out)
         return 0
 
+    if args.command == "operator-status":
+        _emit_json(
+            operator_status(
+                _read_json_file(args.file),
+                observed=_operator_status_observed_from_args(args),
+            ),
+            out=args.out,
+        )
+        return 0
+
     if args.command == "operator-loop":
         client = KubernetesApplyClient.in_cluster(timeout=args.timeout)
         report = operator_loop(
@@ -1574,6 +1599,18 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         autoscaling_max_memories_per_node=args.autoscaling_max_memories_per_node,
         autoscaling_headroom=args.autoscaling_headroom,
     )
+
+
+def _operator_status_observed_from_args(args: argparse.Namespace) -> dict[str, int]:
+    mapping = {
+        "readyReplicas": args.ready_replicas,
+        "currentReplicas": args.current_replicas,
+        "hpaDesiredReplicas": args.hpa_desired_replicas,
+        "currentMemories": args.current_memories,
+        "degradedNodes": args.degraded_nodes,
+        "unavailableNodes": args.unavailable_nodes,
+    }
+    return {key: int(value) for key, value in mapping.items() if value is not None}
 
 
 def _add_serverless_spec_args(parser: argparse.ArgumentParser) -> None:

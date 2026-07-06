@@ -29,6 +29,18 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads():
     assert results["WaveMind Kubernetes operator"]["capacity_target_max_node_memories"] <= 700_000
     assert results["WaveMind Kubernetes operator"]["autoscaling_max_replicas"] >= results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["autoscaling_metrics"] == ["cpu", "memory"]
+    assert results["WaveMind Kubernetes operator"]["status_ready"] is True
+    assert results["WaveMind Kubernetes operator"]["status_phase"] == "Ready"
+    assert results["WaveMind Kubernetes operator"]["status_ready_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
+    assert results["WaveMind Kubernetes operator"]["status_required_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
+    assert results["WaveMind Kubernetes operator"]["status_capacity_within_headroom"] is True
+    assert results["WaveMind Kubernetes operator"]["status_degraded_nodes"] == 0
+    assert set(results["WaveMind Kubernetes operator"]["status_conditions_true"]) == {
+        "AutoscalingReady",
+        "CapacityPlanned",
+        "RepairScheduled",
+        "ResourcesReady",
+    }
     assert results["WaveMind Kubernetes operator"]["has_repair_cronjob"] is True
     assert results["WaveMind Kubernetes operator"]["repair_namespaces"] == 64
     assert results["WaveMind serverless plan"]["has_knative_service"] is True

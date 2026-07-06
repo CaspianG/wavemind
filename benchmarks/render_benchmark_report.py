@@ -76,6 +76,12 @@ METRIC_LABELS = {
     "architecture_next_commands": "architecture commands",
     "memory_os_architecture_advice_status": "Memory OS architecture advice",
     "memory_os_architecture_recommendations": "Memory OS architecture ids",
+    "status_ready": "operator status ready",
+    "status_phase": "operator status phase",
+    "status_ready_replicas": "operator ready replicas",
+    "status_required_replicas": "operator required replicas",
+    "status_capacity_within_headroom": "operator capacity within headroom",
+    "status_conditions_true": "operator true conditions",
 }
 
 

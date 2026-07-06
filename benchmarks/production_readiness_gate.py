@@ -415,20 +415,36 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
+                and operator.get("status_ready")
+                and operator.get("status_phase") == "Ready"
+                and int(operator.get("status_ready_replicas", 0))
+                == int(operator.get("statefulset_replicas", -1))
+                and int(operator.get("status_required_replicas", 0))
+                == int(operator.get("statefulset_replicas", -1))
+                and operator.get("status_capacity_within_headroom")
+                and set(operator.get("status_conditions_true", []))
+                == {
+                    "AutoscalingReady",
+                    "CapacityPlanned",
+                    "RepairScheduled",
+                    "ResourcesReady",
+                }
                 else "fail"
             ),
             requirement=(
                 "Operator output must include CRD, StatefulSet, Service, HPA, "
-                "scheduled repair, and capacity-aware replica reconciliation."
+                "scheduled repair, capacity-aware replica reconciliation, and "
+                "status conditions for readiness/autoscaling/capacity/repair."
             ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
                 f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}, "
                 f"replicas {operator.get('statefulset_replicas')}, "
                 f"required {operator.get('capacity_required_replicas')}, "
-                f"target max {operator.get('capacity_target_max_node_memories')}"
+                f"target max {operator.get('capacity_target_max_node_memories')}, "
+                f"status {operator.get('status_phase')}"
             ),
-            next_step="Run a real Kubernetes smoke deploy and collect HPA behavior under load.",
+            next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA and pod metrics.",
         ),
         _criterion(
             criterion_id="serverless_externalized_state",

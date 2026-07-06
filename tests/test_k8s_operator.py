@@ -13,6 +13,7 @@ from wavemind import (
     operator_bundle,
     operator_loop,
     operator_reconcile,
+    operator_status,
 )
 
 
@@ -35,6 +36,7 @@ class RecordingKubernetesClient:
     def __init__(self, clusters):
         self.clusters = clusters
         self.applied = []
+        self.status_patches = []
 
     def list_wavemind_clusters(self, namespace):
         assert namespace == "wavemind-system"
@@ -43,6 +45,17 @@ class RecordingKubernetesClient:
     def apply(self, resource):
         self.applied.append(resource)
         return resource
+
+    def patch_wavemind_cluster_status(self, *, namespace, name, status, field_manager="wavemind-operator"):
+        self.status_patches.append(
+            {
+                "namespace": namespace,
+                "name": name,
+                "status": status,
+                "field_manager": field_manager,
+            }
+        )
+        return {"status": status}
 
 
 def test_custom_resource_definition_declares_namespaced_wavemindcluster():
@@ -54,6 +67,9 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert crd["spec"]["names"]["kind"] == "WaveMindCluster"
     spec_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"]
     assert "autoscaling" in spec_props
+    status_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["status"]
+    assert crd["spec"]["versions"][0]["subresources"] == {"status": {}}
+    assert status_props["x-kubernetes-preserve-unknown-fields"] is True
     assert "maxReplicas" in spec_props["autoscaling"]["properties"]
     assert "targetMemories" in spec_props["autoscaling"]["properties"]
     assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
@@ -140,6 +156,58 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     assert annotations["memory.wavemind.ai/capacity-target-memories"] == "10000000"
     assert int(annotations["memory.wavemind.ai/capacity-required-replicas"]) == statefulset["spec"]["replicas"]
     assert int(annotations["memory.wavemind.ai/capacity-target-max-node-memories"]) <= 700_000
+    assert payload["operatorStatus"]["ready"] is True
+    assert payload["operatorStatus"]["capacity"]["requiredReplicas"] == statefulset["spec"]["replicas"]
+    assert payload["operatorStatus"]["capacity"]["withinHeadroom"] is True
+    assert {
+        condition["type"] for condition in payload["operatorStatus"]["conditions"]
+    } == {
+        "ResourcesReady",
+        "CapacityPlanned",
+        "AutoscalingReady",
+        "RepairScheduled",
+    }
+
+
+def test_operator_status_reports_degraded_capacity_and_repair_actions():
+    spec = WaveMindClusterSpec(
+        name="wm-status",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=3,
+        namespace_count=128,
+        repair_enabled=False,
+        autoscaling_enabled=True,
+        autoscaling_min_replicas=3,
+        autoscaling_max_replicas=3,
+        autoscaling_target_memories=10_000_000,
+        autoscaling_max_memories_per_node=1_000_000,
+        autoscaling_headroom=0.70,
+    )
+
+    status = operator_status(
+        spec.custom_resource(),
+        observed={
+            "readyReplicas": 2,
+            "currentReplicas": 3,
+            "currentMemories": 1_200_000,
+            "degradedNodes": 1,
+            "unavailableNodes": 1,
+            "hpaDesiredReplicas": 3,
+        },
+    )
+    conditions = {condition["type"]: condition for condition in status["conditions"]}
+
+    assert status["ready"] is False
+    assert status["phase"] == "Degraded"
+    assert status["readyReplicas"] == 2
+    assert status["degradedNodes"] == 1
+    assert status["capacity"]["requiredReplicas"] <= status["autoscaling"]["maxReplicas"]
+    assert conditions["ResourcesReady"]["status"] == "False"
+    assert conditions["CapacityPlanned"]["status"] == "True"
+    assert conditions["RepairScheduled"]["status"] == "False"
+    assert any("Run cluster-health" in action for action in status["actions"])
+    assert any("Enable scheduled cluster repair" in action for action in status["actions"])
 
 
 def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
@@ -163,6 +231,11 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     assert any(
         rule["apiGroups"] == ["autoscaling"]
         and rule["resources"] == ["horizontalpodautoscalers"]
+        for rule in role["rules"]
+    )
+    assert any(
+        rule["apiGroups"] == ["memory.wavemind.ai"]
+        and rule["resources"] == ["wavemindclusters/status"]
         for rule in role["rules"]
     )
 
@@ -211,6 +284,11 @@ def test_operator_loop_applies_reconciled_resources_once():
 
     assert report["clusters"] == 1
     assert report["applied_count"] == 4
+    assert report["statuses"][0]["ready"] is True
+    assert report["statuses"][0]["phase"] == "Ready"
+    assert len(client.status_patches) == 1
+    assert client.status_patches[0]["name"] == "wm-loop"
+    assert client.status_patches[0]["status"]["ready"] is True
     assert [resource["kind"] for resource in client.applied] == [
         "Service",
         "Service",
@@ -257,6 +335,52 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     }
     assert sample_payload["spec"]["autoscaling"]["maxReplicas"] == 18
     assert any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"])
+    assert "operatorStatus" in reconciled
+
+
+def test_operator_cli_status_renders_observed_conditions(tmp_path):
+    sample = json.loads(
+        run_cli(
+            "operator-sample",
+            "--name",
+            "wm-status-cli",
+            "--namespace",
+            "wavemind-system",
+            "--replicas",
+            "3",
+            "--replication-factor",
+            "3",
+            "--namespace-count",
+            "4096",
+            "--autoscaling",
+            "--autoscaling-target-memories",
+            "10000000",
+            "--json",
+        ).stdout
+    )
+    sample_file = tmp_path / "wavemindcluster-status.json"
+    sample_file.write_text(json.dumps(sample), encoding="utf-8")
+
+    status = json.loads(
+        run_cli(
+            "operator-status",
+            "--file",
+            str(sample_file),
+            "--ready-replicas",
+            "2",
+            "--current-replicas",
+            "3",
+            "--degraded-nodes",
+            "1",
+            "--json",
+        ).stdout
+    )
+
+    assert status["ready"] is False
+    assert status["phase"] == "Degraded"
+    assert status["desiredReplicas"] >= 3
+    assert status["capacity"]["requiredReplicas"] == status["desiredReplicas"]
+    assert any(condition["type"] == "ResourcesReady" for condition in status["conditions"])
 
 
 def test_operator_reconcile_accepts_powershell_utf16_redirect_files(tmp_path):

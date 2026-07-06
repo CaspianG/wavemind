@@ -543,6 +543,7 @@ def custom_resource_definition() -> dict[str, Any]:
                     "name": API_VERSION,
                     "served": True,
                     "storage": True,
+                    "subresources": {"status": {}},
                     "schema": {
                         "openAPIV3Schema": {
                             "type": "object",
@@ -594,7 +595,11 @@ def custom_resource_definition() -> dict[str, Any]:
                                         },
                                         "resources": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                     },
-                                }
+                                },
+                                "status": {
+                                    "type": "object",
+                                    "x-kubernetes-preserve-unknown-fields": True,
+                                },
                             },
                         }
                     },
@@ -625,6 +630,11 @@ def operator_bundle(
                 "apiGroups": [API_GROUP],
                 "resources": [RESOURCE_PLURAL],
                 "verbs": ["get", "list", "watch", "patch", "update"],
+            },
+            {
+                "apiGroups": [API_GROUP],
+                "resources": [f"{RESOURCE_PLURAL}/status"],
+                "verbs": ["get", "patch", "update"],
             },
             {
                 "apiGroups": [""],
@@ -704,7 +714,183 @@ def operator_bundle(
 
 def operator_reconcile(resource: dict[str, Any]) -> dict[str, Any]:
     spec = WaveMindClusterSpec.from_custom_resource(resource)
-    return spec.as_resource_list()
+    payload = spec.as_resource_list()
+    payload["operatorStatus"] = operator_status(resource)
+    return payload
+
+
+def operator_status(
+    resource: dict[str, Any],
+    *,
+    observed: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a WaveMindCluster status payload from spec and observed metrics."""
+
+    spec = WaveMindClusterSpec.from_custom_resource(resource)
+    metadata = dict(resource.get("metadata") or {})
+    observed_payload = dict(observed or {})
+    generation = _optional_int(metadata.get("generation")) or 1
+    desired_replicas = int(spec.replicas)
+    ready_replicas = _observed_int(
+        observed_payload,
+        "readyReplicas",
+        "ready_replicas",
+        default=desired_replicas,
+    )
+    current_replicas = _observed_int(
+        observed_payload,
+        "currentReplicas",
+        "current_replicas",
+        default=ready_replicas,
+    )
+    hpa_desired_replicas = _observed_int(
+        observed_payload,
+        "hpaDesiredReplicas",
+        "hpa_desired_replicas",
+        default=desired_replicas,
+    )
+    unavailable_nodes = _observed_int(
+        observed_payload,
+        "unavailableNodes",
+        "unavailable_nodes",
+        default=max(0, desired_replicas - ready_replicas),
+    )
+    degraded_nodes = _observed_int(
+        observed_payload,
+        "degradedNodes",
+        "degraded_nodes",
+        default=0,
+    )
+    current_memories = _observed_int(
+        observed_payload,
+        "currentMemories",
+        "current_memories",
+        default=0,
+    )
+
+    plan = spec.capacity_autoscale_plan()
+    required_replicas = int(plan.required_nodes if plan is not None else desired_replicas)
+    target_max_node_memories = (
+        int(plan.target_max_node_memories)
+        if plan is not None
+        else None
+    )
+    capacity_within_headroom = (
+        True
+        if plan is None
+        else bool(plan.target_max_node_memories <= int(plan.max_memories_per_node * plan.headroom))
+    )
+    capacity_ready = (
+        desired_replicas >= required_replicas
+        and spec.autoscaling_max_replicas >= required_replicas
+        and capacity_within_headroom
+    )
+    resources_ready = (
+        ready_replicas >= desired_replicas
+        and current_replicas >= desired_replicas
+        and unavailable_nodes == 0
+        and degraded_nodes == 0
+    )
+    autoscaling_ready = (
+        not spec.autoscaling_enabled
+        or (
+            spec.autoscaling_min_replicas <= desired_replicas <= spec.autoscaling_max_replicas
+            and hpa_desired_replicas <= spec.autoscaling_max_replicas
+            and spec.autoscaling_max_replicas >= required_replicas
+        )
+    )
+    repair_ready = bool(spec.repair_enabled and spec.namespace_count > 0)
+    ready = resources_ready and capacity_ready and autoscaling_ready and repair_ready
+    timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    conditions = [
+        _operator_condition(
+            "ResourcesReady",
+            resources_ready,
+            "AllReplicasReady" if resources_ready else "ReplicasUnavailable",
+            (
+                f"{ready_replicas}/{desired_replicas} replicas ready; "
+                f"degraded={degraded_nodes}, unavailable={unavailable_nodes}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
+            "CapacityPlanned",
+            capacity_ready,
+            "CapacityWithinHeadroom" if capacity_ready else "CapacityPlanBlocked",
+            (
+                f"required replicas {required_replicas}; "
+                f"target max node memories {target_max_node_memories}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
+            "AutoscalingReady",
+            autoscaling_ready,
+            "AutoscalingConfigured" if autoscaling_ready else "AutoscalingBlocked",
+            (
+                f"HPA desired {hpa_desired_replicas}; max replicas "
+                f"{spec.autoscaling_max_replicas}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
+            "RepairScheduled",
+            repair_ready,
+            "RepairCronJobEnabled" if repair_ready else "RepairDisabled",
+            (
+                f"repair enabled={spec.repair_enabled}; "
+                f"namespaces={spec.namespace_count}"
+            ),
+            timestamp,
+        ),
+    ]
+    actions: list[str] = []
+    if not resources_ready:
+        actions.append("Wait for StatefulSet replicas to become ready before routing production traffic.")
+    if not capacity_ready:
+        actions.append("Increase autoscaling maxReplicas or reduce target memories per cluster before growth.")
+    elif required_replicas > desired_replicas:
+        actions.append("Reconcile StatefulSet replicas to the calculated capacity requirement.")
+    if not autoscaling_ready:
+        actions.append("Fix HPA min/max bounds so capacity-required replicas fit inside autoscaling limits.")
+    if degraded_nodes or unavailable_nodes:
+        actions.append("Run cluster-health and cluster-repair before declaring the cluster ready.")
+    if not repair_ready:
+        actions.append("Enable scheduled cluster repair for replicated namespace deployments.")
+    if not actions:
+        actions.append("Cluster status is ready; keep readiness, repair, and load gates scheduled.")
+
+    return {
+        "observedGeneration": generation,
+        "ready": ready,
+        "phase": "Ready" if ready else "Degraded",
+        "desiredReplicas": desired_replicas,
+        "currentReplicas": current_replicas,
+        "readyReplicas": ready_replicas,
+        "unavailableNodes": unavailable_nodes,
+        "degradedNodes": degraded_nodes,
+        "currentMemories": current_memories,
+        "targetMemories": spec.autoscaling_target_memories,
+        "replicationFactor": spec.replication_factor,
+        "capacity": {
+            "requiredReplicas": required_replicas,
+            "maxReplicas": spec.autoscaling_max_replicas,
+            "maxMemoriesPerNode": spec.autoscaling_max_memories_per_node,
+            "targetMaxNodeMemories": target_max_node_memories,
+            "headroom": spec.autoscaling_headroom,
+            "withinHeadroom": capacity_within_headroom,
+        },
+        "autoscaling": {
+            "enabled": spec.autoscaling_enabled,
+            "minReplicas": spec.autoscaling_min_replicas,
+            "maxReplicas": spec.autoscaling_max_replicas,
+            "hpaDesiredReplicas": hpa_desired_replicas,
+        },
+        "conditions": conditions,
+        "actions": actions,
+        "lastTransitionTime": timestamp,
+    }
 
 
 @dataclass(frozen=True)
@@ -770,6 +956,31 @@ class KubernetesApplyClient:
                 content_type="application/json",
             )
 
+    def patch_wavemind_cluster_status(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        status: dict[str, Any],
+        field_manager: str = "wavemind-operator",
+    ) -> dict[str, Any]:
+        query = urlencode({"fieldManager": field_manager, "force": "true"})
+        payload = {
+            "apiVersion": f"{API_GROUP}/{API_VERSION}",
+            "kind": RESOURCE_KIND,
+            "metadata": {"name": name, "namespace": namespace},
+            "status": status,
+        }
+        return self._request(
+            "PATCH",
+            (
+                f"/apis/{API_GROUP}/{API_VERSION}/namespaces/{namespace}/"
+                f"{RESOURCE_PLURAL}/{name}/status?{query}"
+            ),
+            payload=payload,
+            content_type="application/apply-patch+yaml",
+        )
+
     def _request(
         self,
         method: str,
@@ -808,6 +1019,7 @@ def operator_loop(
     while True:
         clusters = client.list_wavemind_clusters(namespace)
         applied: list[dict[str, Any]] = []
+        statuses: list[dict[str, Any]] = []
         for cluster in clusters:
             for resource in operator_reconcile(cluster)["items"]:
                 client.apply(resource)
@@ -818,11 +1030,30 @@ def operator_loop(
                         "namespace": resource["metadata"].get("namespace", namespace),
                     }
                 )
+            status = operator_status(cluster)
+            statuses.append(
+                {
+                    "name": str((cluster.get("metadata") or {}).get("name") or "wavemind"),
+                    "namespace": str((cluster.get("metadata") or {}).get("namespace") or namespace),
+                    "ready": bool(status.get("ready")),
+                    "phase": status.get("phase"),
+                    "requiredReplicas": dict(status.get("capacity") or {}).get("requiredReplicas"),
+                }
+            )
+            patch_status = getattr(client, "patch_wavemind_cluster_status", None)
+            if callable(patch_status):
+                metadata = dict(cluster.get("metadata") or {})
+                patch_status(
+                    namespace=str(metadata.get("namespace") or namespace),
+                    name=str(metadata.get("name") or "wavemind"),
+                    status=status,
+                )
         last_report = {
             "namespace": namespace,
             "clusters": len(clusters),
             "applied": applied,
             "applied_count": len(applied),
+            "statuses": statuses,
         }
         if once:
             return last_report
@@ -863,3 +1094,30 @@ def _optional_int(value: object) -> int | None:
     if value is None or value == "":
         return None
     return int(value)
+
+
+def _observed_int(
+    observed: dict[str, Any],
+    *keys: str,
+    default: int,
+) -> int:
+    for key in keys:
+        if key in observed and observed[key] is not None:
+            return max(0, int(observed[key]))
+    return max(0, int(default))
+
+
+def _operator_condition(
+    type: str,
+    status: bool,
+    reason: str,
+    message: str,
+    timestamp: str,
+) -> dict[str, str]:
+    return {
+        "type": type,
+        "status": "True" if status else "False",
+        "reason": reason,
+        "message": message,
+        "lastTransitionTime": timestamp,
+    }
