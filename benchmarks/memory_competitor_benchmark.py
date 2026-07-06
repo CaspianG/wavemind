@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import importlib.util
 import json
+import logging
 import os
 import statistics
 import sys
 import tempfile
 import time
 from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -17,6 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import WaveMind
+from wavemind.encoders import HashingTextEncoder
 
 
 @dataclass(frozen=True)
@@ -140,13 +144,107 @@ def skipped_result(engine: str, reason: str) -> dict[str, Any]:
     }
 
 
-def run_mem0() -> dict[str, Any]:
-    if not (_module_available("mem0") or _module_available("mem0ai")):
+def run_mem0(top_k: int = 3) -> dict[str, Any]:
+    if not _module_available("mem0"):
         return skipped_result("Mem0", 'Install Mem0 to run this adapter profile: pip install "mem0ai"')
-    return skipped_result(
-        "Mem0",
-        "Mem0 package detected, but this benchmark requires an explicit local/vector-store configuration to avoid network-backed defaults.",
-    )
+    if not _module_available("fastembed"):
+        return skipped_result("Mem0", 'Install fastembed to run Mem0 locally: pip install "fastembed"')
+    if not _module_available("qdrant_client"):
+        return skipped_result("Mem0", 'Install qdrant-client to run Mem0 locally: pip install "qdrant-client"')
+
+    os.environ.setdefault("MEM0_TELEMETRY", "False")
+    logging.getLogger("mem0.utils.spacy_models").setLevel(logging.ERROR)
+
+    from mem0 import Memory
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        config = {
+            "llm": {
+                "provider": "openai",
+                "config": {"api_key": "dummy-not-used-for-infer-false"},
+            },
+            "embedder": {
+                "provider": "fastembed",
+                "config": {"model": "BAAI/bge-small-en-v1.5"},
+            },
+            "vector_store": {
+                "provider": "qdrant",
+                "config": {
+                    "path": str(root / "qdrant"),
+                    "collection_name": "wavemind_mem0_competitor_profile",
+                    "embedding_model_dims": 384,
+                },
+            },
+            "history_db_path": str(root / "history.db"),
+        }
+        memory = Memory.from_config(config)
+        stored: dict[str, str] = {}
+        try:
+            for fact in FACTS:
+                expiration_date = None
+                if fact.ttl_seconds == 0:
+                    expiration_date = datetime.now(timezone.utc) - timedelta(seconds=1)
+                response = memory.add(
+                    fact.text,
+                    user_id=fact.namespace,
+                    metadata={"benchmark_id": fact.id},
+                    expiration_date=expiration_date,
+                    infer=False,
+                )
+                memory_id = _first_mem0_id(response)
+                if memory_id:
+                    stored[fact.id] = memory_id
+
+            for stale_id in ("old_city", "old_role"):
+                if stale_id in stored:
+                    memory.delete(stored[stale_id])
+
+            rankings: dict[str, list[str]] = {}
+            latencies: list[float] = []
+            for check in CHECKS:
+                started = time.perf_counter()
+                response = memory.search(
+                    check.query,
+                    filters={"user_id": check.namespace},
+                    top_k=top_k,
+                    threshold=0.0,
+                    show_expired=False,
+                )
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                rankings[check.id] = _mem0_benchmark_ids(response)
+        finally:
+            memory.close()
+            del memory
+            gc.collect()
+
+    result = _compute_metrics("Mem0", rankings, latencies)
+    result["configured"] = True
+    result["backend"] = "local qdrant path + fastembed, infer=False"
+    return result
+
+
+def _first_mem0_id(response: Any) -> str | None:
+    rows = response.get("results") if isinstance(response, dict) else response
+    if not isinstance(rows, list) or not rows:
+        return None
+    value = rows[0].get("id") if isinstance(rows[0], dict) else None
+    return str(value) if value else None
+
+
+def _mem0_benchmark_ids(response: Any) -> list[str]:
+    rows = response.get("results") if isinstance(response, dict) else response
+    if not isinstance(rows, list):
+        return []
+    ids: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        metadata = row.get("metadata") or {}
+        benchmark_id = metadata.get("benchmark_id")
+        if benchmark_id:
+            ids.append(str(benchmark_id))
+    return ids
 
 
 def run_zep() -> dict[str, Any]:
@@ -156,29 +254,71 @@ def run_zep() -> dict[str, Any]:
         return skipped_result("Zep", "Set ZEP_API_KEY or ZEP_API_URL to run the Zep adapter profile.")
     return skipped_result(
         "Zep",
-        "Zep credentials are present, but the benchmark does not create remote sessions unless --allow-network-services is passed.",
+        "Zep credentials are present, but this profile needs a dedicated Zep service/session cleanup policy before writing live benchmark data.",
     )
 
 
-def run_langgraph() -> dict[str, Any]:
-    if not _module_available("langgraph"):
+def run_langgraph(top_k: int = 3) -> dict[str, Any]:
+    if not _module_available("langgraph.store.sqlite"):
         return skipped_result(
             "LangGraph persistent memory",
-            'Install LangGraph to run this adapter profile: pip install "langgraph"',
+            'Install LangGraph SQLite store to run this adapter profile: pip install "langgraph" "langgraph-checkpoint-sqlite"',
         )
-    return skipped_result(
-        "LangGraph persistent memory",
-        "LangGraph package detected, but no persistent checkpointer/store DSN was provided.",
-    )
+
+    from langgraph.store.sqlite import SqliteStore
+
+    encoder = HashingTextEncoder(vector_dim=384)
+
+    def embed(texts: str | list[str]) -> list[list[float]]:
+        batch = [texts] if isinstance(texts, str) else list(texts)
+        return [encoder.encode_vector(text).astype(float).tolist() for text in batch]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "langgraph-store.sqlite"
+        with SqliteStore.from_conn_string(
+            str(db_path),
+            index={"dims": 384, "embed": embed, "fields": ["text"]},
+        ) as store:
+            store.setup()
+            for fact in FACTS:
+                if fact.ttl_seconds == 0:
+                    continue
+                store.put(
+                    (fact.namespace,),
+                    fact.id,
+                    {
+                        "text": fact.text,
+                        "benchmark_id": fact.id,
+                        "priority": fact.priority,
+                    },
+                )
+            store.delete(("agent-main",), "old_city")
+            store.delete(("agent-main",), "old_role")
+
+            rankings: dict[str, list[str]] = {}
+            latencies: list[float] = []
+            for check in CHECKS:
+                started = time.perf_counter()
+                results = store.search((check.namespace,), query=check.query, limit=top_k)
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                rankings[check.id] = [
+                    str(item.value.get("benchmark_id", item.key))
+                    for item in results
+                ]
+
+    result = _compute_metrics("LangGraph persistent memory", rankings, latencies)
+    result["configured"] = True
+    result["backend"] = "langgraph.store.sqlite.SqliteStore + local hash embeddings"
+    return result
 
 
 def run_benchmark(engines: Iterable[str], top_k: int = 3) -> dict[str, Any]:
     runners = {
         "wavemind": lambda: run_wavemind(top_k=top_k),
-        "mem0": run_mem0,
+        "mem0": lambda: run_mem0(top_k=top_k),
         "zep": run_zep,
-        "langgraph": run_langgraph,
-        "langgraph-persistent": run_langgraph,
+        "langgraph": lambda: run_langgraph(top_k=top_k),
+        "langgraph-persistent": lambda: run_langgraph(top_k=top_k),
     }
     results = []
     for engine in engines:

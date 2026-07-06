@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-05T23:37:23Z",
-  "source_ref": "caacba94ea37",
+  "generated_at": "2026-07-06T01:10:32Z",
+  "source_ref": "47e4ed6ce49c",
   "workflow_run_id": null,
-  "refresh_profile": "manual-main",
+  "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
   "benchmarks": [
     {
@@ -678,9 +678,10 @@
       "name": "Production load profile 1M",
       "category": "production-scale",
       "status": "implemented",
-      "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
-      "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
+      "source": "benchmarks/production_load_faiss_1m_results.json",
+      "dataset": "1000000 generated normalized 128-d vectors; FAISS persisted and Qdrant service recall@10/latency profiles.",
       "competitors": [
+        "FAISS persisted",
         "Qdrant service"
       ],
       "metrics": [
@@ -697,22 +698,36 @@
       ],
       "current": {
         "Qdrant service": {
-          "recall_at_k": 0.975,
-          "avg_latency_ms": 105.38696300238371,
-          "p95_latency_ms": 143.90710002044216,
-          "p99_latency_ms": 204.62550001684576,
-          "build_ms": 549886.6279000067,
+          "recall_at_k": 0.984,
+          "avg_latency_ms": 82.56740399752744,
+          "p95_latency_ms": 125.98539999453351,
+          "p99_latency_ms": 137.8559999866411,
+          "build_ms": 441774.98039999045,
           "slo_status": "fail",
-          "slo_required_replicas": 16,
-          "slo_autoscaled_qps": 159.41250721514774,
+          "slo_required_replicas": 12,
+          "slo_autoscaled_qps": 203.47012485100163,
           "cost_status": "invalid_slo",
-          "compute_cost_per_1m_queries_usd": 11.11111111111111,
-          "monthly_total_cost_at_target_qps_usd": 2920.2384185791016,
+          "compute_cost_per_1m_queries_usd": 8.333333333333332,
+          "monthly_total_cost_at_target_qps_usd": 2190.2384185791016,
+          "estimated_storage_gb": 2.384185791015625
+        },
+        "WaveMind faiss-persisted": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 39.11671399953775,
+          "p95_latency_ms": 45.28670001309365,
+          "p99_latency_ms": 57.71490000188351,
+          "build_ms": 20788.142599980347,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 6,
+          "slo_autoscaled_qps": 429.4839285375179,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 4.166666666666666,
+          "monthly_total_cost_at_target_qps_usd": 1095.2384185791016,
           "estimated_storage_gb": 2.384185791015625
         }
       },
       "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
-      "next_step": "Tune Qdrant indexing/search params until the 1M profile reaches SLO pass, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk."
+      "next_step": "Keep the FAISS persisted 1M profile green and tune Qdrant/pgvector so service-mode vector DB backends also pass recall and p99."
     },
     {
       "id": "production_load_qdrant_1m_ef_sweep",
@@ -978,16 +993,16 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 0.8,
+          "readiness_score": 0.8666666666666667,
           "overall_status": "action_required",
-          "pass_count": 12,
-          "action_required_count": 3,
+          "pass_count": 13,
+          "action_required_count": 2,
           "fail_count": 0,
           "total_criteria": 15
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-      "next_step": "Clear the three current action-required items: 1M p99 SLO, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile."
+      "next_step": "Clear the two current action-required items: a live Zep service adapter run and a 10M service-backed load profile."
     },
     {
       "id": "memory_competitor_adapter_profile",
@@ -1012,27 +1027,39 @@
           "precision_at_1": 0.8,
           "precision_at_3": 1.0,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 0.55384998753046,
-          "p95_latency_ms": 0.8311999845318496
+          "avg_latency_ms": 0.8319666764388481,
+          "p95_latency_ms": 1.242700032889843
         },
         "Mem0": {
           "engine": "Mem0",
-          "skipped": true,
-          "reason": "Install Mem0 to run this adapter profile: pip install \"mem0ai\""
+          "precision_at_1": 0.8,
+          "precision_at_3": 1.0,
+          "stale_suppression": 0.6,
+          "avg_latency_ms": 12.22609999240376,
+          "p95_latency_ms": 17.347100016195327,
+          "checks": 6,
+          "configured": true,
+          "backend": "local qdrant path + fastembed, infer=False"
         },
         "Zep": {
           "engine": "Zep",
           "skipped": true,
-          "reason": "Install the Zep client package and set ZEP_API_KEY or ZEP_API_URL."
+          "reason": "Set ZEP_API_KEY or ZEP_API_URL to run the Zep adapter profile."
         },
         "LangGraph persistent memory": {
           "engine": "LangGraph persistent memory",
-          "skipped": true,
-          "reason": "Install LangGraph to run this adapter profile: pip install \"langgraph\""
+          "precision_at_1": 0.8,
+          "precision_at_3": 1.0,
+          "stale_suppression": 1.0,
+          "avg_latency_ms": 0.8662666465776662,
+          "p95_latency_ms": 1.1901999823749065,
+          "checks": 6,
+          "configured": true,
+          "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
         }
       },
-      "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
-      "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run."
+      "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once a dedicated service/API key and cleanup policy are configured.",
+      "next_step": "Add documented setup commands for the live Zep adapter and keep Mem0/LangGraph local adapters in the release test profile."
     },
     {
       "id": "longmemeval_answer_generation",

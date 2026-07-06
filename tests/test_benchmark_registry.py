@@ -47,6 +47,9 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
         > 0
     )
     assert entries["production_load_profile_1m"]["status"] == "implemented"
+    assert entries["production_load_profile_1m"]["current"]["WaveMind faiss-persisted"]["recall_at_k"] == 1.0
+    assert entries["production_load_profile_1m"]["current"]["WaveMind faiss-persisted"]["p99_latency_ms"] < 100.0
+    assert entries["production_load_profile_1m"]["current"]["WaveMind faiss-persisted"]["cost_status"] == "valid_slo"
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["recall_at_k"] > 0
     assert entries["production_load_profile_1m"]["current"]["Qdrant service"]["slo_status"] == "fail"
     assert (

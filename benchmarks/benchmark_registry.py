@@ -150,6 +150,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_results.json")
     production_load_100k_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_100k_tuned_results.json")
     production_load_1m_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_tuned_results.json")
+    production_load_faiss_1m_payload = _load_json(root / "benchmarks" / "production_load_faiss_1m_results.json")
     production_load_1m_ef_sweep_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_ef_sweep_results.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
@@ -171,6 +172,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_load_1m_results = _ann_latest_results(production_load_1m_payload)
     production_load_100k_tuned_results = _ann_latest_results(production_load_100k_tuned_payload)
     production_load_1m_tuned_results = _ann_latest_results(production_load_1m_tuned_payload)
+    production_load_faiss_1m_results = _ann_latest_results(production_load_faiss_1m_payload)
     production_load_1m_ef_sweep_results = _qdrant_ef_sweep_results(production_load_1m_ef_sweep_payload)
     scale_readiness_results = _engine_results(scale_readiness_payload)
     production_readiness_summary = (
@@ -715,9 +717,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "name": "Production load profile 1M",
             "category": "production-scale",
             "status": "implemented",
-            "source": "benchmarks/production_load_qdrant_1m_tuned_results.json",
-            "dataset": "1000000 generated normalized 128-d vectors; Qdrant service-only recall@10/latency profile with tuned HNSW search.",
-            "competitors": ["Qdrant service"],
+            "source": "benchmarks/production_load_faiss_1m_results.json",
+            "dataset": "1000000 generated normalized 128-d vectors; FAISS persisted and Qdrant service recall@10/latency profiles.",
+            "competitors": ["FAISS persisted", "Qdrant service"],
             "metrics": [
                 "recall@10",
                 "avg_latency_ms",
@@ -730,9 +732,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "monthly target cost",
                 "build_ms",
             ],
-            "current": {**production_load_1m_results, **production_load_1m_tuned_results},
+            "current": {
+                **production_load_1m_results,
+                **production_load_1m_tuned_results,
+                **production_load_faiss_1m_results,
+            },
             "target": "Keep recall@10 >= 0.95 and push p99 latency below 100 ms at 1M vectors.",
-            "next_step": "Tune Qdrant indexing/search params until the 1M profile reaches SLO pass, then add FAISS IVF/HNSW and pgvector 1M profiles on a larger disk.",
+            "next_step": "Keep the FAISS persisted 1M profile green and tune Qdrant/pgvector so service-mode vector DB backends also pass recall and p99.",
         },
         {
             "id": "production_load_qdrant_1m_ef_sweep",
@@ -959,7 +965,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
-            "next_step": "Clear the three current action-required items: 1M p99 SLO, real Mem0/Zep/LangGraph adapter runs, and a 10M service-backed load profile.",
+            "next_step": "Clear the two current action-required items: a live Zep service adapter run and a 10M service-backed load profile.",
         },
         {
             "id": "memory_competitor_adapter_profile",
@@ -979,8 +985,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "Zep": memory_competitor_results.get("Zep"),
                 "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
             },
-            "target": "Run the same dynamic-memory scenario against real Mem0, Zep, and LangGraph stores once their optional packages/services are configured.",
-            "next_step": "Add documented setup commands for each competitor adapter and store checked-in results only when those real adapters run.",
+            "target": "Keep Mem0 and LangGraph local adapter results checked in, then add a live Zep service run once a dedicated service/API key and cleanup policy are configured.",
+            "next_step": "Add documented setup commands for the live Zep adapter and keep Mem0/LangGraph local adapters in the release test profile.",
         },
         {
             "id": "longmemeval_answer_generation",

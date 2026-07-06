@@ -248,18 +248,24 @@ recall@10 1.000
 avg 10.28 ms
 p99 21.26 ms
 
+1M persisted FAISS:
+recall@10 1.000
+avg 39.12 ms
+p99 57.71 ms
+
 1M Qdrant service tuned:
-recall@10 0.975
-avg 105.39 ms
-p99 204.63 ms
+recall@10 0.984
+avg 82.57 ms
+p99 137.86 ms
 
 1M Qdrant EF sweep:
 recall@10 0.977
 avg 64.76 ms
 p99 103.77 ms
 
-100k is production-ready on the tested machine. 1M recall is strong, but p99
-still needs tuning before a stable sub-100 ms claim.
+100k Qdrant is production-ready on the tested machine. 1M persisted FAISS now
+passes recall and p99. 1M Qdrant is recall-credible, but still needs p99
+tuning before the same claim.
 
 7. Quick start:
 

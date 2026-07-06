@@ -14,6 +14,12 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _load_optional_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return _load_json(path)
+
+
 def _engine_results(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         str(result["engine"]): result
@@ -58,7 +64,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "audit": _load_json(benchmark_dir / "benchmark_artifact_audit.json"),
         "load_100k": _load_json(benchmark_dir / "production_load_qdrant_100k_tuned_results.json"),
         "load_1m": _load_json(benchmark_dir / "production_load_qdrant_1m_tuned_results.json"),
+        "load_1m_faiss": _load_json(benchmark_dir / "production_load_faiss_1m_results.json"),
         "load_1m_ef": _load_json(benchmark_dir / "production_load_qdrant_1m_ef_sweep_results.json"),
+        "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
     }
@@ -68,9 +76,47 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     artifacts = _load_artifacts(root)
     audit = artifacts["audit"]
     load_100k = _size_results(artifacts["load_100k"]).get("Qdrant service", {})
-    load_1m = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
-    load_1m_queries = int(
-        artifacts["load_1m"].get("scenario", {}).get("queries_per_size", 0)
+    load_1m_qdrant = _size_results(artifacts["load_1m"]).get("Qdrant service", {})
+    load_1m_faiss = _size_results(artifacts["load_1m_faiss"]).get("WaveMind faiss-persisted", {})
+    load_10m_candidates = [
+        result
+        for size_result in artifacts["load_10m"].get("results", [])
+        if int(size_result.get("vectors", 0)) >= 10_000_000
+        for result in size_result.get("results", [])
+        if not result.get("skipped")
+    ]
+    load_10m = max(
+        load_10m_candidates,
+        key=lambda row: (
+            float(row.get("recall_at_k", 0.0)) >= 0.95,
+            float(row.get("p99_latency_ms", float("inf"))) <= 100.0,
+            row.get("cost_status") == "valid_slo",
+            float(row.get("recall_at_k", 0.0)),
+            -float(row.get("p99_latency_ms", float("inf"))),
+        ),
+        default={},
+    )
+    load_10m_pass = (
+        bool(load_10m)
+        and float(load_10m.get("recall_at_k", 0.0)) >= 0.95
+        and float(load_10m.get("p99_latency_ms", float("inf"))) <= 100.0
+        and load_10m.get("cost_status") == "valid_slo"
+    )
+    load_1m_candidates = [row for row in (load_1m_faiss, load_1m_qdrant) if row]
+    load_1m = max(
+        load_1m_candidates,
+        key=lambda row: (
+            float(row.get("recall_at_k", 0.0)) >= 0.95,
+            float(row.get("p99_latency_ms", float("inf"))) <= 100.0,
+            row.get("cost_status") == "valid_slo",
+            float(row.get("recall_at_k", 0.0)),
+            -float(row.get("p99_latency_ms", float("inf"))),
+        ),
+        default={},
+    )
+    load_1m_queries = max(
+        int(artifacts["load_1m"].get("scenario", {}).get("queries_per_size", 0)),
+        int(artifacts["load_1m_faiss"].get("scenario", {}).get("queries_per_size", 0)),
     )
     scale = _engine_results(artifacts["scale"])
     competitors = _engine_results(artifacts["competitors"])
@@ -123,18 +169,20 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             title="1M service-backed load profile meets recall and p99 SLO",
             status=(
                 "pass"
-                if load_1m.get("slo_status") == "pass"
+                if float(load_1m.get("recall_at_k", 0.0)) >= 0.95
+                and float(load_1m.get("p99_latency_ms", float("inf"))) <= 100.0
+                and load_1m.get("cost_status") == "valid_slo"
                 else "action_required"
                 if float(load_1m.get("recall_at_k", 0.0)) >= 0.95
                 else "fail"
             ),
             requirement="recall@10 >= 0.95 and p99 <= 100 ms at 1M vectors.",
             evidence=(
-                f"recall {load_1m.get('recall_at_k')}, "
+                f"{load_1m.get('engine')}: recall {load_1m.get('recall_at_k')}, "
                 f"p99 {load_1m.get('p99_latency_ms')} ms, "
                 f"SLO {load_1m.get('slo_status')}"
             ),
-            next_step="Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and keep rerunning 1M with 100+ queries after each tuning change.",
+            next_step="Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths.",
         ),
         _criterion(
             criterion_id="production_1m_query_depth",
@@ -311,19 +359,21 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 if not skipped_competitors
                 else "skipped: " + ", ".join(skipped_competitors)
             ),
-            next_step="Install/configure competitor stacks in a separate benchmark environment and check in real results.",
+            next_step="Configure a dedicated Zep service/API key with cleanup policy and check in the live Zep adapter result.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",
-            title="10M-vector production load profile exists",
-            status=(
-                "pass"
-                if (root / "benchmarks" / "production_load_10m_results.json").exists()
-                else "action_required"
+            title="10M-vector production load profile passes recall, p99, and cost gate",
+            status="pass" if load_10m_pass else "action_required",
+            requirement="A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
+            evidence=(
+                f"{load_10m.get('engine')}: recall {load_10m.get('recall_at_k')}, "
+                f"p99 {load_10m.get('p99_latency_ms')} ms, "
+                f"cost {load_10m.get('cost_status')}"
+                if load_10m
+                else "production_load_10m_results.json has no non-skipped 10M SLO row"
             ),
-            requirement="A 10M-vector service-backed benchmark is required before claiming million-plus production dominance.",
-            evidence="production_load_10m_results.json is not checked in",
-            next_step="Run 10M on larger hardware after the 1M p99 SLO is green.",
+            next_step="Run 10M on larger hardware with FAISS/Qdrant/pgvector service profiles and check in the measured artifact.",
         ),
     ]
 

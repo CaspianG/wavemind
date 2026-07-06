@@ -34,4 +34,4 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "Reddit" in brief
     assert "X Thread" in brief
     assert "$1.39` per 1M queries" in brief
-    assert "$11.11` per 1M queries" in brief
+    assert "$4.17` per 1M queries" in brief

@@ -6,17 +6,17 @@ verdict, not a marketing claim.
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| readiness score | `0.800` |
-| passed criteria | `12` |
-| action required | `3` |
+| readiness score | `0.867` |
+| passed criteria | `13` |
+| action required | `2` |
 | failed criteria | `0` |
 | total criteria | `15` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-05T23:35:29Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T01:08:44Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
-| 1M service-backed load profile meets recall and p99 SLO | `action_required` | recall 0.975, p99 204.62550001684576 ms, SLO fail | Tune collection-level HNSW/build params, add FAISS IVF/HNSW, and keep rerunning 1M with 100+ queries after each tuning change. |
+| 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
 | Namespace placement survives node and zone loss | `pass` | node loss 1.0, zone loss 1.0, namespaces 4096 | Validate the same placement under live multi-node service load. |
 | Kubernetes operator bundle includes HPA and repair job | `pass` | CRD True, HPA True, repair True | Run a real Kubernetes smoke deploy and collect HPA behavior under load. |
@@ -27,5 +27,5 @@ verdict, not a marketing claim.
 | Active-active sync and field-state CRDT converge | `pass` | delta sync True, CRDT idempotent True | Run active-active sync against independent persistent stores. |
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, precision@1 1.0 | Add real CLIP/audio embedding backends and larger multimodal retrieval tests. |
-| Mem0, Zep, and LangGraph adapters have real configured results | `action_required` | skipped: Mem0, Zep, LangGraph persistent memory | Install/configure competitor stacks in a separate benchmark environment and check in real results. |
-| 10M-vector production load profile exists | `action_required` | production_load_10m_results.json is not checked in | Run 10M on larger hardware after the 1M p99 SLO is green. |
+| Mem0, Zep, and LangGraph adapters have real configured results | `action_required` | skipped: Zep | Configure a dedicated Zep service/API key with cleanup policy and check in the live Zep adapter result. |
+| 10M-vector production load profile passes recall, p99, and cost gate | `action_required` | production_load_10m_results.json has no non-skipped 10M SLO row | Run 10M on larger hardware with FAISS/Qdrant/pgvector service profiles and check in the measured artifact. |

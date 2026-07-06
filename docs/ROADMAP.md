@@ -27,14 +27,14 @@ policy matters more than raw vector-database scale:
   deployments where startup rebuild time matters.
 - A Docker-backed production index profile now compares persisted FAISS,
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
-- A service-backed production load profile now includes tuned 100000-vector and
-  1M-vector Qdrant runs. Qdrant reaches `recall@10 1.000`, p99 `21.26 ms` at
-  100k with a checked-in estimate of `$1.39` per 1M queries, and tuned 1M
-  recall reaches `0.975` over 100 queries with an estimated `$11.11` per 1M
-  queries if the SLO is fixed by replication; the remaining blocker is stable
-  sub-100 ms p99 at 1M.
+- A service-backed production load profile now includes tuned 100000-vector
+  Qdrant and 1M-vector persisted FAISS runs. Qdrant reaches `recall@10 1.000`,
+  p99 `21.26 ms` at 100k with a checked-in estimate of `$1.39` per 1M queries.
+  Persisted FAISS reaches `recall@10 1.000`, p99 `57.71 ms` at 1M, and an
+  estimated `$4.17` per 1M queries with 6 replicas for 100 qps. Tuned 1M
+  Qdrant reaches `recall@10 0.984` but still misses the p99 gate at `137.86 ms`.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current gate is `0.800` (`12/15` pass, `3` action
+  production verdict. The current gate is `0.867` (`13/15` pass, `2` action
   required, `0` fail), so complete million-plus readiness is not claimed yet.
 - pgvector now exposes HNSW `m`, `ef_construction`, and `ef_search` controls.
   The checked-in profile uses `ef_search=400`, which improves 50000-vector
@@ -132,12 +132,12 @@ Priorities:
   Postgres source-of-truth backend for multi-tenant storage.
 - Support external vector services such as Qdrant for larger deployments.
   The 100k service-mode Qdrant benchmark is checked in and healthy; the 1M
-  service-mode run is checked in but not production-grade yet because default
-  recall is too low and tuned p99 still misses the SLO gate.
+  service-mode Qdrant run is recall-credible but not production-grade yet
+  because tuned p99 still misses the SLO gate.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
-  first persisted FAISS snapshot path and production profile are implemented;
-  production still needs Linux/container FAISS at 100k/1M and deeper latency
-  traces.
+  first persisted FAISS snapshot path and production profile are implemented,
+  including a 1M-vector checked-in load result that passes recall and p99.
+  Production still needs Linux/container repeat runs and deeper latency traces.
 - Tune the quantized int8 path so lower memory footprint does not increase query
   latency on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
@@ -298,8 +298,9 @@ Enterprise requirements:
 - Larger service-mode benchmark profiles for persisted FAISS, Qdrant, and
   further-tuned pgvector, with SLO and cost gates tracked for every checked-in
   production result.
-- Clear the production readiness gate: 1M p99 SLO, real Mem0/Zep/LangGraph
-  adapter runs, and a 10M service-backed load profile.
+- Clear the production readiness gate: live Zep service adapter run and a
+  10M service-backed load profile. Mem0 and LangGraph already have checked-in
+  local adapter results.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

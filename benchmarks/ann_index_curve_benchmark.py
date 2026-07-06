@@ -69,6 +69,55 @@ def _percentile(values: list[float], pct: float) -> float:
     return ordered[index]
 
 
+def _optional_int_env(name: str) -> int | None:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return None
+    return int(value)
+
+
+def _optional_bool_env(name: str) -> bool | None:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return None
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _without_none(values: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in values.items() if value is not None}
+
+
+def _qdrant_collection_config_from_env() -> dict[str, Any]:
+    hnsw = _without_none(
+        {
+            "m": _optional_int_env("WAVEMIND_QDRANT_HNSW_M"),
+            "ef_construct": _optional_int_env("WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT"),
+            "full_scan_threshold": _optional_int_env("WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD"),
+            "max_indexing_threads": _optional_int_env("WAVEMIND_QDRANT_HNSW_MAX_INDEXING_THREADS"),
+            "on_disk": _optional_bool_env("WAVEMIND_QDRANT_HNSW_ON_DISK"),
+            "payload_m": _optional_int_env("WAVEMIND_QDRANT_HNSW_PAYLOAD_M"),
+            "inline_storage": _optional_bool_env("WAVEMIND_QDRANT_HNSW_INLINE_STORAGE"),
+        }
+    )
+    optimizers = _without_none(
+        {
+            "default_segment_number": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER"),
+            "max_segment_size": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_MAX_SEGMENT_SIZE"),
+            "memmap_threshold": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_MEMMAP_THRESHOLD"),
+            "indexing_threshold": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD"),
+            "flush_interval_sec": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_FLUSH_INTERVAL_SEC"),
+            "max_optimization_threads": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_MAX_THREADS"),
+        }
+    )
+    return {
+        "hnsw": hnsw,
+        "optimizers": optimizers,
+        "vector_on_disk": _optional_bool_env("WAVEMIND_QDRANT_VECTOR_ON_DISK"),
+        "on_disk_payload": _optional_bool_env("WAVEMIND_QDRANT_ON_DISK_PAYLOAD"),
+        "shard_number": _optional_int_env("WAVEMIND_QDRANT_SHARD_NUMBER"),
+    }
+
+
 def run_wavemind_index(
     kind: str,
     vectors: np.ndarray,
@@ -116,7 +165,14 @@ def run_qdrant(
         url = ":memory:"
     try:
         from qdrant_client import QdrantClient
-        from qdrant_client.models import Distance, PointStruct, SearchParams, VectorParams
+        from qdrant_client.models import (
+            Distance,
+            HnswConfigDiff,
+            OptimizersConfigDiff,
+            PointStruct,
+            SearchParams,
+            VectorParams,
+        )
     except ImportError as exc:
         raise RuntimeError("Install qdrant-client to run the Qdrant ANN curve") from exc
     with _local_no_proxy(url):
@@ -131,12 +187,36 @@ def run_qdrant(
             client = QdrantClient(url)
             engine = "Qdrant local"
     collection_name = f"wavemind_ann_curve_{time.time_ns()}"
+    collection_config = _qdrant_collection_config_from_env()
+    hnsw_config = (
+        HnswConfigDiff(**collection_config["hnsw"])
+        if collection_config["hnsw"]
+        else None
+    )
+    optimizers_config = (
+        OptimizersConfigDiff(**collection_config["optimizers"])
+        if collection_config["optimizers"]
+        else None
+    )
+    recreate_kwargs = _without_none(
+        {
+            "hnsw_config": hnsw_config,
+            "optimizers_config": optimizers_config,
+            "on_disk_payload": collection_config["on_disk_payload"],
+            "shard_number": collection_config["shard_number"],
+        }
+    )
     try:
         started = time.perf_counter()
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=int(vectors.shape[1]), distance=Distance.COSINE),
+            vectors_config=VectorParams(
+                size=int(vectors.shape[1]),
+                distance=Distance.COSINE,
+                on_disk=collection_config["vector_on_disk"],
+            ),
             timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+            **recreate_kwargs,
         )
         batch = []
         for index, vector in enumerate(vectors):
@@ -146,24 +226,40 @@ def run_qdrant(
                 batch.clear()
         if batch:
             client.upsert(collection_name=collection_name, points=batch)
+        wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
+        if wait_after_build_seconds > 0:
+            time.sleep(wait_after_build_seconds)
         build_ms = (time.perf_counter() - started) * 1000.0
+        hnsw_ef = os.environ.get("WAVEMIND_QDRANT_HNSW_EF")
+        exact = os.environ.get("WAVEMIND_QDRANT_EXACT", "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        search_params = None
+        if hnsw_ef or exact:
+            search_params = SearchParams(
+                hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
+                exact=exact or None,
+            )
+        warmup_queries = int(os.environ.get("WAVEMIND_QDRANT_WARMUP_QUERIES", "0"))
+        if warmup_queries > 0 and len(queries) > 0:
+            for index in range(warmup_queries):
+                query = queries[index % len(queries)]
+                list(
+                    client.query_points(
+                        collection_name=collection_name,
+                        query=query.tolist(),
+                        limit=top_k,
+                        with_payload=False,
+                        search_params=search_params,
+                    ).points
+                )
         ids: list[list[int]] = []
         latencies: list[float] = []
         for query in queries:
             started = time.perf_counter()
-            search_params = None
-            hnsw_ef = os.environ.get("WAVEMIND_QDRANT_HNSW_EF")
-            exact = os.environ.get("WAVEMIND_QDRANT_EXACT", "").lower() in {
-                "1",
-                "true",
-                "yes",
-                "on",
-            }
-            if hnsw_ef or exact:
-                search_params = SearchParams(
-                    hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
-                    exact=exact or None,
-                )
             hits = list(
                 client.query_points(
                     collection_name=collection_name,
@@ -185,10 +281,13 @@ def run_qdrant(
             "max_latency_ms": max(latencies) if latencies else 0.0,
             "build_ms": build_ms,
             "queries": len(queries),
+            "warmup_queries": warmup_queries,
+            "wait_after_build_seconds": wait_after_build_seconds,
             "search_params": {
                 "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                 "exact": exact,
             },
+            "collection_params": collection_config,
         }
     finally:
         if os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() not in {

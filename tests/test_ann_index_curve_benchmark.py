@@ -108,6 +108,34 @@ def test_ann_curve_runner_reports_missing_qdrant_service_url(monkeypatch):
     assert "WAVEMIND_QDRANT_URL" in result["reason"]
 
 
+def test_qdrant_collection_config_reads_tuning_environment(monkeypatch):
+    from benchmarks.ann_index_curve_benchmark import _qdrant_collection_config_from_env
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_M", "32")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT", "256")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD", "20000")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_MAX_INDEXING_THREADS", "4")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_ON_DISK", "false")
+    monkeypatch.setenv("WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER", "4")
+    monkeypatch.setenv("WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD", "10000")
+    monkeypatch.setenv("WAVEMIND_QDRANT_VECTOR_ON_DISK", "true")
+    monkeypatch.setenv("WAVEMIND_QDRANT_ON_DISK_PAYLOAD", "true")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SHARD_NUMBER", "2")
+
+    config = _qdrant_collection_config_from_env()
+
+    assert config["hnsw"]["m"] == 32
+    assert config["hnsw"]["ef_construct"] == 256
+    assert config["hnsw"]["full_scan_threshold"] == 20000
+    assert config["hnsw"]["max_indexing_threads"] == 4
+    assert config["hnsw"]["on_disk"] is False
+    assert config["optimizers"]["default_segment_number"] == 4
+    assert config["optimizers"]["indexing_threshold"] == 10000
+    assert config["vector_on_disk"] is True
+    assert config["on_disk_payload"] is True
+    assert config["shard_number"] == 2
+
+
 def test_ann_curve_cli_writes_json(tmp_path):
     output = tmp_path / "ann.json"
     project_root = Path(__file__).resolve().parents[1]
