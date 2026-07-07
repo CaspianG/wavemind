@@ -148,6 +148,15 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert local_http["success_rate"] == 1.0
     assert local_http["slo_pass"] is True
     assert local_http["read_fanout"] == 1
+    local_active_active = entries["local_http_active_active_smoke"]["current"][
+        "WaveMind real HTTP active-active service-region sync"
+    ]
+    assert local_active_active["region_count"] == 3
+    assert local_active_active["convergence_rate"] == 1.0
+    assert local_active_active["delete_suppression_rate"] == 1.0
+    assert local_active_active["success_rate"] == 1.0
+    assert local_active_active["final_noop_records_imported"] == 0
+    assert local_active_active["slo_pass"] is True
     external_http = entries["external_http_cluster_load_runner"]["current"][
         "WaveMind external HTTP cluster load"
     ]

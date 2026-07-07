@@ -87,6 +87,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
+        "local_http_active_active": _load_optional_json(
+            benchmark_dir / "local_http_active_active_smoke_results.json"
+        ),
         "external_http_cluster": _load_optional_json(benchmark_dir / "http_cluster_load_results.json"),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
         "vectordbbench_dataset": _load_optional_json(benchmark_dir / "vectordbbench_dataset_manifest.json"),
@@ -156,6 +159,34 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and int(local_http_cluster.get("unavailable_nodes", 1)) == 0
         and local_http_cluster.get("slo_pass")
         and float(local_http_cluster.get("p99_operation_ms", float("inf"))) <= 1000.0
+    )
+    local_http_active_active_script_exists = (
+        root / "benchmarks" / "local_http_active_active_smoke.py"
+    ).exists()
+    local_http_active_active_ci_configured = (
+        local_http_active_active_script_exists
+        and "local-http-active-active-smoke:" in full_check_workflow
+        and "benchmarks/local_http_active_active_smoke.py" in full_check_workflow
+        and "--fail-on-slo" in full_check_workflow
+    )
+    local_http_active_active = _engine_results(artifacts["local_http_active_active"]).get(
+        "WaveMind real HTTP active-active service-region sync",
+        {},
+    )
+    local_http_active_active_pass = (
+        local_http_active_active_ci_configured
+        and int(local_http_active_active.get("region_count", 0)) >= 3
+        and int(local_http_active_active.get("namespaces", 0)) >= 2
+        and int(local_http_active_active.get("pair_syncs", 0)) >= 12
+        and int(local_http_active_active.get("cursor_count", 0)) >= 6
+        and float(local_http_active_active.get("convergence_rate", 0.0)) >= 1.0
+        and float(local_http_active_active.get("delete_suppression_rate", 0.0)) >= 1.0
+        and float(local_http_active_active.get("success_rate", 0.0)) >= 1.0
+        and int(local_http_active_active.get("failed_pairs", 1)) == 0
+        and int(local_http_active_active.get("final_noop_records_imported", 1)) == 0
+        and int(local_http_active_active.get("final_noop_failed_pairs", 1)) == 0
+        and local_http_active_active.get("slo_pass")
+        and float(local_http_active_active.get("p99_operation_ms", float("inf"))) <= 1500.0
     )
     audit = artifacts["audit"]
     agent_coherence = _engine_results(artifacts["agent_coherence"])
@@ -1076,6 +1107,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"slo {local_http_cluster.get('slo_pass')}"
             ),
             next_step="Refresh local_http_cluster_smoke_results.json from CI on every release candidate.",
+        ),
+        _criterion(
+            criterion_id="real_http_active_active_ci",
+            title="Real HTTP active-active service-region smoke passes SLO",
+            status="pass" if local_http_active_active_pass else "fail",
+            requirement=(
+                "CI must start real WaveMind API region processes backed by replicated "
+                "local runtimes, exchange namespace deltas over HTTP export/import "
+                "endpoints, converge without duplicate replay, and propagate deletes."
+            ),
+            evidence=(
+                f"workflow {local_http_active_active_ci_configured}, "
+                f"regions {local_http_active_active.get('region_count')}, "
+                f"namespaces {local_http_active_active.get('namespaces')}, "
+                f"pair_syncs {local_http_active_active.get('pair_syncs')}, "
+                f"convergence {local_http_active_active.get('convergence_rate')}, "
+                f"delete suppression {local_http_active_active.get('delete_suppression_rate')}, "
+                f"success {local_http_active_active.get('success_rate')}, "
+                f"final noop {local_http_active_active.get('final_noop_records_imported')}, "
+                f"p99 {local_http_active_active.get('p99_operation_ms')} ms, "
+                f"slo {local_http_active_active.get('slo_pass')}"
+            ),
+            next_step="Refresh local_http_active_active_smoke_results.json from CI on every release candidate.",
         ),
         _criterion(
             criterion_id="memory_os_worker",

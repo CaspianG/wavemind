@@ -92,6 +92,13 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "health True" in criteria["real_local_http_cluster_ci"]["evidence"]
     assert "degraded 0" in criteria["real_local_http_cluster_ci"]["evidence"]
     assert "slo True" in criteria["real_local_http_cluster_ci"]["evidence"]
+    assert criteria["real_http_active_active_ci"]["status"] == "pass"
+    assert "real WaveMind API region processes" in criteria["real_http_active_active_ci"]["requirement"]
+    assert "regions 3" in criteria["real_http_active_active_ci"]["evidence"]
+    assert "convergence 1.0" in criteria["real_http_active_active_ci"]["evidence"]
+    assert "delete suppression 1.0" in criteria["real_http_active_active_ci"]["evidence"]
+    assert "final noop 0" in criteria["real_http_active_active_ci"]["evidence"]
+    assert "slo True" in criteria["real_http_active_active_ci"]["evidence"]
     assert criteria["distributed_http_shard_transport"]["status"] == "pass"
     assert criteria["sustained_http_cluster_load"]["status"] == "pass"
     assert "mixed write/query/failover" in criteria["sustained_http_cluster_load"]["requirement"]
@@ -174,7 +181,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 35
+    assert payload["summary"]["total_criteria"] == 36
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report

@@ -1,0 +1,50 @@
+{
+  "scenario": {
+    "name": "local_http_active_active_smoke",
+    "source": "local-replicated-api-processes",
+    "region_count": 3,
+    "region_ids": [
+      "region-000",
+      "region-001",
+      "region-002"
+    ],
+    "replicas_per_region": 3,
+    "namespace_prefix": "tenant:http-active-active:1783399710",
+    "namespace_count": 2,
+    "root_path": null,
+    "duration_ms": 7585.50500869751,
+    "description": "Real HTTP active-active service-region smoke for namespace delta export/import, cursor idempotency, convergence, and delete propagation."
+  },
+  "results": [
+    {
+      "engine": "WaveMind real HTTP active-active service-region sync",
+      "region_count": 3,
+      "namespaces": 2,
+      "writes": 6,
+      "deleted_records_requested": 1,
+      "sync_cycles": 3,
+      "pair_syncs": 36,
+      "cursor_count": 12,
+      "records_imported": 36,
+      "tombstones_imported": 6,
+      "deleted_records": 6,
+      "field_keys_exported": 100,
+      "final_noop_records_imported": 0,
+      "final_noop_failed_pairs": 0,
+      "convergence_rate": 1.0,
+      "delete_suppression_rate": 1.0,
+      "success_rate": 1.0,
+      "failed_pairs": 0,
+      "has_more_pairs": 0,
+      "avg_sync_ms": 525.4407333365331,
+      "p99_sync_ms": 925.2175999572501,
+      "avg_operation_ms": 53.4707321535929,
+      "p99_operation_ms": 347.5829000817612,
+      "slo_min_success_rate": 1.0,
+      "slo_min_convergence_rate": 1.0,
+      "slo_min_delete_suppression_rate": 1.0,
+      "slo_p99_ms": 1500.0,
+      "slo_pass": true
+    }
+  ]
+}

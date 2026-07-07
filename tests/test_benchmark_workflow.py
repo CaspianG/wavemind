@@ -106,10 +106,14 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
 
     assert "benchmark-artifact-gate:" in workflow
     assert "local-http-cluster-smoke:" in workflow
+    assert "local-http-active-active-smoke:" in workflow
     assert "qdrant-sharded-streaming-smoke:" in workflow
     assert "benchmarks/local_http_cluster_smoke.py" in workflow
+    assert "benchmarks/local_http_active_active_smoke.py" in workflow
     assert "--read-fanout 1" in workflow
     assert "benchmarks/local_http_cluster_smoke_ci_results.json" in workflow
+    assert "benchmarks/local_http_active_active_smoke_ci_results.json" in workflow
+    assert "local-http-active-active-smoke-results" in workflow
     assert "qdrant/qdrant:v1.15.1" in workflow
     assert "WAVEMIND_QDRANT_URLS: http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
     assert "--engines qdrant-sharded-service" in workflow

@@ -551,6 +551,21 @@ def build_parser() -> argparse.ArgumentParser:
     serve = sub.add_parser("serve", help="Run FastAPI daemon")
     serve.add_argument("--host", default="0.0.0.0")
     serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument(
+        "--replicated-root",
+        dest="root",
+        help="Run the API with a ReplicatedWaveMind root instead of a single SQLite store.",
+    )
+    serve.add_argument(
+        "--replica-node",
+        dest="node",
+        action="append",
+        default=[],
+        help="Replica node as node_id=address or node_id. Repeat for every local replica.",
+    )
+    serve.add_argument("--replication-factor", type=int, default=3)
+    serve.add_argument("--write-quorum", type=int)
+    serve.add_argument("--read-quorum", type=int, default=1)
 
     studio = sub.add_parser("studio", help="Run local WaveMind Studio dashboard")
     studio.add_argument("--host", default="127.0.0.1")
@@ -600,6 +615,16 @@ def make_replicated_mind(args) -> ReplicatedWaveMind:
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
     )
+
+
+def make_served_mind(args) -> WaveMind | ReplicatedWaveMind:
+    if getattr(args, "root", None) or getattr(args, "node", None):
+        if not getattr(args, "root", None):
+            raise SystemExit("--replicated-root is required when --replica-node is used")
+        if not getattr(args, "node", None):
+            raise SystemExit("--replica-node is required when --replicated-root is used")
+        return make_replicated_mind(args)
+    return make_mind(args)
 
 
 def replicated_restore_kwargs(args) -> dict[str, object]:
@@ -783,7 +808,7 @@ def main(argv: list[str] | None = None) -> int:
 
         from .api import create_app
 
-        uvicorn.run(create_app(mind=make_mind(args)), host=args.host, port=args.port)
+        uvicorn.run(create_app(mind=make_served_mind(args)), host=args.host, port=args.port)
         return 0
 
     if args.command == "studio":

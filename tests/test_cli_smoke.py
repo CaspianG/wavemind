@@ -2,6 +2,7 @@ import subprocess
 import sys
 import json
 import os
+import types
 from pathlib import Path
 
 import wavemind.cli as cli
@@ -132,6 +133,43 @@ def test_cli_benchmark_seeds_all_synthetic_cases(tmp_path):
 
     assert report["capacity"] == 4
     assert report["recall_at_k"] == 1.0
+
+
+def test_cli_serve_can_start_replicated_api_runtime(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_run(app, *, host, port):
+        captured["host"] = host
+        captured["port"] = port
+        captured["mind"] = app.state.mind
+        app.state.mind.close()
+
+    monkeypatch.setitem(sys.modules, "uvicorn", types.SimpleNamespace(run=fake_run))
+
+    assert cli.main(
+        [
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8123",
+            "--replicated-root",
+            str(tmp_path / "replicated-api"),
+            "--replica-node",
+            "node-a",
+            "--replica-node",
+            "node-b",
+            "--replica-node",
+            "node-c",
+            "--replication-factor",
+            "3",
+        ]
+    ) == 0
+
+    assert captured["host"] == "127.0.0.1"
+    assert captured["port"] == 8123
+    assert isinstance(captured["mind"], ReplicatedWaveMind)
+    assert callable(getattr(captured["mind"], "export_namespace_delta"))
 
 
 def test_cli_maintenance_runs_one_job(tmp_path):

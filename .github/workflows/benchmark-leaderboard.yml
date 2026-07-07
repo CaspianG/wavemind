@@ -57,6 +57,13 @@ jobs:
             --namespace-prefix "tenant:external-loopback:weekly-${{ github.run_id }}" \
             --fail-on-slo \
             --output benchmarks/http_cluster_load_results.json
+          python benchmarks/local_http_active_active_smoke.py \
+            --regions 3 \
+            --replicas-per-region 3 \
+            --namespace-count 2 \
+            --timeout 3 \
+            --fail-on-slo \
+            --output benchmarks/local_http_active_active_smoke_results.json
           python benchmarks/production_streaming_load_benchmark.py \
             --sizes 10000 \
             --dim 128 \
@@ -141,6 +148,7 @@ jobs:
             tests/test_serverless_observed_telemetry_benchmark.py \
             tests/test_external_http_cluster_loopback.py \
             tests/test_http_cluster_load_benchmark.py \
+            tests/test_local_http_active_active_smoke.py \
             tests/test_scale_readiness_benchmark.py \
             tests/test_production_streaming_load_benchmark.py \
             tests/test_production_readiness_gate.py
@@ -170,6 +178,7 @@ jobs:
             benchmarks/dynamic_memory_results.json
             benchmarks/field_memory_dynamics_results.json
             benchmarks/http_cluster_load_results.json
+            benchmarks/local_http_active_active_smoke_results.json
             benchmarks/scale_readiness_results.json
             deploy/serverless/observed-telemetry.loopback.json
             benchmarks/production_streaming_load_smoke_results.json

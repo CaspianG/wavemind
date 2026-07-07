@@ -212,6 +212,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_pgvector_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_pgvector_10m_plan.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
+    local_http_active_active_payload = _load_json(root / "benchmarks" / "local_http_active_active_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
@@ -254,6 +255,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     }
     scale_readiness_results = _engine_results(scale_readiness_payload)
     local_http_cluster_results = _engine_results(local_http_cluster_payload)
+    local_http_active_active_results = _engine_results(local_http_active_active_payload)
     external_http_cluster_results = _engine_results(external_http_cluster_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
@@ -1509,6 +1511,56 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
             "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware.",
+        },
+        {
+            "id": "local_http_active_active_smoke",
+            "name": "Local HTTP active-active service-region smoke",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/local_http_active_active_smoke.py",
+            "dataset": "Three real localhost WaveMind API region processes. Each region runs a replicated WaveMind runtime behind FastAPI; the workload checks namespace-delta export/import, cursor idempotency, convergence, delete propagation, final no-op sync, p99 operation latency, and SLO status.",
+            "competitors": ["WaveMind local replicated API regions"],
+            "metrics": [
+                "convergence_rate",
+                "delete_suppression_rate",
+                "success_rate",
+                "final_noop_records_imported",
+                "p99_operation_ms",
+                "slo_pass",
+            ],
+            "current": {
+                "WaveMind real HTTP active-active service-region sync": _metric_summary(
+                    local_http_active_active_results.get(
+                        "WaveMind real HTTP active-active service-region sync"
+                    ),
+                    (
+                        "region_count",
+                        "namespaces",
+                        "writes",
+                        "sync_cycles",
+                        "pair_syncs",
+                        "cursor_count",
+                        "records_imported",
+                        "tombstones_imported",
+                        "deleted_records",
+                        "field_keys_exported",
+                        "final_noop_records_imported",
+                        "final_noop_failed_pairs",
+                        "convergence_rate",
+                        "delete_suppression_rate",
+                        "success_rate",
+                        "failed_pairs",
+                        "has_more_pairs",
+                        "avg_sync_ms",
+                        "p99_sync_ms",
+                        "avg_operation_ms",
+                        "p99_operation_ms",
+                        "slo_pass",
+                    ),
+                ),
+            },
+            "target": "Keep real API-process convergence, delete suppression, and pair-sync success at 1.0 with final no-op imports at 0 before moving the same workload to remote Kubernetes or serverless regions.",
+            "next_step": "Run the same active-active service-region workload against remote Kubernetes/serverless API nodes with external Postgres/Qdrant/Redis state.",
         },
         {
             "id": "external_http_cluster_load_runner",

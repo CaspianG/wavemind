@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T04:34:12Z",
-  "source_ref": "5b23d4de2599",
+  "generated_at": "2026-07-07T04:50:20Z",
+  "source_ref": "2355a94d9a99",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1656,10 +1656,10 @@
         "WaveMind production readiness": {
           "readiness_score": 1.0,
           "overall_status": "pass",
-          "pass_count": 35,
+          "pass_count": 36,
           "action_required_count": 0,
           "fail_count": 0,
-          "total_criteria": 35
+          "total_criteria": 36
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
@@ -1705,6 +1705,53 @@
       },
       "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
       "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware."
+    },
+    {
+      "id": "local_http_active_active_smoke",
+      "name": "Local HTTP active-active service-region smoke",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/local_http_active_active_smoke.py",
+      "dataset": "Three real localhost WaveMind API region processes. Each region runs a replicated WaveMind runtime behind FastAPI; the workload checks namespace-delta export/import, cursor idempotency, convergence, delete propagation, final no-op sync, p99 operation latency, and SLO status.",
+      "competitors": [
+        "WaveMind local replicated API regions"
+      ],
+      "metrics": [
+        "convergence_rate",
+        "delete_suppression_rate",
+        "success_rate",
+        "final_noop_records_imported",
+        "p99_operation_ms",
+        "slo_pass"
+      ],
+      "current": {
+        "WaveMind real HTTP active-active service-region sync": {
+          "region_count": 3,
+          "namespaces": 2,
+          "writes": 6,
+          "sync_cycles": 3,
+          "pair_syncs": 36,
+          "cursor_count": 12,
+          "records_imported": 36,
+          "tombstones_imported": 6,
+          "deleted_records": 6,
+          "field_keys_exported": 100,
+          "final_noop_records_imported": 0,
+          "final_noop_failed_pairs": 0,
+          "convergence_rate": 1.0,
+          "delete_suppression_rate": 1.0,
+          "success_rate": 1.0,
+          "failed_pairs": 0,
+          "has_more_pairs": 0,
+          "avg_sync_ms": 525.4407333365331,
+          "p99_sync_ms": 925.2175999572501,
+          "avg_operation_ms": 53.4707321535929,
+          "p99_operation_ms": 347.5829000817612,
+          "slo_pass": true
+        }
+      },
+      "target": "Keep real API-process convergence, delete suppression, and pair-sync success at 1.0 with final no-op imports at 0 before moving the same workload to remote Kubernetes or serverless regions.",
+      "next_step": "Run the same active-active service-region workload against remote Kubernetes/serverless API nodes with external Postgres/Qdrant/Redis state."
     },
     {
       "id": "external_http_cluster_load_runner",

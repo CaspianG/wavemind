@@ -7,14 +7,14 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `35` |
+| passed criteria | `36` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `35` |
+| total criteria | `36` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-07T04:25:50Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-07T04:50:17Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
 | LongMemEval answer generation beats static RAG baselines | `pass` | ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170 | Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
@@ -38,6 +38,7 @@ verdict, not a marketing claim.
 | API cache does not serve stale memory after mutations | `pass` | cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True | Keep the real Redis multi-process API load workflow green. |
 | Real Redis multi-process API load passes SLO | `pass` | workflow True, workers 2, success_rate 1.0, p99 71.7594539700039 ms, stale prevented True | Refresh redis_api_load_results.json from the CI artifact on every release candidate. |
 | Real local HTTP cluster smoke passes SLO | `pass` | workflow True, nodes 4, read_fanout 1, success 1.0, failover 1.0, repair 1, health True, degraded 0, p99 348.82529999595135 ms, slo True | Refresh local_http_cluster_smoke_results.json from CI on every release candidate. |
+| Real HTTP active-active service-region smoke passes SLO | `pass` | workflow True, regions 3, namespaces 2, pair_syncs 36, convergence 1.0, delete suppression 1.0, success 1.0, final noop 0, p99 347.5829000817612 ms, slo True | Refresh local_http_active_active_smoke_results.json from CI on every release candidate. |
 | Memory OS worker prewarms, consolidates, and cleans up | `pass` | hot queries 2, prewarm 2, predictive warmed 5, expired 1, concepts 1, priority predictions 2, forgetting demotions 3, architecture architecture_required | Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments. |
 | Distributed sharding repairs replicas and tombstones stale deletes | `pass` | repair 1, tombstone deleted 1, anti-entropy repaired 1 | Keep the algorithm profile and real HTTP shard profile in sync. |
 | HTTP shard transport handles failover, repair, and tombstones | `pass` | proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0 | Extend the same HTTP shard profile to remote service nodes and sustained load. |

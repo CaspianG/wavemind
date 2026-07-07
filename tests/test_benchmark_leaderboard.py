@@ -91,6 +91,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "WAVEMIND_QDRANT_URLS=http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
     assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "--engines qdrant-sharded-service" in workflow
+    assert "benchmarks/local_http_active_active_smoke.py" in workflow
+    assert "benchmarks/local_http_active_active_smoke_results.json" in workflow
+    assert "tests/test_local_http_active_active_smoke.py" in workflow
     assert "production_readiness_gate.py" in workflow
     assert "benchmark_registry.py" in workflow
     assert "render_benchmark_report.py" in workflow
