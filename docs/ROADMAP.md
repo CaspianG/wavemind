@@ -55,7 +55,7 @@ policy matters more than raw vector-database scale:
   not completed 10M benchmarks; they are exact service-backed run contracts,
   including a horizontal Qdrant fanout path for multi-node storage.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`35/35` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`36/36` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.

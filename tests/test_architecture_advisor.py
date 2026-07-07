@@ -63,10 +63,12 @@ def test_architecture_advisor_requires_service_index_and_sharding():
     assert "bounded-read-fanout" in ids
     assert "service-index" in ids
     assert "namespace-sharding" in ids
+    assert "active-active-region-evidence" in ids
     assert "replication-capacity" in ids
     assert "latency-slo" in ids
     assert "multimodal-payloads" in ids
     assert any("http_cluster_load_benchmark.py" in command for command in advice.next_commands)
+    assert any("external-http-active-active.yml" in command for command in advice.next_commands)
     assert any("--read-fanout 1" in command for command in advice.next_commands)
 
 

@@ -273,6 +273,17 @@ def advise_memory_architecture(
             ),
             ("docs/BENCHMARK_BRIEF.md", ".github/workflows/external-http-cluster-load.yml"),
         )
+        add(
+            "active-active-region-evidence",
+            "architecture_required",
+            "Verify external active-active regions",
+            "Large production deployments need real regional API evidence for convergence, delete propagation, cursor idempotency, and p99 latency.",
+            "Run the external HTTP active-active workflow against at least three real API regions before claiming multi-region readiness.",
+            (
+                'gh workflow run external-http-active-active.yml -f regions="us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com" -f namespace_count=16 -f p99_slo_ms=1500',
+            ),
+            ("docs/BENCHMARK_BRIEF.md", ".github/workflows/external-http-active-active.yml"),
+        )
 
     if observed_p99_ms is not None and float(observed_p99_ms) > target_p99:
         add(
