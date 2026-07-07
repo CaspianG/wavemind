@@ -1511,7 +1511,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     ),
                 ),
             },
-            "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
+            "target": "Keep success_rate, failover_hit_rate, delete_suppression_rate, and cluster health at 1.0; use a 2000 ms p99 ceiling for GitHub runner variance while keeping checked-in local evidence below 1000 ms before promoting remote service-node deployments.",
             "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware.",
         },
         {

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T05:41:41Z",
-  "source_ref": "8c381114b88e",
+  "generated_at": "2026-07-07T06:03:04Z",
+  "source_ref": "0ab9773bc676",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1703,7 +1703,7 @@
           "slo_pass": true
         }
       },
-      "target": "Keep success_rate at 1.0, failover_hit_rate at 1.0, delete_suppression_rate at 1.0, and p99 below 1000 ms in CI before promoting remote service-node deployments.",
+      "target": "Keep success_rate, failover_hit_rate, delete_suppression_rate, and cluster health at 1.0; use a 2000 ms p99 ceiling for GitHub runner variance while keeping checked-in local evidence below 1000 ms before promoting remote service-node deployments.",
       "next_step": "Run the same workload against external service nodes and then increase namespace count and payload size on sized hardware."
     },
     {

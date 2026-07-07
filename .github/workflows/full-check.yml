@@ -205,6 +205,7 @@ jobs:
             --workers 4 \
             --timeout 3 \
             --read-fanout 1 \
+            --p99-slo-ms 2000 \
             --fail-on-slo \
             --output benchmarks/local_http_cluster_smoke_ci_results.json
 

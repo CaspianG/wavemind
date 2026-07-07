@@ -69,6 +69,16 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "actions/upload-artifact@v7" in workflow
 
 
+def test_full_check_local_http_cluster_smoke_uses_ci_p99_ceiling():
+    workflow = Path(".github/workflows/full-check.yml").read_text(encoding="utf-8")
+
+    assert "local-http-cluster-smoke:" in workflow
+    assert "benchmarks/local_http_cluster_smoke.py" in workflow
+    assert "--read-fanout 1" in workflow
+    assert "--p99-slo-ms 2000" in workflow
+    assert "--fail-on-slo" in workflow
+
+
 def test_external_http_active_active_workflow_runs_real_region_profile():
     workflow = Path(".github/workflows/external-http-active-active.yml").read_text(
         encoding="utf-8"
