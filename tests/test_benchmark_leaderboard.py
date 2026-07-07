@@ -54,6 +54,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "serverless-observed-telemetry.yml" in leaderboard
     assert "External HTTP cluster load" in leaderboard
     assert "local loopback service-node evidence" in leaderboard
+    assert "External HTTP active-active" in leaderboard
+    assert "no checked-in remote region artifact" in leaderboard
     assert "pgvector tuning" in leaderboard
     assert "iterative recall `0.97`" in leaderboard
     assert "Qdrant streaming" in leaderboard

@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.http_cluster_load_benchmark import validate_external_cluster_payload
+from benchmarks.local_http_active_active_smoke import validate_external_active_active_payload
 from wavemind import advise_memory_architecture
 
 
@@ -91,6 +92,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
             benchmark_dir / "local_http_active_active_smoke_results.json"
         ),
         "external_http_cluster": _load_optional_json(benchmark_dir / "http_cluster_load_results.json"),
+        "external_http_active_active": _load_optional_json(
+            benchmark_dir / "external_http_active_active_results.json"
+        ),
         "competitors": _load_json(benchmark_dir / "memory_competitor_results.json"),
         "vectordbbench_dataset": _load_optional_json(benchmark_dir / "vectordbbench_dataset_manifest.json"),
     }
@@ -507,6 +511,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     external_cluster_evidence = validate_external_cluster_payload(
         artifacts["external_http_cluster"]
     )
+    external_active_active_evidence = validate_external_active_active_payload(
+        artifacts["external_http_active_active"]
+    )
     external_evidence = [
         {
             "id": "memory_competitor_adapters",
@@ -525,6 +532,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "status": external_cluster_evidence["status"],
             "evidence": external_cluster_evidence["evidence"],
             "next_step": external_cluster_evidence["next_step"],
+        },
+        {
+            "id": "external_http_active_active",
+            "title": "External HTTP active-active region evidence",
+            "status": external_active_active_evidence["status"],
+            "evidence": external_active_active_evidence["evidence"],
+            "next_step": external_active_active_evidence["next_step"],
         }
     ]
 
@@ -1492,8 +1506,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
                 "",
                 "## Non-Gating External Evidence",
                 "",
-                "External competitor services are tracked separately from WaveMind production readiness.",
-                "Missing commercial API credentials should not turn a core WaveMind readiness gate red.",
+                "External competitors and deployment-specific service evidence are tracked separately from WaveMind core readiness.",
+                "Missing commercial API credentials or remote cluster URLs should not turn a core WaveMind readiness gate red.",
                 "",
                 "| evidence | status | result | next step |",
                 "|---|---|---|---|",

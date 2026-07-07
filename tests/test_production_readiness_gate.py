@@ -154,6 +154,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "deployment loopback-2026-07-07" in external["external_http_cluster_load"]["evidence"]
     assert "environment local-loopback" in external["external_http_cluster_load"]["evidence"]
     assert "namespaces 32" in external["external_http_cluster_load"]["evidence"]
+    assert external["external_http_active_active"]["status"] == "action_required"
+    assert "no checked-in external HTTP active-active region result" in external["external_http_active_active"]["evidence"]
 
 
 def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
@@ -204,3 +206,4 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report
     assert "External HTTP service-node load evidence" in report
+    assert "External HTTP active-active region evidence" in report

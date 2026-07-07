@@ -1,0 +1,20 @@
+{
+  "schema": "wavemind.external_http_active_active.v1",
+  "deployment_id": "staging-active-active-2026-07-07",
+  "environment": "staging",
+  "source": "kubernetes-service",
+  "regions": [
+    {
+      "id": "us-east",
+      "url": "https://wm-us-east.example.com"
+    },
+    {
+      "id": "eu-west",
+      "url": "https://wm-eu-west.example.com"
+    },
+    {
+      "id": "ap-south",
+      "url": "https://wm-ap-south.example.com"
+    }
+  ]
+}

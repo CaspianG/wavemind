@@ -214,6 +214,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
     local_http_active_active_payload = _load_json(root / "benchmarks" / "local_http_active_active_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
+    external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
@@ -257,6 +258,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     local_http_cluster_results = _engine_results(local_http_cluster_payload)
     local_http_active_active_results = _engine_results(local_http_active_active_payload)
     external_http_cluster_results = _engine_results(external_http_cluster_payload)
+    external_http_active_active_results = _engine_results(external_http_active_active_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
         if production_readiness_payload
@@ -1610,6 +1612,57 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
             "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment.",
+        },
+        {
+            "id": "external_http_active_active_runner",
+            "name": "External HTTP active-active region runner",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": ".github/workflows/external-http-active-active.yml",
+            "dataset": "User-supplied remote WaveMind API regions. The workflow runs the same active-active namespace-delta workload as the local service smoke and writes benchmarks/external_http_active_active_results.json when real regions are configured.",
+            "competitors": ["WaveMind remote API regions"],
+            "metrics": [
+                "convergence_rate",
+                "delete_suppression_rate",
+                "success_rate",
+                "final_noop_records_imported",
+                "p99_operation_ms",
+                "slo_pass",
+            ],
+            "current": {
+                "WaveMind real HTTP active-active service-region sync": (
+                    _metric_summary(
+                        external_http_active_active_results.get(
+                            "WaveMind real HTTP active-active service-region sync"
+                        ),
+                        (
+                            "region_count",
+                            "namespaces",
+                            "writes",
+                            "sync_cycles",
+                            "pair_syncs",
+                            "cursor_count",
+                            "records_imported",
+                            "tombstones_imported",
+                            "deleted_records",
+                            "final_noop_records_imported",
+                            "final_noop_failed_pairs",
+                            "convergence_rate",
+                            "delete_suppression_rate",
+                            "success_rate",
+                            "failed_pairs",
+                            "p99_operation_ms",
+                            "slo_pass",
+                        ),
+                    )
+                    or {
+                        "status": "action_required",
+                        "reason": "Run external-http-active-active with real region URLs or a regions manifest.",
+                    }
+                ),
+            },
+            "target": "Check in a real remote Kubernetes/serverless active-active region result with convergence, delete suppression, and success at 1.0, final no-op imports at 0, and p99 below 1500 ms.",
+            "next_step": "Run workflow_dispatch external-http-active-active against at least three remote API regions backed by external Postgres/Qdrant/Redis state.",
         },
         {
             "id": "memory_competitor_adapter_profile",

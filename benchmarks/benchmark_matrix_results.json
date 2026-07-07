@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T04:50:20Z",
-  "source_ref": "2355a94d9a99",
+  "generated_at": "2026-07-07T05:06:51Z",
+  "source_ref": "50af90615bf2",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1793,6 +1793,33 @@
       },
       "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
       "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment."
+    },
+    {
+      "id": "external_http_active_active_runner",
+      "name": "External HTTP active-active region runner",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": ".github/workflows/external-http-active-active.yml",
+      "dataset": "User-supplied remote WaveMind API regions. The workflow runs the same active-active namespace-delta workload as the local service smoke and writes benchmarks/external_http_active_active_results.json when real regions are configured.",
+      "competitors": [
+        "WaveMind remote API regions"
+      ],
+      "metrics": [
+        "convergence_rate",
+        "delete_suppression_rate",
+        "success_rate",
+        "final_noop_records_imported",
+        "p99_operation_ms",
+        "slo_pass"
+      ],
+      "current": {
+        "WaveMind real HTTP active-active service-region sync": {
+          "status": "action_required",
+          "reason": "Run external-http-active-active with real region URLs or a regions manifest."
+        }
+      },
+      "target": "Check in a real remote Kubernetes/serverless active-active region result with convergence, delete suppression, and success at 1.0, final no-op imports at 0, and p99 below 1500 ms.",
+      "next_step": "Run workflow_dispatch external-http-active-active against at least three remote API regions backed by external Postgres/Qdrant/Redis state."
     },
     {
       "id": "memory_competitor_adapter_profile",

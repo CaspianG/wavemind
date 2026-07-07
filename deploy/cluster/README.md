@@ -1,7 +1,8 @@
-# External HTTP Cluster Load
+# External HTTP Cluster And Region Load
 
-This directory holds repeatable node manifests for real WaveMind API-node load
-tests. It does not contain benchmark results or secrets.
+This directory holds repeatable manifests for real WaveMind API-node and
+active-active region load tests. It does not contain benchmark results or
+secrets.
 
 Run the external cluster benchmark from a manifest:
 
@@ -29,3 +30,26 @@ The manifest fields are:
 The benchmark writes `benchmarks/http_cluster_load_results.json`. That result is
 treated as external evidence by the production readiness gate. It must come from
 real API nodes; sample or fixture sources are rejected by the validator.
+
+Run the external active-active region benchmark from a manifest:
+
+```sh
+python benchmarks/local_http_active_active_smoke.py \
+  --regions-file deploy/cluster/external-http-active-active.sample.json \
+  --namespace-count 16 \
+  --fail-on-slo \
+  --output benchmarks/external_http_active_active_results.json
+```
+
+The active-active manifest fields are:
+
+- `deployment_id`: stable identifier for the tested regional deployment.
+- `environment`: `staging`, `production`, or another operator-defined scope.
+- `source`: where the regions came from, for example `kubernetes-service`.
+- `regions[].id`: stable region id.
+- `regions[].url`: public or private WaveMind API base URL for that region.
+
+The benchmark writes `benchmarks/external_http_active_active_results.json`. That
+result is treated as external evidence by the production readiness gate. It must
+come from real API regions; sample or fixture sources are rejected by the
+validator.

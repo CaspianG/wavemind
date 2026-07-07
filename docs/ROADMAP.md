@@ -89,6 +89,18 @@ policy matters more than raw vector-database scale:
   service-node profile from GitHub Actions using either newline/comma-separated
   nodes or `nodes_manifest_json`, upload the result, and optionally commit
   refreshed leaderboard artifacts once a real deployment is available.
+- `benchmarks/local_http_active_active_smoke.py` is also the remote
+  active-active region runner when used with repeated `--region id=https://host`
+  arguments or a repeatable
+  `--regions-file deploy/cluster/external-http-active-active.sample.json`
+  manifest. It writes `benchmarks/external_http_active_active_results.json`,
+  validates convergence, delete propagation, cursor idempotency, final no-op
+  sync, p99, and `slo_pass`, and is tracked as non-gating external evidence
+  until a real regional deployment artifact is committed.
+- `.github/workflows/external-http-active-active.yml` can run that remote
+  region profile from GitHub Actions using either newline/comma-separated
+  regions or `regions_manifest_json`, upload the result, and optionally commit
+  refreshed leaderboard/readiness artifacts once real regions are available.
 - `.github/workflows/serverless-observed-telemetry.yml` can run the serverless
   observed-telemetry contract from GitHub Actions against deployed HTTP/HTTPS
   API node URLs, upload `deploy/serverless/observed-telemetry.remote.json`, and

@@ -634,6 +634,26 @@ checked-in run reaches convergence `1.000`, delete suppression `1.000`, pair
 sync success `1.000`, final no-op imports `0`, p99 operation `347.58 ms`, and
 SLO `true`.
 
+External HTTP active-active regions:
+
+```sh
+python benchmarks/local_http_active_active_smoke.py \
+  --region us-east=https://us-east.example.com \
+  --region eu-west=https://eu-west.example.com \
+  --region ap-south=https://ap-south.example.com \
+  --deployment-id staging-active-active-2026-07-07 \
+  --environment staging \
+  --source k8s-service \
+  --namespace-count 16 \
+  --fail-on-slo \
+  --output benchmarks/external_http_active_active_results.json
+```
+
+The same profile is available as the manual GitHub Actions workflow
+`external-http-active-active`. It is intentionally tracked as non-gating
+external evidence until a real remote artifact is committed; the local service
+smoke above is not treated as proof of remote Kubernetes/serverless operation.
+
 External HTTP cluster load:
 
 ```sh
@@ -1503,6 +1523,11 @@ External cluster benchmark refresh: `.github/workflows/external-http-cluster-loa
 runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs or a
 JSON node manifest and can commit `benchmarks/http_cluster_load_results.json`
 plus refreshed leaderboard artifacts when `commit_results=true`.
+External active-active refresh: `.github/workflows/external-http-active-active.yml`
+runs `benchmarks/local_http_active_active_smoke.py` against real API-region URLs
+or a JSON region manifest and can commit
+`benchmarks/external_http_active_active_results.json` plus refreshed
+leaderboard/readiness artifacts when `commit_results=true`.
 Remote serverless telemetry refresh: `.github/workflows/serverless-observed-telemetry.yml`
 runs `benchmarks/serverless_observed_telemetry_benchmark.py` against deployed
 HTTP/HTTPS API node URLs, uploads `deploy/serverless/observed-telemetry.remote.json`,
@@ -1527,6 +1552,7 @@ public claim boundaries stable:
 | Qdrant streaming | Real Qdrant streaming smoke exists, a tuned 1M service run passes SLO after warmup/chunking, a real two-service sharded Qdrant smoke passes, and single-service plus horizontally sharded 10M plan-only contracts are checked in. | `benchmarks/production_streaming_load_qdrant_smoke_results.json`, `benchmarks/production_streaming_load_qdrant_1m_results.json`, `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json`, `benchmarks/production_streaming_load_qdrant_10m_plan.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json` | The 10M Qdrant service results are not claimed until `production_streaming_load_qdrant_10m_results.json` and `production_streaming_load_qdrant_sharded_10m_results.json` are produced by real runs. |
 | pgvector streaming | Real PostgreSQL/pgvector streaming smoke exists, and a 10M plan-only service contract is checked in. | `benchmarks/production_streaming_load_pgvector_smoke_results.json`, `benchmarks/production_streaming_load_pgvector_10m_plan.json` | The 10M pgvector service result is not claimed until `production_streaming_load_pgvector_10m_results.json` is produced by a real run. |
 | HTTP cluster load | Local multi-process API-node evidence exists; the external workflow can run the same contract against real API URLs. | `benchmarks/http_cluster_load_results.json`, `.github/workflows/external-http-cluster-load.yml` | Local loopback evidence is not a remote Kubernetes or multi-region production result. |
+| HTTP active-active regions | Local multi-process API-region evidence exists; the external workflow can run the same namespace-delta contract against real regional API URLs. | `benchmarks/local_http_active_active_smoke_results.json`, `.github/workflows/external-http-active-active.yml` | Local active-active evidence is not a remote Kubernetes/serverless multi-region result until `benchmarks/external_http_active_active_results.json` is produced by a real run. |
 | Serverless telemetry | Loopback replica telemetry exists; remote telemetry has a dedicated manual workflow and artifact path. | `deploy/serverless/observed-telemetry.loopback.json`, `.github/workflows/serverless-observed-telemetry.yml` | Loopback evidence is not a hosted managed-serverless claim until `observed-telemetry.remote.json` is committed. |
 | Competitor adapters | Local Mem0/LangGraph/GraphRAG-style adapters run; optional Zep evidence is skipped until configured. | `benchmarks/memory_competitor_results.json` | Not a full independent Mem0/Zep/Letta leaderboard without live service credentials and public runner parity. |
 
@@ -1611,6 +1637,7 @@ by the production gate.
 | Local HTTP cluster smoke | Starts real localhost API-node processes and runs the service-mode sustained mixed workload through HTTP with `read_fanout=1`, then probes `/stats` on every node for health/circuit state. | implemented | WaveMind local API nodes | Keep success, failover, repair, forget, delete suppression, and cluster health at 1.00 with p99 below 1000 ms in CI. |
 | Local HTTP active-active service-region smoke | Starts real localhost API region processes, each serving a replicated WaveMind runtime, then syncs namespace deltas through HTTP export/import endpoints. | implemented | WaveMind local replicated API regions | Keep convergence, delete suppression, and pair-sync success at 1.00, final no-op imports at 0, and p99 below 1500 ms in CI. |
 | External HTTP cluster load runner | `benchmarks/http_cluster_load_benchmark.py` runs the sustained mixed workload against user-supplied WaveMind API node URLs and reports success rate, failover hit rate, delete suppression, repair count, p99, and `slo_pass`. | implemented | WaveMind remote service nodes | Check in the first real remote service-node artifact, then use it as the deployment gate for production clusters. |
+| External HTTP active-active runner | Manual GitHub workflow and CLI path for user-supplied remote API regions. It writes `benchmarks/external_http_active_active_results.json` and validates convergence, delete propagation, cursor idempotency, final no-op sync, and p99. | implemented | WaveMind remote API regions | Check in a real remote Kubernetes/serverless active-active region artifact with convergence, delete suppression, and success at 1.00. |
 | Production readiness gate | Machine-readable gate over production artifacts, with pass/action_required/fail criteria. | implemented | WaveMind-only gate | Reach `readiness_score 1.000` before claiming complete million-plus production readiness. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |
 | [BEIR](https://github.com/beir-cellar/beir) | Standard zero-shot information retrieval quality. | planned | Chroma / Qdrant / FAISS | Stay within 0.02 `nDCG@10` on identical embeddings. |

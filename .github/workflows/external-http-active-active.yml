@@ -1,0 +1,144 @@
+name: external-http-active-active
+
+on:
+  workflow_dispatch:
+    inputs:
+      regions:
+        description: "WaveMind API regions as id=https://host, separated by newlines, commas, or semicolons. Use at least three regions unless regions_manifest_json is provided."
+        required: false
+        default: ""
+        type: string
+      regions_manifest_json:
+        description: "Optional JSON region manifest with regions[].id/url plus deployment_id/environment/source."
+        required: false
+        default: ""
+        type: string
+      namespace_count:
+        description: "Namespaces to exercise."
+        required: true
+        default: "16"
+        type: string
+      p99_slo_ms:
+        description: "Maximum p99 operation latency."
+        required: true
+        default: "1500"
+        type: string
+      commit_results:
+        description: "Commit benchmark result and refreshed leaderboard artifacts to main."
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  external-http-active-active:
+    runs-on: ubuntu-latest
+    env:
+      WAVEMIND_BENCHMARK_REFRESH_PROFILE: external-http-active-active
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Run external HTTP active-active region benchmark
+        env:
+          WAVEMIND_ACTIVE_ACTIVE_REGIONS: ${{ inputs.regions }}
+          WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON: ${{ inputs.regions_manifest_json }}
+          WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
+          NAMESPACE_COUNT: ${{ inputs.namespace_count }}
+          P99_SLO_MS: ${{ inputs.p99_slo_ms }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          args = [
+              sys.executable,
+              "benchmarks/local_http_active_active_smoke.py",
+              "--namespace-count",
+              os.environ["NAMESPACE_COUNT"],
+              "--p99-slo-ms",
+              os.environ["P99_SLO_MS"],
+              "--output",
+              "benchmarks/external_http_active_active_results.json",
+              "--source",
+              "github-actions-workflow",
+              "--fail-on-slo",
+          ]
+          manifest_json = os.environ.get("WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON", "").strip()
+          if manifest_json:
+              manifest_path = Path("external-http-active-active.regions.json")
+              manifest_path.write_text(manifest_json, encoding="utf-8")
+              args.extend(["--regions-file", str(manifest_path)])
+          else:
+              region_specs = [
+                  item.strip()
+                  for item in re.split(r"[\n,;]+", os.environ["WAVEMIND_ACTIVE_ACTIVE_REGIONS"])
+                  if item.strip()
+              ]
+              if len(region_specs) < 3:
+                  raise SystemExit("external active-active benchmark requires at least three regions or regions_manifest_json")
+              args.extend(["--environment", "external"])
+              args.extend(["--deployment-id", f"github-actions-{os.environ.get('GITHUB_RUN_ID', 'manual')}"])
+              for spec in region_specs:
+                  args.extend(["--region", spec])
+          api_key = os.environ.get("WAVEMIND_API_KEY")
+          if api_key:
+              args.extend(["--api-key", api_key])
+          subprocess.run(args, check=True)
+          PY
+
+      - name: Refresh benchmark report with external active-active result
+        run: |
+          python benchmarks/benchmark_registry.py \
+            --output benchmarks/benchmark_matrix_results.json
+          python benchmarks/render_benchmark_report.py
+          python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/render_benchmark_charts.py \
+            --output docs/assets/benchmark-summary.svg
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit.json
+          python benchmarks/production_readiness_gate.py \
+            --output benchmarks/production_readiness_results.json \
+            --markdown-output benchmarks/PRODUCTION_READINESS.md
+
+      - name: Commit external active-active result
+        if: ${{ inputs.commit_results }}
+        run: |
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg; then
+            echo "No benchmark changes."
+            exit 0
+          fi
+          git config user.name "CaspianG"
+          git config user.email "259116618+CaspianG@users.noreply.github.com"
+          git add benchmarks docs/assets/benchmark-summary.svg
+          git commit -m "Refresh external HTTP active-active benchmark"
+          git push
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: external-http-active-active
+          path: |
+            benchmarks/external_http_active_active_results.json
+            benchmarks/BENCHMARK_LEADERBOARD.md
+            benchmarks/BENCHMARK_REPORT.md
+            benchmarks/PRODUCTION_READINESS.md
+            benchmarks/benchmark_artifact_audit.json
+            benchmarks/benchmark_matrix_results.json
+            benchmarks/production_readiness_results.json
+            docs/assets/benchmark-summary.svg

@@ -69,6 +69,38 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "actions/upload-artifact@v7" in workflow
 
 
+def test_external_http_active_active_workflow_runs_real_region_profile():
+    workflow = Path(".github/workflows/external-http-active-active.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "workflow_dispatch" in workflow
+    assert "contents: write" in workflow
+    assert "WAVEMIND_ACTIVE_ACTIVE_REGIONS" in workflow
+    assert "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON" in workflow
+    assert "regions_manifest_json" in workflow
+    assert "secrets.WAVEMIND_API_KEY" in workflow
+    assert r"[\n,;]+" in workflow
+    assert "benchmarks/local_http_active_active_smoke.py" in workflow
+    assert "--regions-file" in workflow
+    assert "--region" in workflow
+    assert "--deployment-id" in workflow
+    assert "--environment" in workflow
+    assert "--source" in workflow
+    assert "benchmarks/external_http_active_active_results.json" in workflow
+    assert "--fail-on-slo" in workflow
+    assert "external active-active benchmark requires at least three regions or regions_manifest_json" in workflow
+    assert "benchmarks/benchmark_registry.py" in workflow
+    assert "benchmarks/render_benchmark_report.py" in workflow
+    assert "benchmarks/render_benchmark_leaderboard.py" in workflow
+    assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
+    assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "if: ${{ inputs.commit_results }}" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
+    assert "actions/upload-artifact@v7" in workflow
+
+
 def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
     workflow = Path(".github/workflows/serverless-observed-telemetry.yml").read_text(
         encoding="utf-8"

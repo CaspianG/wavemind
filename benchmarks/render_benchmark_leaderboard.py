@@ -332,6 +332,31 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
                 "Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest.",
             )
         )
+    http_active_active = load_json_if_exists(root, "benchmarks/external_http_active_active_results.json")
+    http_active_scenario = (http_active_active or {}).get("scenario", {})
+    http_active_result = _first_result(http_active_active)
+    if http_active_active:
+        environment = str(http_active_scenario.get("environment", "unknown"))
+        rows.append(
+            (
+                "External HTTP active-active",
+                f"{environment}; `{http_active_scenario.get('evidence_source', 'unknown')}`; {http_active_scenario.get('region_count', '?')} regions",
+                (
+                    f"SLO `{http_active_result.get('slo_pass')}`; "
+                    + ("remote active-active evidence" if environment != "local-loopback" else "local loopback active-active evidence")
+                ),
+                "Run `.github/workflows/external-http-active-active.yml` with a remote region manifest.",
+            )
+        )
+    else:
+        rows.append(
+            (
+                "External HTTP active-active",
+                "no checked-in remote region artifact",
+                "action required before remote active-active production claim",
+                "Run `.github/workflows/external-http-active-active.yml` with a remote region manifest.",
+            )
+        )
 
     pgvector_tuning = load_json_if_exists(root, "benchmarks/production_pgvector_tuning_results.json")
     pgvector_latest = {}

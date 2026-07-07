@@ -165,6 +165,11 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert external_http["slo_pass"] is True
     assert external_http["namespaces"] == 32
     assert external_http["read_fanout"] == 1
+    external_active_active = entries["external_http_active_active_runner"]["current"][
+        "WaveMind real HTTP active-active service-region sync"
+    ]
+    assert external_active_active["status"] == "action_required"
+    assert "real region URLs" in external_active_active["reason"]
     serverless = entries["scale_readiness"]["current"]["WaveMind serverless plan"]
     assert serverless["scale_to_zero"] is True
     assert serverless["uses_postgres"] is True

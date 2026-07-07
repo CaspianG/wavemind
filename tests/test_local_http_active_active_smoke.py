@@ -35,6 +35,10 @@ def _args(**overrides):
         "timeout": 15.0,
         "readiness_timeout": 20.0,
         "api_key": None,
+        "deployment_id": None,
+        "environment": None,
+        "source": None,
+        "regions_file": None,
         "min_success_rate": 1.0,
         "min_convergence_rate": 1.0,
         "min_delete_suppression_rate": 1.0,
@@ -93,6 +97,35 @@ def test_parse_region_specs_rejects_invalid_addresses():
         smoke.parse_region_specs(["east=127.0.0.1:8001", "west=http://127.0.0.1:8002"])
 
 
+def test_load_region_manifest_supports_repeatable_external_runs(tmp_path):
+    manifest = tmp_path / "regions.json"
+    manifest.write_text(
+        """
+        {
+          "schema": "wavemind.external_http_active_active.v1",
+          "deployment_id": "staging-regions-2026-07-07",
+          "environment": "staging",
+          "source": "k8s-service",
+          "regions": [
+            {"id": "us-east", "url": "https://us-east.test"},
+            {"id": "eu-west", "address": "https://eu-west.test"}
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    payload = smoke.load_region_manifest(manifest)
+
+    assert payload["region_specs"] == [
+        "us-east=https://us-east.test",
+        "eu-west=https://eu-west.test",
+    ]
+    assert payload["deployment_id"] == "staging-regions-2026-07-07"
+    assert payload["environment"] == "staging"
+    assert payload["source"] == "k8s-service"
+
+
 def test_run_from_args_starts_replicated_regions_and_reports_slo(monkeypatch, tmp_path):
     started = []
     stopped = []
@@ -145,10 +178,16 @@ def test_run_from_args_allows_external_regions_without_local_region_count(monkey
         _args(
             region=["east=http://127.0.0.1:8001", "west=http://127.0.0.1:8002"],
             regions=1,
+            deployment_id="external-test",
+            environment="staging",
+            source="unit-test",
         )
     )
 
     assert payload["scenario"]["source"] == "external-regions"
+    assert payload["scenario"]["deployment_id"] == "external-test"
+    assert payload["scenario"]["environment"] == "staging"
+    assert payload["scenario"]["evidence_source"] == "unit-test"
     assert payload["scenario"]["replicas_per_region"] is None
     assert payload["results"][0]["slo_pass"] is True
 
@@ -196,3 +235,37 @@ def test_stop_regions_terminates_then_kills_if_needed():
 
     assert region.process.terminated is True
     assert region.process.killed is True
+
+
+def test_external_active_active_validator_reports_missing_pass_and_fail():
+    missing = smoke.validate_external_active_active_payload(None)
+    assert missing["status"] == "action_required"
+    assert "missing artifact" in missing["issues"]
+
+    payload = {
+        "scenario": {
+            "name": "local_http_active_active_smoke",
+            "source": "external-regions",
+            "deployment_id": "staging-active-active-2026-07-07",
+            "environment": "staging",
+            "evidence_source": "k8s-service",
+            "region_count": 3,
+            "namespace_count": 16,
+        },
+        "results": [
+            {
+                **_passing_result(region_count=3),
+                "p99_operation_ms": 100.0,
+                "slo_pass": True,
+            }
+        ],
+    }
+
+    passed = smoke.validate_external_active_active_payload(payload)
+    assert passed["status"] == "pass"
+    assert "deployment staging-active-active-2026-07-07" in passed["evidence"]
+
+    payload["scenario"]["source"] = "local-replicated-api-processes"
+    failed = smoke.validate_external_active_active_payload(payload)
+    assert failed["status"] == "fail"
+    assert "source must be external-regions" in failed["issues"]
