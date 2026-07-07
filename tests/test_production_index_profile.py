@@ -23,6 +23,8 @@ def test_production_index_profile_compose_documents_real_services():
     assert "pgvector" in compose
     assert "benchmarks/production_index_profile_results.json" in compose
     assert "docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark" in readme
+    assert "pgvector-exact" in readme
+    assert "pgvector-iterative" in readme
 
 
 def test_production_index_profile_result_is_checked_in_and_documented():
@@ -45,3 +47,5 @@ def test_production_index_profile_result_is_checked_in_and_documented():
     assert "WaveMind faiss-persisted" in readme
     assert "Qdrant service" in readme
     assert "WAVEMIND_PGVECTOR_EF_SEARCH=400" in readme
+    assert "pgvector-exact" in readme
+    assert "pgvector-iterative" in readme

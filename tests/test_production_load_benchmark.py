@@ -18,7 +18,13 @@ def test_production_load_runner_reports_preflight_and_skips_unconfigured_service
         query_count=4,
         top_k=3,
         seed=11,
-        engines=["faiss-persisted", "qdrant-service", "pgvector"],
+        engines=[
+            "faiss-persisted",
+            "qdrant-service",
+            "pgvector",
+            "pgvector-exact",
+            "pgvector-iterative",
+        ],
         noise=0.01,
         output_path=Path("benchmarks/production_load_results.json"),
     )
@@ -38,6 +44,12 @@ def test_production_load_runner_reports_preflight_and_skips_unconfigured_service
     assert results["WaveMind pgvector"]["skipped"] is True
     assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector"]["reason"]
     assert results["WaveMind pgvector"]["slo_status"] == "skipped"
+    assert results["WaveMind pgvector-exact"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector-exact"]["reason"]
+    assert results["WaveMind pgvector-exact"]["slo_status"] == "skipped"
+    assert results["WaveMind pgvector-iterative"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector-iterative"]["reason"]
+    assert results["WaveMind pgvector-iterative"]["slo_status"] == "skipped"
     assert payload["results"][0]["slo"][0]["status"] == "skipped"
     assert payload["results"][0]["cost"][0]["cost_status"] == "skipped"
 

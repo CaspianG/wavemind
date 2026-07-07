@@ -1918,7 +1918,9 @@ python benchmarks/ann_index_curve_benchmark.py --sizes 1000 5000 10000 50000 --d
 ```
 
 Add `pgvector` to `--engines` when `WAVEMIND_PGVECTOR_DSN` points at a
-PostgreSQL database with pgvector enabled.
+PostgreSQL database with pgvector enabled. Use `pgvector-exact` for recall
+audits and `pgvector-iterative` for the HNSW + filtered-collection tuning path
+on pgvector builds that support iterative scans.
 Add `qdrant-service` when `WAVEMIND_QDRANT_URL` points at a running Qdrant
 service. Add `faiss-persisted` when `WAVEMIND_FAISS_PATH` points at the FAISS
 snapshot file to validate persisted-index startup behavior.
@@ -1965,7 +1967,7 @@ Checked-in production 50000-vector point:
 Checked-in production load points:
 
 ```sh
-python benchmarks/production_load_benchmark.py --sizes 100000 --dim 128 --queries 100 --top-k 10 --engines qdrant-service pgvector faiss-persisted
+python benchmarks/production_load_benchmark.py --sizes 100000 --dim 128 --queries 100 --top-k 10 --engines qdrant-service pgvector pgvector-exact pgvector-iterative faiss-persisted
 python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queries 100 --top-k 10 --engines qdrant-service --output benchmarks/production_load_qdrant_1m_tuned_results.json
 python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queries 100 --top-k 10 --engines faiss-persisted --output benchmarks/production_load_faiss_1m_results.json
 ```
@@ -1988,6 +1990,9 @@ FAISS persistence and service-mode Qdrant now both preserve exact recall at
 50000 generated vectors. The checked-in pgvector/HNSW profile uses
 `WAVEMIND_PGVECTOR_EF_SEARCH=400`, which improves recall materially but still
 misses the `0.95` production target and is slower than the other two profiles.
+The runner now has explicit `pgvector-exact` and `pgvector-iterative` engines:
+use exact mode as the correctness floor, then use iterative HNSW scan to tune
+the production latency/recall tradeoff without hiding approximation loss.
 The 100k load profile shows Qdrant service is already viable for candidate
 generation on the tested machine under the checked-in SLO gate. The 1M
 persisted-FAISS profile now passes recall and p99 with a 100-query run, while

@@ -124,6 +124,8 @@ def run_wavemind_index(
     queries: np.ndarray,
     expected: list[set[int]],
     top_k: int,
+    *,
+    label: str | None = None,
 ) -> dict[str, Any]:
     records = [VectorRecord(id=index + 1, vector=vector) for index, vector in enumerate(vectors)]
     index = create_vector_index(kind, vector_dim=vectors.shape[1])
@@ -138,7 +140,7 @@ def run_wavemind_index(
         latencies.append((time.perf_counter() - started) * 1000.0)
         ids.append([item.id for item in result])
     return {
-        "engine": f"WaveMind {kind}",
+        "engine": f"WaveMind {label or kind}",
         "recall_at_k": _recall_at_k(ids, expected, top_k),
         "avg_latency_ms": statistics.mean(latencies) if latencies else 0.0,
         "p50_latency_ms": statistics.median(latencies) if latencies else 0.0,
@@ -148,6 +150,61 @@ def run_wavemind_index(
         "build_ms": build_ms,
         "queries": len(queries),
     }
+
+
+@contextmanager
+def _temporary_env(overrides: dict[str, str | None]):
+    previous = {name: os.environ.get(name) for name in overrides}
+    try:
+        for name, value in overrides.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+        yield
+    finally:
+        for name, value in previous.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
+def run_pgvector_variant(
+    variant: str,
+    vectors: np.ndarray,
+    queries: np.ndarray,
+    expected: list[set[int]],
+    top_k: int,
+) -> dict[str, Any]:
+    if variant == "pgvector-exact":
+        overrides = {
+            "WAVEMIND_PGVECTOR_EXACT": "1",
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN": None,
+        }
+    elif variant == "pgvector-iterative":
+        overrides = {
+            "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+            "WAVEMIND_PGVECTOR_EXACT": "0",
+            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN": "relaxed_order",
+            "WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES": "200000",
+            "WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER": "4",
+        }
+    else:
+        raise ValueError(f"Unknown pgvector variant: {variant}")
+    with _temporary_env(overrides):
+        result = run_wavemind_index(
+            "pgvector",
+            vectors,
+            queries,
+            expected,
+            top_k,
+            label=variant,
+        )
+    result["pgvector_variant"] = variant
+    result["pgvector_settings"] = {key: value for key, value in overrides.items() if value is not None}
+    return result
 
 
 def run_qdrant(
@@ -335,6 +392,17 @@ def run_size(
                         "reason": str(exc),
                     }
                 )
+        elif key in {"pgvector-exact", "pgvector-iterative"}:
+            try:
+                results.append(run_pgvector_variant(key, vectors, queries, expected, top_k))
+            except Exception as exc:
+                results.append(
+                    {
+                        "engine": f"WaveMind {key}",
+                        "skipped": True,
+                        "reason": str(exc),
+                    }
+                )
         elif key in {"qdrant", "qdrant-local"}:
             try:
                 results.append(run_qdrant(vectors, queries, expected, top_k, service=False))
@@ -472,6 +540,8 @@ def main() -> int:
             "faiss",
             "faiss-persisted",
             "pgvector",
+            "pgvector-exact",
+            "pgvector-iterative",
             "qdrant",
             "qdrant-local",
             "qdrant-service",

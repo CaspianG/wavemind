@@ -124,7 +124,8 @@ def run_production_load(
         "description": (
             "Service-backed large-N candidate-index load profile. The intended "
             "production path is SQLite/Postgres as source of truth plus persisted "
-            "FAISS, Qdrant service, or pgvector HNSW for candidate generation. "
+            "FAISS, Qdrant service, pgvector HNSW, pgvector exact safety mode, "
+            "or pgvector iterative-scan mode for candidate generation. "
             "Skipped engines are reported explicitly when optional services or "
             "dependencies are not configured."
         ),
@@ -372,7 +373,15 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["faiss-persisted", "qdrant-service", "pgvector", "numpy", "quantized"],
+        choices=[
+            "faiss-persisted",
+            "qdrant-service",
+            "pgvector",
+            "pgvector-exact",
+            "pgvector-iterative",
+            "numpy",
+            "quantized",
+        ],
         default=["faiss-persisted", "qdrant-service", "pgvector"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/production_load_results.json"))

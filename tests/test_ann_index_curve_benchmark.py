@@ -88,6 +88,32 @@ def test_ann_curve_runner_reports_missing_pgvector_dsn_without_fallback(monkeypa
     assert "WAVEMIND_PGVECTOR_DSN" in result["reason"]
 
 
+def test_ann_curve_pgvector_safety_variants_are_explicit(monkeypatch):
+    from benchmarks.ann_index_curve_benchmark import run_benchmark
+
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_EXACT", "0")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_ITERATIVE_SCAN", "off")
+
+    payload = run_benchmark(
+        sizes=[40],
+        dim=16,
+        query_count=5,
+        top_k=3,
+        seed=7,
+        engines=["pgvector-exact", "pgvector-iterative"],
+        noise=0.01,
+    )
+
+    results = {row["engine"]: row for row in payload["results"][0]["results"]}
+    assert results["WaveMind pgvector-exact"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector-exact"]["reason"]
+    assert results["WaveMind pgvector-iterative"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in results["WaveMind pgvector-iterative"]["reason"]
+    assert os.environ["WAVEMIND_PGVECTOR_EXACT"] == "0"
+    assert os.environ["WAVEMIND_PGVECTOR_ITERATIVE_SCAN"] == "off"
+
+
 def test_ann_curve_runner_reports_missing_qdrant_service_url(monkeypatch):
     from benchmarks.ann_index_curve_benchmark import run_benchmark
 
