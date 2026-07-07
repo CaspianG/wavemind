@@ -63,3 +63,70 @@ def test_field_state_delta_round_trip_and_namespace_guard():
     assert FieldStateDelta.from_dict(payload).to_dict()["positive"] == payload["positive"]
     with pytest.raises(ValueError):
         FieldStateCRDT(namespace="other", actor="region-c").merge(payload)
+
+
+def test_field_state_crdt_watermarks_merge_by_actor_max():
+    key = stable_memory_key(namespace="tenant", text="regional hot memory")
+    region_a = FieldStateCRDT(namespace="tenant", actor="region-a")
+    region_b = FieldStateCRDT(namespace="tenant", actor="region-b")
+
+    region_a.boost(key, 1.0, observed_at=10.0)
+    region_a.boost(key, 1.0, observed_at=12.0)
+    region_a.suppress(key, 0.25, actor="region-c", observed_at=11.0)
+    region_b.boost(key, 3.0, observed_at=9.0)
+    region_b.tombstone("stale-key", deleted_at=20.0)
+
+    merged = FieldStateCRDT(namespace="tenant", actor="merged")
+    first = merged.merge(region_a.delta())
+    second = merged.merge(region_b.delta())
+    idempotent = merged.merge(region_b.delta())
+
+    assert first.changed_watermarks == 2
+    assert second.changed_watermarks == 1
+    assert idempotent.changed is False
+    assert merged.watermark("region-a") == 12.0
+    assert merged.watermark("region-b") == 20.0
+    assert merged.watermark("region-c") == 11.0
+    assert merged.watermark() == 20.0
+    assert merged.covered_actors() == ("region-a", "region-b", "region-c")
+    assert merged.stats()["watermark_actors"] == 3
+    assert merged.stats()["watermark"] == 20.0
+
+
+def test_field_state_partial_delta_carries_only_relevant_actor_watermarks():
+    key_a = stable_memory_key(namespace="tenant", text="active memory")
+    key_b = stable_memory_key(namespace="tenant", text="other memory")
+    state = FieldStateCRDT(namespace="tenant", actor="region-a")
+    state.boost(key_a, 1.0, actor="region-a", observed_at=10.0)
+    state.boost(key_b, 1.0, actor="region-b", observed_at=20.0)
+
+    delta = state.delta(keys=[key_a]).to_dict()
+    restored = FieldStateCRDT(namespace="tenant", actor="region-c")
+    report = restored.merge(delta)
+
+    assert delta["watermarks"] == {"region-a": 10.0}
+    assert report.watermark_actors == 1
+    assert restored.activation(key_a) == 1.0
+    assert restored.activation(key_b) == 0.0
+    assert restored.watermark("region-a") == 10.0
+    assert restored.watermark("region-b") == 0.0
+
+
+def test_field_state_delta_accepts_legacy_payload_without_watermarks():
+    key = stable_memory_key(namespace="tenant", text="legacy memory")
+    legacy_payload = {
+        "format": "wavemind.field_state_delta.v1",
+        "namespace": "tenant",
+        "created_at": 1.0,
+        "positive": {key: {"legacy-region": 2.0}},
+        "negative": {},
+        "tombstones": {},
+    }
+
+    state = FieldStateCRDT(namespace="tenant", actor="region-a")
+    report = state.merge(legacy_payload)
+
+    assert report.changed is True
+    assert report.watermark_actors == 0
+    assert state.activation(key) == 2.0
+    assert state.watermark() == 0.0

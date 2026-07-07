@@ -1318,9 +1318,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and field_crdt.get("commutative_convergence")
                 and field_crdt.get("idempotent_remerge")
                 and field_crdt.get("tombstone_wins")
+                and field_crdt.get("watermark_convergence")
+                and int(field_crdt.get("watermark_actors", 0)) >= 3
                 else "fail"
             ),
-            requirement="Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync.",
+            requirement=(
+                "Multi-region memory deltas and field state must converge "
+                "without duplicate amplification or full-namespace replay on "
+                "incremental sync, and CRDT deltas must carry actor watermarks "
+                "so regions can audit sync progress."
+            ),
             evidence=(
                 f"delta sync {active_active.get('converged_after_bidirectional_sync')}, "
                 f"incremental records {active_active.get('incremental_records_exported')}, "
@@ -1331,7 +1338,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"sustained success {sustained_active_active.get('success_rate')}, "
                 f"HTTP service-region convergence {http_active_active.get('convergence_rate')}, "
                 f"HTTP final no-op imports {http_active_active.get('final_noop_records_imported')}, "
-                f"CRDT idempotent {field_crdt.get('idempotent_remerge')}"
+                f"CRDT idempotent {field_crdt.get('idempotent_remerge')}, "
+                f"watermarks {field_crdt.get('watermark_actors')}"
             ),
             next_step="Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence.",
         ),

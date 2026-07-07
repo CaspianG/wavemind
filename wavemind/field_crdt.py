@@ -63,6 +63,7 @@ class FieldStateDelta:
     positive: dict[str, dict[str, float]] = field(default_factory=dict)
     negative: dict[str, dict[str, float]] = field(default_factory=dict)
     tombstones: dict[str, dict[str, float]] = field(default_factory=dict)
+    watermarks: dict[str, float] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
     format: str = FIELD_STATE_DELTA_FORMAT
 
@@ -74,6 +75,10 @@ class FieldStateDelta:
             "positive": _copy_counter_tree(self.positive),
             "negative": _copy_counter_tree(self.negative),
             "tombstones": _copy_counter_tree(self.tombstones),
+            "watermarks": {
+                str(actor): float(value)
+                for actor, value in sorted(self.watermarks.items())
+            },
         }
 
     @classmethod
@@ -86,6 +91,7 @@ class FieldStateDelta:
             positive=_coerce_counter_tree(payload.get("positive")),
             negative=_coerce_counter_tree(payload.get("negative")),
             tombstones=_coerce_counter_tree(payload.get("tombstones")),
+            watermarks=_coerce_watermarks(payload.get("watermarks")),
         )
 
 
@@ -96,10 +102,12 @@ class FieldStateMergeReport:
     negative_keys: int = 0
     tombstone_keys: int = 0
     changed_cells: int = 0
+    watermark_actors: int = 0
+    changed_watermarks: int = 0
 
     @property
     def changed(self) -> bool:
-        return self.changed_cells > 0
+        return self.changed_cells > 0 or self.changed_watermarks > 0
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -108,6 +116,8 @@ class FieldStateMergeReport:
             "negative_keys": self.negative_keys,
             "tombstone_keys": self.tombstone_keys,
             "changed_cells": self.changed_cells,
+            "watermark_actors": self.watermark_actors,
+            "changed_watermarks": self.changed_watermarks,
             "changed": self.changed,
         }
 
@@ -127,12 +137,27 @@ class FieldStateCRDT:
         self.positive: dict[str, dict[str, float]] = {}
         self.negative: dict[str, dict[str, float]] = {}
         self.tombstones: dict[str, dict[str, float]] = {}
+        self.watermarks: dict[str, float] = {}
 
-    def boost(self, key: str, amount: float = 1.0, *, actor: str | None = None) -> None:
-        self._increment(self.positive, key, amount, actor=actor)
+    def boost(
+        self,
+        key: str,
+        amount: float = 1.0,
+        *,
+        actor: str | None = None,
+        observed_at: float | None = None,
+    ) -> None:
+        self._increment(self.positive, key, amount, actor=actor, observed_at=observed_at)
 
-    def suppress(self, key: str, amount: float = 1.0, *, actor: str | None = None) -> None:
-        self._increment(self.negative, key, amount, actor=actor)
+    def suppress(
+        self,
+        key: str,
+        amount: float = 1.0,
+        *,
+        actor: str | None = None,
+        observed_at: float | None = None,
+    ) -> None:
+        self._increment(self.negative, key, amount, actor=actor, observed_at=observed_at)
 
     def tombstone(
         self,
@@ -148,6 +173,7 @@ class FieldStateCRDT:
         deleted_at = time.time() if deleted_at is None else float(deleted_at)
         by_actor = self.tombstones.setdefault(key, {})
         by_actor[actor] = max(float(by_actor.get(actor, 0.0)), deleted_at)
+        self._mark_watermark(actor, deleted_at)
 
     def merge(self, other: "FieldStateCRDT | FieldStateDelta | dict[str, Any]") -> FieldStateMergeReport:
         delta = _as_delta(other)
@@ -160,18 +186,29 @@ class FieldStateCRDT:
         report.changed_cells += _merge_counter_tree(self.positive, delta.positive)
         report.changed_cells += _merge_counter_tree(self.negative, delta.negative)
         report.changed_cells += _merge_counter_tree(self.tombstones, delta.tombstones)
+        report.changed_watermarks += _merge_watermarks(self.watermarks, delta.watermarks)
         report.positive_keys = len(delta.positive)
         report.negative_keys = len(delta.negative)
         report.tombstone_keys = len(delta.tombstones)
+        report.watermark_actors = len(delta.watermarks)
         return report
 
     def delta(self, keys: Iterable[str] | None = None) -> FieldStateDelta:
         selected = None if keys is None else {str(key) for key in keys}
+        positive = _select_counter_tree(self.positive, selected)
+        negative = _select_counter_tree(self.negative, selected)
+        tombstones = _select_counter_tree(self.tombstones, selected)
+        actors = None if selected is None else _actors_in_counter_trees(
+            positive,
+            negative,
+            tombstones,
+        )
         return FieldStateDelta(
             namespace=self.namespace,
-            positive=_select_counter_tree(self.positive, selected),
-            negative=_select_counter_tree(self.negative, selected),
-            tombstones=_select_counter_tree(self.tombstones, selected),
+            positive=positive,
+            negative=negative,
+            tombstones=tombstones,
+            watermarks=_select_watermarks(self.watermarks, actors),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -208,12 +245,24 @@ class FieldStateCRDT:
         scored.sort(key=lambda item: (-item[1], item[0]))
         return scored[: max(0, int(limit))]
 
+    def watermark(self, actor: str | None = None) -> float:
+        if actor is not None:
+            return float(self.watermarks.get(str(actor), 0.0))
+        if not self.watermarks:
+            return 0.0
+        return max(float(value) for value in self.watermarks.values())
+
+    def covered_actors(self) -> tuple[str, ...]:
+        return tuple(sorted(self.watermarks))
+
     def stats(self) -> dict[str, Any]:
         return {
             "namespace": self.namespace,
             "positive_keys": len(self.positive),
             "negative_keys": len(self.negative),
             "tombstone_keys": len(self.tombstones),
+            "watermark_actors": len(self.watermarks),
+            "watermark": self.watermark(),
             "total_activation": round(sum(value for _, value in self.top(limit=100_000)), 6),
         }
 
@@ -224,6 +273,7 @@ class FieldStateCRDT:
         amount: float,
         *,
         actor: str | None = None,
+        observed_at: float | None = None,
     ) -> None:
         key = str(key)
         amount = float(amount)
@@ -232,6 +282,14 @@ class FieldStateCRDT:
         actor = str(actor or self.actor)
         by_actor = target.setdefault(key, {})
         by_actor[actor] = float(by_actor.get(actor, 0.0)) + amount
+        self._mark_watermark(actor, observed_at)
+
+    def _mark_watermark(self, actor: str, observed_at: float | None = None) -> None:
+        actor = str(actor or self.actor)
+        if not actor:
+            return
+        observed_at = time.time() if observed_at is None else float(observed_at)
+        self.watermarks[actor] = max(float(self.watermarks.get(actor, 0.0)), observed_at)
 
 
 def _as_delta(value: FieldStateCRDT | FieldStateDelta | dict[str, Any]) -> FieldStateDelta:
@@ -271,6 +329,20 @@ def _coerce_counter_tree(value: Any) -> dict[str, dict[str, float]]:
     return tree
 
 
+def _coerce_watermarks(value: Any) -> dict[str, float]:
+    if not isinstance(value, dict):
+        return {}
+    watermarks: dict[str, float] = {}
+    for raw_actor, raw_value in value.items():
+        try:
+            observed_at = float(raw_value)
+        except (TypeError, ValueError):
+            continue
+        if observed_at >= 0.0:
+            watermarks[str(raw_actor)] = observed_at
+    return watermarks
+
+
 def _select_counter_tree(
     source: dict[str, dict[str, float]],
     selected: set[str] | None,
@@ -281,6 +353,29 @@ def _select_counter_tree(
         key: {actor: float(value) for actor, value in counters.items()}
         for key, counters in source.items()
         if key in selected
+    }
+
+
+def _actors_in_counter_trees(
+    *trees: dict[str, dict[str, float]],
+) -> set[str]:
+    actors: set[str] = set()
+    for tree in trees:
+        for counters in tree.values():
+            actors.update(str(actor) for actor in counters)
+    return actors
+
+
+def _select_watermarks(
+    source: dict[str, float],
+    selected_actors: set[str] | None,
+) -> dict[str, float]:
+    if selected_actors is None:
+        return {str(actor): float(value) for actor, value in source.items()}
+    return {
+        str(actor): float(value)
+        for actor, value in source.items()
+        if actor in selected_actors
     }
 
 
@@ -297,6 +392,17 @@ def _merge_counter_tree(
             if value > float(target_counters.get(actor, 0.0)):
                 target_counters[actor] = value
                 changed += 1
+    return changed
+
+
+def _merge_watermarks(target: dict[str, float], incoming: dict[str, float]) -> int:
+    changed = 0
+    for actor, value in incoming.items():
+        actor = str(actor)
+        value = float(value)
+        if value > float(target.get(actor, 0.0)):
+            target[actor] = value
+            changed += 1
     return changed
 
 

@@ -2561,11 +2561,11 @@ def run_field_crdt_profile() -> dict[str, object]:
     region_c = FieldStateCRDT(namespace=namespace, actor="region-c")
 
     started = time.perf_counter()
-    region_a.boost(budget_key, 3.0)
-    region_a.boost(report_key, 1.0)
-    region_b.boost(budget_key, 2.0)
-    region_b.suppress(report_key, 0.25)
-    region_c.boost(stale_key, 5.0)
+    region_a.boost(budget_key, 3.0, observed_at=10.0)
+    region_a.boost(report_key, 1.0, observed_at=11.0)
+    region_b.boost(budget_key, 2.0, observed_at=12.0)
+    region_b.suppress(report_key, 0.25, observed_at=13.0)
+    region_c.boost(stale_key, 5.0, observed_at=14.0)
     region_a.tombstone(stale_key, deleted_at=100.0)
 
     left = FieldStateCRDT(namespace=namespace, actor="left")
@@ -2587,7 +2587,9 @@ def run_field_crdt_profile() -> dict[str, object]:
         left_payload["positive"] == right_payload["positive"]
         and left_payload["negative"] == right_payload["negative"]
         and left_payload["tombstones"] == right_payload["tombstones"]
+        and left_payload["watermarks"] == right_payload["watermarks"]
     )
+    partial_budget_delta = left.delta(keys=[budget_key])
     return {
         "engine": "WaveMind field-state CRDT",
         "regions": 3,
@@ -2595,6 +2597,10 @@ def run_field_crdt_profile() -> dict[str, object]:
         "idempotent_remerge": left.merge(region_b.delta()).changed is False,
         "tombstone_wins": left.activation(stale_key) == 0.0 and left.is_tombstoned(stale_key),
         "top_key_converged": left.top(limit=1) == right.top(limit=1),
+        "watermark_convergence": left_payload["watermarks"] == right_payload["watermarks"],
+        "watermark_actors": len(left.covered_actors()),
+        "max_watermark": left.watermark(),
+        "partial_delta_watermark_actors": sorted(partial_budget_delta.watermarks),
         "budget_activation": left.activation(budget_key),
         "suppressed_report_activation": left.activation(report_key),
         "merge_ms": merge_ms,
