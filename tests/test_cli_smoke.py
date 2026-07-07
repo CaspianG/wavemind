@@ -663,6 +663,60 @@ def test_cli_quickstart_prints_first_run_commands():
     assert "wavemind studio" in result.stdout
 
 
+def test_cli_production_evidence_reports_strict_claim_boundary(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "evidence.json"
+    markdown = tmp_path / "evidence.md"
+
+    result = run_cli(
+        "production-evidence",
+        "--root",
+        str(project_root),
+        "--write-artifacts",
+        "--output",
+        str(output),
+        "--markdown-output",
+        str(markdown),
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    report = markdown.read_text(encoding="utf-8")
+
+    assert "status: action_required" in result.stdout
+    assert "100M remote load result" in result.stdout
+    assert payload["schema"] == "wavemind.production_evidence.v1"
+    assert payload["overall_status"] == "action_required"
+    assert "# WaveMind Strict Production Evidence Gate" in report
+
+
+def test_cli_production_evidence_strict_exits_nonzero():
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "production-evidence",
+            "--root",
+            str(project_root),
+            "--strict",
+            "--json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["overall_status"] == "action_required"
+
+
 def test_cli_version_prints_package_version():
     result = run_cli("--version")
 

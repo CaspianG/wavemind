@@ -41,6 +41,7 @@ from .k8s_operator import (
     operator_status,
 )
 from .object_store import S3SnapshotStore
+from .production_evidence import evaluate_production_evidence, render_markdown
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
@@ -185,6 +186,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero when advice status reaches this threshold",
     )
     advise.add_argument("--json", action="store_true")
+
+    production_evidence = sub.add_parser(
+        "production-evidence",
+        help="Check strict external production-evidence artifacts before scale claims",
+    )
+    production_evidence.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_evidence.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero unless every external production-evidence requirement passes.",
+    )
+    production_evidence.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown reports to the output paths.",
+    )
+    production_evidence.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_evidence_results.json"),
+    )
+    production_evidence.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_EVIDENCE.md"),
+    )
+    production_evidence.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -697,6 +730,25 @@ def print_architecture_advice(advice: dict[str, object]) -> None:
             print(f"- {command}")
 
 
+def print_production_evidence(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {summary['overall_status']}")
+    print(f"passed: {summary['pass_count']}/{summary['total_requirements']}")
+    print(f"action_required: {summary['action_required_count']}")
+    print(f"failed: {summary['fail_count']}")
+    print("requirements:")
+    for row in payload.get("requirements", []):
+        print(f"- [{row['status']}] {row['title']}")
+        print(f"  artifact: {row['artifact']}")
+        print(f"  evidence: {row['evidence']}")
+        issues = row.get("issues") or []
+        if issues:
+            print(f"  issues: {', '.join(issues)}")
+        command = row.get("command")
+        if command:
+            print(f"  command: {command}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -1115,6 +1167,30 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_architecture_advice(advice)
         return 3 if failed_threshold else 0
+
+    if args.command == "production-evidence":
+        payload = evaluate_production_evidence(args.root)
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_evidence(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.strict and payload["overall_status"] != "pass":
+            return 2
+        return 0 if payload["overall_status"] in {"pass", "action_required"} else 1
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

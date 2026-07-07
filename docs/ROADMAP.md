@@ -63,7 +63,8 @@ policy matters more than raw vector-database scale:
   boundary. It does not let local loopback evidence unlock remote service-node,
   active-active, managed-serverless, 10M service, 50M, or 100M scale claims.
   The current strict gate is intentionally `action_required` until real remote
-  and large-service artifacts are committed.
+  and large-service artifacts are committed. `wavemind production-evidence
+  --strict` exposes the same gate as an operator/release preflight.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path

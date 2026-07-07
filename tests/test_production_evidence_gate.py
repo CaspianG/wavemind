@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from benchmarks.production_evidence_gate import evaluate_production_evidence
+from wavemind.production_evidence import evaluate_production_evidence
 
 
 def test_production_evidence_gate_tracks_strict_external_claims():
