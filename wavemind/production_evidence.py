@@ -948,6 +948,128 @@ def evaluate_production_evidence(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     }
 
 
+def evaluate_production_evidence_bundle(
+    root: Path = PROJECT_ROOT,
+    *,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    root = Path(root)
+    strict = evaluate_production_evidence(root)
+    preflight = evaluate_production_evidence_preflight(root, env=env)
+    readiness = _load_optional_json(root / "benchmarks" / "production_readiness_results.json")
+    audit = _load_optional_json(root / "benchmarks" / "benchmark_artifact_audit.json")
+    matrix = _load_optional_json(root / "benchmarks" / "benchmark_matrix_results.json")
+
+    strict_by_id = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    preflight_by_id = {
+        str(row.get("id")): row
+        for row in preflight.get("checks", [])
+        if isinstance(row, dict)
+    }
+    next_actions = []
+    for requirement_id, requirement in strict_by_id.items():
+        if requirement.get("status") == "pass":
+            continue
+        check = preflight_by_id.get(requirement_id, {})
+        command = str(check.get("command") or requirement.get("command") or "")
+        next_actions.append(
+            {
+                "id": requirement_id,
+                "title": requirement.get("title"),
+                "strict_status": requirement.get("status"),
+                "preflight_status": check.get("status", "missing"),
+                "artifact": requirement.get("artifact"),
+                "output_artifact": check.get("output_artifact", requirement.get("artifact")),
+                "issues": list(requirement.get("issues") or ()),
+                "missing_env": list(check.get("missing_env") or ()),
+                "warnings": list(check.get("warnings") or ()),
+                "command": command.replace("\\", "/"),
+                "claim_unlocked": requirement.get("claim_unlocked"),
+            }
+        )
+
+    audit_status = str(audit.get("status", "missing"))
+    readiness_status = str(readiness.get("overall_status", "missing"))
+    strict_status = str(strict.get("overall_status", "missing"))
+    preflight_status = str(preflight.get("overall_status", "missing"))
+    if strict_status == "pass":
+        claim_status = "claims_unlocked"
+    elif strict_status == "fail" or audit_status != "pass" or readiness_status != "pass":
+        claim_status = "claims_blocked"
+    else:
+        claim_status = "claims_limited"
+
+    implemented_count = 0
+    if isinstance(matrix.get("benchmarks"), list):
+        implemented_count = sum(
+            1
+            for item in matrix["benchmarks"]
+            if isinstance(item, dict) and item.get("status") == "implemented"
+        )
+
+    return {
+        "schema": "wavemind.production_evidence_bundle.v1",
+        "generated_at": _utc_now(),
+        "claim_status": claim_status,
+        "summary": {
+            "claim_status": claim_status,
+            "strict_overall_status": strict_status,
+            "strict_pass_count": strict.get("summary", {}).get("pass_count", 0),
+            "strict_total_requirements": strict.get("summary", {}).get("total_requirements", 0),
+            "preflight_overall_status": preflight_status,
+            "preflight_ready_count": preflight.get("summary", {}).get("ready_count", 0),
+            "preflight_total_checks": preflight.get("summary", {}).get("total_checks", 0),
+            "production_readiness_status": readiness_status,
+            "production_readiness_score": readiness.get("readiness_score"),
+            "artifact_audit_status": audit_status,
+            "implemented_benchmarks": implemented_count,
+            "next_action_count": len(next_actions),
+        },
+        "strict_production_evidence": strict,
+        "production_evidence_preflight": preflight,
+        "production_readiness": readiness,
+        "artifact_audit": audit,
+        "next_actions": next_actions,
+        "claim_boundaries": [
+            {
+                "claim": "Core library/API readiness",
+                "status": "unlocked" if readiness_status == "pass" and audit_status == "pass" else "blocked",
+                "evidence": "production_readiness_results.json and benchmark_artifact_audit.json",
+            },
+            {
+                "claim": "Remote service-node cluster SLO",
+                "status": "unlocked" if strict_by_id.get("external_http_cluster", {}).get("status") == "pass" else "locked",
+                "evidence": "benchmarks/http_cluster_load_results.json",
+            },
+            {
+                "claim": "Remote multi-region active-active convergence",
+                "status": "unlocked" if strict_by_id.get("external_http_active_active", {}).get("status") == "pass" else "locked",
+                "evidence": "benchmarks/external_http_active_active_results.json",
+            },
+            {
+                "claim": "10M-100M service-backed production scale",
+                "status": "unlocked"
+                if all(
+                    strict_by_id.get(item, {}).get("status") == "pass"
+                    for item in (
+                        "qdrant_10m_service",
+                        "qdrant_sharded_10m_service",
+                        "pgvector_10m_service",
+                        "faiss_ivfpq_50m",
+                        "hundred_million_remote_load",
+                    )
+                )
+                else "locked",
+                "evidence": "large-N production_streaming_load result artifacts",
+            },
+        ],
+    }
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [
@@ -977,6 +1099,58 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {row['title']} | `{row['status']}` | {evidence} | "
             f"`{row['artifact']}` | `{command}` | {row['claim_unlocked']} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_bundle_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Production Evidence Bundle",
+        "",
+        "This bundle is the operator-facing status page for large-scale production claims.",
+        "It combines strict evidence, environment preflight, readiness, benchmark audit,",
+        "claim boundaries, and the exact next actions required to unlock blocked claims.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| claim status | `{summary['claim_status']}` |",
+        f"| strict evidence | `{summary['strict_pass_count']}/{summary['strict_total_requirements']}` |",
+        f"| preflight ready | `{summary['preflight_ready_count']}/{summary['preflight_total_checks']}` |",
+        f"| production readiness | `{summary['production_readiness_status']}` |",
+        f"| readiness score | `{summary['production_readiness_score']}` |",
+        f"| artifact audit | `{summary['artifact_audit_status']}` |",
+        f"| implemented benchmarks | `{summary['implemented_benchmarks']}` |",
+        f"| next actions | `{summary['next_action_count']}` |",
+        "",
+        "## Claim Boundaries",
+        "",
+        "| claim | status | evidence |",
+        "|---|---|---|",
+    ]
+    for row in payload.get("claim_boundaries", []):
+        lines.append(
+            f"| {row['claim']} | `{row['status']}` | `{row['evidence']}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Next Actions",
+            "",
+            "| item | strict | preflight | artifact | missing env | command |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
+    for row in payload.get("next_actions", []):
+        missing_env = ", ".join(row.get("missing_env") or ())
+        issues = ", ".join(row.get("issues") or ())
+        if issues:
+            missing_env = f"{missing_env}; issues: {issues}".strip("; ")
+        command = str(row.get("command") or "").replace("|", "\\|")
+        lines.append(
+            f"| {row['title']} | `{row['strict_status']}` | `{row['preflight_status']}` | "
+            f"`{row['artifact']}` | `{missing_env}` | `{command}` |"
         )
     lines.append("")
     return "\n".join(lines)

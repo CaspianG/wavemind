@@ -1,0 +1,843 @@
+{
+  "schema": "wavemind.production_evidence_bundle.v1",
+  "generated_at": "2026-07-07T22:37:41Z",
+  "claim_status": "claims_limited",
+  "summary": {
+    "claim_status": "claims_limited",
+    "strict_overall_status": "action_required",
+    "strict_pass_count": 0,
+    "strict_total_requirements": 8,
+    "preflight_overall_status": "action_required",
+    "preflight_ready_count": 0,
+    "preflight_total_checks": 8,
+    "production_readiness_status": "pass",
+    "production_readiness_score": 1.0,
+    "artifact_audit_status": "pass",
+    "implemented_benchmarks": 28,
+    "next_action_count": 8
+  },
+  "strict_production_evidence": {
+    "schema": "wavemind.production_evidence.v1",
+    "generated_at": "2026-07-07T22:37:41Z",
+    "overall_status": "action_required",
+    "summary": {
+      "overall_status": "action_required",
+      "pass_count": 0,
+      "action_required_count": 8,
+      "fail_count": 0,
+      "total_requirements": 8
+    },
+    "requirements": [
+      {
+        "id": "external_http_cluster",
+        "title": "External HTTP service-node load",
+        "status": "action_required",
+        "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
+        "artifact": "benchmarks/http_cluster_load_results.json",
+        "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true",
+        "claim_unlocked": "Remote service-node cluster load SLO.",
+        "issues": [
+          "environment must be a real remote/staging/production deployment",
+          "source must identify a real remote run, not a sample or loopback"
+        ]
+      },
+      {
+        "id": "external_http_active_active",
+        "title": "External HTTP active-active regions",
+        "status": "action_required",
+        "evidence": "no checked-in external HTTP active-active region result",
+        "artifact": "benchmarks/external_http_active_active_results.json",
+        "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
+        "claim_unlocked": "Remote multi-region active-active memory convergence.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "serverless_remote_telemetry",
+        "title": "Managed/serverless remote telemetry",
+        "status": "action_required",
+        "evidence": "no checked-in remote serverless telemetry",
+        "artifact": "deploy/serverless/observed-telemetry.remote.json",
+        "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
+        "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "qdrant_10m_service",
+        "title": "10M Qdrant service load",
+        "status": "action_required",
+        "evidence": "no checked-in 10,000,000-vector result for Qdrant service streaming",
+        "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+        "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "qdrant_sharded_10m_service",
+        "title": "10M sharded Qdrant service load",
+        "status": "action_required",
+        "evidence": "no checked-in 10,000,000-vector result for Qdrant sharded service streaming",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+        "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "pgvector_10m_service",
+        "title": "10M pgvector service load",
+        "status": "action_required",
+        "evidence": "no checked-in 10,000,000-vector result for WaveMind pgvector streaming",
+        "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+        "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "faiss_ivfpq_50m",
+        "title": "50M FAISS IVF-PQ streaming load",
+        "status": "action_required",
+        "evidence": "no checked-in 50,000,000-vector result for WaveMind faiss-ivfpq-persisted streaming",
+        "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+        "claim_unlocked": "50M compressed local/persistent FAISS profile.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "hundred_million_remote_load",
+        "title": "100M remote load result",
+        "status": "action_required",
+        "evidence": "no checked-in 100M remote service-backed latency result",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+        "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      }
+    ]
+  },
+  "production_evidence_preflight": {
+    "schema": "wavemind.production_evidence_preflight.v1",
+    "generated_at": "2026-07-07T22:37:41Z",
+    "overall_status": "action_required",
+    "summary": {
+      "overall_status": "action_required",
+      "ready_count": 0,
+      "action_required_count": 8,
+      "total_checks": 8
+    },
+    "checks": [
+      {
+        "id": "external_http_cluster",
+        "title": "External HTTP service-node load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "0 URLs configured",
+        "required_env": [
+          "WAVEMIND_CLUSTER_NODES",
+          "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "missing_env": [
+          "WAVEMIND_CLUSTER_NODES",
+          "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f batch_query_size=24 -f commit_results=true",
+        "output_artifact": "benchmarks/http_cluster_load_results.json",
+        "issues": [
+          "cluster node requires at least 4 URLs",
+          "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ]
+      },
+      {
+        "id": "external_http_active_active",
+        "title": "External HTTP active-active regions preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "0 URLs configured",
+        "required_env": [
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "missing_env": [
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+        "output_artifact": "benchmarks/external_http_active_active_results.json",
+        "issues": [
+          "active-active region requires at least 3 URLs",
+          "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ]
+      },
+      {
+        "id": "serverless_remote_telemetry",
+        "title": "Managed/serverless remote telemetry preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "0 node URLs configured",
+        "required_env": [
+          "WAVEMIND_SERVERLESS_NODES"
+        ],
+        "missing_env": [
+          "WAVEMIND_SERVERLESS_NODES"
+        ],
+        "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
+        "output_artifact": "deploy/serverless/observed-telemetry.remote.json",
+        "issues": [
+          "serverless node requires at least 1 URLs",
+          "set WAVEMIND_SERVERLESS_NODES"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ]
+      },
+      {
+        "id": "qdrant_10m_service",
+        "title": "10M Qdrant service load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "plan benchmarks/production_streaming_load_qdrant_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+        "required_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "issues": [
+          "set WAVEMIND_QDRANT_URL"
+        ],
+        "warnings": []
+      },
+      {
+        "id": "qdrant_sharded_10m_service",
+        "title": "10M sharded Qdrant service load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "plan benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "issues": [
+          "set WAVEMIND_QDRANT_URLS"
+        ],
+        "warnings": []
+      },
+      {
+        "id": "pgvector_10m_service",
+        "title": "10M pgvector service load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "plan benchmarks/production_streaming_load_pgvector_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+        "required_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "missing_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+        "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "issues": [
+          "set WAVEMIND_PGVECTOR_DSN"
+        ],
+        "warnings": []
+      },
+      {
+        "id": "faiss_ivfpq_50m",
+        "title": "50M FAISS IVF-PQ streaming load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "plan benchmarks/production_streaming_load_50m_plan.json, vectors 50000000, required env 1, missing env 1, required local free 1.578 GB",
+        "required_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "missing_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+        "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "issues": [
+          "set WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "warnings": []
+      },
+      {
+        "id": "hundred_million_remote_load",
+        "title": "100M sharded Qdrant service load preflight",
+        "status": "action_required",
+        "ready": false,
+        "evidence": "plan benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json, vectors 100000000, required env 1, missing env 1, required local free 0.06 GB",
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "issues": [
+          "set WAVEMIND_QDRANT_URLS"
+        ],
+        "warnings": []
+      }
+    ]
+  },
+  "production_readiness": {
+    "schema": "wavemind.production_readiness.v1",
+    "generated_at": "2026-07-07T22:09:42Z",
+    "overall_status": "pass",
+    "readiness_score": 1.0,
+    "summary": {
+      "overall_status": "pass",
+      "readiness_score": 1.0,
+      "pass_count": 39,
+      "action_required_count": 0,
+      "fail_count": 0,
+      "total_criteria": 39
+    },
+    "criteria": [
+      {
+        "id": "benchmark_artifact_freshness",
+        "title": "Checked-in benchmark artifacts are synchronized",
+        "status": "pass",
+        "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
+        "evidence": "audit status pass, generated_at 2026-07-07T21:53:58Z",
+        "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
+      },
+      {
+        "id": "agent_coherence_quality",
+        "title": "Agent coherence benchmark proves behavioral lift",
+        "status": "pass",
+        "requirement": "Dynamic memory must improve agent task success, avoid stale facts, preserve coherent task runs, and save prompt context against static vector and Chroma-static baselines.",
+        "evidence": "WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms",
+        "next_step": "Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval."
+      },
+      {
+        "id": "longmemeval_answer_quality",
+        "title": "LongMemEval answer generation beats static RAG baselines",
+        "status": "pass",
+        "requirement": "A real local LLM answer-generation run must show WaveMind improves final answers, not only retrieval: 50+ LongMemEval questions, stronger answer accuracy/F1 than Chroma and Qdrant static RAG, high evidence recall, and bounded retrieval latency.",
+        "evidence": "ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170",
+        "next_step": "Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring."
+      },
+      {
+        "id": "production_100k_slo_cost",
+        "title": "100k service-backed load profile passes SLO and cost gate",
+        "status": "pass",
+        "requirement": "recall@10 >= 0.95, p99 <= 100 ms, target QPS capacity available, and cost estimate present.",
+        "evidence": "recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries",
+        "next_step": "Keep the 100k profile green while adding persisted FAISS and pgvector service runs."
+      },
+      {
+        "id": "production_1m_slo",
+        "title": "1M service-backed load profile meets recall and p99 SLO",
+        "status": "pass",
+        "requirement": "recall@10 >= 0.95 and p99 <= 100 ms at 1M vectors.",
+        "evidence": "WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required",
+        "next_step": "Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths."
+      },
+      {
+        "id": "production_1m_query_depth",
+        "title": "1M load result has enough query depth for a production claim",
+        "status": "pass",
+        "requirement": "Use at least 100 queries for checked-in 1M production claims.",
+        "evidence": "current tuned 1M profile uses 100 queries",
+        "next_step": "Keep 100+ query depth for all checked-in 1M production profiles."
+      },
+      {
+        "id": "persisted_ann_integrity",
+        "title": "Persisted FAISS snapshots validate source-of-truth vectors",
+        "status": "pass",
+        "requirement": "Persisted FAISS must treat SQLite/Postgres as the source of truth, verify id map, vector dimension, vector count, and normalized-vector checksum, then rebuild stale snapshots.",
+        "evidence": "source contract _vector_snapshot_checksum + vector_checksum, regression test rebuilds matching-id stale vectors",
+        "next_step": "Keep checksum validation in the FAISS persisted path and add the same content-integrity contract to future persisted ANN backends."
+      },
+      {
+        "id": "pgvector_tuning_path",
+        "title": "pgvector exact and iterative service profile passes 50k tuning gate",
+        "status": "pass",
+        "requirement": "A real PostgreSQL/pgvector service profile must show exact recall as the correctness floor and iterative HNSW recall@10 >= 0.95 with p99 <= 100 ms at 50000 vectors over 100 queries.",
+        "evidence": "size 50000, exact recall 1.0, exact p99 76.98170002549887 ms, iterative recall 0.97, iterative p99 55.18779996782541 ms, Qdrant reference recall 1.0",
+        "next_step": "Promote pgvector-iterative into the 100k and 1M production load SLO profiles after allocating enough disk/build time."
+      },
+      {
+        "id": "qdrant_streaming_path",
+        "title": "Qdrant streaming runner has service smoke and 10M preflight",
+        "status": "pass",
+        "requirement": "Qdrant must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, and has a committed 10M plan-only contract with exact reproduction command.",
+        "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 17.90370000526309 ms, plan status action_required, plan required local free 0.06 GB, blockers missing_env:WAVEMIND_QDRANT_URL",
+        "next_step": "Run the embedded 10M Qdrant command against a sized Qdrant service and commit production_streaming_load_qdrant_10m_results.json."
+      },
+      {
+        "id": "qdrant_streaming_1m_slo",
+        "title": "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate",
+        "status": "pass",
+        "requirement": "A real Qdrant service streaming profile at 1M vectors must use safe upsert chunks, warm the service, and meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO over at least 100 queries.",
+        "evidence": "cold recall 0.99, cold p99 3013.9777000295 ms, tuned recall 1, tuned p99 26.373000000603497 ms, warmup 100, wait 30.0 s, upsert chunk 2000, SLO pass",
+        "next_step": "Promote the same warmup/chunking profile into the checked 10M Qdrant service run on storage sized for the index."
+      },
+      {
+        "id": "pgvector_streaming_path",
+        "title": "pgvector streaming runner has service smoke and 10M preflight",
+        "status": "pass",
+        "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, and has a committed 10M plan-only contract with exact reproduction command.",
+        "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.06 GB, blockers missing_env:WAVEMIND_PGVECTOR_DSN",
+        "next_step": "Run the embedded 10M pgvector command against a sized PostgreSQL service and commit production_streaming_load_pgvector_10m_results.json."
+      },
+      {
+        "id": "vectordbbench_custom_dataset",
+        "title": "VectorDBBench custom dataset export is reproducible",
+        "status": "pass",
+        "requirement": "A public vector-database comparison path must expose train/test/neighbors/scalar-label parquet files for an official VectorDBBench custom dataset run.",
+        "evidence": "status ready, vectors 10000, queries 100, files ['neighbors', 'scalar_labels', 'test', 'train']",
+        "next_step": "Run this custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles."
+      },
+      {
+        "id": "cluster_ha_placement",
+        "title": "Namespace placement survives node and zone loss",
+        "status": "pass",
+        "requirement": "Replicated namespace placement must keep availability at 1.0 under node and zone loss simulation.",
+        "evidence": "node loss 1.0, zone loss 1.0, namespaces 4096",
+        "next_step": "Validate the same placement under live multi-node service load."
+      },
+      {
+        "id": "cluster_autoscale_planner",
+        "title": "Cluster autoscaler plans node additions within headroom",
+        "status": "pass",
+        "requirement": "Autoscale planning must convert target memories, RF, and per-node capacity into required node count, bounded target load, and namespace movement actions.",
+        "evidence": "current 4, required 50, target max 678711, moves 25+4069",
+        "next_step": "Connect this planner to operator reconciliation status and real HPA/load metrics."
+      },
+      {
+        "id": "control_plane_consensus",
+        "title": "Control-plane consensus blocks split-brain config changes",
+        "status": "pass",
+        "requirement": "Cluster membership and operator config changes must require a majority leadership lease, reject stale leaders, reject stale config revisions, and block minority partitions.",
+        "evidence": "voters 3 -> 5, term 1 -> 2, revision 2, minority blocked True",
+        "next_step": "Wrap the same majority lease/revision contract around remote operator membership changes."
+      },
+      {
+        "id": "hundred_million_capacity_envelope",
+        "title": "100M-memory capacity envelope is planned across a large cluster",
+        "status": "pass",
+        "requirement": "The production plan must include a deterministic 100M-memory capacity envelope with 100+ nodes, RF=3, node/zone-loss availability, balanced placement, and bounded per-node storage.",
+        "evidence": "100000000 memories, 128 nodes, RF 3, replica skew 1.09375, max storage/node 5.806214176118374 GB",
+        "next_step": "Promote this envelope from deterministic planning to a real 100M service-backed Qdrant/pgvector/FAISS load run on sized hardware."
+      },
+      {
+        "id": "operator_autoscaling_repair",
+        "title": "Kubernetes operator bundle includes HPA and repair job",
+        "status": "pass",
+        "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, and status conditions for readiness/autoscaling/capacity/repair plus control-plane consensus safety.",
+        "evidence": "CRD True, HPA True, repair True, replicas 34, required 34, target max 678711, status Ready, control-plane True",
+        "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
+      },
+      {
+        "id": "serverless_externalized_state",
+        "title": "Serverless plan externalizes state and validates KEDA target",
+        "status": "pass",
+        "requirement": "Serverless mode must use external durable state, external vector index, shared cache, valid KEDA scale target, scale-to-zero-safe workers, an operational SLO/cold-start/cost profile, and an observed-telemetry contract for real cluster load tests.",
+        "evidence": "Postgres True, Qdrant True, Redis True, required replicas 4, burst rps 256000, cold start 1220.0 ms, cost $81.76, observed source loopback-api-capacity-estimate, observed replicas 4, observed pool rps 583.26, observed p99 17.039 ms, observed errors 0.0",
+        "next_step": "Run the same profile against a real Knative/KEDA cluster and replace loopback telemetry with remote p95/p99/cold-start/error-rate/scale-out metrics."
+      },
+      {
+        "id": "hot_cache_prewarm",
+        "title": "Hot cache and query-audit prewarm work",
+        "status": "pass",
+        "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
+        "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
+        "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
+      },
+      {
+        "id": "query_vector_cache",
+        "title": "Query-vector cache avoids repeated encoder work",
+        "status": "pass",
+        "requirement": "Repeated hot queries must reuse encoded query vectors locally across Redis-backed workers, and through the FastAPI service before hitting the vector index.",
+        "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 5.607399973087013 ms, service metrics True",
+        "next_step": "Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test."
+      },
+      {
+        "id": "api_batch_query",
+        "title": "Batch query API amortizes service recall overhead",
+        "status": "pass",
+        "requirement": "FastAPI must support production batch recall so agents can issue many memory lookups with one HTTP request while preserving vector-cache reuse.",
+        "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 11.680788280389637, metrics True",
+        "next_step": "Keep the real Redis multi-process batch recall profile green, then repeat it with larger batches on remote Kubernetes/serverless nodes."
+      },
+      {
+        "id": "shared_rate_limiter",
+        "title": "Redis-compatible shared rate limiter works across workers",
+        "status": "pass",
+        "requirement": "Production API workers must enforce one shared request budget through Redis instead of separate per-process in-memory buckets.",
+        "evidence": "workers 2, allowed 4, limited 1, shared True",
+        "next_step": "Run the same shared limiter profile against a live Redis service in multi-worker API load tests."
+      },
+      {
+        "id": "redis_shared_cache_memory_os",
+        "title": "Redis-compatible shared cache and Memory OS prewarm work",
+        "status": "pass",
+        "requirement": "Production cache must be shareable across workers, support query-audit prewarm, support Memory OS prewarm, guard adaptive Memory OS mutation cycles with a Redis-compatible single-flight lock, learn observed follow-up query transitions, apply explicit useful/not-useful recall feedback, invalidate a namespace after memory changes, and preserve architecture advice for production-scale deployments.",
+        "evidence": "shared True, prewarm hit True, Memory OS warmed 2, predictive warmed 6, transition hit True, transition queries ['risk limits'], transition edge True, feedback events 8, lock acquired True, busy skipped True, Memory OS hit True, invalidation True, architecture architecture_required",
+        "next_step": "Keep the real Redis multi-process API load workflow green."
+      },
+      {
+        "id": "api_cache_mutation_safety",
+        "title": "API cache does not serve stale memory after mutations",
+        "status": "pass",
+        "requirement": "FastAPI workers must invalidate shared query cache on remember, feedback, and forget so mutations cannot leave stale cached recall.",
+        "evidence": "cached True, remember invalidation True, remember stale prevented True, feedback invalidation True, feedback demoted True, forget invalidation True, forget stale prevented True",
+        "next_step": "Keep the real Redis multi-process API load workflow green."
+      },
+      {
+        "id": "batch_recall_feedback",
+        "title": "Batch recall feedback updates priority, audit, and cache",
+        "status": "pass",
+        "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
+        "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 34.689399995841086 ms",
+        "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
+      },
+      {
+        "id": "real_redis_api_load_ci",
+        "title": "Real Redis multi-process API load passes SLO",
+        "status": "pass",
+        "requirement": "CI must start a real Redis service, launch multiple uvicorn workers, verify cross-process cache visibility, and fail on stale-cache, batch feedback, batch recall, shared query-vector cache, or p99 SLO regression.",
+        "evidence": "workflow True, workers 2, success_rate 1.0, p99 38.7309649924282 ms, batch accepted 2, batch rejected 1, batch cache invalidated True, batch query True, batch HTTP 12 -> 1, batch vector hits 12.0, batch p99 331.59499999601394 ms, stale prevented True",
+        "next_step": "Scale this Redis-backed batch recall profile to more workers, larger batch sizes, and remote Kubernetes/serverless API nodes."
+      },
+      {
+        "id": "real_local_http_cluster_ci",
+        "title": "Real local HTTP cluster smoke passes SLO",
+        "status": "pass",
+        "requirement": "CI must start multiple real localhost WaveMind API processes with isolated SQLite stores and run the sustained HTTP cluster workload through the same service-mode client used for remote nodes.",
+        "evidence": "workflow True, nodes 4, read_fanout 1, success 1.0, failover 1.0, repair 1, health True, degraded 0, p99 348.82529999595135 ms, slo True",
+        "next_step": "Refresh local_http_cluster_smoke_results.json from CI on every release candidate."
+      },
+      {
+        "id": "real_http_active_active_ci",
+        "title": "Real HTTP active-active service-region smoke passes SLO",
+        "status": "pass",
+        "requirement": "CI must start real WaveMind API region processes backed by replicated local runtimes, exchange namespace deltas over HTTP export/import endpoints, converge without duplicate replay, and propagate deletes.",
+        "evidence": "workflow True, regions 3, namespaces 2, pair_syncs 36, convergence 1.0, delete suppression 1.0, success 1.0, final noop 0, p99 347.5829000817612 ms, slo True",
+        "next_step": "Refresh local_http_active_active_smoke_results.json from CI on every release candidate."
+      },
+      {
+        "id": "memory_os_worker",
+        "title": "Memory OS worker prewarms, consolidates, and cleans up",
+        "status": "pass",
+        "requirement": "Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
+        "evidence": "hot queries 2, prewarm 2, predictive warmed 6, transition hit True, transition queries ['risk limits'], transition edge True, expired 1, concepts 1, feedback events 8, priority predictions 2, forgetting demotions 4, architecture architecture_required",
+        "next_step": "Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments."
+      },
+      {
+        "id": "distributed_repair_tombstones",
+        "title": "Distributed sharding repairs replicas and tombstones stale deletes",
+        "status": "pass",
+        "requirement": "Replicated writes, missing-record repair, tombstone repair, and anti-entropy must all pass.",
+        "evidence": "repair 1, tombstone deleted 1, anti-entropy repaired 1",
+        "next_step": "Keep the algorithm profile and real HTTP shard profile in sync."
+      },
+      {
+        "id": "distributed_http_shard_transport",
+        "title": "HTTP shard transport handles failover, repair, and tombstones",
+        "status": "pass",
+        "requirement": "Real localhost API shard nodes must pass quorum write, failover query, missing-replica repair, proxy-safe HTTP transport, tombstone cleanup, and concurrent namespace traffic.",
+        "evidence": "proxy bypass True, failover True, repair 1, tombstone deleted 1, concurrent hit rate 1.0",
+        "next_step": "Extend the same HTTP shard profile to remote service nodes and sustained load."
+      },
+      {
+        "id": "sustained_http_cluster_load",
+        "title": "Sustained HTTP cluster load survives failover and repair",
+        "status": "pass",
+        "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
+        "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 187.29 ms",
+        "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
+      },
+      {
+        "id": "replicated_runtime_loss",
+        "title": "Runtime replica quorum survives node loss",
+        "status": "pass",
+        "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
+        "evidence": "recall after loss True, repair copied 1, p99 1.8033001106232405 ms, concurrent hit rate 1.0",
+        "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
+      },
+      {
+        "id": "active_active_field_crdt",
+        "title": "Active-active sync and field-state CRDT converge",
+        "status": "pass",
+        "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync, and CRDT deltas must carry actor watermarks so regions can audit sync progress, missing actors, and replication lag.",
+        "evidence": "delta sync True, incremental records 1, field-only keys 1, sustained regions 3, sustained convergence 1.0, sustained delete suppression 1.0, sustained success 1.0, HTTP service-region convergence 1.0, HTTP final no-op imports 0, CRDT idempotent True, watermarks 3, watermark health pass, missing detected True, lag detected True",
+        "next_step": "Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence."
+      },
+      {
+        "id": "backup_restore_dr",
+        "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
+        "status": "pass",
+        "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage.",
+        "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env",
+        "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, then execute the Postgres PITR runbook against a staging or managed Postgres service and commit the drill report."
+      },
+      {
+        "id": "structured_multimodal_payloads",
+        "title": "Structured and multimodal payload retrieval works",
+        "status": "pass",
+        "requirement": "Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable, retrievable through the same memory API, queryable through a shared cross-modal embedding space, returned with provenance, and compatible with externally computed multimodal vectors. Temporal events must support actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance. Large media assets must be backed by verified content-addressed object-store manifests. Knowledge graphs must support entity/predicate filters, multi-hop path traversal, persistence, and provenance.",
+        "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
+        "next_step": "Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal, temporal-event, and knowledge-graph retrieval tests against object-store-backed assets."
+      },
+      {
+        "id": "ten_million_load_profile",
+        "title": "10M-vector production load profile passes recall, p99, and cost gate",
+        "status": "pass",
+        "requirement": "A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
+        "evidence": "WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo",
+        "next_step": "Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available."
+      },
+      {
+        "id": "fifty_million_streaming_preflight",
+        "title": "50M streaming load run has a checked preflight contract",
+        "status": "pass",
+        "requirement": "The next 50M streaming run must have a committed plan-only artifact with exact reproduction command, local index/transient storage estimates, application-storage estimate, required env, and an explicit boundary that it is not a completed benchmark.",
+        "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 1.578 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+        "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the embedded 50M command to produce production_streaming_load_ivfpq_50m_results.json."
+      },
+      {
+        "id": "architecture_advisor_preflight",
+        "title": "Architecture advisor blocks unsafe large production growth",
+        "status": "pass",
+        "requirement": "Advisor must convert live stats plus 10M production targets into service-index, namespace-sharding, load-test, production-controls, and multimodal readiness actions.",
+        "evidence": "status architecture_required, recommendations active-active-region-evidence, bounded-read-fanout, capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 13",
+        "next_step": "Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks."
+      }
+    ],
+    "external_evidence": [
+      {
+        "id": "memory_competitor_adapters",
+        "title": "Mem0, Zep, and LangGraph adapter evidence",
+        "status": "action_required",
+        "evidence": "skipped: Zep",
+        "next_step": "Configure ZEP_API_URL or ZEP_API_KEY for a real Zep service and check in the live Zep adapter result."
+      },
+      {
+        "id": "external_http_cluster_load",
+        "title": "External HTTP service-node load evidence",
+        "status": "pass",
+        "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
+        "next_step": "Replace this loopback service-node run with a remote Kubernetes/serverless node manifest run."
+      },
+      {
+        "id": "external_http_active_active",
+        "title": "External HTTP active-active region evidence",
+        "status": "action_required",
+        "evidence": "no checked-in external HTTP active-active region result",
+        "next_step": "Run external-http-active-active against real API regions and upload or commit the resulting artifact."
+      }
+    ]
+  },
+  "artifact_audit": {
+    "schema": "wavemind.benchmark_artifact_audit.v1",
+    "status": "pass",
+    "checked_at": "2026-07-07T22:31:23Z",
+    "generated_at": "2026-07-07T22:09:42Z",
+    "source_ref": "7adba2eee923",
+    "workflow_run_id": null,
+    "refresh_profile": "local",
+    "max_age_days": null,
+    "age_days": 0.015057927013888889,
+    "implemented_count": 28,
+    "runner_ready_count": 2,
+    "planned_count": 6,
+    "errors": []
+  },
+  "next_actions": [
+    {
+      "id": "external_http_cluster",
+      "title": "External HTTP service-node load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/http_cluster_load_results.json",
+      "output_artifact": "benchmarks/http_cluster_load_results.json",
+      "issues": [
+        "environment must be a real remote/staging/production deployment",
+        "source must identify a real remote run, not a sample or loopback"
+      ],
+      "missing_env": [
+        "WAVEMIND_CLUSTER_NODES",
+        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ],
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f batch_query_size=24 -f commit_results=true",
+      "claim_unlocked": "Remote service-node cluster load SLO."
+    },
+    {
+      "id": "external_http_active_active",
+      "title": "External HTTP active-active regions",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/external_http_active_active_results.json",
+      "output_artifact": "benchmarks/external_http_active_active_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ],
+      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+      "claim_unlocked": "Remote multi-region active-active memory convergence."
+    },
+    {
+      "id": "serverless_remote_telemetry",
+      "title": "Managed/serverless remote telemetry",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "deploy/serverless/observed-telemetry.remote.json",
+      "output_artifact": "deploy/serverless/observed-telemetry.remote.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_SERVERLESS_NODES"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ],
+      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
+      "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
+    },
+    {
+      "id": "qdrant_10m_service",
+      "title": "10M Qdrant service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "warnings": [],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "claim_unlocked": "10M Qdrant service-backed candidate index SLO."
+    },
+    {
+      "id": "qdrant_sharded_10m_service",
+      "title": "10M sharded Qdrant service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "warnings": [],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO."
+    },
+    {
+      "id": "pgvector_10m_service",
+      "title": "10M pgvector service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "warnings": [],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."
+    },
+    {
+      "id": "faiss_ivfpq_50m",
+      "title": "50M FAISS IVF-PQ streaming load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "warnings": [],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "claim_unlocked": "50M compressed local/persistent FAISS profile."
+    },
+    {
+      "id": "hundred_million_remote_load",
+      "title": "100M remote load result",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "issues": [
+        "missing artifact"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "warnings": [],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO."
+    }
+  ],
+  "claim_boundaries": [
+    {
+      "claim": "Core library/API readiness",
+      "status": "unlocked",
+      "evidence": "production_readiness_results.json and benchmark_artifact_audit.json"
+    },
+    {
+      "claim": "Remote service-node cluster SLO",
+      "status": "locked",
+      "evidence": "benchmarks/http_cluster_load_results.json"
+    },
+    {
+      "claim": "Remote multi-region active-active convergence",
+      "status": "locked",
+      "evidence": "benchmarks/external_http_active_active_results.json"
+    },
+    {
+      "claim": "10M-100M service-backed production scale",
+      "status": "locked",
+      "evidence": "large-N production_streaming_load result artifacts"
+    }
+  ]
+}

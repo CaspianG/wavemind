@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-07T22:09:47Z",
+  "generated_at": "2026-07-07T22:31:23Z",
   "source_ref": "7adba2eee923",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -37,8 +37,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-07T22:09:47Z",
-    "age_days": 5.79156712962963e-05,
+    "checked_at": "2026-07-07T22:31:23Z",
+    "age_days": 0.015057927013888889,
     "max_age_days": null,
     "errors": []
   },
@@ -141,6 +141,25 @@
       }
     ]
   },
+  "production_evidence_bundle": {
+    "schema": "wavemind.production_evidence_bundle.v1",
+    "claim_status": "claims_limited",
+    "summary": {
+      "claim_status": "claims_limited",
+      "strict_overall_status": "action_required",
+      "strict_pass_count": 0,
+      "strict_total_requirements": 8,
+      "preflight_overall_status": "action_required",
+      "preflight_ready_count": 0,
+      "preflight_total_checks": 8,
+      "production_readiness_status": "pass",
+      "production_readiness_score": 1.0,
+      "artifact_audit_status": "pass",
+      "implemented_benchmarks": 28,
+      "next_action_count": 8
+    },
+    "next_action_count": 8
+  },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
     "overall_status": "action_required",
@@ -156,7 +175,8 @@
     "benchmarks/benchmark_artifact_audit.json",
     "benchmarks/production_readiness_results.json",
     "benchmarks/production_evidence_results.json",
-    "benchmarks/production_evidence_preflight_results.json"
+    "benchmarks/production_evidence_preflight_results.json",
+    "benchmarks/production_evidence_bundle_results.json"
   ],
   "load_errors": []
 }

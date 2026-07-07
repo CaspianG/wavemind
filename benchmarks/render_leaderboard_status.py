@@ -18,6 +18,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     audit = _load_json(root / "benchmarks" / "benchmark_artifact_audit.json", load_errors)
     readiness = _load_json(root / "benchmarks" / "production_readiness_results.json", load_errors)
     evidence = _load_json(root / "benchmarks" / "production_evidence_results.json", load_errors)
+    evidence_bundle = _load_json(
+        root / "benchmarks" / "production_evidence_bundle_results.json",
+        load_errors,
+        required=False,
+    )
     preflight = _load_json(
         root / "benchmarks" / "production_evidence_preflight_results.json",
         load_errors,
@@ -98,6 +103,14 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "summary": evidence.get("summary", {}),
             "action_required": action_required,
         },
+        "production_evidence_bundle": {
+            "schema": evidence_bundle.get("schema"),
+            "claim_status": evidence_bundle.get("claim_status", "missing"),
+            "summary": evidence_bundle.get("summary", {}),
+            "next_action_count": len(evidence_bundle.get("next_actions", []))
+            if isinstance(evidence_bundle.get("next_actions"), list)
+            else 0,
+        },
         "production_evidence_preflight": {
             "schema": preflight.get("schema"),
             "overall_status": preflight_status,
@@ -109,6 +122,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "benchmarks/production_readiness_results.json",
             "benchmarks/production_evidence_results.json",
             "benchmarks/production_evidence_preflight_results.json",
+            "benchmarks/production_evidence_bundle_results.json",
         ],
         "load_errors": load_errors,
     }

@@ -46,7 +46,9 @@ from .object_store import S3SnapshotStore
 from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import (
     evaluate_production_evidence,
+    evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
+    render_bundle_markdown,
     render_markdown,
     render_preflight_markdown,
 )
@@ -286,6 +288,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md"),
     )
     production_evidence_preflight.add_argument("--json", action="store_true")
+
+    production_evidence_bundle = sub.add_parser(
+        "production-evidence-bundle",
+        help="Build a combined strict evidence, preflight, readiness, and claim-status bundle",
+    )
+    production_evidence_bundle.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_evidence_bundle.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown bundle reports to the output paths.",
+    )
+    production_evidence_bundle.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero unless strict production claims are unlocked.",
+    )
+    production_evidence_bundle.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_evidence_bundle_results.json"),
+    )
+    production_evidence_bundle.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md"),
+    )
+    production_evidence_bundle.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -917,6 +951,43 @@ def print_production_evidence_preflight(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_production_evidence_bundle(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"claim_status: {summary['claim_status']}")
+    print(
+        "strict: "
+        f"{summary['strict_pass_count']}/{summary['strict_total_requirements']} "
+        f"({summary['strict_overall_status']})"
+    )
+    print(
+        "preflight: "
+        f"{summary['preflight_ready_count']}/{summary['preflight_total_checks']} "
+        f"({summary['preflight_overall_status']})"
+    )
+    print(f"readiness: {summary['production_readiness_status']}")
+    print(f"artifact_audit: {summary['artifact_audit_status']}")
+    print(f"next_actions: {summary['next_action_count']}")
+    print("claim_boundaries:")
+    for row in payload.get("claim_boundaries", []):
+        print(f"- [{row['status']}] {row['claim']}")
+        print(f"  evidence: {row['evidence']}")
+    next_actions = payload.get("next_actions", [])
+    if next_actions:
+        print("next_actions_detail:")
+    for row in next_actions:
+        print(f"- [{row['strict_status']}/{row['preflight_status']}] {row['title']}")
+        print(f"  artifact: {row['artifact']}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        issues = row.get("issues") or []
+        if issues:
+            print(f"  issues: {', '.join(issues)}")
+        command = row.get("command")
+        if command:
+            print(f"  command: {command}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -1430,6 +1501,30 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_action_required and payload["overall_status"] != "ready":
             return 2
         return 0
+
+    if args.command == "production-evidence-bundle":
+        payload = evaluate_production_evidence_bundle(args.root)
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_bundle_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_evidence_bundle(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.strict and payload["claim_status"] != "claims_unlocked":
+            return 2
+        return 0 if payload["claim_status"] in {"claims_unlocked", "claims_limited"} else 1
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

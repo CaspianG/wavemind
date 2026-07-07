@@ -43,6 +43,7 @@ purpose-built vector databases.
 | Production readiness gate | Current WaveMind core gate score is `1.000`: `39/39` criteria pass, `0` require action, `0` fail. Live Zep competitor evidence is tracked separately and remains pending until a real service is configured. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | `python benchmarks/production_readiness_gate.py --output benchmarks/production_readiness_results.json --markdown-output benchmarks/PRODUCTION_READINESS.md` |
 | Strict production evidence gate | Hard claim boundary for remote service-node load, external active-active regions, managed/serverless telemetry, 10M Qdrant/pgvector service runs, 50M FAISS, and 100M remote service-backed load. It is allowed to be `action_required` while core readiness is green, because local loopback evidence must not unlock remote production claims. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md` | `wavemind production-evidence --strict`; `python benchmarks/production_evidence_gate.py --output benchmarks/production_evidence_results.json --markdown-output benchmarks/PRODUCTION_EVIDENCE.md` |
 | Production evidence preflight | Operator prerequisite check for strict production evidence jobs. It verifies remote endpoint env, service index env, FAISS storage paths, plan artifacts, disk headroom, and exact output-producing commands before expensive remote/large-N jobs are launched. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md` | `wavemind production-evidence-preflight --write-artifacts`; `wavemind production-evidence-preflight --fail-on-action-required` |
+| Production evidence bundle | Operator-facing status contract that combines strict evidence, preflight, readiness, artifact audit, claim boundaries, and exact next actions. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md` | `wavemind production-evidence-bundle --write-artifacts`; `wavemind production-evidence-bundle --strict` |
 | VectorDBBench custom dataset | Runner-ready custom dataset export for official VectorDBBench flows: `train.parquet`, `test.parquet`, `neighbors.parquet`, and `scalar_labels.parquet` with 10000 vectors, 100 queries, 128 dimensions, and cosine neighbors. | `benchmarks/vectordbbench_dataset_manifest.json` | `python benchmarks/vectordbbench_dataset.py --vectors 10000 --queries 100 --dim 128 --top-k 10 --output-dir state/vectordbbench-wavemind --manifest benchmarks/vectordbbench_dataset_manifest.json` |
 | Memory competitor adapter profile | WaveMind reaches `precision@1 0.80`, `precision@3 1.00`, stale suppression `1.00`; Mem0 runs locally with Qdrant + FastEmbed and reaches `0.80`, `1.00`, stale suppression `0.60`; LangGraph persistent SQLite reaches `0.80`, `1.00`, stale suppression `1.00`; GraphRAG-style static graph reaches `1.00`, `1.00`, stale suppression `1.00` on this small static graph scenario; Zep has live adapter paths for the current `zep-cloud` Graph API and legacy/OSS-compatible `zep-python`, and remains skipped until `ZEP_API_URL` or `ZEP_API_KEY` points at a real service. | `benchmarks/memory_competitor_results.json` | `python benchmarks/memory_competitor_benchmark.py --engines wavemind mem0 zep langgraph graphrag` |
 
@@ -50,11 +51,14 @@ The generated matrix view is in `benchmarks/BENCHMARK_REPORT.md`; the compact
 leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
 The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 The strict production evidence gate is in `benchmarks/PRODUCTION_EVIDENCE.md`.
+The combined operator evidence bundle is in
+`benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`.
 `benchmarks/benchmark_artifact_audit.json` records the latest freshness and
 synchronization check for the generated benchmark artifacts.
 `docs/data/leaderboard-status.json` is the compact machine-readable public
 status contract for the GitHub Pages dashboard: publishability, artifact
-freshness, production readiness, and strict production claim boundaries.
+freshness, production readiness, strict production claim boundaries, and
+production evidence bundle status.
 The weekly leaderboard workflow refreshes these artifacts, uploads them for
 maintainer review, and deploys `docs/benchmark-dashboard.html` plus the
 machine-readable JSON evidence as a GitHub Pages living leaderboard instead of
