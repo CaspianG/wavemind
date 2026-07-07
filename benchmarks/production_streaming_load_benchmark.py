@@ -797,6 +797,10 @@ def run_qdrant_streaming(
     if not url:
         return skipped_result("Qdrant service streaming", "Set WAVEMIND_QDRANT_URL to run streaming Qdrant")
     try:
+        upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
+    except ValueError as exc:
+        return skipped_result("Qdrant service streaming", str(exc))
+    try:
         from qdrant_client import QdrantClient
         from qdrant_client.models import (
             Distance,
@@ -808,10 +812,6 @@ def run_qdrant_streaming(
         )
     except ImportError as exc:
         return skipped_result("Qdrant service streaming", f"Install qdrant-client: {exc}")
-    try:
-        upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
-    except ValueError as exc:
-        return skipped_result("Qdrant service streaming", str(exc))
 
     source_ids = choose_source_ids(count, query_count, seed)
     source_vectors: dict[int, np.ndarray] = {}
