@@ -147,7 +147,9 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     from benchmarks.production_streaming_load_benchmark import run_streaming_load
 
     index_path = tmp_path / "streaming-ivfpq.faiss"
+    checkpoint_path = tmp_path / "streaming-ivfpq.checkpoint.json"
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_PATH", str(index_path))
+    monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NLIST", "8")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_M", "2")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NBITS", "8")
@@ -171,6 +173,62 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert row["target_recall_at_k"] >= 0.95
     assert row["ivfpq_nprobe"] == 8
     assert index_path.exists()
+    assert checkpoint_path.exists()
+    assert row["checkpoint_enabled"] is True
+    assert row["checkpoint_completed_batches"] == 4
+    assert row["checkpoint_source_vectors"] == 16
+
+    resumed = run_streaming_load(
+        sizes=[1024],
+        dim=8,
+        query_count=16,
+        top_k=10,
+        seed=13,
+        noise=0.0,
+        batch_size=256,
+        engines=["faiss-ivfpq-persisted"],
+    )
+    resumed_row = resumed["results"][0]["results"][0]
+    assert resumed_row["target_recall_at_k"] >= 0.95
+    assert resumed_row["checkpoint_completed_batches"] == 4
+    assert resumed_row["checkpoint_source_vectors"] == 16
+
+
+def test_streaming_checkpoint_rejects_signature_mismatch(tmp_path):
+    from benchmarks.production_streaming_load_benchmark import (
+        _checkpoint_signature,
+        _load_checkpoint,
+        _record_checkpoint_batch,
+    )
+
+    checkpoint_path = tmp_path / "streaming.checkpoint.json"
+    signature = _checkpoint_signature(
+        engine="test-engine",
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+    )
+    payload = _load_checkpoint(checkpoint_path, signature)
+    _record_checkpoint_batch(
+        path=checkpoint_path,
+        payload=payload,
+        batch_start=1,
+        captured={3: [0.1, 0.2]},
+    )
+
+    assert checkpoint_path.exists()
+    loaded = _load_checkpoint(checkpoint_path, signature)
+    assert loaded["completed_batch_starts"] == [1]
+    assert loaded["source_vectors"]["3"] == pytest.approx([0.1, 0.2])
+
+    mismatch = dict(signature)
+    mismatch["vectors"] = 128
+    with pytest.raises(ValueError, match="does not match"):
+        _load_checkpoint(checkpoint_path, mismatch)
 
 
 def test_streaming_load_cli_writes_json(tmp_path):
@@ -243,8 +301,11 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert row["required_local_free_gb"] > row["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in row["required_env"]
     assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in row["blockers"]
+    assert row["checkpoint_path"] == "state/faiss-ivfpq-persisted-50000000.checkpoint.json"
+    assert row["resume_mode"].startswith("batch checkpoint")
     assert "--sizes 50000000" in row["command"]
     assert "--engines faiss-ivfpq-persisted" in row["command"]
+    assert "--checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json" in row["command"]
     assert "--output benchmarks" in row["command"]
     assert "production_streaming_load_ivfpq_50m_results.json" in row["command"]
     assert row["claim_boundary"].startswith("preflight only")
@@ -291,6 +352,7 @@ def test_streaming_load_plan_only_cli_writes_json(tmp_path):
     assert payload["schema"] == "wavemind.production_streaming_load_plan.v1"
     assert payload["plans"][0]["vectors"] == 50_000_000
     assert payload["plans"][0]["status"] == "action_required"
+    assert "--checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json" in payload["plans"][0]["command"]
     assert "production_streaming_load_ivfpq_50m_results.json" in payload["plans"][0]["command"]
 
 

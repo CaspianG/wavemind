@@ -58,7 +58,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 4.83,
+      "free_gb": 3.78,
       "total_gb": 231.85
     }
   },
@@ -77,7 +77,7 @@
       "estimated_float_vector_storage_gb": 4.768,
       "estimated_application_storage_gb": 23.842,
       "required_local_free_gb": 0.06,
-      "disk_free_gb": 4.83,
+      "disk_free_gb": 3.78,
       "safety_factor": 1.25,
       "module_requirements": {
         "qdrant_client": true
@@ -96,7 +96,9 @@
         "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
         "WAVEMIND_QDRANT_WARMUP_QUERIES": "100"
       },
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json",
+      "checkpoint_path": "state/qdrant-sharded-service-10000000.checkpoint.json",
+      "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
       "status": "action_required",
       "blockers": [
         "missing_env:WAVEMIND_QDRANT_URLS"

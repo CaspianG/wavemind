@@ -53,7 +53,10 @@ policy matters more than raw vector-database scale:
   `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json`, and
   `benchmarks/production_streaming_load_pgvector_10m_plan.json`. These plans are
   not completed 10M benchmarks; they are exact service-backed run contracts,
-  including a horizontal Qdrant fanout path for multi-node storage.
+  including a horizontal Qdrant fanout path for multi-node storage. The same
+  runner now emits resumable checkpoint paths for large-N ingest, and
+  `benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json` is the
+  checked preflight contract for a future 100M sharded Qdrant service run.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
   production verdict. The current WaveMind core gate is `1.000` (`36/36` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
@@ -343,6 +346,8 @@ memory policy also needs to become cheaper:
 - compress or quantize embeddings where quality allows it;
 - benchmark p50, p95, p99 latency separately for candidate search, reranking,
   SQLite writes, and feedback updates.
+- keep long 10M/50M/100M streaming benchmark runs checkpointed so interrupted
+  service ingest can resume from completed batches.
 - run `wavemind scale-plan --target-memories <N> --fail-on action_required`
   before import or deployment growth so the index choice is explicit instead of
   accidental.

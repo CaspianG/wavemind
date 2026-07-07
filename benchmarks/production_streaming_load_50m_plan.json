@@ -58,7 +58,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 6.12,
+      "free_gb": 3.79,
       "total_gb": 231.85
     }
   },
@@ -77,7 +77,7 @@
       "estimated_float_vector_storage_gb": 23.842,
       "estimated_application_storage_gb": 119.209,
       "required_local_free_gb": 1.578,
-      "disk_free_gb": 6.12,
+      "disk_free_gb": 3.79,
       "safety_factor": 1.25,
       "module_requirements": {
         "faiss": true
@@ -96,7 +96,9 @@
         "WAVEMIND_FAISS_IVFPQ_NPROBE": "1024",
         "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000"
       },
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json",
+      "checkpoint_path": "state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "status": "action_required",
       "blockers": [
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH"

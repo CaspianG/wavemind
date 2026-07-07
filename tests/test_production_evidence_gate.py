@@ -32,6 +32,10 @@ def test_production_evidence_gate_tracks_strict_external_claims():
     assert by_id["hundred_million_remote_load"]["artifact"] == (
         "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
     )
+    assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
+        "hundred_million_remote_load"
+    ]["command"]
+    assert "--checkpoint-path" in by_id["hundred_million_remote_load"]["command"]
 
 
 def test_production_evidence_gate_cli_writes_json_and_markdown(tmp_path):

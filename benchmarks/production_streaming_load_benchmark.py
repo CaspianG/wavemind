@@ -24,6 +24,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from benchmarks.production_load_benchmark import add_slo_evaluation, preflight
 
 
+CHECKPOINT_SCHEMA = "wavemind.production_streaming_checkpoint.v1"
+
+
 def _normalize(matrix: np.ndarray) -> np.ndarray:
     matrix = np.asarray(matrix, dtype=np.float32)
     norms = np.linalg.norm(matrix, axis=1, keepdims=True)
@@ -115,6 +118,123 @@ def _chunks(items: list[Any], size: int) -> Iterable[list[Any]]:
         raise ValueError("chunk size must be positive")
     for start in range(0, len(items), size):
         yield items[start : start + size]
+
+
+def _utc_now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _checkpoint_path_from_env() -> Path | None:
+    value = os.environ.get("WAVEMIND_STREAMING_CHECKPOINT_PATH")
+    if value is None or value == "":
+        return None
+    return Path(value).expanduser()
+
+
+def _checkpoint_signature(
+    *,
+    engine: str,
+    count: int,
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "engine": engine,
+        "vectors": int(count),
+        "vector_dim": int(dim),
+        "queries": min(int(query_count), int(count)),
+        "top_k": int(top_k),
+        "seed": int(seed),
+        "noise": float(noise),
+        "batch_size": int(batch_size),
+        "extra": extra or {},
+    }
+
+
+def _new_checkpoint(signature: dict[str, Any]) -> dict[str, Any]:
+    now = _utc_now()
+    return {
+        "schema": CHECKPOINT_SCHEMA,
+        "created_at": now,
+        "updated_at": now,
+        "signature": signature,
+        "metadata": {},
+        "completed_batch_starts": [],
+        "source_vectors": {},
+    }
+
+
+def _load_checkpoint(path: Path | None, signature: dict[str, Any]) -> dict[str, Any]:
+    if path is None or not path.exists():
+        return _new_checkpoint(signature)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema") != CHECKPOINT_SCHEMA:
+        raise ValueError(f"checkpoint {path} has unsupported schema")
+    if payload.get("signature") != signature:
+        raise ValueError(f"checkpoint {path} does not match this streaming run")
+    payload.setdefault("metadata", {})
+    payload.setdefault("completed_batch_starts", [])
+    payload.setdefault("source_vectors", {})
+    return payload
+
+
+def _write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload["updated_at"] = _utc_now()
+    temp = path.with_suffix(path.suffix + ".tmp")
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp.replace(path)
+
+
+def _checkpoint_source_vectors(payload: dict[str, Any]) -> dict[int, np.ndarray]:
+    return {
+        int(source_id): np.asarray(vector, dtype=np.float32)
+        for source_id, vector in payload.get("source_vectors", {}).items()
+    }
+
+
+def _checkpoint_completed_batches(payload: dict[str, Any]) -> set[int]:
+    return {int(value) for value in payload.get("completed_batch_starts", [])}
+
+
+def _record_checkpoint_batch(
+    *,
+    path: Path | None,
+    payload: dict[str, Any],
+    batch_start: int,
+    captured: dict[int, np.ndarray],
+) -> None:
+    completed = _checkpoint_completed_batches(payload)
+    completed.add(int(batch_start))
+    payload["completed_batch_starts"] = sorted(completed)
+    source_vectors = payload.setdefault("source_vectors", {})
+    for source_id, vector in captured.items():
+        source_vectors[str(int(source_id))] = [
+            float(value) for value in np.asarray(vector, dtype=np.float32)
+        ]
+    _write_checkpoint(path, payload)
+
+
+def _checkpoint_extra(
+    checkpoint_path: Path | None,
+    checkpoint: dict[str, Any],
+    completed_batches: set[int],
+) -> dict[str, Any]:
+    if checkpoint_path is None:
+        return {"checkpoint_enabled": False}
+    return {
+        "checkpoint_enabled": True,
+        "checkpoint_path": artifact_index_path(checkpoint_path),
+        "checkpoint_completed_batches": len(completed_batches),
+        "checkpoint_source_vectors": len(checkpoint.get("source_vectors", {})),
+    }
 
 
 @dataclass(frozen=True)
@@ -489,6 +609,9 @@ def _streaming_plan_row(
         blockers.append("insufficient_local_disk_for_index_and_transient_batches")
 
     command_output_path = planned_result_output_path or output_path or Path("benchmarks/production_streaming_load_results.json")
+    checkpoint_slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-") or "streaming"
+    checkpoint_path = Path("state") / f"{checkpoint_slug}-{int(count)}.checkpoint.json"
+    checkpoint_arg = str(checkpoint_path).replace("\\", "/")
     command_parts = [
         "python",
         "benchmarks/production_streaming_load_benchmark.py",
@@ -522,6 +645,8 @@ def _streaming_plan_row(
         str(float(capacity_headroom)),
         "--output",
         str(command_output_path),
+        "--checkpoint-path",
+        checkpoint_arg,
     ]
     return {
         "engine": canonical,
@@ -543,6 +668,8 @@ def _streaming_plan_row(
         "required_env": required_env,
         "missing_env": missing_env,
         "command_env": command_env,
+        "checkpoint_path": checkpoint_arg,
+        "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",
         "command": " ".join(command_parts),
         "status": "ready" if not blockers else "action_required",
         "blockers": blockers,
@@ -714,9 +841,37 @@ def run_faiss_streaming(
         import faiss
     except ImportError as exc:
         return skipped_result("WaveMind faiss-persisted streaming", f"Install faiss-cpu: {exc}")
+    output = Path(path).expanduser()
+    checkpoint_path = _checkpoint_path_from_env()
+    signature = _checkpoint_signature(
+        engine="WaveMind faiss-persisted streaming",
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={"index_path": str(output)},
+    )
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result("WaveMind faiss-persisted streaming", str(exc))
+    completed_batches = _checkpoint_completed_batches(checkpoint)
+    if completed_batches and not output.exists():
+        return skipped_result(
+            "WaveMind faiss-persisted streaming",
+            f"checkpoint {checkpoint_path} exists but persisted FAISS index {output} is missing",
+        )
     source_ids = choose_source_ids(count, query_count, seed)
-    source_vectors: dict[int, np.ndarray] = {}
-    index = faiss.IndexIDMap2(faiss.IndexFlatIP(int(dim)))
+    source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+    index = (
+        faiss.read_index(str(output))
+        if completed_batches
+        else faiss.IndexIDMap2(faiss.IndexFlatIP(int(dim)))
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     for ids, vectors, captured in iter_vector_batches(
         count=count,
@@ -725,10 +880,19 @@ def run_faiss_streaming(
         batch_size=batch_size,
         source_ids=source_ids,
     ):
-        index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+        batch_start = int(ids[0]) if len(ids) else 0
+        if batch_start not in completed_batches:
+            index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+            if checkpoint_path is not None:
+                faiss.write_index(index, str(output))
         source_vectors.update(captured)
-    output = Path(path).expanduser()
-    output.parent.mkdir(parents=True, exist_ok=True)
+        _record_checkpoint_batch(
+            path=checkpoint_path,
+            payload=checkpoint,
+            batch_start=batch_start,
+            captured=captured,
+        )
+        completed_batches.add(batch_start)
     faiss.write_index(index, str(output))
     build_ms = (time.perf_counter() - started) * 1000.0
     queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
@@ -757,6 +921,7 @@ def run_faiss_streaming(
         extra={
             "index_path": artifact_index_path(output),
             "memory_mode": "streaming add_with_ids; query source vectors only",
+            **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
         },
     )
 
@@ -791,22 +956,57 @@ def run_faiss_ivfpq_streaming(
     if nlist <= 0 or pq_m <= 0 or nbits <= 0:
         return skipped_result(engine, "IVF-PQ parameters nlist, M, and nbits must be positive")
 
-    source_ids = choose_source_ids(count, query_count, seed)
-    source_vectors: dict[int, np.ndarray] = {}
-    quantizer = faiss.IndexFlatIP(int(dim))
-    index = faiss.IndexIVFPQ(
-        quantizer,
-        int(dim),
-        int(nlist),
-        int(pq_m),
-        int(nbits),
-        faiss.METRIC_INNER_PRODUCT,
+    output = Path(path).expanduser()
+    checkpoint_path = _checkpoint_path_from_env()
+    signature = _checkpoint_signature(
+        engine=engine,
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={
+            "index_path": str(output),
+            "nlist": int(nlist),
+            "pq_m": int(pq_m),
+            "nbits": int(nbits),
+            "nprobe": int(nprobe),
+            "training_size": int(training_size),
+        },
     )
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    completed_batches = _checkpoint_completed_batches(checkpoint)
+    if completed_batches and not output.exists():
+        return skipped_result(
+            engine,
+            f"checkpoint {checkpoint_path} exists but persisted FAISS IVF-PQ index {output} is missing",
+        )
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+    if completed_batches:
+        index = faiss.read_index(str(output))
+    else:
+        quantizer = faiss.IndexFlatIP(int(dim))
+        index = faiss.IndexIVFPQ(
+            quantizer,
+            int(dim),
+            int(nlist),
+            int(pq_m),
+            int(nbits),
+            faiss.METRIC_INNER_PRODUCT,
+        )
     index.nprobe = int(min(max(1, nprobe), nlist))
+    output.parent.mkdir(parents=True, exist_ok=True)
 
     started = time.perf_counter()
-    sample = training_sample(dim=dim, seed=seed + count, sample_size=training_size)
-    index.train(sample)
+    if not completed_batches:
+        sample = training_sample(dim=dim, seed=seed + count, sample_size=training_size)
+        index.train(sample)
     for ids, vectors, captured in iter_vector_batches(
         count=count,
         dim=dim,
@@ -814,10 +1014,19 @@ def run_faiss_ivfpq_streaming(
         batch_size=batch_size,
         source_ids=source_ids,
     ):
-        index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+        batch_start = int(ids[0]) if len(ids) else 0
+        if batch_start not in completed_batches:
+            index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+            if checkpoint_path is not None:
+                faiss.write_index(index, str(output))
         source_vectors.update(captured)
-    output = Path(path).expanduser()
-    output.parent.mkdir(parents=True, exist_ok=True)
+        _record_checkpoint_batch(
+            path=checkpoint_path,
+            payload=checkpoint,
+            batch_start=batch_start,
+            captured=captured,
+        )
+        completed_batches.add(batch_start)
     faiss.write_index(index, str(output))
     build_ms = (time.perf_counter() - started) * 1000.0
 
@@ -854,6 +1063,7 @@ def run_faiss_ivfpq_streaming(
             "ivfpq_nprobe": int(index.nprobe),
             "ivfpq_training_size": int(training_size),
             "compression_note": "approximate target-recall; tune nprobe/nlist/M for recall-latency tradeoff",
+            **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
         },
     )
 
@@ -888,10 +1098,41 @@ def run_qdrant_streaming(
     except ImportError as exc:
         return skipped_result("Qdrant service streaming", f"Install qdrant-client: {exc}")
 
-    source_ids = choose_source_ids(count, query_count, seed)
-    source_vectors: dict[int, np.ndarray] = {}
-    collection_name = os.environ.get("WAVEMIND_QDRANT_COLLECTION") or f"wavemind_streaming_load_{time.time_ns()}"
     collection_config = _qdrant_collection_config_from_env()
+    checkpoint_path = _checkpoint_path_from_env()
+    signature = _checkpoint_signature(
+        engine="Qdrant service streaming",
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={"collection_config": collection_config},
+    )
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result("Qdrant service streaming", str(exc))
+    checkpoint_metadata = checkpoint.setdefault("metadata", {})
+    configured_collection = os.environ.get("WAVEMIND_QDRANT_COLLECTION")
+    checkpoint_collection = checkpoint_metadata.get("collection_name")
+    if configured_collection and checkpoint_collection and configured_collection != checkpoint_collection:
+        return skipped_result(
+            "Qdrant service streaming",
+            "WAVEMIND_QDRANT_COLLECTION does not match checkpoint collection_name",
+        )
+    collection_name = (
+        configured_collection
+        or checkpoint_collection
+        or f"wavemind_streaming_load_{time.time_ns()}"
+    )
+    checkpoint_metadata["collection_name"] = collection_name
+    _write_checkpoint(checkpoint_path, checkpoint)
+    completed_batches = _checkpoint_completed_batches(checkpoint)
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
     hnsw_config = (
         HnswConfigDiff(**collection_config["hnsw"])
         if collection_config["hnsw"]
@@ -918,16 +1159,17 @@ def run_qdrant_streaming(
         )
     try:
         started = time.perf_counter()
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=int(dim),
-                distance=Distance.COSINE,
-                on_disk=collection_config["vector_on_disk"],
-            ),
-            timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
-            **recreate_kwargs,
-        )
+        if not completed_batches:
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=int(dim),
+                    distance=Distance.COSINE,
+                    on_disk=collection_config["vector_on_disk"],
+                ),
+                timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+                **recreate_kwargs,
+            )
         for ids, vectors, captured in iter_vector_batches(
             count=count,
             dim=dim,
@@ -935,13 +1177,22 @@ def run_qdrant_streaming(
             batch_size=batch_size,
             source_ids=source_ids,
         ):
-            points = [
-                PointStruct(id=int(id), vector=vector.tolist())
-                for id, vector in zip(ids, vectors)
-            ]
-            for point_chunk in _chunks(points, upsert_batch_size):
-                client.upsert(collection_name=collection_name, points=point_chunk)
+            batch_start = int(ids[0]) if len(ids) else 0
+            if batch_start not in completed_batches:
+                points = [
+                    PointStruct(id=int(id), vector=vector.tolist())
+                    for id, vector in zip(ids, vectors)
+                ]
+                for point_chunk in _chunks(points, upsert_batch_size):
+                    client.upsert(collection_name=collection_name, points=point_chunk)
             source_vectors.update(captured)
+            _record_checkpoint_batch(
+                path=checkpoint_path,
+                payload=checkpoint,
+                batch_start=batch_start,
+                captured=captured,
+            )
+            completed_batches.add(batch_start)
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
@@ -1014,15 +1265,17 @@ def run_qdrant_streaming(
                 "collection_params": collection_config,
                 "upsert_batch_size": upsert_batch_size,
                 "memory_mode": "streaming upsert; query source vectors only",
+                **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },
         )
     finally:
-        if os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() not in {
+        keep = checkpoint_path is not None or os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() in {
             "1",
             "true",
             "yes",
             "on",
-        }:
+        }
+        if not keep:
             try:
                 client.delete_collection(collection_name=collection_name)
             except Exception:
@@ -1043,23 +1296,8 @@ def run_qdrant_sharded_streaming(
     batch_size: int,
 ) -> dict[str, Any]:
     engine = "Qdrant sharded service streaming"
-    base_collection_name = (
-        os.environ.get("WAVEMIND_QDRANT_COLLECTION_PREFIX")
-        or os.environ.get("WAVEMIND_QDRANT_COLLECTION")
-        or f"wavemind_streaming_load_{time.time_ns()}"
-    )
-    targets = _qdrant_shard_targets_from_env(base_collection_name)
-    if len(targets) < 2:
-        return skipped_result(
-            engine,
-            "Set WAVEMIND_QDRANT_URLS to at least two comma-separated Qdrant service URLs",
-        )
     try:
         upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
-        fanout_workers = min(
-            len(targets),
-            _positive_int_env("WAVEMIND_QDRANT_FANOUT_WORKERS", len(targets)),
-        )
     except ValueError as exc:
         return skipped_result(engine, str(exc))
     try:
@@ -1076,6 +1314,54 @@ def run_qdrant_sharded_streaming(
         return skipped_result(engine, f"Install qdrant-client: {exc}")
 
     collection_config = _qdrant_collection_config_from_env()
+    checkpoint_path = _checkpoint_path_from_env()
+    target_urls = _split_env_list(os.environ.get("WAVEMIND_QDRANT_URLS"))
+    signature = _checkpoint_signature(
+        engine=engine,
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={"collection_config": collection_config, "target_urls": target_urls},
+    )
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    checkpoint_metadata = checkpoint.setdefault("metadata", {})
+    configured_prefix = (
+        os.environ.get("WAVEMIND_QDRANT_COLLECTION_PREFIX")
+        or os.environ.get("WAVEMIND_QDRANT_COLLECTION")
+    )
+    checkpoint_prefix = checkpoint_metadata.get("collection_prefix")
+    if configured_prefix and checkpoint_prefix and configured_prefix != checkpoint_prefix:
+        return skipped_result(
+            engine,
+            "WAVEMIND_QDRANT_COLLECTION_PREFIX does not match checkpoint collection_prefix",
+        )
+    base_collection_name = (
+        configured_prefix
+        or checkpoint_prefix
+        or f"wavemind_streaming_load_{time.time_ns()}"
+    )
+    checkpoint_metadata["collection_prefix"] = base_collection_name
+    _write_checkpoint(checkpoint_path, checkpoint)
+    targets = _qdrant_shard_targets_from_env(base_collection_name)
+    if len(targets) < 2:
+        return skipped_result(
+            engine,
+            "Set WAVEMIND_QDRANT_URLS to at least two comma-separated Qdrant service URLs",
+        )
+    try:
+        fanout_workers = min(
+            len(targets),
+            _positive_int_env("WAVEMIND_QDRANT_FANOUT_WORKERS", len(targets)),
+        )
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
     hnsw_config = (
         HnswConfigDiff(**collection_config["hnsw"])
         if collection_config["hnsw"]
@@ -1118,19 +1404,21 @@ def run_qdrant_sharded_streaming(
 
     try:
         source_ids = choose_source_ids(count, query_count, seed)
-        source_vectors: dict[int, np.ndarray] = {}
+        source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+        completed_batches = _checkpoint_completed_batches(checkpoint)
         started = time.perf_counter()
-        for client, target in zip(clients, targets):
-            client.recreate_collection(
-                collection_name=target.collection_name,
-                vectors_config=VectorParams(
-                    size=int(dim),
-                    distance=Distance.COSINE,
-                    on_disk=collection_config["vector_on_disk"],
-                ),
-                timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
-                **recreate_kwargs,
-            )
+        if not completed_batches:
+            for client, target in zip(clients, targets):
+                client.recreate_collection(
+                    collection_name=target.collection_name,
+                    vectors_config=VectorParams(
+                        size=int(dim),
+                        distance=Distance.COSINE,
+                        on_disk=collection_config["vector_on_disk"],
+                    ),
+                    timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+                    **recreate_kwargs,
+                )
         for ids, vectors, captured in iter_vector_batches(
             count=count,
             dim=dim,
@@ -1138,20 +1426,29 @@ def run_qdrant_sharded_streaming(
             batch_size=batch_size,
             source_ids=source_ids,
         ):
-            points_by_shard: dict[int, list[Any]] = {index: [] for index in range(len(targets))}
-            for point_id, vector in zip(ids, vectors):
-                shard_index = _qdrant_shard_index(int(point_id), len(targets))
-                points_by_shard[shard_index].append(
-                    PointStruct(id=int(point_id), vector=vector.tolist())
-                )
-            for shard_index, points in points_by_shard.items():
-                if not points:
-                    continue
-                client = clients[shard_index]
-                collection_name = targets[shard_index].collection_name
-                for point_chunk in _chunks(points, upsert_batch_size):
-                    client.upsert(collection_name=collection_name, points=point_chunk)
+            batch_start = int(ids[0]) if len(ids) else 0
+            if batch_start not in completed_batches:
+                points_by_shard: dict[int, list[Any]] = {index: [] for index in range(len(targets))}
+                for point_id, vector in zip(ids, vectors):
+                    shard_index = _qdrant_shard_index(int(point_id), len(targets))
+                    points_by_shard[shard_index].append(
+                        PointStruct(id=int(point_id), vector=vector.tolist())
+                    )
+                for shard_index, points in points_by_shard.items():
+                    if not points:
+                        continue
+                    client = clients[shard_index]
+                    collection_name = targets[shard_index].collection_name
+                    for point_chunk in _chunks(points, upsert_batch_size):
+                        client.upsert(collection_name=collection_name, points=point_chunk)
             source_vectors.update(captured)
+            _record_checkpoint_batch(
+                path=checkpoint_path,
+                payload=checkpoint,
+                batch_start=batch_start,
+                captured=captured,
+            )
+            completed_batches.add(batch_start)
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
@@ -1223,10 +1520,11 @@ def run_qdrant_sharded_streaming(
                 "collection_params": collection_config,
                 "upsert_batch_size": upsert_batch_size,
                 "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge",
+                **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },
         )
     finally:
-        keep = os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() in {
+        keep = checkpoint_path is not None or os.environ.get("WAVEMIND_QDRANT_KEEP_COLLECTION", "0").lower() in {
             "1",
             "true",
             "yes",
@@ -1273,10 +1571,44 @@ def run_pgvector_streaming(
             "WAVEMIND_PGVECTOR_ITERATIVE_SCAN must be strict_order, relaxed_order, or off",
         )
 
-    source_ids = choose_source_ids(count, query_count, seed)
-    source_vectors: dict[int, np.ndarray] = {}
     table = str(config["table"])
-    collection = str(config["collection"])
+    checkpoint_path = _checkpoint_path_from_env()
+    signature = _checkpoint_signature(
+        engine=engine,
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={
+            "table": table,
+            "create_hnsw": bool(config["create_hnsw"]),
+            "hnsw_m": config["hnsw_m"],
+            "hnsw_ef_construction": config["hnsw_ef_construction"],
+            "exact": bool(config["exact"]),
+            "iterative_scan": iterative_scan,
+        },
+    )
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    checkpoint_metadata = checkpoint.setdefault("metadata", {})
+    configured_collection = os.environ.get("WAVEMIND_PGVECTOR_COLLECTION")
+    checkpoint_collection = checkpoint_metadata.get("collection")
+    if configured_collection and checkpoint_collection and configured_collection != checkpoint_collection:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_COLLECTION does not match checkpoint collection",
+        )
+    collection = configured_collection or checkpoint_collection or str(config["collection"])
+    checkpoint_metadata["collection"] = collection
+    _write_checkpoint(checkpoint_path, checkpoint)
+    completed_batches = _checkpoint_completed_batches(checkpoint)
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
     conn = psycopg.connect(dsn, autocommit=True)
     try:
         started = time.perf_counter()
@@ -1293,7 +1625,8 @@ def run_pgvector_streaming(
             """
         )
         conn.execute(f"CREATE INDEX IF NOT EXISTS {table}_collection_idx ON {table} (collection)")
-        conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
+        if not completed_batches:
+            conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
         insert_sql = (
             f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
             f"VALUES (%s, %s, %s::vector, now()) "
@@ -1308,12 +1641,21 @@ def run_pgvector_streaming(
                 batch_size=batch_size,
                 source_ids=source_ids,
             ):
-                rows = [
-                    (collection, int(id), _vector_literal(vector))
-                    for id, vector in zip(ids, vectors)
-                ]
-                cur.executemany(insert_sql, rows)
+                batch_start = int(ids[0]) if len(ids) else 0
+                if batch_start not in completed_batches:
+                    rows = [
+                        (collection, int(id), _vector_literal(vector))
+                        for id, vector in zip(ids, vectors)
+                    ]
+                    cur.executemany(insert_sql, rows)
                 source_vectors.update(captured)
+                _record_checkpoint_batch(
+                    path=checkpoint_path,
+                    payload=checkpoint,
+                    batch_start=batch_start,
+                    captured=captured,
+                )
+                completed_batches.add(batch_start)
         if config["create_hnsw"]:
             options = []
             if config["hnsw_m"] is not None:
@@ -1396,11 +1738,12 @@ def run_pgvector_streaming(
                     "hnsw_ef_construction": config["hnsw_ef_construction"],
                 },
                 "memory_mode": "streaming PostgreSQL insert; query source vectors only",
+                **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },
         )
     finally:
         try:
-            if not config.get("keep_collection"):
+            if not config.get("keep_collection") and checkpoint_path is None:
                 conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
         finally:
             conn.close()
@@ -1583,6 +1926,12 @@ def main() -> int:
     parser.add_argument("--planned-result-output", type=Path, default=None, help="Result JSON path embedded in plan-only reproduction commands.")
     parser.add_argument("--safety-factor", type=float, default=1.25, help="Disk safety factor for plan-only local index/transient storage estimates.")
     parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        default=None,
+        help="Enable resumable batch checkpointing for one size and one engine.",
+    )
+    parser.add_argument(
         "--engines",
         nargs="+",
         choices=[
@@ -1598,6 +1947,10 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/production_streaming_load_results.json"))
     args = parser.parse_args()
+    if args.checkpoint_path and (len(args.sizes) != 1 or len(args.engines) != 1):
+        parser.error("--checkpoint-path requires exactly one --sizes value and one --engines value")
+    if args.checkpoint_path:
+        os.environ["WAVEMIND_STREAMING_CHECKPOINT_PATH"] = str(args.checkpoint_path)
     if args.plan_only:
         payload = plan_streaming_load(
             sizes=args.sizes,

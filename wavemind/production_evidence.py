@@ -385,6 +385,7 @@ def _large_service_requirement(
 
 def _hundred_million_requirement(root: Path) -> EvidenceRequirement:
     artifact = "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+    plan_artifact = "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json"
     payload = _load_optional_json(root / artifact)
     rows = [
         row
@@ -414,7 +415,8 @@ def _hundred_million_requirement(root: Path) -> EvidenceRequirement:
             else "no checked-in 100M remote service-backed latency result"
         ),
         artifact=artifact,
-        command=(
+        command=_plan_command(root, plan_artifact)
+        or (
             "python benchmarks/production_streaming_load_benchmark.py "
             "--sizes 100000000 --engines qdrant-sharded-service "
             "--queries 100 --batch-size 2000 "
