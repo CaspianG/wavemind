@@ -33,3 +33,4 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Production readiness gate" in html
     assert "Planned rows are not claimed wins" in html
     assert "benchmarks/benchmark_matrix_results.json" in html
+    assert "benchmarks/PRODUCTION_EVIDENCE.md" in html

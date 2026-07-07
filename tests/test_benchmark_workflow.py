@@ -13,6 +13,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "--output benchmarks/production_evidence_results.json" in workflow
+    assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE.md" in workflow
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(
@@ -21,6 +24,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output docs/assets/benchmark-summary.svg" in workflow
     assert "--output docs/benchmark-dashboard.html" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
+    assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
     assert "qdrant-1:" in workflow
@@ -33,6 +37,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
+    assert "benchmarks/production_evidence_results.json" in workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():

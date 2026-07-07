@@ -1,0 +1,111 @@
+{
+  "schema": "wavemind.production_evidence.v1",
+  "generated_at": "2026-07-07T06:33:03Z",
+  "overall_status": "action_required",
+  "summary": {
+    "overall_status": "action_required",
+    "pass_count": 0,
+    "action_required_count": 8,
+    "fail_count": 0,
+    "total_requirements": 8
+  },
+  "requirements": [
+    {
+      "id": "external_http_cluster",
+      "title": "External HTTP service-node load",
+      "status": "action_required",
+      "evidence": "nodes 4, deployment loopback-2026-07-07, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 739.9693999905139 ms",
+      "artifact": "benchmarks/http_cluster_load_results.json",
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true -f commit_results=true",
+      "claim_unlocked": "Remote service-node cluster load SLO.",
+      "issues": [
+        "environment must be a real remote/staging/production deployment",
+        "source must identify a real remote run, not a sample or loopback"
+      ]
+    },
+    {
+      "id": "external_http_active_active",
+      "title": "External HTTP active-active regions",
+      "status": "action_required",
+      "evidence": "no checked-in external HTTP active-active region result",
+      "artifact": "benchmarks/external_http_active_active_results.json",
+      "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
+      "claim_unlocked": "Remote multi-region active-active memory convergence.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "serverless_remote_telemetry",
+      "title": "Managed/serverless remote telemetry",
+      "status": "action_required",
+      "evidence": "no checked-in remote serverless telemetry",
+      "artifact": "deploy/serverless/observed-telemetry.remote.json",
+      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
+      "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "qdrant_10m_service",
+      "title": "10M Qdrant service load",
+      "status": "action_required",
+      "evidence": "no checked-in 10,000,000-vector result for Qdrant service streaming",
+      "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "qdrant_sharded_10m_service",
+      "title": "10M sharded Qdrant service load",
+      "status": "action_required",
+      "evidence": "no checked-in 10,000,000-vector result for Qdrant sharded service streaming",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "pgvector_10m_service",
+      "title": "10M pgvector service load",
+      "status": "action_required",
+      "evidence": "no checked-in 10,000,000-vector result for WaveMind pgvector streaming",
+      "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "faiss_ivfpq_50m",
+      "title": "50M FAISS IVF-PQ streaming load",
+      "status": "action_required",
+      "evidence": "no checked-in 50,000,000-vector result for WaveMind faiss-ivfpq-persisted streaming",
+      "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "claim_unlocked": "50M compressed local/persistent FAISS profile.",
+      "issues": [
+        "missing artifact"
+      ]
+    },
+    {
+      "id": "hundred_million_remote_load",
+      "title": "100M remote load result",
+      "status": "action_required",
+      "evidence": "no checked-in 100M remote service-backed latency result",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --engines qdrant-sharded-service --queries 100 --batch-size 2000 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+      "issues": [
+        "missing artifact"
+      ]
+    }
+  ]
+}

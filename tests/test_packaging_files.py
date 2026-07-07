@@ -228,6 +228,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/memory_competitor_results.json" in readme
     assert "production_readiness_results.json" in readme
     assert "PRODUCTION_READINESS.md" in readme
+    assert "production_evidence_results.json" in readme
+    assert "PRODUCTION_EVIDENCE.md" in readme
+    assert "production_evidence_gate.py" in readme
     assert "examples/chroma_migration.py" in readme
     assert "examples/customer_support_memory.py" in readme
     assert "examples/research_notebook_memory.py" in readme
@@ -265,8 +268,11 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmark_artifact_audit.json" in benchmark_brief
     assert "--max-age-days 8" in benchmark_brief
     assert "PRODUCTION_READINESS.md" in benchmark_brief
+    assert "PRODUCTION_EVIDENCE.md" in benchmark_brief
+    assert "production_evidence_gate.py" in benchmark_brief
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert Path("benchmarks/production_readiness_gate.py").exists()
+    assert Path("benchmarks/production_evidence_gate.py").exists()
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases
     assert "consolidate_concepts" in use_cases

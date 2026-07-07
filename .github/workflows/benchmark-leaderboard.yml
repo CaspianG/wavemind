@@ -126,6 +126,9 @@ jobs:
           python benchmarks/production_readiness_gate.py \
             --output benchmarks/production_readiness_results.json \
             --markdown-output benchmarks/PRODUCTION_READINESS.md
+          python benchmarks/production_evidence_gate.py \
+            --output benchmarks/production_evidence_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
           python benchmarks/benchmark_registry.py \
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
@@ -156,7 +159,8 @@ jobs:
             tests/test_local_http_active_active_smoke.py \
             tests/test_scale_readiness_benchmark.py \
             tests/test_production_streaming_load_benchmark.py \
-            tests/test_production_readiness_gate.py
+            tests/test_production_readiness_gate.py \
+            tests/test_production_evidence_gate.py
 
       - name: Commit leaderboard update
         run: |
@@ -190,5 +194,7 @@ jobs:
             benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json
             benchmarks/production_readiness_results.json
             benchmarks/PRODUCTION_READINESS.md
+            benchmarks/production_evidence_results.json
+            benchmarks/PRODUCTION_EVIDENCE.md
             docs/benchmark-dashboard.html
             docs/assets/benchmark-summary.svg

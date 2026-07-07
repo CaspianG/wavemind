@@ -59,6 +59,11 @@ policy matters more than raw vector-database scale:
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
+- `benchmarks/production_evidence_gate.py` is the stricter production-claim
+  boundary. It does not let local loopback evidence unlock remote service-node,
+  active-active, managed-serverless, 10M service, 50M, or 100M scale claims.
+  The current strict gate is intentionally `action_required` until real remote
+  and large-service artifacts are committed.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path
@@ -504,6 +509,9 @@ Enterprise requirements:
   `CrossModalMemoryLayer` and `PrecomputedCrossModalEncoder` contracts.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
+- Strict production-evidence dashboard/report that stays separate from the core
+  readiness score and lists the exact remote or large-scale run needed for each
+  blocked claim.
 
 ### Longer Term
 

@@ -103,6 +103,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "render_benchmark_dashboard.py" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
     assert "tests/test_benchmark_dashboard.py" in workflow
+    assert "production_evidence_gate.py" in workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
+    assert "tests/test_production_evidence_gate.py" in workflow
     assert "validate_benchmark_artifacts.py" in workflow
     assert "--max-age-days 8" in workflow
     assert "WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast" in workflow

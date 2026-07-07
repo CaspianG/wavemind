@@ -1511,12 +1511,16 @@ Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmark
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
+Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)
+from `benchmarks/production_evidence_results.json`. This is the hard boundary
+for remote multi-region, managed-serverless, 50M, and 100M scale claims.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
-`docs/assets/benchmark-summary.svg`, and `docs/benchmark-dashboard.html`, validates freshness with
-`benchmarks/validate_benchmark_artifacts.py`, writes
-`benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
-artifacts back to `main`.
+`docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
+production-readiness report, and the strict production-evidence report,
+validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
+`benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark artifacts
+back to `main`.
 `full-check` and the release workflow also run the same freshness gate with
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.
@@ -1547,6 +1551,7 @@ public claim boundaries stable:
 | Claim area | Current public status | Source of truth | Not proven yet |
 |---|---|---|---|
 | Production readiness | WaveMind core readiness is gated by checked-in artifacts before release. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | Missing external competitor credentials should not be treated as WaveMind core failure, but they still limit competitor claims. |
+| Strict production evidence | Remote service-node, active-active, serverless, 10M service, 50M, and 100M claims are separated into a hard evidence gate. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md`, `benchmarks/production_evidence_gate.py` | Current status remains action-required until real remote/service artifacts are committed. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
 | 50M memory-scale preflight | Checked-in plan-only artifact estimates local index/transient storage, application storage, required env, blockers, and exact reproduction command. | `benchmarks/production_streaming_load_50m_plan.json` | Not a completed latency/recall benchmark until `production_streaming_load_ivfpq_50m_results.json` is produced by a real run. |
 | pgvector tuning | Real PostgreSQL/pgvector service profile now separates baseline HNSW, exact recall floor, and iterative HNSW tuning. | `benchmarks/production_pgvector_tuning_results.json` | This is a 50k service-backed tuning profile, not yet the 100k/1M production load SLO artifact. |
