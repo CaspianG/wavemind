@@ -125,6 +125,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "PITR full True" in criteria["backup_restore_dr"]["evidence"]
     assert "PITR point True" in criteria["backup_restore_dr"]["evidence"]
     assert "journal entries" in criteria["backup_restore_dr"]["evidence"]
+    assert "Postgres PITR" in criteria["backup_restore_dr"]["requirement"]
+    assert "Postgres PITR ready" in criteria["backup_restore_dr"]["evidence"]
+    assert "commands 7" in criteria["backup_restore_dr"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]
@@ -219,6 +222,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Real local HTTP cluster smoke passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report
     assert "Active-active sync and field-state CRDT converge" in report
+    assert "Postgres PITR ready" in report
     assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
     assert "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate" in report

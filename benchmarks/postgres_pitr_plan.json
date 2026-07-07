@@ -1,0 +1,173 @@
+{
+  "schema": "wavemind.postgres_pitr_profile.v1",
+  "generated_at": "2026-07-07T00:00:00Z",
+  "status": "ready",
+  "environment_status": "missing_env",
+  "profile": {
+    "schema": "wavemind.postgres_pitr_plan.v1",
+    "generated_at": "2026-07-07T00:00:00Z",
+    "status": "ready",
+    "retention_hours": 72,
+    "required_env": [
+      "WAVEMIND_POSTGRES_DSN",
+      "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+      "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+    ],
+    "missing_env": [
+      "WAVEMIND_POSTGRES_DSN",
+      "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+      "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+    ],
+    "environment_status": "missing_env",
+    "postgresql_settings": {
+      "wal_level": "replica",
+      "archive_mode": "on",
+      "archive_command": "test ! -f ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f && cp %p ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f",
+      "restore_command": "cp ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f %p",
+      "retention": "retain base backups and WAL for at least 72 hours"
+    },
+    "commands": [
+      {
+        "phase": "preflight",
+        "name": "verify required environment",
+        "command": "test -n \"${WAVEMIND_POSTGRES_DSN}\" && test -n \"${WAVEMIND_POSTGRES_BASEBACKUP_DIR}\" && test -n \"${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}\" && test -n \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}\" && test -n \"${WAVEMIND_POSTGRES_RESTORE_TARGET_TIME}\"",
+        "validates": [
+          "required_env_present"
+        ],
+        "destructive": false
+      },
+      {
+        "phase": "configure",
+        "name": "enable WAL archiving",
+        "command": "psql \"${WAVEMIND_POSTGRES_DSN}\" -c \"ALTER SYSTEM SET wal_level = 'replica';\" -c \"ALTER SYSTEM SET archive_mode = 'on';\" -c \"ALTER SYSTEM SET archive_command = 'test ! -f ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f && cp %p ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f';\" -c \"SELECT pg_reload_conf();\"",
+        "validates": [
+          "wal_archiving_enabled"
+        ],
+        "destructive": false
+      },
+      {
+        "phase": "backup",
+        "name": "create streaming base backup",
+        "command": "pg_basebackup --dbname \"${WAVEMIND_POSTGRES_DSN}\" --pgdata \"${WAVEMIND_POSTGRES_BASEBACKUP_DIR}\" --format=tar --gzip --wal-method=stream --checkpoint=fast --label=wavemind-basebackup",
+        "validates": [
+          "base_backup_created",
+          "wal_streamed_with_backup"
+        ],
+        "destructive": false
+      },
+      {
+        "phase": "restore",
+        "name": "extract base backup into restore data directory",
+        "command": "mkdir -p \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}\" && tar -xzf \"${WAVEMIND_POSTGRES_BASEBACKUP_DIR}/base.tar.gz\" -C \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}\"",
+        "validates": [
+          "base_backup_restored"
+        ],
+        "destructive": true
+      },
+      {
+        "phase": "restore",
+        "name": "write recovery target config",
+        "command": "printf \"%s\\n\" \"restore_command = 'cp ${WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR}/%f %p'\" \"recovery_target_time = '${WAVEMIND_POSTGRES_RESTORE_TARGET_TIME}'\" \"recovery_target_action = 'pause'\" >> \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}/postgresql.auto.conf\" && touch \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}/recovery.signal\"",
+        "validates": [
+          "recovery_signal_present",
+          "restore_target_time_configured"
+        ],
+        "destructive": false
+      },
+      {
+        "phase": "verify",
+        "name": "verify replay target before promotion",
+        "command": "pg_ctl start -D \"${WAVEMIND_POSTGRES_RESTORE_DATA_DIR}\" && psql \"${WAVEMIND_POSTGRES_DSN}\" -c \"SELECT pg_is_in_recovery();\" && psql \"${WAVEMIND_POSTGRES_DSN}\" -c \"SELECT pg_last_wal_replay_lsn();\"",
+        "validates": [
+          "restore_started",
+          "wal_replay_observable"
+        ],
+        "destructive": false
+      },
+      {
+        "phase": "promote",
+        "name": "promote restored database after validation",
+        "command": "psql \"${WAVEMIND_POSTGRES_DSN}\" -c \"SELECT pg_promote(wait_seconds => 60);\"",
+        "validates": [
+          "promotion_completed"
+        ],
+        "destructive": false
+      }
+    ],
+    "verification_queries": [
+      "SELECT pg_is_in_recovery();",
+      "SELECT pg_last_wal_replay_lsn();",
+      "SELECT now() >= current_setting('recovery_target_time', true)::timestamptz;",
+      "SELECT count(*) FROM wavemind_memories;",
+      "SELECT count(*) FROM wavemind_audit_events;"
+    ],
+    "safety_notes": [
+      "This plan stores only environment variable names, not secret values.",
+      "Run restore into an isolated data directory before promoting.",
+      "Keep regular managed snapshots or pg_basebackup artifacts plus WAL archives.",
+      "Use SQLite recovery journals only for SQLite source-of-truth deployments."
+    ],
+    "validation": {
+      "status": "ready",
+      "ok": true,
+      "checks": {
+        "has_required_env_contract": true,
+        "has_wal_archiving_command": true,
+        "has_base_backup_command": true,
+        "has_restore_command": true,
+        "has_recovery_signal": true,
+        "has_restore_target_time": true,
+        "has_replay_verification": true,
+        "has_promotion_command": true,
+        "has_safe_restore_phase": true,
+        "has_full_phase_order": true,
+        "secret_values_not_embedded": true
+      },
+      "missing_env": [
+        "WAVEMIND_POSTGRES_DSN",
+        "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+        "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+        "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+        "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+      ],
+      "warnings": [
+        "Environment variables are missing; this is a runnable runbook shape, not an executed drill."
+      ]
+    }
+  },
+  "summary": {
+    "required_env": [
+      "WAVEMIND_POSTGRES_DSN",
+      "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+      "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+    ],
+    "missing_env": [
+      "WAVEMIND_POSTGRES_DSN",
+      "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+      "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+      "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+    ],
+    "checks": {
+      "has_required_env_contract": true,
+      "has_wal_archiving_command": true,
+      "has_base_backup_command": true,
+      "has_restore_command": true,
+      "has_recovery_signal": true,
+      "has_restore_target_time": true,
+      "has_replay_verification": true,
+      "has_promotion_command": true,
+      "has_safe_restore_phase": true,
+      "has_full_phase_order": true,
+      "secret_values_not_embedded": true
+    },
+    "command_count": 7,
+    "retention_hours": 72
+  }
+}

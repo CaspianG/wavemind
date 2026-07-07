@@ -43,6 +43,7 @@ from .k8s_operator import (
     operator_status,
 )
 from .object_store import S3SnapshotStore
+from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import evaluate_production_evidence, render_markdown
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
@@ -567,6 +568,24 @@ def build_parser() -> argparse.ArgumentParser:
     recovery_restore.add_argument("--overwrite", action="store_true")
     recovery_restore.add_argument("--json", action="store_true")
 
+    postgres_pitr = sub.add_parser(
+        "postgres-pitr-plan",
+        help="Emit a secret-safe Postgres point-in-time recovery runbook/preflight",
+    )
+    postgres_pitr.add_argument("--dsn-env", default="WAVEMIND_POSTGRES_DSN")
+    postgres_pitr.add_argument("--basebackup-env", default="WAVEMIND_POSTGRES_BASEBACKUP_DIR")
+    postgres_pitr.add_argument("--wal-archive-env", default="WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR")
+    postgres_pitr.add_argument("--restore-data-env", default="WAVEMIND_POSTGRES_RESTORE_DATA_DIR")
+    postgres_pitr.add_argument("--restore-target-env", default="WAVEMIND_POSTGRES_RESTORE_TARGET_TIME")
+    postgres_pitr.add_argument("--retention-hours", type=int, default=72)
+    postgres_pitr.add_argument(
+        "--fail-on-missing-env",
+        action="store_true",
+        help="Exit non-zero when any required runtime environment variable is missing.",
+    )
+    postgres_pitr.add_argument("--out", type=Path)
+    postgres_pitr.add_argument("--json", action="store_true")
+
     replicated_snapshot = sub.add_parser(
         "replicated-snapshot",
         help="Snapshot a ReplicatedWaveMind root with optional offsite mirror/archive",
@@ -972,6 +991,34 @@ def main(argv: list[str] | None = None) -> int:
             print(f"restored: {payload['destination_path']}")
             print(f"applied_entries: {payload['applied_entries']}")
             print(f"restored_records: {payload['restored_records']}")
+        return 0
+
+    if args.command == "postgres-pitr-plan":
+        plan = build_postgres_pitr_plan(
+            dsn_env=args.dsn_env,
+            basebackup_env=args.basebackup_env,
+            wal_archive_env=args.wal_archive_env,
+            restore_data_env=args.restore_data_env,
+            restore_target_env=args.restore_target_env,
+            retention_hours=args.retention_hours,
+        )
+        payload = plan.as_dict()
+        if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"status: {payload['status']}")
+            print(f"environment_status: {payload['environment_status']}")
+            print(f"required_env: {', '.join(payload['required_env'])}")
+            if payload["missing_env"]:
+                print(f"missing_env: {', '.join(payload['missing_env'])}")
+        if args.fail_on_missing_env and payload["missing_env"]:
+            return 4
         return 0
 
     if args.command == "replicated-snapshot":

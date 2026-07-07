@@ -85,6 +85,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "qdrant_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_10m_plan.json"),
         "pgvector_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_smoke_results.json"),
         "pgvector_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_10m_plan.json"),
+        "postgres_pitr": _load_optional_json(benchmark_dir / "postgres_pitr_plan.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
@@ -471,6 +472,22 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     field_crdt = scale.get("WaveMind field-state CRDT", {})
     snapshot = scale.get("WaveMind replicated snapshot", {})
     recovery_journal = scale.get("WaveMind recovery journal", {})
+    postgres_pitr = artifacts["postgres_pitr"]
+    postgres_pitr_profile = postgres_pitr.get("profile", {})
+    postgres_pitr_checks = postgres_pitr_profile.get("validation", {}).get("checks", {})
+    postgres_pitr_pass = (
+        postgres_pitr.get("status") == "ready"
+        and postgres_pitr_profile.get("schema") == "wavemind.postgres_pitr_plan.v1"
+        and int(postgres_pitr.get("summary", {}).get("command_count", 0)) >= 7
+        and postgres_pitr_checks.get("has_wal_archiving_command")
+        and postgres_pitr_checks.get("has_base_backup_command")
+        and postgres_pitr_checks.get("has_restore_command")
+        and postgres_pitr_checks.get("has_recovery_signal")
+        and postgres_pitr_checks.get("has_restore_target_time")
+        and postgres_pitr_checks.get("has_replay_verification")
+        and postgres_pitr_checks.get("has_promotion_command")
+        and postgres_pitr_checks.get("secret_values_not_embedded")
+    )
     payloads = scale.get("WaveMind structured payloads", {})
     advisor = advise_memory_architecture(
         {
@@ -1366,12 +1383,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(recovery_journal.get("full_deleted_records", 0)) >= 2
                 and int(recovery_journal.get("full_restored_records", 0)) >= 1
                 and int(recovery_journal.get("point_restored_records", 0)) >= 1
+                and postgres_pitr_pass
                 else "fail"
             ),
             requirement=(
                 "Backups must be checksummed, restorable, offsite-capable, "
                 "recover recall after restore, and support SQLite point-in-time "
-                "recovery from an append-only mutation journal."
+                "recovery from an append-only mutation journal plus database-native "
+                "Postgres PITR runbook/preflight coverage."
             ),
             evidence=(
                 f"archive {snapshot.get('archive_verified')}, "
@@ -1380,11 +1399,15 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"PITR full {recovery_journal.get('full_restore_ok')}, "
                 f"PITR point {recovery_journal.get('point_in_time_restore_ok')}, "
                 f"journal entries {recovery_journal.get('journal_entries')}, "
-                f"deleted {recovery_journal.get('full_deleted_records')}"
+                f"deleted {recovery_journal.get('full_deleted_records')}, "
+                f"Postgres PITR {postgres_pitr.get('status')}, "
+                f"commands {postgres_pitr.get('summary', {}).get('command_count')}, "
+                f"env {postgres_pitr.get('environment_status')}"
             ),
             next_step=(
                 "Repeat the drill with real S3-compatible storage, larger SQLite "
-                "journals, and database-native Postgres PITR runbooks."
+                "journals, then execute the Postgres PITR runbook against a "
+                "staging or managed Postgres service and commit the drill report."
             ),
         ),
         _criterion(

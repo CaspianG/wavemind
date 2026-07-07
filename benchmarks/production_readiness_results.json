@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T12:12:27Z",
+  "generated_at": "2026-07-07T12:46:20Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T11:33:07Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T12:45:51Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -264,9 +264,9 @@
       "id": "backup_restore_dr",
       "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
       "status": "pass",
-      "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal.",
-      "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2",
-      "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, and database-native Postgres PITR runbooks."
+      "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage.",
+      "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env",
+      "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, then execute the Postgres PITR runbook against a staging or managed Postgres service and commit the drill report."
     },
     {
       "id": "structured_multimodal_payloads",

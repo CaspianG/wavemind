@@ -220,6 +220,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
+    postgres_pitr_payload = _load_json(root / "benchmarks" / "postgres_pitr_plan.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
     vectordbbench_payload = _load_json(root / "benchmarks" / "vectordbbench_dataset_manifest.json")
@@ -269,6 +270,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         if production_readiness_payload
         else {}
     )
+    postgres_pitr_profile = (
+        postgres_pitr_payload.get("profile", {})
+        if postgres_pitr_payload
+        else {}
+    )
+    postgres_pitr_validation = postgres_pitr_profile.get("validation", {})
     memory_competitor_results = _engine_results(memory_competitor_payload)
     vectordbbench_summary = (
         {
@@ -1450,6 +1457,34 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, cursor-based active-active sync, sustained active-active mesh convergence, field-only hotness sync, field-state convergence with actor-watermark missing/lag diagnostics, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting with production architecture advice, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
             "next_step": "Move from deterministic 100M capacity planning to service-backed 100M Qdrant/pgvector/FAISS load tests on sized hardware.",
+        },
+        {
+            "id": "postgres_pitr_plan",
+            "name": "Postgres PITR runbook/preflight",
+            "category": "production-ops",
+            "status": "implemented",
+            "source": "benchmarks/postgres_pitr_plan.py",
+            "dataset": "Secret-safe database-native Postgres point-in-time recovery runbook: WAL archiving, streaming base backup, restore target config, replay verification, and promotion.",
+            "competitors": [],
+            "metrics": [
+                "status",
+                "environment_status",
+                "command_count",
+                "retention_hours",
+                "missing_env",
+            ],
+            "current": {
+                "WaveMind Postgres PITR preflight": {
+                    "status": (postgres_pitr_payload or {}).get("status"),
+                    "environment_status": (postgres_pitr_payload or {}).get("environment_status"),
+                    "command_count": (postgres_pitr_payload or {}).get("summary", {}).get("command_count"),
+                    "retention_hours": (postgres_pitr_payload or {}).get("summary", {}).get("retention_hours"),
+                    "missing_env": (postgres_pitr_payload or {}).get("summary", {}).get("missing_env"),
+                    "ok": postgres_pitr_validation.get("ok"),
+                },
+            },
+            "target": "Keep Postgres source-of-truth recovery database-native: no embedded secrets, explicit WAL/archive/base-backup/restore/promotion steps, and a CLI preflight operators can run before production rollout.",
+            "next_step": "Execute the same runbook against staging or managed Postgres and commit a real PITR drill report with replay LSN, target timestamp, restore duration, and post-restore row/index checks.",
         },
         {
             "id": "production_readiness_gate",

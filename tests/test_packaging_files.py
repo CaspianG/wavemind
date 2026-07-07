@@ -222,6 +222,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json" in readme
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in readme
     assert "benchmarks/production_streaming_load_pgvector_10m_plan.json" in readme
+    assert "benchmarks/postgres_pitr_plan.json" in readme
+    assert "wavemind postgres-pitr-plan" in readme
     assert "production_streaming_load_ivfpq_50m_results.json" in readme
     assert "production_streaming_load_qdrant_10m_results.json" in readme
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in readme
@@ -315,6 +317,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production-streaming-load.yml" in roadmap
     assert "ingest_production_streaming_artifact.py" in roadmap
     assert "production_streaming_load_pgvector_10m_plan.json" in roadmap
+    assert "postgres_pitr_plan.json" in roadmap
+    assert "wavemind postgres-pitr-plan" in roadmap
     assert "production_pgvector_tuning_results.json" in roadmap
     assert "pgvector-iterative" in roadmap
     assert "production_streaming_load_ivfpq_50m_results.json" in roadmap
@@ -333,6 +337,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "ingest_production_streaming_artifact.py" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_10m_plan.json" in benchmark_brief
+    assert "benchmarks/postgres_pitr_plan.json" in benchmark_brief
+    assert "Postgres PITR runbook/preflight" in benchmark_brief
     assert "benchmarks/production_pgvector_tuning_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_qdrant_10m_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json" in benchmark_brief

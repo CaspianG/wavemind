@@ -1170,6 +1170,20 @@ managed snapshots, or Postgres point-in-time recovery. WaveMind's JSONL recovery
 journal is a local SQLite source-of-truth mechanism, not a replacement for
 database-native WAL/PITR in managed Postgres.
 
+Postgres PITR runbook/preflight:
+
+```sh
+wavemind postgres-pitr-plan --out ./ops/postgres-pitr-plan.json --json
+```
+
+This emits a secret-safe database-native runbook with WAL archiving, streaming
+`pg_basebackup`, restore target configuration, replay verification, and
+promotion steps. It stores environment variable names only, not DSNs or secret
+values. The checked-in artifact is
+`benchmarks/postgres_pitr_plan.json`; a real managed Postgres restore drill
+should execute the plan in staging and record replay LSN, target timestamp,
+restore duration, and post-restore row/index checks.
+
 Replicated runtime snapshot/restore:
 
 ```python
@@ -2405,8 +2419,11 @@ If you already use Chroma for local memory, see the practical migration guide:
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
 - pgvector is a candidate-index backend. PostgreSQL source-of-truth storage is
-  also available separately, but migrations, Postgres-native PITR runbooks, and
-  service benchmark profiles still need more real deployment coverage.
+  also available separately. A Postgres-native PITR runbook/preflight now exists
+  through `wavemind postgres-pitr-plan` and
+  `benchmarks/postgres_pitr_plan.json`; migrations, real managed-Postgres PITR
+  drill evidence, and larger service benchmark profiles still need more real
+  deployment coverage.
 - The Qdrant backend is also a candidate-index backend. WaveMind rebuilds it
   from SQLite on load/build, so large service-mode deployments still need a
   measured rebuild strategy and index-health monitoring.
@@ -2456,9 +2473,10 @@ Near-term priorities:
 - Better production operations: OpenTelemetry, SQLite point-in-time recovery,
   and replicated offsite snapshot jobs with verified portable archives,
   S3-compatible upload, latest-archive lookup, restore from latest,
-  object-store DR drill, and object-store retention are implemented; richer
-  latency histograms, index-health metrics, alerting examples, real cloud
-  disaster-recovery drills, and Postgres PITR runbooks are next.
+  object-store DR drill, object-store retention, and a Postgres PITR
+  runbook/preflight are implemented; richer latency histograms, index-health
+  metrics, alerting examples, real cloud disaster-recovery drills, and a real
+  managed-Postgres PITR drill report are next.
 
 Longer-term direction:
 

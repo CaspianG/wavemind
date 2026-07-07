@@ -149,6 +149,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert "WAVEMIND_PGVECTOR_DSN" in pgvector_plan["missing_env"]
     assert "100M" in entries["production_streaming_load_runner"]["dataset"]
     assert "production-streaming-load.yml" in entries["production_streaming_load_runner"]["next_step"]
+    assert entries["postgres_pitr_plan"]["status"] == "implemented"
+    postgres_pitr = entries["postgres_pitr_plan"]["current"]["WaveMind Postgres PITR preflight"]
+    assert postgres_pitr["status"] == "ready"
+    assert postgres_pitr["environment_status"] in {"ready", "missing_env"}
+    assert postgres_pitr["command_count"] == 7
+    assert postgres_pitr["retention_hours"] == 72
+    assert postgres_pitr["ok"] is True
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
     assert readiness["overall_status"] == "pass"

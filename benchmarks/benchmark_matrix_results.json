@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T12:12:35Z",
-  "source_ref": "d03e98c04184",
+  "generated_at": "2026-07-07T12:45:51Z",
+  "source_ref": "a39b89d48864",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1674,6 +1674,40 @@
       },
       "target": "Prove the production foundation before heavier 100k, 1M, 10M, and 100M vector load tests: deterministic placement, cluster autoscale planning, Kubernetes deployment, HPA autoscaling, serverless scale-to-zero planning, scheduled repair manifests, service-mode distributed namespace sharding, real HTTP shard transport, sustained mixed HTTP cluster load, missing-replica repair, tombstone-aware delete repair, anti-entropy repair worker, survivable replicas, cursor-based active-active sync, sustained active-active mesh convergence, field-only hotness sync, field-state convergence with actor-watermark missing/lag diagnostics, offsite/archive/object-store upload/latest-metadata/download/retention/DR-drill checks, query-vector cache, shared rate limiting, Memory OS adaptive prewarm/consolidation/forgetting with production architecture advice, hot-cache behavior, API cache mutation safety, structured payload recall, and a 100M-memory capacity envelope.",
       "next_step": "Move from deterministic 100M capacity planning to service-backed 100M Qdrant/pgvector/FAISS load tests on sized hardware."
+    },
+    {
+      "id": "postgres_pitr_plan",
+      "name": "Postgres PITR runbook/preflight",
+      "category": "production-ops",
+      "status": "implemented",
+      "source": "benchmarks/postgres_pitr_plan.py",
+      "dataset": "Secret-safe database-native Postgres point-in-time recovery runbook: WAL archiving, streaming base backup, restore target config, replay verification, and promotion.",
+      "competitors": [],
+      "metrics": [
+        "status",
+        "environment_status",
+        "command_count",
+        "retention_hours",
+        "missing_env"
+      ],
+      "current": {
+        "WaveMind Postgres PITR preflight": {
+          "status": "ready",
+          "environment_status": "missing_env",
+          "command_count": 7,
+          "retention_hours": 72,
+          "missing_env": [
+            "WAVEMIND_POSTGRES_DSN",
+            "WAVEMIND_POSTGRES_BASEBACKUP_DIR",
+            "WAVEMIND_POSTGRES_WAL_ARCHIVE_DIR",
+            "WAVEMIND_POSTGRES_RESTORE_DATA_DIR",
+            "WAVEMIND_POSTGRES_RESTORE_TARGET_TIME"
+          ],
+          "ok": true
+        }
+      },
+      "target": "Keep Postgres source-of-truth recovery database-native: no embedded secrets, explicit WAL/archive/base-backup/restore/promotion steps, and a CLI preflight operators can run before production rollout.",
+      "next_step": "Execute the same runbook against staging or managed Postgres and commit a real PITR drill report with replay LSN, target timestamp, restore duration, and post-restore row/index checks."
     },
     {
       "id": "production_readiness_gate",

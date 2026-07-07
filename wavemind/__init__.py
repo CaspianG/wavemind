@@ -114,6 +114,13 @@ from .object_store import (
     S3SnapshotStore,
     parse_object_store_uri,
 )
+from .postgres_recovery import (
+    PostgresPITRCommand,
+    PostgresPITRPlan,
+    PostgresPITRValidationReport,
+    build_postgres_pitr_plan,
+    validate_postgres_pitr_commands,
+)
 from .replication import (
     NamespaceDeltaSyncReport,
     ReadQuorumError,
@@ -169,7 +176,7 @@ from .storage import (
     restore_recovery_journal,
 )
 
-__version__ = "2.4.23"
+__version__ = "2.4.24"
 
 __all__ = [
     "FieldProjector",
@@ -262,6 +269,9 @@ __all__ = [
     "ReplicationError",
     "PgVectorIndex",
     "PostgresMemoryStore",
+    "PostgresPITRCommand",
+    "PostgresPITRPlan",
+    "PostgresPITRValidationReport",
     "QdrantVectorIndex",
     "QuantizedVectorIndex",
     "SentenceTransformerTextEncoder",
@@ -286,6 +296,7 @@ __all__ = [
     "advice_status_meets_or_exceeds",
     "append_recovery_journal_entry",
     "advise_memory_architecture",
+    "build_postgres_pitr_plan",
     "build_scale_plan",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
@@ -319,4 +330,5 @@ __all__ = [
     "stable_record_key",
     "sync_namespace_delta",
     "table_payload",
+    "validate_postgres_pitr_commands",
 ]

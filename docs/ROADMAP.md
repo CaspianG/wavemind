@@ -485,9 +485,12 @@ Enterprise requirements:
   implemented. Replicated snapshot/restore, offsite-mirrored snapshot jobs, and
   portable snapshot archives with S3-compatible upload, latest-archive lookup,
   remote download verification, object-store disaster-recovery drills, and
-  retention are also implemented; Postgres-native PITR runbooks, real
-  multi-region cloud disaster-recovery drills, and network-service consensus
-  remain future work;
+  retention are also implemented. `wavemind postgres-pitr-plan` and
+  `benchmarks/postgres_pitr_plan.json` add a database-native Postgres PITR
+  runbook/preflight with WAL archiving, streaming base backup, restore target,
+  replay verification, promotion, and secret-safe environment placeholders.
+  Real managed-Postgres PITR drill evidence, real multi-region cloud
+  disaster-recovery drills, and network-service consensus remain future work;
 - data residency controls;
 - SSO/OAuth integration;
 - SLOs for latency, throughput, and durability;
