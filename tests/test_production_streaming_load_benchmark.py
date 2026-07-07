@@ -68,11 +68,31 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
 
 
 def test_streaming_load_qdrant_chunks_large_upsert_batches():
-    from benchmarks.production_streaming_load_benchmark import _chunks
+    from benchmarks.production_streaming_load_benchmark import (
+        _chunks,
+        _merge_scored_hits,
+        _qdrant_shard_index,
+    )
 
     assert list(_chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
     with pytest.raises(ValueError, match="chunk size must be positive"):
         list(_chunks([1], 0))
+    assert [_qdrant_shard_index(point_id, 3) for point_id in range(1, 8)] == [0, 1, 2, 0, 1, 2, 0]
+    with pytest.raises(ValueError, match="shard_count must be positive"):
+        _qdrant_shard_index(1, 0)
+
+    class Hit:
+        def __init__(self, point_id, score):
+            self.id = point_id
+            self.score = score
+
+    assert _merge_scored_hits(
+        [
+            [Hit(1, 0.7), Hit(2, 0.6)],
+            [Hit(3, 0.95), Hit(4, 0.5)],
+        ],
+        top_k=3,
+    ) == [3, 1, 2]
 
 
 def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
@@ -96,6 +116,29 @@ def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
     assert row["engine"] == "Qdrant service streaming"
     assert row["skipped"] is True
     assert "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE must be positive" in row["reason"]
+
+
+def test_streaming_load_qdrant_sharded_requires_multiple_urls(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import run_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_QDRANT_URLS", raising=False)
+    monkeypatch.setenv("WAVEMIND_QDRANT_URL", "http://127.0.0.1:6333")
+
+    payload = run_streaming_load(
+        sizes=[64],
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+        engines=["qdrant-sharded-service"],
+    )
+
+    row = payload["results"][0]["results"][0]
+    assert row["engine"] == "Qdrant sharded service streaming"
+    assert row["skipped"] is True
+    assert "WAVEMIND_QDRANT_URLS" in row["reason"]
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
@@ -308,3 +351,35 @@ def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
     assert "--engines qdrant-service" in row["command"]
     assert "production_streaming_load_qdrant_10m_results.json" in row["command"]
+
+
+def test_streaming_load_plan_only_supports_qdrant_sharded_service(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import plan_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_QDRANT_URLS", raising=False)
+    monkeypatch.setenv("WAVEMIND_QDRANT_SHARD_COUNT", "6")
+
+    payload = plan_streaming_load(
+        sizes=[10_000_000],
+        dim=128,
+        query_count=100,
+        top_k=10,
+        seed=42,
+        noise=0.08,
+        batch_size=100_000,
+        engines=["qdrant-sharded-service"],
+        output_path=Path("benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json"),
+        planned_result_output_path=Path("benchmarks/production_streaming_load_qdrant_sharded_10m_results.json"),
+    )
+
+    row = payload["plans"][0]
+    assert row["engine"] == "Qdrant sharded service streaming"
+    assert row["vectors"] == 10_000_000
+    assert row["estimated_index_gb"] == 0.0
+    assert "horizontally sharded Qdrant" in row["index_mode"]
+    assert "WAVEMIND_QDRANT_URLS" in row["required_env"]
+    assert "missing_env:WAVEMIND_QDRANT_URLS" in row["blockers"]
+    assert row["command_env"]["WAVEMIND_QDRANT_FANOUT_WORKERS"] == "6"
+    assert "qdrant-5.example" in row["command_env"]["WAVEMIND_QDRANT_URLS"]
+    assert "--engines qdrant-sharded-service" in row["command"]
+    assert "production_streaming_load_qdrant_sharded_10m_results.json" in row["command"]

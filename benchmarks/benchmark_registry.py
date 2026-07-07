@@ -97,7 +97,10 @@ def _streaming_plan_results(label: str, payload: dict[str, Any] | None) -> dict[
                 "estimated_application_storage_gb",
                 "required_local_free_gb",
                 "disk_free_gb",
+                "index_mode",
+                "required_env",
                 "missing_env",
+                "blockers",
             ),
         ) or {}
     return rows
@@ -200,6 +203,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_qdrant_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_1m_results.json")
     production_streaming_qdrant_1m_tuned_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_1m_tuned_results.json")
     production_streaming_qdrant_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_10m_plan.json")
+    production_streaming_qdrant_sharded_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_10m_plan.json")
     production_streaming_pgvector_smoke_payload = _load_json(root / "benchmarks" / "production_streaming_load_pgvector_smoke_results.json")
     production_streaming_pgvector_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_pgvector_10m_plan.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
@@ -239,6 +243,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("1M Qdrant cold", production_streaming_qdrant_1m_payload),
         **_prefixed_ann_results("1M Qdrant tuned", production_streaming_qdrant_1m_tuned_payload),
         **_streaming_plan_results("10M Qdrant preflight", production_streaming_qdrant_10m_plan_payload),
+        **_streaming_plan_results("10M Qdrant sharded preflight", production_streaming_qdrant_sharded_10m_plan_payload),
         **_prefixed_ann_results("pgvector smoke", production_streaming_pgvector_smoke_payload),
         **_streaming_plan_results("10M pgvector preflight", production_streaming_pgvector_10m_plan_payload),
     }
@@ -931,8 +936,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_streaming_load_benchmark.py",
-            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, Qdrant and pgvector 10M service preflights, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
-            "competitors": ["FAISS persisted streaming", "FAISS IVF-PQ persisted streaming", "Qdrant service streaming", "pgvector streaming"],
+            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
+            "competitors": ["FAISS persisted streaming", "FAISS IVF-PQ persisted streaming", "Qdrant service streaming", "Qdrant sharded service streaming", "pgvector streaming"],
             "metrics": [
                 "target_recall@10",
                 "target_recall@1",
@@ -946,8 +951,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "build_ms",
             ],
             "current": production_streaming_results,
-            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant and pgvector streaming smokes green, keep 10M Qdrant/pgvector and 50M FAISS preflights reproducible, then run 10M Qdrant/pgvector and 50M compressed FAISS on hardware sized for the index.",
-            "next_step": "Set service credentials and run the checked 10M Qdrant/pgvector reproduction commands, then run the 50M compressed FAISS command on hardware sized for the index.",
+            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, and 50M FAISS preflights reproducible, then run those service profiles on hardware sized for the index.",
+            "next_step": "Set service credentials and run the checked 10M Qdrant, sharded Qdrant, and pgvector reproduction commands, then run the 50M compressed FAISS command on hardware sized for the index.",
         },
         {
             "id": "scale_readiness",

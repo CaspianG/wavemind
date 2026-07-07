@@ -102,6 +102,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert qdrant_plan["status"] == "action_required"
     assert qdrant_plan["estimated_index_gb"] == 0.0
     assert "WAVEMIND_QDRANT_URL" in qdrant_plan["missing_env"]
+    qdrant_sharded_plan = entries["production_streaming_load_runner"]["current"][
+        "10M Qdrant sharded preflight / Qdrant sharded service streaming"
+    ]
+    assert qdrant_sharded_plan["status"] == "action_required"
+    assert qdrant_sharded_plan["estimated_index_gb"] == 0.0
+    assert "WAVEMIND_QDRANT_URLS" in qdrant_sharded_plan["missing_env"]
+    assert "horizontally sharded Qdrant" in qdrant_sharded_plan["index_mode"]
     qdrant_1m = entries["production_streaming_load_runner"]["current"][
         "1M Qdrant cold / Qdrant service streaming"
     ]

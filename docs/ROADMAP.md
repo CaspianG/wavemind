@@ -45,9 +45,11 @@ policy matters more than raw vector-database scale:
   run reaches target recall@10 `1.000`, p99 `26.37 ms`, and valid SLO/cost
   status in `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json`.
   Checked 10M plan-only contracts live in
-  `benchmarks/production_streaming_load_qdrant_10m_plan.json` and
+  `benchmarks/production_streaming_load_qdrant_10m_plan.json`,
+  `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json`, and
   `benchmarks/production_streaming_load_pgvector_10m_plan.json`. These plans are
-  not completed 10M benchmarks; they are exact service-backed run contracts.
+  not completed 10M benchmarks; they are exact service-backed run contracts,
+  including a horizontal Qdrant fanout path for multi-node storage.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
   production verdict. The current WaveMind core gate is `1.000` (`35/35` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
@@ -451,9 +453,11 @@ Enterprise requirements:
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
-- Service-mode Qdrant streaming now has a real smoke and a 10M preflight
-  contract; the next step is producing
-  `production_streaming_load_qdrant_10m_results.json` on sized Qdrant storage.
+- Service-mode Qdrant streaming now has a real smoke, a tuned 1M passing run,
+  and single-service plus sharded 10M preflight contracts; the next step is
+  producing `production_streaming_load_qdrant_10m_results.json` on sized
+  Qdrant storage and `production_streaming_load_qdrant_sharded_10m_results.json`
+  on multiple Qdrant service nodes.
 - Service-mode Qdrant latency baseline beyond the checked-in 50000-vector
   profile.
 - Better README examples for non-agent use cases.

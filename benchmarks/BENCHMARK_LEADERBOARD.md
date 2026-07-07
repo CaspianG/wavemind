@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-07T02:42:33Z` from `47c5fca0ae95`.
+Last refresh: `2026-07-07T03:09:50Z` from `d665e3f0c9d0`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -34,16 +34,17 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-07T02:42:33Z` | source `47c5fca0ae95`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-07T03:09:50Z` | source `d665e3f0c9d0`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | pgvector tuning | real PostgreSQL/pgvector service profile at 50k vectors | iterative recall `0.97`, iterative p99 `55.2 ms`; exact recall `1` | Promote pgvector-iterative into the 100k and 1M production load SLO profiles. |
 | 10M streaming load | local `WaveMind faiss-ivfpq-persisted streaming` profile | target recall `0.99`, p99 `60.1 ms`, SLO `scale_required` | Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts. |
 | 50M streaming preflight | `WaveMind faiss-ivfpq-persisted streaming` plan-only contract | `action_required`; index `1.12 GB`; app storage `119.2 GB`; blockers `missing_env:WAVEMIND_FAISS_IVFPQ_PATH` | Satisfy the preflight and commit `production_streaming_load_ivfpq_50m_results.json` after a real run. |
 | Qdrant streaming | real Qdrant service smoke plus 10M preflight | smoke recall `1`, smoke p99 `17.9 ms`; 10M preflight `action_required` | Run the embedded 10M Qdrant command against sized Qdrant storage. |
+| Qdrant sharded streaming | horizontal Qdrant service fanout preflight | 10M preflight `action_required`; shards `4`; blockers `missing_env:WAVEMIND_QDRANT_URLS` | Run the embedded sharded 10M command against multiple Qdrant service nodes. |
 | Qdrant 1M streaming | real Qdrant service run before and after warmup/chunking tuning | cold p99 `3014.0 ms`; tuned recall `1`, tuned p99 `26.4 ms`, SLO `pass` | Use the tuned warmup/chunking profile for the 10M Qdrant service run. |
 | pgvector streaming | real PostgreSQL/pgvector service smoke plus 10M preflight | smoke recall `1`, smoke p99 `7.624 ms`; 10M preflight `action_required` | Run the embedded 10M pgvector command against sized Postgres storage. |
-| Production readiness gate | checked-in benchmark artifacts | `pass`; 34/34 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
+| Production readiness gate | checked-in benchmark artifacts | `pass`; 35/35 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
 | Competitor adapters | checked local adapters plus optional external services | configured `4`; skipped `Zep` | Configure skipped external services before claiming full competitor coverage. |
 
 ## Reading Rules

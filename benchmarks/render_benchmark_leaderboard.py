@@ -427,6 +427,32 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    qdrant_sharded_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json")
+    qdrant_sharded_plan_row = {}
+    if (
+        qdrant_sharded_plan
+        and isinstance(qdrant_sharded_plan.get("plans"), list)
+        and qdrant_sharded_plan["plans"]
+    ):
+        first_plan = qdrant_sharded_plan["plans"][0]
+        if isinstance(first_plan, dict):
+            qdrant_sharded_plan_row = first_plan
+    if qdrant_sharded_plan_row:
+        shard_urls = qdrant_sharded_plan_row.get("command_env", {}).get("WAVEMIND_QDRANT_URLS", "")
+        shard_count = len([part for part in str(shard_urls).split(",") if part.strip()])
+        blockers = ", ".join(qdrant_sharded_plan_row.get("blockers", [])) or "none"
+        rows.append(
+            (
+                "Qdrant sharded streaming",
+                "horizontal Qdrant service fanout preflight",
+                (
+                    f"10M preflight `{qdrant_sharded_plan_row.get('status', 'unknown')}`; "
+                    f"shards `{shard_count}`; blockers `{blockers}`"
+                ),
+                "Run the embedded sharded 10M command against multiple Qdrant service nodes.",
+            )
+        )
+
     qdrant_1m = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_1m_results.json")
     qdrant_1m_tuned = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json")
     qdrant_1m_result = _first_result(qdrant_1m)
