@@ -44,7 +44,12 @@ from .k8s_operator import (
 )
 from .object_store import S3SnapshotStore
 from .postgres_recovery import build_postgres_pitr_plan
-from .production_evidence import evaluate_production_evidence, render_markdown
+from .production_evidence import (
+    evaluate_production_evidence,
+    evaluate_production_evidence_preflight,
+    render_markdown,
+    render_preflight_markdown,
+)
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
@@ -249,6 +254,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE.md"),
     )
     production_evidence.add_argument("--json", action="store_true")
+
+    production_evidence_preflight = sub.add_parser(
+        "production-evidence-preflight",
+        help="Check env and plan prerequisites for strict production-evidence runs",
+    )
+    production_evidence_preflight.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_evidence_preflight.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown preflight reports to the output paths.",
+    )
+    production_evidence_preflight.add_argument(
+        "--fail-on-action-required",
+        action="store_true",
+        help="Exit non-zero unless every production-evidence prerequisite is ready.",
+    )
+    production_evidence_preflight.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_evidence_preflight_results.json"),
+    )
+    production_evidence_preflight.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md"),
+    )
+    production_evidence_preflight.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -855,6 +892,30 @@ def print_production_evidence(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_production_evidence_preflight(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {summary['overall_status']}")
+    print(f"ready: {summary['ready_count']}/{summary['total_checks']}")
+    print(f"action_required: {summary['action_required_count']}")
+    print("checks:")
+    for row in payload.get("checks", []):
+        print(f"- [{row['status']}] {row['title']}")
+        print(f"  output: {row['output_artifact']}")
+        print(f"  evidence: {row['evidence']}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        issues = row.get("issues") or []
+        if issues:
+            print(f"  issues: {', '.join(issues)}")
+        warnings = row.get("warnings") or []
+        if warnings:
+            print(f"  warnings: {', '.join(warnings)}")
+        command = row.get("command")
+        if command:
+            print(f"  command: {command}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -1344,6 +1405,30 @@ def main(argv: list[str] | None = None) -> int:
         if args.strict and payload["overall_status"] != "pass":
             return 2
         return 0 if payload["overall_status"] in {"pass", "action_required"} else 1
+
+    if args.command == "production-evidence-preflight":
+        payload = evaluate_production_evidence_preflight(args.root)
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_preflight_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_evidence_preflight(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["overall_status"] != "ready":
+            return 2
+        return 0
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

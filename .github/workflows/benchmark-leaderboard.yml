@@ -142,6 +142,10 @@ jobs:
           python benchmarks/production_evidence_gate.py \
             --output benchmarks/production_evidence_results.json \
             --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
+          python -m wavemind production-evidence-preflight \
+            --write-artifacts \
+            --output benchmarks/production_evidence_preflight_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
           python benchmarks/benchmark_registry.py \
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
@@ -174,7 +178,8 @@ jobs:
             tests/test_scale_readiness_benchmark.py \
             tests/test_production_streaming_load_benchmark.py \
             tests/test_production_readiness_gate.py \
-            tests/test_production_evidence_gate.py
+            tests/test_production_evidence_gate.py \
+            tests/test_production_evidence_preflight.py
 
       - name: Report benchmark artifact drift
         run: |
@@ -195,10 +200,12 @@ jobs:
           cp benchmarks/BENCHMARK_REPORT.md site/benchmarks/BENCHMARK_REPORT.md
           cp benchmarks/PRODUCTION_READINESS.md site/benchmarks/PRODUCTION_READINESS.md
           cp benchmarks/PRODUCTION_EVIDENCE.md site/benchmarks/PRODUCTION_EVIDENCE.md
+          cp benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md site/benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
           cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
           cp benchmarks/production_evidence_results.json site/data/production_evidence_results.json
+          cp benchmarks/production_evidence_preflight_results.json site/data/production_evidence_preflight_results.json
 
       - uses: actions/configure-pages@v5
 
@@ -233,5 +240,7 @@ jobs:
             benchmarks/PRODUCTION_READINESS.md
             benchmarks/production_evidence_results.json
             benchmarks/PRODUCTION_EVIDENCE.md
+            benchmarks/production_evidence_preflight_results.json
+            benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
             docs/benchmark-dashboard.html
             docs/assets/benchmark-summary.svg

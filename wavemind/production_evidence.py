@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
+import shutil
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,10 +31,42 @@ class EvidenceRequirement:
         return payload
 
 
+@dataclass(frozen=True)
+class EvidencePreflightCheck:
+    id: str
+    title: str
+    status: str
+    ready: bool
+    evidence: str
+    required_env: tuple[str, ...]
+    missing_env: tuple[str, ...]
+    command: str
+    output_artifact: str
+    issues: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["required_env"] = list(self.required_env)
+        payload["missing_env"] = list(self.missing_env)
+        payload["issues"] = list(self.issues)
+        payload["warnings"] = list(self.warnings)
+        return payload
+
+
 def _load_optional_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _utc_now() -> str:
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _size_results(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -58,6 +93,115 @@ def _status_from_issues(*, missing: bool, issues: list[str]) -> str:
     if missing:
         return "action_required"
     return "fail" if issues else "pass"
+
+
+def _preflight_status(issues: list[str]) -> str:
+    return "ready" if not issues else "action_required"
+
+
+def _env_value(env: dict[str, str], name: str) -> str:
+    return str(env.get(name) or "").strip()
+
+
+def _split_env_list(value: str) -> list[str]:
+    return [item.strip() for item in re.split(r"[\n,;]+", value or "") if item.strip()]
+
+
+def _is_sample_url(value: str) -> bool:
+    lowered = value.lower()
+    return (
+        "example.com" in lowered
+        or "example.test" in lowered
+        or lowered.startswith("http://localhost")
+        or lowered.startswith("https://localhost")
+        or lowered.startswith("http://127.0.0.1")
+        or lowered.startswith("https://127.0.0.1")
+    )
+
+
+def _extract_url_from_spec(spec: str) -> str:
+    return spec.split("=", 1)[-1].strip().rstrip("/")
+
+
+def _validate_url_specs(
+    specs: list[str],
+    *,
+    min_count: int,
+    label: str,
+) -> tuple[list[str], list[str]]:
+    issues: list[str] = []
+    urls = [_extract_url_from_spec(spec) for spec in specs]
+    if len(urls) < min_count:
+        issues.append(f"{label} requires at least {min_count} URLs")
+    for url in urls:
+        if not url.startswith(("http://", "https://")):
+            issues.append(f"{label} URL must start with http:// or https://: {url}")
+        if _is_sample_url(url):
+            issues.append(f"{label} URL must be remote/staging/production, not sample/local: {url}")
+    if len(set(urls)) != len(urls):
+        issues.append(f"{label} URLs must be unique")
+    return urls, issues
+
+
+def _manifest_specs(
+    manifest_json: str,
+    *,
+    kind: str,
+) -> tuple[list[str], list[str], dict[str, Any]]:
+    if not manifest_json.strip():
+        return [], [], {}
+    try:
+        payload = json.loads(manifest_json)
+    except json.JSONDecodeError as exc:
+        return [], [f"{kind} manifest JSON is invalid: {exc.msg}"], {}
+    key = "nodes" if kind == "cluster" else "regions"
+    entries = payload.get(key)
+    if not isinstance(entries, list):
+        return [], [f"{kind} manifest must contain a {key} array"], payload
+    specs: list[str] = []
+    issues: list[str] = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            issues.append(f"{kind} manifest {key}[{index}] must be an object")
+            continue
+        item_id = str(entry.get("id") or entry.get("name") or f"{kind}-{index:03d}").strip()
+        url = str(entry.get("url") or entry.get("address") or "").strip()
+        if not url:
+            issues.append(f"{kind} manifest {key}[{index}] requires url/address")
+            continue
+        specs.append(f"{item_id}={url}")
+    environment = str(payload.get("environment") or "").lower()
+    source = str(payload.get("source") or "").lower()
+    if environment in {"", "local", "local-loopback", "loopback"}:
+        issues.append(f"{kind} manifest environment must be remote/staging/production")
+    if source in {"", "fixture", "sample", "loopback-api-processes", "loopback-api-regions"}:
+        issues.append(f"{kind} manifest source must identify a real deployment")
+    if not payload.get("deployment_id"):
+        issues.append(f"{kind} manifest deployment_id is required")
+    return specs, issues, payload
+
+
+def _first_plan(root: Path, plan_artifact: str) -> dict[str, Any]:
+    payload = _load_optional_json(root / plan_artifact)
+    plans = payload.get("plans") if isinstance(payload, dict) else None
+    if isinstance(plans, list) and plans:
+        first = plans[0]
+        if isinstance(first, dict):
+            return first
+    return {}
+
+
+def _disk_free_gb_for_path(path_value: str) -> float | None:
+    if not path_value:
+        return None
+    path = Path(path_value).expanduser()
+    parent = path if path.is_dir() else path.parent
+    while not parent.exists() and parent != parent.parent:
+        parent = parent.parent
+    if not parent.exists():
+        return None
+    usage = shutil.disk_usage(parent)
+    return usage.free / (1024**3)
 
 
 def _validate_external_cluster_payload(
@@ -427,6 +571,265 @@ def _hundred_million_requirement(root: Path) -> EvidenceRequirement:
     )
 
 
+def _endpoint_preflight(
+    *,
+    check_id: str,
+    title: str,
+    list_env: str,
+    manifest_env: str | None,
+    min_count: int,
+    label: str,
+    command: str,
+    output_artifact: str,
+    env: dict[str, str],
+    manifest_kind: str,
+) -> EvidencePreflightCheck:
+    required_env = (list_env,) if not manifest_env else (list_env, manifest_env)
+    specs: list[str] = []
+    issues: list[str] = []
+    warnings: list[str] = []
+    manifest_payload: dict[str, Any] = {}
+    manifest_value = _env_value(env, manifest_env) if manifest_env else ""
+    if manifest_value:
+        specs, manifest_issues, manifest_payload = _manifest_specs(
+            manifest_value,
+            kind=manifest_kind,
+        )
+        issues.extend(manifest_issues)
+    else:
+        specs = _split_env_list(_env_value(env, list_env))
+    urls, url_issues = _validate_url_specs(specs, min_count=min_count, label=label)
+    issues.extend(url_issues)
+    if not manifest_value and not _env_value(env, list_env):
+        issues.append(f"set {list_env} or {manifest_env}" if manifest_env else f"set {list_env}")
+    if "WAVEMIND_API_KEY" not in env:
+        warnings.append("WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated")
+    deployment_id = manifest_payload.get("deployment_id") if manifest_payload else None
+    evidence = (
+        f"{len(urls)} URLs configured"
+        + (f", deployment {deployment_id}" if deployment_id else "")
+    )
+    missing_env = () if (manifest_value or _env_value(env, list_env)) else required_env
+    return EvidencePreflightCheck(
+        id=check_id,
+        title=title,
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=evidence,
+        required_env=required_env,
+        missing_env=missing_env,
+        command=command,
+        output_artifact=output_artifact,
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=tuple(dict.fromkeys(warnings)),
+    )
+
+
+def _serverless_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
+    command = (
+        "gh workflow run serverless-observed-telemetry.yml "
+        "-f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first "
+        "-f commit_results=true"
+    )
+    node_specs = _split_env_list(_env_value(env, "WAVEMIND_SERVERLESS_NODES"))
+    urls, issues = _validate_url_specs(
+        node_specs,
+        min_count=1,
+        label="serverless node",
+    )
+    if not _env_value(env, "WAVEMIND_SERVERLESS_NODES"):
+        issues.append("set WAVEMIND_SERVERLESS_NODES")
+    warnings: list[str] = []
+    if "WAVEMIND_API_KEY" not in env:
+        warnings.append("WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated")
+    return EvidencePreflightCheck(
+        id="serverless_remote_telemetry",
+        title="Managed/serverless remote telemetry preflight",
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=f"{len(urls)} node URLs configured",
+        required_env=("WAVEMIND_SERVERLESS_NODES",),
+        missing_env=("WAVEMIND_SERVERLESS_NODES",)
+        if not _env_value(env, "WAVEMIND_SERVERLESS_NODES")
+        else (),
+        command=command,
+        output_artifact="deploy/serverless/observed-telemetry.remote.json",
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=tuple(dict.fromkeys(warnings)),
+    )
+
+
+def _large_run_preflight(
+    root: Path,
+    *,
+    check_id: str,
+    title: str,
+    plan_artifact: str,
+    output_artifact: str,
+    env: dict[str, str],
+) -> EvidencePreflightCheck:
+    plan = _first_plan(root, plan_artifact)
+    issues: list[str] = []
+    warnings: list[str] = []
+    if not plan:
+        issues.append(f"missing plan artifact {plan_artifact}")
+    required_env = tuple(str(item) for item in plan.get("required_env", []) if item) if plan else ()
+    missing_env = tuple(name for name in required_env if not _env_value(env, name))
+    for name in missing_env:
+        issues.append(f"set {name}")
+
+    if "WAVEMIND_QDRANT_URL" in required_env and _env_value(env, "WAVEMIND_QDRANT_URL"):
+        url = _env_value(env, "WAVEMIND_QDRANT_URL")
+        if url == ":memory:":
+            issues.append("WAVEMIND_QDRANT_URL must point at a real Qdrant service, not :memory:")
+        elif not url.startswith(("http://", "https://")):
+            issues.append("WAVEMIND_QDRANT_URL must start with http:// or https://")
+    if "WAVEMIND_QDRANT_URLS" in required_env and _env_value(env, "WAVEMIND_QDRANT_URLS"):
+        _, url_issues = _validate_url_specs(
+            _split_env_list(_env_value(env, "WAVEMIND_QDRANT_URLS")),
+            min_count=2,
+            label="Qdrant shard",
+        )
+        issues.extend(url_issues)
+    if "WAVEMIND_PGVECTOR_DSN" in required_env and _env_value(env, "WAVEMIND_PGVECTOR_DSN"):
+        dsn = _env_value(env, "WAVEMIND_PGVECTOR_DSN")
+        if not dsn.startswith(("postgresql://", "postgres://")):
+            issues.append("WAVEMIND_PGVECTOR_DSN must start with postgresql:// or postgres://")
+    for name in ("WAVEMIND_FAISS_PATH", "WAVEMIND_FAISS_IVFPQ_PATH"):
+        if name in required_env and _env_value(env, name):
+            required_free = float(plan.get("required_local_free_gb", 0.0) or 0.0)
+            free = _disk_free_gb_for_path(_env_value(env, name))
+            if free is None:
+                issues.append(f"{name} parent path does not exist on this machine")
+            elif required_free and free < required_free:
+                issues.append(f"{name} free disk {free:.2f} GB is below required {required_free:.2f} GB")
+            elif required_free and free < required_free * 1.5:
+                warnings.append(f"{name} free disk {free:.2f} GB is close to required {required_free:.2f} GB")
+
+    command = str(plan.get("command") or "")
+    if not command:
+        issues.append(f"{plan_artifact} does not contain a reproduction command")
+    if output_artifact not in command.replace("\\", "/"):
+        issues.append(f"reproduction command must write {output_artifact}")
+
+    evidence = (
+        f"plan {plan_artifact}, vectors {plan.get('vectors')}, "
+        f"required env {len(required_env)}, missing env {len(missing_env)}, "
+        f"required local free {plan.get('required_local_free_gb')} GB"
+        if plan
+        else f"missing plan {plan_artifact}"
+    )
+    return EvidencePreflightCheck(
+        id=check_id,
+        title=title,
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=evidence,
+        required_env=required_env,
+        missing_env=missing_env,
+        command=command,
+        output_artifact=output_artifact,
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=tuple(dict.fromkeys(warnings)),
+    )
+
+
+def evaluate_production_evidence_preflight(
+    root: Path = PROJECT_ROOT,
+    *,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    environment = dict(os.environ if env is None else env)
+    checks = [
+        _endpoint_preflight(
+            check_id="external_http_cluster",
+            title="External HTTP service-node load preflight",
+            list_env="WAVEMIND_CLUSTER_NODES",
+            manifest_env="WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
+            min_count=4,
+            label="cluster node",
+            command=(
+                "gh workflow run external-http-cluster-load.yml "
+                "-f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f commit_results=true"
+            ),
+            output_artifact="benchmarks/http_cluster_load_results.json",
+            env=environment,
+            manifest_kind="cluster",
+        ),
+        _endpoint_preflight(
+            check_id="external_http_active_active",
+            title="External HTTP active-active regions preflight",
+            list_env="WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+            manifest_env="WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
+            min_count=3,
+            label="active-active region",
+            command=(
+                "gh workflow run external-http-active-active.yml "
+                "-f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true"
+            ),
+            output_artifact="benchmarks/external_http_active_active_results.json",
+            env=environment,
+            manifest_kind="active-active",
+        ),
+        _serverless_preflight(environment),
+        _large_run_preflight(
+            root,
+            check_id="qdrant_10m_service",
+            title="10M Qdrant service load preflight",
+            plan_artifact="benchmarks/production_streaming_load_qdrant_10m_plan.json",
+            output_artifact="benchmarks/production_streaming_load_qdrant_10m_results.json",
+            env=environment,
+        ),
+        _large_run_preflight(
+            root,
+            check_id="qdrant_sharded_10m_service",
+            title="10M sharded Qdrant service load preflight",
+            plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json",
+            output_artifact="benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+            env=environment,
+        ),
+        _large_run_preflight(
+            root,
+            check_id="pgvector_10m_service",
+            title="10M pgvector service load preflight",
+            plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
+            output_artifact="benchmarks/production_streaming_load_pgvector_10m_results.json",
+            env=environment,
+        ),
+        _large_run_preflight(
+            root,
+            check_id="faiss_ivfpq_50m",
+            title="50M FAISS IVF-PQ streaming load preflight",
+            plan_artifact="benchmarks/production_streaming_load_50m_plan.json",
+            output_artifact="benchmarks/production_streaming_load_ivfpq_50m_results.json",
+            env=environment,
+        ),
+        _large_run_preflight(
+            root,
+            check_id="hundred_million_remote_load",
+            title="100M sharded Qdrant service load preflight",
+            plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
+            output_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+            env=environment,
+        ),
+    ]
+    ready_count = sum(1 for item in checks if item.ready)
+    action_required_count = len(checks) - ready_count
+    overall_status = "ready" if action_required_count == 0 else "action_required"
+    return {
+        "schema": "wavemind.production_evidence_preflight.v1",
+        "generated_at": _utc_now(),
+        "overall_status": overall_status,
+        "summary": {
+            "overall_status": overall_status,
+            "ready_count": ready_count,
+            "action_required_count": action_required_count,
+            "total_checks": len(checks),
+        },
+        "checks": [item.as_dict() for item in checks],
+    }
+
+
 def evaluate_production_evidence(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     requirements = [
         _external_cluster_requirement(root),
@@ -488,10 +891,7 @@ def evaluate_production_evidence(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     )
     return {
         "schema": "wavemind.production_evidence.v1",
-        "generated_at": datetime.now(timezone.utc)
-        .replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z"),
+        "generated_at": _utc_now(),
         "overall_status": overall_status,
         "summary": {
             "overall_status": overall_status,
@@ -533,6 +933,43 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {row['title']} | `{row['status']}` | {evidence} | "
             f"`{row['artifact']}` | `{command}` | {row['claim_unlocked']} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_preflight_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Production Evidence Preflight",
+        "",
+        "This report checks whether the environment is ready to run the strict",
+        "remote and large-N production evidence jobs. It is not a substitute for",
+        "the strict production evidence gate; it only verifies prerequisites.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| overall status | `{summary['overall_status']}` |",
+        f"| ready checks | `{summary['ready_count']}` |",
+        f"| action required | `{summary['action_required_count']}` |",
+        f"| total checks | `{summary['total_checks']}` |",
+        "",
+        "| check | status | evidence | missing env | output | command |",
+        "|---|---|---|---|---|---|",
+    ]
+    for row in payload["checks"]:
+        evidence = str(row["evidence"]).replace("|", "\\|")
+        issues = ", ".join(row.get("issues") or ())
+        warnings = ", ".join(row.get("warnings") or ())
+        if issues:
+            evidence = f"{evidence}; issues: {issues}"
+        if warnings:
+            evidence = f"{evidence}; warnings: {warnings}"
+        missing_env = ", ".join(row.get("missing_env") or ())
+        command = str(row["command"]).replace("|", "\\|")
+        lines.append(
+            f"| {row['title']} | `{row['status']}` | {evidence} | "
+            f"`{missing_env}` | `{row['output_artifact']}` | `{command}` |"
         )
     lines.append("")
     return "\n".join(lines)

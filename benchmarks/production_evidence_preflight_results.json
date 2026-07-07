@@ -1,0 +1,178 @@
+{
+  "schema": "wavemind.production_evidence_preflight.v1",
+  "generated_at": "2026-07-07T14:58:37Z",
+  "overall_status": "action_required",
+  "summary": {
+    "overall_status": "action_required",
+    "ready_count": 0,
+    "action_required_count": 8,
+    "total_checks": 8
+  },
+  "checks": [
+    {
+      "id": "external_http_cluster",
+      "title": "External HTTP service-node load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "0 URLs configured",
+      "required_env": [
+        "WAVEMIND_CLUSTER_NODES",
+        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+      ],
+      "missing_env": [
+        "WAVEMIND_CLUSTER_NODES",
+        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+      ],
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f commit_results=true",
+      "output_artifact": "benchmarks/http_cluster_load_results.json",
+      "issues": [
+        "cluster node requires at least 4 URLs",
+        "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ]
+    },
+    {
+      "id": "external_http_active_active",
+      "title": "External HTTP active-active regions preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "0 URLs configured",
+      "required_env": [
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+      ],
+      "missing_env": [
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+      ],
+      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+      "output_artifact": "benchmarks/external_http_active_active_results.json",
+      "issues": [
+        "active-active region requires at least 3 URLs",
+        "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ]
+    },
+    {
+      "id": "serverless_remote_telemetry",
+      "title": "Managed/serverless remote telemetry preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "0 node URLs configured",
+      "required_env": [
+        "WAVEMIND_SERVERLESS_NODES"
+      ],
+      "missing_env": [
+        "WAVEMIND_SERVERLESS_NODES"
+      ],
+      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
+      "output_artifact": "deploy/serverless/observed-telemetry.remote.json",
+      "issues": [
+        "serverless node requires at least 1 URLs",
+        "set WAVEMIND_SERVERLESS_NODES"
+      ],
+      "warnings": [
+        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      ]
+    },
+    {
+      "id": "qdrant_10m_service",
+      "title": "10M Qdrant service load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "plan benchmarks/production_streaming_load_qdrant_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+      "required_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "issues": [
+        "set WAVEMIND_QDRANT_URL"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "qdrant_sharded_10m_service",
+      "title": "10M sharded Qdrant service load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "plan benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+      "required_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "issues": [
+        "set WAVEMIND_QDRANT_URLS"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "pgvector_10m_service",
+      "title": "10M pgvector service load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "plan benchmarks/production_streaming_load_pgvector_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.06 GB",
+      "required_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "missing_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "issues": [
+        "set WAVEMIND_PGVECTOR_DSN"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "faiss_ivfpq_50m",
+      "title": "50M FAISS IVF-PQ streaming load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "plan benchmarks/production_streaming_load_50m_plan.json, vectors 50000000, required env 1, missing env 1, required local free 1.578 GB",
+      "required_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "missing_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "issues": [
+        "set WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "hundred_million_remote_load",
+      "title": "100M sharded Qdrant service load preflight",
+      "status": "action_required",
+      "ready": false,
+      "evidence": "plan benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json, vectors 100000000, required env 1, missing env 1, required local free 0.06 GB",
+      "required_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "issues": [
+        "set WAVEMIND_QDRANT_URLS"
+      ],
+      "warnings": []
+    }
+  ]
+}

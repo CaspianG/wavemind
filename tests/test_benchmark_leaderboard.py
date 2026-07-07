@@ -118,6 +118,10 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "tests/test_benchmark_dashboard.py" in workflow
     assert "production_evidence_gate.py" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
+    assert "production-evidence-preflight" in workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md" in workflow
+    assert "benchmarks/production_evidence_preflight_results.json" in workflow
+    assert "tests/test_production_evidence_preflight.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "validate_benchmark_artifacts.py" in workflow
     assert "--max-age-days 8" in workflow

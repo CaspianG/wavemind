@@ -1674,7 +1674,13 @@ The ingest command only accepts real large-N proof filenames such as
 `production_streaming_load_qdrant_sharded_100m_results.json`; it rejects smoke
 artifacts, wrong engines, wrong vector counts, skipped rows, recall below
 `0.95`, p99 above `100 ms`, and failed SLO/cost rows.
-CLI preflight: `wavemind production-evidence --strict`.
+Prerequisite preflight: `wavemind production-evidence-preflight --write-artifacts`.
+This writes `benchmarks/production_evidence_preflight_results.json` and
+`benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, checks the required remote URLs,
+service index env vars, FAISS paths, plan artifacts, disk headroom, and exact
+large-run commands, and can fail deployments with
+`--fail-on-action-required`. Strict claim gate: `wavemind production-evidence
+--strict`.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
@@ -1717,6 +1723,7 @@ public claim boundaries stable:
 |---|---|---|---|
 | Production readiness | WaveMind core readiness is gated by checked-in artifacts before release. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | Missing external competitor credentials should not be treated as WaveMind core failure, but they still limit competitor claims. |
 | Strict production evidence | Remote service-node, active-active, serverless, 10M service, 50M, and 100M claims are separated into a hard evidence gate. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md`, `benchmarks/production_evidence_gate.py`, `wavemind production-evidence --strict` | Current status remains action-required until real remote/service artifacts are committed. |
+| Production evidence preflight | Remote endpoint/env/path prerequisites are checked before launching expensive strict-evidence jobs. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, `wavemind production-evidence-preflight --write-artifacts` | A ready preflight is not a passing evidence result; it only proves the environment is ready to run the remote/large-N jobs. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
 | 50M memory-scale preflight | Checked-in plan-only artifact estimates local index/transient storage, application storage, required env, blockers, and exact resumable reproduction command with checkpointing. | `benchmarks/production_streaming_load_50m_plan.json` | Not a completed latency/recall benchmark until `production_streaming_load_ivfpq_50m_results.json` is produced by a real run. |
 | pgvector tuning | Real PostgreSQL/pgvector service profile now separates baseline HNSW, exact recall floor, and iterative HNSW tuning. | `benchmarks/production_pgvector_tuning_results.json` | This is a 50k service-backed tuning profile, not yet the 100k/1M production load SLO artifact. |
