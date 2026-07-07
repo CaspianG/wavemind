@@ -737,9 +737,20 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
 ```
 
 The chart deploys a StatefulSet, normal and headless Services, optional auth
-Secret wiring, and a scheduled `cluster-repair` CronJob. It uses
+Secret wiring, a scheduled `cluster-repair` CronJob, and optional Memory OS
+CronJobs that call `/memory-os/plan` before `/memory-os/run`. It uses
 `ghcr.io/caspiang/wavemind` by default; set `image.repository` when deploying
 from a private registry.
+
+```sh
+helm upgrade --install wavemind ./deploy/helm/wavemind \
+  --set memoryOs.enabled=true \
+  --set runtime.auditQueries=1 \
+  --set runtime.redisUrl=redis://redis.default.svc.cluster.local:6379/0
+```
+
+With `memoryOs.strictPlan=true`, the Memory OS job fails before mutation when
+the plan reports `architecture_required`.
 
 Operator-style deployment:
 

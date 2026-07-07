@@ -24,6 +24,7 @@ from .importers import import_path
 from .jobs import (
     CachePrewarmWorker,
     HotMemoryCache,
+    MemoryOSScheduler,
     MemoryOSWorker,
     QueryVectorCache,
     RedisHotMemoryCache,
@@ -536,6 +537,28 @@ class MemoryOSRequest(BaseModel):
     target_qps: float = Field(default=100.0, ge=0.0)
     deployment: str = "local"
     multimodal: bool = False
+
+
+class MemoryOSPlanRequest(BaseModel):
+    namespace: str | None = None
+    audit_limit: int = Field(default=512, ge=0, le=10000)
+    max_hot_queries: int = Field(default=32, ge=0, le=1000)
+    min_frequency: int = Field(default=2, ge=1)
+    top_k: int = Field(default=3, ge=1, le=100)
+    min_score: float | None = None
+    target_memories: int | None = Field(default=None, ge=0)
+    namespace_count: int | None = Field(default=None, ge=0)
+    node_count: int | None = Field(default=None, ge=0)
+    replication_factor: int = Field(default=3, ge=1)
+    read_quorum: int = Field(default=1, ge=1)
+    read_fanout: int | None = Field(default=None, ge=1)
+    target_qps: float = Field(default=100.0, ge=0.0)
+    target_p99_ms: float = Field(default=100.0, ge=0.0)
+    observed_p99_ms: float | None = Field(default=None, ge=0.0)
+    deployment: str = "local"
+    cache_mode: str = "auto"
+    multimodal: bool = False
+    memory_pressure_threshold: int = Field(default=50000, ge=0)
 
 
 class ScalePlanResponse(BaseModel):
@@ -1273,6 +1296,32 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 min_score=request.min_score,
             )
         return CachePrewarmResponse(**report.as_dict())
+
+    @app.post("/memory-os/plan", dependencies=[Depends(require_role("admin"))])
+    def memory_os_plan(request: MemoryOSPlanRequest):
+        with _api_operation(app, "memory_os_plan"):
+            plan = MemoryOSScheduler(app.state.mind).plan(
+                namespace=request.namespace,
+                audit_limit=request.audit_limit,
+                max_hot_queries=request.max_hot_queries,
+                min_frequency=request.min_frequency,
+                top_k=request.top_k,
+                min_score=request.min_score,
+                target_memories=request.target_memories,
+                namespace_count=request.namespace_count,
+                node_count=request.node_count,
+                replication_factor=request.replication_factor,
+                read_quorum=request.read_quorum,
+                read_fanout=request.read_fanout,
+                target_qps=request.target_qps,
+                target_p99_ms=request.target_p99_ms,
+                observed_p99_ms=request.observed_p99_ms,
+                deployment=request.deployment,
+                cache_mode=request.cache_mode,
+                multimodal=request.multimodal,
+                memory_pressure_threshold=request.memory_pressure_threshold,
+            )
+        return plan.as_dict()
 
     @app.post("/memory-os/run", dependencies=[Depends(require_role("admin"))])
     def memory_os_run(request: MemoryOSRequest):

@@ -61,6 +61,29 @@ repair:
   failedJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
 
+memoryOs:
+  enabled: false
+  schedule: "*/10 * * * *"
+  namespace: ""
+  auditLimit: 512
+  maxHotQueries: 32
+  minFrequency: 2
+  topK: 3
+  targetMemories: 2000000
+  namespaceCount: 4096
+  deployment: production
+  cacheMode: auto
+  targetQps: 100
+  targetP99Ms: 100
+  observedP99Ms: null
+  multimodal: false
+  strictPlan: true
+  runOnAllReplicas: true
+  timeoutSeconds: 30
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+
 autoscaling:
   enabled: false
   minReplicas: 3

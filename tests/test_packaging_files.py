@@ -242,6 +242,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("examples/qdrant-sharded-streaming/README.md").exists()
     assert "docs/OBSERVABILITY.md" in readme
     assert "deploy/helm/wavemind" in readme
+    assert "memoryOs.enabled=true" in readme
+    assert "/memory-os/plan" in readme
     assert "deploy/operator" in readme
     assert "deploy/serverless" in readme
     assert "wavemind operator-bundle" in readme
@@ -252,6 +254,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind cluster-autoscale-plan" in readme
     assert '"targetMemories": 10000000' in readme
     assert "spec.autoscaling.targetMemories" in roadmap
+    assert "Memory OS CronJobs" in roadmap
     assert "wavemind scale-plan --target-memories 50000" in readme
     assert "wavemind advise --target-memories 2000000" in readme
     assert "--fail-on action_required" in readme

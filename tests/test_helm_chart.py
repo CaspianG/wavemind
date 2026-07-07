@@ -16,6 +16,7 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert (CHART_ROOT / "values.yaml").exists()
     assert (CHART_ROOT / "templates/statefulset.yaml").exists()
     assert (CHART_ROOT / "templates/repair-cronjob.yaml").exists()
+    assert (CHART_ROOT / "templates/memory-os-cronjob.yaml").exists()
     assert (CHART_ROOT / "templates/hpa.yaml").exists()
 
     chart = read_chart_file("Chart.yaml")
@@ -30,6 +31,8 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "replicationFactor: 2" in values
     assert "autoscaling:" in values
     assert "maxReplicas: 12" in values
+    assert "memoryOs:" in values
+    assert "strictPlan: true" in values
 
 
 def test_helm_chart_templates_define_cluster_network_and_state():
@@ -66,6 +69,25 @@ def test_helm_chart_repair_cronjob_wires_cluster_repair():
     assert "WAVEMIND_API_KEY" in cronjob
     assert "--namespace-prefix" in cronjob
     assert "--namespace-count" in cronjob
+
+
+def test_helm_chart_memory_os_cronjob_wires_api_scheduler_and_worker():
+    cronjob = read_chart_file("templates/memory-os-cronjob.yaml")
+    values = read_chart_file("values.yaml")
+    readme = read_chart_file("README.md")
+
+    assert "{{- if .Values.memoryOs.enabled }}" in cronjob
+    assert "kind: CronJob" in cronjob
+    assert "app.kubernetes.io/component: memory-os" in cronjob
+    assert "/memory-os/plan" in cronjob
+    assert "/memory-os/run" in cronjob
+    assert "strictPlan" in cronjob
+    assert "runOnAllReplicas" in cronjob
+    assert "WAVEMIND_API_KEY" in cronjob
+    assert "svc.cluster.local" in cronjob
+    assert "memoryOs:" in values
+    assert "cacheMode: auto" in values
+    assert "--set memoryOs.enabled=true" in readme
 
 
 def test_helm_chart_hpa_is_optional_and_targets_statefulset():
@@ -113,3 +135,5 @@ def test_helm_chart_is_checked_by_github_actions():
     assert "grep -q \"kind: StatefulSet\"" in workflow
     assert "grep -q \"kind: CronJob\"" in workflow
     assert "grep -q \"kind: HorizontalPodAutoscaler\"" in workflow
+    assert "--set memoryOs.enabled=true" in workflow
+    assert "grep -q \"memory-os\"" in workflow

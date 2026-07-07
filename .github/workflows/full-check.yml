@@ -371,9 +371,12 @@ jobs:
             --set repair.namespaceCount=4 \
             --set autoscaling.enabled=true \
             --set autoscaling.maxReplicas=12 \
+            --set memoryOs.enabled=true \
             > /tmp/wavemind-chart.yaml
           grep -q "kind: StatefulSet" /tmp/wavemind-chart.yaml
           grep -q "kind: CronJob" /tmp/wavemind-chart.yaml
           grep -q "kind: HorizontalPodAutoscaler" /tmp/wavemind-chart.yaml
           grep -q "cluster-repair" /tmp/wavemind-chart.yaml
+          grep -q "memory-os" /tmp/wavemind-chart.yaml
+          grep -q "/memory-os/plan" /tmp/wavemind-chart.yaml
           grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml

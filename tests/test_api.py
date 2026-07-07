@@ -533,6 +533,64 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    mind = WaveMind(
+        db_path=tmp_path / "api-memory-os-plan.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        mind.remember("memory os plan should prewarm budget recall", namespace="tenant:os")
+        mind.remember("memory os plan cold note stays untouched", namespace="tenant:os")
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+        before = mind.stats(namespace="tenant:os")
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/memory-os/plan",
+                json={
+                    "namespace": "tenant:os",
+                    "min_frequency": 2,
+                    "top_k": 1,
+                    "target_memories": 2000000,
+                    "namespace_count": 4096,
+                    "node_count": 2,
+                    "deployment": "production",
+                    "cache_mode": "auto",
+                    "target_qps": 500,
+                    "observed_p99_ms": 150,
+                    "multimodal": True,
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            task_by_id = {task["id"]: task for task in payload["tasks"]}
+
+            assert payload["status"] == "architecture_required"
+            assert payload["effective_cache_mode"] == "redis"
+            assert payload["hot_query_count"] == 1
+            assert payload["worker_count"] >= 5
+            assert "memory-os" in payload["enabled_task_ids"]
+            assert "cache-prewarm" in payload["enabled_task_ids"]
+            assert task_by_id["memory-os"]["requires_distributed_lock"] is True
+            assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"]["command"]
+
+            after = mind.stats(namespace="tenant:os")
+            assert before["active_memories"] == after["active_memories"]
+            assert mind.audit_events(namespace="tenant:os", action="memory_os", limit=1) == []
+
+            metrics = client.get("/metrics")
+            assert "wavemind_api_memory_os_plan_requests_total 1" in metrics.text
+    finally:
+        mind.close()
+
+
 def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
     class FakeRedisClient:
         values = {}

@@ -1,0 +1,104 @@
+{{- if .Values.memoryOs.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "wavemind.fullname" . }}-memory-os
+  labels:
+    {{- include "wavemind.labels" . | nindent 4 }}
+    app.kubernetes.io/component: memory-os
+spec:
+  schedule: {{ .Values.memoryOs.schedule | quote }}
+  concurrencyPolicy: {{ .Values.memoryOs.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.memoryOs.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.memoryOs.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "wavemind.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: memory-os
+        spec:
+          serviceAccountName: {{ include "wavemind.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          containers:
+            - name: memory-os
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              {{- if .Values.auth.enabled }}
+              env:
+                - name: WAVEMIND_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "wavemind.authSecretName" . }}
+                      key: {{ .Values.auth.adminKeyKey }}
+              {{- end }}
+              command:
+                - python
+                - -c
+              args:
+                - |
+                  import json
+                  import os
+                  import sys
+                  import urllib.request
+
+                  nodes = [
+                  {{- range $index := until (int .Values.replicaCount) }}
+                      {{ printf "http://%s-%d.%s.%s.svc.cluster.local:%v" (include "wavemind.fullname" $) $index (include "wavemind.headlessServiceName" $) $.Release.Namespace $.Values.service.port | quote }},
+                  {{- end }}
+                  ]
+                  timeout = float({{ .Values.memoryOs.timeoutSeconds }})
+                  api_key = os.environ.get("WAVEMIND_API_KEY")
+                  headers = {"Content-Type": "application/json"}
+                  if api_key:
+                      headers["x-api-key"] = api_key
+
+                  namespace = {{- if .Values.memoryOs.namespace }} {{ .Values.memoryOs.namespace | quote }}{{- else }} None{{- end }}
+                  observed_p99 = {{- if .Values.memoryOs.observedP99Ms }} float({{ .Values.memoryOs.observedP99Ms }}){{- else }} None{{- end }}
+                  plan_payload = {
+                      "namespace": namespace,
+                      "audit_limit": int({{ .Values.memoryOs.auditLimit }}),
+                      "max_hot_queries": int({{ .Values.memoryOs.maxHotQueries }}),
+                      "min_frequency": int({{ .Values.memoryOs.minFrequency }}),
+                      "top_k": int({{ .Values.memoryOs.topK }}),
+                      "target_memories": int({{ .Values.memoryOs.targetMemories }}),
+                      "namespace_count": int({{ .Values.memoryOs.namespaceCount }}),
+                      "node_count": len(nodes),
+                      "deployment": {{ .Values.memoryOs.deployment | quote }},
+                      "cache_mode": {{ .Values.memoryOs.cacheMode | quote }},
+                      "target_qps": float({{ .Values.memoryOs.targetQps }}),
+                      "target_p99_ms": float({{ .Values.memoryOs.targetP99Ms }}),
+                      "observed_p99_ms": observed_p99,
+                      "multimodal": {{ if .Values.memoryOs.multimodal }}True{{ else }}False{{ end }},
+                  }
+                  run_payload = dict(plan_payload)
+                  run_payload.pop("cache_mode", None)
+
+                  def post(node, path, payload):
+                      data = json.dumps(payload).encode("utf-8")
+                      request = urllib.request.Request(
+                          node.rstrip("/") + path,
+                          data=data,
+                          headers=headers,
+                          method="POST",
+                      )
+                      with urllib.request.urlopen(request, timeout=timeout) as response:
+                          return json.loads(response.read().decode("utf-8"))
+
+                  plan = post(nodes[0], "/memory-os/plan", plan_payload)
+                  print(json.dumps({"node": nodes[0], "plan": plan}, ensure_ascii=False))
+                  if {{ if .Values.memoryOs.strictPlan }}True{{ else }}False{{ end }} and plan.get("status") not in {"ok", "watch"}:
+                      raise SystemExit(3)
+
+                  run_nodes = nodes if {{ if .Values.memoryOs.runOnAllReplicas }}True{{ else }}False{{ end }} else nodes[:1]
+                  failed = []
+                  for node in run_nodes:
+                      report = post(node, "/memory-os/run", run_payload)
+                      print(json.dumps({"node": node, "report": report}, ensure_ascii=False))
+                      if not report.get("ok", False):
+                          failed.append(node)
+                  if failed:
+                      print(json.dumps({"failed_nodes": failed}), file=sys.stderr)
+                      raise SystemExit(4)
+{{- end }}

@@ -171,7 +171,8 @@ policy matters more than raw vector-database scale:
   preflight for config changes, not a full networked Raft log.
 - A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
-  storage, and scheduled `cluster-repair` CronJob.
+  storage, scheduled `cluster-repair` CronJob, and opt-in Memory OS CronJobs
+  that call `/memory-os/plan` before `/memory-os/run`.
 - GitHub Actions builds and publishes the official
   `ghcr.io/caspiang/wavemind` container image for `main` and version tags, and
   `full-check` validates Helm lint/template rendering.
