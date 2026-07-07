@@ -201,6 +201,14 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmark_artifact_audit.json" in readme
     assert "validate_benchmark_artifacts.py" in readme
     assert "stale or manually edited public benchmark artifacts block" in readme
+    assert "### Current Evidence Status" in readme
+    assert "benchmarks/BENCHMARK_LEADERBOARD.md" in readme
+    assert "benchmarks/production_streaming_load_ivfpq_10m_results.json" in readme
+    assert "deploy/serverless/observed-telemetry.loopback.json" in readme
+    assert "observed-telemetry.remote.json" in readme
+    assert "Local loopback evidence is not a remote Kubernetes" in readme
+    assert "not a hosted managed-serverless claim" in readme
+    assert "benchmarks/memory_competitor_results.json" in readme
     assert "production_readiness_results.json" in readme
     assert "PRODUCTION_READINESS.md" in readme
     assert "examples/chroma_migration.py" in readme

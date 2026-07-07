@@ -1487,6 +1487,21 @@ artifacts when `commit_results=true`. When that remote file exists,
 `benchmarks/scale_readiness_benchmark.py` prefers it over the checked-in
 loopback telemetry.
 
+### Current Evidence Status
+
+The compact leaderboard now carries an explicit evidence-status table:
+[`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
+Use that generated file for exact current numbers. This README keeps the
+public claim boundaries stable:
+
+| Claim area | Current public status | Source of truth | Not proven yet |
+|---|---|---|---|
+| Production readiness | WaveMind core readiness is gated by checked-in artifacts before release. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | Missing external competitor credentials should not be treated as WaveMind core failure, but they still limit competitor claims. |
+| 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not a 50M run and not yet a 10M Qdrant/pgvector service comparison. |
+| HTTP cluster load | Local multi-process API-node evidence exists; the external workflow can run the same contract against real API URLs. | `benchmarks/http_cluster_load_results.json`, `.github/workflows/external-http-cluster-load.yml` | Local loopback evidence is not a remote Kubernetes or multi-region production result. |
+| Serverless telemetry | Loopback replica telemetry exists; remote telemetry has a dedicated manual workflow and artifact path. | `deploy/serverless/observed-telemetry.loopback.json`, `.github/workflows/serverless-observed-telemetry.yml` | Loopback evidence is not a hosted managed-serverless claim until `observed-telemetry.remote.json` is committed. |
+| Competitor adapters | Local Mem0/LangGraph/GraphRAG-style adapters run; optional Zep evidence is skipped until configured. | `benchmarks/memory_competitor_results.json` | Not a full independent Mem0/Zep/Letta leaderboard without live service credentials and public runner parity. |
+
 Visual summary generated from the checked-in JSON results:
 
 ![WaveMind benchmark summary](docs/assets/benchmark-summary.svg)
