@@ -46,6 +46,18 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "token F1" in leaderboard
     assert "extractive smoke: 0.024" not in leaderboard
     assert "WaveMind dynamic capacity" in leaderboard
+    assert "## Evidence Source Status" in leaderboard
+    assert "| area | current source | claim status | next action |" in leaderboard
+    assert "Artifact freshness" in leaderboard
+    assert "Serverless telemetry" in leaderboard
+    assert "loopback evidence, not a managed-serverless claim" in leaderboard
+    assert "serverless-observed-telemetry.yml" in leaderboard
+    assert "External HTTP cluster load" in leaderboard
+    assert "local loopback service-node evidence" in leaderboard
+    assert "10M streaming load" in leaderboard
+    assert "Production readiness gate" in leaderboard
+    assert "Competitor adapters" in leaderboard
+    assert "skipped `Zep`" in leaderboard
 
 
 def test_benchmark_leaderboard_workflow_reruns_core_artifacts():

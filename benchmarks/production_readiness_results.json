@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-06T23:54:19Z",
+  "generated_at": "2026-07-07T00:06:57Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {

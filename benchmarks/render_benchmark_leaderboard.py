@@ -57,6 +57,13 @@ def load_matrix(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_json_if_exists(root: Path, relative_path: str) -> dict[str, Any] | None:
+    path = root / relative_path
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def fmt(value: Any) -> str:
     if value is None:
         return "-"
@@ -250,6 +257,145 @@ def leaderboard_row(entry: dict[str, Any]) -> str | None:
     )
 
 
+def _matrix_entry(payload: dict[str, Any], entry_id: str) -> dict[str, Any] | None:
+    for entry in payload.get("benchmarks", []):
+        if entry.get("id") == entry_id:
+            return entry
+    return None
+
+
+def _first_result(payload: dict[str, Any] | None) -> dict[str, Any]:
+    if not payload:
+        return {}
+    results = payload.get("results")
+    if isinstance(results, list) and results and isinstance(results[0], dict):
+        return results[0]
+    return {}
+
+
+def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> list[str]:
+    rows: list[tuple[str, str, str, str]] = []
+
+    rows.append(
+        (
+            "Artifact freshness",
+            f"{payload.get('refresh_profile', 'unknown')} matrix refresh at `{payload.get('generated_at', 'unknown')}`",
+            f"source `{payload.get('source_ref', 'unknown')}`; audit gate enforced by `validate_benchmark_artifacts.py`",
+            "Keep weekly refresh green before public claims.",
+        )
+    )
+
+    remote_serverless = load_json_if_exists(
+        root,
+        "deploy/serverless/observed-telemetry.remote.json",
+    )
+    loopback_serverless = load_json_if_exists(
+        root,
+        "deploy/serverless/observed-telemetry.loopback.json",
+    )
+    serverless = remote_serverless or loopback_serverless
+    if serverless:
+        is_remote = remote_serverless is not None
+        mode = str(serverless.get("node_mode") or ("external" if is_remote else "loopback"))
+        rows.append(
+            (
+                "Serverless telemetry",
+                (
+                    f"{mode} API pool; `{serverless.get('source', 'unknown')}`; "
+                    f"{serverless.get('measured_replicas', '?')} measured replicas"
+                ),
+                (
+                    f"observed SLO `{serverless.get('observed_slo_pass')}`; "
+                    + ("remote evidence" if is_remote else "loopback evidence, not a managed-serverless claim")
+                ),
+                (
+                    "Keep remote telemetry current with `.github/workflows/serverless-observed-telemetry.yml`."
+                    if is_remote
+                    else "Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes."
+                ),
+            )
+        )
+
+    http_cluster = load_json_if_exists(root, "benchmarks/http_cluster_load_results.json")
+    http_scenario = (http_cluster or {}).get("scenario", {})
+    http_result = _first_result(http_cluster)
+    if http_cluster:
+        environment = str(http_scenario.get("environment", "unknown"))
+        rows.append(
+            (
+                "External HTTP cluster load",
+                f"{environment}; `{http_scenario.get('source', 'unknown')}`; {http_scenario.get('node_count', '?')} nodes",
+                (
+                    f"SLO `{http_result.get('slo_pass')}`; "
+                    + ("remote cluster evidence" if environment != "local-loopback" else "local loopback service-node evidence")
+                ),
+                "Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest.",
+            )
+        )
+
+    streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_ivfpq_10m_results.json")
+    streaming_result = _first_result(streaming)
+    if streaming_result and isinstance(streaming_result.get("results"), list):
+        nested_results = streaming_result["results"]
+        if nested_results and isinstance(nested_results[0], dict):
+            streaming_result = nested_results[0]
+    if streaming_result:
+        rows.append(
+            (
+                "10M streaming load",
+                f"local `{streaming_result.get('engine', 'unknown')}` profile",
+                (
+                    f"target recall `{fmt(streaming_result.get('target_recall_at_k'))}`, "
+                    f"p99 `{fmt(streaming_result.get('p99_latency_ms'))} ms`, "
+                    f"SLO `{streaming_result.get('slo_status', 'unknown')}`"
+                ),
+                "Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts.",
+            )
+        )
+
+    readiness = _matrix_entry(payload, "production_readiness_gate")
+    readiness_current = (readiness or {}).get("current", {})
+    readiness_metrics = representative_metrics(
+        readiness_current.get("WaveMind production readiness")
+        if isinstance(readiness_current, dict)
+        else None
+    )
+    if readiness_metrics:
+        rows.append(
+            (
+                "Production readiness gate",
+                "checked-in benchmark artifacts",
+                (
+                    f"`{readiness_metrics.get('overall_status')}`; "
+                    f"{readiness_metrics.get('pass_count')}/{readiness_metrics.get('total_criteria')} pass"
+                ),
+                str((readiness or {}).get("next_step", "Keep the gate green.")),
+            )
+        )
+
+    competitors = load_json_if_exists(root, "benchmarks/memory_competitor_results.json")
+    competitor_results = competitors.get("results", []) if competitors else []
+    skipped = [
+        result.get("engine", "unknown")
+        for result in competitor_results
+        if isinstance(result, dict) and result.get("skipped")
+    ]
+    if competitor_results:
+        rows.append(
+            (
+                "Competitor adapters",
+                "checked local adapters plus optional external services",
+                f"configured `{len(competitor_results) - len(skipped)}`; skipped `{', '.join(skipped) or '-'}`",
+                "Configure skipped external services before claiming full competitor coverage.",
+            )
+        )
+
+    return [
+        f"| {area} | {source} | {status} | {next_action} |"
+        for area, source, status, next_action in rows
+    ]
+
+
 def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
     payload = load_matrix(root)
     implemented = [
@@ -257,6 +403,7 @@ def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
     ]
     rows = [row for entry in implemented if (row := leaderboard_row(entry))]
     table = "\n".join(rows)
+    evidence_rows = "\n".join(evidence_status_rows(payload, root))
     return "\n".join(
         [
             "# WaveMind Benchmark Leaderboard",
@@ -269,6 +416,12 @@ def render_leaderboard(root: Path = PROJECT_ROOT) -> str:
             "| benchmark | category | primary metric | best WaveMind result | best baseline result | readout |",
             "|---|---|---|---|---|---|",
             table,
+            "",
+            "## Evidence Source Status",
+            "",
+            "| area | current source | claim status | next action |",
+            "|---|---|---|---|",
+            evidence_rows,
             "",
             "## Reading Rules",
             "",

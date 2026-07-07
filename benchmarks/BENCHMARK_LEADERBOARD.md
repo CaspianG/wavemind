@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-06T23:54:17Z` from `6e0665ad8253`.
+Last refresh: `2026-07-07T00:06:56Z` from `280772fe82b4`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -28,6 +28,17 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production readiness gate | production-scale | readiness score | WaveMind production readiness: 1 / - | - | WaveMind-only check |
 | Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 3.088 ms | GraphRAG static graph: 1 / 0.013 ms | Baseline leads on quality |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
+
+## Evidence Source Status
+
+| area | current source | claim status | next action |
+|---|---|---|---|
+| Artifact freshness | local matrix refresh at `2026-07-07T00:06:56Z` | source `280772fe82b4`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
+| External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
+| 10M streaming load | local `WaveMind faiss-ivfpq-persisted streaming` profile | target recall `0.99`, p99 `60.1 ms`, SLO `scale_required` | Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts. |
+| Production readiness gate | checked-in benchmark artifacts | `pass`; 30/30 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
+| Competitor adapters | checked local adapters plus optional external services | configured `4`; skipped `Zep` | Configure skipped external services before claiming full competitor coverage. |
 
 ## Reading Rules
 
