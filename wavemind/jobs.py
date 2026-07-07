@@ -584,6 +584,19 @@ class CachePrewarmReport:
 
 
 @dataclass(frozen=True)
+class TransitionPrefetchEdge:
+    namespace: str
+    from_query: str
+    to_query: str
+    count: int
+    probability: float
+    last_seen: float
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class PredictivePrefetchReport:
     scanned_hot_queries: int = 0
     generated_queries: int = 0
@@ -592,6 +605,7 @@ class PredictivePrefetchReport:
     errors: dict[str, str] = field(default_factory=dict)
     queries: tuple[str, ...] = ()
     transition_queries: tuple[str, ...] = ()
+    transition_edges: tuple[TransitionPrefetchEdge, ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -606,6 +620,7 @@ class PredictivePrefetchReport:
             "errors": dict(self.errors),
             "queries": list(self.queries),
             "transition_queries": list(self.transition_queries),
+            "transition_edges": [edge.as_dict() for edge in self.transition_edges],
             "ok": self.ok,
         }
 
@@ -2274,16 +2289,16 @@ class MemoryOSWorker:
 
         planned: OrderedDict[tuple[str, str], None] = OrderedDict()
         errors: dict[str, str] = {}
-        transition_planned = self._transition_queries(
+        transition_edges = self._transition_edges(
             events,
             hot_queries,
             max_queries=max_queries,
             window_seconds=transition_window_seconds,
         )
-        for key in transition_planned:
+        for edge in transition_edges:
             if len(planned) >= max_queries:
                 break
-            planned[key] = None
+            planned[(edge.namespace, edge.to_query)] = None
         for hot_query in hot_queries:
             if len(planned) >= max_queries:
                 break
@@ -2345,17 +2360,18 @@ class MemoryOSWorker:
             skipped=skipped,
             errors=errors,
             queries=tuple(warmed_queries),
-            transition_queries=tuple(query for _namespace, query in transition_planned),
+            transition_queries=tuple(edge.to_query for edge in transition_edges),
+            transition_edges=transition_edges,
         )
 
-    def _transition_queries(
+    def _transition_edges(
         self,
         events: Iterable[Any],
         hot_queries: list[MemoryOSHotQuery],
         *,
         max_queries: int,
         window_seconds: float,
-    ) -> tuple[tuple[str, str], ...]:
+    ) -> tuple[TransitionPrefetchEdge, ...]:
         if max_queries <= 0 or window_seconds <= 0 or not hot_queries:
             return ()
         hot_keys = {(query.namespace, query.query) for query in hot_queries}
@@ -2367,8 +2383,9 @@ class MemoryOSWorker:
             ),
         )
         previous_by_namespace: dict[str, tuple[str, float]] = {}
-        transition_counts: OrderedDict[tuple[str, str], int] = OrderedDict()
-        last_seen: dict[tuple[str, str], float] = {}
+        transition_counts: OrderedDict[tuple[str, str, str], int] = OrderedDict()
+        totals_by_source: dict[tuple[str, str], int] = {}
+        last_seen: dict[tuple[str, str, str], float] = {}
         for event in ordered:
             metadata = getattr(event, "metadata", {}) or {}
             query = str(metadata.get("query") or "").strip()
@@ -2385,20 +2402,42 @@ class MemoryOSWorker:
                     and 0.0 <= elapsed <= float(window_seconds)
                     and (namespace, previous_query) in hot_keys
                 ):
-                    key = (namespace, query)
+                    source = (namespace, previous_query)
+                    totals_by_source[source] = totals_by_source.get(source, 0) + 1
+                    if (namespace, query) in hot_keys:
+                        previous_by_namespace[namespace] = (query, created_at)
+                        continue
+                    key = (namespace, previous_query, query)
                     transition_counts[key] = transition_counts.get(key, 0) + 1
                     last_seen[key] = max(created_at, last_seen.get(key, 0.0))
             previous_by_namespace[namespace] = (query, created_at)
+        edges = tuple(
+            TransitionPrefetchEdge(
+                namespace=namespace,
+                from_query=from_query,
+                to_query=to_query,
+                count=count,
+                probability=(
+                    count / totals_by_source.get((namespace, from_query), count)
+                    if count > 0
+                    else 0.0
+                ),
+                last_seen=last_seen.get((namespace, from_query, to_query), 0.0),
+            )
+            for (namespace, from_query, to_query), count in transition_counts.items()
+        )
         ordered_transitions = sorted(
-            transition_counts.items(),
+            edges,
             key=lambda item: (
-                -item[1],
-                -last_seen.get(item[0], 0.0),
-                item[0][0],
-                item[0][1],
+                -item.probability,
+                -item.count,
+                -item.last_seen,
+                item.namespace,
+                item.from_query,
+                item.to_query,
             ),
         )
-        return tuple(key for key, _count in ordered_transitions[:max_queries])
+        return tuple(ordered_transitions[:max_queries])
 
     def _neighbor_queries(
         self,

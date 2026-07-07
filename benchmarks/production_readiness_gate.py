@@ -480,6 +480,27 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "advise_architecture" in set(memory_os.get("actions", []))
         and int(memory_os.get("architecture_next_commands", 0)) >= 1
     )
+    def has_budget_risk_transition(edges: object) -> bool:
+        if not isinstance(edges, list):
+            return False
+        for edge in edges:
+            if not isinstance(edge, dict):
+                continue
+            if (
+                edge.get("from_query") == "budget recall"
+                and edge.get("to_query") == "risk limits"
+                and float(edge.get("probability", 0.0)) >= 1.0
+                and int(edge.get("count", 0)) >= 1
+            ):
+                return True
+        return False
+
+    redis_transition_edge_pass = has_budget_risk_transition(
+        redis_cache.get("memory_os_transition_prefetch_edges")
+    )
+    memory_os_transition_edge_pass = has_budget_risk_transition(
+        memory_os.get("transition_prefetch_edges")
+    )
     sharding = scale.get("WaveMind distributed sharding", {})
     http_sharding = scale.get("WaveMind distributed HTTP sharding", {})
     sustained_http_cluster = scale.get("WaveMind sustained HTTP cluster load", {})
@@ -1087,6 +1108,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and "risk limits"
                 in set(redis_cache.get("memory_os_transition_prefetch_queries") or [])
                 and redis_cache.get("memory_os_transition_prefetch_hit")
+                and redis_transition_edge_pass
                 and int(redis_cache.get("memory_os_user_feedback_events", 0)) >= 2
                 and float(
                     redis_cache.get("memory_os_positive_feedback_priority_delta", 0.0)
@@ -1124,6 +1146,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"predictive warmed {redis_cache.get('memory_os_predictive_warmed')}, "
                 f"transition hit {redis_cache.get('memory_os_transition_prefetch_hit')}, "
                 f"transition queries {redis_cache.get('memory_os_transition_prefetch_queries')}, "
+                f"transition edge {redis_transition_edge_pass}, "
                 f"feedback events {redis_cache.get('memory_os_user_feedback_events')}, "
                 f"lock acquired {redis_cache.get('memory_os_lock_acquired')}, "
                 f"busy skipped {redis_cache.get('memory_os_busy_lock_skipped')}, "
@@ -1275,6 +1298,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(memory_os.get("predictive_prefetch_warmed", 0)) >= 1
                 and "risk limits" in set(memory_os.get("transition_prefetch_queries") or [])
                 and memory_os.get("transition_prefetch_hit")
+                and memory_os_transition_edge_pass
                 and int(memory_os.get("expired_purged", 0)) >= 1
                 and int(memory_os.get("concepts_created", 0)) >= 1
                 and int(memory_os.get("user_feedback_events", 0)) >= 2
@@ -1295,6 +1319,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"predictive warmed {memory_os.get('predictive_prefetch_warmed')}, "
                 f"transition hit {memory_os.get('transition_prefetch_hit')}, "
                 f"transition queries {memory_os.get('transition_prefetch_queries')}, "
+                f"transition edge {memory_os_transition_edge_pass}, "
                 f"expired {memory_os.get('expired_purged')}, "
                 f"concepts {memory_os.get('concepts_created')}, "
                 f"feedback events {memory_os.get('user_feedback_events')}, "

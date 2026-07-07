@@ -1281,6 +1281,10 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "memory_os_transition_prefetch_queries": list(
                     os_report.predictive_prefetch.transition_queries
                 ),
+                "memory_os_transition_prefetch_edges": [
+                    edge.as_dict()
+                    for edge in os_report.predictive_prefetch.transition_edges
+                ],
                 "memory_os_transition_prefetch_hit": os_transition_hit,
                 "memory_os_concepts_created": os_report.concepts_created,
                 "memory_os_user_feedback_events": len(
@@ -1665,6 +1669,10 @@ def run_memory_os_profile() -> dict[str, object]:
                 "transition_prefetch_queries": list(
                     report.predictive_prefetch.transition_queries
                 ),
+                "transition_prefetch_edges": [
+                    edge.as_dict()
+                    for edge in report.predictive_prefetch.transition_edges
+                ],
                 "transition_prefetch_hit": (
                     bool(transition_cached)
                     and transition_cached[0].text == "risk limits follow budget recall in real sessions"

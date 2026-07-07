@@ -2,6 +2,7 @@ import fnmatch
 import tarfile
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -646,13 +647,56 @@ def test_memory_os_worker_prefetches_observed_follow_up_queries(tmp_path):
 
         assert report.ok
         assert [query.query for query in report.hot_queries] == ["budget recall"]
-        assert "risk limits" in report.predictive_prefetch.transition_queries
+        assert report.predictive_prefetch.transition_queries == ("risk limits",)
         assert "risk limits" in report.predictive_prefetch.queries
+        assert len(report.predictive_prefetch.transition_edges) == 1
+        edge = report.predictive_prefetch.transition_edges[0]
+        assert edge.namespace == namespace
+        assert edge.from_query == "budget recall"
+        assert edge.to_query == "risk limits"
+        assert edge.count == 2
+        assert edge.probability == 1.0
+        assert edge.as_dict()["to_query"] == "risk limits"
         assert cached_follow_up is not None
         assert cached_follow_up[0].text == "risk limits follow up memory"
         assert "predictive_prefetch" in report.actions
     finally:
         memory.close()
+
+
+def test_memory_os_transition_edges_rank_probability_and_skip_hot_targets():
+    worker = object.__new__(MemoryOSWorker)
+    namespace = "tenant:sequence"
+    hot_queries = [
+        SimpleNamespace(namespace=namespace, query="budget recall"),
+        SimpleNamespace(namespace=namespace, query="status update"),
+    ]
+    events = [
+        SimpleNamespace(id=1, namespace=namespace, created_at=1.0, metadata={"query": "budget recall"}),
+        SimpleNamespace(id=2, namespace=namespace, created_at=2.0, metadata={"query": "risk limits"}),
+        SimpleNamespace(id=3, namespace=namespace, created_at=3.0, metadata={"query": "budget recall"}),
+        SimpleNamespace(id=4, namespace=namespace, created_at=4.0, metadata={"query": "risk limits"}),
+        SimpleNamespace(id=5, namespace=namespace, created_at=5.0, metadata={"query": "budget recall"}),
+        SimpleNamespace(id=6, namespace=namespace, created_at=6.0, metadata={"query": "status update"}),
+        SimpleNamespace(id=7, namespace=namespace, created_at=7.0, metadata={"query": "tax planning"}),
+    ]
+
+    edges = worker._transition_edges(
+        events,
+        hot_queries,
+        max_queries=4,
+        window_seconds=60,
+    )
+
+    assert [(edge.from_query, edge.to_query) for edge in edges] == [
+        ("status update", "tax planning"),
+        ("budget recall", "risk limits"),
+    ]
+    assert edges[0].count == 1
+    assert edges[0].probability == 1.0
+    assert edges[1].count == 2
+    assert edges[1].probability == 2 / 3
+    assert all(edge.to_query != "status update" for edge in edges)
 
 
 def test_memory_os_worker_embeds_architecture_advice_for_production_targets(tmp_path):

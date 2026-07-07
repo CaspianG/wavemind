@@ -204,6 +204,24 @@ def _disk_free_gb_for_path(path_value: str) -> float | None:
     return usage.free / (1024**3)
 
 
+def _disk_free_override_gb(env: dict[str, str], env_name: str) -> float | None:
+    candidates = [
+        f"{env_name}_FREE_GB",
+        env_name.replace("_PATH", "_FREE_GB"),
+    ]
+    for candidate in dict.fromkeys(candidates):
+        raw = _env_value(env, candidate)
+        if not raw:
+            continue
+        try:
+            value = float(raw)
+        except ValueError:
+            return None
+        if value >= 0:
+            return value
+    return None
+
+
 def _validate_external_cluster_payload(
     payload: dict[str, Any] | None,
     *,
@@ -698,7 +716,9 @@ def _large_run_preflight(
     for name in ("WAVEMIND_FAISS_PATH", "WAVEMIND_FAISS_IVFPQ_PATH"):
         if name in required_env and _env_value(env, name):
             required_free = float(plan.get("required_local_free_gb", 0.0) or 0.0)
-            free = _disk_free_gb_for_path(_env_value(env, name))
+            free = _disk_free_override_gb(env, name)
+            if free is None:
+                free = _disk_free_gb_for_path(_env_value(env, name))
             if free is None:
                 issues.append(f"{name} parent path does not exist on this machine")
             elif required_free and free < required_free:
