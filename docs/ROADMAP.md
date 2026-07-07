@@ -71,7 +71,7 @@ policy matters more than raw vector-database scale:
   recognized 10M/50M/100M result JSON files, and can refresh the public
   leaderboard/readiness/evidence artifacts from the accepted result.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`37/37` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`38/38` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
