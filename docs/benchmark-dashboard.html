@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WaveMind Living Benchmark Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #566174;
+      --line: #d9e1ee;
+      --pass: #0a7f5a;
+      --warn: #9a5b00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 48px; }
+    header { margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 0.98; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; }
+    p { margin: 0; color: var(--muted); }
+    a { color: #245bdb; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .metric-card, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .metric-card strong { display: block; margin-bottom: 6px; font-size: 1.9rem; }
+    .summary { width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #e8edf5; text-align: left; vertical-align: top; }
+    th { background: #f1f4f9; font-weight: 700; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    table.compact td { font-size: 0.86rem; }
+    .badge { display: inline-block; padding: 3px 7px; border-radius: 999px; background: #eef2f7; color: var(--text); }
+    .badge.pass { background: #e8f6ef; color: var(--pass); }
+    .badge.warn { background: #fff3dd; color: var(--warn); }
+    .section-title { margin: 30px 0 12px; }
+    .rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .rules p { padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+    footer { margin-top: 30px; color: var(--muted); font-size: 0.9rem; }
+    @media (max-width: 760px) {
+      main { padding: 22px 14px 36px; }
+      .cards, .rules { grid-template-columns: 1fr; }
+      th, td { padding: 9px 10px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>WaveMind Living Benchmark Dashboard</h1>
+    <p>Generated from checked-in benchmark artifacts. Planned rows are not claimed wins; external service evidence is shown separately.</p>
+  </header>
+
+  <div class="cards">
+    <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>36/36 criteria pass</p></section>
+<section class="metric-card"><h2>Implemented</h2><strong>26</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-07-07T06:03:04Z</strong><p>source 0ab9773bc676</p></section>
+  </div>
+
+  <section class="panel">
+    <h2>Visual Summary</h2>
+    <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
+  </section>
+
+  <h2 class="section-title">Benchmark Leaderboard</h2>
+  <div class="table-wrap">
+    <table class="">
+<thead><tr>
+<th>benchmark</th>
+<th>category</th>
+<th>primary metric</th>
+<th>best WaveMind result</th>
+<th>best baseline result</th>
+<th>readout</th>
+</tr></thead><tbody>
+<tr>
+<td>Agent user-memory retrieval</td>
+<td>agent-memory</td>
+<td>precision@1</td>
+<td>WaveMind: 0.82 / 2.249 ms</td>
+<td>Chroma: 0.82 / 0.933 ms</td>
+<td><span class="badge warn">Quality tie; WaveMind slower</span></td>
+</tr>
+<tr>
+<td>Agent coherence and token savings</td>
+<td>agent-memory</td>
+<td>task success</td>
+<td>WaveMind: 0.917 / 2.984 ms</td>
+<td>Chroma static: 0.417 / 3.637 ms</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+<tr>
+<td>Dynamic memory policy</td>
+<td>agent-memory</td>
+<td>precision@1</td>
+<td>WaveMind: 1 / 3.918 ms</td>
+<td>Chroma static: 0.571 / 1.662 ms</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+<tr>
+<td>Field memory graph dynamics</td>
+<td>agent-memory</td>
+<td>precision@1</td>
+<td>WaveMind graph: 1 / 0.332 ms</td>
+<td>-</td>
+<td>WaveMind-only check</td>
+</tr>
+<tr>
+<td>WaveMind capacity curve</td>
+<td>capacity</td>
+<td>precision@1</td>
+<td>WaveMind dynamic capacity: 1 / 48.4 ms</td>
+<td>-</td>
+<td>WaveMind-only check</td>
+</tr>
+<tr>
+<td>Long-term memory evidence</td>
+<td>long-term-agent-memory</td>
+<td>evidence recall@k</td>
+<td>WaveMind: 1 / 6.103 ms</td>
+<td>Static vector: 1 / 0.648 ms</td>
+<td><span class="badge warn">Quality tie; WaveMind slower</span></td>
+</tr>
+<tr>
+<td>BEIR-style open retrieval runner</td>
+<td>retrieval</td>
+<td>precision@1</td>
+<td>WaveMind: 0.24 / 117.0 ms</td>
+<td>Chroma: 0.243 / 1.794 ms</td>
+<td><span class="badge pass">Baseline leads on quality</span></td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/datasets/miracl/nomiracl">NoMIRACL Russian retrieval</a></td>
+<td>multilingual-retrieval</td>
+<td>precision@1</td>
+<td>WaveMind: 0.41 / 10.2 ms</td>
+<td>Chroma: 0.41 / 2.603 ms</td>
+<td><span class="badge warn">Quality tie; WaveMind slower</span></td>
+</tr>
+<tr>
+<td><a href="https://github.com/snap-research/locomo">LoCoMo evidence retrieval runner</a></td>
+<td>long-term-conversation-memory</td>
+<td>evidence recall@k</td>
+<td>WaveMind sentence: 0.547 / 3.438 ms</td>
+<td>Qdrant sentence: 0.409 / 124.3 ms</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+<tr>
+<td><a href="https://github.com/xiaowu0162/LongMemEval">LongMemEval evidence retrieval</a></td>
+<td>long-term-agent-memory</td>
+<td>evidence recall@k</td>
+<td>WaveMind: 0.782 / 7.274 ms</td>
+<td>Static vector: 0.52 / 0.083 ms</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+<tr>
+<td><a href="https://github.com/xiaowu0162/LongMemEval">LongMemEval evidence 50-query smoke</a></td>
+<td>long-term-agent-memory</td>
+<td>evidence recall@k</td>
+<td>WaveMind: 0.92 / 15.3 ms</td>
+<td>Static vector: 0.6 / 0.337 ms</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+<tr>
+<td><a href="https://github.com/erikbern/ann-benchmarks">ANN index latency curve</a></td>
+<td>index-latency</td>
+<td>Recall@k</td>
+<td>WaveMind numpy: 1 / 6.485 ms</td>
+<td>Qdrant local: 1 / 43.5 ms</td>
+<td><span class="badge pass">Quality tie; WaveMind faster</span></td>
+</tr>
+<tr>
+<td>Production index profile</td>
+<td>index-latency</td>
+<td>Recall@k</td>
+<td>WaveMind faiss-persisted: 1 / 3.524 ms</td>
+<td>Qdrant service: 1 / 4.414 ms</td>
+<td><span class="badge pass">Quality tie; WaveMind faster</span></td>
+</tr>
+<tr>
+<td>Production pgvector tuning profile</td>
+<td>index-latency</td>
+<td>Recall@k</td>
+<td>WaveMind pgvector-exact: 1 / 55.7 ms</td>
+<td>Qdrant service: 1 / 9.137 ms</td>
+<td><span class="badge warn">Quality tie; WaveMind slower</span></td>
+</tr>
+<tr>
+<td>Production load profile 100k</td>
+<td>production-scale</td>
+<td>Recall@k</td>
+<td>WaveMind pgvector: 0.736 / 17.8 ms</td>
+<td>Qdrant service: 1 / 10.3 ms</td>
+<td><span class="badge pass">Baseline leads on quality; production SLO pass: Qdrant service; cost: Qdrant service $1.39/1M queries</span></td>
+</tr>
+<tr>
+<td>Production load profile 1M</td>
+<td>production-scale</td>
+<td>Recall@k</td>
+<td>WaveMind faiss-persisted: 1 / 39.1 ms</td>
+<td>Qdrant service: 0.984 / 82.6 ms</td>
+<td><span class="badge pass">WaveMind leads on quality; production SLO needs scale: WaveMind faiss-persisted; cost: WaveMind faiss-persisted $4.17/1M queries</span></td>
+</tr>
+<tr>
+<td>Qdrant 1M HNSW ef sweep</td>
+<td>production-scale</td>
+<td>Recall@k</td>
+<td>-</td>
+<td>hnsw_ef=2048: 0.977 / 64.8 ms</td>
+<td><span class="badge warn">No WaveMind result; production SLO miss; cost if SLO fixed: hnsw_ef=512 $4.86/1M queries</span></td>
+</tr>
+<tr>
+<td>Production streaming load runner</td>
+<td>production-scale</td>
+<td>Recall@k</td>
+<td>10k smoke / WaveMind numpy-streaming: 1 / 0.098 ms</td>
+<td>Qdrant sharded smoke / Qdrant sharded service streaming: 1 / 9.103 ms</td>
+<td><span class="badge pass">Quality tie; WaveMind faster; production SLO pass: 10k smoke / WaveMind numpy-streaming; cost: 10k smoke / WaveMind numpy-streaming $0.69/1M queries</span></td>
+</tr>
+<tr>
+<td>Scale readiness profile</td>
+<td>production-scale</td>
+<td>precision@1</td>
+<td>WaveMind structured payloads: 1 / 0.639 ms</td>
+<td>-</td>
+<td>WaveMind-only check</td>
+</tr>
+<tr>
+<td>Production readiness gate</td>
+<td>production-scale</td>
+<td>readiness score</td>
+<td>WaveMind production readiness: 1 / -</td>
+<td>-</td>
+<td>WaveMind-only check</td>
+</tr>
+<tr>
+<td>Memory competitor adapter profile</td>
+<td>agent-memory</td>
+<td>precision@1</td>
+<td>WaveMind: 0.8 / 3.088 ms</td>
+<td>GraphRAG static graph: 1 / 0.013 ms</td>
+<td><span class="badge pass">Baseline leads on quality</span></td>
+</tr>
+<tr>
+<td><a href="https://github.com/xiaowu0162/LongMemEval">LongMemEval answer generation</a></td>
+<td>long-term-agent-memory</td>
+<td>token F1</td>
+<td>WaveMind + qwen2.5:1.5b: 0.333 / -</td>
+<td>Chroma static + qwen2.5:1.5b: 0.17 / -</td>
+<td><span class="badge pass">WaveMind leads on quality</span></td>
+</tr>
+</tbody></table>
+  </div>
+
+  <h2 class="section-title">Evidence Source Status</h2>
+  <div class="table-wrap">
+    <table class="compact">
+<thead><tr>
+<th>area</th>
+<th>current source</th>
+<th>claim status</th>
+<th>next action</th>
+</tr></thead><tbody>
+<tr>
+<td>Artifact freshness</td>
+<td>local matrix refresh at 2026-07-07T06:03:04Z</td>
+<td>source 0ab9773bc676; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>Keep weekly refresh green before public claims.</td>
+</tr>
+<tr>
+<td>Serverless telemetry</td>
+<td>loopback API pool; loopback-api-capacity-estimate; 4 measured replicas</td>
+<td>observed SLO True; loopback evidence, not a managed-serverless claim</td>
+<td>Run .github/workflows/serverless-observed-telemetry.yml against deployed API nodes.</td>
+</tr>
+<tr>
+<td>External HTTP cluster load</td>
+<td>local-loopback; loopback-api-processes; 4 nodes</td>
+<td>SLO True; local loopback service-node evidence</td>
+<td>Run .github/workflows/external-http-cluster-load.yml with a remote node manifest.</td>
+</tr>
+<tr>
+<td>External HTTP active-active</td>
+<td>no checked-in remote region artifact</td>
+<td><span class="badge warn">action required before remote active-active production claim</span></td>
+<td>Run .github/workflows/external-http-active-active.yml with a remote region manifest.</td>
+</tr>
+<tr>
+<td>pgvector tuning</td>
+<td>real PostgreSQL/pgvector service profile at 50k vectors</td>
+<td>iterative recall 0.97, iterative p99 55.2 ms; exact recall 1</td>
+<td>Promote pgvector-iterative into the 100k and 1M production load SLO profiles.</td>
+</tr>
+<tr>
+<td>10M streaming load</td>
+<td>local WaveMind faiss-ivfpq-persisted streaming profile</td>
+<td>target recall 0.99, p99 60.1 ms, SLO scale_required</td>
+<td>Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts.</td>
+</tr>
+<tr>
+<td>50M streaming preflight</td>
+<td>WaveMind faiss-ivfpq-persisted streaming plan-only contract</td>
+<td><span class="badge warn">action_required; index 1.12 GB; app storage 119.2 GB; blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH</span></td>
+<td>Satisfy the preflight and commit production_streaming_load_ivfpq_50m_results.json after a real run.</td>
+</tr>
+<tr>
+<td>Qdrant streaming</td>
+<td>real Qdrant service smoke plus 10M preflight</td>
+<td>smoke recall 1, smoke p99 17.9 ms; 10M preflight action_required</td>
+<td>Run the embedded 10M Qdrant command against sized Qdrant storage.</td>
+</tr>
+<tr>
+<td>Qdrant sharded streaming</td>
+<td>real two-service fanout smoke plus horizontal Qdrant preflight</td>
+<td><span class="badge warn">smoke recall 1, smoke p99 16.0 ms; 10M preflight action_required; planned shards 4; blockers missing_env:WAVEMIND_QDRANT_URLS</span></td>
+<td>Run the embedded sharded 10M command against multiple Qdrant service nodes.</td>
+</tr>
+<tr>
+<td>Qdrant 1M streaming</td>
+<td>real Qdrant service run before and after warmup/chunking tuning</td>
+<td><span class="badge pass">cold p99 3014.0 ms; tuned recall 1, tuned p99 26.4 ms, SLO pass</span></td>
+<td>Use the tuned warmup/chunking profile for the 10M Qdrant service run.</td>
+</tr>
+<tr>
+<td>pgvector streaming</td>
+<td>real PostgreSQL/pgvector service smoke plus 10M preflight</td>
+<td>smoke recall 1, smoke p99 7.624 ms; 10M preflight action_required</td>
+<td>Run the embedded 10M pgvector command against sized Postgres storage.</td>
+</tr>
+<tr>
+<td>Production readiness gate</td>
+<td>checked-in benchmark artifacts</td>
+<td><span class="badge pass">pass; 36/36 pass</span></td>
+<td>Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.</td>
+</tr>
+<tr>
+<td>Competitor adapters</td>
+<td>checked local adapters plus optional external services</td>
+<td>configured 4; skipped Zep</td>
+<td>Configure skipped external services before claiming full competitor coverage.</td>
+</tr>
+</tbody></table>
+  </div>
+
+  <h2 class="section-title">Reading Rules</h2>
+  <div class="rules">
+    <p>Quality wins and latency wins are separate. A row can lead on recall while still being slower.</p>
+    <p>WaveMind-only rows are regression and capacity checks, not competitor claims.</p>
+    <p>Production SLO rows use checked recall, p99, QPS, replica count, autoscaling, and cost assumptions.</p>
+    <p>Remote active-active, managed serverless, and live competitor rows stay marked as external evidence until real service artifacts are checked in.</p>
+  </div>
+
+  <footer>
+    Source: <code>benchmarks/benchmark_matrix_results.json</code>.
+    Markdown view: <a href="../benchmarks/BENCHMARK_LEADERBOARD.md">benchmarks/BENCHMARK_LEADERBOARD.md</a>.
+  </footer>
+</main>
+</body>
+</html>

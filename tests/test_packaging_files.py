@@ -184,6 +184,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/RELEASE.md" in manifest
     assert "include docs/PROJECT_BOARD.md" in manifest
     assert "include docs/BENCHMARK_BRIEF.md" in manifest
+    assert "include docs/benchmark-dashboard.html" in manifest
     assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/OBSERVABILITY.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
@@ -204,6 +205,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "stale or manually edited public benchmark artifacts block" in readme
     assert "### Current Evidence Status" in readme
     assert "benchmarks/BENCHMARK_LEADERBOARD.md" in readme
+    assert "docs/benchmark-dashboard.html" in readme
     assert "benchmarks/production_streaming_load_ivfpq_10m_results.json" in readme
     assert "benchmarks/production_streaming_load_50m_plan.json" in readme
     assert "benchmarks/production_pgvector_tuning_results.json" in readme

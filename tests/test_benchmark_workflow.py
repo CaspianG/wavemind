@@ -11,6 +11,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "contents: write" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
+    assert "benchmarks/render_benchmark_dashboard.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
@@ -18,6 +19,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
         "benchmarks/production_readiness_gate.py"
     )
     assert "--output docs/assets/benchmark-summary.svg" in workflow
+    assert "--output docs/benchmark-dashboard.html" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
@@ -27,9 +29,10 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--engines qdrant-sharded-service" in workflow
     assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "sharded Qdrant smoke SLO failed" in workflow
-    assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
+    assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
+    assert "docs/benchmark-dashboard.html" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():

@@ -1508,11 +1508,12 @@ WaveMind tracks benchmarks in two layers:
 Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/BENCHMARK_REPORT.md).
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
+Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
-and `docs/assets/benchmark-summary.svg`, validates freshness with
+`docs/assets/benchmark-summary.svg`, and `docs/benchmark-dashboard.html`, validates freshness with
 `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark
 artifacts back to `main`.
