@@ -70,6 +70,7 @@ from wavemind import (
     ServerlessWorkloadTarget,
     WaveMindClusterSpec,
     WaveMindServerlessSpec,
+    audit_field_state_watermarks,
     stable_memory_key,
 )
 from wavemind.api import RedisRateLimiter, create_app
@@ -2590,6 +2591,25 @@ def run_field_crdt_profile() -> dict[str, object]:
         and left_payload["watermarks"] == right_payload["watermarks"]
     )
     partial_budget_delta = left.delta(keys=[budget_key])
+    healthy_watermarks = audit_field_state_watermarks(
+        {"left": left, "right": right},
+        expected_actors=left.covered_actors(),
+    )
+    lagging_region = FieldStateCRDT(namespace=namespace, actor="lagging")
+    lagging_region.merge(region_a.delta())
+    missing_watermarks = audit_field_state_watermarks(
+        {"left": left, "lagging": lagging_region},
+        expected_actors=left.covered_actors(),
+    )
+    stale_region = FieldStateCRDT(namespace=namespace, actor="stale")
+    stale_region.boost(budget_key, actor="region-a", observed_at=90.0)
+    stale_region.boost(budget_key, actor="region-b", observed_at=13.0)
+    stale_region.boost(stale_key, actor="region-c", observed_at=14.0)
+    stale_watermarks = audit_field_state_watermarks(
+        {"left": left, "stale": stale_region},
+        expected_actors=left.covered_actors(),
+        max_lag_seconds=5.0,
+    )
     return {
         "engine": "WaveMind field-state CRDT",
         "regions": 3,
@@ -2601,6 +2621,12 @@ def run_field_crdt_profile() -> dict[str, object]:
         "watermark_actors": len(left.covered_actors()),
         "max_watermark": left.watermark(),
         "partial_delta_watermark_actors": sorted(partial_budget_delta.watermarks),
+        "watermark_health_ok": healthy_watermarks.healthy,
+        "watermark_health_status": healthy_watermarks.status,
+        "watermark_health_regions": healthy_watermarks.region_count,
+        "watermark_health_max_observed_lag": healthy_watermarks.max_observed_lag_seconds,
+        "watermark_missing_detected": bool(missing_watermarks.missing_by_region["lagging"]),
+        "watermark_lag_detected": bool(stale_watermarks.stale_by_region["stale"]),
         "budget_activation": left.activation(budget_key),
         "suppressed_report_activation": left.activation(report_key),
         "merge_ms": merge_ms,

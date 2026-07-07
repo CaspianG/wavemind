@@ -1,6 +1,11 @@
 import pytest
 
-from wavemind.field_crdt import FieldStateCRDT, FieldStateDelta, stable_memory_key
+from wavemind.field_crdt import (
+    FieldStateCRDT,
+    FieldStateDelta,
+    audit_field_state_watermarks,
+    stable_memory_key,
+)
 
 
 def test_field_state_crdt_merge_is_commutative_and_idempotent():
@@ -130,3 +135,57 @@ def test_field_state_delta_accepts_legacy_payload_without_watermarks():
     assert report.watermark_actors == 0
     assert state.activation(key) == 2.0
     assert state.watermark() == 0.0
+
+
+def test_field_state_watermark_health_passes_when_regions_cover_same_actors():
+    key = stable_memory_key(namespace="tenant", text="shared memory")
+    region_a = FieldStateCRDT(namespace="tenant", actor="region-a")
+    region_b = FieldStateCRDT(namespace="tenant", actor="region-b")
+    region_a.boost(key, actor="region-a", observed_at=10.0)
+    region_a.boost(key, actor="region-b", observed_at=20.0)
+    region_b.merge(region_a.delta())
+
+    health = audit_field_state_watermarks(
+        {"region-a": region_a, "region-b": region_b},
+        expected_actors=["region-a", "region-b"],
+    )
+
+    assert health.healthy is True
+    assert health.status == "pass"
+    assert health.expected_actors == ("region-a", "region-b")
+    assert health.observed_actors == ("region-a", "region-b")
+    assert health.max_observed_lag_seconds == 0.0
+    assert health.missing_by_region == {"region-a": (), "region-b": ()}
+    assert health.stale_by_region == {"region-a": {}, "region-b": {}}
+    assert health.as_dict()["healthy"] is True
+
+
+def test_field_state_watermark_health_detects_missing_and_stale_actors():
+    key = stable_memory_key(namespace="tenant", text="regional memory")
+    fresh = FieldStateCRDT(namespace="tenant", actor="region-a")
+    stale = FieldStateCRDT(namespace="tenant", actor="region-b")
+    fresh.boost(key, actor="region-a", observed_at=100.0)
+    fresh.boost(key, actor="region-b", observed_at=90.0)
+    stale.boost(key, actor="region-a", observed_at=80.0)
+
+    health = audit_field_state_watermarks(
+        {"fresh": fresh, "stale": stale.delta()},
+        expected_actors=["region-a", "region-b", "region-c"],
+        max_lag_seconds=5.0,
+    )
+
+    assert health.healthy is False
+    assert health.status == "action_required"
+    assert health.missing_by_region["fresh"] == ("region-c",)
+    assert health.missing_by_region["stale"] == ("region-b", "region-c")
+    assert health.lag_by_region["stale"]["region-a"] == 20.0
+    assert health.stale_by_region["stale"] == {"region-a": 20.0}
+    assert health.as_dict()["max_observed_lag_seconds"] == 20.0
+
+
+def test_field_state_watermark_health_rejects_mixed_namespaces():
+    left = FieldStateCRDT(namespace="left", actor="region-a")
+    right = FieldStateCRDT(namespace="right", actor="region-b")
+
+    with pytest.raises(ValueError):
+        audit_field_state_watermarks({"left": left, "right": right})

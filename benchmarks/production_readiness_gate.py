@@ -1320,13 +1320,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and field_crdt.get("tombstone_wins")
                 and field_crdt.get("watermark_convergence")
                 and int(field_crdt.get("watermark_actors", 0)) >= 3
+                and field_crdt.get("watermark_health_ok")
+                and field_crdt.get("watermark_missing_detected")
+                and field_crdt.get("watermark_lag_detected")
                 else "fail"
             ),
             requirement=(
                 "Multi-region memory deltas and field state must converge "
                 "without duplicate amplification or full-namespace replay on "
                 "incremental sync, and CRDT deltas must carry actor watermarks "
-                "so regions can audit sync progress."
+                "so regions can audit sync progress, missing actors, and "
+                "replication lag."
             ),
             evidence=(
                 f"delta sync {active_active.get('converged_after_bidirectional_sync')}, "
@@ -1339,7 +1343,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"HTTP service-region convergence {http_active_active.get('convergence_rate')}, "
                 f"HTTP final no-op imports {http_active_active.get('final_noop_records_imported')}, "
                 f"CRDT idempotent {field_crdt.get('idempotent_remerge')}, "
-                f"watermarks {field_crdt.get('watermark_actors')}"
+                f"watermarks {field_crdt.get('watermark_actors')}, "
+                f"watermark health {field_crdt.get('watermark_health_status')}, "
+                f"missing detected {field_crdt.get('watermark_missing_detected')}, "
+                f"lag detected {field_crdt.get('watermark_lag_detected')}"
             ),
             next_step="Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence.",
         ),

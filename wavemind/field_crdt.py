@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from .storage import MemoryRecord
 
@@ -119,6 +119,66 @@ class FieldStateMergeReport:
             "watermark_actors": self.watermark_actors,
             "changed_watermarks": self.changed_watermarks,
             "changed": self.changed,
+        }
+
+
+@dataclass(frozen=True)
+class FieldStateWatermarkHealthReport:
+    namespace: str
+    region_count: int
+    expected_actors: tuple[str, ...]
+    observed_actors: tuple[str, ...]
+    max_lag_seconds: float
+    missing_by_region: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    lag_by_region: dict[str, dict[str, float]] = field(default_factory=dict)
+    stale_by_region: dict[str, dict[str, float]] = field(default_factory=dict)
+
+    @property
+    def healthy(self) -> bool:
+        return not any(self.missing_by_region.values()) and not any(
+            self.stale_by_region.values()
+        )
+
+    @property
+    def status(self) -> str:
+        return "pass" if self.healthy else "action_required"
+
+    @property
+    def max_observed_lag_seconds(self) -> float:
+        max_lag = 0.0
+        for actor_lags in self.lag_by_region.values():
+            for lag in actor_lags.values():
+                max_lag = max(max_lag, float(lag))
+        return max_lag
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "namespace": self.namespace,
+            "region_count": self.region_count,
+            "expected_actors": list(self.expected_actors),
+            "observed_actors": list(self.observed_actors),
+            "max_lag_seconds": self.max_lag_seconds,
+            "max_observed_lag_seconds": self.max_observed_lag_seconds,
+            "missing_by_region": {
+                region: list(actors)
+                for region, actors in sorted(self.missing_by_region.items())
+            },
+            "lag_by_region": {
+                region: {
+                    actor: float(lag)
+                    for actor, lag in sorted(actor_lags.items())
+                }
+                for region, actor_lags in sorted(self.lag_by_region.items())
+            },
+            "stale_by_region": {
+                region: {
+                    actor: float(lag)
+                    for actor, lag in sorted(actor_lags.items())
+                }
+                for region, actor_lags in sorted(self.stale_by_region.items())
+            },
+            "healthy": self.healthy,
+            "status": self.status,
         }
 
 
@@ -300,6 +360,78 @@ def _as_delta(value: FieldStateCRDT | FieldStateDelta | dict[str, Any]) -> Field
     if isinstance(value, dict):
         return FieldStateDelta.from_dict(value)
     raise TypeError(f"Unsupported field state payload: {type(value)!r}")
+
+
+def audit_field_state_watermarks(
+    regions: Mapping[str, FieldStateCRDT | FieldStateDelta | dict[str, Any]],
+    *,
+    expected_actors: Iterable[str] | None = None,
+    max_lag_seconds: float = 0.0,
+) -> FieldStateWatermarkHealthReport:
+    """Compare actor watermarks across active-active field-state replicas."""
+
+    if not regions:
+        raise ValueError("At least one region is required")
+    max_lag_seconds = max(0.0, float(max_lag_seconds))
+    namespace: str | None = None
+    region_watermarks: dict[str, dict[str, float]] = {}
+    observed_actors: set[str] = set()
+    for raw_region, payload in sorted(regions.items()):
+        region = str(raw_region)
+        if not region:
+            raise ValueError("Region id cannot be empty")
+        delta = _as_delta(payload)
+        if namespace is None:
+            namespace = delta.namespace
+        elif delta.namespace != namespace:
+            raise ValueError(
+                f"Cannot audit field state for namespace {delta.namespace!r} "
+                f"with namespace {namespace!r}"
+            )
+        watermarks = {
+            str(actor): float(value)
+            for actor, value in sorted(delta.watermarks.items())
+        }
+        region_watermarks[region] = watermarks
+        observed_actors.update(watermarks)
+    actors = set(observed_actors)
+    if expected_actors is not None:
+        actors.update(str(actor) for actor in expected_actors)
+    global_watermarks = {
+        actor: max(
+            float(watermarks.get(actor, 0.0))
+            for watermarks in region_watermarks.values()
+        )
+        for actor in actors
+    }
+    missing_by_region: dict[str, tuple[str, ...]] = {}
+    lag_by_region: dict[str, dict[str, float]] = {}
+    stale_by_region: dict[str, dict[str, float]] = {}
+    for region, watermarks in sorted(region_watermarks.items()):
+        missing = tuple(sorted(actor for actor in actors if actor not in watermarks))
+        missing_by_region[region] = missing
+        actor_lags = {
+            actor: round(max(0.0, global_watermarks[actor] - float(value)), 6)
+            for actor, value in sorted(watermarks.items())
+            if actor in actors
+        }
+        stale = {
+            actor: lag
+            for actor, lag in actor_lags.items()
+            if lag > max_lag_seconds
+        }
+        lag_by_region[region] = actor_lags
+        stale_by_region[region] = stale
+    return FieldStateWatermarkHealthReport(
+        namespace=namespace or "default",
+        region_count=len(region_watermarks),
+        expected_actors=tuple(sorted(actors)),
+        observed_actors=tuple(sorted(observed_actors)),
+        max_lag_seconds=max_lag_seconds,
+        missing_by_region=missing_by_region,
+        lag_by_region=lag_by_region,
+        stale_by_region=stale_by_region,
+    )
 
 
 def _copy_counter_tree(source: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:

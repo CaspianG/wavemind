@@ -268,6 +268,12 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "region-a",
         "region-b",
     ]
+    assert results["WaveMind field-state CRDT"]["watermark_health_ok"] is True
+    assert results["WaveMind field-state CRDT"]["watermark_health_status"] == "pass"
+    assert results["WaveMind field-state CRDT"]["watermark_health_regions"] == 2
+    assert results["WaveMind field-state CRDT"]["watermark_health_max_observed_lag"] == 0.0
+    assert results["WaveMind field-state CRDT"]["watermark_missing_detected"] is True
+    assert results["WaveMind field-state CRDT"]["watermark_lag_detected"] is True
     assert results["WaveMind field-state CRDT"]["budget_activation"] == 5.0
     assert results["WaveMind replicated snapshot"]["manifest_healthy"] is True
     assert results["WaveMind replicated snapshot"]["offsite_verified"] is True

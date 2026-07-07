@@ -564,7 +564,7 @@ Checked-in result:
 | Sustained active-active sync | 3 independent regions, 3 namespaces, 18 writes, 5 mesh sync cycles, 90 region-pair syncs, cursor count `18`, records imported `108`, tombstones imported `6`, deleted records `6`, field keys exported `348`, final no-op imported `0`, convergence `1.000`, delete suppression `1.000`, success `1.000`, failed pairs `0`. |
 | HTTP active-active service-region sync | 3 FastAPI service-boundary regions, 2 namespaces, 6 writes, 4 sync cycles, 48 export/import pair calls through `/namespace-delta/export` and `/namespace-delta/import`, cursor count `12`, records imported `36`, tombstones imported `6`, deleted records `6`, final no-op imported `0`, convergence `1.000`, delete suppression `1.000`, success `1.000`, failed pairs `0`. |
 | Real HTTP active-active service-region smoke | 3 real localhost API region processes, each serving a replicated runtime, 2 namespaces, 6 writes, 3 sync cycles, 36 export/import pair calls, cursor count `12`, records imported `36`, tombstones imported `6`, deleted records `6`, final no-op imported `0`, convergence `1.000`, delete suppression `1.000`, success `1.000`, failed pairs `0`, p99 operation `347.58 ms`, SLO `true`. |
-| Field-state CRDT | 3 regions, commutative convergence `true`, idempotent re-merge `true`, tombstone-wins `true`, top-key convergence `true`, actor watermark convergence `true`, watermark actors `3`, max watermark `100.0`, merge `0.13 ms`. |
+| Field-state CRDT | 3 regions, commutative convergence `true`, idempotent re-merge `true`, tombstone-wins `true`, top-key convergence `true`, actor watermark convergence `true`, watermark actors `3`, health `pass`, missing actor detection `true`, lag detection `true`, max watermark `100.0`, merge `0.13 ms`. |
 | Replicated snapshot job | 3 replica files, manifest checksum validation `true`, offsite mirror validation `true`, portable archive validation `true`, S3-compatible upload validation `true`, latest remote archive metadata validation `true`, remote archive download validation `true`, object-store DR drill `true`, object-store retention pruned `2`, archive restore `64.13 ms`. |
 | Structured payloads | image/audio/video/3D/table/event/graph retrieval through the standard memory API, precision@1 `1.000`, p99 `1.81 ms`; cross-modal target-modality retrieval over persisted payload vectors, precision@1 `1.000`, vector persistence `1.000`, provenance rate `1.000`, embedding dim `64`, p99 `4.03 ms`; strict external/precomputed vectors for image/audio/video/3D, precision@1 `1.000`, vector persistence `1.000`, p99 `2.36 ms`. |
 | 100M capacity envelope | 100000000 target memories, 32768 deterministic namespace buckets, 128 nodes, 8 zones, replication factor 3, node-loss availability `1.000`, zone-loss availability `1.000`, replica-load skew `1.094`, max storage per node `5.81 GB`, valid capacity plan `true`. |
@@ -582,7 +582,7 @@ invalidation, API cache mutation safety, cursor-based active-active namespace
 delta sync, sustained active-active mesh sync, HTTP service-region
 active-active sync, real multi-process active-active service-region smoke,
 field-only hotness delta sync,
-field-state CRDT convergence with actor watermarks,
+field-state CRDT convergence with actor watermarks plus missing/lag diagnostics,
 replicated snapshot/restore, structured payload handling,
 deterministic cross-modal payload retrieval, external precomputed-vector
 compatibility, and provenance,
@@ -1911,7 +1911,9 @@ The delta contains active records plus tombstones. Import is idempotent and
 tombstone-aware, so a stale region export cannot resurrect a deleted memory.
 The replicated runtime also carries field-state CRDT deltas for active-active
 hotness/suppression signals. Each delta includes per-actor watermarks, so a
-region can audit which writers are covered by the field state it has received.
+region can audit which writers are covered by the field state it has received,
+and detect missing actors or lagging field-state replicas before serving stale
+priority.
 Recall-only hotness changes can sync without resending records:
 
 ```python
