@@ -7,19 +7,20 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `37` |
+| passed criteria | `38` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `37` |
+| total criteria | `38` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-07T14:16:05Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-07T14:40:22Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
 | LongMemEval answer generation beats static RAG baselines | `pass` | ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170 | Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
 | 1M service-backed load profile meets recall and p99 SLO | `pass` | WaveMind faiss-persisted: recall 1.0, p99 57.71490000188351 ms, SLO scale_required | Keep FAISS 1M green in CI-capable benchmark environments and continue tuning Qdrant/pgvector service paths. |
 | 1M load result has enough query depth for a production claim | `pass` | current tuned 1M profile uses 100 queries | Keep 100+ query depth for all checked-in 1M production profiles. |
+| Persisted FAISS snapshots validate source-of-truth vectors | `pass` | source contract _vector_snapshot_checksum + vector_checksum, regression test rebuilds matching-id stale vectors | Keep checksum validation in the FAISS persisted path and add the same content-integrity contract to future persisted ANN backends. |
 | pgvector exact and iterative service profile passes 50k tuning gate | `pass` | size 50000, exact recall 1.0, exact p99 76.98170002549887 ms, iterative recall 0.97, iterative p99 55.18779996782541 ms, Qdrant reference recall 1.0 | Promote pgvector-iterative into the 100k and 1M production load SLO profiles after allocating enough disk/build time. |
 | Qdrant streaming runner has service smoke and 10M preflight | `pass` | smoke vectors 1000, smoke recall 1, smoke p99 17.90370000526309 ms, plan status action_required, plan required local free 0.06 GB, blockers missing_env:WAVEMIND_QDRANT_URL | Run the embedded 10M Qdrant command against a sized Qdrant service and commit production_streaming_load_qdrant_10m_results.json. |
 | Qdrant streaming 1M tuned profile passes recall, p99, and cost gate | `pass` | cold recall 0.99, cold p99 3013.9777000295 ms, tuned recall 1, tuned p99 26.373000000603497 ms, warmup 100, wait 30.0 s, upsert chunk 2000, SLO pass | Promote the same warmup/chunking profile into the checked 10M Qdrant service run on storage sized for the index. |

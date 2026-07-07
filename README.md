@@ -389,8 +389,10 @@ wavemind --index faiss-persisted query "trader" --namespace demo
 ```
 
 SQLite or Postgres remains the source of truth. The persisted FAISS files are a
-candidate-index snapshot and are validated against the current memory ids on
-load. If the snapshot does not match the stored memories, WaveMind rebuilds it.
+candidate-index snapshot and are validated against the current memory ids,
+vector dimension, vector count, and a SHA-256 checksum of normalized source
+vectors on load. If the snapshot does not match the stored memories, WaveMind
+rebuilds it from the durable store.
 You can also check and rebuild the candidate index explicitly:
 
 ```sh

@@ -110,6 +110,15 @@ def _read_optional_text(path: Path) -> str:
 def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     artifacts = _load_artifacts(root)
     full_check_workflow = _read_optional_text(root / ".github" / "workflows" / "full-check.yml")
+    index_source = _read_optional_text(root / "wavemind" / "indexes.py")
+    index_tests = _read_optional_text(root / "tests" / "test_indexes_encoders.py")
+    persisted_ann_integrity_pass = (
+        "_vector_snapshot_checksum" in index_source
+        and "vector_checksum" in index_source
+        and "checksum_algorithm" in index_source
+        and "test_faiss_persisted_index_rebuilds_when_vector_checksum_differs" in index_tests
+        and "loaded_from_persisted is False" in index_tests
+    )
     redis_api_load_script_exists = (root / "benchmarks" / "redis_api_load_benchmark.py").exists()
     redis_api_load_ci_configured = (
         redis_api_load_script_exists
@@ -677,6 +686,24 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement="Use at least 100 queries for checked-in 1M production claims.",
             evidence=f"current tuned 1M profile uses {load_1m_queries} queries",
             next_step="Keep 100+ query depth for all checked-in 1M production profiles.",
+        ),
+        _criterion(
+            criterion_id="persisted_ann_integrity",
+            title="Persisted FAISS snapshots validate source-of-truth vectors",
+            status="pass" if persisted_ann_integrity_pass else "fail",
+            requirement=(
+                "Persisted FAISS must treat SQLite/Postgres as the source of "
+                "truth, verify id map, vector dimension, vector count, and "
+                "normalized-vector checksum, then rebuild stale snapshots."
+            ),
+            evidence=(
+                "source contract _vector_snapshot_checksum + vector_checksum, "
+                "regression test rebuilds matching-id stale vectors"
+            ),
+            next_step=(
+                "Keep checksum validation in the FAISS persisted path and add "
+                "the same content-integrity contract to future persisted ANN backends."
+            ),
         ),
         _criterion(
             criterion_id="pgvector_tuning_path",

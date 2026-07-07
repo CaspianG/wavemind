@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T14:40:43Z",
+  "generated_at": "2026-07-07T15:24:54Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 37,
+    "pass_count": 38,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 37
+    "total_criteria": 38
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T14:16:05Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T14:40:22Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -59,6 +59,14 @@
       "requirement": "Use at least 100 queries for checked-in 1M production claims.",
       "evidence": "current tuned 1M profile uses 100 queries",
       "next_step": "Keep 100+ query depth for all checked-in 1M production profiles."
+    },
+    {
+      "id": "persisted_ann_integrity",
+      "title": "Persisted FAISS snapshots validate source-of-truth vectors",
+      "status": "pass",
+      "requirement": "Persisted FAISS must treat SQLite/Postgres as the source of truth, verify id map, vector dimension, vector count, and normalized-vector checksum, then rebuild stale snapshots.",
+      "evidence": "source contract _vector_snapshot_checksum + vector_checksum, regression test rebuilds matching-id stale vectors",
+      "next_step": "Keep checksum validation in the FAISS persisted path and add the same content-integrity contract to future persisted ANN backends."
     },
     {
       "id": "pgvector_tuning_path",

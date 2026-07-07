@@ -199,6 +199,10 @@ def test_faiss_vector_index_can_persist_and_reload(monkeypatch, tmp_path):
             self.d = dim
             self.vectors = np.zeros((0, dim), dtype=np.float32)
 
+        @property
+        def ntotal(self):
+            return int(self.vectors.shape[0])
+
         def add(self, matrix):
             self.vectors = np.asarray(matrix, dtype=np.float32)
 
@@ -239,6 +243,9 @@ def test_faiss_vector_index_can_persist_and_reload(monkeypatch, tmp_path):
     assert index_path.exists()
     assert index.metadata_path is not None
     assert index.metadata_path.exists()
+    metadata = json.loads(index.metadata_path.read_text(encoding="utf-8"))
+    assert metadata["checksum_algorithm"] == "sha256-normalized-f32-v1"
+    assert len(metadata["vector_checksum"]) == 64
 
     reloaded = FaissVectorIndex(vector_dim=3, index_path=index_path)
     reloaded.build(records)
@@ -249,6 +256,77 @@ def test_faiss_vector_index_can_persist_and_reload(monkeypatch, tmp_path):
 
     assert reloaded.loaded_from_persisted is True
     assert [result.id for result in results] == [1, 3]
+
+
+def test_faiss_persisted_index_rebuilds_when_vector_checksum_differs(monkeypatch, tmp_path):
+    class FakeFaissIndex:
+        def __init__(self, dim):
+            self.d = dim
+            self.vectors = np.zeros((0, dim), dtype=np.float32)
+
+        @property
+        def ntotal(self):
+            return int(self.vectors.shape[0])
+
+        def add(self, matrix):
+            self.vectors = np.asarray(matrix, dtype=np.float32)
+
+        def search(self, query, top_k):
+            scores = self.vectors @ np.asarray(query, dtype=np.float32)[0]
+            order = np.argsort(scores)[::-1][:top_k]
+            return scores[order].reshape(1, -1), order.astype(np.int64).reshape(1, -1)
+
+    def write_index(index, path):
+        payload = {"dim": index.d, "vectors": index.vectors.tolist()}
+        Path(path).write_text(json.dumps(payload), encoding="utf-8")
+
+    def read_index(path):
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        index = FakeFaissIndex(payload["dim"])
+        index.add(np.asarray(payload["vectors"], dtype=np.float32))
+        return index
+
+    monkeypatch.setitem(
+        sys.modules,
+        "faiss",
+        SimpleNamespace(
+            IndexFlatIP=FakeFaissIndex,
+            write_index=write_index,
+            read_index=read_index,
+        ),
+    )
+
+    original_records = [
+        SimpleNamespace(id=1, vector=np.array([1.0, 0.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=2, vector=np.array([0.0, 1.0, 0.0], dtype=np.float32)),
+    ]
+    changed_records = [
+        SimpleNamespace(id=1, vector=np.array([0.0, 1.0, 0.0], dtype=np.float32)),
+        SimpleNamespace(id=2, vector=np.array([1.0, 0.0, 0.0], dtype=np.float32)),
+    ]
+    index_path = tmp_path / "vectors.faiss"
+    first = FaissVectorIndex(vector_dim=3, index_path=index_path)
+    first.build(original_records)
+    old_checksum = json.loads(first.metadata_path.read_text(encoding="utf-8"))[
+        "vector_checksum"
+    ]
+
+    reloaded = FaissVectorIndex(vector_dim=3, index_path=index_path)
+    reloaded.build(changed_records)
+    results = reloaded.search(
+        np.array([0.0, 1.0, 0.0], dtype=np.float32),
+        top_k=1,
+    )
+    health = reloaded.health(expected_ids={1, 2}).as_dict()
+    new_checksum = json.loads(reloaded.metadata_path.read_text(encoding="utf-8"))[
+        "vector_checksum"
+    ]
+
+    assert reloaded.loaded_from_persisted is False
+    assert "checksum" in health["reason"]
+    assert results[0].id == 1
+    assert new_checksum != old_checksum
+    assert health["healthy"] is True
 
 
 def test_persisted_faiss_requires_explicit_path(monkeypatch):

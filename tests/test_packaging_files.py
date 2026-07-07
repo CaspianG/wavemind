@@ -244,6 +244,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_evidence_preflight_results.json" in readme
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in readme
     assert "wavemind production-evidence-preflight" in readme
+    assert "faiss-persisted" in readme
+    assert "SHA-256 checksum of normalized source" in readme
+    assert "rebuilds it from the durable store" in readme
     assert "wavemind memory-os-plan" in readme
     assert "examples/chroma_migration.py" in readme
     assert "examples/customer_support_memory.py" in readme
@@ -280,6 +283,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "consolidate_concepts" in readme
     assert "scale-plan" in roadmap
     assert "serverless-sample" in roadmap
+    assert "matching ids are rebuilt" in roadmap
     assert "valid KEDA Deployment" in benchmark_brief
     assert "freshness/audit gate" in roadmap
     assert "GitHub Pages living leaderboard" in roadmap

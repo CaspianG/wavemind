@@ -34,6 +34,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["production_100k_slo_cost"]["status"] == "pass"
     assert criteria["production_1m_slo"]["status"] == "pass"
     assert criteria["production_1m_query_depth"]["status"] == "pass"
+    assert criteria["persisted_ann_integrity"]["status"] == "pass"
+    assert "normalized-vector checksum" in criteria["persisted_ann_integrity"]["requirement"]
+    assert "matching-id stale vectors" in criteria["persisted_ann_integrity"]["evidence"]
     assert criteria["vectordbbench_custom_dataset"]["status"] == "pass"
     assert "train/test/neighbors/scalar-label parquet" in criteria["vectordbbench_custom_dataset"]["requirement"]
     assert "vectors 10000" in criteria["vectordbbench_custom_dataset"]["evidence"]
@@ -220,7 +223,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 37
+    assert payload["summary"]["total_criteria"] == 38
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report

@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-07T14:40:22Z` from `5dd72d249c68`.
+Last refresh: `2026-07-07T15:25:15Z` from `901ef1d7a34a`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -34,7 +34,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-07T14:40:22Z` | source `5dd72d249c68`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-07T15:25:15Z` | source `901ef1d7a34a`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |
@@ -46,7 +46,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Qdrant sharded streaming | real two-service fanout smoke plus horizontal Qdrant preflight | smoke recall `1`, smoke p99 `16.0 ms`; 10M preflight `action_required`; 100M preflight `action_required`; planned shards `4`; blockers `missing_env:WAVEMIND_QDRANT_URLS` | Run `.github/workflows/production-streaming-load.yml` with `qdrant-sharded-service` and publish `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` or `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`. |
 | Qdrant 1M streaming | real Qdrant service run before and after warmup/chunking tuning | cold p99 `3014.0 ms`; tuned recall `1`, tuned p99 `26.4 ms`, SLO `pass` | Use the tuned warmup/chunking profile for the 10M Qdrant service run. |
 | pgvector streaming | real PostgreSQL/pgvector service smoke plus 10M preflight | smoke recall `1`, smoke p99 `7.624 ms`; 10M preflight `action_required` | Run `.github/workflows/production-streaming-load.yml` with `pgvector-service` against sized Postgres storage. |
-| Production readiness gate | checked-in benchmark artifacts | `pass`; 37/37 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
+| Production readiness gate | checked-in benchmark artifacts | `pass`; 38/38 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
 | Competitor adapters | checked local adapters plus optional external services | configured `4`; skipped `Zep` | Configure skipped external services before claiming full competitor coverage. |
 
 ## Reading Rules

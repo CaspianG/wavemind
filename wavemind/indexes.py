@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 from dataclasses import dataclass
@@ -114,6 +115,24 @@ def _normalize(vector: np.ndarray) -> np.ndarray:
     if norm <= 1e-12:
         return vector
     return (vector / norm).astype(np.float32)
+
+
+def _vector_snapshot_checksum(
+    items: Iterable[tuple[int, np.ndarray]],
+    *,
+    vector_dim: int,
+) -> str:
+    digest = hashlib.sha256()
+    digest.update(b"wavemind.vector-index.snapshot.v1\0")
+    digest.update(str(int(vector_dim)).encode("ascii"))
+    digest.update(b"\0")
+    for id, vector in sorted((int(id), vector) for id, vector in items):
+        digest.update(str(id).encode("ascii"))
+        digest.update(b"\0")
+        normalized = np.ascontiguousarray(_normalize(vector), dtype="<f4")
+        digest.update(normalized.tobytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def _quantize_unit_vector(vector: np.ndarray) -> np.ndarray:
@@ -359,15 +378,23 @@ class FaissVectorIndex(NumpyVectorIndex):
                 "true",
                 "yes",
                 "on",
-            }
+        }
         self.autosave = bool(autosave)
         self.loaded_from_persisted = False
+        self._last_persisted_load_reason: str | None = None
 
     @property
     def metadata_path(self) -> Path | None:
         if self.index_path is None:
             return None
         return self.index_path.with_name(self.index_path.name + ".ids.json")
+
+    @property
+    def vector_checksum(self) -> str:
+        return _vector_snapshot_checksum(
+            self._vectors.items(),
+            vector_dim=self.vector_dim,
+        )
 
     def build(self, records: Iterable) -> None:
         records = list(records)
@@ -411,29 +438,47 @@ class FaissVectorIndex(NumpyVectorIndex):
         self.loaded_from_persisted = False
 
     def _load_persisted(self, expected_ids: list[int]) -> bool:
+        self._last_persisted_load_reason = None
         metadata_path = self.metadata_path
         if self.index_path is None or metadata_path is None:
             return False
         if not self.index_path.exists() or not metadata_path.exists():
+            self._last_persisted_load_reason = "persisted FAISS index or metadata is missing"
             return False
         try:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
+            self._last_persisted_load_reason = "persisted FAISS metadata is unreadable"
             return False
         ids = [int(id) for id in metadata.get("ids", [])]
         if int(metadata.get("vector_dim", -1)) != self.vector_dim:
+            self._last_persisted_load_reason = "persisted FAISS vector dimension does not match"
             return False
         if ids != expected_ids:
+            self._last_persisted_load_reason = "persisted FAISS id map does not match source of truth"
+            return False
+        checksum = str(metadata.get("vector_checksum") or "")
+        if checksum != self.vector_checksum:
+            self._last_persisted_load_reason = (
+                "persisted FAISS vector checksum does not match source of truth"
+            )
             return False
         try:
             self._index = self._faiss.read_index(str(self.index_path))
         except Exception:
+            self._last_persisted_load_reason = "persisted FAISS index is unreadable"
             return False
         if getattr(self._index, "d", self.vector_dim) != self.vector_dim:
+            self._last_persisted_load_reason = "persisted FAISS index dimension does not match"
+            return False
+        ntotal = getattr(self._index, "ntotal", None)
+        if ntotal is not None and int(ntotal) != len(ids):
+            self._last_persisted_load_reason = "persisted FAISS vector count does not match id map"
             return False
         self._id_order = ids
         self._ann_dirty = False
         self.loaded_from_persisted = True
+        self._last_persisted_load_reason = "loaded"
         return True
 
     def _save_persisted(self) -> None:
@@ -447,6 +492,8 @@ class FaissVectorIndex(NumpyVectorIndex):
             "backend": self.name,
             "vector_dim": self.vector_dim,
             "ids": self._id_order,
+            "checksum_algorithm": "sha256-normalized-f32-v1",
+            "vector_checksum": self.vector_checksum,
         }
         metadata_path.write_text(
             json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
@@ -503,6 +550,7 @@ class FaissVectorIndex(NumpyVectorIndex):
             persisted=self.index_path is not None,
             loaded_from_persisted=self.loaded_from_persisted,
             path=str(self.index_path) if self.index_path is not None else None,
+            reason=self._last_persisted_load_reason,
         )
 
 

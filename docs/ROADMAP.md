@@ -24,7 +24,9 @@ policy matters more than raw vector-database scale:
 - FAISS, pgvector, and Qdrant are exposed as explicit optional
   candidate-index backends.
 - FAISS can persist a validated index snapshot and id map for single-node
-  deployments where startup rebuild time matters.
+  deployments where startup rebuild time matters. Persisted FAISS metadata now
+  includes a SHA-256 checksum over normalized source-of-truth vectors, so stale
+  snapshots with matching ids are rebuilt instead of trusted.
 - A Docker-backed production index profile now compares persisted FAISS,
   service-mode Qdrant, and PostgreSQL/pgvector on the same generated vectors.
 - A service-backed production load profile now includes tuned 100000-vector
