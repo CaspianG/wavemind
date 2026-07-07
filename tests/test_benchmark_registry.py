@@ -77,6 +77,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert ten_million["target_recall_at_k"] >= 0.95
     assert ten_million["p99_latency_ms"] < 100.0
     assert ten_million["cost_status"] == "valid_slo"
+    fifty_million_plan = entries["production_streaming_load_runner"]["current"][
+        "50M preflight / WaveMind faiss-ivfpq-persisted streaming"
+    ]
+    assert fifty_million_plan["status"] == "action_required"
+    assert fifty_million_plan["estimated_index_gb"] > 0
+    assert fifty_million_plan["estimated_application_storage_gb"] > fifty_million_plan["estimated_index_gb"]
+    assert "WAVEMIND_FAISS_IVFPQ_PATH" in fifty_million_plan["missing_env"]
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
     assert readiness["overall_status"] == "pass"

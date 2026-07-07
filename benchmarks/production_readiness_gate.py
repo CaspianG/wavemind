@@ -76,6 +76,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_1m_ef": _load_json(benchmark_dir / "production_load_qdrant_1m_ef_sweep_results.json"),
         "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
+        "load_50m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_50m_plan.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
         "local_http_cluster": _load_optional_json(benchmark_dir / "local_http_cluster_smoke_results.json"),
@@ -246,6 +247,27 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and float(load_10m.get("recall_at_k", 0.0)) >= 0.95
         and float(load_10m.get("p99_latency_ms", float("inf"))) <= 100.0
         and load_10m.get("cost_status") == "valid_slo"
+    )
+    load_50m_plan = artifacts["load_50m_plan"]
+    load_50m_plan_rows = [
+        row
+        for row in load_50m_plan.get("plans", [])
+        if isinstance(row, dict)
+    ]
+    load_50m_plan_row = load_50m_plan_rows[0] if load_50m_plan_rows else {}
+    load_50m_plan_pass = (
+        load_50m_plan.get("schema") == "wavemind.production_streaming_load_plan.v1"
+        and load_50m_plan.get("scenario", {}).get("plan_only") is True
+        and int(load_50m_plan.get("scenario", {}).get("sizes", [0])[0]) >= 50_000_000
+        and load_50m_plan_row.get("engine") == "WaveMind faiss-ivfpq-persisted streaming"
+        and int(load_50m_plan_row.get("vectors", 0)) >= 50_000_000
+        and float(load_50m_plan_row.get("estimated_index_gb", 0.0)) > 0.0
+        and float(load_50m_plan_row.get("estimated_application_storage_gb", 0.0))
+        > float(load_50m_plan_row.get("estimated_index_gb", 0.0))
+        and "production_streaming_load_ivfpq_50m_results.json"
+        in str(load_50m_plan_row.get("command", ""))
+        and str(load_50m_plan_row.get("claim_boundary", "")).startswith("preflight only")
+        and load_50m_plan_row.get("status") in {"ready", "action_required"}
     )
     load_1m_candidates = [row for row in (load_1m_faiss, load_1m_qdrant) if row]
     load_1m = max(
@@ -1095,6 +1117,32 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 else "no production_load_10m or production_streaming_load_ivfpq_10m non-skipped SLO row"
             ),
             next_step="Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available.",
+        ),
+        _criterion(
+            criterion_id="fifty_million_streaming_preflight",
+            title="50M streaming load run has a checked preflight contract",
+            status="pass" if load_50m_plan_pass else "action_required",
+            requirement=(
+                "The next 50M streaming run must have a committed plan-only "
+                "artifact with exact reproduction command, local index/transient "
+                "storage estimates, application-storage estimate, required env, "
+                "and an explicit boundary that it is not a completed benchmark."
+            ),
+            evidence=(
+                f"{load_50m_plan_row.get('engine')}: "
+                f"status {load_50m_plan_row.get('status')}, "
+                f"index {load_50m_plan_row.get('estimated_index_gb')} GB, "
+                f"app storage {load_50m_plan_row.get('estimated_application_storage_gb')} GB, "
+                f"required local free {load_50m_plan_row.get('required_local_free_gb')} GB, "
+                f"blockers {', '.join(load_50m_plan_row.get('blockers', [])) or '-'}"
+                if load_50m_plan_row
+                else "no 50M plan artifact"
+            ),
+            next_step=(
+                "Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the "
+                "embedded 50M command to produce "
+                "production_streaming_load_ivfpq_50m_results.json."
+            ),
         ),
         _criterion(
             criterion_id="architecture_advisor_preflight",

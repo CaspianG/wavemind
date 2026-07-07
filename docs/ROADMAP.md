@@ -419,10 +419,11 @@ Enterprise requirements:
   baseline already have checked-in local adapter results; a live Zep service
   adapter run remains external evidence to add when `ZEP_API_URL` or
   `ZEP_API_KEY` is configured.
-- Use `benchmarks/production_streaming_load_benchmark.py` for the next 50M
-  target-recall run and for Qdrant/pgvector 10M service-backed profiles, so
-  large-N profiles do not hold the full vector corpus or exact-neighbor matrix
-  in RAM.
+- Use the checked-in `benchmarks/production_streaming_load_50m_plan.json`
+  preflight to run the next 50M target-recall profile, then add the resulting
+  `production_streaming_load_ivfpq_50m_results.json` artifact. Use the same
+  runner for Qdrant/pgvector 10M service-backed profiles so large-N profiles do
+  not hold the full vector corpus or exact-neighbor matrix in RAM.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.

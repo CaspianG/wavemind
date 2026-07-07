@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T00:06:56Z",
-  "source_ref": "280772fe82b4",
+  "generated_at": "2026-07-07T00:35:04Z",
+  "source_ref": "f723fad4efdb",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -888,7 +888,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles.",
+      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, plus a 50M plan-only resource/command preflight.",
       "competitors": [
         "FAISS persisted streaming",
         "FAISS IVF-PQ persisted streaming",
@@ -970,10 +970,21 @@
           "compute_cost_per_1m_queries_usd": 4.861111111111111,
           "monthly_total_cost_at_target_qps_usd": 1279.8841857910156,
           "estimated_storage_gb": 23.84185791015625
+        },
+        "50M preflight / WaveMind faiss-ivfpq-persisted streaming": {
+          "status": "action_required",
+          "estimated_index_gb": 1.12,
+          "estimated_transient_runner_gb": 0.143,
+          "estimated_application_storage_gb": 119.209,
+          "required_local_free_gb": 1.578,
+          "disk_free_gb": 6.12,
+          "missing_env": [
+            "WAVEMIND_FAISS_IVFPQ_PATH"
+          ]
         }
       },
-      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, then repeat at 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
-      "next_step": "Run the same streaming profile at 50M, and add service-backed Qdrant/pgvector 10M artifacts for broader production evidence."
+      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep the 50M preflight reproducible, then run 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
+      "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH and run the checked 50M reproduction command, then add service-backed Qdrant/pgvector 10M artifacts for broader production evidence."
     },
     {
       "id": "scale_readiness",
@@ -1387,10 +1398,10 @@
         "WaveMind production readiness": {
           "readiness_score": 1.0,
           "overall_status": "pass",
-          "pass_count": 30,
+          "pass_count": 31,
           "action_required_count": 0,
           "fail_count": 0,
-          "total_criteria": 30
+          "total_criteria": 31
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",

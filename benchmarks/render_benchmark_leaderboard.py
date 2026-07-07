@@ -353,6 +353,28 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    streaming_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_50m_plan.json")
+    streaming_plan_row = {}
+    if streaming_plan and isinstance(streaming_plan.get("plans"), list) and streaming_plan["plans"]:
+        first_plan = streaming_plan["plans"][0]
+        if isinstance(first_plan, dict):
+            streaming_plan_row = first_plan
+    if streaming_plan_row:
+        blockers = ", ".join(str(item) for item in streaming_plan_row.get("blockers", [])) or "-"
+        rows.append(
+            (
+                "50M streaming preflight",
+                f"`{streaming_plan_row.get('engine', 'unknown')}` plan-only contract",
+                (
+                    f"`{streaming_plan_row.get('status', 'unknown')}`; "
+                    f"index `{fmt(streaming_plan_row.get('estimated_index_gb'))} GB`; "
+                    f"app storage `{fmt(streaming_plan_row.get('estimated_application_storage_gb'))} GB`; "
+                    f"blockers `{blockers}`"
+                ),
+                "Satisfy the preflight and commit `production_streaming_load_ivfpq_50m_results.json` after a real run.",
+            )
+        )
+
     readiness = _matrix_entry(payload, "production_readiness_gate")
     readiness_current = (readiness or {}).get("current", {})
     readiness_metrics = representative_metrics(

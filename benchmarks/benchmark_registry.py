@@ -81,6 +81,27 @@ def _prefixed_ann_results(label: str, payload: dict[str, Any] | None) -> dict[st
     }
 
 
+def _streaming_plan_results(label: str, payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not payload:
+        return {}
+    rows: dict[str, dict[str, Any]] = {}
+    for plan in payload.get("plans", []):
+        engine = str(plan.get("engine") or "unknown")
+        rows[f"{label} / {engine}"] = _metric_summary(
+            plan,
+            (
+                "status",
+                "estimated_index_gb",
+                "estimated_transient_runner_gb",
+                "estimated_application_storage_gb",
+                "required_local_free_gb",
+                "disk_free_gb",
+                "missing_env",
+            ),
+        ) or {}
+    return rows
+
+
 def _qdrant_ef_sweep_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -172,6 +193,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_ivfpq_100k_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_100k_results.json")
     production_streaming_ivfpq_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_1m_results.json")
     production_streaming_ivfpq_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_ivfpq_10m_results.json")
+    production_streaming_50m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_50m_plan.json")
     scale_readiness_payload = _load_json(root / "benchmarks" / "scale_readiness_results.json")
     local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
@@ -203,6 +225,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("100k compressed", production_streaming_ivfpq_100k_payload),
         **_prefixed_ann_results("1M compressed", production_streaming_ivfpq_1m_payload),
         **_prefixed_ann_results("10M compressed", production_streaming_ivfpq_10m_payload),
+        **_streaming_plan_results("50M preflight", production_streaming_50m_plan_payload),
     }
     scale_readiness_results = _engine_results(scale_readiness_payload)
     local_http_cluster_results = _engine_results(local_http_cluster_payload)
@@ -880,7 +903,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_streaming_load_benchmark.py",
-            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles.",
+            "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, plus a 50M plan-only resource/command preflight.",
             "competitors": ["FAISS persisted streaming", "FAISS IVF-PQ persisted streaming", "Qdrant service streaming"],
             "metrics": [
                 "target_recall@10",
@@ -895,8 +918,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "build_ms",
             ],
             "current": production_streaming_results,
-            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, then repeat at 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
-            "next_step": "Run the same streaming profile at 50M, and add service-backed Qdrant/pgvector 10M artifacts for broader production evidence.",
+            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep the 50M preflight reproducible, then run 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
+            "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH and run the checked 50M reproduction command, then add service-backed Qdrant/pgvector 10M artifacts for broader production evidence.",
         },
         {
             "id": "scale_readiness",

@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T00:06:57Z",
+  "generated_at": "2026-07-07T00:35:03Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 30,
+    "pass_count": 31,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 30
+    "total_criteria": 31
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-06T23:54:17Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T00:06:56Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -243,6 +243,14 @@
       "requirement": "A real non-skipped 10M-vector service-backed benchmark must meet recall@10 >= 0.95, p99 <= 100 ms, and valid cost SLO before claiming 10M readiness.",
       "evidence": "WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo",
       "next_step": "Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available."
+    },
+    {
+      "id": "fifty_million_streaming_preflight",
+      "title": "50M streaming load run has a checked preflight contract",
+      "status": "pass",
+      "requirement": "The next 50M streaming run must have a committed plan-only artifact with exact reproduction command, local index/transient storage estimates, application-storage estimate, required env, and an explicit boundary that it is not a completed benchmark.",
+      "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 1.578 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+      "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the embedded 50M command to produce production_streaming_load_ivfpq_50m_results.json."
     },
     {
       "id": "architecture_advisor_preflight",

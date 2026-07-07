@@ -133,3 +133,84 @@ def test_streaming_load_cli_writes_json(tmp_path):
     assert payload["scenario"]["vector_dim"] == 12
     assert payload["results"][0]["vectors"] == 128
     assert payload["results"][0]["results"][0]["target_recall_at_k"] >= 0.95
+
+
+def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import plan_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_FAISS_IVFPQ_PATH", raising=False)
+
+    payload = plan_streaming_load(
+        sizes=[50_000_000],
+        dim=128,
+        query_count=100,
+        top_k=10,
+        seed=42,
+        noise=0.08,
+        batch_size=100_000,
+        engines=["faiss-ivfpq-persisted"],
+        output_path=Path("benchmarks/production_streaming_load_50m_plan.json"),
+        planned_result_output_path=Path("benchmarks/production_streaming_load_ivfpq_50m_results.json"),
+    )
+
+    assert payload["schema"] == "wavemind.production_streaming_load_plan.v1"
+    assert payload["scenario"]["plan_only"] is True
+    assert payload["scenario"]["sizes"] == [50_000_000]
+    assert payload["status"] == "action_required"
+    row = payload["plans"][0]
+    assert row["vectors"] == 50_000_000
+    assert row["engine"] == "WaveMind faiss-ivfpq-persisted streaming"
+    assert row["estimated_index_gb"] > 0
+    assert row["estimated_index_gb"] < row["estimated_application_storage_gb"]
+    assert row["required_local_free_gb"] > row["estimated_index_gb"]
+    assert "WAVEMIND_FAISS_IVFPQ_PATH" in row["required_env"]
+    assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in row["blockers"]
+    assert "--sizes 50000000" in row["command"]
+    assert "--engines faiss-ivfpq-persisted" in row["command"]
+    assert "--output benchmarks" in row["command"]
+    assert "production_streaming_load_ivfpq_50m_results.json" in row["command"]
+    assert row["claim_boundary"].startswith("preflight only")
+
+
+def test_streaming_load_plan_only_cli_writes_json(tmp_path):
+    output = tmp_path / "streaming-load-plan.json"
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+    env.pop("WAVEMIND_FAISS_IVFPQ_PATH", None)
+
+    subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/production_streaming_load_benchmark.py",
+            "--plan-only",
+            "--sizes",
+            "50000000",
+            "--dim",
+            "128",
+            "--queries",
+            "100",
+            "--top-k",
+            "10",
+            "--batch-size",
+            "100000",
+            "--engines",
+            "faiss-ivfpq-persisted",
+            "--output",
+            str(output),
+            "--planned-result-output",
+            "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["schema"] == "wavemind.production_streaming_load_plan.v1"
+    assert payload["plans"][0]["vectors"] == 50_000_000
+    assert payload["plans"][0]["status"] == "action_required"
+    assert "production_streaming_load_ivfpq_50m_results.json" in payload["plans"][0]["command"]

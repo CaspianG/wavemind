@@ -12,6 +12,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/open_retrieval_scifact_results.json",
         "benchmarks/nomiracl_russian_results.json",
         "benchmarks/production_index_profile_results.json",
+        "benchmarks/production_streaming_load_50m_plan.json",
     ]
     commands = [
         "python benchmarks/agent_coherence_benchmark.py",
@@ -22,6 +23,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "python benchmarks/open_retrieval_benchmark.py",
         "python benchmarks/nomiracl_russian_benchmark.py",
         "docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark",
+        "python benchmarks/production_streaming_load_benchmark.py --plan-only --sizes 50000000",
     ]
 
     for artifact in artifacts:

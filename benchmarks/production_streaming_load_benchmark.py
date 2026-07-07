@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import math
 import os
 import statistics
 import sys
@@ -68,6 +70,10 @@ def _int_env(name: str, default: int) -> int:
 
 def _without_none(values: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _module_available(name: str) -> bool:
+    return importlib.util.find_spec(name) is not None
 
 
 def _qdrant_collection_config_from_env() -> dict[str, Any]:
@@ -224,6 +230,261 @@ def skipped_result(engine: str, reason: str) -> dict[str, Any]:
         "engine": engine,
         "skipped": True,
         "reason": reason,
+    }
+
+
+def _bytes_to_gb(value: float) -> float:
+    return float(value) / float(1024**3)
+
+
+def _round_gb(value: float) -> float:
+    return round(float(value), 3)
+
+
+def _env_ready(names: Iterable[str]) -> tuple[bool, list[str]]:
+    missing = [name for name in names if not os.environ.get(name)]
+    return not missing, missing
+
+
+def _streaming_plan_row(
+    *,
+    count: int,
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+    engine: str,
+    output_path: Path | None,
+    planned_result_output_path: Path | None,
+    target_recall: float,
+    target_p99_ms: float,
+    target_qps: float,
+    replicas: int,
+    autoscaling_max_replicas: int,
+    capacity_headroom: float,
+    memory_payload_kb: float,
+    vector_dtype_bytes: int,
+    disk_free_gb: float,
+    safety_factor: float,
+) -> dict[str, Any]:
+    key = engine.lower()
+    canonical = {
+        "numpy-streaming": "WaveMind numpy-streaming",
+        "faiss-persisted": "WaveMind faiss-persisted streaming",
+        "faiss-ivfpq-persisted": "WaveMind faiss-ivfpq-persisted streaming",
+        "qdrant-service": "Qdrant service streaming",
+    }.get(key, engine)
+    vector_bytes = int(count) * int(dim) * int(vector_dtype_bytes)
+    payload_bytes = int(count) * float(memory_payload_kb) * 1024.0
+    source_vector_bytes = min(int(query_count), int(count)) * int(dim) * int(vector_dtype_bytes)
+    batch_bytes = min(int(batch_size), int(count)) * int(dim) * int(vector_dtype_bytes)
+    blockers: list[str] = []
+    required_env: list[str] = []
+    module_requirements: list[str] = []
+    index_bytes = vector_bytes
+    transient_bytes = batch_bytes + source_vector_bytes
+    index_mode = "full matrix"
+    command_env: dict[str, str] = {}
+
+    if key == "numpy-streaming":
+        index_mode = "full float32 matrix; smoke/testing only at large N"
+        if count > 1_000_000:
+            blockers.append("numpy_streaming_not_large_n_production_path")
+    elif key == "faiss-persisted":
+        module_requirements = ["faiss"]
+        required_env = ["WAVEMIND_FAISS_PATH"]
+        index_bytes = vector_bytes + int(count) * 8
+        index_mode = "persisted FAISS flat index plus int64 ids"
+        command_env = {"WAVEMIND_FAISS_PATH": "./state/wavemind-faiss-50m.faiss"}
+    elif key == "faiss-ivfpq-persisted":
+        module_requirements = ["faiss"]
+        required_env = ["WAVEMIND_FAISS_IVFPQ_PATH"]
+        nlist = _int_env("WAVEMIND_FAISS_IVFPQ_NLIST", 4096)
+        pq_m = _int_env("WAVEMIND_FAISS_IVFPQ_M", 16)
+        nbits = _int_env("WAVEMIND_FAISS_IVFPQ_NBITS", 8)
+        nprobe = _int_env("WAVEMIND_FAISS_IVFPQ_NPROBE", min(1024, nlist))
+        training_size = _int_env("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", max(200_000, nlist * 40))
+        if dim % pq_m != 0:
+            blockers.append(f"vector_dim_not_divisible_by_ivfpq_m:{dim}%{pq_m}")
+        code_bytes = int(count) * int(math.ceil((pq_m * nbits) / 8.0))
+        id_bytes = int(count) * 8
+        centroid_bytes = int(nlist) * int(dim) * int(vector_dtype_bytes)
+        training_bytes = int(training_size) * int(dim) * int(vector_dtype_bytes)
+        index_bytes = code_bytes + id_bytes + centroid_bytes
+        transient_bytes += training_bytes
+        index_mode = "persisted FAISS IVF-PQ compressed codes plus int64 ids"
+        command_env = {
+            "WAVEMIND_FAISS_IVFPQ_PATH": "./state/wavemind-faiss-ivfpq-50m.faiss",
+            "WAVEMIND_FAISS_IVFPQ_NLIST": str(nlist),
+            "WAVEMIND_FAISS_IVFPQ_M": str(pq_m),
+            "WAVEMIND_FAISS_IVFPQ_NBITS": str(nbits),
+            "WAVEMIND_FAISS_IVFPQ_NPROBE": str(nprobe),
+            "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": str(training_size),
+        }
+    elif key == "qdrant-service":
+        module_requirements = ["qdrant_client"]
+        required_env = ["WAVEMIND_QDRANT_URL"]
+        index_bytes = 0
+        index_mode = "remote Qdrant service storage; local runner stores only generated batches"
+        command_env = {"WAVEMIND_QDRANT_URL": "http://qdrant.example:6333"}
+    else:
+        raise ValueError(f"Unknown engine: {engine}")
+
+    module_status = {
+        name: _module_available(name)
+        for name in module_requirements
+        if name in module_requirements
+    }
+    missing_modules = [name for name, ok in module_status.items() if not ok]
+    if missing_modules:
+        blockers.extend(f"missing_module:{name}" for name in missing_modules)
+    env_ok, missing_env = _env_ready(required_env)
+    if not env_ok:
+        blockers.extend(f"missing_env:{name}" for name in missing_env)
+
+    required_local_free_gb = _bytes_to_gb((index_bytes + transient_bytes) * safety_factor)
+    if disk_free_gb < required_local_free_gb:
+        blockers.append("insufficient_local_disk_for_index_and_transient_batches")
+
+    command_output_path = planned_result_output_path or output_path or Path("benchmarks/production_streaming_load_results.json")
+    command_parts = [
+        "python",
+        "benchmarks/production_streaming_load_benchmark.py",
+        "--sizes",
+        str(int(count)),
+        "--dim",
+        str(int(dim)),
+        "--queries",
+        str(int(query_count)),
+        "--top-k",
+        str(int(top_k)),
+        "--seed",
+        str(int(seed)),
+        "--noise",
+        str(float(noise)),
+        "--batch-size",
+        str(int(batch_size)),
+        "--engines",
+        engine,
+        "--target-recall",
+        str(float(target_recall)),
+        "--target-p99-ms",
+        str(float(target_p99_ms)),
+        "--target-qps",
+        str(float(target_qps)),
+        "--replicas",
+        str(int(replicas)),
+        "--autoscaling-max-replicas",
+        str(int(autoscaling_max_replicas)),
+        "--capacity-headroom",
+        str(float(capacity_headroom)),
+        "--output",
+        str(command_output_path),
+    ]
+    return {
+        "engine": canonical,
+        "vectors": int(count),
+        "vector_dim": int(dim),
+        "queries": min(int(query_count), int(count)),
+        "top_k": int(top_k),
+        "batch_size": int(batch_size),
+        "index_mode": index_mode,
+        "estimated_index_gb": _round_gb(_bytes_to_gb(index_bytes)),
+        "estimated_transient_runner_gb": _round_gb(_bytes_to_gb(transient_bytes)),
+        "estimated_payload_storage_gb": _round_gb(_bytes_to_gb(payload_bytes)),
+        "estimated_float_vector_storage_gb": _round_gb(_bytes_to_gb(vector_bytes)),
+        "estimated_application_storage_gb": _round_gb(_bytes_to_gb(vector_bytes + payload_bytes)),
+        "required_local_free_gb": _round_gb(required_local_free_gb),
+        "disk_free_gb": round(float(disk_free_gb), 3),
+        "safety_factor": float(safety_factor),
+        "module_requirements": module_status,
+        "required_env": required_env,
+        "missing_env": missing_env,
+        "command_env": command_env,
+        "command": " ".join(command_parts),
+        "status": "ready" if not blockers else "action_required",
+        "blockers": blockers,
+        "claim_boundary": "preflight only; this is not a completed latency or recall benchmark",
+    }
+
+
+def plan_streaming_load(
+    *,
+    sizes: Iterable[int],
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+    engines: Iterable[str],
+    output_path: Path | None = None,
+    planned_result_output_path: Path | None = None,
+    target_recall: float = 0.95,
+    target_p99_ms: float = 100.0,
+    target_qps: float = 100.0,
+    replicas: int = 3,
+    autoscaling_max_replicas: int = 24,
+    capacity_headroom: float = 0.70,
+    memory_payload_kb: float = 2.0,
+    vector_dtype_bytes: int = 4,
+    safety_factor: float = 1.25,
+) -> dict[str, Any]:
+    preflight_payload = preflight(output_path=output_path)
+    disk_free_gb = float(preflight_payload.get("disk", {}).get("free_gb", 0.0))
+    size_list = [int(size) for size in sizes]
+    rows = [
+        _streaming_plan_row(
+            count=size,
+            dim=dim,
+            query_count=query_count,
+            top_k=top_k,
+            seed=seed,
+            noise=noise,
+            batch_size=batch_size,
+            engine=engine,
+            output_path=output_path,
+            planned_result_output_path=planned_result_output_path,
+            target_recall=target_recall,
+            target_p99_ms=target_p99_ms,
+            target_qps=target_qps,
+            replicas=replicas,
+            autoscaling_max_replicas=autoscaling_max_replicas,
+            capacity_headroom=capacity_headroom,
+            memory_payload_kb=memory_payload_kb,
+            vector_dtype_bytes=vector_dtype_bytes,
+            disk_free_gb=disk_free_gb,
+            safety_factor=safety_factor,
+        )
+        for size in size_list
+        for engine in engines
+    ]
+    return {
+        "schema": "wavemind.production_streaming_load_plan.v1",
+        "status": "ready" if rows and all(row["status"] == "ready" for row in rows) else "action_required",
+        "scenario": {
+            "name": "production_streaming_load_plan",
+            "description": "Plan-only preflight for large-N streaming load runs. It estimates local index/transient storage, application storage, required environment, and the exact reproduction command without generating vectors.",
+            "sizes": size_list,
+            "vector_dim": int(dim),
+            "queries_per_size": int(query_count),
+            "top_k": int(top_k),
+            "seed": int(seed),
+            "noise": float(noise),
+            "batch_size": int(batch_size),
+            "engines": list(engines),
+            "target_recall_at_k": float(target_recall),
+            "target_p99_ms": float(target_p99_ms),
+            "target_qps": float(target_qps),
+            "replicas": int(replicas),
+            "autoscaling_max_replicas": int(autoscaling_max_replicas),
+            "capacity_headroom": float(capacity_headroom),
+            "plan_only": True,
+        },
+        "preflight": preflight_payload,
+        "plans": rows,
     }
 
 
@@ -764,6 +1025,17 @@ def print_table(payload: dict[str, Any]) -> None:
             )
 
 
+def print_plan_table(payload: dict[str, Any]) -> None:
+    print("| vectors | engine | status | local free | required local free | blockers |")
+    print("|---:|---|---|---:|---:|---|")
+    for row in payload.get("plans", []):
+        blockers = ", ".join(row.get("blockers", [])) or "-"
+        print(
+            f"| {row['vectors']} | {row['engine']} | {row['status']} | "
+            f"{row['disk_free_gb']:.2f} GB | {row['required_local_free_gb']:.2f} GB | {blockers} |"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sizes", nargs="+", type=int, default=[10_000_000])
@@ -783,6 +1055,9 @@ def main() -> int:
     parser.add_argument("--storage-gb-monthly-cost-usd", type=float, default=0.10)
     parser.add_argument("--memory-payload-kb", type=float, default=2.0)
     parser.add_argument("--vector-dtype-bytes", type=int, default=4)
+    parser.add_argument("--plan-only", action="store_true", help="Write a large-N preflight plan without generating vectors.")
+    parser.add_argument("--planned-result-output", type=Path, default=None, help="Result JSON path embedded in plan-only reproduction commands.")
+    parser.add_argument("--safety-factor", type=float, default=1.25, help="Disk safety factor for plan-only local index/transient storage estimates.")
     parser.add_argument(
         "--engines",
         nargs="+",
@@ -791,6 +1066,33 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/production_streaming_load_results.json"))
     args = parser.parse_args()
+    if args.plan_only:
+        payload = plan_streaming_load(
+            sizes=args.sizes,
+            dim=args.dim,
+            query_count=args.queries,
+            top_k=args.top_k,
+            seed=args.seed,
+            noise=args.noise,
+            batch_size=args.batch_size,
+            engines=args.engines,
+            output_path=args.output,
+            planned_result_output_path=args.planned_result_output,
+            target_recall=args.target_recall,
+            target_p99_ms=args.target_p99_ms,
+            target_qps=args.target_qps,
+            replicas=args.replicas,
+            autoscaling_max_replicas=args.autoscaling_max_replicas,
+            capacity_headroom=args.capacity_headroom,
+            memory_payload_kb=args.memory_payload_kb,
+            vector_dtype_bytes=args.vector_dtype_bytes,
+            safety_factor=args.safety_factor,
+        )
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print_plan_table(payload)
+        print(f"\nWrote {args.output}")
+        return 0
     payload = run_streaming_load(
         sizes=args.sizes,
         dim=args.dim,

@@ -7,14 +7,14 @@ verdict, not a marketing claim.
 |---|---:|
 | overall status | `pass` |
 | readiness score | `1.000` |
-| passed criteria | `30` |
+| passed criteria | `31` |
 | action required | `0` |
 | failed criteria | `0` |
-| total criteria | `30` |
+| total criteria | `31` |
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-06T23:54:17Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-07T00:06:56Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.417, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.984 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
 | LongMemEval answer generation beats static RAG baselines | `pass` | ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170 | Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |
@@ -43,6 +43,7 @@ verdict, not a marketing claim.
 | Snapshots, archives, offsite mirror, and object-store DR verify | `pass` | archive True, object-store DR True, restored files 3 | Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps. |
 | Structured and multimodal payload retrieval works | `pass` | modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, provenance 1.0 | Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal retrieval tests. |
 | 10M-vector production load profile passes recall, p99, and cost gate | `pass` | WaveMind faiss-ivfpq-persisted streaming: recall 0.99, p99 60.12930005090311 ms, cost valid_slo | Keep the 10M compressed FAISS IVF-PQ profile green and repeat with Qdrant/pgvector service profiles when larger service hardware is available. |
+| 50M streaming load run has a checked preflight contract | `pass` | WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 1.578 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH | Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the embedded 50M command to produce production_streaming_load_ivfpq_50m_results.json. |
 | Architecture advisor blocks unsafe large production growth | `pass` | status architecture_required, recommendations bounded-read-fanout, capacity-envelope, load-test, multimodal-payloads, namespace-sharding, production-controls, scale-plan, service-index, commands 12 | Keep `wavemind advise --fail-on action_required` in release and deployment preflight checks. |
 
 ## Non-Gating External Evidence
