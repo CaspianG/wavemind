@@ -126,6 +126,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and redis_api_load.get("shared_fresh_cache_visible_across_processes")
         and redis_api_load.get("cache_invalidated_on_remember")
         and redis_api_load.get("stale_prevented_after_remember")
+        and int(redis_api_load.get("batch_feedback_accepted", 0)) >= 2
+        and int(redis_api_load.get("batch_feedback_rejected", 0)) >= 1
+        and redis_api_load.get("batch_feedback_shared_cache_visible")
+        and redis_api_load.get("batch_feedback_cache_invalidated")
+        and redis_api_load.get("batch_feedback_stale_prevented")
+        and int(redis_api_load.get("batch_feedback_audit_events", 0)) >= 2
+        and float(redis_api_load.get("batch_feedback_positive_priority_delta", 0.0)) > 0.0
+        and float(redis_api_load.get("batch_feedback_negative_priority_delta", 0.0)) < 0.0
         and redis_api_load.get("cache_invalidated_on_forget")
         and redis_api_load.get("stale_prevented_after_forget")
         and float(redis_api_load.get("success_rate", 0.0)) >= 1.0
@@ -1162,13 +1170,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement=(
                 "CI must start a real Redis service, launch multiple uvicorn "
                 "workers, verify cross-process cache visibility, and fail on "
-                "stale-cache or p99 SLO regression."
+                "stale-cache, batch feedback, or p99 SLO regression."
             ),
             evidence=(
                 f"workflow {redis_api_load_ci_configured}, "
                 f"workers {redis_api_load.get('workers')}, "
                 f"success_rate {redis_api_load.get('success_rate')}, "
                 f"p99 {redis_api_load.get('p99_latency_ms')} ms, "
+                f"batch accepted {redis_api_load.get('batch_feedback_accepted')}, "
+                f"batch rejected {redis_api_load.get('batch_feedback_rejected')}, "
+                f"batch cache invalidated {redis_api_load.get('batch_feedback_cache_invalidated')}, "
                 f"stale prevented {redis_api_load.get('stale_prevented_after_forget')}"
             ),
             next_step="Refresh redis_api_load_results.json from the CI artifact on every release candidate.",

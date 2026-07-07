@@ -944,7 +944,8 @@ WAVEMIND_VECTOR_CACHE_CAPACITY=1024 WAVEMIND_VECTOR_CACHE_TTL_SECONDS=300 wavemi
 WAVEMIND_VECTOR_CACHE_REDIS_URL=redis://localhost:6379/0 wavemind serve
 ```
 
-To verify the live multi-process cache path against a real Redis service:
+To verify the live multi-process cache path, including batch recall feedback
+invalidation, against a real Redis service:
 
 ```sh
 python benchmarks/redis_api_load_benchmark.py --redis-url redis://localhost:6379/0 --workers 2 --requests 40 --fail-on-slo

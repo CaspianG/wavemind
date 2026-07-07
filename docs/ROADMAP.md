@@ -91,6 +91,10 @@ policy matters more than raw vector-database scale:
   reject bad namespace items, and invalidate API cache entries for the affected
   namespace, so agent feedback can become an operational memory signal instead
   of a Studio-only UI action.
+- `benchmarks/redis_api_load_benchmark.py` now exercises the batch feedback
+  endpoint through real multi-process FastAPI workers and a real Redis cache:
+  one writer records accepted/rejected feedback, Redis cache is invalidated,
+  and another worker can no longer replay the stale cached recall.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path

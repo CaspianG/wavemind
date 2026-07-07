@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T14:00:18Z",
+  "generated_at": "2026-07-07T14:16:30Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T13:48:12Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T14:16:05Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -200,8 +200,8 @@
       "id": "real_redis_api_load_ci",
       "title": "Real Redis multi-process API load passes SLO",
       "status": "pass",
-      "requirement": "CI must start a real Redis service, launch multiple uvicorn workers, verify cross-process cache visibility, and fail on stale-cache or p99 SLO regression.",
-      "evidence": "workflow True, workers 2, success_rate 1.0, p99 71.7594539700039 ms, stale prevented True",
+      "requirement": "CI must start a real Redis service, launch multiple uvicorn workers, verify cross-process cache visibility, and fail on stale-cache, batch feedback, or p99 SLO regression.",
+      "evidence": "workflow True, workers 2, success_rate 1.0, p99 29.923557032598183 ms, batch accepted 2, batch rejected 1, batch cache invalidated True, stale prevented True",
       "next_step": "Refresh redis_api_load_results.json from the CI artifact on every release candidate."
     },
     {

@@ -59,6 +59,9 @@ def test_build_worker_env_sets_production_cache_controls(tmp_path):
     assert env["WAVEMIND_REDIS_PREFIX"] == "wm:test"
     assert env["WAVEMIND_AUDIT_QUERIES"] == "1"
     assert env["WAVEMIND_ENCODER"] == "hash"
+    assert "127.0.0.1" in env["NO_PROXY"]
+    assert "localhost" in env["NO_PROXY"]
+    assert "::1" in env["no_proxy"]
     assert "existing" in env["PYTHONPATH"]
     assert str(Path(__file__).resolve().parents[1]) in env["PYTHONPATH"]
 
