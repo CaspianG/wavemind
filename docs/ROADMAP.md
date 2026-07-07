@@ -36,7 +36,7 @@ policy matters more than raw vector-database scale:
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`31/31` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`32/32` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -84,6 +84,10 @@ policy matters more than raw vector-database scale:
   The benchmark runners now expose `pgvector-exact` and
   `pgvector-iterative` as named engines, so pgvector can be tuned under the
   same SLO/cost gate instead of being tracked as one opaque failing backend.
+  The checked-in service-backed tuning artifact now shows 50000-vector
+  `pgvector-exact` at recall@10 `1.000` / p99 `76.98 ms` and
+  `pgvector-iterative` at recall@10 `0.970` / p99 `55.19 ms`
+  in `benchmarks/production_pgvector_tuning_results.json`.
 - Candidate indexes expose health snapshots, count/id drift checks, HTTP/CLI
   rebuild operations, and Prometheus-compatible index-health metrics.
 - `wavemind scale-plan`, `WaveMind.scale_plan()`, and `GET /scale-plan` are

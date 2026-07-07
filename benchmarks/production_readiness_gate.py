@@ -74,6 +74,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_1m": _load_json(benchmark_dir / "production_load_qdrant_1m_tuned_results.json"),
         "load_1m_faiss": _load_json(benchmark_dir / "production_load_faiss_1m_results.json"),
         "load_1m_ef": _load_json(benchmark_dir / "production_load_qdrant_1m_ef_sweep_results.json"),
+        "pgvector_tuning": _load_json(benchmark_dir / "production_pgvector_tuning_results.json"),
         "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "load_50m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_50m_plan.json"),
@@ -247,6 +248,23 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and float(load_10m.get("recall_at_k", 0.0)) >= 0.95
         and float(load_10m.get("p99_latency_ms", float("inf"))) <= 100.0
         and load_10m.get("cost_status") == "valid_slo"
+    )
+    pgvector_tuning_rows = _size_results(artifacts["pgvector_tuning"])
+    pgvector_exact = pgvector_tuning_rows.get("WaveMind pgvector-exact", {})
+    pgvector_iterative = pgvector_tuning_rows.get("WaveMind pgvector-iterative", {})
+    pgvector_reference = pgvector_tuning_rows.get("Qdrant service", {})
+    pgvector_latest_size = int(
+        (artifacts["pgvector_tuning"].get("results") or [{}])[-1].get("vectors", 0)
+    )
+    pgvector_tuning_pass = (
+        pgvector_latest_size >= 50_000
+        and int(pgvector_exact.get("queries", 0)) >= 100
+        and int(pgvector_iterative.get("queries", 0)) >= 100
+        and float(pgvector_exact.get("recall_at_k", 0.0)) >= 1.0
+        and float(pgvector_exact.get("p99_latency_ms", float("inf"))) <= 100.0
+        and float(pgvector_iterative.get("recall_at_k", 0.0)) >= 0.95
+        and float(pgvector_iterative.get("p99_latency_ms", float("inf"))) <= 100.0
+        and float(pgvector_reference.get("recall_at_k", 0.0)) >= 0.95
     )
     load_50m_plan = artifacts["load_50m_plan"]
     load_50m_plan_rows = [
@@ -500,6 +518,28 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement="Use at least 100 queries for checked-in 1M production claims.",
             evidence=f"current tuned 1M profile uses {load_1m_queries} queries",
             next_step="Keep 100+ query depth for all checked-in 1M production profiles.",
+        ),
+        _criterion(
+            criterion_id="pgvector_tuning_path",
+            title="pgvector exact and iterative service profile passes 50k tuning gate",
+            status="pass" if pgvector_tuning_pass else "action_required",
+            requirement=(
+                "A real PostgreSQL/pgvector service profile must show exact recall "
+                "as the correctness floor and iterative HNSW recall@10 >= 0.95 "
+                "with p99 <= 100 ms at 50000 vectors over 100 queries."
+            ),
+            evidence=(
+                f"size {pgvector_latest_size}, "
+                f"exact recall {pgvector_exact.get('recall_at_k')}, "
+                f"exact p99 {pgvector_exact.get('p99_latency_ms')} ms, "
+                f"iterative recall {pgvector_iterative.get('recall_at_k')}, "
+                f"iterative p99 {pgvector_iterative.get('p99_latency_ms')} ms, "
+                f"Qdrant reference recall {pgvector_reference.get('recall_at_k')}"
+            ),
+            next_step=(
+                "Promote pgvector-iterative into the 100k and 1M production "
+                "load SLO profiles after allocating enough disk/build time."
+            ),
         ),
         _criterion(
             criterion_id="vectordbbench_custom_dataset",

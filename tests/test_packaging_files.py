@@ -205,6 +205,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/BENCHMARK_LEADERBOARD.md" in readme
     assert "benchmarks/production_streaming_load_ivfpq_10m_results.json" in readme
     assert "benchmarks/production_streaming_load_50m_plan.json" in readme
+    assert "benchmarks/production_pgvector_tuning_results.json" in readme
     assert "production_streaming_load_ivfpq_50m_results.json" in readme
     assert "deploy/serverless/observed-telemetry.loopback.json" in readme
     assert "observed-telemetry.remote.json" in readme
@@ -266,7 +267,11 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "estimate_production_cost" in readme
     assert "SLO and cost gates" in roadmap
     assert "production_streaming_load_50m_plan.json" in roadmap
+    assert "production_pgvector_tuning_results.json" in roadmap
+    assert "pgvector-iterative" in roadmap
     assert "production_streaming_load_ivfpq_50m_results.json" in roadmap
     assert "benchmarks/production_streaming_load_50m_plan.json" in benchmark_brief
+    assert "benchmarks/production_pgvector_tuning_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_ivfpq_50m_results.json" in benchmark_brief
+    assert "pgvector iterative tuning recall@10: 0.970" in benchmark_brief
     assert "cost $1.39 / 1M queries" in benchmark_brief

@@ -333,6 +333,32 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    pgvector_tuning = load_json_if_exists(root, "benchmarks/production_pgvector_tuning_results.json")
+    pgvector_latest = {}
+    if pgvector_tuning and isinstance(pgvector_tuning.get("results"), list) and pgvector_tuning["results"]:
+        latest = pgvector_tuning["results"][-1]
+        if isinstance(latest, dict):
+            pgvector_latest = {
+                str(row.get("engine")): row
+                for row in latest.get("results", [])
+                if isinstance(row, dict) and row.get("engine")
+            }
+    pgvector_iterative = pgvector_latest.get("WaveMind pgvector-iterative")
+    pgvector_exact = pgvector_latest.get("WaveMind pgvector-exact")
+    if pgvector_iterative and pgvector_exact:
+        rows.append(
+            (
+                "pgvector tuning",
+                "real PostgreSQL/pgvector service profile at 50k vectors",
+                (
+                    f"iterative recall `{fmt(pgvector_iterative.get('recall_at_k'))}`, "
+                    f"iterative p99 `{fmt(pgvector_iterative.get('p99_latency_ms'))} ms`; "
+                    f"exact recall `{fmt(pgvector_exact.get('recall_at_k'))}`"
+                ),
+                "Promote pgvector-iterative into the 100k and 1M production load SLO profiles.",
+            )
+        )
+
     streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_ivfpq_10m_results.json")
     streaming_result = _first_result(streaming)
     if streaming_result and isinstance(streaming_result.get("results"), list):

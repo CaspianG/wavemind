@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T00:35:03Z",
+  "generated_at": "2026-07-07T01:15:38Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 31,
+    "pass_count": 32,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 31
+    "total_criteria": 32
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T00:06:56Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T00:35:04Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -59,6 +59,14 @@
       "requirement": "Use at least 100 queries for checked-in 1M production claims.",
       "evidence": "current tuned 1M profile uses 100 queries",
       "next_step": "Keep 100+ query depth for all checked-in 1M production profiles."
+    },
+    {
+      "id": "pgvector_tuning_path",
+      "title": "pgvector exact and iterative service profile passes 50k tuning gate",
+      "status": "pass",
+      "requirement": "A real PostgreSQL/pgvector service profile must show exact recall as the correctness floor and iterative HNSW recall@10 >= 0.95 with p99 <= 100 ms at 50000 vectors over 100 queries.",
+      "evidence": "size 50000, exact recall 1.0, exact p99 76.98170002549887 ms, iterative recall 0.97, iterative p99 55.18779996782541 ms, Qdrant reference recall 1.0",
+      "next_step": "Promote pgvector-iterative into the 100k and 1M production load SLO profiles after allocating enough disk/build time."
     },
     {
       "id": "vectordbbench_custom_dataset",

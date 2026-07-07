@@ -67,6 +67,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
         == "invalid_slo"
     )
     assert entries["production_load_qdrant_1m_ef_sweep"]["current"]["hnsw_ef=2048"]["slo_status"] == "fail"
+    assert entries["production_pgvector_tuning_profile"]["status"] == "implemented"
+    pgvector_tuning = entries["production_pgvector_tuning_profile"]["current"]
+    assert pgvector_tuning["WaveMind pgvector-exact"]["recall_at_k"] == 1.0
+    assert pgvector_tuning["WaveMind pgvector-exact"]["p99_latency_ms"] < 100.0
+    assert pgvector_tuning["WaveMind pgvector-iterative"]["recall_at_k"] >= 0.95
+    assert pgvector_tuning["WaveMind pgvector-iterative"]["p99_latency_ms"] < 100.0
+    assert pgvector_tuning["WaveMind pgvector-iterative"]["pgvector_variant"] == "pgvector-iterative"
     assert entries["production_streaming_load_runner"]["status"] == "implemented"
     streaming = entries["production_streaming_load_runner"]["current"]["10k smoke / WaveMind numpy-streaming"]
     assert streaming["target_recall_at_k"] >= 0.95

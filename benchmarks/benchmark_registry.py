@@ -69,6 +69,7 @@ def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, A
                 "compute_cost_per_1m_queries_usd",
                 "monthly_total_cost_at_target_qps_usd",
                 "estimated_storage_gb",
+                "pgvector_variant",
             ),
         ) or {}
     return summaries
@@ -183,6 +184,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_payload = _load_json(root / "benchmarks" / "longmemeval_evidence_50_results.json")
     ann_payload = _load_json(root / "benchmarks" / "ann_index_curve_results.json")
     production_index_payload = _load_json(root / "benchmarks" / "production_index_profile_results.json")
+    production_pgvector_tuning_payload = _load_json(root / "benchmarks" / "production_pgvector_tuning_results.json")
     production_load_payload = _load_json(root / "benchmarks" / "production_load_results.json")
     production_load_1m_payload = _load_json(root / "benchmarks" / "production_load_qdrant_1m_results.json")
     production_load_100k_tuned_payload = _load_json(root / "benchmarks" / "production_load_qdrant_100k_tuned_results.json")
@@ -214,6 +216,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     longmemeval_50_results = _engine_results(longmemeval_50_payload)
     ann_results = _ann_latest_results(ann_payload)
     production_index_results = _ann_latest_results(production_index_payload)
+    production_pgvector_tuning_results = _ann_latest_results(production_pgvector_tuning_payload)
     production_load_results = _ann_latest_results(production_load_payload)
     production_load_1m_results = _ann_latest_results(production_load_1m_payload)
     production_load_100k_tuned_results = _ann_latest_results(production_load_100k_tuned_payload)
@@ -821,6 +824,19 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "current": production_index_results,
             "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
             "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency.",
+        },
+        {
+            "id": "production_pgvector_tuning_profile",
+            "name": "Production pgvector tuning profile",
+            "category": "index-latency",
+            "status": "implemented",
+            "source": "benchmarks/production_pgvector_tuning_results.json",
+            "dataset": "Docker-backed PostgreSQL/pgvector tuning profile over 10000 and 50000 generated normalized 128-d vectors, with Qdrant service as the reference service baseline.",
+            "competitors": ["Qdrant service", "pgvector HNSW", "pgvector exact", "pgvector iterative HNSW"],
+            "metrics": ["recall@10", "avg_latency_ms", "p95_latency_ms", "p99_latency_ms", "build_ms"],
+            "current": production_pgvector_tuning_results,
+            "target": "Use pgvector exact as the recall floor and keep pgvector iterative above recall@10 0.95 with p99 below 100 ms at 50000 vectors.",
+            "next_step": "Promote pgvector iterative from the 50000-vector tuning profile into the 100k/1M production load SLO profiles when disk and build time allow it.",
         },
         {
             "id": "production_load_profile_100k",

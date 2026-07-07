@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T00:35:04Z",
-  "source_ref": "f723fad4efdb",
+  "generated_at": "2026-07-07T01:15:38Z",
+  "source_ref": "4f72e730fe4b",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -669,6 +669,61 @@
       },
       "target": "Keep persisted FAISS and service-mode vector backends at recall@10 >= 0.95 while staying below 10 ms average query latency at 50000 vectors.",
       "next_step": "Use the dedicated production load profile for 100000 and 1000000-vector service tests, then tune pgvector and Qdrant for recall/latency."
+    },
+    {
+      "id": "production_pgvector_tuning_profile",
+      "name": "Production pgvector tuning profile",
+      "category": "index-latency",
+      "status": "implemented",
+      "source": "benchmarks/production_pgvector_tuning_results.json",
+      "dataset": "Docker-backed PostgreSQL/pgvector tuning profile over 10000 and 50000 generated normalized 128-d vectors, with Qdrant service as the reference service baseline.",
+      "competitors": [
+        "Qdrant service",
+        "pgvector HNSW",
+        "pgvector exact",
+        "pgvector iterative HNSW"
+      ],
+      "metrics": [
+        "recall@10",
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "p99_latency_ms",
+        "build_ms"
+      ],
+      "current": {
+        "Qdrant service": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 9.136750996112823,
+          "p95_latency_ms": 17.305999994277954,
+          "p99_latency_ms": 17.842400004155934,
+          "build_ms": 14786.168900085613
+        },
+        "WaveMind pgvector": {
+          "recall_at_k": 0.834,
+          "avg_latency_ms": 14.516923007322475,
+          "p95_latency_ms": 19.587800023145974,
+          "p99_latency_ms": 21.081199985928833,
+          "build_ms": 200277.73690002505
+        },
+        "WaveMind pgvector-exact": {
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 55.7216919970233,
+          "p95_latency_ms": 66.91249995492399,
+          "p99_latency_ms": 76.98170002549887,
+          "build_ms": 211610.96560000442,
+          "pgvector_variant": "pgvector-exact"
+        },
+        "WaveMind pgvector-iterative": {
+          "recall_at_k": 0.97,
+          "avg_latency_ms": 38.32061400171369,
+          "p95_latency_ms": 48.01979998592287,
+          "p99_latency_ms": 55.18779996782541,
+          "build_ms": 189784.2862000689,
+          "pgvector_variant": "pgvector-iterative"
+        }
+      },
+      "target": "Use pgvector exact as the recall floor and keep pgvector iterative above recall@10 0.95 with p99 below 100 ms at 50000 vectors.",
+      "next_step": "Promote pgvector iterative from the 50000-vector tuning profile into the 100k/1M production load SLO profiles when disk and build time allow it."
     },
     {
       "id": "production_load_profile_100k",
@@ -1398,10 +1453,10 @@
         "WaveMind production readiness": {
           "readiness_score": 1.0,
           "overall_status": "pass",
-          "pass_count": 31,
+          "pass_count": 32,
           "action_required_count": 0,
           "fail_count": 0,
-          "total_criteria": 31
+          "total_criteria": 32
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",

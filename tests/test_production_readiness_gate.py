@@ -110,6 +110,10 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "precomputed precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert criteria["ten_million_load_profile"]["status"] == "pass"
+    assert criteria["pgvector_tuning_path"]["status"] == "pass"
+    assert "iterative HNSW recall@10 >= 0.95" in criteria["pgvector_tuning_path"]["requirement"]
+    assert "iterative recall 0.97" in criteria["pgvector_tuning_path"]["evidence"]
+    assert "exact recall 1.0" in criteria["pgvector_tuning_path"]["evidence"]
     assert criteria["fifty_million_streaming_preflight"]["status"] == "pass"
     assert "not a completed benchmark" in criteria["fifty_million_streaming_preflight"]["requirement"]
     assert "50000000" not in criteria["fifty_million_streaming_preflight"]["evidence"]
@@ -150,7 +154,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 31
+    assert payload["summary"]["total_criteria"] == 32
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report
@@ -165,6 +169,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Real Redis multi-process API load passes SLO" in report
     assert "Real local HTTP cluster smoke passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report
+    assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report

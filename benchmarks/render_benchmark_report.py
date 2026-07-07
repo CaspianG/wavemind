@@ -81,6 +81,7 @@ METRIC_LABELS = {
     "compute_cost_per_1m_queries_usd": "cost / 1M queries",
     "monthly_total_cost_at_target_qps_usd": "monthly target cost",
     "estimated_storage_gb": "storage",
+    "pgvector_variant": "pgvector variant",
     "status": "status",
     "estimated_index_gb": "estimated index",
     "estimated_transient_runner_gb": "transient runner",

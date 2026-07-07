@@ -1,0 +1,175 @@
+{
+  "scenario": {
+    "name": "ann_index_curve",
+    "description": "ANN/VectorDBBench-style local recall/latency curve. Random normalized vectors are queried with noisy copies, and recall@k is measured against exact cosine nearest neighbors.",
+    "sizes": [
+      10000,
+      50000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08
+  },
+  "results": [
+    {
+      "vectors": 10000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 7.822876001009718,
+          "p50_latency_ms": 6.214999943040311,
+          "p95_latency_ms": 16.13640005234629,
+          "p99_latency_ms": 17.131099943071604,
+          "max_latency_ms": 17.16429996304214,
+          "build_ms": 3925.6877000443637,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
+        },
+        {
+          "engine": "WaveMind pgvector",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 9.07972400309518,
+          "p50_latency_ms": 8.729549997951835,
+          "p95_latency_ms": 12.221999932080507,
+          "p99_latency_ms": 13.363000005483627,
+          "max_latency_ms": 15.11209993623197,
+          "build_ms": 15064.197700005025,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind pgvector-exact",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 15.491754993563518,
+          "p50_latency_ms": 14.212650014087558,
+          "p95_latency_ms": 24.369999999180436,
+          "p99_latency_ms": 28.053899994120002,
+          "max_latency_ms": 32.60689997114241,
+          "build_ms": 14623.995600035414,
+          "queries": 100,
+          "pgvector_variant": "pgvector-exact",
+          "pgvector_settings": {
+            "WAVEMIND_PGVECTOR_EXACT": "1"
+          }
+        },
+        {
+          "engine": "WaveMind pgvector-iterative",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 12.921589994803071,
+          "p50_latency_ms": 12.497649993747473,
+          "p95_latency_ms": 19.09800001885742,
+          "p99_latency_ms": 22.534399991855025,
+          "max_latency_ms": 22.583700018003583,
+          "build_ms": 15095.171099994332,
+          "queries": 100,
+          "pgvector_variant": "pgvector-iterative",
+          "pgvector_settings": {
+            "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+            "WAVEMIND_PGVECTOR_EXACT": "0",
+            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN": "relaxed_order",
+            "WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES": "200000",
+            "WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER": "4"
+          }
+        }
+      ]
+    },
+    {
+      "vectors": 50000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "results": [
+        {
+          "engine": "Qdrant service",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 9.136750996112823,
+          "p50_latency_ms": 7.129799982067198,
+          "p95_latency_ms": 17.305999994277954,
+          "p99_latency_ms": 17.842400004155934,
+          "max_latency_ms": 17.843099893070757,
+          "build_ms": 14786.168900085613,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
+        },
+        {
+          "engine": "WaveMind pgvector",
+          "recall_at_k": 0.834,
+          "avg_latency_ms": 14.516923007322475,
+          "p50_latency_ms": 14.217649993952364,
+          "p95_latency_ms": 19.587800023145974,
+          "p99_latency_ms": 21.081199985928833,
+          "max_latency_ms": 21.73189993482083,
+          "build_ms": 200277.73690002505,
+          "queries": 100
+        },
+        {
+          "engine": "WaveMind pgvector-exact",
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 55.7216919970233,
+          "p50_latency_ms": 53.99195000063628,
+          "p95_latency_ms": 66.91249995492399,
+          "p99_latency_ms": 76.98170002549887,
+          "max_latency_ms": 82.01949996873736,
+          "build_ms": 211610.96560000442,
+          "queries": 100,
+          "pgvector_variant": "pgvector-exact",
+          "pgvector_settings": {
+            "WAVEMIND_PGVECTOR_EXACT": "1"
+          }
+        },
+        {
+          "engine": "WaveMind pgvector-iterative",
+          "recall_at_k": 0.97,
+          "avg_latency_ms": 38.32061400171369,
+          "p50_latency_ms": 37.28849999606609,
+          "p95_latency_ms": 48.01979998592287,
+          "p99_latency_ms": 55.18779996782541,
+          "max_latency_ms": 55.46839989256114,
+          "build_ms": 189784.2862000689,
+          "queries": 100,
+          "pgvector_variant": "pgvector-iterative",
+          "pgvector_settings": {
+            "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+            "WAVEMIND_PGVECTOR_EXACT": "0",
+            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN": "relaxed_order",
+            "WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES": "200000",
+            "WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER": "4"
+          }
+        }
+      ]
+    }
+  ]
+}

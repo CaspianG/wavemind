@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-07T00:35:04Z` from `f723fad4efdb`.
+Last refresh: `2026-07-07T01:15:38Z` from `4f72e730fe4b`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -20,6 +20,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | [LongMemEval evidence 50-query smoke](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | evidence recall@k | WaveMind: 0.92 / 15.3 ms | Static vector: 0.6 / 0.337 ms | WaveMind leads on quality |
 | [ANN index latency curve](https://github.com/erikbern/ann-benchmarks) | index-latency | Recall@k | WaveMind numpy: 1 / 6.485 ms | Qdrant local: 1 / 43.5 ms | Quality tie; WaveMind faster |
 | Production index profile | index-latency | Recall@k | WaveMind faiss-persisted: 1 / 3.524 ms | Qdrant service: 1 / 4.414 ms | Quality tie; WaveMind faster |
+| Production pgvector tuning profile | index-latency | Recall@k | WaveMind pgvector-exact: 1 / 55.7 ms | Qdrant service: 1 / 9.137 ms | Quality tie; WaveMind slower |
 | Production load profile 100k | production-scale | Recall@k | WaveMind pgvector: 0.736 / 17.8 ms | Qdrant service: 1 / 10.3 ms | Baseline leads on quality; production SLO pass: Qdrant service; cost: Qdrant service $1.39/1M queries |
 | Production load profile 1M | production-scale | Recall@k | WaveMind faiss-persisted: 1 / 39.1 ms | Qdrant service: 0.984 / 82.6 ms | WaveMind leads on quality; production SLO needs scale: WaveMind faiss-persisted; cost: WaveMind faiss-persisted $4.17/1M queries |
 | Qdrant 1M HNSW ef sweep | production-scale | Recall@k | - | hnsw_ef=2048: 0.977 / 64.8 ms | No WaveMind result; production SLO miss; cost if SLO fixed: hnsw_ef=512 $4.86/1M queries |
@@ -33,12 +34,13 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-07T00:35:04Z` | source `f723fad4efdb`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-07T01:15:38Z` | source `4f72e730fe4b`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
+| pgvector tuning | real PostgreSQL/pgvector service profile at 50k vectors | iterative recall `0.97`, iterative p99 `55.2 ms`; exact recall `1` | Promote pgvector-iterative into the 100k and 1M production load SLO profiles. |
 | 10M streaming load | local `WaveMind faiss-ivfpq-persisted streaming` profile | target recall `0.99`, p99 `60.1 ms`, SLO `scale_required` | Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts. |
 | 50M streaming preflight | `WaveMind faiss-ivfpq-persisted streaming` plan-only contract | `action_required`; index `1.12 GB`; app storage `119.2 GB`; blockers `missing_env:WAVEMIND_FAISS_IVFPQ_PATH` | Satisfy the preflight and commit `production_streaming_load_ivfpq_50m_results.json` after a real run. |
-| Production readiness gate | checked-in benchmark artifacts | `pass`; 31/31 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
+| Production readiness gate | checked-in benchmark artifacts | `pass`; 32/32 pass | Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile. |
 | Competitor adapters | checked local adapters plus optional external services | configured `4`; skipped `Zep` | Configure skipped external services before claiming full competitor coverage. |
 
 ## Reading Rules
