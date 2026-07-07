@@ -5,6 +5,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import statistics
 import sys
 import time
@@ -61,6 +62,13 @@ def _optional_bool_env(name: str) -> bool | None:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def _bool_env(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return bool(default)
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 def _int_env(name: str, default: int) -> int:
     value = os.environ.get(name)
     if value is None or value == "":
@@ -72,8 +80,39 @@ def _without_none(values: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
 
+def _safe_identifier(value: str, label: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+        raise ValueError(f"{label} must be a simple SQL identifier")
+    return value
+
+
+def _vector_literal(vector: np.ndarray) -> str:
+    normalized = _normalize_one(vector)
+    return json.dumps([float(value) for value in normalized], separators=(",", ":"))
+
+
 def _module_available(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
+
+
+def _pgvector_config_from_env() -> dict[str, Any]:
+    return {
+        "table": _safe_identifier(
+            os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_streaming_vectors"),
+            "WAVEMIND_PGVECTOR_TABLE",
+        ),
+        "collection": os.environ.get("WAVEMIND_PGVECTOR_COLLECTION")
+        or f"streaming_load_{time.time_ns()}",
+        "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
+        "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
+        "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
+        "ef_search": _optional_int_env("WAVEMIND_PGVECTOR_EF_SEARCH"),
+        "exact": _bool_env("WAVEMIND_PGVECTOR_EXACT", False),
+        "iterative_scan": os.environ.get("WAVEMIND_PGVECTOR_ITERATIVE_SCAN"),
+        "max_scan_tuples": _optional_int_env("WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES"),
+        "scan_mem_multiplier": _optional_int_env("WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER"),
+        "keep_collection": _bool_env("WAVEMIND_PGVECTOR_KEEP_COLLECTION", False),
+    }
 
 
 def _qdrant_collection_config_from_env() -> dict[str, Any]:
@@ -275,6 +314,8 @@ def _streaming_plan_row(
         "faiss-persisted": "WaveMind faiss-persisted streaming",
         "faiss-ivfpq-persisted": "WaveMind faiss-ivfpq-persisted streaming",
         "qdrant-service": "Qdrant service streaming",
+        "pgvector-service": "WaveMind pgvector streaming",
+        "pgvector-streaming": "WaveMind pgvector streaming",
     }.get(key, engine)
     vector_bytes = int(count) * int(dim) * int(vector_dtype_bytes)
     payload_bytes = int(count) * float(memory_payload_kb) * 1024.0
@@ -329,6 +370,16 @@ def _streaming_plan_row(
         index_bytes = 0
         index_mode = "remote Qdrant service storage; local runner stores only generated batches"
         command_env = {"WAVEMIND_QDRANT_URL": "http://qdrant.example:6333"}
+    elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
+        module_requirements = ["psycopg"]
+        required_env = ["WAVEMIND_PGVECTOR_DSN"]
+        index_bytes = 0
+        index_mode = "remote PostgreSQL/pgvector storage; local runner stores only generated batches"
+        command_env = {
+            "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
+            "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+        }
     else:
         raise ValueError(f"Unknown engine: {engine}")
 
@@ -886,6 +937,169 @@ def run_qdrant_streaming(
             close()
 
 
+def run_pgvector_streaming(
+    *,
+    count: int,
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+) -> dict[str, Any]:
+    dsn = os.environ.get("WAVEMIND_PGVECTOR_DSN")
+    engine = "WaveMind pgvector streaming"
+    if not dsn:
+        return skipped_result(engine, "Set WAVEMIND_PGVECTOR_DSN to run streaming pgvector")
+    try:
+        import psycopg
+    except ImportError as exc:
+        return skipped_result(engine, f'Install PostgreSQL support with: pip install "wavemind[postgres]": {exc}')
+
+    try:
+        config = _pgvector_config_from_env()
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    iterative_scan = config.get("iterative_scan")
+    if iterative_scan and iterative_scan not in {"strict_order", "relaxed_order", "off"}:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_ITERATIVE_SCAN must be strict_order, relaxed_order, or off",
+        )
+
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = {}
+    table = str(config["table"])
+    collection = str(config["collection"])
+    conn = psycopg.connect(dsn, autocommit=True)
+    try:
+        started = time.perf_counter()
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {table} (
+                collection TEXT NOT NULL,
+                memory_id BIGINT NOT NULL,
+                embedding vector({int(dim)}) NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                PRIMARY KEY (collection, memory_id)
+            )
+            """
+        )
+        conn.execute(f"CREATE INDEX IF NOT EXISTS {table}_collection_idx ON {table} (collection)")
+        conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
+        insert_sql = (
+            f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
+            f"VALUES (%s, %s, %s::vector, now()) "
+            f"ON CONFLICT (collection, memory_id) "
+            f"DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()"
+        )
+        with conn.cursor() as cur:
+            for ids, vectors, captured in iter_vector_batches(
+                count=count,
+                dim=dim,
+                seed=seed + count,
+                batch_size=batch_size,
+                source_ids=source_ids,
+            ):
+                rows = [
+                    (collection, int(id), _vector_literal(vector))
+                    for id, vector in zip(ids, vectors)
+                ]
+                cur.executemany(insert_sql, rows)
+                source_vectors.update(captured)
+        if config["create_hnsw"]:
+            options = []
+            if config["hnsw_m"] is not None:
+                options.append(f"m = {int(config['hnsw_m'])}")
+            if config["hnsw_ef_construction"] is not None:
+                options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
+            with_options = f" WITH ({', '.join(options)})" if options else ""
+            conn.execute(
+                f"CREATE INDEX IF NOT EXISTS {table}_embedding_hnsw_idx "
+                f"ON {table} USING hnsw (embedding vector_cosine_ops)"
+                f"{with_options}"
+            )
+        conn.execute(f"ANALYZE {table}")
+        wait_after_build_seconds = float(os.environ.get("WAVEMIND_PGVECTOR_WAIT_AFTER_BUILD_SECONDS", "0"))
+        if wait_after_build_seconds > 0:
+            time.sleep(wait_after_build_seconds)
+        build_ms = (time.perf_counter() - started) * 1000.0
+
+        queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
+        if config["ef_search"] is not None:
+            conn.execute(f"SET hnsw.ef_search = {int(config['ef_search'])}")
+        if iterative_scan:
+            conn.execute(f"SET hnsw.iterative_scan = '{iterative_scan}'")
+        if config["max_scan_tuples"] is not None:
+            conn.execute(f"SET hnsw.max_scan_tuples = {int(config['max_scan_tuples'])}")
+        if config["scan_mem_multiplier"] is not None:
+            conn.execute(f"SET hnsw.scan_mem_multiplier = {int(config['scan_mem_multiplier'])}")
+        if config["exact"]:
+            conn.execute("SET enable_indexscan = off")
+            conn.execute("SET enable_bitmapscan = off")
+
+        warmup_queries = int(os.environ.get("WAVEMIND_PGVECTOR_WARMUP_QUERIES", "0"))
+        search_sql = (
+            f"SELECT memory_id FROM {table} "
+            f"WHERE collection = %s "
+            f"ORDER BY embedding <=> %s::vector "
+            f"LIMIT %s"
+        )
+        if warmup_queries > 0 and queries:
+            for index in range(warmup_queries):
+                _, query = queries[index % len(queries)]
+                conn.execute(search_sql, (collection, _vector_literal(query), int(top_k))).fetchall()
+        rows: list[dict[str, Any]] = []
+        for source_id, query in queries:
+            started = time.perf_counter()
+            hits = conn.execute(search_sql, (collection, _vector_literal(query), int(top_k))).fetchall()
+            latency_ms = (time.perf_counter() - started) * 1000.0
+            top = [int(row[0]) for row in hits]
+            rows.append(
+                {
+                    "source_id": int(source_id),
+                    "target_hit": int(source_id) in top,
+                    "target_hit_at_1": bool(top and top[0] == int(source_id)),
+                    "latency_ms": latency_ms,
+                }
+            )
+        return _metrics_from_hits(
+            engine=engine,
+            vector_count=count,
+            dim=dim,
+            batch_size=batch_size,
+            top_k=top_k,
+            build_ms=build_ms,
+            query_rows=rows,
+            extra={
+                "table": table,
+                "collection": collection,
+                "warmup_queries": warmup_queries,
+                "wait_after_build_seconds": wait_after_build_seconds,
+                "search_params": {
+                    "hnsw_ef": config["ef_search"],
+                    "exact": config["exact"],
+                    "iterative_scan": iterative_scan,
+                    "max_scan_tuples": config["max_scan_tuples"],
+                    "scan_mem_multiplier": config["scan_mem_multiplier"],
+                },
+                "collection_params": {
+                    "create_hnsw": config["create_hnsw"],
+                    "hnsw_m": config["hnsw_m"],
+                    "hnsw_ef_construction": config["hnsw_ef_construction"],
+                },
+                "memory_mode": "streaming PostgreSQL insert; query source vectors only",
+            },
+        )
+    finally:
+        try:
+            if not config.get("keep_collection"):
+                conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
+        finally:
+            conn.close()
+
+
 def run_size(
     *,
     count: int,
@@ -917,6 +1131,8 @@ def run_size(
             results.append(run_faiss_ivfpq_streaming(**kwargs))
         elif key in {"qdrant", "qdrant-service", "qdrant-streaming"}:
             results.append(run_qdrant_streaming(**kwargs))
+        elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
+            results.append(run_pgvector_streaming(**kwargs))
         else:
             raise ValueError(f"Unknown engine: {engine}")
     return {
@@ -1061,7 +1277,14 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["numpy-streaming", "faiss-persisted", "faiss-ivfpq-persisted", "qdrant-service"],
+        choices=[
+            "numpy-streaming",
+            "faiss-persisted",
+            "faiss-ivfpq-persisted",
+            "qdrant-service",
+            "pgvector-service",
+            "pgvector-streaming",
+        ],
         default=["faiss-persisted", "qdrant-service"],
     )
     parser.add_argument("--output", type=Path, default=Path("benchmarks/production_streaming_load_results.json"))

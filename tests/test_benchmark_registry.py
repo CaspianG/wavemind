@@ -91,6 +91,17 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert fifty_million_plan["estimated_index_gb"] > 0
     assert fifty_million_plan["estimated_application_storage_gb"] > fifty_million_plan["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in fifty_million_plan["missing_env"]
+    pgvector_smoke = entries["production_streaming_load_runner"]["current"][
+        "pgvector smoke / WaveMind pgvector streaming"
+    ]
+    assert pgvector_smoke["target_recall_at_k"] >= 0.95
+    assert pgvector_smoke["p99_latency_ms"] < 100.0
+    pgvector_plan = entries["production_streaming_load_runner"]["current"][
+        "10M pgvector preflight / WaveMind pgvector streaming"
+    ]
+    assert pgvector_plan["status"] == "action_required"
+    assert pgvector_plan["estimated_index_gb"] == 0.0
+    assert "WAVEMIND_PGVECTOR_DSN" in pgvector_plan["missing_env"]
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
     assert readiness["overall_status"] == "pass"

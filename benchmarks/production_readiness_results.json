@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T01:15:38Z",
+  "generated_at": "2026-07-07T01:43:17Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 32,
+    "pass_count": 33,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 32
+    "total_criteria": 33
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T00:35:04Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T01:15:38Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -67,6 +67,14 @@
       "requirement": "A real PostgreSQL/pgvector service profile must show exact recall as the correctness floor and iterative HNSW recall@10 >= 0.95 with p99 <= 100 ms at 50000 vectors over 100 queries.",
       "evidence": "size 50000, exact recall 1.0, exact p99 76.98170002549887 ms, iterative recall 0.97, iterative p99 55.18779996782541 ms, Qdrant reference recall 1.0",
       "next_step": "Promote pgvector-iterative into the 100k and 1M production load SLO profiles after allocating enough disk/build time."
+    },
+    {
+      "id": "pgvector_streaming_path",
+      "title": "pgvector streaming runner has service smoke and 10M preflight",
+      "status": "pass",
+      "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, and has a committed 10M plan-only contract with exact reproduction command.",
+      "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.06 GB, blockers missing_env:WAVEMIND_PGVECTOR_DSN",
+      "next_step": "Run the embedded 10M pgvector command against a sized PostgreSQL service and commit production_streaming_load_pgvector_10m_results.json."
     },
     {
       "id": "vectordbbench_custom_dataset",

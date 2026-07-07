@@ -39,6 +39,7 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
     monkeypatch.delenv("WAVEMIND_FAISS_PATH", raising=False)
     monkeypatch.delenv("WAVEMIND_FAISS_IVFPQ_PATH", raising=False)
     monkeypatch.delenv("WAVEMIND_QDRANT_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
 
     payload = run_streaming_load(
         sizes=[64],
@@ -48,7 +49,7 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
         seed=3,
         noise=0.01,
         batch_size=32,
-        engines=["faiss-persisted", "faiss-ivfpq-persisted", "qdrant-service"],
+        engines=["faiss-persisted", "faiss-ivfpq-persisted", "qdrant-service", "pgvector-service"],
     )
 
     rows = {row["engine"]: row for row in payload["results"][0]["results"]}
@@ -58,9 +59,12 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in rows["WaveMind faiss-ivfpq-persisted streaming"]["reason"]
     assert rows["Qdrant service streaming"]["skipped"] is True
     assert "WAVEMIND_QDRANT_URL" in rows["Qdrant service streaming"]["reason"]
+    assert rows["WaveMind pgvector streaming"]["skipped"] is True
+    assert "WAVEMIND_PGVECTOR_DSN" in rows["WaveMind pgvector streaming"]["reason"]
     assert rows["WaveMind faiss-persisted streaming"]["slo_status"] == "skipped"
     assert rows["WaveMind faiss-ivfpq-persisted streaming"]["cost_status"] == "skipped"
     assert rows["Qdrant service streaming"]["cost_status"] == "skipped"
+    assert rows["WaveMind pgvector streaming"]["slo_status"] == "skipped"
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
@@ -214,3 +218,33 @@ def test_streaming_load_plan_only_cli_writes_json(tmp_path):
     assert payload["plans"][0]["vectors"] == 50_000_000
     assert payload["plans"][0]["status"] == "action_required"
     assert "production_streaming_load_ivfpq_50m_results.json" in payload["plans"][0]["command"]
+
+
+def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import plan_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+
+    payload = plan_streaming_load(
+        sizes=[10_000_000],
+        dim=128,
+        query_count=100,
+        top_k=10,
+        seed=42,
+        noise=0.08,
+        batch_size=100_000,
+        engines=["pgvector-service"],
+        output_path=Path("benchmarks/production_streaming_load_pgvector_10m_plan.json"),
+        planned_result_output_path=Path("benchmarks/production_streaming_load_pgvector_10m_results.json"),
+    )
+
+    row = payload["plans"][0]
+    assert row["engine"] == "WaveMind pgvector streaming"
+    assert row["vectors"] == 10_000_000
+    assert row["estimated_index_gb"] == 0.0
+    assert row["index_mode"].startswith("remote PostgreSQL/pgvector")
+    assert "WAVEMIND_PGVECTOR_DSN" in row["required_env"]
+    assert "missing_env:WAVEMIND_PGVECTOR_DSN" in row["blockers"]
+    assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
+    assert "--engines pgvector-service" in row["command"]
+    assert "production_streaming_load_pgvector_10m_results.json" in row["command"]

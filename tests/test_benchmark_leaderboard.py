@@ -56,6 +56,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "local loopback service-node evidence" in leaderboard
     assert "pgvector tuning" in leaderboard
     assert "iterative recall `0.97`" in leaderboard
+    assert "pgvector streaming" in leaderboard
+    assert "10M preflight `action_required`" in leaderboard
     assert "10M streaming load" in leaderboard
     assert "50M streaming preflight" in leaderboard
     assert "production_streaming_load_ivfpq_50m_results.json" in leaderboard

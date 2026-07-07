@@ -401,6 +401,32 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    pgvector_streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_pgvector_smoke_results.json")
+    pgvector_streaming_result = _first_result(pgvector_streaming)
+    if pgvector_streaming_result and isinstance(pgvector_streaming_result.get("results"), list):
+        nested_results = pgvector_streaming_result["results"]
+        if nested_results:
+            pgvector_streaming_result = nested_results[0]
+    pgvector_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_pgvector_10m_plan.json")
+    pgvector_plan_row = {}
+    if pgvector_plan and isinstance(pgvector_plan.get("plans"), list) and pgvector_plan["plans"]:
+        first_plan = pgvector_plan["plans"][0]
+        if isinstance(first_plan, dict):
+            pgvector_plan_row = first_plan
+    if pgvector_streaming_result and pgvector_plan_row:
+        rows.append(
+            (
+                "pgvector streaming",
+                "real PostgreSQL/pgvector service smoke plus 10M preflight",
+                (
+                    f"smoke recall `{fmt(pgvector_streaming_result.get('target_recall_at_k'))}`, "
+                    f"smoke p99 `{fmt(pgvector_streaming_result.get('p99_latency_ms'))} ms`; "
+                    f"10M preflight `{pgvector_plan_row.get('status', 'unknown')}`"
+                ),
+                "Run the embedded 10M pgvector command against sized Postgres storage.",
+            )
+        )
+
     readiness = _matrix_entry(payload, "production_readiness_gate")
     readiness_current = (readiness or {}).get("current", {})
     readiness_metrics = representative_metrics(

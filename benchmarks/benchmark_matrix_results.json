@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T01:15:38Z",
-  "source_ref": "4f72e730fe4b",
+  "generated_at": "2026-07-07T01:46:48Z",
+  "source_ref": "84757a7d8e11",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -943,11 +943,12 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, plus a 50M plan-only resource/command preflight.",
+      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, a real PostgreSQL/pgvector service smoke, a pgvector 10M service preflight, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
       "competitors": [
         "FAISS persisted streaming",
         "FAISS IVF-PQ persisted streaming",
-        "Qdrant service streaming"
+        "Qdrant service streaming",
+        "pgvector streaming"
       ],
       "metrics": [
         "target_recall@10",
@@ -1036,9 +1037,36 @@
           "missing_env": [
             "WAVEMIND_FAISS_IVFPQ_PATH"
           ]
+        },
+        "pgvector smoke / WaveMind pgvector streaming": {
+          "recall_at_k": 1,
+          "target_recall_at_k": 1,
+          "target_recall_at_1": 1,
+          "avg_latency_ms": 2.5939199898857623,
+          "p95_latency_ms": 4.454500041902065,
+          "p99_latency_ms": 7.623799960128963,
+          "build_ms": 763.6344999773428,
+          "slo_status": "pass",
+          "slo_required_replicas": 1,
+          "slo_autoscaled_qps": 6476.683963077781,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 0.6944444444444444,
+          "monthly_total_cost_at_target_qps_usd": 182.50020265579224,
+          "estimated_storage_gb": 0.0020265579223632812
+        },
+        "10M pgvector preflight / WaveMind pgvector streaming": {
+          "status": "action_required",
+          "estimated_index_gb": 0.0,
+          "estimated_transient_runner_gb": 0.048,
+          "estimated_application_storage_gb": 23.842,
+          "required_local_free_gb": 0.06,
+          "disk_free_gb": 5.18,
+          "missing_env": [
+            "WAVEMIND_PGVECTOR_DSN"
+          ]
         }
       },
-      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep the 50M preflight reproducible, then run 50M and add Qdrant/pgvector service backends on hardware sized for the index.",
+      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep pgvector streaming smoke green, keep 10M pgvector and 50M FAISS preflights reproducible, then run 10M pgvector/Qdrant and 50M compressed FAISS on hardware sized for the index.",
       "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH and run the checked 50M reproduction command, then add service-backed Qdrant/pgvector 10M artifacts for broader production evidence."
     },
     {
@@ -1453,10 +1481,10 @@
         "WaveMind production readiness": {
           "readiness_score": 1.0,
           "overall_status": "pass",
-          "pass_count": 32,
+          "pass_count": 33,
           "action_required_count": 0,
           "fail_count": 0,
-          "total_criteria": 32
+          "total_criteria": 33
         }
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
