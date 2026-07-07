@@ -218,6 +218,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
     local_http_active_active_payload = _load_json(root / "benchmarks" / "local_http_active_active_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
+    external_http_active_active_loopback_payload = _load_json(
+        root / "benchmarks" / "external_http_active_active_loopback_results.json"
+    )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     postgres_pitr_payload = _load_json(root / "benchmarks" / "postgres_pitr_plan.json")
@@ -264,6 +267,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     local_http_cluster_results = _engine_results(local_http_cluster_payload)
     local_http_active_active_results = _engine_results(local_http_active_active_payload)
     external_http_cluster_results = _engine_results(external_http_cluster_payload)
+    external_http_active_active_loopback_results = _engine_results(
+        external_http_active_active_loopback_payload
+    )
     external_http_active_active_results = _engine_results(external_http_active_active_payload)
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
@@ -1689,6 +1695,57 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
             "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment.",
+        },
+        {
+            "id": "external_http_active_active_loopback",
+            "name": "External HTTP active-active loopback",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/external_http_active_active_loopback.py",
+            "dataset": "Real localhost WaveMind API regions passed into the external URL-based active-active runner. This checks the same namespace-delta export/import, cursor idempotency, convergence, delete propagation, final no-op sync, p99, and SLO contract used for user-supplied remote region URLs.",
+            "competitors": ["WaveMind URL-based API regions"],
+            "metrics": [
+                "convergence_rate",
+                "delete_suppression_rate",
+                "success_rate",
+                "final_noop_records_imported",
+                "p99_operation_ms",
+                "slo_pass",
+            ],
+            "current": {
+                "WaveMind real HTTP active-active service-region sync": (
+                    _metric_summary(
+                        external_http_active_active_loopback_results.get(
+                            "WaveMind real HTTP active-active service-region sync"
+                        ),
+                        (
+                            "region_count",
+                            "namespaces",
+                            "writes",
+                            "sync_cycles",
+                            "pair_syncs",
+                            "cursor_count",
+                            "records_imported",
+                            "tombstones_imported",
+                            "deleted_records",
+                            "final_noop_records_imported",
+                            "final_noop_failed_pairs",
+                            "convergence_rate",
+                            "delete_suppression_rate",
+                            "success_rate",
+                            "failed_pairs",
+                            "p99_operation_ms",
+                            "slo_pass",
+                        ),
+                    )
+                    or {
+                        "status": "action_required",
+                        "reason": "Run benchmarks/external_http_active_active_loopback.py to verify the external URL-based active-active contract locally.",
+                    }
+                ),
+            },
+            "target": "Keep the URL-based active-active contract green in CI while remote Kubernetes/serverless regions are provisioned.",
+            "next_step": "Use the same runner path against real remote API regions through `.github/workflows/external-http-active-active.yml`.",
         },
         {
             "id": "external_http_active_active_runner",

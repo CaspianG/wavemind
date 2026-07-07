@@ -332,6 +332,28 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
                 "Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest.",
             )
         )
+    http_active_loopback = load_json_if_exists(
+        root,
+        "benchmarks/external_http_active_active_loopback_results.json",
+    )
+    http_active_loopback_scenario = (http_active_loopback or {}).get("scenario", {})
+    http_active_loopback_result = _first_result(http_active_loopback)
+    if http_active_loopback:
+        rows.append(
+            (
+                "External HTTP active-active loopback",
+                (
+                    f"{http_active_loopback_scenario.get('environment', 'unknown')}; "
+                    f"`{http_active_loopback_scenario.get('evidence_source', 'unknown')}`; "
+                    f"{http_active_loopback_scenario.get('region_count', '?')} regions"
+                ),
+                (
+                    f"SLO `{http_active_loopback_result.get('slo_pass')}`; "
+                    "external URL contract over local API regions"
+                ),
+                "Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence.",
+            )
+        )
     http_active_active = load_json_if_exists(root, "benchmarks/external_http_active_active_results.json")
     http_active_scenario = (http_active_active or {}).get("scenario", {})
     http_active_result = _first_result(http_active_active)

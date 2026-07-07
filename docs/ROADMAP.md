@@ -134,6 +134,12 @@ policy matters more than raw vector-database scale:
   validates convergence, delete propagation, cursor idempotency, final no-op
   sync, p99, and `slo_pass`, and is tracked as non-gating external evidence
   until a real regional deployment artifact is committed.
+- `benchmarks/external_http_active_active_loopback.py` now starts real
+  localhost API regions, passes their URLs through the same external
+  active-active runner, and writes
+  `benchmarks/external_http_active_active_loopback_results.json`. This keeps the
+  URL-based transport contract green in CI without pretending that localhost is
+  remote Kubernetes/serverless evidence.
 - `.github/workflows/external-http-active-active.yml` can run that remote
   region profile from GitHub Actions using either newline/comma-separated
   regions or `regions_manifest_json`, upload the result, and optionally commit

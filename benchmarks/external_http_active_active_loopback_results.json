@@ -1,0 +1,55 @@
+{
+  "scenario": {
+    "name": "local_http_active_active_smoke",
+    "source": "external-regions",
+    "deployment_id": "loopback-active-active-1783435045",
+    "environment": "local-loopback",
+    "evidence_source": "loopback-api-regions",
+    "region_count": 3,
+    "region_ids": [
+      "region-000",
+      "region-001",
+      "region-002"
+    ],
+    "replicas_per_region": null,
+    "namespace_prefix": "tenant:external-active-active-loopback:loopback-active-active-1783435045",
+    "namespace_count": 16,
+    "root_path": null,
+    "duration_ms": 16772.812366485596,
+    "description": "External URL-based active-active runner executed against real localhost WaveMind API region processes. This proves the region transport, namespace-delta sync, cursor idempotency, delete propagation, and SLO contract without claiming remote Kubernetes/serverless evidence.",
+    "started_api_processes": 3,
+    "loopback_duration_ms": 22322.83115386963
+  },
+  "results": [
+    {
+      "engine": "WaveMind real HTTP active-active service-region sync",
+      "region_count": 3,
+      "namespaces": 16,
+      "writes": 48,
+      "deleted_records_requested": 1,
+      "sync_cycles": 3,
+      "pair_syncs": 288,
+      "cursor_count": 96,
+      "records_imported": 288,
+      "tombstones_imported": 6,
+      "deleted_records": 6,
+      "field_keys_exported": 688,
+      "final_noop_records_imported": 0,
+      "final_noop_failed_pairs": 0,
+      "convergence_rate": 1.0,
+      "delete_suppression_rate": 1.0,
+      "success_rate": 1.0,
+      "failed_pairs": 0,
+      "has_more_pairs": 0,
+      "avg_sync_ms": 3741.6069333752,
+      "p99_sync_ms": 7383.592600002885,
+      "avg_operation_ms": 28.033020916247587,
+      "p99_operation_ms": 349.20579998288304,
+      "slo_min_success_rate": 1.0,
+      "slo_min_convergence_rate": 1.0,
+      "slo_min_delete_suppression_rate": 1.0,
+      "slo_p99_ms": 1500.0,
+      "slo_pass": true
+    }
+  ]
+}

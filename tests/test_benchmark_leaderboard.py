@@ -54,6 +54,8 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "serverless-observed-telemetry.yml" in leaderboard
     assert "External HTTP cluster load" in leaderboard
     assert "local loopback service-node evidence" in leaderboard
+    assert "External HTTP active-active loopback" in leaderboard
+    assert "external URL contract over local API regions" in leaderboard
     assert "External HTTP active-active" in leaderboard
     assert "no checked-in remote region artifact" in leaderboard
     assert "pgvector tuning" in leaderboard
@@ -103,6 +105,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "--engines qdrant-sharded-service" in workflow
     assert "benchmarks/local_http_active_active_smoke.py" in workflow
     assert "benchmarks/local_http_active_active_smoke_results.json" in workflow
+    assert "benchmarks/external_http_active_active_loopback.py" in workflow
+    assert "benchmarks/external_http_active_active_loopback_results.json" in workflow
+    assert "tests/test_external_http_active_active_loopback.py" in workflow
     assert "tests/test_local_http_active_active_smoke.py" in workflow
     assert "production_readiness_gate.py" in workflow
     assert "benchmark_registry.py" in workflow

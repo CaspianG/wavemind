@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T14:16:05Z",
-  "source_ref": "998e2c08f738",
+  "generated_at": "2026-07-07T14:40:22Z",
+  "source_ref": "5dd72d249c68",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1894,6 +1894,48 @@
       },
       "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
       "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment."
+    },
+    {
+      "id": "external_http_active_active_loopback",
+      "name": "External HTTP active-active loopback",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/external_http_active_active_loopback.py",
+      "dataset": "Real localhost WaveMind API regions passed into the external URL-based active-active runner. This checks the same namespace-delta export/import, cursor idempotency, convergence, delete propagation, final no-op sync, p99, and SLO contract used for user-supplied remote region URLs.",
+      "competitors": [
+        "WaveMind URL-based API regions"
+      ],
+      "metrics": [
+        "convergence_rate",
+        "delete_suppression_rate",
+        "success_rate",
+        "final_noop_records_imported",
+        "p99_operation_ms",
+        "slo_pass"
+      ],
+      "current": {
+        "WaveMind real HTTP active-active service-region sync": {
+          "region_count": 3,
+          "namespaces": 16,
+          "writes": 48,
+          "sync_cycles": 3,
+          "pair_syncs": 288,
+          "cursor_count": 96,
+          "records_imported": 288,
+          "tombstones_imported": 6,
+          "deleted_records": 6,
+          "final_noop_records_imported": 0,
+          "final_noop_failed_pairs": 0,
+          "convergence_rate": 1.0,
+          "delete_suppression_rate": 1.0,
+          "success_rate": 1.0,
+          "failed_pairs": 0,
+          "p99_operation_ms": 349.20579998288304,
+          "slo_pass": true
+        }
+      },
+      "target": "Keep the URL-based active-active contract green in CI while remote Kubernetes/serverless regions are provisioned.",
+      "next_step": "Use the same runner path against real remote API regions through `.github/workflows/external-http-active-active.yml`."
     },
     {
       "id": "external_http_active_active_runner",

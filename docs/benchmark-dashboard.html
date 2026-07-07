@@ -67,8 +67,8 @@
 
   <div class="cards">
     <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>37/37 criteria pass</p></section>
-<section class="metric-card"><h2>Implemented</h2><strong>27</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
-<section class="metric-card"><h2>Refresh</h2><strong>2026-07-07T13:48:12Z</strong><p>source ca450082244a</p></section>
+<section class="metric-card"><h2>Implemented</h2><strong>28</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-07-07T14:40:22Z</strong><p>source 5dd72d249c68</p></section>
   </div>
 
   <section class="panel">
@@ -277,8 +277,8 @@
 </tr></thead><tbody>
 <tr>
 <td>Artifact freshness</td>
-<td>local matrix refresh at 2026-07-07T13:48:12Z</td>
-<td>source ca450082244a; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>local matrix refresh at 2026-07-07T14:40:22Z</td>
+<td>source 5dd72d249c68; audit gate enforced by validate_benchmark_artifacts.py</td>
 <td>Keep weekly refresh green before public claims.</td>
 </tr>
 <tr>
@@ -292,6 +292,12 @@
 <td>local-loopback; loopback-api-processes; 4 nodes</td>
 <td>SLO True; local loopback service-node evidence</td>
 <td>Run .github/workflows/external-http-cluster-load.yml with a remote node manifest.</td>
+</tr>
+<tr>
+<td>External HTTP active-active loopback</td>
+<td>local-loopback; loopback-api-regions; 3 regions</td>
+<td>SLO True; external URL contract over local API regions</td>
+<td>Run .github/workflows/external-http-active-active.yml with remote regions for production evidence.</td>
 </tr>
 <tr>
 <td>External HTTP active-active</td>

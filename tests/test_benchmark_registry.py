@@ -183,6 +183,16 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert external_http["slo_pass"] is True
     assert external_http["namespaces"] == 32
     assert external_http["read_fanout"] == 1
+    external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
+        "WaveMind real HTTP active-active service-region sync"
+    ]
+    assert external_active_active_loopback["region_count"] == 3
+    assert external_active_active_loopback["namespaces"] == 16
+    assert external_active_active_loopback["convergence_rate"] == 1.0
+    assert external_active_active_loopback["delete_suppression_rate"] == 1.0
+    assert external_active_active_loopback["success_rate"] == 1.0
+    assert external_active_active_loopback["final_noop_records_imported"] == 0
+    assert external_active_active_loopback["slo_pass"] is True
     external_active_active = entries["external_http_active_active_runner"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]
