@@ -85,6 +85,12 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "field_memory_dynamics_benchmark.py" in workflow
     assert "scale_readiness_benchmark.py" in workflow
     assert "production_streaming_load_benchmark.py" in workflow
+    assert "qdrant-0:" in workflow
+    assert "qdrant-1:" in workflow
+    assert "qdrant/qdrant:v1.15.1" in workflow
+    assert "WAVEMIND_QDRANT_URLS=http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
+    assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
+    assert "--engines qdrant-sharded-service" in workflow
     assert "production_readiness_gate.py" in workflow
     assert "benchmark_registry.py" in workflow
     assert "render_benchmark_report.py" in workflow
@@ -95,5 +101,6 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "benchmark_artifact_audit.json" in workflow
     assert "production_readiness_results.json" in workflow
     assert "production_streaming_load_smoke_results.json" in workflow
+    assert "production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "PRODUCTION_READINESS.md" in workflow
     assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow

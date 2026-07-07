@@ -213,6 +213,82 @@ jobs:
           name: local-http-cluster-smoke-results
           path: benchmarks/local_http_cluster_smoke_ci_results.json
 
+  qdrant-sharded-streaming-smoke:
+    runs-on: ubuntu-latest
+    services:
+      qdrant-0:
+        image: qdrant/qdrant:v1.15.1
+        ports:
+          - 6333:6333
+      qdrant-1:
+        image: qdrant/qdrant:v1.15.1
+        ports:
+          - 6334:6333
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Qdrant benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Wait for Qdrant shards
+        run: |
+          python - <<'PY'
+          import time
+          import urllib.request
+
+          for port in (6333, 6334):
+              url = f"http://127.0.0.1:{port}/readyz"
+              deadline = time.time() + 90
+              while True:
+                  try:
+                      with urllib.request.urlopen(url, timeout=2) as response:
+                          if response.status == 200:
+                              break
+                  except Exception:
+                      if time.time() >= deadline:
+                          raise
+                      time.sleep(1)
+          PY
+
+      - name: Run real sharded Qdrant streaming smoke
+        env:
+          WAVEMIND_QDRANT_URLS: http://127.0.0.1:6333,http://127.0.0.1:6334
+          WAVEMIND_QDRANT_COLLECTION_PREFIX: wavemind_sharded_ci
+          WAVEMIND_QDRANT_UPSERT_BATCH_SIZE: "500"
+          WAVEMIND_QDRANT_FANOUT_WORKERS: "2"
+          WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS: "2"
+          WAVEMIND_QDRANT_WARMUP_QUERIES: "10"
+        run: |
+          python benchmarks/production_streaming_load_benchmark.py \
+            --sizes 5000 \
+            --dim 64 \
+            --queries 20 \
+            --top-k 10 \
+            --batch-size 1000 \
+            --engines qdrant-sharded-service \
+            --output benchmarks/production_streaming_load_qdrant_sharded_ci_results.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("benchmarks/production_streaming_load_qdrant_sharded_ci_results.json").read_text())
+          result = payload["results"][0]["results"][0]
+          if result["target_recall_at_k"] < 0.95 or result["p99_latency_ms"] > 100 or result["slo_status"] != "pass":
+              raise SystemExit(f"sharded Qdrant smoke SLO failed: {result}")
+          PY
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qdrant-sharded-streaming-smoke-results
+          path: benchmarks/production_streaming_load_qdrant_sharded_ci_results.json
+
   docker:
     runs-on: ubuntu-latest
 

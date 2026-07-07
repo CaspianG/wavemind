@@ -20,6 +20,13 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output docs/assets/benchmark-summary.svg" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
+    assert "qdrant-0:" in workflow
+    assert "qdrant-1:" in workflow
+    assert "qdrant/qdrant:v1.15.1" in workflow
+    assert "WAVEMIND_QDRANT_URLS=http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
+    assert "--engines qdrant-sharded-service" in workflow
+    assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
+    assert "sharded Qdrant smoke SLO failed" in workflow
     assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
@@ -99,9 +106,15 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
 
     assert "benchmark-artifact-gate:" in workflow
     assert "local-http-cluster-smoke:" in workflow
+    assert "qdrant-sharded-streaming-smoke:" in workflow
     assert "benchmarks/local_http_cluster_smoke.py" in workflow
     assert "--read-fanout 1" in workflow
     assert "benchmarks/local_http_cluster_smoke_ci_results.json" in workflow
+    assert "qdrant/qdrant:v1.15.1" in workflow
+    assert "WAVEMIND_QDRANT_URLS: http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
+    assert "--engines qdrant-sharded-service" in workflow
+    assert "benchmarks/production_streaming_load_qdrant_sharded_ci_results.json" in workflow
+    assert "qdrant-sharded-streaming-smoke-results" in workflow
     assert "Block stale or unsynchronized public benchmark artifacts" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "--max-age-days 8" in workflow
