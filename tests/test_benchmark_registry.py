@@ -109,6 +109,15 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert qdrant_sharded_plan["estimated_index_gb"] == 0.0
     assert "WAVEMIND_QDRANT_URLS" in qdrant_sharded_plan["missing_env"]
     assert "horizontally sharded Qdrant" in qdrant_sharded_plan["index_mode"]
+    qdrant_sharded_100m_plan = entries["production_streaming_load_runner"][
+        "current"
+    ][
+        "100M Qdrant sharded preflight / Qdrant sharded service streaming"
+    ]
+    assert qdrant_sharded_100m_plan["status"] == "action_required"
+    assert qdrant_sharded_100m_plan["vectors"] == 100_000_000
+    assert "WAVEMIND_QDRANT_URLS" in qdrant_sharded_100m_plan["missing_env"]
+    assert "horizontally sharded Qdrant" in qdrant_sharded_100m_plan["index_mode"]
     qdrant_1m = entries["production_streaming_load_runner"]["current"][
         "1M Qdrant cold / Qdrant service streaming"
     ]
@@ -138,6 +147,8 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert pgvector_plan["status"] == "action_required"
     assert pgvector_plan["estimated_index_gb"] == 0.0
     assert "WAVEMIND_PGVECTOR_DSN" in pgvector_plan["missing_env"]
+    assert "100M" in entries["production_streaming_load_runner"]["dataset"]
+    assert "production-streaming-load.yml" in entries["production_streaming_load_runner"]["next_step"]
     assert entries["production_readiness_gate"]["status"] == "implemented"
     readiness = entries["production_readiness_gate"]["current"]["WaveMind production readiness"]
     assert readiness["overall_status"] == "pass"

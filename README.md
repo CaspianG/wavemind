@@ -1538,14 +1538,20 @@ for remote multi-region, managed-serverless, 50M, and 100M scale claims.
 Large-N service plans include resumable `--checkpoint-path` commands so
 interrupted 10M/50M/100M ingest runs can continue from completed batches instead
 of restarting from zero.
+Manual large-N runner: `.github/workflows/production-streaming-load.yml` runs
+those checkpointed Qdrant, sharded Qdrant, pgvector, or FAISS IVF-PQ profiles on
+a sized GitHub or self-hosted runner, uploads checkpoint/result artifacts, and
+can commit refreshed benchmark/evidence reports when `commit_results=true`.
 CLI preflight: `wavemind production-evidence --strict`.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
 production-readiness report, and the strict production-evidence report,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
-`benchmarks/benchmark_artifact_audit.json`, and commits changed benchmark artifacts
-back to `main`.
+`benchmarks/benchmark_artifact_audit.json`, and uploads changed benchmark
+artifacts for maintainer review. It does not push scheduled bot commits to
+`main`; reviewed benchmark refreshes should be committed from a maintainer
+account.
 `full-check` and the release workflow also run the same freshness gate with
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.

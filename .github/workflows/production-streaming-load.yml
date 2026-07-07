@@ -1,0 +1,321 @@
+name: production-streaming-load
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: "Large-N backend to run."
+        required: true
+        default: "qdrant-sharded-service"
+        type: choice
+        options:
+          - qdrant-service
+          - qdrant-sharded-service
+          - pgvector-service
+          - faiss-ivfpq-persisted
+      size:
+        description: "Vector count. Use 10000000, 50000000, or 100000000 for strict evidence paths."
+        required: true
+        default: "10000000"
+        type: string
+      dim:
+        description: "Vector dimension."
+        required: true
+        default: "128"
+        type: string
+      queries:
+        description: "Query count."
+        required: true
+        default: "100"
+        type: string
+      top_k:
+        description: "Top-k recall window."
+        required: true
+        default: "10"
+        type: string
+      batch_size:
+        description: "Generated vector batch size."
+        required: true
+        default: "100000"
+        type: string
+      target_recall:
+        description: "Required recall@k."
+        required: true
+        default: "0.95"
+        type: string
+      target_p99_ms:
+        description: "Required p99 latency."
+        required: true
+        default: "100.0"
+        type: string
+      target_qps:
+        description: "Target query rate for cost/SLO modeling."
+        required: true
+        default: "100.0"
+        type: string
+      replicas:
+        description: "Replica count for cost/SLO modeling."
+        required: true
+        default: "3"
+        type: string
+      autoscaling_max_replicas:
+        description: "Max replicas for cost/SLO modeling."
+        required: true
+        default: "24"
+        type: string
+      capacity_headroom:
+        description: "Capacity headroom used by the SLO/cost gate."
+        required: true
+        default: "0.7"
+        type: string
+      runner_label:
+        description: "Runner label. Use a self-hosted sized runner for real 10M/50M/100M runs."
+        required: true
+        default: "ubuntu-latest"
+        type: string
+      resume_run_id:
+        description: "Optional previous workflow run id whose production-streaming-load-state artifact should be downloaded first."
+        required: false
+        default: ""
+        type: string
+      qdrant_url:
+        description: "Optional Qdrant URL. Falls back to secret WAVEMIND_QDRANT_URL."
+        required: false
+        default: ""
+        type: string
+      qdrant_urls:
+        description: "Optional comma/newline-separated Qdrant shard URLs. Falls back to secret WAVEMIND_QDRANT_URLS."
+        required: false
+        default: ""
+        type: string
+      pgvector_dsn:
+        description: "Optional PostgreSQL/pgvector DSN. Falls back to secret WAVEMIND_PGVECTOR_DSN."
+        required: false
+        default: ""
+        type: string
+      faiss_ivfpq_path:
+        description: "Optional persisted FAISS IVF-PQ path. Defaults under ./state."
+        required: false
+        default: ""
+        type: string
+      commit_results:
+        description: "Commit result and refreshed benchmark/evidence artifacts to main."
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  production-streaming-load:
+    runs-on: ${{ inputs.runner_label }}
+    env:
+      ENGINE: ${{ inputs.engine }}
+      SIZE: ${{ inputs.size }}
+      DIM: ${{ inputs.dim }}
+      QUERIES: ${{ inputs.queries }}
+      TOP_K: ${{ inputs.top_k }}
+      BATCH_SIZE: ${{ inputs.batch_size }}
+      TARGET_RECALL: ${{ inputs.target_recall }}
+      TARGET_P99_MS: ${{ inputs.target_p99_ms }}
+      TARGET_QPS: ${{ inputs.target_qps }}
+      REPLICAS: ${{ inputs.replicas }}
+      AUTOSCALING_MAX_REPLICAS: ${{ inputs.autoscaling_max_replicas }}
+      CAPACITY_HEADROOM: ${{ inputs.capacity_headroom }}
+      RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+      INPUT_QDRANT_URL: ${{ inputs.qdrant_url }}
+      INPUT_QDRANT_URLS: ${{ inputs.qdrant_urls }}
+      INPUT_PGVECTOR_DSN: ${{ inputs.pgvector_dsn }}
+      INPUT_FAISS_IVFPQ_PATH: ${{ inputs.faiss_ivfpq_path }}
+      SECRET_QDRANT_URL: ${{ secrets.WAVEMIND_QDRANT_URL }}
+      SECRET_QDRANT_URLS: ${{ secrets.WAVEMIND_QDRANT_URLS }}
+      SECRET_PGVECTOR_DSN: ${{ secrets.WAVEMIND_PGVECTOR_DSN }}
+      SECRET_QDRANT_API_KEY: ${{ secrets.WAVEMIND_QDRANT_API_KEY }}
+      SECRET_QDRANT_API_KEYS: ${{ secrets.WAVEMIND_QDRANT_API_KEYS }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,bench]"
+
+      - name: Restore previous checkpoint artifact
+        if: ${{ inputs.resume_run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$RESUME_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name production-streaming-load-state \
+            --dir .
+
+      - name: Run production streaming benchmark
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          engine = os.environ["ENGINE"]
+          size = int(os.environ["SIZE"])
+
+          def pick(input_name: str, secret_name: str) -> str:
+              return (os.environ.get(input_name) or os.environ.get(secret_name) or "").strip()
+
+          def slug(value: str) -> str:
+              return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+
+          def result_path(engine_name: str, vector_count: int) -> Path:
+              if engine_name == "qdrant-service" and vector_count == 10_000_000:
+                  return Path("benchmarks/production_streaming_load_qdrant_10m_results.json")
+              if engine_name == "qdrant-sharded-service" and vector_count == 10_000_000:
+                  return Path("benchmarks/production_streaming_load_qdrant_sharded_10m_results.json")
+              if engine_name == "qdrant-sharded-service" and vector_count == 100_000_000:
+                  return Path("benchmarks/production_streaming_load_qdrant_sharded_100m_results.json")
+              if engine_name == "pgvector-service" and vector_count == 10_000_000:
+                  return Path("benchmarks/production_streaming_load_pgvector_10m_results.json")
+              if engine_name == "faiss-ivfpq-persisted" and vector_count == 50_000_000:
+                  return Path("benchmarks/production_streaming_load_ivfpq_50m_results.json")
+              return Path(f"benchmarks/production_streaming_load_{slug(engine_name)}_{vector_count}_results.json")
+
+          env = os.environ.copy()
+          if engine == "qdrant-service":
+              value = pick("INPUT_QDRANT_URL", "SECRET_QDRANT_URL")
+              if not value:
+                  raise SystemExit("qdrant-service requires qdrant_url or secret WAVEMIND_QDRANT_URL")
+              env["WAVEMIND_QDRANT_URL"] = value
+              api_key = os.environ.get("SECRET_QDRANT_API_KEY", "").strip()
+              if api_key:
+                  env["WAVEMIND_QDRANT_API_KEY"] = api_key
+          elif engine == "qdrant-sharded-service":
+              value = pick("INPUT_QDRANT_URLS", "SECRET_QDRANT_URLS")
+              if not value:
+                  raise SystemExit("qdrant-sharded-service requires qdrant_urls or secret WAVEMIND_QDRANT_URLS")
+              env["WAVEMIND_QDRANT_URLS"] = value
+              api_key = os.environ.get("SECRET_QDRANT_API_KEY", "").strip()
+              api_keys = os.environ.get("SECRET_QDRANT_API_KEYS", "").strip()
+              if api_key:
+                  env["WAVEMIND_QDRANT_API_KEY"] = api_key
+              if api_keys:
+                  env["WAVEMIND_QDRANT_API_KEYS"] = api_keys
+          elif engine == "pgvector-service":
+              value = pick("INPUT_PGVECTOR_DSN", "SECRET_PGVECTOR_DSN")
+              if not value:
+                  raise SystemExit("pgvector-service requires pgvector_dsn or secret WAVEMIND_PGVECTOR_DSN")
+              env["WAVEMIND_PGVECTOR_DSN"] = value
+          elif engine == "faiss-ivfpq-persisted":
+              value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
+              env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or f"state/faiss-ivfpq-{size}.faiss"
+          else:
+              raise SystemExit(f"unsupported engine: {engine}")
+
+          output = result_path(engine, size)
+          checkpoint = Path("state") / f"{slug(engine)}-{size}.checkpoint.json"
+          output.parent.mkdir(parents=True, exist_ok=True)
+          checkpoint.parent.mkdir(parents=True, exist_ok=True)
+
+          args = [
+              sys.executable,
+              "benchmarks/production_streaming_load_benchmark.py",
+              "--sizes",
+              str(size),
+              "--dim",
+              os.environ["DIM"],
+              "--queries",
+              os.environ["QUERIES"],
+              "--top-k",
+              os.environ["TOP_K"],
+              "--batch-size",
+              os.environ["BATCH_SIZE"],
+              "--engines",
+              engine,
+              "--target-recall",
+              os.environ["TARGET_RECALL"],
+              "--target-p99-ms",
+              os.environ["TARGET_P99_MS"],
+              "--target-qps",
+              os.environ["TARGET_QPS"],
+              "--replicas",
+              os.environ["REPLICAS"],
+              "--autoscaling-max-replicas",
+              os.environ["AUTOSCALING_MAX_REPLICAS"],
+              "--capacity-headroom",
+              os.environ["CAPACITY_HEADROOM"],
+              "--output",
+              str(output),
+              "--checkpoint-path",
+              str(checkpoint),
+          ]
+          subprocess.run(args, check=True, env=env)
+          Path("production-streaming-output-path.txt").write_text(str(output), encoding="utf-8")
+          Path("production-streaming-checkpoint-path.txt").write_text(str(checkpoint), encoding="utf-8")
+          PY
+
+      - name: Refresh benchmark and evidence reports
+        run: |
+          python benchmarks/benchmark_registry.py \
+            --output benchmarks/benchmark_matrix_results.json
+          python benchmarks/render_benchmark_report.py
+          python benchmarks/render_benchmark_leaderboard.py
+          python benchmarks/render_benchmark_charts.py \
+            --output docs/assets/benchmark-summary.svg
+          python benchmarks/render_benchmark_dashboard.py \
+            --output docs/benchmark-dashboard.html
+          python benchmarks/validate_benchmark_artifacts.py \
+            --max-age-days 8 \
+            --output benchmarks/benchmark_artifact_audit.json
+          python benchmarks/production_readiness_gate.py \
+            --output benchmarks/production_readiness_results.json \
+            --markdown-output benchmarks/PRODUCTION_READINESS.md
+          python benchmarks/production_evidence_gate.py \
+            --output benchmarks/production_evidence_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
+
+      - name: Commit production streaming result
+        if: ${{ inputs.commit_results }}
+        run: |
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html; then
+            echo "No benchmark changes."
+            exit 0
+          fi
+          git config user.name "CaspianG"
+          git config user.email "259116618+CaspianG@users.noreply.github.com"
+          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html
+          git commit -m "Refresh production streaming benchmark"
+          git push
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: production-streaming-load-state
+          path: |
+            state/**
+            production-streaming-output-path.txt
+            production-streaming-checkpoint-path.txt
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: production-streaming-load-results
+          path: |
+            benchmarks/production_streaming_load_*_results.json
+            benchmarks/BENCHMARK_LEADERBOARD.md
+            benchmarks/BENCHMARK_REPORT.md
+            benchmarks/PRODUCTION_EVIDENCE.md
+            benchmarks/PRODUCTION_READINESS.md
+            benchmarks/benchmark_artifact_audit.json
+            benchmarks/benchmark_matrix_results.json
+            benchmarks/production_evidence_results.json
+            benchmarks/production_readiness_results.json
+            docs/benchmark-dashboard.html
+            docs/assets/benchmark-summary.svg

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T06:03:04Z",
-  "source_ref": "0ab9773bc676",
+  "generated_at": "2026-07-07T08:44:59Z",
+  "source_ref": "6f8cfce37f53",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -943,7 +943,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, a real two-service sharded Qdrant smoke, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
+      "dataset": "Memory-bounded streaming generator for 10M, 50M, and 100M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, a real two-service sharded Qdrant smoke, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, a 50M FAISS IVF-PQ plan-only resource/command preflight, and a 100M sharded Qdrant preflight contract.",
       "competitors": [
         "FAISS persisted streaming",
         "FAISS IVF-PQ persisted streaming",
@@ -1034,11 +1034,14 @@
         },
         "50M preflight / WaveMind faiss-ivfpq-persisted streaming": {
           "status": "action_required",
+          "vectors": 50000000,
+          "vector_dim": 128,
+          "queries": 100,
           "estimated_index_gb": 1.12,
           "estimated_transient_runner_gb": 0.143,
           "estimated_application_storage_gb": 119.209,
           "required_local_free_gb": 1.578,
-          "disk_free_gb": 6.12,
+          "disk_free_gb": 3.79,
           "index_mode": "persisted FAISS IVF-PQ compressed codes plus int64 ids",
           "required_env": [
             "WAVEMIND_FAISS_IVFPQ_PATH"
@@ -1122,11 +1125,14 @@
         },
         "10M Qdrant preflight / Qdrant service streaming": {
           "status": "action_required",
+          "vectors": 10000000,
+          "vector_dim": 128,
+          "queries": 100,
           "estimated_index_gb": 0.0,
           "estimated_transient_runner_gb": 0.048,
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.06,
-          "disk_free_gb": 5.08,
+          "disk_free_gb": 3.78,
           "index_mode": "remote Qdrant service storage; local runner stores only generated batches",
           "required_env": [
             "WAVEMIND_QDRANT_URL"
@@ -1140,11 +1146,35 @@
         },
         "10M Qdrant sharded preflight / Qdrant sharded service streaming": {
           "status": "action_required",
+          "vectors": 10000000,
+          "vector_dim": 128,
+          "queries": 100,
           "estimated_index_gb": 0.0,
           "estimated_transient_runner_gb": 0.048,
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.06,
-          "disk_free_gb": 4.83,
+          "disk_free_gb": 3.78,
+          "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
+          "required_env": [
+            "WAVEMIND_QDRANT_URLS"
+          ],
+          "missing_env": [
+            "WAVEMIND_QDRANT_URLS"
+          ],
+          "blockers": [
+            "missing_env:WAVEMIND_QDRANT_URLS"
+          ]
+        },
+        "100M Qdrant sharded preflight / Qdrant sharded service streaming": {
+          "status": "action_required",
+          "vectors": 100000000,
+          "vector_dim": 128,
+          "queries": 100,
+          "estimated_index_gb": 0.0,
+          "estimated_transient_runner_gb": 0.048,
+          "estimated_application_storage_gb": 238.419,
+          "required_local_free_gb": 0.06,
+          "disk_free_gb": 3.78,
           "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
           "required_env": [
             "WAVEMIND_QDRANT_URLS"
@@ -1175,11 +1205,14 @@
         },
         "10M pgvector preflight / WaveMind pgvector streaming": {
           "status": "action_required",
+          "vectors": 10000000,
+          "vector_dim": 128,
+          "queries": 100,
           "estimated_index_gb": 0.0,
           "estimated_transient_runner_gb": 0.048,
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.06,
-          "disk_free_gb": 5.18,
+          "disk_free_gb": 3.78,
           "index_mode": "remote PostgreSQL/pgvector storage; local runner stores only generated batches",
           "required_env": [
             "WAVEMIND_PGVECTOR_DSN"
@@ -1192,8 +1225,8 @@
           ]
         }
       },
-      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant, sharded Qdrant, and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, and 50M FAISS preflights reproducible, then run those service profiles on hardware sized for the index.",
-      "next_step": "Set service credentials and run the checked 10M Qdrant, sharded Qdrant, and pgvector reproduction commands, then run the 50M compressed FAISS command on hardware sized for the index."
+      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant, sharded Qdrant, and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS, and 100M sharded Qdrant preflights reproducible, then run those service profiles on hardware sized for the index.",
+      "next_step": "Run .github/workflows/production-streaming-load.yml with service credentials on a sized runner for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M compressed FAISS, and 100M sharded Qdrant profiles."
     },
     {
       "id": "scale_readiness",
@@ -1654,11 +1687,11 @@
       ],
       "current": {
         "WaveMind production readiness": {
-          "readiness_score": 1.0,
-          "overall_status": "pass",
-          "pass_count": 36,
+          "readiness_score": 0.9722222222222222,
+          "overall_status": "fail",
+          "pass_count": 35,
           "action_required_count": 0,
-          "fail_count": 0,
+          "fail_count": 1,
           "total_criteria": 36
         }
       },

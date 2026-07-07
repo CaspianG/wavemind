@@ -57,6 +57,11 @@ policy matters more than raw vector-database scale:
   runner now emits resumable checkpoint paths for large-N ingest, and
   `benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json` is the
   checked preflight contract for a future 100M sharded Qdrant service run.
+- `.github/workflows/production-streaming-load.yml` is the manual large-N
+  runner for those contracts. It can restore a prior checkpoint artifact, run
+  Qdrant, sharded Qdrant, pgvector, or FAISS IVF-PQ profiles on a sized runner,
+  upload checkpoint/result artifacts, and optionally commit refreshed benchmark
+  and strict-evidence reports after a real service run.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
   production verdict. The current WaveMind core gate is `1.000` (`36/36` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked

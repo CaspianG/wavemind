@@ -66,9 +66,9 @@
   </header>
 
   <div class="cards">
-    <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>36/36 criteria pass</p></section>
+    <section class="metric-card"><h2>Readiness</h2><strong>fail</strong><p>35/36 criteria pass</p></section>
 <section class="metric-card"><h2>Implemented</h2><strong>26</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
-<section class="metric-card"><h2>Refresh</h2><strong>2026-07-07T06:03:04Z</strong><p>source 0ab9773bc676</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-07-07T08:44:59Z</strong><p>source 6f8cfce37f53</p></section>
   </div>
 
   <section class="panel">
@@ -243,7 +243,7 @@
 <td>Production readiness gate</td>
 <td>production-scale</td>
 <td>readiness score</td>
-<td>WaveMind production readiness: 1 / -</td>
+<td>WaveMind production readiness: 0.972 / -</td>
 <td>-</td>
 <td>WaveMind-only check</td>
 </tr>
@@ -277,8 +277,8 @@
 </tr></thead><tbody>
 <tr>
 <td>Artifact freshness</td>
-<td>local matrix refresh at 2026-07-07T06:03:04Z</td>
-<td>source 0ab9773bc676; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>local matrix refresh at 2026-07-07T08:44:59Z</td>
+<td>source 6f8cfce37f53; audit gate enforced by validate_benchmark_artifacts.py</td>
 <td>Keep weekly refresh green before public claims.</td>
 </tr>
 <tr>
@@ -315,19 +315,19 @@
 <td>50M streaming preflight</td>
 <td>WaveMind faiss-ivfpq-persisted streaming plan-only contract</td>
 <td><span class="badge warn">action_required; index 1.12 GB; app storage 119.2 GB; blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH</span></td>
-<td>Satisfy the preflight and commit production_streaming_load_ivfpq_50m_results.json after a real run.</td>
+<td>Run .github/workflows/production-streaming-load.yml with faiss-ivfpq-persisted and publish benchmarks/production_streaming_load_ivfpq_50m_results.json.</td>
 </tr>
 <tr>
 <td>Qdrant streaming</td>
 <td>real Qdrant service smoke plus 10M preflight</td>
 <td>smoke recall 1, smoke p99 17.9 ms; 10M preflight action_required</td>
-<td>Run the embedded 10M Qdrant command against sized Qdrant storage.</td>
+<td>Run .github/workflows/production-streaming-load.yml with qdrant-service against sized Qdrant storage.</td>
 </tr>
 <tr>
 <td>Qdrant sharded streaming</td>
 <td>real two-service fanout smoke plus horizontal Qdrant preflight</td>
-<td><span class="badge warn">smoke recall 1, smoke p99 16.0 ms; 10M preflight action_required; planned shards 4; blockers missing_env:WAVEMIND_QDRANT_URLS</span></td>
-<td>Run the embedded sharded 10M command against multiple Qdrant service nodes.</td>
+<td><span class="badge warn">smoke recall 1, smoke p99 16.0 ms; 10M preflight action_required; 100M preflight action_required; planned shards 4; blockers missing_env:WAVEMIND_QDRANT_URLS</span></td>
+<td>Run .github/workflows/production-streaming-load.yml with qdrant-sharded-service and publish benchmarks/production_streaming_load_qdrant_sharded_10m_results.json or benchmarks/production_streaming_load_qdrant_sharded_100m_results.json.</td>
 </tr>
 <tr>
 <td>Qdrant 1M streaming</td>
@@ -339,12 +339,12 @@
 <td>pgvector streaming</td>
 <td>real PostgreSQL/pgvector service smoke plus 10M preflight</td>
 <td>smoke recall 1, smoke p99 7.624 ms; 10M preflight action_required</td>
-<td>Run the embedded 10M pgvector command against sized Postgres storage.</td>
+<td>Run .github/workflows/production-streaming-load.yml with pgvector-service against sized Postgres storage.</td>
 </tr>
 <tr>
 <td>Production readiness gate</td>
 <td>checked-in benchmark artifacts</td>
-<td><span class="badge pass">pass; 36/36 pass</span></td>
+<td><span class="badge pass">fail; 35/36 pass</span></td>
 <td>Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.</td>
 </tr>
 <tr>

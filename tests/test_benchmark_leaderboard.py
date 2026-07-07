@@ -67,6 +67,7 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "10M preflight `action_required`" in leaderboard
     assert "10M streaming load" in leaderboard
     assert "50M streaming preflight" in leaderboard
+    assert "production-streaming-load.yml" in leaderboard
     assert "production_streaming_load_ivfpq_50m_results.json" in leaderboard
     assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in leaderboard
     assert "Production readiness gate" in leaderboard
@@ -79,7 +80,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
 
     assert "schedule:" in workflow
     assert "workflow_dispatch:" in workflow
-    assert "contents: write" in workflow
+    assert "contents: read" in workflow
     assert "agent_coherence_benchmark.py" in workflow
     assert "benchmarks/agent_coherence_results.json" in workflow
     assert "tests/test_agent_coherence_benchmark.py" in workflow
@@ -114,4 +115,6 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "production_streaming_load_smoke_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "PRODUCTION_READINESS.md" in workflow
-    assert "git commit -m \"Refresh benchmark leaderboard\"" in workflow
+    assert "Benchmark artifacts changed" in workflow
+    assert "commit the reviewed files from a maintainer account" in workflow
+    assert "git push" not in workflow

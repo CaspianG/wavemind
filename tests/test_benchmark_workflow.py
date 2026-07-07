@@ -8,7 +8,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
 
     assert "cron: \"17 4 * * 1\"" in workflow
     assert "workflow_dispatch" in workflow
-    assert "contents: write" in workflow
+    assert "contents: read" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
@@ -34,7 +34,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "sharded Qdrant smoke SLO failed" in workflow
     assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
+    assert "Benchmark artifacts changed" in workflow
+    assert "commit the reviewed files from a maintainer account" in workflow
+    assert "git push" not in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
     assert "benchmarks/production_evidence_results.json" in workflow
@@ -75,6 +77,39 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
+    assert "actions/upload-artifact@v7" in workflow
+
+
+def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles():
+    workflow_path = Path(".github/workflows/production-streaming-load.yml")
+    workflow = workflow_path.read_text(encoding="utf-8")
+
+    assert workflow_path.exists()
+    assert "workflow_dispatch" in workflow
+    assert "contents: write" in workflow
+    assert "actions: read" in workflow
+    assert "production_streaming_load_benchmark.py" in workflow
+    assert "--checkpoint-path" in workflow
+    assert "production-streaming-load-state" in workflow
+    assert "production-streaming-load-results" in workflow
+    assert "resume_run_id" in workflow
+    assert "gh run download" in workflow
+    assert "qdrant-service" in workflow
+    assert "qdrant-sharded-service" in workflow
+    assert "pgvector-service" in workflow
+    assert "faiss-ivfpq-persisted" in workflow
+    assert "WAVEMIND_QDRANT_URL" in workflow
+    assert "WAVEMIND_QDRANT_URLS" in workflow
+    assert "WAVEMIND_PGVECTOR_DSN" in workflow
+    assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
+    assert "production_streaming_load_qdrant_10m_results.json" in workflow
+    assert "production_streaming_load_qdrant_sharded_10m_results.json" in workflow
+    assert "production_streaming_load_qdrant_sharded_100m_results.json" in workflow
+    assert "production_streaming_load_pgvector_10m_results.json" in workflow
+    assert "production_streaming_load_ivfpq_50m_results.json" in workflow
+    assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "if: ${{ inputs.commit_results }}" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 

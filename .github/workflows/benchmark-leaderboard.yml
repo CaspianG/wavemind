@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   update-leaderboard:
@@ -162,17 +162,14 @@ jobs:
             tests/test_production_readiness_gate.py \
             tests/test_production_evidence_gate.py
 
-      - name: Commit leaderboard update
+      - name: Report benchmark artifact drift
         run: |
           if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json; then
             echo "No benchmark changes."
             exit 0
           fi
-          git config user.name "CaspianG"
-          git config user.email "259116618+CaspianG@users.noreply.github.com"
-          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json
-          git commit -m "Refresh benchmark leaderboard"
-          git push
+          echo "::notice::Benchmark artifacts changed. Download the benchmark-leaderboard artifact and commit the reviewed files from a maintainer account."
+          git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json
 
       - uses: actions/upload-artifact@v7
         if: always()
