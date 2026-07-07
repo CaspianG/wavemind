@@ -1078,6 +1078,138 @@ def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
             service_memory.close()
 
 
+def run_api_batch_query_profile(*, queries: int = 100) -> dict[str, object]:
+    from fastapi.testclient import TestClient
+
+    queries = max(1, int(queries))
+    namespace = "tenant:api-batch"
+
+    def run_service(db_path: Path, *, batch: bool) -> dict[str, object]:
+        encoder = CountingMemoryOSEncoder()
+        memory = WaveMind(
+            db_path=db_path,
+            encoder=encoder,
+            width=16,
+            height=16,
+            layers=1,
+        )
+        latencies: list[float] = []
+        try:
+            memory.remember("budget recall should work through batch query", namespace=namespace)
+            encoder.calls = 0
+            cache = QueryVectorCache(capacity=32, ttl_seconds=120)
+            app = create_app(mind=memory)
+            app.state.cache = None
+            app.state.vector_cache = cache
+            success = True
+            with TestClient(app) as api:
+                if batch:
+                    started = time.perf_counter()
+                    response = api.post(
+                        "/query/batch",
+                        json={
+                            "queries": [
+                                {
+                                    "text": "budget recall",
+                                    "namespace": namespace,
+                                    "top_k": 1,
+                                }
+                                for _ in range(queries)
+                            ]
+                        },
+                    )
+                    latencies.append((time.perf_counter() - started) * 1000.0)
+                    payload = response.json() if response.status_code == 200 else {}
+                    items = payload.get("items", [])
+                    returned_texts = [
+                        item.get("results", [{}])[0].get("text")
+                        if item.get("results")
+                        else None
+                        for item in items
+                    ]
+                    success = (
+                        response.status_code == 200
+                        and payload.get("count") == queries
+                        and len(items) == queries
+                        and all(
+                            text == "budget recall should work through batch query"
+                            for text in returned_texts
+                        )
+                    )
+                else:
+                    for _ in range(queries):
+                        started = time.perf_counter()
+                        response = api.post(
+                            "/query",
+                            json={
+                                "text": "budget recall",
+                                "namespace": namespace,
+                                "top_k": 1,
+                            },
+                        )
+                        latencies.append((time.perf_counter() - started) * 1000.0)
+                        success = (
+                            success
+                            and response.status_code == 200
+                            and response.json()["results"][0]["text"]
+                            == "budget recall should work through batch query"
+                        )
+                metrics_response = api.get("/metrics")
+            stats = cache.stats()
+            return {
+                "success": success,
+                "encoder_calls": encoder.calls,
+                "cache_hits": stats.hits,
+                "cache_misses": stats.misses,
+                "hit_rate": stats.hit_rate,
+                "total_ms": sum(latencies),
+                "avg_ms": statistics.mean(latencies) if latencies else 0.0,
+                "p99_ms": percentile(latencies, 99),
+                "metrics_text": metrics_response.text if metrics_response.status_code == 200 else "",
+            }
+        finally:
+            memory.close()
+
+    with tempfile.TemporaryDirectory() as directory:
+        individual = run_service(Path(directory) / "query-batch-individual.sqlite3", batch=False)
+        batched = run_service(Path(directory) / "query-batch-batched.sqlite3", batch=True)
+
+    batch_metrics_exposed = all(
+        token in str(batched["metrics_text"])
+        for token in (
+            "wavemind_api_query_batch_requests_total",
+            "wavemind_vector_cache_hits_total",
+            "wavemind_vector_cache_misses_total",
+        )
+    )
+    individual_total_ms = float(individual["total_ms"])
+    batch_total_ms = float(batched["total_ms"])
+    return {
+        "engine": "WaveMind API batch query",
+        "queries": queries,
+        "batch_size": queries,
+        "individual_http_requests": queries,
+        "batch_http_requests": 1,
+        "request_reduction_ratio": 1.0 - (1.0 / float(queries)),
+        "individual_success": individual["success"],
+        "batch_success": batched["success"],
+        "individual_encoder_calls": individual["encoder_calls"],
+        "batch_encoder_calls": batched["encoder_calls"],
+        "individual_cache_hits": individual["cache_hits"],
+        "batch_cache_hits": batched["cache_hits"],
+        "batch_cache_misses": batched["cache_misses"],
+        "batch_hit_rate": batched["hit_rate"],
+        "batch_metrics_exposed": batch_metrics_exposed,
+        "individual_total_ms": individual_total_ms,
+        "batch_total_ms": batch_total_ms,
+        "batch_total_speedup": (
+            individual_total_ms / batch_total_ms if batch_total_ms > 0 else 0.0
+        ),
+        "individual_p99_query_ms": individual["p99_ms"],
+        "batch_request_ms": batch_total_ms,
+    }
+
+
 class _RateLimitClient:
     host = "127.0.0.1"
 
@@ -3518,6 +3650,7 @@ def run_benchmark(
         run_serverless_operational_profile(),
         run_cache_profile(queries=cache_queries, capacity=cache_capacity),
         run_query_vector_cache_profile(),
+        run_api_batch_query_profile(),
         run_shared_rate_limit_profile(),
         run_redis_cache_profile(),
         run_api_cache_mutation_profile(),
@@ -3556,7 +3689,7 @@ def run_benchmark(
                 "replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, SQLite point-in-time "
-                "recovery journal replay, query-vector cache, "
+                "recovery journal replay, query-vector cache, API batch query, "
                 "Redis-compatible shared rate limiting, Memory OS adaptive "
                 "prewarm/consolidation/forgetting, local and Redis-compatible "
                 "hot-cache behavior, API cache mutation safety, batch recall "
@@ -3638,6 +3771,10 @@ def main() -> int:
             print(f"| query vector cache | local_encode_calls | {result['local_encode_calls']} |")
             print(f"| query vector cache | local_hit_rate | {result['local_hit_rate']:.3f} |")
             print(f"| query vector cache | redis_shared_across_workers | {result['redis_shared_across_workers']} |")
+        elif result["engine"] == "WaveMind API batch query":
+            print(f"| API batch query | batch_success | {result['batch_success']} |")
+            print(f"| API batch query | request_reduction_ratio | {result['request_reduction_ratio']:.3f} |")
+            print(f"| API batch query | batch_hit_rate | {result['batch_hit_rate']:.3f} |")
         elif result["engine"] == "WaveMind shared rate limiter":
             print(f"| shared rate limiter | shared_across_workers | {result['shared_across_workers']} |")
             print(f"| shared rate limiter | allowed | {result['allowed']} |")

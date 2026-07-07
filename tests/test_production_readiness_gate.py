@@ -79,6 +79,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["query_vector_cache"]["status"] == "pass"
     assert "encoded query vectors" in criteria["query_vector_cache"]["requirement"]
     assert "local encode calls 1" in criteria["query_vector_cache"]["evidence"]
+    assert criteria["api_batch_query"]["status"] == "pass"
+    assert "Batch query API" in criteria["api_batch_query"]["title"]
+    assert "HTTP requests 100 -> 1" in criteria["api_batch_query"]["evidence"]
     assert criteria["shared_rate_limiter"]["status"] == "pass"
     assert "one shared request budget" in criteria["shared_rate_limiter"]["requirement"]
     assert "limited 1" in criteria["shared_rate_limiter"]["evidence"]
@@ -223,7 +226,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 38
+    assert payload["summary"]["total_criteria"] == 39
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report
@@ -232,6 +235,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Cluster autoscaler plans node additions within headroom" in report
     assert "Control-plane consensus blocks split-brain config changes" in report
     assert "Query-vector cache avoids repeated encoder work" in report
+    assert "Batch query API amortizes service recall overhead" in report
     assert "Redis-compatible shared rate limiter works across workers" in report
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report
     assert "transition hit True" in report

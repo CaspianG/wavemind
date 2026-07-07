@@ -463,6 +463,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     serverless_ops = scale.get("WaveMind serverless operational profile", {})
     hot_cache = scale.get("WaveMind hot cache", {})
     query_vector_cache = scale.get("WaveMind query vector cache", {})
+    api_batch_query = scale.get("WaveMind API batch query", {})
     shared_rate_limiter = scale.get("WaveMind shared rate limiter", {})
     redis_cache = scale.get("WaveMind Redis hot cache", {})
     api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
@@ -1079,6 +1080,39 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"service metrics {query_vector_cache.get('service_metrics_exposed')}"
             ),
             next_step="Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test.",
+        ),
+        _criterion(
+            criterion_id="api_batch_query",
+            title="Batch query API amortizes service recall overhead",
+            status=(
+                "pass"
+                if api_batch_query.get("batch_success")
+                and api_batch_query.get("individual_success")
+                and int(api_batch_query.get("batch_http_requests", 999999)) == 1
+                and int(api_batch_query.get("individual_http_requests", 0)) >= 100
+                and float(api_batch_query.get("request_reduction_ratio", 0.0)) >= 0.99
+                and int(api_batch_query.get("batch_encoder_calls", 999999)) == 1
+                and float(api_batch_query.get("batch_hit_rate", 0.0)) >= 0.99
+                and api_batch_query.get("batch_metrics_exposed")
+                else "fail"
+            ),
+            requirement=(
+                "FastAPI must support production batch recall so agents can issue "
+                "many memory lookups with one HTTP request while preserving vector-cache reuse."
+            ),
+            evidence=(
+                f"queries {api_batch_query.get('queries')}, "
+                f"HTTP requests {api_batch_query.get('individual_http_requests')} -> "
+                f"{api_batch_query.get('batch_http_requests')}, "
+                f"batch encode calls {api_batch_query.get('batch_encoder_calls')}, "
+                f"batch hit rate {api_batch_query.get('batch_hit_rate')}, "
+                f"speedup {api_batch_query.get('batch_total_speedup')}, "
+                f"metrics {api_batch_query.get('batch_metrics_exposed')}"
+            ),
+            next_step=(
+                "Run batch recall under multi-worker Redis-backed API load and compare "
+                "p95/p99 against individual query fanout."
+            ),
         ),
         _criterion(
             criterion_id="shared_rate_limiter",

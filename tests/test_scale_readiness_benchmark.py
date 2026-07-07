@@ -120,6 +120,19 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind query vector cache"]["service_hit_rate"] >= 0.99
     assert results["WaveMind query vector cache"]["service_metrics_exposed"] is True
     assert results["WaveMind query vector cache"]["p99_service_query_ms"] < 100.0
+    assert results["WaveMind API batch query"]["queries"] == 100
+    assert results["WaveMind API batch query"]["batch_size"] == 100
+    assert results["WaveMind API batch query"]["individual_http_requests"] == 100
+    assert results["WaveMind API batch query"]["batch_http_requests"] == 1
+    assert results["WaveMind API batch query"]["request_reduction_ratio"] == 0.99
+    assert results["WaveMind API batch query"]["individual_success"] is True
+    assert results["WaveMind API batch query"]["batch_success"] is True
+    assert results["WaveMind API batch query"]["individual_encoder_calls"] == 1
+    assert results["WaveMind API batch query"]["batch_encoder_calls"] == 1
+    assert results["WaveMind API batch query"]["batch_cache_hits"] == 99
+    assert results["WaveMind API batch query"]["batch_cache_misses"] == 1
+    assert results["WaveMind API batch query"]["batch_hit_rate"] == 0.99
+    assert results["WaveMind API batch query"]["batch_metrics_exposed"] is True
     assert results["WaveMind shared rate limiter"]["shared_across_workers"] is True
     assert results["WaveMind shared rate limiter"]["workers"] == 2
     assert results["WaveMind shared rate limiter"]["allowed"] == 4

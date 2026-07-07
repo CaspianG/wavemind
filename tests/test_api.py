@@ -615,6 +615,68 @@ def test_fastapi_query_vector_cache_reuses_encoder_output(tmp_path, monkeypatch)
         mind.close()
 
 
+def test_fastapi_query_batch_uses_shared_query_path_and_vector_cache(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+    monkeypatch.delenv("WAVEMIND_VECTOR_CACHE_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_VECTOR_CACHE_CAPACITY", "8")
+    monkeypatch.setenv("WAVEMIND_VECTOR_CACHE_TTL_SECONDS", "60")
+    monkeypatch.setenv("WAVEMIND_QUERY_BATCH_MAX_ITEMS", "4")
+    encoder = CountingEncoder()
+    mind = WaveMind(
+        db_path=tmp_path / "api-query-batch.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=encoder,
+    )
+    try:
+        mind.remember("budget recall batch memory", namespace="tenant:batch")
+        mind.remember("risk recall batch memory", namespace="tenant:batch")
+        encoder.calls = 0
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/query/batch",
+                json={
+                    "queries": [
+                        {"text": "budget recall", "namespace": "tenant:batch", "top_k": 1},
+                        {"text": "budget recall", "namespace": "tenant:batch", "top_k": 1},
+                        {"text": "risk recall", "namespace": "tenant:batch", "top_k": 1},
+                    ]
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            assert payload["count"] == 3
+            assert [item["index"] for item in payload["items"]] == [0, 1, 2]
+            assert payload["items"][0]["results"][0]["text"] == "budget recall batch memory"
+            assert payload["items"][1]["results"][0]["text"] == "budget recall batch memory"
+            assert payload["items"][2]["results"][0]["text"] == "risk recall batch memory"
+            assert encoder.calls == 2
+
+            empty = client.post("/query/batch", json={"queries": []})
+            assert empty.status_code == 400
+
+            oversized = client.post(
+                "/query/batch",
+                json={
+                    "queries": [
+                        {"text": f"budget recall {index}", "namespace": "tenant:batch"}
+                        for index in range(5)
+                    ]
+                },
+            )
+            assert oversized.status_code == 413
+
+            metrics = client.get("/metrics")
+            assert metrics.status_code == 200
+            assert "wavemind_api_query_batch_requests_total 1" in metrics.text
+            assert "wavemind_vector_cache_hits_total 1" in metrics.text
+            assert "wavemind_vector_cache_misses_total 2" in metrics.text
+    finally:
+        mind.close()
+
+
 def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
     monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")

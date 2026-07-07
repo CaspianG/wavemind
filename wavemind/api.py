@@ -379,6 +379,22 @@ class QueryResponse(BaseModel):
     results: list[QueryResultResponse]
 
 
+class QueryBatchRequest(BaseModel):
+    queries: list[QueryRequest] = Field(default_factory=list)
+
+
+class QueryBatchItemResponse(BaseModel):
+    index: int
+    text: str
+    namespace: str
+    results: list[QueryResultResponse]
+
+
+class QueryBatchResponse(BaseModel):
+    count: int
+    items: list[QueryBatchItemResponse]
+
+
 class ForgetRequest(BaseModel):
     id: int | None = None
     text: str | None = None
@@ -894,6 +910,52 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         max_samples=int(os.environ.get("WAVEMIND_METRICS_SAMPLE_SIZE", "512"))
     )
 
+    def _query_results(request: QueryRequest):
+        if app.state.cache is None:
+            if app.state.vector_cache is None:
+                return app.state.mind.query(
+                    request.text,
+                    namespace=request.namespace,
+                    top_k=request.top_k,
+                    tags=request.tags,
+                    min_score=request.min_score,
+                )
+            return query_with_vector_cache(
+                app.state.mind,
+                app.state.vector_cache,
+                request.text,
+                namespace=request.namespace,
+                top_k=request.top_k,
+                tags=request.tags,
+                min_score=request.min_score,
+            )
+        return query_with_cache(
+            app.state.mind,
+            app.state.cache,
+            request.text,
+            namespace=request.namespace,
+            top_k=request.top_k,
+            tags=request.tags,
+            min_score=request.min_score,
+            vector_cache=app.state.vector_cache,
+        )
+
+    def _query_result_responses(results) -> list[QueryResultResponse]:
+        return [
+            QueryResultResponse(
+                id=result.id,
+                text=result.text,
+                score=result.score,
+                vector_score=result.vector_score,
+                field_score=result.field_score,
+                graph_score=result.graph_score,
+                namespace=result.namespace,
+                tags=list(result.tags),
+                metadata=result.metadata,
+            )
+            for result in results
+        ]
+
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
         limiter = request.app.state.rate_limiter
@@ -1021,52 +1083,36 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
         with _api_operation(app, "query"):
-            if app.state.cache is None:
-                if app.state.vector_cache is None:
-                    results = app.state.mind.query(
-                        request.text,
-                        namespace=request.namespace,
-                        top_k=request.top_k,
-                        tags=request.tags,
-                        min_score=request.min_score,
+            results = _query_results(request)
+        return QueryResponse(results=_query_result_responses(results))
+
+    @app.post(
+        "/query/batch",
+        response_model=QueryBatchResponse,
+        dependencies=[Depends(require_role("read"))],
+    )
+    def query_batch(request: QueryBatchRequest) -> QueryBatchResponse:
+        if not request.queries:
+            raise HTTPException(status_code=400, detail="query batch must contain at least one query")
+        max_items = int(os.environ.get("WAVEMIND_QUERY_BATCH_MAX_ITEMS", "256") or "256")
+        if len(request.queries) > max_items:
+            raise HTTPException(
+                status_code=413,
+                detail=f"query batch exceeds WAVEMIND_QUERY_BATCH_MAX_ITEMS={max_items}",
+            )
+        items: list[QueryBatchItemResponse] = []
+        with _api_operation(app, "query_batch"):
+            for index, item in enumerate(request.queries):
+                results = _query_results(item)
+                items.append(
+                    QueryBatchItemResponse(
+                        index=index,
+                        text=item.text,
+                        namespace=item.namespace,
+                        results=_query_result_responses(results),
                     )
-                else:
-                    results = query_with_vector_cache(
-                        app.state.mind,
-                        app.state.vector_cache,
-                        request.text,
-                        namespace=request.namespace,
-                        top_k=request.top_k,
-                        tags=request.tags,
-                        min_score=request.min_score,
-                    )
-            else:
-                results = query_with_cache(
-                    app.state.mind,
-                    app.state.cache,
-                    request.text,
-                    namespace=request.namespace,
-                    top_k=request.top_k,
-                    tags=request.tags,
-                    min_score=request.min_score,
-                    vector_cache=app.state.vector_cache,
                 )
-        return QueryResponse(
-            results=[
-                QueryResultResponse(
-                    id=result.id,
-                    text=result.text,
-                    score=result.score,
-                    vector_score=result.vector_score,
-                    field_score=result.field_score,
-                    graph_score=result.graph_score,
-                    namespace=result.namespace,
-                    tags=list(result.tags),
-                    metadata=result.metadata,
-                )
-                for result in results
-            ]
-        )
+        return QueryBatchResponse(count=len(items), items=items)
 
     @app.delete("/forget", response_model=ForgetResponse, dependencies=[Depends(require_role("admin"))])
     def forget(
