@@ -35,13 +35,15 @@ policy matters more than raw vector-database scale:
   Qdrant reaches `recall@10 0.984` but still misses the p99 gate at `137.86 ms`.
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
-- The streaming runner now also has a real PostgreSQL/pgvector service smoke:
-  1000 vectors, 20 queries, target recall@10 `1.000`, p99 `7.62 ms`, valid
-  SLO/cost status, plus a checked 10M pgvector plan-only contract in
-  `benchmarks/production_streaming_load_pgvector_10m_plan.json`. That plan is
-  not a completed 10M benchmark; it is the exact service-backed run contract.
+- The streaming runner now also has real service smokes for Qdrant and
+  PostgreSQL/pgvector. Qdrant reaches target recall@10 `1.000`, p99 `17.90 ms`
+  over 1000 vectors / 20 queries; pgvector reaches target recall@10 `1.000`,
+  p99 `7.62 ms` over the same smoke shape. Checked 10M plan-only contracts live
+  in `benchmarks/production_streaming_load_qdrant_10m_plan.json` and
+  `benchmarks/production_streaming_load_pgvector_10m_plan.json`. These plans are
+  not completed 10M benchmarks; they are exact service-backed run contracts.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`33/33` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`34/34` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -442,6 +444,9 @@ Enterprise requirements:
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
+- Service-mode Qdrant streaming now has a real smoke and a 10M preflight
+  contract; the next step is producing
+  `production_streaming_load_qdrant_10m_results.json` on sized Qdrant storage.
 - Service-mode Qdrant latency baseline beyond the checked-in 50000-vector
   profile.
 - Better README examples for non-agent use cases.

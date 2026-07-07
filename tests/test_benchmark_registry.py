@@ -91,6 +91,17 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert fifty_million_plan["estimated_index_gb"] > 0
     assert fifty_million_plan["estimated_application_storage_gb"] > fifty_million_plan["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in fifty_million_plan["missing_env"]
+    qdrant_smoke = entries["production_streaming_load_runner"]["current"][
+        "Qdrant smoke / Qdrant service streaming"
+    ]
+    assert qdrant_smoke["target_recall_at_k"] >= 0.95
+    assert qdrant_smoke["p99_latency_ms"] < 100.0
+    qdrant_plan = entries["production_streaming_load_runner"]["current"][
+        "10M Qdrant preflight / Qdrant service streaming"
+    ]
+    assert qdrant_plan["status"] == "action_required"
+    assert qdrant_plan["estimated_index_gb"] == 0.0
+    assert "WAVEMIND_QDRANT_URL" in qdrant_plan["missing_env"]
     pgvector_smoke = entries["production_streaming_load_runner"]["current"][
         "pgvector smoke / WaveMind pgvector streaming"
     ]

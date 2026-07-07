@@ -1,0 +1,169 @@
+{
+  "scenario": {
+    "name": "production_streaming_load_profile",
+    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",
+    "sizes": [
+      1000
+    ],
+    "vector_dim": 32,
+    "queries_per_size": 20,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "batch_size": 250,
+    "target_recall_definition": "source id appears in top-k for a noisy copy of that source vector",
+    "memory_model": "streaming batches; stores only selected query source vectors outside the index",
+    "default_target_sizes": [
+      10000000,
+      50000000
+    ],
+    "slo_targets": {
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0
+    }
+  },
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": true,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": "200",
+      "WAVEMIND_QDRANT_EXACT": null,
+      "WAVEMIND_QDRANT_WARMUP_QUERIES": null,
+      "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": null,
+      "WAVEMIND_QDRANT_HNSW_M": null,
+      "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
+      "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD": null,
+      "WAVEMIND_QDRANT_VECTOR_ON_DISK": null,
+      "WAVEMIND_QDRANT_ON_DISK_PAYLOAD": null,
+      "WAVEMIND_QDRANT_SHARD_NUMBER": null
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 5.08,
+      "total_gb": 231.85
+    }
+  },
+  "results": [
+    {
+      "vectors": 1000,
+      "vector_dim": 32,
+      "queries": 20,
+      "top_k": 10,
+      "noise": 0.08,
+      "batch_size": 250,
+      "results": [
+        {
+          "engine": "Qdrant service streaming",
+          "vectors": 1000,
+          "vector_dim": 32,
+          "batch_size": 250,
+          "recall_at_k": 1,
+          "target_recall_at_k": 1,
+          "target_recall_at_1": 1,
+          "avg_latency_ms": 9.73162999143824,
+          "p50_latency_ms": 8.167500025592744,
+          "p95_latency_ms": 17.739999922923744,
+          "p99_latency_ms": 17.90370000526309,
+          "max_latency_ms": 17.90370000526309,
+          "build_ms": 1002.4543999461457,
+          "queries": 20,
+          "recall_definition": "source vector id appears in top_k for a noisy copy of that vector",
+          "collection_name": "streaming_smoke",
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": 200,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          },
+          "memory_mode": "streaming upsert; query source vectors only",
+          "slo_status": "pass",
+          "slo_required_replicas": 2,
+          "slo_autoscaled_qps": 1726.3295064424374,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+          "monthly_storage_cost_usd": 0.00020265579223632812,
+          "monthly_total_cost_at_target_qps_usd": 365.00020265579224,
+          "estimated_storage_gb": 0.0020265579223632812
+        }
+      ],
+      "slo": [
+        {
+          "engine": "Qdrant service streaming",
+          "status": "pass",
+          "target_recall_at_k": 0.95,
+          "target_p99_ms": 100.0,
+          "target_qps": 100.0,
+          "recall_at_k": 1.0,
+          "p99_latency_ms": 17.90370000526309,
+          "avg_latency_ms": 9.73162999143824,
+          "per_replica_qps_at_headroom": 71.93039610176822,
+          "current_replicas": 3,
+          "current_capacity_qps": 215.79118830530467,
+          "required_replicas": 2,
+          "autoscaling_max_replicas": 24,
+          "autoscaled_capacity_qps": 1726.3295064424374,
+          "blocking_reasons": [],
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+          "monthly_storage_cost_usd": 0.00020265579223632812,
+          "monthly_total_cost_at_target_qps_usd": 365.00020265579224,
+          "estimated_storage_gb": 0.0020265579223632812
+        }
+      ],
+      "cost": [
+        {
+          "engine": "Qdrant service streaming",
+          "cost_status": "valid_slo",
+          "memory_count": 1000,
+          "vector_dim": 32,
+          "required_replicas": 2,
+          "target_qps": 100.0,
+          "replica_hourly_cost_usd": 0.25,
+          "storage_gb_monthly_cost_usd": 0.1,
+          "vector_storage_gb": 0.00011920928955078125,
+          "payload_storage_gb": 0.0019073486328125,
+          "total_storage_gb": 0.0020265579223632812,
+          "monthly_storage_cost_usd": 0.00020265579223632812,
+          "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+          "monthly_compute_cost_at_target_qps_usd": 365.0,
+          "monthly_total_cost_at_target_qps_usd": 365.00020265579224
+        }
+      ]
+    }
+  ]
+}

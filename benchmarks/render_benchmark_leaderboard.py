@@ -401,6 +401,32 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    qdrant_streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_smoke_results.json")
+    qdrant_streaming_result = _first_result(qdrant_streaming)
+    if qdrant_streaming_result and isinstance(qdrant_streaming_result.get("results"), list):
+        nested_results = qdrant_streaming_result["results"]
+        if nested_results:
+            qdrant_streaming_result = nested_results[0]
+    qdrant_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_10m_plan.json")
+    qdrant_plan_row = {}
+    if qdrant_plan and isinstance(qdrant_plan.get("plans"), list) and qdrant_plan["plans"]:
+        first_plan = qdrant_plan["plans"][0]
+        if isinstance(first_plan, dict):
+            qdrant_plan_row = first_plan
+    if qdrant_streaming_result and qdrant_plan_row:
+        rows.append(
+            (
+                "Qdrant streaming",
+                "real Qdrant service smoke plus 10M preflight",
+                (
+                    f"smoke recall `{fmt(qdrant_streaming_result.get('target_recall_at_k'))}`, "
+                    f"smoke p99 `{fmt(qdrant_streaming_result.get('p99_latency_ms'))} ms`; "
+                    f"10M preflight `{qdrant_plan_row.get('status', 'unknown')}`"
+                ),
+                "Run the embedded 10M Qdrant command against sized Qdrant storage.",
+            )
+        )
+
     pgvector_streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_pgvector_smoke_results.json")
     pgvector_streaming_result = _first_result(pgvector_streaming)
     if pgvector_streaming_result and isinstance(pgvector_streaming_result.get("results"), list):

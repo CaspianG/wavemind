@@ -114,6 +114,10 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "iterative HNSW recall@10 >= 0.95" in criteria["pgvector_tuning_path"]["requirement"]
     assert "iterative recall 0.97" in criteria["pgvector_tuning_path"]["evidence"]
     assert "exact recall 1.0" in criteria["pgvector_tuning_path"]["evidence"]
+    assert criteria["qdrant_streaming_path"]["status"] == "pass"
+    assert "memory-bounded streaming runner" in criteria["qdrant_streaming_path"]["requirement"]
+    assert "smoke recall 1" in criteria["qdrant_streaming_path"]["evidence"]
+    assert "missing_env:WAVEMIND_QDRANT_URL" in criteria["qdrant_streaming_path"]["evidence"]
     assert criteria["pgvector_streaming_path"]["status"] == "pass"
     assert "memory-bounded streaming runner" in criteria["pgvector_streaming_path"]["requirement"]
     assert "smoke recall 1" in criteria["pgvector_streaming_path"]["evidence"]
@@ -158,7 +162,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 33
+    assert payload["summary"]["total_criteria"] == 34
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report

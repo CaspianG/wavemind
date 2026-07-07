@@ -78,6 +78,8 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_10m": _load_optional_json(benchmark_dir / "production_load_10m_results.json"),
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "load_50m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_50m_plan.json"),
+        "qdrant_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_smoke_results.json"),
+        "qdrant_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_10m_plan.json"),
         "pgvector_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_smoke_results.json"),
         "pgvector_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_10m_plan.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
@@ -288,6 +290,36 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         in str(load_50m_plan_row.get("command", ""))
         and str(load_50m_plan_row.get("claim_boundary", "")).startswith("preflight only")
         and load_50m_plan_row.get("status") in {"ready", "action_required"}
+    )
+    qdrant_streaming_smoke = _size_results(artifacts["qdrant_streaming_smoke"]).get(
+        "Qdrant service streaming",
+        {},
+    )
+    qdrant_streaming_plan = artifacts["qdrant_streaming_10m_plan"]
+    qdrant_streaming_plan_rows = [
+        row
+        for row in qdrant_streaming_plan.get("plans", [])
+        if isinstance(row, dict)
+    ]
+    qdrant_streaming_plan_row = (
+        qdrant_streaming_plan_rows[0] if qdrant_streaming_plan_rows else {}
+    )
+    qdrant_streaming_pass = (
+        bool(qdrant_streaming_smoke)
+        and int(qdrant_streaming_smoke.get("vectors", 0)) >= 1000
+        and int(qdrant_streaming_smoke.get("queries", 0)) >= 20
+        and float(qdrant_streaming_smoke.get("recall_at_k", 0.0)) >= 0.95
+        and float(qdrant_streaming_smoke.get("p99_latency_ms", float("inf"))) <= 100.0
+        and qdrant_streaming_smoke.get("cost_status") == "valid_slo"
+        and qdrant_streaming_plan.get("schema") == "wavemind.production_streaming_load_plan.v1"
+        and qdrant_streaming_plan.get("scenario", {}).get("plan_only") is True
+        and int(qdrant_streaming_plan.get("scenario", {}).get("sizes", [0])[0]) >= 10_000_000
+        and qdrant_streaming_plan_row.get("engine") == "Qdrant service streaming"
+        and int(qdrant_streaming_plan_row.get("vectors", 0)) >= 10_000_000
+        and float(qdrant_streaming_plan_row.get("estimated_index_gb", 1.0)) == 0.0
+        and "production_streaming_load_qdrant_10m_results.json"
+        in str(qdrant_streaming_plan_row.get("command", ""))
+        and str(qdrant_streaming_plan_row.get("claim_boundary", "")).startswith("preflight only")
     )
     pgvector_streaming_smoke = _size_results(artifacts["pgvector_streaming_smoke"]).get(
         "WaveMind pgvector streaming",
@@ -571,6 +603,28 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             next_step=(
                 "Promote pgvector-iterative into the 100k and 1M production "
                 "load SLO profiles after allocating enough disk/build time."
+            ),
+        ),
+        _criterion(
+            criterion_id="qdrant_streaming_path",
+            title="Qdrant streaming runner has service smoke and 10M preflight",
+            status="pass" if qdrant_streaming_pass else "action_required",
+            requirement=(
+                "Qdrant must have a memory-bounded streaming runner that inserts "
+                "vectors in batches, passes a real service smoke, and has a "
+                "committed 10M plan-only contract with exact reproduction command."
+            ),
+            evidence=(
+                f"smoke vectors {qdrant_streaming_smoke.get('vectors')}, "
+                f"smoke recall {qdrant_streaming_smoke.get('recall_at_k')}, "
+                f"smoke p99 {qdrant_streaming_smoke.get('p99_latency_ms')} ms, "
+                f"plan status {qdrant_streaming_plan_row.get('status')}, "
+                f"plan required local free {qdrant_streaming_plan_row.get('required_local_free_gb')} GB, "
+                f"blockers {', '.join(qdrant_streaming_plan_row.get('blockers', [])) or '-'}"
+            ),
+            next_step=(
+                "Run the embedded 10M Qdrant command against a sized Qdrant "
+                "service and commit production_streaming_load_qdrant_10m_results.json."
             ),
         ),
         _criterion(

@@ -1,0 +1,102 @@
+{
+  "schema": "wavemind.production_streaming_load_plan.v1",
+  "status": "action_required",
+  "scenario": {
+    "name": "production_streaming_load_plan",
+    "description": "Plan-only preflight for large-N streaming load runs. It estimates local index/transient storage, application storage, required environment, and the exact reproduction command without generating vectors.",
+    "sizes": [
+      10000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "batch_size": 100000,
+    "engines": [
+      "qdrant-service"
+    ],
+    "target_recall_at_k": 0.95,
+    "target_p99_ms": 100.0,
+    "target_qps": 100.0,
+    "replicas": 3,
+    "autoscaling_max_replicas": 24,
+    "capacity_headroom": 0.7,
+    "plan_only": true
+  },
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": true,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": false,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": null,
+      "WAVEMIND_QDRANT_EXACT": null,
+      "WAVEMIND_QDRANT_WARMUP_QUERIES": null,
+      "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": null,
+      "WAVEMIND_QDRANT_HNSW_M": null,
+      "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
+      "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD": null,
+      "WAVEMIND_QDRANT_VECTOR_ON_DISK": null,
+      "WAVEMIND_QDRANT_ON_DISK_PAYLOAD": null,
+      "WAVEMIND_QDRANT_SHARD_NUMBER": null
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 5.08,
+      "total_gb": 231.85
+    }
+  },
+  "plans": [
+    {
+      "engine": "Qdrant service streaming",
+      "vectors": 10000000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "batch_size": 100000,
+      "index_mode": "remote Qdrant service storage; local runner stores only generated batches",
+      "estimated_index_gb": 0.0,
+      "estimated_transient_runner_gb": 0.048,
+      "estimated_payload_storage_gb": 19.073,
+      "estimated_float_vector_storage_gb": 4.768,
+      "estimated_application_storage_gb": 23.842,
+      "required_local_free_gb": 0.06,
+      "disk_free_gb": 5.08,
+      "safety_factor": 1.25,
+      "module_requirements": {
+        "qdrant_client": true
+      },
+      "required_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "command_env": {
+        "WAVEMIND_QDRANT_URL": "http://qdrant.example:6333"
+      },
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json",
+      "status": "action_required",
+      "blockers": [
+        "missing_env:WAVEMIND_QDRANT_URL"
+      ],
+      "claim_boundary": "preflight only; this is not a completed latency or recall benchmark"
+    }
+  ]
+}

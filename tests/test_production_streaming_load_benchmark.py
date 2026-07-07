@@ -248,3 +248,32 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]
+
+
+def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import plan_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_QDRANT_URL", raising=False)
+
+    payload = plan_streaming_load(
+        sizes=[10_000_000],
+        dim=128,
+        query_count=100,
+        top_k=10,
+        seed=42,
+        noise=0.08,
+        batch_size=100_000,
+        engines=["qdrant-service"],
+        output_path=Path("benchmarks/production_streaming_load_qdrant_10m_plan.json"),
+        planned_result_output_path=Path("benchmarks/production_streaming_load_qdrant_10m_results.json"),
+    )
+
+    row = payload["plans"][0]
+    assert row["engine"] == "Qdrant service streaming"
+    assert row["vectors"] == 10_000_000
+    assert row["estimated_index_gb"] == 0.0
+    assert row["index_mode"].startswith("remote Qdrant service")
+    assert "WAVEMIND_QDRANT_URL" in row["required_env"]
+    assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
+    assert "--engines qdrant-service" in row["command"]
+    assert "production_streaming_load_qdrant_10m_results.json" in row["command"]
