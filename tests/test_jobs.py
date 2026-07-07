@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from wavemind import (
+    ActiveActiveSyncWorker,
     CachePrewarmWorker,
     DistributedRepairWorker,
     DistributedShardedWaveMind,
@@ -241,6 +242,22 @@ class LocalShardServiceClient:
             )
             self.minds[address] = mind
         return mind
+
+
+def _active_region(tmp_path: Path, name: str) -> ReplicatedWaveMind:
+    return ReplicatedWaveMind(
+        root_path=tmp_path / name,
+        nodes=[
+            {"id": f"{name}-a", "address": f"{name}-a.internal", "zone": "zone-a"},
+            {"id": f"{name}-b", "address": f"{name}-b.internal", "zone": "zone-b"},
+            {"id": f"{name}-c", "address": f"{name}-c.internal", "zone": "zone-c"},
+        ],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
 
 
 def test_hot_memory_cache_reuses_query_results(tmp_path):
@@ -697,6 +714,81 @@ def test_distributed_repair_worker_repairs_service_mode_namespaces(tmp_path):
         assert memory.query("deleted service memory", namespace=tombstone_namespace, top_k=1) == []
     finally:
         client.close()
+
+
+def test_active_active_sync_worker_converges_incremental_writes_and_tombstones(tmp_path):
+    region_a = _active_region(tmp_path, "region-a")
+    region_b = _active_region(tmp_path, "region-b")
+    try:
+        namespace = "tenant:active-active-worker"
+        region_a.remember("region a user prefers low latency recall", namespace=namespace)
+        region_b.remember("region b user budget is 2000", namespace=namespace)
+        worker = ActiveActiveSyncWorker({"region-a": region_a, "region-b": region_b})
+
+        first = worker.run_once([namespace])
+        second = worker.run_once(namespaces=[namespace])
+
+        assert first.ok
+        assert first.records_imported == 6
+        assert first.failed_pairs == 0
+        assert len(worker.cursors) == 2
+        assert second.ok
+        assert second.records_imported == 0
+        assert second.tombstones_imported == 0
+        assert region_a.query("budget 2000", namespace=namespace, top_k=1)[0].text == (
+            "region b user budget is 2000"
+        )
+        assert region_b.query("low latency recall", namespace=namespace, top_k=1)[0].text == (
+            "region a user prefers low latency recall"
+        )
+
+        region_a.remember("region a user wants weekly market summaries", namespace=namespace)
+        incremental = worker.run_once(namespaces=[namespace])
+
+        assert incremental.ok
+        assert incremental.records_imported == 3
+        assert region_b.query("weekly market summaries", namespace=namespace, top_k=1)[0].text == (
+            "region a user wants weekly market summaries"
+        )
+
+        region_b.forget(text="region b user budget is 2000", namespace=namespace)
+        tombstone = worker.run_once(namespaces=[namespace])
+        region_a_results = region_a.query("budget 2000", namespace=namespace, top_k=3)
+        region_b_results = region_b.query("budget 2000", namespace=namespace, top_k=3)
+
+        assert tombstone.ok
+        assert tombstone.deleted_records >= 3
+        assert tombstone.tombstones_imported >= 1
+        assert all(result.text != "region b user budget is 2000" for result in region_a_results)
+        assert all(result.text != "region b user budget is 2000" for result in region_b_results)
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_active_active_sync_worker_reports_failed_region_pair(tmp_path):
+    region_a = _active_region(tmp_path, "region-a")
+    region_b = _active_region(tmp_path, "region-b")
+    try:
+        namespace = "tenant:active-active-failure"
+        region_a.remember("region a memory cannot reach unavailable target", namespace=namespace)
+        placement = region_b.placement(namespace)
+        for node_id in placement.replicas[:2]:
+            region_b.set_node_available(node_id, False)
+        worker = ActiveActiveSyncWorker({"region-a": region_a, "region-b": region_b})
+
+        report = worker.run_once(namespaces=[namespace])
+
+        assert not report.ok
+        assert report.failed_pairs == 1
+        failed = [pair for pair in report.pair_reports if not pair.ok]
+        assert len(failed) == 1
+        assert failed[0].source_region == "region-a"
+        assert failed[0].target_region == "region-b"
+        assert "quorum" in str(failed[0].error).lower()
+    finally:
+        region_a.close()
+        region_b.close()
 
 
 def test_replicated_snapshot_worker_mirrors_offsite_and_restores(tmp_path):

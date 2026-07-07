@@ -26,6 +26,7 @@ from wavemind import (
     CachePrewarmWorker,
     ClusterNode,
     CrossModalMemoryLayer,
+    ActiveActiveSyncWorker,
     DistributedRepairWorker,
     DistributedShardedWaveMind,
     FieldStateCRDT,
@@ -2205,6 +2206,121 @@ def run_active_active_delta_profile() -> dict[str, object]:
             region_b.close()
 
 
+def _benchmark_active_region(root: Path, name: str) -> ReplicatedWaveMind:
+    return ReplicatedWaveMind(
+        root_path=root / name,
+        nodes=[
+            {"id": f"{name}-a", "address": f"{name}-a.internal", "zone": "zone-a"},
+            {"id": f"{name}-b", "address": f"{name}-b.internal", "zone": "zone-b"},
+            {"id": f"{name}-c", "address": f"{name}-c.internal", "zone": "zone-c"},
+        ],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+
+
+def run_sustained_active_active_sync_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        regions = {
+            name: _benchmark_active_region(root, name)
+            for name in ("region-a", "region-b", "region-c")
+        }
+        namespaces = tuple(f"tenant:active-active-sustained:{index}" for index in range(3))
+        expected: dict[str, set[str]] = {namespace: set() for namespace in namespaces}
+        reports = []
+        sync_latencies: list[float] = []
+        write_count = 0
+        try:
+            worker = ActiveActiveSyncWorker(regions)
+            for round_index in range(2):
+                for region_name, region in regions.items():
+                    for namespace_index, namespace in enumerate(namespaces):
+                        text = (
+                            f"{region_name} sustained round {round_index} "
+                            f"namespace {namespace_index} memory"
+                        )
+                        region.remember(text, namespace=namespace)
+                        expected[namespace].add(text)
+                        write_count += 1
+                report = worker.run_once(namespaces=namespaces)
+                reports.append(report)
+                sync_latencies.append(report.duration_ms)
+
+            total_expected = 0
+            total_hits = 0
+            for namespace, texts in expected.items():
+                for text in texts:
+                    total_expected += len(regions)
+                    for region in regions.values():
+                        results = region.query(text, namespace=namespace, top_k=3)
+                        if any(result.text == text for result in results):
+                            total_hits += 1
+            convergence_rate = total_hits / total_expected if total_expected else 0.0
+
+            deleted_namespace = namespaces[0]
+            deleted_text = "region-b sustained round 0 namespace 0 memory"
+            regions["region-b"].forget(text=deleted_text, namespace=deleted_namespace)
+            expected[deleted_namespace].discard(deleted_text)
+            tombstone_report = worker.run_once(namespaces=namespaces)
+            reports.append(tombstone_report)
+            sync_latencies.append(tombstone_report.duration_ms)
+            delete_checks = []
+            for region in regions.values():
+                results = region.query(deleted_text, namespace=deleted_namespace, top_k=3)
+                delete_checks.append(all(result.text != deleted_text for result in results))
+            delete_suppression_rate = sum(1 for item in delete_checks if item) / len(delete_checks)
+
+            hot_text = "region-c sustained round 1 namespace 1 memory"
+            for _ in range(3):
+                regions["region-c"].query(hot_text, namespace=namespaces[1], top_k=1)
+            field_report = worker.run_once(namespaces=namespaces)
+            reports.append(field_report)
+            sync_latencies.append(field_report.duration_ms)
+
+            final_report = worker.run_once(namespaces=namespaces)
+            reports.append(final_report)
+            sync_latencies.append(final_report.duration_ms)
+
+            pair_reports = [
+                pair
+                for report in reports
+                for pair in report.pair_reports
+            ]
+            total_pairs = len(pair_reports)
+            ok_pairs = sum(1 for pair in pair_reports if pair.ok)
+            success_rate = ok_pairs / total_pairs if total_pairs else 0.0
+            return {
+                "engine": "WaveMind sustained active-active sync",
+                "regions": len(regions),
+                "namespaces": len(namespaces),
+                "replication_factor_per_region": 3,
+                "writes": write_count,
+                "sync_cycles": len(reports),
+                "pair_syncs": total_pairs,
+                "cursor_count": len(worker.cursors),
+                "records_imported": sum(report.records_imported for report in reports),
+                "tombstones_imported": sum(report.tombstones_imported for report in reports),
+                "deleted_records": sum(report.deleted_records for report in reports),
+                "field_keys_exported": sum(report.exported_field_keys for report in reports),
+                "final_noop_records_imported": final_report.records_imported,
+                "final_noop_failed_pairs": final_report.failed_pairs,
+                "convergence_rate": convergence_rate,
+                "delete_suppression_rate": delete_suppression_rate,
+                "success_rate": success_rate,
+                "failed_pairs": sum(report.failed_pairs for report in reports),
+                "has_more_pairs": sum(report.has_more_pairs for report in reports),
+                "p99_sync_ms": percentile(sync_latencies, 99),
+                "avg_sync_ms": statistics.mean(sync_latencies) if sync_latencies else 0.0,
+            }
+        finally:
+            for region in regions.values():
+                region.close()
+
+
 def run_field_crdt_profile() -> dict[str, object]:
     namespace = "tenant:field-crdt"
     budget_key = stable_memory_key(namespace=namespace, text="user budget is 2000")
@@ -2686,6 +2802,7 @@ def run_benchmark(
         run_sustained_http_cluster_load_profile(),
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
+        run_sustained_active_active_sync_profile(),
         run_field_crdt_profile(),
         run_replicated_snapshot_profile(),
         run_multimodal_profile(),
@@ -2706,7 +2823,8 @@ def run_benchmark(
                 "node/zone loss simulation, quorum-replicated runtime behavior, "
                 "service-mode distributed namespace sharding, real HTTP shard transport, "
                 "sustained mixed HTTP cluster load, "
-                "active-active delta sync, replicated snapshot/offsite/archive "
+                "active-active delta sync, sustained active-active sync, "
+                "replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, query-vector cache, "
                 "Redis-compatible shared rate limiting, Memory OS adaptive "
@@ -2845,6 +2963,11 @@ def main() -> int:
         elif result["engine"] == "WaveMind active-active delta sync":
             print(f"| active-active delta | converged | {result['converged_after_bidirectional_sync']} |")
             print(f"| active-active delta | tombstone_converged | {result['tombstone_converged']} |")
+        elif result["engine"] == "WaveMind sustained active-active sync":
+            print(f"| sustained active-active | convergence_rate | {result['convergence_rate']:.3f} |")
+            print(f"| sustained active-active | delete_suppression_rate | {result['delete_suppression_rate']:.3f} |")
+            print(f"| sustained active-active | success_rate | {result['success_rate']:.3f} |")
+            print(f"| sustained active-active | p99_sync_ms | {result['p99_sync_ms']:.2f} |")
         elif result["engine"] == "WaveMind field-state CRDT":
             print(f"| field-state CRDT | commutative_convergence | {result['commutative_convergence']} |")
             print(f"| field-state CRDT | idempotent_remerge | {result['idempotent_remerge']} |")

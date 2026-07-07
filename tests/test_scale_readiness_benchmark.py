@@ -225,6 +225,22 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind active-active delta sync"]["suppressed_stale_import_after_delete"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_converged"] is True
     assert results["WaveMind active-active delta sync"]["tombstone_deleted_records"] == 3
+    assert results["WaveMind sustained active-active sync"]["regions"] == 3
+    assert results["WaveMind sustained active-active sync"]["namespaces"] == 3
+    assert results["WaveMind sustained active-active sync"]["writes"] == 18
+    assert results["WaveMind sustained active-active sync"]["pair_syncs"] == 90
+    assert results["WaveMind sustained active-active sync"]["cursor_count"] == 18
+    assert results["WaveMind sustained active-active sync"]["records_imported"] >= 54
+    assert results["WaveMind sustained active-active sync"]["tombstones_imported"] >= 1
+    assert results["WaveMind sustained active-active sync"]["deleted_records"] >= 3
+    assert results["WaveMind sustained active-active sync"]["field_keys_exported"] >= 1
+    assert results["WaveMind sustained active-active sync"]["final_noop_records_imported"] == 0
+    assert results["WaveMind sustained active-active sync"]["final_noop_failed_pairs"] == 0
+    assert results["WaveMind sustained active-active sync"]["convergence_rate"] == 1.0
+    assert results["WaveMind sustained active-active sync"]["delete_suppression_rate"] == 1.0
+    assert results["WaveMind sustained active-active sync"]["success_rate"] == 1.0
+    assert results["WaveMind sustained active-active sync"]["failed_pairs"] == 0
+    assert results["WaveMind sustained active-active sync"]["has_more_pairs"] == 0
     assert results["WaveMind field-state CRDT"]["commutative_convergence"] is True
     assert results["WaveMind field-state CRDT"]["idempotent_remerge"] is True
     assert results["WaveMind field-state CRDT"]["tombstone_wins"] is True

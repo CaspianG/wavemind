@@ -42,6 +42,9 @@ from .field_crdt import (
 )
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
 from .jobs import (
+    ActiveActivePairSyncReport,
+    ActiveActiveSyncJobReport,
+    ActiveActiveSyncWorker,
     CachePrewarmReport,
     CachePrewarmWorker,
     DistributedRepairJobReport,
@@ -173,6 +176,9 @@ __all__ = [
     "ControlPlaneConsensus",
     "ControlPlaneLogEntry",
     "AuditEvent",
+    "ActiveActivePairSyncReport",
+    "ActiveActiveSyncJobReport",
+    "ActiveActiveSyncWorker",
     "CachePrewarmReport",
     "CachePrewarmWorker",
     "DistributedRepairJobReport",

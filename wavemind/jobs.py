@@ -15,7 +15,7 @@ from .advisor import MemoryArchitectureAdvice, advise_memory_architecture
 from .core import QueryResult
 from .encoders import is_stopword_token, normalize_token
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
-from .replication import ReplicatedWaveMind
+from .replication import NamespaceDeltaSyncReport, ReplicatedWaveMind, sync_namespace_delta
 
 
 @dataclass(frozen=True)
@@ -814,6 +814,233 @@ class ReplicatedObjectStoreDrillReport:
             "expected_text_found": self.expected_text_found,
             "ok": self.ok,
         }
+
+
+@dataclass(frozen=True)
+class ActiveActivePairSyncReport:
+    source_region: str
+    target_region: str
+    namespace: str
+    from_cursor: float | None
+    to_cursor: float | None
+    exported_records: int = 0
+    exported_tombstones: int = 0
+    exported_field_keys: int = 0
+    imported_records: int = 0
+    skipped_records: int = 0
+    deleted_records: int = 0
+    imported_tombstones: int = 0
+    has_more: bool = False
+    failed_nodes: dict[str, str] = field(default_factory=dict)
+    error: str | None = None
+    duration_ms: float = 0.0
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None and not self.failed_nodes
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "source_region": self.source_region,
+            "target_region": self.target_region,
+            "namespace": self.namespace,
+            "from_cursor": self.from_cursor,
+            "to_cursor": self.to_cursor,
+            "exported_records": self.exported_records,
+            "exported_tombstones": self.exported_tombstones,
+            "exported_field_keys": self.exported_field_keys,
+            "imported_records": self.imported_records,
+            "skipped_records": self.skipped_records,
+            "deleted_records": self.deleted_records,
+            "imported_tombstones": self.imported_tombstones,
+            "has_more": self.has_more,
+            "failed_nodes": dict(self.failed_nodes),
+            "error": self.error,
+            "duration_ms": self.duration_ms,
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
+class ActiveActiveSyncJobReport:
+    regions: tuple[str, ...]
+    namespaces: tuple[str, ...]
+    pair_reports: tuple[ActiveActivePairSyncReport, ...]
+    duration_ms: float
+
+    @property
+    def ok(self) -> bool:
+        return all(report.ok for report in self.pair_reports)
+
+    @property
+    def records_imported(self) -> int:
+        return sum(report.imported_records for report in self.pair_reports)
+
+    @property
+    def tombstones_imported(self) -> int:
+        return sum(report.imported_tombstones for report in self.pair_reports)
+
+    @property
+    def deleted_records(self) -> int:
+        return sum(report.deleted_records for report in self.pair_reports)
+
+    @property
+    def exported_field_keys(self) -> int:
+        return sum(report.exported_field_keys for report in self.pair_reports)
+
+    @property
+    def failed_pairs(self) -> int:
+        return sum(1 for report in self.pair_reports if not report.ok)
+
+    @property
+    def has_more_pairs(self) -> int:
+        return sum(1 for report in self.pair_reports if report.has_more)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "regions": list(self.regions),
+            "namespaces": list(self.namespaces),
+            "pair_reports": [report.as_dict() for report in self.pair_reports],
+            "records_imported": self.records_imported,
+            "tombstones_imported": self.tombstones_imported,
+            "deleted_records": self.deleted_records,
+            "exported_field_keys": self.exported_field_keys,
+            "failed_pairs": self.failed_pairs,
+            "has_more_pairs": self.has_more_pairs,
+            "duration_ms": self.duration_ms,
+            "ok": self.ok,
+        }
+
+
+class ActiveActiveSyncWorker:
+    """Cursor-based mesh sync for independent active-active regions."""
+
+    def __init__(
+        self,
+        regions: dict[str, ReplicatedWaveMind],
+        *,
+        cursors: dict[tuple[str, str, str], float] | None = None,
+    ) -> None:
+        if len(regions) < 2:
+            raise ValueError("active-active sync requires at least two regions")
+        names = tuple(str(name) for name in regions)
+        if len(set(names)) != len(names):
+            raise ValueError("region names must be unique")
+        self.regions = {str(name): region for name, region in regions.items()}
+        self.cursors: dict[tuple[str, str, str], float] = dict(cursors or {})
+
+    def run_once(
+        self,
+        namespaces: Iterable[str],
+        *,
+        limit: int | None = None,
+        bidirectional: bool = True,
+        fail_fast: bool = False,
+    ) -> ActiveActiveSyncJobReport:
+        requested = tuple(dict.fromkeys(str(namespace) for namespace in namespaces))
+        if not requested:
+            raise ValueError("active-active sync requires at least one namespace")
+        region_names = tuple(self.regions)
+        pairs = self._pairs(region_names, bidirectional=bidirectional)
+        started = time.perf_counter()
+        reports: list[ActiveActivePairSyncReport] = []
+        for namespace in requested:
+            for source_name, target_name in pairs:
+                report = self._sync_pair(
+                    source_name,
+                    target_name,
+                    namespace,
+                    limit=limit,
+                )
+                reports.append(report)
+                if fail_fast and not report.ok:
+                    return ActiveActiveSyncJobReport(
+                        regions=region_names,
+                        namespaces=requested,
+                        pair_reports=tuple(reports),
+                        duration_ms=(time.perf_counter() - started) * 1000.0,
+                    )
+        return ActiveActiveSyncJobReport(
+            regions=region_names,
+            namespaces=requested,
+            pair_reports=tuple(reports),
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+        )
+
+    def _sync_pair(
+        self,
+        source_name: str,
+        target_name: str,
+        namespace: str,
+        *,
+        limit: int | None,
+    ) -> ActiveActivePairSyncReport:
+        cursor_key = (source_name, target_name, namespace)
+        since = self.cursors.get(cursor_key)
+        started = time.perf_counter()
+        try:
+            report = sync_namespace_delta(
+                self.regions[source_name],
+                self.regions[target_name],
+                namespace,
+                since=since,
+                limit=limit,
+            )
+        except Exception as exc:  # pragma: no cover - scheduler boundary
+            return ActiveActivePairSyncReport(
+                source_region=source_name,
+                target_region=target_name,
+                namespace=namespace,
+                from_cursor=since,
+                to_cursor=None,
+                error=str(exc),
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+            )
+        self.cursors[cursor_key] = report.to_cursor
+        return _active_active_pair_report(
+            source_name,
+            target_name,
+            report,
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+        )
+
+    @staticmethod
+    def _pairs(region_names: tuple[str, ...], *, bidirectional: bool) -> tuple[tuple[str, str], ...]:
+        if bidirectional:
+            return tuple(
+                (source, target)
+                for source in region_names
+                for target in region_names
+                if source != target
+            )
+        first, *rest = region_names
+        return tuple((first, target) for target in rest)
+
+
+def _active_active_pair_report(
+    source_region: str,
+    target_region: str,
+    report: NamespaceDeltaSyncReport,
+    *,
+    duration_ms: float,
+) -> ActiveActivePairSyncReport:
+    return ActiveActivePairSyncReport(
+        source_region=source_region,
+        target_region=target_region,
+        namespace=report.namespace,
+        from_cursor=report.from_cursor,
+        to_cursor=report.to_cursor,
+        exported_records=report.exported_records,
+        exported_tombstones=report.exported_tombstones,
+        exported_field_keys=report.exported_field_keys,
+        imported_records=report.imported_records,
+        skipped_records=report.skipped_records,
+        deleted_records=report.deleted_records,
+        imported_tombstones=report.imported_tombstones,
+        has_more=report.has_more,
+        failed_nodes=dict(report.failed_nodes),
+        duration_ms=duration_ms,
+    )
 
 
 class ReplicatedSnapshotWorker:

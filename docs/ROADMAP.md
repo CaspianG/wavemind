@@ -67,6 +67,11 @@ policy matters more than raw vector-database scale:
   across 4 real localhost API nodes: quorum writes, normal queries, node
   failover queries, replicated deletes, missing-replica repair, and p99
   operation latency are all checked by the readiness gate.
+- The same scale-readiness profile now includes sustained active-active mesh
+  sync across 3 independent regions and 3 namespaces: 18 writes, 90 region-pair
+  syncs, cursor tracking, tombstone propagation, field-only hotness sync, final
+  no-op imports `0`, convergence `1.000`, delete suppression `1.000`, and
+  success `1.000`.
 - `benchmarks/local_http_cluster_smoke.py` is now a standalone CI gate for the
   same service-mode path. It starts 4 real localhost API processes with isolated
   SQLite stores, uses RF=3 and quorum-sized `read_fanout=1`, and currently
@@ -207,7 +212,8 @@ policy matters more than raw vector-database scale:
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, control-plane majority lease/config revision safety,
   quorum-replicated runtime behavior, cursor-based
-  active-active namespace delta sync, field-only hotness delta sync,
+  active-active namespace delta sync, sustained active-active mesh sync,
+  field-only hotness delta sync,
   service-mode distributed namespace sharding with
   primary-loss recall, missing-replica repair, real HTTP shard transport,
   concurrent namespace traffic, and tombstone-aware delete

@@ -35,6 +35,9 @@ def test_benchmark_report_renderer_writes_status_report(tmp_path):
     assert "Production readiness gate" in report
     assert "readiness score" in report
     assert "WaveMind faiss-persisted" in report
+    assert "WaveMind sustained active-active sync" in report
+    assert "convergence rate 1.00" in report
+    assert "final noop records imported 0" in report
     assert "cost / 1M queries" in report
     assert "monthly target cost" in report
     assert "Planned rows are not claimed wins." in report

@@ -431,6 +431,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     sustained_http_cluster = scale.get("WaveMind sustained HTTP cluster load", {})
     runtime = scale.get("WaveMind replicated runtime", {})
     active_active = scale.get("WaveMind active-active delta sync", {})
+    sustained_active_active = scale.get("WaveMind sustained active-active sync", {})
     field_crdt = scale.get("WaveMind field-state CRDT", {})
     snapshot = scale.get("WaveMind replicated snapshot", {})
     payloads = scale.get("WaveMind structured payloads", {})
@@ -1222,6 +1223,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and active_active.get("field_only_records_exported") == 0
                 and active_active.get("field_only_keys_exported", 0) >= 1
                 and active_active.get("tombstone_converged")
+                and int(sustained_active_active.get("regions", 0)) >= 3
+                and int(sustained_active_active.get("namespaces", 0)) >= 3
+                and float(sustained_active_active.get("convergence_rate", 0.0)) >= 1.0
+                and float(sustained_active_active.get("delete_suppression_rate", 0.0)) >= 1.0
+                and float(sustained_active_active.get("success_rate", 0.0)) >= 1.0
+                and int(sustained_active_active.get("failed_pairs", 1)) == 0
+                and int(sustained_active_active.get("final_noop_records_imported", 1)) == 0
                 and field_crdt.get("commutative_convergence")
                 and field_crdt.get("idempotent_remerge")
                 and field_crdt.get("tombstone_wins")
@@ -1232,9 +1240,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"delta sync {active_active.get('converged_after_bidirectional_sync')}, "
                 f"incremental records {active_active.get('incremental_records_exported')}, "
                 f"field-only keys {active_active.get('field_only_keys_exported')}, "
+                f"sustained regions {sustained_active_active.get('regions')}, "
+                f"sustained convergence {sustained_active_active.get('convergence_rate')}, "
+                f"sustained delete suppression {sustained_active_active.get('delete_suppression_rate')}, "
+                f"sustained success {sustained_active_active.get('success_rate')}, "
                 f"CRDT idempotent {field_crdt.get('idempotent_remerge')}"
             ),
-            next_step="Run cursor-based active-active sync against independent remote regions under sustained writes.",
+            next_step="Promote sustained active-active sync from local independent regions to remote service-region nodes.",
         ),
         _criterion(
             criterion_id="backup_restore_dr",

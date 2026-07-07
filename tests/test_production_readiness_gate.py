@@ -99,6 +99,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["replicated_runtime_loss"]["status"] == "pass"
     assert "concurrent read/write traffic" in criteria["replicated_runtime_loss"]["requirement"]
     assert "concurrent hit rate" in criteria["replicated_runtime_loss"]["evidence"]
+    assert criteria["active_active_field_crdt"]["status"] == "pass"
+    assert "Multi-region memory deltas" in criteria["active_active_field_crdt"]["requirement"]
+    assert "sustained regions 3" in criteria["active_active_field_crdt"]["evidence"]
+    assert "sustained convergence 1.0" in criteria["active_active_field_crdt"]["evidence"]
+    assert "sustained delete suppression 1.0" in criteria["active_active_field_crdt"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]
@@ -182,6 +187,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Real Redis multi-process API load passes SLO" in report
     assert "Real local HTTP cluster smoke passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report
+    assert "Active-active sync and field-state CRDT converge" in report
     assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
     assert "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate" in report
