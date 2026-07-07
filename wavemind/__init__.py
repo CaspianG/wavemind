@@ -92,6 +92,8 @@ from .multimodal import (
     MemoryPayload,
     PrecomputedCrossModalEncoder,
     SentenceTransformersCrossModalEncoder,
+    TemporalEventMemoryLayer,
+    TemporalEventQueryResult,
     asset3d_payload,
     audio_payload,
     cross_modal_descriptor,
@@ -101,8 +103,10 @@ from .multimodal import (
     graph_payload,
     image_payload,
     normalize_modality,
+    normalize_timestamp,
     remember_payload,
     table_payload,
+    timestamp_epoch,
     video_payload,
 )
 from .object_store import (
@@ -235,6 +239,8 @@ __all__ = [
     "DescriptorCrossModalEncoder",
     "PrecomputedCrossModalEncoder",
     "SentenceTransformersCrossModalEncoder",
+    "TemporalEventMemoryLayer",
+    "TemporalEventQueryResult",
     "NamespaceMove",
     "NamespaceDeltaSyncReport",
     "NamespaceShardRouter",
@@ -317,6 +323,7 @@ __all__ = [
     "operator_reconcile",
     "operator_status",
     "normalize_modality",
+    "normalize_timestamp",
     "parse_object_store_uri",
     "query_vector_cache_key",
     "query_with_cache",
@@ -330,5 +337,6 @@ __all__ = [
     "stable_record_key",
     "sync_namespace_delta",
     "table_payload",
+    "timestamp_epoch",
     "validate_postgres_pitr_commands",
 ]

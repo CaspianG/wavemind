@@ -4,6 +4,7 @@ import json
 import math
 import re
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Protocol, Sequence
 
@@ -64,6 +65,42 @@ class CrossModalQueryResult:
             "tags": list(self.tags),
             "metadata": self.metadata,
             "matched_features": list(self.matched_features),
+            "provenance": self.provenance,
+        }
+
+
+@dataclass(frozen=True)
+class TemporalEventQueryResult:
+    id: int
+    text: str
+    score: float
+    base_score: float
+    temporal_score: float
+    namespace: str
+    tags: tuple[str, ...]
+    metadata: dict[str, Any]
+    timestamp: str | None
+    timestamp_epoch: float | None
+    end_timestamp: str | None
+    end_timestamp_epoch: float | None
+    time_distance_seconds: float | None
+    provenance: dict[str, Any]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "text": self.text,
+            "score": self.score,
+            "base_score": self.base_score,
+            "temporal_score": self.temporal_score,
+            "namespace": self.namespace,
+            "tags": list(self.tags),
+            "metadata": self.metadata,
+            "timestamp": self.timestamp,
+            "timestamp_epoch": self.timestamp_epoch,
+            "end_timestamp": self.end_timestamp,
+            "end_timestamp_epoch": self.end_timestamp_epoch,
+            "time_distance_seconds": self.time_distance_seconds,
             "provenance": self.provenance,
         }
 
@@ -419,6 +456,157 @@ class CrossModalMemoryLayer:
             return {}
 
 
+class TemporalEventMemoryLayer:
+    """Temporal event retrieval layer over WaveMind event payloads.
+
+    Events remain ordinary WaveMind memories with durable metadata. This layer
+    adds interval filtering, actor filtering, around-time scoring, and recency
+    scoring without requiring a separate event database.
+    """
+
+    def __init__(
+        self,
+        memory: Any,
+        *,
+        base_weight: float = 0.70,
+        temporal_weight: float = 0.30,
+    ) -> None:
+        self.memory = memory
+        self.base_weight = float(base_weight)
+        self.temporal_weight = float(temporal_weight)
+
+    def remember(
+        self,
+        name: str,
+        *,
+        namespace: str = "default",
+        actor: str | None = None,
+        timestamp: str | datetime | int | float | None = None,
+        end_timestamp: str | datetime | int | float | None = None,
+        duration_seconds: float | None = None,
+        properties: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+        tags: Iterable[str] | None = None,
+        ttl_seconds: float | None = None,
+        priority: float = 1.0,
+    ) -> int:
+        payload = event_payload(
+            name,
+            actor=actor,
+            timestamp=timestamp,
+            end_timestamp=end_timestamp,
+            duration_seconds=duration_seconds,
+            properties=properties,
+            metadata=metadata,
+            tags=tags,
+        )
+        return remember_payload(
+            self.memory,
+            payload,
+            namespace=namespace,
+            ttl_seconds=ttl_seconds,
+            priority=priority,
+        )
+
+    def query(
+        self,
+        query: str,
+        *,
+        namespace: str = "default",
+        top_k: int = 3,
+        candidate_k: int | None = None,
+        actor: str | None = None,
+        start: str | datetime | int | float | None = None,
+        end: str | datetime | int | float | None = None,
+        around: str | datetime | int | float | None = None,
+        tolerance_seconds: float | None = None,
+        recency_anchor: str | datetime | int | float | None = None,
+        recency_half_life_seconds: float | None = None,
+        min_score: float | None = None,
+    ) -> list[TemporalEventQueryResult]:
+        if top_k <= 0:
+            return []
+        start_epoch = timestamp_epoch(start)
+        end_epoch = timestamp_epoch(end)
+        around_epoch = timestamp_epoch(around)
+        recency_epoch = timestamp_epoch(recency_anchor)
+        normalized_actor = actor.lower() if actor else None
+        needs_temporal_scan = any(
+            value is not None
+            for value in (start_epoch, end_epoch, around_epoch, recency_epoch, normalized_actor)
+        )
+
+        base_results = self.memory.query(
+            query,
+            namespace=namespace,
+            tags=["event"],
+            top_k=max(candidate_k or top_k * 12, top_k),
+            min_score=0.0,
+        )
+        base_scores = {int(result.id): float(result.score) for result in base_results}
+        records_by_id = {
+            int(record.id): record
+            for record in self.memory.store.list(namespace=namespace, tags=["event"])
+            if record.id is not None
+        }
+        candidate_ids = list(dict.fromkeys([int(result.id) for result in base_results]))
+        if needs_temporal_scan:
+            for id in records_by_id:
+                if id not in base_scores:
+                    candidate_ids.append(id)
+                    base_scores[id] = 0.0
+
+        scored: list[TemporalEventQueryResult] = []
+        for id in candidate_ids:
+            record = records_by_id.get(id)
+            if record is None or record.is_expired:
+                continue
+            metadata = record.metadata
+            if normalized_actor is not None:
+                record_actor = str(metadata.get("actor", "")).lower()
+                if record_actor != normalized_actor:
+                    continue
+            event_start = _metadata_epoch(metadata, "timestamp_epoch", "timestamp")
+            event_end = _metadata_epoch(metadata, "end_timestamp_epoch", "end_timestamp")
+            if event_end is None:
+                event_end = event_start
+            if not _event_overlaps(event_start, event_end, start_epoch, end_epoch):
+                continue
+
+            temporal_score, distance = _temporal_score(
+                event_start=event_start,
+                event_end=event_end,
+                around_epoch=around_epoch,
+                tolerance_seconds=tolerance_seconds,
+                recency_epoch=recency_epoch,
+                recency_half_life_seconds=recency_half_life_seconds,
+            )
+            base_score = _bounded_score(base_scores.get(id, 0.0))
+            score = self.base_weight * base_score + self.temporal_weight * temporal_score
+            if min_score is not None and score < min_score:
+                continue
+            scored.append(
+                TemporalEventQueryResult(
+                    id=id,
+                    text=record.text,
+                    score=float(score),
+                    base_score=float(base_score),
+                    temporal_score=float(temporal_score),
+                    namespace=record.namespace,
+                    tags=record.tags,
+                    metadata=metadata,
+                    timestamp=_metadata_text(metadata, "timestamp"),
+                    timestamp_epoch=event_start,
+                    end_timestamp=_metadata_text(metadata, "end_timestamp"),
+                    end_timestamp_epoch=event_end,
+                    time_distance_seconds=distance,
+                    provenance=_provenance(metadata, id, "event"),
+                )
+            )
+        scored.sort(key=lambda item: item.score, reverse=True)
+        return scored[:top_k]
+
+
 def image_payload(
     uri: str | Path,
     *,
@@ -556,20 +744,37 @@ def event_payload(
     name: str,
     *,
     actor: str | None = None,
-    timestamp: str | None = None,
+    timestamp: str | datetime | int | float | None = None,
+    end_timestamp: str | datetime | int | float | None = None,
+    duration_seconds: float | None = None,
     properties: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
     tags: Iterable[str] | None = None,
 ) -> MemoryPayload:
+    start_iso, start_epoch = normalize_timestamp(timestamp)
+    end_iso, end_epoch = normalize_timestamp(end_timestamp)
+    if end_epoch is None and start_epoch is not None and duration_seconds is not None:
+        end_epoch = start_epoch + float(duration_seconds)
+        end_iso = _iso_from_epoch(end_epoch)
+    payload_metadata = dict(metadata or {})
+    if start_iso is not None:
+        payload_metadata["timestamp"] = start_iso
+        payload_metadata["timestamp_epoch"] = start_epoch
+    if end_iso is not None:
+        payload_metadata["end_timestamp"] = end_iso
+        payload_metadata["end_timestamp_epoch"] = end_epoch
+    if duration_seconds is not None:
+        payload_metadata["duration_seconds"] = float(duration_seconds)
     return _payload(
         "event",
         {
             "name": name,
             "actor": actor or "",
-            "timestamp": timestamp or "",
+            "timestamp": start_iso or "",
+            "end_timestamp": end_iso or "",
             "properties": json.dumps(properties or {}, ensure_ascii=False, sort_keys=True),
         },
-        metadata=metadata,
+        metadata=payload_metadata,
         tags=tags,
     )
 
@@ -652,6 +857,43 @@ def normalize_modality(value: Any) -> str:
     return aliases.get(text, text)
 
 
+def normalize_timestamp(
+    value: str | datetime | int | float | None,
+) -> tuple[str | None, float | None]:
+    if value is None:
+        return None, None
+    if isinstance(value, datetime):
+        dt = value
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.astimezone(timezone.utc)
+        return _iso_from_datetime(dt), float(dt.timestamp())
+    if isinstance(value, (int, float)):
+        epoch = float(value)
+        if not math.isfinite(epoch):
+            raise ValueError("timestamp epoch must be finite")
+        return _iso_from_epoch(epoch), epoch
+    text = str(value).strip()
+    if not text:
+        return None, None
+    if re.fullmatch(r"-?\d+(\.\d+)?", text):
+        epoch = float(text)
+        return _iso_from_epoch(epoch), epoch
+    normalized = text.replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError(f"Unsupported timestamp format: {value!r}") from exc
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    dt = dt.astimezone(timezone.utc)
+    return _iso_from_datetime(dt), float(dt.timestamp())
+
+
+def timestamp_epoch(value: str | datetime | int | float | None) -> float | None:
+    return normalize_timestamp(value)[1]
+
+
 def cross_modal_vector_from_metadata(
     metadata: dict[str, Any],
     *,
@@ -690,7 +932,7 @@ def _payload(
         kind=kind,
         text=f"{kind} memory | {text}",
         metadata={**fields, **(metadata or {})},
-        tags=tuple(dict.fromkeys(tags or ())),
+        tags=tuple(dict.fromkeys((kind, *(tags or ())))),
     )
 
 
@@ -755,6 +997,8 @@ def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict
         "transcript",
         "summary",
         "timestamp",
+        "end_timestamp",
+        "duration_seconds",
         "actor",
         "source",
         "cross_modal_version",
@@ -772,6 +1016,83 @@ def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict
         if key in metadata and metadata[key] not in (None, ""):
             provenance[key] = metadata[key]
     return provenance
+
+
+def _iso_from_datetime(value: datetime) -> str:
+    return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _iso_from_epoch(epoch: float) -> str:
+    return _iso_from_datetime(datetime.fromtimestamp(float(epoch), tz=timezone.utc))
+
+
+def _metadata_epoch(
+    metadata: dict[str, Any],
+    epoch_key: str,
+    text_key: str,
+) -> float | None:
+    value = metadata.get(epoch_key)
+    if value not in (None, ""):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+    return timestamp_epoch(metadata.get(text_key))
+
+
+def _metadata_text(metadata: dict[str, Any], key: str) -> str | None:
+    value = metadata.get(key)
+    if value in (None, ""):
+        return None
+    return str(value)
+
+
+def _event_overlaps(
+    event_start: float | None,
+    event_end: float | None,
+    start_epoch: float | None,
+    end_epoch: float | None,
+) -> bool:
+    if start_epoch is None and end_epoch is None:
+        return True
+    if event_start is None:
+        return False
+    effective_end = event_end if event_end is not None else event_start
+    if start_epoch is not None and effective_end < start_epoch:
+        return False
+    if end_epoch is not None and event_start > end_epoch:
+        return False
+    return True
+
+
+def _temporal_score(
+    *,
+    event_start: float | None,
+    event_end: float | None,
+    around_epoch: float | None,
+    tolerance_seconds: float | None,
+    recency_epoch: float | None,
+    recency_half_life_seconds: float | None,
+) -> tuple[float, float | None]:
+    if event_start is None:
+        return 0.0, None
+    effective_end = event_end if event_end is not None else event_start
+    scores: list[float] = []
+    distance: float | None = None
+    if around_epoch is not None:
+        if event_start <= around_epoch <= effective_end:
+            distance = 0.0
+        else:
+            distance = min(abs(event_start - around_epoch), abs(effective_end - around_epoch))
+        tolerance = max(float(tolerance_seconds or 86400.0), 1.0)
+        scores.append(math.exp(-distance / tolerance))
+    if recency_epoch is not None:
+        age = max(0.0, recency_epoch - effective_end)
+        half_life = max(float(recency_half_life_seconds or 86400.0), 1.0)
+        scores.append(0.5 ** (age / half_life))
+    if not scores:
+        return 1.0, distance
+    return max(0.0, min(1.0, sum(scores) / len(scores))), distance
 
 
 def _normalize_triple(triple: tuple[str, str, str] | dict[str, Any]) -> dict[str, str]:

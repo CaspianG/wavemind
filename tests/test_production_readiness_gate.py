@@ -163,6 +163,14 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "vectors persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "precomputed precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "temporal precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "temporal around/window/recency/interval 1/1/1/1" in criteria[
+        "structured_multimodal_payloads"
+    ]["evidence"]
+    assert "temporal persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "temporal provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "interval overlap" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "around-time reranking" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "content-addressed object-store manifests" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "asset manifest verified True" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "asset provenance 1" in criteria["structured_multimodal_payloads"]["evidence"]

@@ -392,6 +392,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "video",
         "3d",
     ]
+    assert results["WaveMind structured payloads"]["temporal_event_queries"] == 4
+    assert results["WaveMind structured payloads"]["temporal_event_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["temporal_event_around_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["temporal_event_window_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["temporal_event_recency_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["temporal_event_interval_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["temporal_event_persistence_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["temporal_event_provenance_rate"] == 1.0
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
     assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3

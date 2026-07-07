@@ -8,14 +8,17 @@ from wavemind import (
     ObjectStoreAssetReport,
     PrecomputedCrossModalEncoder,
     SentenceTransformersCrossModalEncoder,
+    TemporalEventMemoryLayer,
     WaveMind,
     asset3d_payload,
     audio_payload,
     event_payload,
     graph_payload,
     image_payload,
+    normalize_timestamp,
     remember_payload,
     table_payload,
+    timestamp_epoch,
     video_payload,
 )
 
@@ -525,3 +528,144 @@ def test_sentence_transformers_cross_modal_encoder_uses_descriptor_for_remote_as
         assert results[0].metadata["cross_modal_vector"] == _one_hot(0)
     finally:
         memory.close()
+
+
+def test_temporal_event_payload_normalizes_interval_metadata(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "temporal-payload.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        payload = event_payload(
+            "budget increased",
+            actor="tenant:acme",
+            timestamp="2026-07-07T10:00:00+03:00",
+            duration_seconds=3600,
+            properties={"budget": 2000},
+            tags=["billing"],
+        )
+        event_id = remember_payload(memory, payload, namespace="events")
+        result = memory.query("budget increased", namespace="events", tags=["event"], top_k=1)[0]
+
+        assert result.id == event_id
+        assert result.metadata["timestamp"] == "2026-07-07T07:00:00Z"
+        assert result.metadata["timestamp_epoch"] == timestamp_epoch("2026-07-07T07:00:00Z")
+        assert result.metadata["end_timestamp"] == "2026-07-07T08:00:00Z"
+        assert result.metadata["duration_seconds"] == 3600.0
+        assert normalize_timestamp(result.metadata["timestamp"])[0] == "2026-07-07T07:00:00Z"
+    finally:
+        memory.close()
+
+
+def test_temporal_event_layer_filters_and_reranks_by_time_window(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "temporal-layer.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = TemporalEventMemoryLayer(memory, base_weight=0.45, temporal_weight=0.55)
+        morning_id = layer.remember(
+            "risk limits reviewed",
+            namespace="events",
+            actor="agent:trading",
+            timestamp="2026-07-07T09:00:00Z",
+            properties={"limit": "morning"},
+            tags=["risk"],
+        )
+        midday_id = layer.remember(
+            "risk limits reviewed",
+            namespace="events",
+            actor="agent:trading",
+            timestamp="2026-07-07T12:00:00Z",
+            properties={"limit": "midday"},
+            tags=["risk"],
+        )
+        layer.remember(
+            "risk limits reviewed",
+            namespace="events",
+            actor="agent:trading",
+            timestamp="2026-07-08T12:00:00Z",
+            properties={"limit": "next-day"},
+            tags=["risk"],
+        )
+
+        around = layer.query(
+            "risk limits",
+            namespace="events",
+            actor="agent:trading",
+            around="2026-07-07T12:10:00Z",
+            tolerance_seconds=1800,
+            top_k=2,
+        )
+        window = layer.query(
+            "risk limits",
+            namespace="events",
+            start="2026-07-07T08:00:00Z",
+            end="2026-07-07T10:00:00Z",
+            top_k=5,
+        )
+
+        assert around[0].id == midday_id
+        assert around[0].temporal_score > around[1].temporal_score
+        assert around[0].time_distance_seconds == 600.0
+        assert [item.id for item in window] == [morning_id]
+    finally:
+        memory.close()
+
+
+def test_temporal_event_layer_recency_and_persistence(tmp_path):
+    db_path = tmp_path / "temporal-persist.sqlite3"
+    first = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = TemporalEventMemoryLayer(first, base_weight=0.20, temporal_weight=0.80)
+        old_id = layer.remember(
+            "customer requested SSO",
+            namespace="events",
+            actor="tenant:acme",
+            timestamp="2026-07-01T12:00:00Z",
+        )
+        fresh_id = layer.remember(
+            "customer requested SSO",
+            namespace="events",
+            actor="tenant:acme",
+            timestamp="2026-07-07T12:00:00Z",
+        )
+    finally:
+        first.close()
+
+    second = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = TemporalEventMemoryLayer(second, base_weight=0.20, temporal_weight=0.80)
+        results = layer.query(
+            "customer requested SSO",
+            namespace="events",
+            actor="tenant:acme",
+            recency_anchor="2026-07-07T13:00:00Z",
+            recency_half_life_seconds=24 * 3600,
+            top_k=2,
+        )
+
+        assert [item.id for item in results] == [fresh_id, old_id]
+        assert results[0].temporal_score > results[1].temporal_score
+        assert results[0].provenance["timestamp"] == "2026-07-07T12:00:00Z"
+        assert results[0].as_dict()["end_timestamp_epoch"] == results[0].timestamp_epoch
+    finally:
+        second.close()

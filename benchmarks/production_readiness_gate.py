@@ -1609,6 +1609,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and payloads.get("cross_modal_vectors_persisted_rate") == 1.0
                 and payloads.get("precomputed_vector_precision_at_1") == 1.0
                 and payloads.get("precomputed_vector_persisted_rate") == 1.0
+                and payloads.get("temporal_event_precision_at_1") == 1.0
+                and payloads.get("temporal_event_around_precision_at_1") == 1
+                and payloads.get("temporal_event_window_precision_at_1") == 1
+                and payloads.get("temporal_event_recency_precision_at_1") == 1
+                and payloads.get("temporal_event_interval_precision_at_1") == 1
+                and payloads.get("temporal_event_persistence_rate") == 1.0
+                and payloads.get("temporal_event_provenance_rate") == 1.0
                 and payloads.get("asset_manifest_verified")
                 and payloads.get("asset_manifest_sha256_present")
                 and payloads.get("asset_manifest_provenance_rate") == 1
@@ -1630,8 +1637,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "and graph facts must be storable, retrievable through the same "
                 "memory API, queryable through a shared cross-modal embedding "
                 "space, returned with provenance, and compatible with externally "
-                "computed multimodal vectors. Large media assets must be backed "
-                "by verified content-addressed object-store manifests."
+                "computed multimodal vectors. Temporal events must support "
+                "actor filters, interval overlap, around-time reranking, "
+                "recency reranking, persistence, and provenance. Large media "
+                "assets must be backed by verified content-addressed object-store "
+                "manifests."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
@@ -1640,10 +1650,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"vectors persisted {payloads.get('cross_modal_vectors_persisted_rate')}, "
                 f"precomputed precision@1 {payloads.get('precomputed_vector_precision_at_1')}, "
                 f"provenance {payloads.get('cross_modal_provenance_rate')}, "
+                f"temporal precision@1 {payloads.get('temporal_event_precision_at_1')}, "
+                f"temporal around/window/recency/interval "
+                f"{payloads.get('temporal_event_around_precision_at_1')}/"
+                f"{payloads.get('temporal_event_window_precision_at_1')}/"
+                f"{payloads.get('temporal_event_recency_precision_at_1')}/"
+                f"{payloads.get('temporal_event_interval_precision_at_1')}, "
+                f"temporal persisted {payloads.get('temporal_event_persistence_rate')}, "
+                f"temporal provenance {payloads.get('temporal_event_provenance_rate')}, "
                 f"asset manifest verified {payloads.get('asset_manifest_verified')}, "
                 f"asset provenance {payloads.get('asset_manifest_provenance_rate')}"
             ),
-            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal retrieval tests against object-store-backed assets.",
+            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal and temporal-event retrieval tests against object-store-backed assets.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

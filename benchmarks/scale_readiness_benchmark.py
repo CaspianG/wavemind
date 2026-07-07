@@ -48,6 +48,7 @@ from wavemind import (
     S3AssetStore,
     S3SnapshotStore,
     SQLiteMemoryStore,
+    TemporalEventMemoryLayer,
     WaveMind,
     asset3d_payload,
     audio_payload,
@@ -3499,6 +3500,123 @@ def run_multimodal_profile() -> dict[str, object]:
                 if results and results[0].metadata.get("cross_modal_vector"):
                     precomputed_persisted += 1
 
+            temporal_layer = TemporalEventMemoryLayer(
+                memory,
+                base_weight=0.30,
+                temporal_weight=0.70,
+            )
+            morning_risk_id = temporal_layer.remember(
+                "risk limits reviewed",
+                namespace="timeline",
+                actor="agent:trading",
+                timestamp="2026-07-07T09:00:00Z",
+                properties={"window": "morning"},
+                tags=["risk"],
+            )
+            midday_risk_id = temporal_layer.remember(
+                "risk limits reviewed",
+                namespace="timeline",
+                actor="agent:trading",
+                timestamp="2026-07-07T12:00:00Z",
+                properties={"window": "midday"},
+                tags=["risk"],
+            )
+            latest_risk_id = temporal_layer.remember(
+                "risk limits reviewed",
+                namespace="timeline",
+                actor="agent:trading",
+                timestamp="2026-07-08T12:00:00Z",
+                properties={"window": "latest"},
+                tags=["risk"],
+            )
+            incident_id = temporal_layer.remember(
+                "customer incident response bridge",
+                namespace="timeline",
+                actor="support:lead",
+                timestamp="2026-07-07T10:00:00Z",
+                duration_seconds=3600,
+                properties={"severity": "high"},
+                tags=["incident"],
+            )
+            temporal_checks = [
+                (
+                    "around",
+                    "risk limits",
+                    {"actor": "agent:trading", "around": "2026-07-07T12:10:00Z", "tolerance_seconds": 1800},
+                    midday_risk_id,
+                ),
+                (
+                    "window",
+                    "risk limits",
+                    {"start": "2026-07-07T08:00:00Z", "end": "2026-07-07T10:00:00Z"},
+                    morning_risk_id,
+                ),
+                (
+                    "recency",
+                    "risk limits",
+                    {
+                        "actor": "agent:trading",
+                        "recency_anchor": "2026-07-08T13:00:00Z",
+                        "recency_half_life_seconds": 24 * 3600,
+                    },
+                    latest_risk_id,
+                ),
+                (
+                    "interval",
+                    "incident response",
+                    {"start": "2026-07-07T10:30:00Z", "end": "2026-07-07T10:45:00Z"},
+                    incident_id,
+                ),
+            ]
+            temporal_latencies = []
+            temporal_correct = 0
+            temporal_kind_correct: dict[str, int] = {}
+            temporal_provenance = 0
+            for kind, query, kwargs, expected_id in temporal_checks:
+                started = time.perf_counter()
+                results = temporal_layer.query(
+                    query,
+                    namespace="timeline",
+                    top_k=1,
+                    **kwargs,
+                )
+                temporal_latencies.append((time.perf_counter() - started) * 1000.0)
+                ok = bool(results and results[0].id == expected_id)
+                temporal_kind_correct[kind] = int(ok)
+                if ok:
+                    temporal_correct += 1
+                if (
+                    results
+                    and results[0].provenance.get("memory_id") == results[0].id
+                    and results[0].provenance.get("timestamp")
+                ):
+                    temporal_provenance += 1
+
+            reopened = WaveMind(
+                db_path=Path(directory) / "payloads.sqlite3",
+                encoder=HashingTextEncoder(vector_dim=64),
+                width=16,
+                height=16,
+                layers=1,
+            )
+            try:
+                persisted_layer = TemporalEventMemoryLayer(
+                    reopened,
+                    base_weight=0.30,
+                    temporal_weight=0.70,
+                )
+                persisted = persisted_layer.query(
+                    "risk limits",
+                    namespace="timeline",
+                    actor="agent:trading",
+                    recency_anchor="2026-07-08T13:00:00Z",
+                    recency_half_life_seconds=24 * 3600,
+                    top_k=1,
+                )
+                temporal_persistence_rate = float(bool(persisted and persisted[0].id == latest_risk_id))
+            finally:
+                reopened.close()
+
             return {
                 "engine": "WaveMind structured payloads",
                 "modalities": ["image", "audio", "table", "event", "video", "3d", "graph"],
@@ -3519,12 +3637,22 @@ def run_multimodal_profile() -> dict[str, object]:
                 "precomputed_vector_embedding_dim": precomputed_layer.vector_dim,
                 "precomputed_vector_persisted_rate": precomputed_persisted / len(precomputed_checks),
                 "precomputed_vector_target_modalities": [modality for modality, _ in precomputed_checks],
+                "temporal_event_queries": len(temporal_checks),
+                "temporal_event_precision_at_1": temporal_correct / len(temporal_checks),
+                "temporal_event_around_precision_at_1": temporal_kind_correct.get("around", 0),
+                "temporal_event_window_precision_at_1": temporal_kind_correct.get("window", 0),
+                "temporal_event_recency_precision_at_1": temporal_kind_correct.get("recency", 0),
+                "temporal_event_interval_precision_at_1": temporal_kind_correct.get("interval", 0),
+                "temporal_event_persistence_rate": temporal_persistence_rate,
+                "temporal_event_provenance_rate": temporal_provenance / len(temporal_checks),
                 "avg_latency_ms": statistics.mean(latencies),
                 "p99_latency_ms": percentile(latencies, 99),
                 "cross_modal_avg_latency_ms": statistics.mean(cross_latencies),
                 "cross_modal_p99_latency_ms": percentile(cross_latencies, 99),
                 "precomputed_vector_avg_latency_ms": statistics.mean(precomputed_latencies),
                 "precomputed_vector_p99_latency_ms": percentile(precomputed_latencies, 99),
+                "temporal_event_avg_latency_ms": statistics.mean(temporal_latencies),
+                "temporal_event_p99_latency_ms": percentile(temporal_latencies, 99),
             }
         finally:
             memory.close()
