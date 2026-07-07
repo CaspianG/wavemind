@@ -277,7 +277,11 @@ policy matters more than raw vector-database scale:
   persisted cross-modal vectors, target-modality routing,
   provenance-preserving recall across all seven payload types, and a strict
   precomputed-vector path for externally computed CLIP/audio/video/3D
-  embeddings. `SentenceTransformersCrossModalEncoder` adds an optional
+  embeddings. `validate_precomputed_cross_modal_contract()` adds a production
+  preflight for those external vectors: target-modality routing, global
+  retrieval, persisted finite normalized vectors, provenance, and separation
+  margin across image, audio, table, event, video, 3D, and graph payloads.
+  `SentenceTransformersCrossModalEncoder` adds an optional
   CLIP-style local image/text backend without making sentence-transformers or
   Pillow mandatory for the base install. `S3AssetStore` adds verified
   content-addressed object-store manifests for large media assets, so
@@ -574,7 +578,8 @@ Enterprise requirements:
 - Multimodal encoders: the optional sentence-transformers backend now covers
   CLIP-style local image/text retrieval; next are benchmarked audio embeddings,
   video scene embeddings, and 3D descriptors behind the same
-  `CrossModalMemoryLayer` and `PrecomputedCrossModalEncoder` contracts.
+  `CrossModalMemoryLayer`, `PrecomputedCrossModalEncoder`, and
+  `validate_precomputed_cross_modal_contract()` contracts.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
 - Strict production-evidence dashboard/report that stays separate from the core

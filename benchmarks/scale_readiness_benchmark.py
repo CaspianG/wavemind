@@ -76,6 +76,7 @@ from wavemind import (
     WaveMindServerlessSpec,
     audit_field_state_watermarks,
     stable_memory_key,
+    validate_precomputed_cross_modal_contract,
 )
 from wavemind.api import RedisRateLimiter, create_app
 
@@ -3711,6 +3712,12 @@ def run_multimodal_profile() -> dict[str, object]:
             finally:
                 reopened.close()
 
+            encoder_contract = validate_precomputed_cross_modal_contract(
+                memory,
+                namespace="encoder-contract",
+                encoder_name="scale-readiness-precomputed-contract",
+            )
+
             return {
                 "engine": "WaveMind structured payloads",
                 "modalities": ["image", "audio", "table", "event", "video", "3d", "graph"],
@@ -3731,6 +3738,20 @@ def run_multimodal_profile() -> dict[str, object]:
                 "precomputed_vector_embedding_dim": precomputed_layer.vector_dim,
                 "precomputed_vector_persisted_rate": precomputed_persisted / len(precomputed_checks),
                 "precomputed_vector_target_modalities": [modality for modality, _ in precomputed_checks],
+                "encoder_contract_ok": encoder_contract.ok,
+                "encoder_contract_encoder": encoder_contract.encoder_name,
+                "encoder_contract_modalities": list(encoder_contract.modalities),
+                "encoder_contract_payloads": encoder_contract.payloads,
+                "encoder_contract_target_precision_at_1": encoder_contract.target_precision_at_1,
+                "encoder_contract_global_precision_at_1": encoder_contract.global_precision_at_1,
+                "encoder_contract_target_modality_routing_rate": encoder_contract.target_modality_routing_rate,
+                "encoder_contract_persisted_vector_rate": encoder_contract.persisted_vector_rate,
+                "encoder_contract_normalized_vector_rate": encoder_contract.normalized_vector_rate,
+                "encoder_contract_finite_vector_rate": encoder_contract.finite_vector_rate,
+                "encoder_contract_provenance_rate": encoder_contract.provenance_rate,
+                "encoder_contract_min_global_margin": encoder_contract.min_global_margin,
+                "encoder_contract_min_required_margin": encoder_contract.min_required_margin,
+                "encoder_contract_failures": list(encoder_contract.failures),
                 "temporal_event_queries": len(temporal_checks),
                 "temporal_event_precision_at_1": temporal_correct / len(temporal_checks),
                 "temporal_event_around_precision_at_1": temporal_kind_correct.get("around", 0),

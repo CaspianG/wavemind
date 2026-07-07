@@ -6,6 +6,7 @@ from wavemind import (
     CrossModalMemoryLayer,
     HashingTextEncoder,
     KnowledgeGraphMemoryLayer,
+    CrossModalContractFixture,
     ObjectStoreAssetReport,
     PrecomputedCrossModalEncoder,
     SentenceTransformersCrossModalEncoder,
@@ -20,6 +21,7 @@ from wavemind import (
     remember_payload,
     table_payload,
     timestamp_epoch,
+    validate_precomputed_cross_modal_contract,
     video_payload,
 )
 
@@ -449,6 +451,82 @@ def test_cross_modal_query_vector_dimension_is_validated(tmp_path):
                 target_modality="image",
                 query_vector=[1.0, 0.0, 0.0],
             )
+    finally:
+        memory.close()
+
+
+def test_precomputed_cross_modal_contract_validates_full_external_vector_roundtrip(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "multimodal-contract.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        report = validate_precomputed_cross_modal_contract(memory)
+
+        assert report.ok is True
+        assert report.vector_dim == 8
+        assert report.modalities == ("image", "audio", "table", "event", "video", "3d", "graph")
+        assert report.payloads == 7
+        assert report.target_precision_at_1 == 1.0
+        assert report.global_precision_at_1 == 1.0
+        assert report.target_modality_routing_rate == 1.0
+        assert report.persisted_vector_rate == 1.0
+        assert report.normalized_vector_rate == 1.0
+        assert report.finite_vector_rate == 1.0
+        assert report.provenance_rate == 1.0
+        assert report.min_global_margin >= report.min_required_margin
+        assert report.failures == ()
+        assert report.as_dict()["ok"] is True
+    finally:
+        memory.close()
+
+
+def test_precomputed_cross_modal_contract_fails_when_vectors_are_not_separated(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "multimodal-contract-fail.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        shared = (1.0, 0.0, 0.0, 0.0)
+        fixtures = (
+            CrossModalContractFixture(
+                modality="image",
+                payload=image_payload(
+                    "s3://contract/revenue.png",
+                    caption="revenue chart",
+                    metadata={"cross_modal_vector": shared},
+                ),
+                query="revenue chart",
+                query_vector=shared,
+            ),
+            CrossModalContractFixture(
+                modality="audio",
+                payload=audio_payload(
+                    "s3://contract/revenue.wav",
+                    transcript="revenue call",
+                    metadata={"cross_modal_vector": shared},
+                ),
+                query="revenue call",
+                query_vector=shared,
+            ),
+        )
+
+        report = validate_precomputed_cross_modal_contract(
+            memory,
+            fixtures=fixtures,
+            vector_dim=4,
+            min_required_margin=0.20,
+        )
+
+        assert report.ok is False
+        assert report.min_global_margin < report.min_required_margin
+        assert "global separation margin below required threshold" in report.failures
     finally:
         memory.close()
 

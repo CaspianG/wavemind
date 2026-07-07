@@ -70,6 +70,64 @@ class CrossModalQueryResult:
 
 
 @dataclass(frozen=True)
+class CrossModalContractFixture:
+    modality: str
+    payload: MemoryPayload
+    query: str
+    query_vector: tuple[float, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "modality": self.modality,
+            "payload": self.payload.as_dict(),
+            "query": self.query,
+            "query_vector_dim": len(self.query_vector),
+        }
+
+
+@dataclass(frozen=True)
+class CrossModalEncoderContractReport:
+    encoder_name: str
+    vector_dim: int
+    ok: bool
+    modalities: tuple[str, ...]
+    payloads: int
+    target_queries: int
+    global_queries: int
+    target_precision_at_1: float
+    global_precision_at_1: float
+    target_modality_routing_rate: float
+    persisted_vector_rate: float
+    normalized_vector_rate: float
+    finite_vector_rate: float
+    provenance_rate: float
+    min_global_margin: float
+    min_required_margin: float
+    failures: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "encoder_name": self.encoder_name,
+            "vector_dim": self.vector_dim,
+            "ok": self.ok,
+            "modalities": list(self.modalities),
+            "payloads": self.payloads,
+            "target_queries": self.target_queries,
+            "global_queries": self.global_queries,
+            "target_precision_at_1": self.target_precision_at_1,
+            "global_precision_at_1": self.global_precision_at_1,
+            "target_modality_routing_rate": self.target_modality_routing_rate,
+            "persisted_vector_rate": self.persisted_vector_rate,
+            "normalized_vector_rate": self.normalized_vector_rate,
+            "finite_vector_rate": self.finite_vector_rate,
+            "provenance_rate": self.provenance_rate,
+            "min_global_margin": self.min_global_margin,
+            "min_required_margin": self.min_required_margin,
+            "failures": list(self.failures),
+        }
+
+
+@dataclass(frozen=True)
 class TemporalEventQueryResult:
     id: int
     text: str
@@ -490,6 +548,278 @@ class CrossModalMemoryLayer:
             }
         except Exception:
             return {}
+
+
+def default_cross_modal_contract_fixtures(
+    *,
+    vector_dim: int = 8,
+) -> tuple[CrossModalContractFixture, ...]:
+    """Return deterministic external-vector fixtures for all supported modalities."""
+
+    if vector_dim < 7:
+        raise ValueError("vector_dim must be at least 7 for the default contract.")
+
+    def one_hot(index: int) -> tuple[float, ...]:
+        vector = [0.0] * vector_dim
+        vector[index] = 1.0
+        return tuple(vector)
+
+    fixtures = (
+        (
+            "image",
+            image_payload(
+                "s3://contract/revenue-chart.png",
+                caption="enterprise revenue expansion chart",
+            ),
+            "visual chart about enterprise revenue expansion",
+        ),
+        (
+            "audio",
+            audio_payload(
+                "s3://contract/support-call.wav",
+                transcript="customer call requested SSO and audit log export",
+            ),
+            "voice call asking for SSO audit logs",
+        ),
+        (
+            "table",
+            table_payload(
+                [{"segment": "enterprise", "arr": 2000}],
+                title="ARR by segment table",
+            ),
+            "spreadsheet table with enterprise ARR metrics",
+        ),
+        (
+            "event",
+            event_payload(
+                "account upgraded to enterprise plan",
+                actor="tenant:acme",
+                properties={"plan": "enterprise"},
+            ),
+            "timeline event where account upgraded plan",
+        ),
+        (
+            "video",
+            video_payload(
+                "s3://contract/memory-demo.mp4",
+                summary="memory graph heatmap demo video",
+                transcript="agent suppresses stale facts after corrections",
+                scenes=["memory graph heatmap", "stale fact suppression"],
+            ),
+            "video scene about memory graph stale fact suppression",
+        ),
+        (
+            "3d",
+            asset3d_payload(
+                "s3://contract/robot-arm.glb",
+                description="3D robot arm model for warehouse picking",
+                format="glb",
+                labels=["robot arm", "warehouse", "picking"],
+            ),
+            "3D warehouse robot arm model",
+        ),
+        (
+            "graph",
+            graph_payload(
+                [
+                    ("trading agent", "uses", "WaveMind memory"),
+                    ("WaveMind memory", "stores", "dynamic preferences"),
+                ],
+                title="agent knowledge graph",
+                summary="trading agent uses WaveMind memory",
+            ),
+            "knowledge graph relation trading agent uses memory",
+        ),
+    )
+    return tuple(
+        CrossModalContractFixture(
+            modality=modality,
+            payload=MemoryPayload(
+                kind=payload.kind,
+                text=payload.text,
+                metadata={**payload.metadata, "cross_modal_vector": list(one_hot(index))},
+                tags=payload.tags,
+            ),
+            query=query,
+            query_vector=one_hot(index),
+        )
+        for index, (modality, payload, query) in enumerate(fixtures)
+    )
+
+
+def validate_precomputed_cross_modal_contract(
+    memory: Any,
+    *,
+    fixtures: Sequence[CrossModalContractFixture] | None = None,
+    namespace: str = "__wavemind_multimodal_contract__",
+    vector_dim: int | None = None,
+    encoder_name: str = "precomputed-contract",
+    min_required_margin: float = 0.20,
+) -> CrossModalEncoderContractReport:
+    """Validate that external multimodal vectors obey WaveMind's retrieval contract.
+
+    The contract is intentionally strict and read as a production preflight:
+    payload vectors must be finite, normalized after storage, persisted in
+    metadata, retrievable globally, routable by target modality, and returned
+    with provenance. It is designed for CLIP/audio/video/3D/table/event/graph
+    pipelines that compute vectors outside WaveMind.
+    """
+
+    selected = tuple(fixtures or default_cross_modal_contract_fixtures())
+    if not selected:
+        return CrossModalEncoderContractReport(
+            encoder_name=encoder_name,
+            vector_dim=int(vector_dim or 0),
+            ok=False,
+            modalities=(),
+            payloads=0,
+            target_queries=0,
+            global_queries=0,
+            target_precision_at_1=0.0,
+            global_precision_at_1=0.0,
+            target_modality_routing_rate=0.0,
+            persisted_vector_rate=0.0,
+            normalized_vector_rate=0.0,
+            finite_vector_rate=0.0,
+            provenance_rate=0.0,
+            min_global_margin=0.0,
+            min_required_margin=float(min_required_margin),
+            failures=("no fixtures provided",),
+        )
+    resolved_dim = int(vector_dim or len(selected[0].query_vector))
+    layer = CrossModalMemoryLayer(
+        memory,
+        cross_modal_encoder=PrecomputedCrossModalEncoder(
+            vector_dim=resolved_dim,
+            name=encoder_name,
+        ),
+    )
+    failures: list[str] = []
+    ids: dict[str, int] = {}
+    for fixture in selected:
+        modality = normalize_modality(fixture.modality)
+        if len(fixture.query_vector) != resolved_dim:
+            failures.append(f"{modality}: query vector dimension mismatch")
+            continue
+        try:
+            ids[modality] = layer.remember(
+                fixture.payload,
+                namespace=namespace,
+                metadata={
+                    "contract_modality": modality,
+                    "contract_query": fixture.query,
+                },
+            )
+        except Exception as exc:
+            failures.append(f"{modality}: remember failed: {exc}")
+
+    records = memory.store.list(namespace=namespace, tags=["multimodal"])
+    persisted = 0
+    normalized = 0
+    finite = 0
+    for record in records:
+        vector = cross_modal_vector_from_metadata(record.metadata, vector_dim=resolved_dim)
+        if vector is None:
+            continue
+        persisted += 1
+        if np.all(np.isfinite(vector)):
+            finite += 1
+        norm = float(np.linalg.norm(vector))
+        if abs(norm - 1.0) <= 1e-5:
+            normalized += 1
+
+    target_hits = 0
+    target_routes = 0
+    global_hits = 0
+    provenance_hits = 0
+    margins: list[float] = []
+    for fixture in selected:
+        modality = normalize_modality(fixture.modality)
+        expected_id = ids.get(modality)
+        if expected_id is None:
+            continue
+        try:
+            target = layer.query(
+                fixture.query,
+                namespace=namespace,
+                target_modality=modality,
+                top_k=2,
+                query_vector=fixture.query_vector,
+            )
+            if target and target[0].id == expected_id:
+                target_hits += 1
+            if target and target[0].modality == modality:
+                target_routes += 1
+
+            global_results = layer.query(
+                fixture.query,
+                namespace=namespace,
+                top_k=2,
+                query_vector=fixture.query_vector,
+            )
+            if global_results and global_results[0].id == expected_id:
+                global_hits += 1
+            if global_results:
+                if len(global_results) > 1:
+                    margins.append(float(global_results[0].score - global_results[1].score))
+                else:
+                    margins.append(float(global_results[0].score))
+            if (
+                global_results
+                and global_results[0].id == expected_id
+                and global_results[0].provenance.get("memory_id") == expected_id
+                and global_results[0].provenance.get("modality") == modality
+            ):
+                provenance_hits += 1
+        except Exception as exc:
+            failures.append(f"{modality}: query failed: {exc}")
+
+    payload_count = len(selected)
+    stored_count = len(ids)
+    min_margin = min(margins) if margins else 0.0
+    target_precision = _rate(target_hits, payload_count)
+    global_precision = _rate(global_hits, payload_count)
+    routing_rate = _rate(target_routes, payload_count)
+    persisted_rate = _rate(persisted, stored_count)
+    normalized_rate = _rate(normalized, stored_count)
+    finite_rate = _rate(finite, stored_count)
+    provenance_rate = _rate(provenance_hits, payload_count)
+    if target_precision < 1.0:
+        failures.append("target precision@1 below 1.0")
+    if global_precision < 1.0:
+        failures.append("global precision@1 below 1.0")
+    if routing_rate < 1.0:
+        failures.append("target modality routing below 1.0")
+    if persisted_rate < 1.0:
+        failures.append("persisted vector rate below 1.0")
+    if normalized_rate < 1.0:
+        failures.append("normalized vector rate below 1.0")
+    if finite_rate < 1.0:
+        failures.append("finite vector rate below 1.0")
+    if provenance_rate < 1.0:
+        failures.append("provenance rate below 1.0")
+    if min_margin < min_required_margin:
+        failures.append("global separation margin below required threshold")
+
+    return CrossModalEncoderContractReport(
+        encoder_name=encoder_name,
+        vector_dim=resolved_dim,
+        ok=not failures,
+        modalities=tuple(normalize_modality(fixture.modality) for fixture in selected),
+        payloads=payload_count,
+        target_queries=payload_count,
+        global_queries=payload_count,
+        target_precision_at_1=target_precision,
+        global_precision_at_1=global_precision,
+        target_modality_routing_rate=routing_rate,
+        persisted_vector_rate=persisted_rate,
+        normalized_vector_rate=normalized_rate,
+        finite_vector_rate=finite_rate,
+        provenance_rate=provenance_rate,
+        min_global_margin=float(min_margin),
+        min_required_margin=float(min_required_margin),
+        failures=tuple(failures),
+    )
 
 
 class TemporalEventMemoryLayer:
@@ -1241,6 +1571,12 @@ def _bounded_score(value: float) -> float:
     if value <= -1.0 or value >= 1.0:
         return math.tanh(value)
     return float(value)
+
+
+def _rate(numerator: int, denominator: int) -> float:
+    if denominator <= 0:
+        return 0.0
+    return float(numerator) / float(denominator)
 
 
 def _normalize_vector(

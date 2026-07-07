@@ -86,6 +86,8 @@ from .k8s_operator import (
 )
 from .multimodal import (
     CrossModalEncoder,
+    CrossModalContractFixture,
+    CrossModalEncoderContractReport,
     CrossModalMemoryLayer,
     CrossModalQueryResult,
     DescriptorCrossModalEncoder,
@@ -101,6 +103,7 @@ from .multimodal import (
     cross_modal_descriptor,
     cross_modal_query_descriptor,
     cross_modal_vector_from_metadata,
+    default_cross_modal_contract_fixtures,
     event_payload,
     graph_payload,
     image_payload,
@@ -109,6 +112,7 @@ from .multimodal import (
     remember_payload,
     table_payload,
     timestamp_epoch,
+    validate_precomputed_cross_modal_contract,
     video_payload,
 )
 from .object_store import (
@@ -240,6 +244,8 @@ __all__ = [
     "MemoryRecord",
     "MemoryPayload",
     "CrossModalEncoder",
+    "CrossModalContractFixture",
+    "CrossModalEncoderContractReport",
     "CrossModalMemoryLayer",
     "CrossModalQueryResult",
     "DescriptorCrossModalEncoder",
@@ -323,6 +329,7 @@ __all__ = [
     "cross_modal_query_descriptor",
     "cross_modal_vector_from_metadata",
     "custom_resource_definition",
+    "default_cross_modal_contract_fixtures",
     "event_payload",
     "estimate_production_cost",
     "evaluate_production_slo",
@@ -350,5 +357,6 @@ __all__ = [
     "sync_namespace_delta",
     "table_payload",
     "timestamp_epoch",
+    "validate_precomputed_cross_modal_contract",
     "validate_postgres_pitr_commands",
 ]

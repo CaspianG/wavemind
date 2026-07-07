@@ -392,6 +392,30 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "video",
         "3d",
     ]
+    assert results["WaveMind structured payloads"]["encoder_contract_ok"] is True
+    assert results["WaveMind structured payloads"]["encoder_contract_encoder"] == "scale-readiness-precomputed-contract"
+    assert results["WaveMind structured payloads"]["encoder_contract_modalities"] == [
+        "image",
+        "audio",
+        "table",
+        "event",
+        "video",
+        "3d",
+        "graph",
+    ]
+    assert results["WaveMind structured payloads"]["encoder_contract_payloads"] == 7
+    assert results["WaveMind structured payloads"]["encoder_contract_target_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_global_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_target_modality_routing_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_persisted_vector_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_normalized_vector_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_finite_vector_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["encoder_contract_provenance_rate"] == 1.0
+    assert (
+        results["WaveMind structured payloads"]["encoder_contract_min_global_margin"]
+        >= results["WaveMind structured payloads"]["encoder_contract_min_required_margin"]
+    )
+    assert results["WaveMind structured payloads"]["encoder_contract_failures"] == []
     assert results["WaveMind structured payloads"]["temporal_event_queries"] == 4
     assert results["WaveMind structured payloads"]["temporal_event_precision_at_1"] == 1.0
     assert results["WaveMind structured payloads"]["temporal_event_around_precision_at_1"] == 1

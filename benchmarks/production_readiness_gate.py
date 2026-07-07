@@ -1609,6 +1609,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and payloads.get("cross_modal_vectors_persisted_rate") == 1.0
                 and payloads.get("precomputed_vector_precision_at_1") == 1.0
                 and payloads.get("precomputed_vector_persisted_rate") == 1.0
+                and payloads.get("encoder_contract_ok") is True
+                and payloads.get("encoder_contract_target_precision_at_1") == 1.0
+                and payloads.get("encoder_contract_global_precision_at_1") == 1.0
+                and payloads.get("encoder_contract_target_modality_routing_rate") == 1.0
+                and payloads.get("encoder_contract_persisted_vector_rate") == 1.0
+                and payloads.get("encoder_contract_normalized_vector_rate") == 1.0
+                and payloads.get("encoder_contract_finite_vector_rate") == 1.0
+                and payloads.get("encoder_contract_provenance_rate") == 1.0
+                and payloads.get("encoder_contract_min_global_margin", 0.0)
+                >= payloads.get("encoder_contract_min_required_margin", 1.0)
                 and payloads.get("temporal_event_precision_at_1") == 1.0
                 and payloads.get("temporal_event_around_precision_at_1") == 1
                 and payloads.get("temporal_event_window_precision_at_1") == 1
@@ -1650,7 +1660,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "recency reranking, persistence, and provenance. Large media "
                 "assets must be backed by verified content-addressed object-store "
                 "manifests. Knowledge graphs must support entity/predicate filters, "
-                "multi-hop path traversal, persistence, and provenance."
+                "multi-hop path traversal, persistence, and provenance. External "
+                "multimodal encoders must pass a precomputed-vector contract that "
+                "checks global retrieval, target-modality routing, persisted finite "
+                "normalized vectors, provenance, and vector separation margin."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
@@ -1658,6 +1671,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"cross-modal precision@1 {payloads.get('cross_modal_precision_at_1')}, "
                 f"vectors persisted {payloads.get('cross_modal_vectors_persisted_rate')}, "
                 f"precomputed precision@1 {payloads.get('precomputed_vector_precision_at_1')}, "
+                f"encoder contract {payloads.get('encoder_contract_ok')}, "
+                f"encoder global@1 {payloads.get('encoder_contract_global_precision_at_1')}, "
+                f"encoder target@1 {payloads.get('encoder_contract_target_precision_at_1')}, "
+                f"encoder margin {payloads.get('encoder_contract_min_global_margin')}, "
                 f"provenance {payloads.get('cross_modal_provenance_rate')}, "
                 f"temporal precision@1 {payloads.get('temporal_event_precision_at_1')}, "
                 f"temporal around/window/recency/interval "
@@ -1679,7 +1696,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"asset manifest verified {payloads.get('asset_manifest_verified')}, "
                 f"asset provenance {payloads.get('asset_manifest_provenance_rate')}"
             ),
-            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal, temporal-event, and knowledge-graph retrieval tests against object-store-backed assets.",
+            next_step="Run the same encoder contract with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

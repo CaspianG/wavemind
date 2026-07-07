@@ -619,7 +619,7 @@ Checked-in result:
 | Real HTTP active-active service-region smoke | 3 real localhost API region processes, each serving a replicated runtime, 2 namespaces, 6 writes, 3 sync cycles, 36 export/import pair calls, cursor count `12`, records imported `36`, tombstones imported `6`, deleted records `6`, final no-op imported `0`, convergence `1.000`, delete suppression `1.000`, success `1.000`, failed pairs `0`, p99 operation `347.58 ms`, SLO `true`. |
 | Field-state CRDT | 3 regions, commutative convergence `true`, idempotent re-merge `true`, tombstone-wins `true`, top-key convergence `true`, actor watermark convergence `true`, watermark actors `3`, health `pass`, missing actor detection `true`, lag detection `true`, max watermark `100.0`, merge `0.13 ms`. |
 | Replicated snapshot job | 3 replica files, manifest checksum validation `true`, offsite mirror validation `true`, portable archive validation `true`, S3-compatible upload validation `true`, latest remote archive metadata validation `true`, remote archive download validation `true`, object-store DR drill `true`, object-store retention pruned `2`, archive restore `64.13 ms`. |
-| Structured payloads | image/audio/video/3D/table/event/graph retrieval through the standard memory API, precision@1 `1.000`, p99 `0.88 ms`; cross-modal target-modality retrieval over persisted payload vectors, precision@1 `1.000`, vector persistence `1.000`, provenance rate `1.000`, embedding dim `64`, p99 `2.41 ms`; strict external/precomputed vectors for image/audio/video/3D, precision@1 `1.000`, vector persistence `1.000`, p99 `0.95 ms`; temporal event retrieval covers actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance with precision@1 `1.000`, p99 `1.05 ms`; knowledge-graph memory covers entity/predicate filters, 2-hop/3-hop traversal, persistence, and provenance with precision@1 `1.000`, path precision@1 `1.000`, p99 `1.08 ms`. |
+| Structured payloads | image/audio/video/3D/table/event/graph retrieval through the standard memory API, precision@1 `1.000`; cross-modal target-modality retrieval over persisted payload vectors, precision@1 `1.000`, vector persistence `1.000`, provenance rate `1.000`, embedding dim `64`; strict external/precomputed vectors for image/audio/video/3D, precision@1 `1.000`, vector persistence `1.000`; external encoder contract over image/audio/table/event/video/3D/graph payloads passes with target precision@1 `1.000`, global precision@1 `1.000`, normalized finite persisted vectors `1.000`, provenance `1.000`, and separation margin `0.811`; temporal event retrieval covers actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance with precision@1 `1.000`; knowledge-graph memory covers entity/predicate filters, 2-hop/3-hop traversal, persistence, and provenance with precision@1 `1.000`, path precision@1 `1.000`. |
 | 100M capacity envelope | 100000000 target memories, 32768 deterministic namespace buckets, 128 nodes, 8 zones, replication factor 3, node-loss availability `1.000`, zone-loss availability `1.000`, replica-load skew `1.094`, max storage per node `5.81 GB`, valid capacity plan `true`. |
 
 This profile validates routing, cluster autoscale planning, control-plane
@@ -1092,6 +1092,24 @@ results = layer.query(
     query_vector=text_clip_vector,
 )
 ```
+
+Before trusting a production multimodal encoder, run the external-vector
+contract. It writes representative image, audio, table, event, video, 3D, and
+graph payloads through the real memory layer, then checks global retrieval,
+target-modality routing, persisted finite normalized vectors, provenance, and
+separation margin:
+
+```python
+from wavemind import WaveMind, validate_precomputed_cross_modal_contract
+
+memory = WaveMind()
+report = validate_precomputed_cross_modal_contract(memory)
+assert report.ok, report.failures
+```
+
+The same contract is part of the scale-readiness and production-readiness gates,
+so external CLIP/audio/video/3D integrations must prove the storage and recall
+contract before they become published evidence.
 
 For production media, keep large files in S3-compatible object storage and store
 a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
