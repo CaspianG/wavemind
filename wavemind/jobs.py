@@ -16,6 +16,7 @@ from .core import QueryResult
 from .encoders import is_stopword_token, normalize_token
 from .object_store import ObjectStoreArchive, ObjectStoreUploadReport, S3SnapshotStore
 from .replication import NamespaceDeltaSyncReport, ReplicatedWaveMind, sync_namespace_delta
+from .sharding import HTTPNamespaceShardClient
 
 
 @dataclass(frozen=True)
@@ -1017,6 +1018,110 @@ class ActiveActiveSyncWorker:
         return tuple((first, target) for target in rest)
 
 
+class HTTPActiveActiveSyncWorker:
+    """Cursor-based active-active sync across WaveMind API service regions."""
+
+    def __init__(
+        self,
+        regions: dict[str, str],
+        *,
+        client: HTTPNamespaceShardClient | Any | None = None,
+        cursors: dict[tuple[str, str, str], float] | None = None,
+    ) -> None:
+        if len(regions) < 2:
+            raise ValueError("HTTP active-active sync requires at least two regions")
+        names = tuple(str(name) for name in regions)
+        if len(set(names)) != len(names):
+            raise ValueError("region names must be unique")
+        self.regions = {str(name): str(address).rstrip("/") for name, address in regions.items()}
+        self.client = client or HTTPNamespaceShardClient()
+        self.cursors: dict[tuple[str, str, str], float] = dict(cursors or {})
+
+    def run_once(
+        self,
+        namespaces: Iterable[str],
+        *,
+        limit: int | None = None,
+        bidirectional: bool = True,
+        fail_fast: bool = False,
+    ) -> ActiveActiveSyncJobReport:
+        requested = tuple(dict.fromkeys(str(namespace) for namespace in namespaces))
+        if not requested:
+            raise ValueError("HTTP active-active sync requires at least one namespace")
+        region_names = tuple(self.regions)
+        pairs = ActiveActiveSyncWorker._pairs(region_names, bidirectional=bidirectional)
+        started = time.perf_counter()
+        reports: list[ActiveActivePairSyncReport] = []
+        for namespace in requested:
+            for source_name, target_name in pairs:
+                report = self._sync_pair(
+                    source_name,
+                    target_name,
+                    namespace,
+                    limit=limit,
+                )
+                reports.append(report)
+                if fail_fast and not report.ok:
+                    return ActiveActiveSyncJobReport(
+                        regions=region_names,
+                        namespaces=requested,
+                        pair_reports=tuple(reports),
+                        duration_ms=(time.perf_counter() - started) * 1000.0,
+                    )
+        return ActiveActiveSyncJobReport(
+            regions=region_names,
+            namespaces=requested,
+            pair_reports=tuple(reports),
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+        )
+
+    def _sync_pair(
+        self,
+        source_name: str,
+        target_name: str,
+        namespace: str,
+        *,
+        limit: int | None,
+    ) -> ActiveActivePairSyncReport:
+        cursor_key = (source_name, target_name, namespace)
+        since = self.cursors.get(cursor_key)
+        started = time.perf_counter()
+        try:
+            delta = self.client.export_namespace_delta(
+                self.regions[source_name],
+                namespace=namespace,
+                since=since,
+                limit=limit,
+            )
+            import_report = self.client.import_namespace_delta(
+                self.regions[target_name],
+                delta=delta,
+                namespace=namespace,
+            )
+        except Exception as exc:  # pragma: no cover - service boundary
+            return ActiveActivePairSyncReport(
+                source_region=source_name,
+                target_region=target_name,
+                namespace=namespace,
+                from_cursor=since,
+                to_cursor=None,
+                error=str(exc),
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+            )
+        to_cursor = float(delta.get("cursor", since or time.time()))
+        self.cursors[cursor_key] = to_cursor
+        return _http_active_active_pair_report(
+            source_name,
+            target_name,
+            namespace,
+            delta,
+            import_report,
+            from_cursor=since,
+            to_cursor=to_cursor,
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+        )
+
+
 def _active_active_pair_report(
     source_region: str,
     target_region: str,
@@ -1039,6 +1144,45 @@ def _active_active_pair_report(
         imported_tombstones=report.imported_tombstones,
         has_more=report.has_more,
         failed_nodes=dict(report.failed_nodes),
+        duration_ms=duration_ms,
+    )
+
+
+def _http_active_active_pair_report(
+    source_region: str,
+    target_region: str,
+    namespace: str,
+    delta: dict[str, Any],
+    import_report: dict[str, Any],
+    *,
+    from_cursor: float | None,
+    to_cursor: float,
+    duration_ms: float,
+) -> ActiveActivePairSyncReport:
+    field_state = delta.get("field_state") if isinstance(delta, dict) else {}
+    exported_field_keys = 0
+    if isinstance(field_state, dict):
+        for bucket_name in ("positive", "negative", "tombstones"):
+            bucket = field_state.get(bucket_name)
+            if isinstance(bucket, dict):
+                exported_field_keys += len(bucket)
+    failed_nodes = dict(import_report.get("failed_nodes") or {})
+    return ActiveActivePairSyncReport(
+        source_region=source_region,
+        target_region=target_region,
+        namespace=namespace,
+        from_cursor=from_cursor,
+        to_cursor=to_cursor,
+        exported_records=len(delta.get("records", []) or []),
+        exported_tombstones=len(delta.get("tombstones", []) or []),
+        exported_field_keys=exported_field_keys,
+        imported_records=int(import_report.get("imported_records", 0)),
+        skipped_records=int(import_report.get("skipped_records", 0)),
+        deleted_records=int(import_report.get("deleted_records", 0)),
+        imported_tombstones=int(import_report.get("imported_tombstones", 0)),
+        has_more=bool(delta.get("has_more", False)),
+        failed_nodes=failed_nodes,
+        error=None if not failed_nodes else json.dumps(failed_nodes, sort_keys=True),
         duration_ms=duration_ms,
     )
 

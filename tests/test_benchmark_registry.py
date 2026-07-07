@@ -192,6 +192,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert active_active["delete_suppression_rate"] == 1.0
     assert active_active["success_rate"] == 1.0
     assert active_active["final_noop_records_imported"] == 0
+    http_active_active = entries["scale_readiness"]["current"]["WaveMind HTTP active-active service-region sync"]
+    assert http_active_active["service_boundary"] == "FastAPI TestClient"
+    assert http_active_active["regions"] == 3
+    assert http_active_active["namespaces"] == 2
+    assert http_active_active["convergence_rate"] == 1.0
+    assert http_active_active["delete_suppression_rate"] == 1.0
+    assert http_active_active["success_rate"] == 1.0
+    assert http_active_active["final_noop_records_imported"] == 0
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"

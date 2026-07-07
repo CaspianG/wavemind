@@ -435,6 +435,27 @@ class MemoryTombstoneWriteResponse(BaseModel):
     id: int
 
 
+class NamespaceDeltaExportRequest(BaseModel):
+    namespace: str = "default"
+    since: float | None = None
+    limit: int | None = Field(default=None, ge=0, le=100000)
+
+
+class NamespaceDeltaImportRequest(BaseModel):
+    delta: dict[str, Any]
+    namespace: str | None = None
+
+
+class NamespaceDeltaImportResponse(BaseModel):
+    namespace: str
+    imported_records: int = 0
+    skipped_records: int = 0
+    deleted_records: int = 0
+    imported_tombstones: int = 0
+    failed_nodes: dict[str, str] = Field(default_factory=dict)
+    ok: bool
+
+
 class AuditEventResponse(BaseModel):
     id: int
     created_at: float
@@ -622,6 +643,49 @@ class FeedbackRequest(BaseModel):
     strength: float = Field(default=0.25, ge=0.0, le=10.0)
 
 
+def _remember_response_id(result: Any) -> int:
+    if isinstance(result, int):
+        return result
+    primary_id = getattr(result, "primary_id", None)
+    if primary_id is not None:
+        return int(primary_id)
+    writes = getattr(result, "writes", None)
+    if isinstance(writes, dict) and writes:
+        return int(next(iter(writes.values())))
+    raise TypeError(f"Unsupported remember result: {type(result).__name__}")
+
+
+def _forget_response_deleted(result: Any) -> int:
+    if isinstance(result, int):
+        return result
+    writes = getattr(result, "writes", None)
+    if isinstance(writes, dict) and writes:
+        return max(int(value) for value in writes.values())
+    return 0
+
+
+def _require_delta_method(mind: Any, name: str):
+    method = getattr(mind, name, None)
+    if not callable(method):
+        raise HTTPException(
+            status_code=501,
+            detail=f"Current memory backend does not support {name}",
+        )
+    return method
+
+
+def _delta_import_response(report: Any) -> NamespaceDeltaImportResponse:
+    return NamespaceDeltaImportResponse(
+        namespace=str(getattr(report, "namespace", "default")),
+        imported_records=int(getattr(report, "imported_records", 0)),
+        skipped_records=int(getattr(report, "skipped_records", 0)),
+        deleted_records=int(getattr(report, "deleted_records", 0)),
+        imported_tombstones=int(getattr(report, "imported_tombstones", 0)),
+        failed_nodes=dict(getattr(report, "failed_nodes", {}) or {}),
+        ok=not bool(getattr(report, "failed_nodes", {}) or {}),
+    )
+
+
 @contextmanager
 def _api_operation(app: FastAPI, operation: str) -> Iterator[None]:
     started = time.perf_counter()
@@ -788,7 +852,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:
         with _api_operation(app, "remember"):
-            id = app.state.mind.remember(
+            remember_result = app.state.mind.remember(
                 request.text,
                 namespace=request.namespace,
                 tags=request.tags,
@@ -796,6 +860,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 metadata=request.metadata,
                 priority=request.priority,
             )
+            id = _remember_response_id(remember_result)
             invalidated = _invalidate_cache(app, request.namespace)
         logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
         return RememberResponse(id=id)
@@ -859,11 +924,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     ) -> ForgetResponse:
         payload = request or ForgetRequest(id=id, text=text, namespace=namespace)
         with _api_operation(app, "forget"):
-            deleted = app.state.mind.forget(
+            forget_result = app.state.mind.forget(
                 id=payload.id,
                 text=payload.text,
                 namespace=payload.namespace,
             )
+            deleted = _forget_response_deleted(forget_result)
             invalidated = _invalidate_cache(app, payload.namespace) if deleted else 0
         logger.info("forgot deleted=%s namespace=%s cache_invalidated=%s", deleted, payload.namespace, invalidated)
         return ForgetResponse(deleted=deleted)
@@ -946,6 +1012,40 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 },
             )
         return MemoryTombstoneWriteResponse(id=event_id)
+
+    @app.post("/namespace-delta/export", dependencies=[Depends(require_role("admin"))])
+    def export_namespace_delta(request: NamespaceDeltaExportRequest) -> dict[str, Any]:
+        exporter = _require_delta_method(app.state.mind, "export_namespace_delta")
+        with _api_operation(app, "namespace_delta_export"):
+            return dict(
+                exporter(
+                    request.namespace,
+                    since=request.since,
+                    limit=request.limit,
+                )
+            )
+
+    @app.post(
+        "/namespace-delta/import",
+        response_model=NamespaceDeltaImportResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def import_namespace_delta(request: NamespaceDeltaImportRequest) -> NamespaceDeltaImportResponse:
+        importer = _require_delta_method(app.state.mind, "import_namespace_delta")
+        with _api_operation(app, "namespace_delta_import"):
+            report = importer(request.delta, namespace=request.namespace)
+            invalidated = _invalidate_cache(
+                app,
+                request.namespace or str(request.delta.get("namespace") or "default"),
+            )
+        logger.info(
+            "imported namespace delta namespace=%s imported=%s tombstones=%s cache_invalidated=%s",
+            getattr(report, "namespace", request.namespace),
+            getattr(report, "imported_records", 0),
+            getattr(report, "imported_tombstones", 0),
+            invalidated,
+        )
+        return _delta_import_response(report)
 
     @app.get("/index/health", dependencies=[Depends(require_role("read"))])
     def index_health():

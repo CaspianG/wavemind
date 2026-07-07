@@ -375,6 +375,34 @@ class HTTPNamespaceShardClient:
         response = self._request("POST", address, "/memories/tombstone", payload)
         return int(response["id"])
 
+    def export_namespace_delta(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        since: float | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        payload = {
+            "namespace": namespace,
+            "since": since,
+            "limit": limit,
+        }
+        return self._request("POST", address, "/namespace-delta/export", payload)
+
+    def import_namespace_delta(
+        self,
+        address: str,
+        *,
+        delta: dict[str, Any],
+        namespace: str | None = None,
+    ) -> dict[str, Any]:
+        payload = {
+            "delta": delta,
+            "namespace": namespace,
+        }
+        return self._request("POST", address, "/namespace-delta/import", payload)
+
     def stats(self, address: str) -> dict[str, Any]:
         return self._request("GET", address, "/stats", None)
 

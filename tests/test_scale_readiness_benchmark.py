@@ -241,6 +241,22 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind sustained active-active sync"]["success_rate"] == 1.0
     assert results["WaveMind sustained active-active sync"]["failed_pairs"] == 0
     assert results["WaveMind sustained active-active sync"]["has_more_pairs"] == 0
+    assert results["WaveMind HTTP active-active service-region sync"]["service_boundary"] == "FastAPI TestClient"
+    assert results["WaveMind HTTP active-active service-region sync"]["regions"] == 3
+    assert results["WaveMind HTTP active-active service-region sync"]["namespaces"] == 2
+    assert results["WaveMind HTTP active-active service-region sync"]["writes"] == 6
+    assert results["WaveMind HTTP active-active service-region sync"]["pair_syncs"] == 48
+    assert results["WaveMind HTTP active-active service-region sync"]["cursor_count"] == 12
+    assert results["WaveMind HTTP active-active service-region sync"]["export_calls"] == 48
+    assert results["WaveMind HTTP active-active service-region sync"]["import_calls"] == 48
+    assert results["WaveMind HTTP active-active service-region sync"]["records_imported"] >= 18
+    assert results["WaveMind HTTP active-active service-region sync"]["tombstones_imported"] >= 1
+    assert results["WaveMind HTTP active-active service-region sync"]["deleted_records"] >= 3
+    assert results["WaveMind HTTP active-active service-region sync"]["convergence_rate"] == 1.0
+    assert results["WaveMind HTTP active-active service-region sync"]["delete_suppression_rate"] == 1.0
+    assert results["WaveMind HTTP active-active service-region sync"]["success_rate"] == 1.0
+    assert results["WaveMind HTTP active-active service-region sync"]["failed_pairs"] == 0
+    assert results["WaveMind HTTP active-active service-region sync"]["final_noop_records_imported"] == 0
     assert results["WaveMind field-state CRDT"]["commutative_convergence"] is True
     assert results["WaveMind field-state CRDT"]["idempotent_remerge"] is True
     assert results["WaveMind field-state CRDT"]["tombstone_wins"] is True

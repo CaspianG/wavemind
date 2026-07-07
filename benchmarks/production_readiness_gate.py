@@ -432,6 +432,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     runtime = scale.get("WaveMind replicated runtime", {})
     active_active = scale.get("WaveMind active-active delta sync", {})
     sustained_active_active = scale.get("WaveMind sustained active-active sync", {})
+    http_active_active = scale.get("WaveMind HTTP active-active service-region sync", {})
     field_crdt = scale.get("WaveMind field-state CRDT", {})
     snapshot = scale.get("WaveMind replicated snapshot", {})
     payloads = scale.get("WaveMind structured payloads", {})
@@ -1230,6 +1231,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and float(sustained_active_active.get("success_rate", 0.0)) >= 1.0
                 and int(sustained_active_active.get("failed_pairs", 1)) == 0
                 and int(sustained_active_active.get("final_noop_records_imported", 1)) == 0
+                and int(http_active_active.get("regions", 0)) >= 3
+                and http_active_active.get("api_export_endpoint") == "/namespace-delta/export"
+                and http_active_active.get("api_import_endpoint") == "/namespace-delta/import"
+                and float(http_active_active.get("convergence_rate", 0.0)) >= 1.0
+                and float(http_active_active.get("delete_suppression_rate", 0.0)) >= 1.0
+                and float(http_active_active.get("success_rate", 0.0)) >= 1.0
+                and int(http_active_active.get("failed_pairs", 1)) == 0
+                and int(http_active_active.get("final_noop_records_imported", 1)) == 0
                 and field_crdt.get("commutative_convergence")
                 and field_crdt.get("idempotent_remerge")
                 and field_crdt.get("tombstone_wins")
@@ -1244,9 +1253,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"sustained convergence {sustained_active_active.get('convergence_rate')}, "
                 f"sustained delete suppression {sustained_active_active.get('delete_suppression_rate')}, "
                 f"sustained success {sustained_active_active.get('success_rate')}, "
+                f"HTTP service-region convergence {http_active_active.get('convergence_rate')}, "
+                f"HTTP final no-op imports {http_active_active.get('final_noop_records_imported')}, "
                 f"CRDT idempotent {field_crdt.get('idempotent_remerge')}"
             ),
-            next_step="Promote sustained active-active sync from local independent regions to remote service-region nodes.",
+            next_step="Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence.",
         ),
         _criterion(
             criterion_id="backup_restore_dr",

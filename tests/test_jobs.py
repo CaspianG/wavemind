@@ -12,6 +12,7 @@ from wavemind import (
     DistributedShardedWaveMind,
     HashingTextEncoder,
     HotMemoryCache,
+    HTTPActiveActiveSyncWorker,
     MemoryMaintenanceWorker,
     MemoryOSWorker,
     QueryVectorCache,
@@ -242,6 +243,57 @@ class LocalShardServiceClient:
             )
             self.minds[address] = mind
         return mind
+
+
+class FakeHTTPActiveActiveClient:
+    def __init__(self, regions: dict[str, ReplicatedWaveMind]):
+        self.regions = regions
+        self.exports: list[tuple[str, str, float | None, int | None]] = []
+        self.imports: list[tuple[str, str]] = []
+
+    def export_namespace_delta(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        since: float | None = None,
+        limit: int | None = None,
+    ):
+        self.exports.append((address, namespace, since, limit))
+        return self.regions[address].export_namespace_delta(
+            namespace,
+            since=since,
+            limit=limit,
+        )
+
+    def import_namespace_delta(
+        self,
+        address: str,
+        *,
+        delta,
+        namespace: str | None = None,
+    ):
+        self.imports.append((address, namespace or str(delta["namespace"])))
+        report = self.regions[address].import_namespace_delta(delta, namespace=namespace)
+        return {
+            "namespace": report.namespace,
+            "imported_records": report.imported_records,
+            "skipped_records": report.skipped_records,
+            "deleted_records": report.deleted_records,
+            "imported_tombstones": report.imported_tombstones,
+            "failed_nodes": dict(report.failed_nodes),
+        }
+
+
+class FailingHTTPActiveActiveClient(FakeHTTPActiveActiveClient):
+    def import_namespace_delta(
+        self,
+        address: str,
+        *,
+        delta,
+        namespace: str | None = None,
+    ):
+        raise TimeoutError(f"region {address} unavailable")
 
 
 def _active_region(tmp_path: Path, name: str) -> ReplicatedWaveMind:
@@ -786,6 +838,68 @@ def test_active_active_sync_worker_reports_failed_region_pair(tmp_path):
         assert failed[0].source_region == "region-a"
         assert failed[0].target_region == "region-b"
         assert "quorum" in str(failed[0].error).lower()
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_http_active_active_sync_worker_syncs_service_regions_incrementally(tmp_path):
+    region_a = _active_region(tmp_path, "http-region-a")
+    region_b = _active_region(tmp_path, "http-region-b")
+    try:
+        namespace = "tenant:http-active-active"
+        region_a.remember("http region a remembers trading budget", namespace=namespace)
+        region_b.remember("http region b remembers concise answers", namespace=namespace)
+        client = FakeHTTPActiveActiveClient({"https://a": region_a, "https://b": region_b})
+        worker = HTTPActiveActiveSyncWorker(
+            {"region-a": "https://a/", "region-b": "https://b"},
+            client=client,
+        )
+
+        first = worker.run_once(namespaces=[namespace])
+        second = worker.run_once(namespaces=[namespace])
+
+        region_a_results = region_a.query("concise answers", namespace=namespace, top_k=3)
+        region_b_results = region_b.query("trading budget", namespace=namespace, top_k=3)
+
+        assert first.ok
+        assert len(first.pair_reports) == 2
+        assert sum(pair.exported_records for pair in first.pair_reports) >= 2
+        assert first.records_imported >= 6
+        assert len(worker.cursors) == 2
+        assert all(pair.to_cursor is not None for pair in first.pair_reports)
+        assert second.ok
+        assert second.records_imported == 0
+        assert client.exports[0] == ("https://a", namespace, None, None)
+        assert client.exports[2][2] is not None
+        assert any(result.text == "http region b remembers concise answers" for result in region_a_results)
+        assert any(result.text == "http region a remembers trading budget" for result in region_b_results)
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_http_active_active_sync_worker_reports_unavailable_service_region(tmp_path):
+    region_a = _active_region(tmp_path, "http-region-fail-a")
+    region_b = _active_region(tmp_path, "http-region-fail-b")
+    try:
+        namespace = "tenant:http-active-active-failure"
+        region_a.remember("http active active source write", namespace=namespace)
+        client = FailingHTTPActiveActiveClient({"https://a": region_a, "https://b": region_b})
+        worker = HTTPActiveActiveSyncWorker(
+            {"region-a": "https://a", "region-b": "https://b"},
+            client=client,
+        )
+
+        report = worker.run_once(namespaces=[namespace], fail_fast=True)
+
+        assert not report.ok
+        assert report.failed_pairs == 1
+        assert len(report.pair_reports) == 1
+        failed = report.pair_reports[0]
+        assert failed.source_region == "region-a"
+        assert failed.target_region == "region-b"
+        assert "unavailable" in str(failed.error)
     finally:
         region_a.close()
         region_b.close()

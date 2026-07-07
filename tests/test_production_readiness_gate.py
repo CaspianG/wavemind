@@ -104,6 +104,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "sustained regions 3" in criteria["active_active_field_crdt"]["evidence"]
     assert "sustained convergence 1.0" in criteria["active_active_field_crdt"]["evidence"]
     assert "sustained delete suppression 1.0" in criteria["active_active_field_crdt"]["evidence"]
+    assert "HTTP service-region convergence 1.0" in criteria["active_active_field_crdt"]["evidence"]
+    assert "HTTP final no-op imports 0" in criteria["active_active_field_crdt"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]

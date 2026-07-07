@@ -31,6 +31,7 @@ from wavemind import (
     DistributedShardedWaveMind,
     FieldStateCRDT,
     HashingTextEncoder,
+    HTTPActiveActiveSyncWorker,
     HTTPNamespaceShardClient,
     HotMemoryCache,
     MemoryOSWorker,
@@ -69,7 +70,7 @@ from wavemind import (
     WaveMindServerlessSpec,
     stable_memory_key,
 )
-from wavemind.api import RedisRateLimiter
+from wavemind.api import RedisRateLimiter, create_app
 
 
 SERVERLESS_LOOPBACK_OBSERVED_TELEMETRY_PATH = (
@@ -360,6 +361,59 @@ class LocalWaveMindServiceClient:
             )
             self.minds[address] = mind
         return mind
+
+
+class FastAPIReplicatedRegionClient:
+    """Service-boundary client for benchmarked active-active region sync.
+
+    This keeps the scale-readiness profile CI-friendly while still exercising
+    FastAPI request validation and response serialization for namespace deltas.
+    """
+
+    def __init__(self, regions: dict[str, ReplicatedWaveMind]):
+        from fastapi.testclient import TestClient
+
+        self.clients = {
+            address.rstrip("/"): TestClient(create_app(mind=memory))
+            for address, memory in regions.items()
+        }
+        self.export_calls = 0
+        self.import_calls = 0
+
+    def export_namespace_delta(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        since: float | None = None,
+        limit: int | None = None,
+    ) -> dict[str, object]:
+        self.export_calls += 1
+        response = self.clients[address.rstrip("/")].post(
+            "/namespace-delta/export",
+            json={"namespace": namespace, "since": since, "limit": limit},
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def import_namespace_delta(
+        self,
+        address: str,
+        *,
+        delta: dict[str, object],
+        namespace: str | None = None,
+    ) -> dict[str, object]:
+        self.import_calls += 1
+        response = self.clients[address.rstrip("/")].post(
+            "/namespace-delta/import",
+            json={"delta": delta, "namespace": namespace},
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def close(self) -> None:
+        for client in self.clients.values():
+            client.close()
 
 
 def _free_port() -> int:
@@ -2321,6 +2375,115 @@ def run_sustained_active_active_sync_profile() -> dict[str, object]:
                 region.close()
 
 
+def run_http_active_active_service_region_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        memories = {
+            name: _benchmark_active_region(root, name)
+            for name in ("svc-region-a", "svc-region-b", "svc-region-c")
+        }
+        addresses = {
+            name: f"http://{name}.local"
+            for name in memories
+        }
+        client = FastAPIReplicatedRegionClient(
+            {addresses[name]: memory for name, memory in memories.items()}
+        )
+        namespaces = tuple(f"tenant:http-active-active:{index}" for index in range(2))
+        expected: dict[str, set[str]] = {namespace: set() for namespace in namespaces}
+        reports = []
+        sync_latencies: list[float] = []
+        write_count = 0
+        try:
+            worker = HTTPActiveActiveSyncWorker(addresses, client=client)
+            for region_name, memory in memories.items():
+                for namespace_index, namespace in enumerate(namespaces):
+                    text = f"{region_name} service region namespace {namespace_index} memory"
+                    memory.remember(text, namespace=namespace)
+                    expected[namespace].add(text)
+                    write_count += 1
+
+            first_report = worker.run_once(namespaces=namespaces)
+            reports.append(first_report)
+            sync_latencies.append(first_report.duration_ms)
+
+            total_expected = 0
+            total_hits = 0
+            for namespace, texts in expected.items():
+                for text in texts:
+                    total_expected += len(memories)
+                    for memory in memories.values():
+                        results = memory.query(text, namespace=namespace, top_k=3)
+                        if any(result.text == text for result in results):
+                            total_hits += 1
+            convergence_rate = total_hits / total_expected if total_expected else 0.0
+
+            deleted_namespace = namespaces[0]
+            deleted_text = "svc-region-b service region namespace 0 memory"
+            memories["svc-region-b"].forget(text=deleted_text, namespace=deleted_namespace)
+            expected[deleted_namespace].discard(deleted_text)
+            tombstone_report = worker.run_once(namespaces=namespaces)
+            reports.append(tombstone_report)
+            sync_latencies.append(tombstone_report.duration_ms)
+            delete_checks = []
+            for memory in memories.values():
+                results = memory.query(deleted_text, namespace=deleted_namespace, top_k=3)
+                delete_checks.append(all(result.text != deleted_text for result in results))
+            delete_suppression_rate = sum(1 for item in delete_checks if item) / len(delete_checks)
+
+            hot_text = "svc-region-c service region namespace 1 memory"
+            for _ in range(2):
+                memories["svc-region-c"].query(hot_text, namespace=namespaces[1], top_k=1)
+            field_report = worker.run_once(namespaces=namespaces)
+            reports.append(field_report)
+            sync_latencies.append(field_report.duration_ms)
+
+            final_report = worker.run_once(namespaces=namespaces)
+            reports.append(final_report)
+            sync_latencies.append(final_report.duration_ms)
+
+            pair_reports = [
+                pair
+                for report in reports
+                for pair in report.pair_reports
+            ]
+            total_pairs = len(pair_reports)
+            ok_pairs = sum(1 for pair in pair_reports if pair.ok)
+            success_rate = ok_pairs / total_pairs if total_pairs else 0.0
+            return {
+                "engine": "WaveMind HTTP active-active service-region sync",
+                "service_boundary": "FastAPI TestClient",
+                "api_export_endpoint": "/namespace-delta/export",
+                "api_import_endpoint": "/namespace-delta/import",
+                "regions": len(memories),
+                "namespaces": len(namespaces),
+                "replication_factor_per_region": 3,
+                "writes": write_count,
+                "sync_cycles": len(reports),
+                "pair_syncs": total_pairs,
+                "cursor_count": len(worker.cursors),
+                "export_calls": client.export_calls,
+                "import_calls": client.import_calls,
+                "records_imported": sum(report.records_imported for report in reports),
+                "tombstones_imported": sum(report.tombstones_imported for report in reports),
+                "deleted_records": sum(report.deleted_records for report in reports),
+                "field_keys_exported": sum(report.exported_field_keys for report in reports),
+                "final_noop_records_imported": final_report.records_imported,
+                "final_noop_failed_pairs": final_report.failed_pairs,
+                "convergence_rate": convergence_rate,
+                "delete_suppression_rate": delete_suppression_rate,
+                "success_rate": success_rate,
+                "failed_pairs": sum(report.failed_pairs for report in reports),
+                "has_more_pairs": sum(report.has_more_pairs for report in reports),
+                "p99_sync_ms": percentile(sync_latencies, 99),
+                "avg_sync_ms": statistics.mean(sync_latencies) if sync_latencies else 0.0,
+            }
+        finally:
+            client.close()
+            for memory in memories.values():
+                memory.close()
+
+
 def run_field_crdt_profile() -> dict[str, object]:
     namespace = "tenant:field-crdt"
     budget_key = stable_memory_key(namespace=namespace, text="user budget is 2000")
@@ -2803,6 +2966,7 @@ def run_benchmark(
         run_replication_runtime_profile(),
         run_active_active_delta_profile(),
         run_sustained_active_active_sync_profile(),
+        run_http_active_active_service_region_profile(),
         run_field_crdt_profile(),
         run_replicated_snapshot_profile(),
         run_multimodal_profile(),
@@ -2824,6 +2988,7 @@ def run_benchmark(
                 "service-mode distributed namespace sharding, real HTTP shard transport, "
                 "sustained mixed HTTP cluster load, "
                 "active-active delta sync, sustained active-active sync, "
+                "HTTP service-region active-active sync, "
                 "replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
                 "download/retention/DR-drill verification, query-vector cache, "
@@ -2968,6 +3133,11 @@ def main() -> int:
             print(f"| sustained active-active | delete_suppression_rate | {result['delete_suppression_rate']:.3f} |")
             print(f"| sustained active-active | success_rate | {result['success_rate']:.3f} |")
             print(f"| sustained active-active | p99_sync_ms | {result['p99_sync_ms']:.2f} |")
+        elif result["engine"] == "WaveMind HTTP active-active service-region sync":
+            print(f"| HTTP active-active service-region | convergence_rate | {result['convergence_rate']:.3f} |")
+            print(f"| HTTP active-active service-region | delete_suppression_rate | {result['delete_suppression_rate']:.3f} |")
+            print(f"| HTTP active-active service-region | success_rate | {result['success_rate']:.3f} |")
+            print(f"| HTTP active-active service-region | p99_sync_ms | {result['p99_sync_ms']:.2f} |")
         elif result["engine"] == "WaveMind field-state CRDT":
             print(f"| field-state CRDT | commutative_convergence | {result['commutative_convergence']} |")
             print(f"| field-state CRDT | idempotent_remerge | {result['idempotent_remerge']} |")

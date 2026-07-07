@@ -4,7 +4,7 @@ import types
 from fastapi.testclient import TestClient
 import numpy as np
 
-from wavemind import HashingTextEncoder, WaveMind, __version__
+from wavemind import HashingTextEncoder, ReplicatedWaveMind, WaveMind, __version__
 from wavemind.api import create_app
 
 
@@ -697,6 +697,109 @@ def test_fastapi_admin_can_write_and_export_tombstones(tmp_path):
                 json={"namespace": "tenant:tombstone"},
             )
             assert bad.status_code == 400
+    finally:
+        mind.close()
+
+
+def test_fastapi_replication_delta_export_import_between_service_regions(tmp_path):
+    region_a = ReplicatedWaveMind(
+        root_path=tmp_path / "api-region-a",
+        nodes=["a1", "a2", "a3"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    region_b = ReplicatedWaveMind(
+        root_path=tmp_path / "api-region-b",
+        nodes=["b1", "b2", "b3"],
+        replication_factor=3,
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        namespace = "tenant:http-delta"
+        with TestClient(create_app(mind=region_a)) as client_a, TestClient(create_app(mind=region_b)) as client_b:
+            remembered = client_a.post(
+                "/remember",
+                json={"text": "service region delta keeps active active memory", "namespace": namespace},
+            )
+            assert remembered.status_code == 200
+            assert remembered.json()["id"] >= 1
+
+            exported = client_a.post(
+                "/namespace-delta/export",
+                json={"namespace": namespace},
+            )
+            assert exported.status_code == 200
+            delta = exported.json()
+            assert delta["namespace"] == namespace
+            assert len(delta["records"]) == 1
+            assert delta["cursor"] is not None
+
+            imported = client_b.post(
+                "/namespace-delta/import",
+                json={"delta": delta, "namespace": namespace},
+            )
+            assert imported.status_code == 200
+            imported_payload = imported.json()
+            assert imported_payload["ok"] is True
+            assert imported_payload["imported_records"] == 3
+
+            query = client_b.post(
+                "/query",
+                json={"text": "active active memory", "namespace": namespace, "top_k": 1},
+            )
+            assert query.status_code == 200
+            assert query.json()["results"][0]["text"] == "service region delta keeps active active memory"
+
+            deleted = client_a.request(
+                "DELETE",
+                "/forget",
+                json={"text": "service region delta keeps active active memory", "namespace": namespace},
+            )
+            assert deleted.status_code == 200
+            assert deleted.json()["deleted"] == 1
+
+            tombstone_delta = client_a.post(
+                "/namespace-delta/export",
+                json={"namespace": namespace, "since": delta["cursor"]},
+            )
+            assert tombstone_delta.status_code == 200
+            assert tombstone_delta.json()["tombstones"]
+
+            tombstone_import = client_b.post(
+                "/namespace-delta/import",
+                json={"delta": tombstone_delta.json(), "namespace": namespace},
+            )
+            assert tombstone_import.status_code == 200
+            assert tombstone_import.json()["imported_tombstones"] >= 1
+            assert region_b.query("active active memory", namespace=namespace, top_k=1) == []
+    finally:
+        region_a.close()
+        region_b.close()
+
+
+def test_fastapi_replication_delta_requires_replicated_backend(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-no-delta.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/namespace-delta/export",
+                json={"namespace": "tenant:no-delta"},
+            )
+
+            assert response.status_code == 501
+            assert "export_namespace_delta" in response.json()["detail"]
     finally:
         mind.close()
 
