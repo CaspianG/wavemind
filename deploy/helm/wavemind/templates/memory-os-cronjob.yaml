@@ -74,6 +74,9 @@ spec:
                   }
                   run_payload = dict(plan_payload)
                   run_payload.pop("cache_mode", None)
+                  run_payload["lock_required"] = {{ if .Values.memoryOs.lockRequired }}True{{ else }}False{{ end }}
+                  run_payload["lock_ttl_seconds"] = int({{ .Values.memoryOs.lockTtlSeconds }})
+                  run_payload["lock_prefix"] = {{ .Values.memoryOs.lockPrefix | quote }}
 
                   def post(node, path, payload):
                       data = json.dumps(payload).encode("utf-8")

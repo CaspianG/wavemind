@@ -533,6 +533,77 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_memory_os_required_lock_skips_when_busy(tmp_path, monkeypatch):
+    class FakeRedisClient:
+        values = {"wm:lock:tenant:os": "other-worker"}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert url == "redis://memory-os-lock.test/0"
+            assert decode_responses is True
+            return cls()
+
+        def get(self, key):
+            return self.values.get(key)
+
+        def set(self, key, value, ex=None, nx=False):
+            if nx and key in self.values:
+                return False
+            self.values[key] = value
+            return True
+
+        def scan_iter(self, match=None):
+            return iter(())
+
+        def delete(self, *keys):
+            for key in keys:
+                self.values.pop(key, None)
+
+    fake_redis_module = types.SimpleNamespace(Redis=FakeRedisClient)
+    monkeypatch.setitem(sys.modules, "redis", fake_redis_module)
+    monkeypatch.setenv("WAVEMIND_MEMORY_OS_LOCK_REDIS_URL", "redis://memory-os-lock.test/0")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-memory-os-lock.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        id = mind.remember("memory os lock should prevent mutation", namespace="tenant:os", priority=1.0)
+        mind.query("prevent mutation", namespace="tenant:os", top_k=1)
+        mind.query("prevent mutation", namespace="tenant:os", top_k=1)
+        before = mind.store.get(id).priority
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.post(
+                "/memory-os/run",
+                json={
+                    "namespace": "tenant:os",
+                    "lock_required": True,
+                    "lock_prefix": "wm:lock",
+                    "consolidate_steps": 0,
+                    "consolidate_concepts": False,
+                    "priority_boost_per_hit": 1.0,
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            assert payload["ok"] is False
+            assert payload["lock"]["required"] is True
+            assert payload["lock"]["acquired"] is False
+            assert payload["lock"]["reason"] == "lock_already_held"
+            assert payload["actions"] == ["lock_skipped"]
+            assert mind.store.get(id).priority == before
+            assert FakeRedisClient.values["wm:lock:tenant:os"] == "other-worker"
+    finally:
+        mind.close()
+
+
 def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
     monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")

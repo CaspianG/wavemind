@@ -87,7 +87,15 @@ def test_helm_chart_memory_os_cronjob_wires_api_scheduler_and_worker():
     assert "svc.cluster.local" in cronjob
     assert "memoryOs:" in values
     assert "cacheMode: auto" in values
+    assert "lockRequired: false" in values
+    assert "lockTtlSeconds: 300" in values
+    assert "lockPrefix: wavemind:memory-os:lock" in values
+    assert "lock_required" in cronjob
+    assert "lock_ttl_seconds" in cronjob
+    assert "lock_prefix" in cronjob
     assert "--set memoryOs.enabled=true" in readme
+    assert "--set memoryOs.lockRequired=true" in readme
+    assert "--set memoryOs.runOnAllReplicas=false" in readme
 
 
 def test_helm_chart_hpa_is_optional_and_targets_statefulset():

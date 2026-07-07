@@ -853,7 +853,7 @@ Maintenance workers:
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
 wavemind memory-os-plan --namespace user:42 --deployment production --target-memories 2000000 --namespace-count 4096 --cache-mode auto --json
-wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --min-frequency 2 --max-hot-queries 32 --json
+wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --lock-required --min-frequency 2 --max-hot-queries 32 --json
 wavemind cluster-health --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --fail-on-degraded --json
 wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --json
 wavemind cluster-plan --namespace-count 4096 --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --repair-cronjob --repair-api-key-secret wavemind-api-key --json
@@ -873,7 +873,10 @@ production targets such as `--target-memories`, `--namespace-count`,
 `--deployment production`, and `--multimodal`, it also embeds the same
 architecture-advisor output used by release readiness gates: service-index,
 namespace-sharding, production-controls, replication capacity, load-test, and
-multimodal-readiness actions. The cluster-health command probes every
+multimodal-readiness actions. In production, use `--lock-required` with
+`--redis-url` so CronJob retries or multiple workers cannot run overlapping
+consolidation, forgetting, and prewarm cycles for the same namespace. The
+cluster-health command probes every
 WaveMind API node, exposes healthy/degraded/unavailable circuit state, and can
 fail deployment preflight when any node is degraded. The cluster-repair command runs service-mode
 anti-entropy repair across WaveMind API nodes:

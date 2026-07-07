@@ -28,6 +28,7 @@ from .jobs import (
     MemoryOSWorker,
     QueryVectorCache,
     RedisHotMemoryCache,
+    RedisMemoryOSLock,
     RedisQueryVectorCache,
     query_with_cache,
     query_with_vector_cache,
@@ -267,6 +268,24 @@ def _vector_cache_from_env() -> QueryVectorCache | RedisQueryVectorCache | None:
     if capacity <= 0:
         return None
     return QueryVectorCache(capacity=capacity, ttl_seconds=ttl_seconds)
+
+
+def _memory_os_lock(
+    *,
+    namespace: str | None,
+    prefix: str,
+    ttl_seconds: int,
+    cache: HotMemoryCache | RedisHotMemoryCache | None,
+) -> RedisMemoryOSLock | None:
+    key = f"{prefix.rstrip(':')}:{namespace or 'all'}"
+    if isinstance(cache, RedisHotMemoryCache):
+        return RedisMemoryOSLock(cache.client, key=key, ttl_seconds=ttl_seconds)
+    redis_url = os.environ.get("WAVEMIND_MEMORY_OS_LOCK_REDIS_URL") or os.environ.get(
+        "WAVEMIND_REDIS_URL"
+    )
+    if not redis_url:
+        return None
+    return RedisMemoryOSLock.from_url(redis_url, key=key, ttl_seconds=ttl_seconds)
 
 
 def _rate_limiter_from_env() -> InMemoryRateLimiter | RedisRateLimiter | None:
@@ -537,6 +556,9 @@ class MemoryOSRequest(BaseModel):
     target_qps: float = Field(default=100.0, ge=0.0)
     deployment: str = "local"
     multimodal: bool = False
+    lock_required: bool = False
+    lock_ttl_seconds: int = Field(default=300, ge=1, le=86400)
+    lock_prefix: str = "wavemind:memory-os:lock"
 
 
 class MemoryOSPlanRequest(BaseModel):
@@ -1326,6 +1348,12 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
     @app.post("/memory-os/run", dependencies=[Depends(require_role("admin"))])
     def memory_os_run(request: MemoryOSRequest):
         with _api_operation(app, "memory_os"):
+            lock = _memory_os_lock(
+                namespace=request.namespace,
+                prefix=request.lock_prefix,
+                ttl_seconds=request.lock_ttl_seconds,
+                cache=app.state.cache,
+            )
             report = MemoryOSWorker(app.state.mind, app.state.cache).run_once(
                 namespace=request.namespace,
                 audit_limit=request.audit_limit,
@@ -1367,6 +1395,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 target_qps=request.target_qps,
                 deployment=request.deployment,
                 multimodal=request.multimodal,
+                lock=lock,
+                lock_required=request.lock_required,
             )
         return report.as_dict()
 

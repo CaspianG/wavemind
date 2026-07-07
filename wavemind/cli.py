@@ -29,6 +29,7 @@ from .jobs import (
     MemoryMaintenanceWorker,
     MemoryOSScheduler,
     MemoryOSWorker,
+    RedisMemoryOSLock,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
     RedisHotMemoryCache,
@@ -485,6 +486,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--redis-prefix",
         default=os.environ.get("WAVEMIND_REDIS_PREFIX", "wavemind:hot"),
     )
+    memory_os.add_argument(
+        "--lock-required",
+        action="store_true",
+        default=os.environ.get("WAVEMIND_MEMORY_OS_LOCK_REQUIRED", "0").lower()
+        in {"1", "true", "yes", "on"},
+        help="Require a Redis single-flight lock before mutating Memory OS state.",
+    )
+    memory_os.add_argument(
+        "--lock-prefix",
+        default=os.environ.get("WAVEMIND_MEMORY_OS_LOCK_PREFIX", "wavemind:memory-os:lock"),
+    )
+    memory_os.add_argument("--lock-ttl-seconds", type=int, default=300)
     memory_os.add_argument("--no-cache", action="store_true")
     memory_os.add_argument("--json", action="store_true")
 
@@ -1633,6 +1646,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "memory-os":
         cache = None
+        lock = None
         if not args.no_cache:
             if args.redis_url:
                 cache = RedisHotMemoryCache.from_url(
@@ -1645,6 +1659,13 @@ def main(argv: list[str] | None = None) -> int:
                     capacity=args.capacity,
                     ttl_seconds=args.ttl_seconds,
                 )
+        if args.redis_url:
+            lock_key = f"{args.lock_prefix.rstrip(':')}:{args.namespace or 'all'}"
+            lock = RedisMemoryOSLock.from_url(
+                args.redis_url,
+                key=lock_key,
+                ttl_seconds=args.lock_ttl_seconds,
+            )
         report = MemoryOSWorker(mind, cache).run_once(
             namespace=args.namespace,
             audit_limit=args.audit_limit,
@@ -1686,6 +1707,8 @@ def main(argv: list[str] | None = None) -> int:
             target_qps=args.target_qps,
             deployment=args.deployment,
             multimodal=args.multimodal,
+            lock=lock,
+            lock_required=args.lock_required,
         )
         payload = report.as_dict()
         payload["cache"] = (

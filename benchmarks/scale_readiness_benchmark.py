@@ -39,6 +39,7 @@ from wavemind import (
     QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
+    RedisMemoryOSLock,
     RedisQueryVectorCache,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
@@ -158,9 +159,12 @@ class RedisLikeCacheClient:
     def get(self, key: str):
         return self.items.get(key)
 
-    def set(self, key: str, value: str, ex: int | None = None):
+    def set(self, key: str, value: str, ex: int | None = None, nx: bool = False):
+        if nx and key in self.items:
+            return False
         self.items[key] = value
         self.expirations[key] = ex
+        return True
 
     def scan_iter(self, match: str):
         for key in list(self.items):
@@ -1112,6 +1116,13 @@ def run_redis_cache_profile() -> dict[str, object]:
 
             os_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
             os_reader_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
+            os_lock_key = f"wm:scale:memory-os-lock:{os_namespace}"
+            os_lock = RedisMemoryOSLock(
+                client,
+                key=os_lock_key,
+                ttl_seconds=300,
+                owner="scale-readiness-memory-os",
+            )
             os_started = time.perf_counter()
             os_report = MemoryOSWorker(memory, os_cache).run_once(
                 namespace=os_namespace,
@@ -1136,8 +1147,41 @@ def run_redis_cache_profile() -> dict[str, object]:
                 target_qps=250.0,
                 deployment="production",
                 multimodal=True,
+                lock=os_lock,
+                lock_required=True,
             )
             os_ms = (time.perf_counter() - os_started) * 1000.0
+            busy_lock_key = f"wm:scale:memory-os-busy:{os_namespace}"
+            held_lock = RedisMemoryOSLock(
+                client,
+                key=busy_lock_key,
+                ttl_seconds=300,
+                owner="active-worker",
+            )
+            held_lock.acquire()
+            try:
+                busy_report = MemoryOSWorker(memory, os_cache).run_once(
+                    namespace=os_namespace,
+                    audit_limit=16,
+                    max_hot_queries=8,
+                    min_frequency=2,
+                    top_k=1,
+                    consolidate_steps=0,
+                    consolidate_concepts=False,
+                    predict_priorities=False,
+                    adaptive_forgetting=False,
+                    predictive_prefetch=False,
+                    architecture_advice=False,
+                    lock=RedisMemoryOSLock(
+                        client,
+                        key=busy_lock_key,
+                        ttl_seconds=300,
+                        owner="contending-worker",
+                    ),
+                    lock_required=True,
+                )
+            finally:
+                held_lock.release()
             started = time.perf_counter()
             os_cached = query_with_cache(
                 memory,
@@ -1171,6 +1215,15 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "cache_prewarm_warmed": prewarm.warmed,
                 "cache_prewarm_cross_worker_hit": shared_hit,
                 "memory_os_ok": os_report.ok,
+                "memory_os_lock_required": os_report.lock.required,
+                "memory_os_lock_acquired": os_report.lock.acquired,
+                "memory_os_lock_released": client.get(os_lock_key) is None,
+                "memory_os_busy_lock_skipped": (
+                    busy_report.lock.required
+                    and not busy_report.lock.acquired
+                    and busy_report.lock.reason == "lock_already_held"
+                    and "lock_skipped" in busy_report.actions
+                ),
                 "memory_os_hot_queries": len(os_report.hot_queries),
                 "memory_os_prewarm_warmed": os_report.prewarm.warmed,
                 "memory_os_predictive_generated": os_report.predictive_prefetch.generated_queries,

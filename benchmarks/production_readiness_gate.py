@@ -1030,6 +1030,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(redis_cache.get("memory_os_prewarm_warmed", 0)) >= 2
                 and int(redis_cache.get("memory_os_predictive_generated", 0)) >= 1
                 and int(redis_cache.get("memory_os_predictive_warmed", 0)) >= 1
+                and redis_cache.get("memory_os_lock_required")
+                and redis_cache.get("memory_os_lock_acquired")
+                and redis_cache.get("memory_os_lock_released")
+                and redis_cache.get("memory_os_busy_lock_skipped")
                 and redis_cache.get("memory_os_cross_worker_hit")
                 and redis_cache.get("namespace_invalidation_removed")
                 and redis_cache.get("memory_os_architecture_advice_status")
@@ -1041,15 +1045,19 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             ),
             requirement=(
                 "Production cache must be shareable across workers, support "
-                "query-audit prewarm, support Memory OS prewarm, invalidate "
-                "a namespace after memory changes, and preserve architecture "
-                "advice for production-scale deployments."
+                "query-audit prewarm, support Memory OS prewarm, guard "
+                "adaptive Memory OS mutation cycles with a Redis-compatible "
+                "single-flight lock, invalidate a namespace after memory "
+                "changes, and preserve architecture advice for production-scale "
+                "deployments."
             ),
             evidence=(
                 f"shared {redis_cache.get('shared_cache_visible_across_clients')}, "
                 f"prewarm hit {redis_cache.get('cache_prewarm_cross_worker_hit')}, "
                 f"Memory OS warmed {redis_cache.get('memory_os_prewarm_warmed')}, "
                 f"predictive warmed {redis_cache.get('memory_os_predictive_warmed')}, "
+                f"lock acquired {redis_cache.get('memory_os_lock_acquired')}, "
+                f"busy skipped {redis_cache.get('memory_os_busy_lock_skipped')}, "
                 f"Memory OS hit {redis_cache.get('memory_os_cross_worker_hit')}, "
                 f"invalidation {redis_cache.get('namespace_invalidation_removed')}, "
                 f"architecture {redis_cache.get('memory_os_architecture_advice_status')}"

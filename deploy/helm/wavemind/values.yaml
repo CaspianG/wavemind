@@ -78,6 +78,9 @@ memoryOs:
   observedP99Ms: null
   multimodal: false
   strictPlan: true
+  lockRequired: false
+  lockTtlSeconds: 300
+  lockPrefix: wavemind:memory-os:lock
   runOnAllReplicas: true
   timeoutSeconds: 30
   successfulJobsHistoryLimit: 3

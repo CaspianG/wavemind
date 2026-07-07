@@ -167,6 +167,11 @@ policy matters more than raw vector-database scale:
   fails if the checked-in Memory OS profile does not emit production-scale
   service-index, namespace-sharding, production-controls, load-test, and
   multimodal-readiness advice.
+- `RedisMemoryOSLock`, `wavemind memory-os --lock-required`, and
+  `/memory-os/run` lock fields add a Redis-backed single-flight guard for
+  production Memory OS cycles. This prevents overlapping consolidation,
+  forgetting, and prewarm mutations when CronJobs, retries, or multiple
+  operators target the same namespace.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,

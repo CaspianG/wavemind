@@ -42,6 +42,22 @@ The Memory OS CronJob calls `/memory-os/plan` first. With
 `architecture_required`. If the plan is acceptable, it calls `/memory-os/run`
 on every StatefulSet replica by default.
 
+For shared-state production deployments, enable the Redis-backed single-flight
+lock and run one Memory OS cycle per namespace:
+
+```sh
+helm upgrade --install wavemind ./deploy/helm/wavemind \
+  --set memoryOs.enabled=true \
+  --set runtime.redisUrl=redis://redis.default.svc.cluster.local:6379/0 \
+  --set memoryOs.runOnAllReplicas=false \
+  --set memoryOs.lockRequired=true
+```
+
+The lock is passed to `/memory-os/run` as `lock_required`,
+`lock_ttl_seconds`, and `lock_prefix`. It prevents overlapping consolidation,
+forgetting, and prewarm cycles when CronJobs, retries, or multiple operators
+attempt to run the same namespace at the same time.
+
 Enable autoscaling for production clusters:
 
 ```sh

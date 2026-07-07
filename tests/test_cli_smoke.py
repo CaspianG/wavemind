@@ -313,6 +313,8 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
 
     assert payload["ok"] is True
     assert payload["cache"] == "local"
+    assert payload["lock"]["required"] is False
+    assert payload["lock"]["ok"] is True
     assert payload["hot_queries"][0]["query"] == "budget recall"
     assert payload["prewarm"]["warmed"] == 1
     assert payload["predictive_prefetch"]["generated_queries"] >= 1
@@ -327,6 +329,49 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
     assert advice["status"] == "architecture_required"
     assert "namespace-sharding" in recommendation_ids
     assert "production-controls" in recommendation_ids
+
+
+def test_cli_memory_os_lock_required_without_redis_skips_mutation(tmp_path):
+    db_path = tmp_path / "memory-os-lock.sqlite3"
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "cli lock required memory",
+        "--namespace",
+        "ops",
+    )
+
+    env = os.environ.copy()
+    project_root = Path(__file__).resolve().parents[1]
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "--db",
+            str(db_path),
+            "memory-os",
+            "--namespace",
+            "ops",
+            "--lock-required",
+            "--json",
+        ],
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=False,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 4
+    assert payload["ok"] is False
+    assert payload["lock"]["required"] is True
+    assert payload["lock"]["acquired"] is False
+    assert payload["lock"]["reason"] == "lock_required_without_lock"
+    assert payload["actions"] == ["lock_skipped"]
 
 
 def test_cli_memory_os_plan_is_read_only_production_preflight(tmp_path):

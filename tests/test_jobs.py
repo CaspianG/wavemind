@@ -19,6 +19,7 @@ from wavemind import (
     QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
+    RedisMemoryOSLock,
     RedisQueryVectorCache,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
@@ -70,9 +71,12 @@ class FakeRedis:
     def get(self, key):
         return self.items.get(key)
 
-    def set(self, key, value, ex=None):
+    def set(self, key, value, ex=None, nx=False):
+        if nx and key in self.items:
+            return False
         self.items[key] = value
         self.expirations[key] = ex
+        return True
 
     def scan_iter(self, match):
         for key in list(self.items):
@@ -723,6 +727,91 @@ def test_memory_os_worker_demotes_cold_memories_from_usage_patterns(tmp_path):
         assert memory.store.get(hot_id).priority >= hot_before
         assert "adaptive_forgetting" in report.actions
     finally:
+        memory.close()
+
+
+def test_redis_memory_os_lock_is_single_flight_and_owner_checked():
+    redis = FakeRedis()
+    first = RedisMemoryOSLock(redis, key="wavemind:memory-os:lock:agent", ttl_seconds=30, owner="one")
+    second = RedisMemoryOSLock(redis, key="wavemind:memory-os:lock:agent", ttl_seconds=30, owner="two")
+
+    assert first.acquire() is True
+    assert second.acquire() is False
+    assert redis.items["wavemind:memory-os:lock:agent"] == "one"
+    assert second.release() is False
+    assert redis.items["wavemind:memory-os:lock:agent"] == "one"
+    assert first.release() is True
+    assert second.acquire() is True
+
+
+def test_memory_os_worker_required_lock_without_lock_skips_mutation(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-required-lock.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        id = memory.remember("required lock should protect priority", namespace="agent", priority=1.0)
+        before = memory.store.get(id).priority
+
+        report = MemoryOSWorker(memory).run_once(
+            namespace="agent",
+            lock_required=True,
+            priority_boost_per_hit=1.0,
+            forgetting_min_age_seconds=0.0,
+        )
+
+        assert not report.ok
+        assert report.lock.required is True
+        assert report.lock.acquired is False
+        assert report.lock.reason == "lock_required_without_lock"
+        assert report.actions == ("lock_skipped",)
+        assert memory.store.get(id).priority == before
+    finally:
+        memory.close()
+
+
+def test_memory_os_worker_busy_redis_lock_skips_cycle(tmp_path):
+    redis = FakeRedis()
+    held = RedisMemoryOSLock(redis, key="wavemind:memory-os:lock:agent", ttl_seconds=30, owner="owner-a")
+    contender = RedisMemoryOSLock(redis, key="wavemind:memory-os:lock:agent", ttl_seconds=30, owner="owner-b")
+    assert held.acquire() is True
+
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-busy-lock.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        id = memory.remember("busy lock should skip priority mutation", namespace="agent", priority=1.0)
+        memory.query("priority mutation", namespace="agent", top_k=1)
+        memory.query("priority mutation", namespace="agent", top_k=1)
+        before = memory.store.get(id).priority
+
+        report = MemoryOSWorker(memory).run_once(
+            namespace="agent",
+            lock=contender,
+            lock_required=True,
+            priority_boost_per_hit=1.0,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+        )
+
+        assert not report.ok
+        assert report.lock.required is True
+        assert report.lock.acquired is False
+        assert report.lock.reason == "lock_already_held"
+        assert report.actions == ("lock_skipped",)
+        assert memory.store.get(id).priority == before
+        assert redis.items["wavemind:memory-os:lock:agent"] == "owner-a"
+    finally:
+        held.release()
         memory.close()
 
 

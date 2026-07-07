@@ -5,10 +5,12 @@ import json
 import hashlib
 import math
 import shutil
+import uuid
 from collections import OrderedDict
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 import numpy as np
 
@@ -618,6 +620,127 @@ class MemoryOSHotQuery:
 
 
 @dataclass(frozen=True)
+class MemoryOSLockReport:
+    required: bool = False
+    acquired: bool = False
+    key: str | None = None
+    owner: str | None = None
+    ttl_seconds: int | None = None
+    reason: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return not self.required or self.acquired
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "required": self.required,
+            "acquired": self.acquired,
+            "key": self.key,
+            "owner": self.owner,
+            "ttl_seconds": self.ttl_seconds,
+            "reason": self.reason,
+            "ok": self.ok,
+        }
+
+
+class RedisMemoryOSLock:
+    """Small Redis-compatible single-flight lock for Memory OS workers."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        key: str,
+        ttl_seconds: int = 300,
+        owner: str | None = None,
+    ):
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        if not key:
+            raise ValueError("key must not be empty")
+        self.client = client
+        self.key = key
+        self.ttl_seconds = int(ttl_seconds)
+        self.owner = owner or str(uuid.uuid4())
+        self.acquired = False
+
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        *,
+        key: str,
+        ttl_seconds: int = 300,
+        owner: str | None = None,
+    ) -> "RedisMemoryOSLock":
+        try:
+            import redis
+        except ImportError as exc:
+            raise RuntimeError(
+                'Install Redis support with: pip install "wavemind[redis]"'
+            ) from exc
+        return cls(
+            redis.Redis.from_url(url, decode_responses=True),
+            key=key,
+            ttl_seconds=ttl_seconds,
+            owner=owner,
+        )
+
+    def acquire(self) -> bool:
+        try:
+            acquired = self.client.set(
+                self.key,
+                self.owner,
+                ex=self.ttl_seconds,
+                nx=True,
+            )
+        except TypeError:
+            if self.client.get(self.key) is not None:
+                acquired = False
+            else:
+                self.client.set(self.key, self.owner, ex=self.ttl_seconds)
+                acquired = True
+        self.acquired = bool(acquired)
+        return self.acquired
+
+    def release(self) -> bool:
+        if not self.acquired:
+            return False
+        current = self.client.get(self.key)
+        if isinstance(current, bytes):
+            current = current.decode("utf-8")
+        if current != self.owner:
+            self.acquired = False
+            return False
+        self.client.delete(self.key)
+        self.acquired = False
+        return True
+
+    def report(self, *, required: bool, reason: str | None = None) -> MemoryOSLockReport:
+        return MemoryOSLockReport(
+            required=required,
+            acquired=self.acquired,
+            key=self.key,
+            owner=self.owner,
+            ttl_seconds=self.ttl_seconds,
+            reason=reason,
+        )
+
+    @contextmanager
+    def hold(self, *, required: bool = False) -> Iterator[MemoryOSLockReport]:
+        acquired = self.acquire()
+        if required and not acquired:
+            yield self.report(required=True, reason="lock_already_held")
+            return
+        try:
+            yield self.report(required=required)
+        finally:
+            if acquired:
+                self.release()
+
+
+@dataclass(frozen=True)
 class MemoryOSReport:
     namespace: str | None
     scanned_events: int
@@ -642,13 +765,14 @@ class MemoryOSReport:
     stats_before: dict[str, object] = field(default_factory=dict)
     stats_after: dict[str, object] = field(default_factory=dict)
     architecture_advice: dict[str, object] = field(default_factory=dict)
+    lock: MemoryOSLockReport = field(default_factory=MemoryOSLockReport)
     actions: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
 
     @property
     def ok(self) -> bool:
         index_healthy = bool(self.stats_after.get("index_healthy", True))
-        return index_healthy and self.prewarm.ok and self.predictive_prefetch.ok
+        return index_healthy and self.prewarm.ok and self.predictive_prefetch.ok and self.lock.ok
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -673,6 +797,7 @@ class MemoryOSReport:
             "stats_before": dict(self.stats_before),
             "stats_after": dict(self.stats_after),
             "architecture_advice": dict(self.architecture_advice),
+            "lock": self.lock.as_dict(),
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
             "ok": self.ok,
@@ -1645,8 +1770,142 @@ class MemoryOSWorker:
         target_qps: float = 100.0,
         deployment: str = "local",
         multimodal: bool = False,
+        lock: RedisMemoryOSLock | None = None,
+        lock_required: bool = False,
     ) -> MemoryOSReport:
         stats_before = self._stats(namespace)
+        if lock is None and lock_required:
+            report = MemoryOSReport(
+                namespace=namespace,
+                scanned_events=0,
+                stats_before=stats_before,
+                stats_after=stats_before,
+                lock=MemoryOSLockReport(
+                    required=True,
+                    acquired=False,
+                    reason="lock_required_without_lock",
+                ),
+                actions=("lock_skipped",),
+                recommendations=(
+                    "Configure --redis-url or pass a RedisMemoryOSLock before running Memory OS in production.",
+                ),
+            )
+            self._log_report(report)
+            return report
+
+        lock_report = MemoryOSLockReport(required=False, acquired=False)
+        if lock is not None:
+            if not lock.acquire():
+                report = MemoryOSReport(
+                    namespace=namespace,
+                    scanned_events=0,
+                    stats_before=stats_before,
+                    stats_after=stats_before,
+                    lock=lock.report(required=lock_required, reason="lock_already_held"),
+                    actions=("lock_skipped",),
+                    recommendations=(
+                        "Another Memory OS worker holds the namespace lock; retry after the lock TTL or the active run finishes.",
+                    ),
+                )
+                self._log_report(report)
+                return report
+            lock_report = lock.report(required=lock_required)
+
+        try:
+            return self._run_once_locked(
+                namespace=namespace,
+                audit_limit=audit_limit,
+                max_hot_queries=max_hot_queries,
+                min_frequency=min_frequency,
+                top_k=top_k,
+                min_score=min_score,
+                consolidate_steps=consolidate_steps,
+                consolidate_concepts=consolidate_concepts,
+                concept_seed_text=concept_seed_text,
+                min_concept_energy=min_concept_energy,
+                min_concept_size=min_concept_size,
+                max_concepts=max_concepts,
+                concept_priority=concept_priority,
+                predict_priorities=predict_priorities,
+                max_priority_predictions=max_priority_predictions,
+                priority_boost_per_hit=priority_boost_per_hit,
+                max_priority_boost=max_priority_boost,
+                adaptive_forgetting=adaptive_forgetting,
+                forgetting_min_age_seconds=forgetting_min_age_seconds,
+                forgetting_max_memories=forgetting_max_memories,
+                forgetting_max_access_count=forgetting_max_access_count,
+                forgetting_priority_decay=forgetting_priority_decay,
+                forgetting_min_priority=forgetting_min_priority,
+                predictive_prefetch=predictive_prefetch,
+                max_predictive_queries=max_predictive_queries,
+                predictive_terms_per_hot_query=predictive_terms_per_hot_query,
+                rebuild_unhealthy_index=rebuild_unhealthy_index,
+                memory_pressure_threshold=memory_pressure_threshold,
+                architecture_advice=architecture_advice,
+                target_memories=target_memories,
+                target_p99_ms=target_p99_ms,
+                observed_p99_ms=observed_p99_ms,
+                namespace_count=namespace_count,
+                node_count=node_count,
+                replication_factor=replication_factor,
+                read_quorum=read_quorum,
+                read_fanout=read_fanout,
+                target_qps=target_qps,
+                deployment=deployment,
+                multimodal=multimodal,
+                stats_before=stats_before,
+                lock_report=lock_report,
+            )
+        finally:
+            if lock is not None:
+                lock.release()
+
+    def _run_once_locked(
+        self,
+        *,
+        namespace: str | None,
+        audit_limit: int,
+        max_hot_queries: int,
+        min_frequency: int,
+        top_k: int,
+        min_score: float | None,
+        consolidate_steps: int,
+        consolidate_concepts: bool,
+        concept_seed_text: str | None,
+        min_concept_energy: float,
+        min_concept_size: int,
+        max_concepts: int,
+        concept_priority: float,
+        predict_priorities: bool,
+        max_priority_predictions: int,
+        priority_boost_per_hit: float,
+        max_priority_boost: float,
+        adaptive_forgetting: bool,
+        forgetting_min_age_seconds: float,
+        forgetting_max_memories: int,
+        forgetting_max_access_count: int,
+        forgetting_priority_decay: float,
+        forgetting_min_priority: float,
+        predictive_prefetch: bool,
+        max_predictive_queries: int,
+        predictive_terms_per_hot_query: int,
+        rebuild_unhealthy_index: bool,
+        memory_pressure_threshold: int,
+        architecture_advice: bool,
+        target_memories: int | None,
+        target_p99_ms: float,
+        observed_p99_ms: float | None,
+        namespace_count: int | None,
+        node_count: int | None,
+        replication_factor: int,
+        read_quorum: int,
+        read_fanout: int | None,
+        target_qps: float,
+        deployment: str,
+        multimodal: bool,
+        stats_before: dict[str, object],
+        lock_report: MemoryOSLockReport,
+    ) -> MemoryOSReport:
         events = self._query_events(namespace=namespace, limit=audit_limit)
         hot_queries = self._hot_queries(
             events,
@@ -1818,6 +2077,7 @@ class MemoryOSWorker:
             stats_before=stats_before,
             stats_after=stats_after,
             architecture_advice=architecture_payload,
+            lock=lock_report,
             actions=tuple(dict.fromkeys(actions)),
             recommendations=tuple(recommendations),
         )
@@ -2230,6 +2490,10 @@ class MemoryOSWorker:
                     "predictive_prefetch_generated": report.predictive_prefetch.generated_queries,
                     "predictive_prefetch_warmed": report.predictive_prefetch.warmed,
                     "index_rebuilt": report.index_rebuilt,
+                    "lock_required": report.lock.required,
+                    "lock_acquired": report.lock.acquired,
+                    "lock_key": report.lock.key,
+                    "lock_reason": report.lock.reason,
                     "actions": list(report.actions),
                     "ok": report.ok,
                 },
