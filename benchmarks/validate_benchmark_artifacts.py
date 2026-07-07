@@ -9,9 +9,11 @@ from typing import Any
 try:
     from benchmarks.render_benchmark_leaderboard import render_leaderboard
     from benchmarks.render_benchmark_report import render_report
+    from benchmarks.render_leaderboard_status import render_leaderboard_status
 except ModuleNotFoundError:  # pragma: no cover - direct script execution
     from render_benchmark_leaderboard import render_leaderboard
     from render_benchmark_report import render_report
+    from render_leaderboard_status import render_leaderboard_status
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +33,7 @@ def validate_benchmark_artifacts(
     matrix_path = root / "benchmarks" / "benchmark_matrix_results.json"
     report_path = root / "benchmarks" / "BENCHMARK_REPORT.md"
     leaderboard_path = root / "benchmarks" / "BENCHMARK_LEADERBOARD.md"
+    leaderboard_status_path = root / "docs" / "data" / "leaderboard-status.json"
 
     errors: list[str] = []
     matrix = _load_json(matrix_path, errors)
@@ -85,6 +88,12 @@ def validate_benchmark_artifacts(
         path=leaderboard_path,
         expected=render_leaderboard(root),
         label="benchmark leaderboard",
+        errors=errors,
+    )
+    _assert_rendered_file(
+        path=leaderboard_status_path,
+        expected=json.dumps(render_leaderboard_status(root), ensure_ascii=False, indent=2) + "\n",
+        label="leaderboard status",
         errors=errors,
     )
 

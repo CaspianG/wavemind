@@ -15,6 +15,8 @@ dist/
 *.sqlite
 *.sqlite3
 data/
+!docs/data/
+!docs/data/leaderboard-status.json
 backups/
 logs/
 state/

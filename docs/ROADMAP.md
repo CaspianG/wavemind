@@ -466,8 +466,9 @@ Priorities:
 - benchmark scripts that contributors can run locally;
 - weekly benchmark refresh that regenerates the matrix/report/leaderboard and
   SVG summary, validates freshness, writes a machine-readable artifact audit,
-  uploads review artifacts, and deploys a GitHub Pages living leaderboard
-  without scheduled bot commits to `main`;
+  renders `docs/data/leaderboard-status.json`, uploads review artifacts, and
+  deploys a GitHub Pages living leaderboard without scheduled bot commits to
+  `main`;
 - `full-check` and release workflows block stale or unsynchronized public
   benchmark artifacts with the same 8-day freshness gate;
 - Docker images for the API server and sidecar mode;

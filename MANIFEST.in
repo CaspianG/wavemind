@@ -16,6 +16,7 @@ include docs/DEMO_SCRIPT.md
 include docs/LAUNCH_KIT.md
 include docs/BENCHMARK_BRIEF.md
 include docs/benchmark-dashboard.html
+include docs/data/leaderboard-status.json
 include docs/CHROMA_MIGRATION.md
 include docs/OBSERVABILITY.md
 include docs/RU_LAUNCH_POSTS.md

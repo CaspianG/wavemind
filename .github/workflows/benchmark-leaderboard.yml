@@ -157,6 +157,8 @@ jobs:
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit.json
+          python benchmarks/render_leaderboard_status.py \
+            --output docs/data/leaderboard-status.json
 
       - name: Validate benchmark renderers
         run: |
@@ -166,6 +168,7 @@ jobs:
             tests/test_benchmark_leaderboard.py \
             tests/test_benchmark_charts.py \
             tests/test_benchmark_dashboard.py \
+            tests/test_leaderboard_status.py \
             tests/test_benchmark_artifact_audit.py \
             tests/test_agent_coherence_benchmark.py \
             tests/test_dynamic_memory_benchmark.py \
@@ -183,12 +186,12 @@ jobs:
 
       - name: Report benchmark artifact drift
         run: |
-          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json; then
             echo "No benchmark changes."
             exit 0
           fi
           echo "::notice::Benchmark artifacts changed. Download the benchmark-leaderboard artifact and commit the reviewed files from a maintainer account."
-          git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json
+          git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json
 
       - name: Build GitHub Pages leaderboard
         run: |
@@ -206,6 +209,7 @@ jobs:
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
           cp benchmarks/production_evidence_results.json site/data/production_evidence_results.json
           cp benchmarks/production_evidence_preflight_results.json site/data/production_evidence_preflight_results.json
+          cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
       - uses: actions/configure-pages@v5
 
@@ -243,4 +247,5 @@ jobs:
             benchmarks/production_evidence_preflight_results.json
             benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
             docs/benchmark-dashboard.html
+            docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

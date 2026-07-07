@@ -114,8 +114,11 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "render_benchmark_report.py" in workflow
     assert "render_benchmark_leaderboard.py" in workflow
     assert "render_benchmark_dashboard.py" in workflow
+    assert "render_leaderboard_status.py" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
     assert "tests/test_benchmark_dashboard.py" in workflow
+    assert "tests/test_leaderboard_status.py" in workflow
     assert "production_evidence_gate.py" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
     assert "production-evidence-preflight" in workflow
@@ -130,6 +133,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "production_readiness_results.json" in workflow
     assert "production_streaming_load_smoke_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
+    assert "leaderboard-status.json" in workflow
     assert "PRODUCTION_READINESS.md" in workflow
     assert "Benchmark artifacts changed" in workflow
     assert "commit the reviewed files from a maintainer account" in workflow

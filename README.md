@@ -1653,6 +1653,7 @@ Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/BENCHMARK_REPORT.md).
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
+Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/data/leaderboard-status.json).
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
@@ -1694,9 +1695,10 @@ the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
 production-readiness report, and the strict production-evidence report,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
-`benchmarks/benchmark_artifact_audit.json`, and uploads changed benchmark
-artifacts for maintainer review. It also builds a static GitHub Pages bundle
-from the dashboard, reports, summary SVG, and machine-readable JSON evidence,
+`benchmarks/benchmark_artifact_audit.json`, renders
+`docs/data/leaderboard-status.json`, and uploads changed benchmark artifacts for
+maintainer review. It also builds a static GitHub Pages bundle from the
+dashboard, reports, summary SVG, public status JSON, and machine-readable JSON evidence,
 then deploys the living leaderboard with `actions/upload-pages-artifact@v3` and
 `actions/deploy-pages@v4`. It does not push scheduled bot commits to `main`;
 reviewed benchmark refreshes should be committed from a maintainer account.

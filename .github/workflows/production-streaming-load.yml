@@ -280,17 +280,19 @@ jobs:
           python benchmarks/production_evidence_gate.py \
             --output benchmarks/production_evidence_results.json \
             --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
+          python benchmarks/render_leaderboard_status.py \
+            --output docs/data/leaderboard-status.json
 
       - name: Commit production streaming result
         if: ${{ inputs.commit_results }}
         run: |
-          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json; then
             echo "No benchmark changes."
             exit 0
           fi
           git config user.name "CaspianG"
           git config user.email "259116618+CaspianG@users.noreply.github.com"
-          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html
+          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json
           git commit -m "Refresh production streaming benchmark"
           git push
 
@@ -318,4 +320,5 @@ jobs:
             benchmarks/production_evidence_results.json
             benchmarks/production_readiness_results.json
             docs/benchmark-dashboard.html
+            docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

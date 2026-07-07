@@ -52,6 +52,9 @@ The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 The strict production evidence gate is in `benchmarks/PRODUCTION_EVIDENCE.md`.
 `benchmarks/benchmark_artifact_audit.json` records the latest freshness and
 synchronization check for the generated benchmark artifacts.
+`docs/data/leaderboard-status.json` is the compact machine-readable public
+status contract for the GitHub Pages dashboard: publishability, artifact
+freshness, production readiness, and strict production claim boundaries.
 The weekly leaderboard workflow refreshes these artifacts, uploads them for
 maintainer review, and deploys `docs/benchmark-dashboard.html` plus the
 machine-readable JSON evidence as a GitHub Pages living leaderboard instead of

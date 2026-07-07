@@ -1,0 +1,162 @@
+{
+  "schema": "wavemind.leaderboard_status.v1",
+  "generated_at": "2026-07-07T19:43:49Z",
+  "source_ref": "9f0a1d09d9b6",
+  "workflow_run_id": null,
+  "refresh_profile": "local",
+  "public_url": "https://caspiang.github.io/wavemind/",
+  "publishing_status": "publishable_with_claim_limits",
+  "benchmark_matrix": {
+    "schema": "wavemind.benchmark_matrix.v1",
+    "generated_at": "2026-07-07T19:18:36Z",
+    "implemented_count": 28,
+    "runner_ready_count": 2,
+    "planned_count": 6,
+    "total_count": 36,
+    "status_counts": {
+      "implemented": 28,
+      "planned": 6,
+      "runner-ready": 2
+    },
+    "category_counts": {
+      "agent-memory": 5,
+      "capacity": 1,
+      "index-latency": 3,
+      "long-term-agent-memory": 4,
+      "long-term-conversation-memory": 2,
+      "memory-embedding": 1,
+      "multilingual-retrieval": 2,
+      "production-ops": 1,
+      "production-scale": 11,
+      "rag-quality": 1,
+      "retrieval": 3,
+      "vector-db": 1,
+      "web-agent-memory": 1
+    }
+  },
+  "artifact_audit": {
+    "schema": "wavemind.benchmark_artifact_audit.v1",
+    "status": "pass",
+    "checked_at": "2026-07-07T19:43:49Z",
+    "age_days": 0.01751702818287037,
+    "max_age_days": null,
+    "errors": []
+  },
+  "production_readiness": {
+    "schema": "wavemind.production_readiness.v1",
+    "overall_status": "pass",
+    "readiness_score": 1.0,
+    "summary": {
+      "overall_status": "pass",
+      "readiness_score": 1.0,
+      "pass_count": 39,
+      "action_required_count": 0,
+      "fail_count": 0,
+      "total_criteria": 39
+    }
+  },
+  "strict_production_evidence": {
+    "schema": "wavemind.production_evidence.v1",
+    "overall_status": "action_required",
+    "summary": {
+      "overall_status": "action_required",
+      "pass_count": 0,
+      "action_required_count": 8,
+      "fail_count": 0,
+      "total_requirements": 8
+    },
+    "action_required": [
+      {
+        "id": "external_http_cluster",
+        "title": "External HTTP service-node load",
+        "artifact": "benchmarks/http_cluster_load_results.json",
+        "claim_unlocked": "Remote service-node cluster load SLO.",
+        "issues": [
+          "environment must be a real remote/staging/production deployment",
+          "source must identify a real remote run, not a sample or loopback"
+        ]
+      },
+      {
+        "id": "external_http_active_active",
+        "title": "External HTTP active-active regions",
+        "artifact": "benchmarks/external_http_active_active_results.json",
+        "claim_unlocked": "Remote multi-region active-active memory convergence.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "serverless_remote_telemetry",
+        "title": "Managed/serverless remote telemetry",
+        "artifact": "deploy/serverless/observed-telemetry.remote.json",
+        "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "qdrant_10m_service",
+        "title": "10M Qdrant service load",
+        "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "qdrant_sharded_10m_service",
+        "title": "10M sharded Qdrant service load",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "pgvector_10m_service",
+        "title": "10M pgvector service load",
+        "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "faiss_ivfpq_50m",
+        "title": "50M FAISS IVF-PQ streaming load",
+        "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "claim_unlocked": "50M compressed local/persistent FAISS profile.",
+        "issues": [
+          "missing artifact"
+        ]
+      },
+      {
+        "id": "hundred_million_remote_load",
+        "title": "100M remote load result",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+        "issues": [
+          "missing artifact"
+        ]
+      }
+    ]
+  },
+  "production_evidence_preflight": {
+    "schema": "wavemind.production_evidence_preflight.v1",
+    "overall_status": "action_required",
+    "summary": {
+      "overall_status": "action_required",
+      "ready_count": 0,
+      "action_required_count": 8,
+      "total_checks": 8
+    }
+  },
+  "source_files": [
+    "benchmarks/benchmark_matrix_results.json",
+    "benchmarks/benchmark_artifact_audit.json",
+    "benchmarks/production_readiness_results.json",
+    "benchmarks/production_evidence_results.json",
+    "benchmarks/production_evidence_preflight_results.json"
+  ],
+  "load_errors": []
+}

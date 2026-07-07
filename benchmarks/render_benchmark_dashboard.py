@@ -239,6 +239,7 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
 
   <footer>
     Source: <code>benchmarks/benchmark_matrix_results.json</code>.
+    Machine status: <a href="data/leaderboard-status.json">data/leaderboard-status.json</a>.
     Markdown view: <a href="../benchmarks/BENCHMARK_LEADERBOARD.md">benchmarks/BENCHMARK_LEADERBOARD.md</a>.
     Strict production evidence: <a href="../benchmarks/PRODUCTION_EVIDENCE.md">benchmarks/PRODUCTION_EVIDENCE.md</a>.
   </footer>

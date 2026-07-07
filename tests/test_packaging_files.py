@@ -185,6 +185,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/PROJECT_BOARD.md" in manifest
     assert "include docs/BENCHMARK_BRIEF.md" in manifest
     assert "include docs/benchmark-dashboard.html" in manifest
+    assert "include docs/data/leaderboard-status.json" in manifest
     assert "include docs/CHROMA_MIGRATION.md" in manifest
     assert "include docs/OBSERVABILITY.md" in manifest
     assert "include docs/assets/benchmark-summary.svg" in manifest
@@ -207,6 +208,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "### Current Evidence Status" in readme
     assert "benchmarks/BENCHMARK_LEADERBOARD.md" in readme
     assert "docs/benchmark-dashboard.html" in readme
+    assert "docs/data/leaderboard-status.json" in readme
     assert "https://caspiang.github.io/wavemind/" in readme
     assert "actions/upload-pages-artifact@v3" in readme
     assert "actions/deploy-pages@v4" in readme
@@ -289,6 +291,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "GitHub Pages living leaderboard" in roadmap
     assert "without scheduled bot commits" in roadmap
     assert "benchmark_artifact_audit.json" in benchmark_brief
+    assert "leaderboard-status.json" in benchmark_brief
     assert "GitHub Pages living leaderboard" in benchmark_brief
     assert "--max-age-days 8" in benchmark_brief
     assert "PRODUCTION_READINESS.md" in benchmark_brief
@@ -300,6 +303,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production-evidence-preflight" in roadmap
     assert "memory-os-plan" in roadmap
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
+    assert Path("benchmarks/render_leaderboard_status.py").exists()
+    assert Path("docs/data/leaderboard-status.json").exists()
     assert Path("benchmarks/production_readiness_gate.py").exists()
     assert Path("benchmarks/production_evidence_gate.py").exists()
     assert Path("benchmarks/production_evidence_preflight_results.json").exists()

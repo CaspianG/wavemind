@@ -17,6 +17,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
+    assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
     assert "--output benchmarks/production_evidence_results.json" in workflow
@@ -28,7 +29,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     )
     assert "--output docs/assets/benchmark-summary.svg" in workflow
     assert "--output docs/benchmark-dashboard.html" in workflow
+    assert "--output docs/data/leaderboard-status.json" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
+    assert "tests/test_leaderboard_status.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
@@ -38,18 +41,20 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--engines qdrant-sharded-service" in workflow
     assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "sharded Qdrant smoke SLO failed" in workflow
-    assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
+    assert "git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "Benchmark artifacts changed" in workflow
     assert "commit the reviewed files from a maintainer account" in workflow
     assert "git push" not in workflow
     assert "Build GitHub Pages leaderboard" in workflow
     assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
+    assert "cp docs/data/leaderboard-status.json site/data/leaderboard-status.json" in workflow
     assert "cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json" in workflow
     assert "actions/configure-pages@v5" in workflow
     assert "actions/upload-pages-artifact@v3" in workflow
     assert "actions/deploy-pages@v4" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
     assert "benchmarks/production_evidence_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
 
@@ -87,7 +92,12 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "benchmarks/render_benchmark_charts.py" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
+    assert "benchmarks/render_benchmark_dashboard.py" in workflow
+    assert "benchmarks/render_leaderboard_status.py" in workflow
+    assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 
@@ -120,7 +130,9 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "production_streaming_load_ivfpq_50m_results.json" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html" in workflow
+    assert "benchmarks/render_leaderboard_status.py" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 
@@ -159,10 +171,14 @@ def test_external_http_active_active_workflow_runs_real_region_profile():
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/render_benchmark_dashboard.py" in workflow
+    assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "benchmarks/production_evidence_gate.py" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 
@@ -191,10 +207,14 @@ def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/render_benchmark_dashboard.py" in workflow
+    assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "benchmarks/production_evidence_gate.py" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg deploy/serverless/observed-telemetry.remote.json" in workflow
+    assert "docs/data/leaderboard-status.json" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 

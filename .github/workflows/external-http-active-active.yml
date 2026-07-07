@@ -109,23 +109,30 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/render_benchmark_dashboard.py \
+            --output docs/benchmark-dashboard.html
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit.json
           python benchmarks/production_readiness_gate.py \
             --output benchmarks/production_readiness_results.json \
             --markdown-output benchmarks/PRODUCTION_READINESS.md
+          python benchmarks/production_evidence_gate.py \
+            --output benchmarks/production_evidence_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
+          python benchmarks/render_leaderboard_status.py \
+            --output docs/data/leaderboard-status.json
 
       - name: Commit external active-active result
         if: ${{ inputs.commit_results }}
         run: |
-          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json; then
             echo "No benchmark changes."
             exit 0
           fi
           git config user.name "CaspianG"
           git config user.email "259116618+CaspianG@users.noreply.github.com"
-          git add benchmarks docs/assets/benchmark-summary.svg
+          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json
           git commit -m "Refresh external HTTP active-active benchmark"
           git push
 
@@ -138,7 +145,11 @@ jobs:
             benchmarks/BENCHMARK_LEADERBOARD.md
             benchmarks/BENCHMARK_REPORT.md
             benchmarks/PRODUCTION_READINESS.md
+            benchmarks/PRODUCTION_EVIDENCE.md
             benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
+            benchmarks/production_evidence_results.json
             benchmarks/production_readiness_results.json
+            docs/benchmark-dashboard.html
+            docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

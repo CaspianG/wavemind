@@ -209,6 +209,12 @@ def refresh_commands() -> list[list[str]]:
             "--markdown-output",
             "benchmarks/PRODUCTION_EVIDENCE.md",
         ],
+        [
+            python,
+            "benchmarks/render_leaderboard_status.py",
+            "--output",
+            "docs/data/leaderboard-status.json",
+        ],
     ]
 
 

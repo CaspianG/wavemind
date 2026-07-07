@@ -7,6 +7,7 @@ import pytest
 
 from benchmarks.render_benchmark_leaderboard import render_leaderboard
 from benchmarks.render_benchmark_report import render_report
+from benchmarks.render_leaderboard_status import render_leaderboard_status
 from benchmarks.validate_benchmark_artifacts import (
     BenchmarkArtifactError,
     validate_benchmark_artifacts,
@@ -51,3 +52,33 @@ def test_benchmark_artifact_audit_rejects_stale_matrix(tmp_path):
         )
 
     assert "benchmark matrix is stale" in str(exc.value)
+
+
+def test_benchmark_artifact_audit_rejects_unsynchronized_leaderboard_status(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    shutil.copytree(
+        project_root / "benchmarks",
+        tmp_path / "benchmarks",
+        ignore=shutil.ignore_patterns("data", ".field_memory_workdir", "__pycache__"),
+    )
+    docs_data = tmp_path / "docs" / "data"
+    docs_data.mkdir(parents=True)
+    status = render_leaderboard_status(tmp_path)
+    status["publishing_status"] = "stale"
+    (docs_data / "leaderboard-status.json").write_text(
+        json.dumps(status, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "benchmarks" / "BENCHMARK_REPORT.md").write_text(
+        render_report(tmp_path),
+        encoding="utf-8",
+    )
+    (tmp_path / "benchmarks" / "BENCHMARK_LEADERBOARD.md").write_text(
+        render_leaderboard(tmp_path),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(BenchmarkArtifactError) as exc:
+        validate_benchmark_artifacts(tmp_path, max_age_days=3650)
+
+    assert "leaderboard status is not synchronized" in str(exc.value)
