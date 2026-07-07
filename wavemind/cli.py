@@ -14,7 +14,12 @@ from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .encoders import create_text_encoder
 from .advisor import advise_memory_architecture, advice_status_meets_or_exceeds
-from .scale import build_scale_plan, scale_status_meets_or_exceeds
+from .scale import (
+    build_production_scale_run_plan,
+    build_scale_plan,
+    production_scale_profile_names,
+    scale_status_meets_or_exceeds,
+)
 from .serverless import (
     SecretEnvRef,
     ServerlessObservedTelemetry,
@@ -196,6 +201,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero when scale status reaches this threshold",
     )
     scale_plan.add_argument("--json", action="store_true")
+
+    production_scale_plan = sub.add_parser(
+        "production-scale-plan",
+        help="Plan large 10M/50M/100M production benchmark runs",
+    )
+    production_scale_plan.add_argument(
+        "--profile",
+        action="append",
+        choices=["all", *production_scale_profile_names()],
+        default=[],
+        help="Profile to include. Can be repeated. Defaults to all profiles.",
+    )
+    production_scale_plan.add_argument(
+        "--disk-free-gb",
+        type=float,
+        help="Override local free disk for deterministic preflight artifacts.",
+    )
+    production_scale_plan.add_argument("--output-dir", default="benchmarks")
+    production_scale_plan.add_argument("--state-dir", default="state")
+    production_scale_plan.add_argument(
+        "--write-artifact",
+        action="store_true",
+        help="Write the plan JSON to --output.",
+    )
+    production_scale_plan.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_scale_run_plan.json"),
+    )
+    production_scale_plan.add_argument(
+        "--fail-on-action-required",
+        action="store_true",
+        help="Exit non-zero unless every requested profile is ready to run.",
+    )
+    production_scale_plan.add_argument("--json", action="store_true")
 
     advise = sub.add_parser(
         "advise",
@@ -881,6 +921,27 @@ def print_scale_plan(plan: dict[str, object]) -> None:
             print(f"- {item}")
 
 
+def print_production_scale_run_plan(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {summary['overall_status']}")
+    print(f"ready: {summary['ready_count']}/{summary['total_profiles']}")
+    print(f"target_memories_total: {summary['target_memories_total']}")
+    print(f"claim_boundary: {summary['claim_boundary']}")
+    for row in payload.get("profiles", []):
+        print(f"- [{row['status']}] {row['profile']}")
+        print(f"  engine: {row['engine']}")
+        print(f"  target_memories: {row['target_memories']}")
+        print(f"  output: {row['output_artifact']}")
+        print(f"  required_local_free_gb: {row['required_local_free_gb']}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        blockers = row.get("blockers") or []
+        if blockers:
+            print(f"  blockers: {', '.join(blockers)}")
+        print(f"  command: {row['command']}")
+
+
 def print_architecture_advice(advice: dict[str, object]) -> None:
     print(f"status: {advice['status']}")
     print(f"production_ready: {str(advice['production_ready']).lower()}")
@@ -1391,6 +1452,30 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print_scale_plan(plan)
         return 3 if failed_threshold else 0
+
+    if args.command == "production-scale-plan":
+        profiles = args.profile or ["all"]
+        payload = build_production_scale_run_plan(
+            profiles=profiles,
+            disk_free_gb=args.disk_free_gb,
+            output_dir=args.output_dir,
+            state_dir=args.state_dir,
+        )
+        if args.write_artifact:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_scale_run_plan(payload)
+        failed = (
+            args.fail_on_action_required
+            and payload["summary"]["overall_status"] != "ready"
+        )
+        return 3 if failed else 0
 
     if args.command == "advise":
         current_memories = args.current_memories

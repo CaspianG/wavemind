@@ -493,6 +493,40 @@ The same scale preflight is available over HTTP:
 curl "http://127.0.0.1:8000/scale-plan?target_memories=50000"
 ```
 
+For large production benchmark runs, generate the run contract before starting
+heavy ingest:
+
+```sh
+wavemind production-scale-plan --json
+```
+
+The checked-in deterministic artifact is:
+
+```sh
+wavemind production-scale-plan \
+  --disk-free-gb 0 \
+  --write-artifact \
+  --output benchmarks/production_scale_run_plan.json \
+  --json
+```
+
+It covers the next large-N profiles without claiming unfinished benchmark
+results:
+
+| profile | engine | target memories | required env | output artifact |
+|---|---|---:|---|---|
+| `qdrant-10m` | `qdrant-service` | 10000000 | `WAVEMIND_QDRANT_URL` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
+| `qdrant-sharded-10m` | `qdrant-sharded-service` | 10000000 | `WAVEMIND_QDRANT_URLS` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
+| `pgvector-10m` | `pgvector-service` | 10000000 | `WAVEMIND_PGVECTOR_DSN` | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
+| `faiss-ivfpq-50m` | `faiss-ivfpq-persisted` | 50000000 | `WAVEMIND_FAISS_IVFPQ_PATH` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` |
+| `qdrant-sharded-100m` | `qdrant-sharded-service` | 100000000 | `WAVEMIND_QDRANT_URLS` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
+
+Each profile includes exact command, checkpoint path, required environment,
+local runner storage estimate, application storage estimate, SLO capacity
+envelope, and cost envelope. A profile stays `action_required` until the
+service/index backend and local runner requirements are present. The artifact is
+a preflight contract, not latency or recall evidence.
+
 For a concrete operator checklist, use the architecture advisor:
 
 ```sh
@@ -1796,6 +1830,7 @@ public claim boundaries stable:
 | Strict production evidence | Remote service-node, active-active, serverless, 10M service, 50M, and 100M claims are separated into a hard evidence gate. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md`, `benchmarks/production_evidence_gate.py`, `wavemind production-evidence --strict` | Current status remains action-required until real remote/service artifacts are committed. |
 | Production evidence preflight | Remote endpoint/env/path prerequisites are checked before launching expensive strict-evidence jobs. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, `wavemind production-evidence-preflight --write-artifacts` | A ready preflight is not a passing evidence result; it only proves the environment is ready to run the remote/large-N jobs. |
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
+| Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, cost, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
 | 50M memory-scale preflight | Checked-in plan-only artifact estimates local index/transient storage, application storage, required env, blockers, and exact resumable reproduction command with checkpointing. | `benchmarks/production_streaming_load_50m_plan.json` | Not a completed latency/recall benchmark until `production_streaming_load_ivfpq_50m_results.json` is produced by a real run. |
 | pgvector tuning | Real PostgreSQL/pgvector service profile now separates baseline HNSW, exact recall floor, and iterative HNSW tuning. | `benchmarks/production_pgvector_tuning_results.json` | This is a 50k service-backed tuning profile, not yet the 100k/1M production load SLO artifact. |

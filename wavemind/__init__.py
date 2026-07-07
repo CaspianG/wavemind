@@ -142,14 +142,18 @@ from .replication import (
     sync_namespace_delta,
 )
 from .scale import (
+    ProductionScaleRunPlan,
+    ProductionScaleRunProfile,
     ProductionCostResult,
     ProductionCostTarget,
     ProductionSLOResult,
     ProductionSLOTarget,
     ScalePlan,
+    build_production_scale_run_plan,
     build_scale_plan,
     estimate_production_cost,
     evaluate_production_slo,
+    production_scale_profile_names,
     scale_status_meets_or_exceeds,
 )
 from .serverless import (
@@ -256,6 +260,8 @@ __all__ = [
     "QueryResult",
     "ProductionCostResult",
     "ProductionCostTarget",
+    "ProductionScaleRunPlan",
+    "ProductionScaleRunProfile",
     "ProductionSLOResult",
     "ProductionSLOTarget",
     "PredictivePrefetchReport",
@@ -307,6 +313,7 @@ __all__ = [
     "append_recovery_journal_entry",
     "advise_memory_architecture",
     "build_postgres_pitr_plan",
+    "build_production_scale_run_plan",
     "build_scale_plan",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
@@ -335,6 +342,7 @@ __all__ = [
     "remember_payload",
     "restore_recovery_journal",
     "run_control_plane_consensus_profile",
+    "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",
     "stable_memory_key",

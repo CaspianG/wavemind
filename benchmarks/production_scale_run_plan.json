@@ -1,0 +1,463 @@
+{
+  "summary": {
+    "overall_status": "action_required",
+    "ready_count": 0,
+    "action_required_count": 5,
+    "total_profiles": 5,
+    "target_memories_total": 180000000,
+    "profiles": [
+      "qdrant-10m",
+      "qdrant-sharded-10m",
+      "pgvector-10m",
+      "faiss-ivfpq-50m",
+      "qdrant-sharded-100m"
+    ],
+    "claim_boundary": "preflight plans only; real benchmark claims require the output artifacts"
+  },
+  "profiles": [
+    {
+      "profile": "qdrant-10m",
+      "status": "action_required",
+      "claim_boundary": "plan_only; not a completed latency or recall benchmark until the output artifact is produced by a real run",
+      "engine": "qdrant-service",
+      "target_memories": 10000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "batch_size": 5000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7,
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "checkpoint_path": "state/qdrant-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "command_env": {
+        "WAVEMIND_QDRANT_URL": "http://qdrant.example:6333",
+        "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
+        "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
+        "WAVEMIND_QDRANT_WARMUP_QUERIES": "100"
+      },
+      "required_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "module_requirements": {
+        "qdrant_client": true
+      },
+      "estimated_index_gb": 0.0,
+      "estimated_transient_runner_gb": 0.003,
+      "estimated_payload_storage_gb": 19.073,
+      "estimated_float_vector_storage_gb": 4.768,
+      "estimated_application_storage_gb": 23.842,
+      "required_local_free_gb": 1.0,
+      "disk_free_gb": 0.0,
+      "index_mode": "remote Qdrant HNSW service; local runner stores generated batches only",
+      "slo_capacity_envelope": {
+        "engine": "qdrant-service",
+        "status": "scale_required",
+        "target_recall_at_k": 0.95,
+        "target_p99_ms": 100.0,
+        "target_qps": 100.0,
+        "recall_at_k": 0.95,
+        "p99_latency_ms": 100.0,
+        "avg_latency_ms": 50.0,
+        "per_replica_qps_at_headroom": 14.0,
+        "current_replicas": 3,
+        "current_capacity_qps": 42.0,
+        "required_replicas": 8,
+        "autoscaling_max_replicas": 24,
+        "autoscaled_capacity_qps": 336.0,
+        "blocking_reasons": []
+      },
+      "cost_envelope": {
+        "engine": "qdrant-service",
+        "cost_status": "valid_slo",
+        "memory_count": 10000000,
+        "vector_dim": 128,
+        "required_replicas": 8,
+        "target_qps": 100.0,
+        "replica_hourly_cost_usd": 0.25,
+        "storage_gb_monthly_cost_usd": 0.1,
+        "vector_storage_gb": 4.76837158203125,
+        "payload_storage_gb": 19.073486328125,
+        "total_storage_gb": 23.84185791015625,
+        "monthly_storage_cost_usd": 2.384185791015625,
+        "compute_cost_per_1m_queries_usd": 5.555555555555555,
+        "monthly_compute_cost_at_target_qps_usd": 1460.0,
+        "monthly_total_cost_at_target_qps_usd": 1462.3841857910156
+      },
+      "blockers": [
+        "missing_env:WAVEMIND_QDRANT_URL",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "actions": [
+        "Provision the required service/index backend and set the required environment variables.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json` from the repository root.",
+        "Commit `benchmarks/production_streaming_load_qdrant_10m_results.json` only after the real run completes.",
+        "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
+      ]
+    },
+    {
+      "profile": "qdrant-sharded-10m",
+      "status": "action_required",
+      "claim_boundary": "plan_only; not a completed latency or recall benchmark until the output artifact is produced by a real run",
+      "engine": "qdrant-sharded-service",
+      "target_memories": 10000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "batch_size": 5000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 250.0,
+      "replicas": 4,
+      "autoscaling_max_replicas": 48,
+      "capacity_headroom": 0.7,
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "checkpoint_path": "state/qdrant-sharded-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "command_env": {
+        "WAVEMIND_QDRANT_URLS": "http://qdrant-0.example:6333,http://qdrant-1.example:6333,http://qdrant-2.example:6333,http://qdrant-3.example:6333",
+        "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_10m",
+        "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
+        "WAVEMIND_QDRANT_FANOUT_WORKERS": "4",
+        "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
+        "WAVEMIND_QDRANT_WARMUP_QUERIES": "100"
+      },
+      "required_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "module_requirements": {
+        "qdrant_client": true
+      },
+      "estimated_index_gb": 0.0,
+      "estimated_transient_runner_gb": 0.003,
+      "estimated_payload_storage_gb": 19.073,
+      "estimated_float_vector_storage_gb": 4.768,
+      "estimated_application_storage_gb": 23.842,
+      "required_local_free_gb": 1.0,
+      "disk_free_gb": 0.0,
+      "index_mode": "remote horizontally sharded Qdrant services with fanout top-k merge",
+      "slo_capacity_envelope": {
+        "engine": "qdrant-sharded-service",
+        "status": "scale_required",
+        "target_recall_at_k": 0.95,
+        "target_p99_ms": 100.0,
+        "target_qps": 250.0,
+        "recall_at_k": 0.95,
+        "p99_latency_ms": 100.0,
+        "avg_latency_ms": 50.0,
+        "per_replica_qps_at_headroom": 14.0,
+        "current_replicas": 4,
+        "current_capacity_qps": 56.0,
+        "required_replicas": 18,
+        "autoscaling_max_replicas": 48,
+        "autoscaled_capacity_qps": 672.0,
+        "blocking_reasons": []
+      },
+      "cost_envelope": {
+        "engine": "qdrant-sharded-service",
+        "cost_status": "valid_slo",
+        "memory_count": 10000000,
+        "vector_dim": 128,
+        "required_replicas": 18,
+        "target_qps": 250.0,
+        "replica_hourly_cost_usd": 0.25,
+        "storage_gb_monthly_cost_usd": 0.1,
+        "vector_storage_gb": 4.76837158203125,
+        "payload_storage_gb": 19.073486328125,
+        "total_storage_gb": 23.84185791015625,
+        "monthly_storage_cost_usd": 2.384185791015625,
+        "compute_cost_per_1m_queries_usd": 5.0,
+        "monthly_compute_cost_at_target_qps_usd": 3285.0,
+        "monthly_total_cost_at_target_qps_usd": 3287.3841857910156
+      },
+      "blockers": [
+        "missing_env:WAVEMIND_QDRANT_URLS",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "actions": [
+        "Provision the required service/index backend and set the required environment variables.",
+        "Verify every Qdrant shard has comparable HNSW/on-disk settings before measuring fanout.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json` from the repository root.",
+        "Commit `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` only after the real run completes.",
+        "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
+      ]
+    },
+    {
+      "profile": "pgvector-10m",
+      "status": "action_required",
+      "claim_boundary": "plan_only; not a completed latency or recall benchmark until the output artifact is produced by a real run",
+      "engine": "pgvector-service",
+      "target_memories": 10000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "batch_size": 5000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7,
+      "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "checkpoint_path": "state/pgvector-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "command_env": {
+        "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
+        "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+        "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+        "WAVEMIND_PGVECTOR_WARMUP_QUERIES": "100"
+      },
+      "required_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "missing_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "module_requirements": {
+        "psycopg": true
+      },
+      "estimated_index_gb": 0.0,
+      "estimated_transient_runner_gb": 0.003,
+      "estimated_payload_storage_gb": 19.073,
+      "estimated_float_vector_storage_gb": 4.768,
+      "estimated_application_storage_gb": 23.842,
+      "required_local_free_gb": 1.0,
+      "disk_free_gb": 0.0,
+      "index_mode": "remote PostgreSQL/pgvector HNSW service",
+      "slo_capacity_envelope": {
+        "engine": "pgvector-service",
+        "status": "scale_required",
+        "target_recall_at_k": 0.95,
+        "target_p99_ms": 100.0,
+        "target_qps": 100.0,
+        "recall_at_k": 0.95,
+        "p99_latency_ms": 100.0,
+        "avg_latency_ms": 50.0,
+        "per_replica_qps_at_headroom": 14.0,
+        "current_replicas": 3,
+        "current_capacity_qps": 42.0,
+        "required_replicas": 8,
+        "autoscaling_max_replicas": 24,
+        "autoscaled_capacity_qps": 336.0,
+        "blocking_reasons": []
+      },
+      "cost_envelope": {
+        "engine": "pgvector-service",
+        "cost_status": "valid_slo",
+        "memory_count": 10000000,
+        "vector_dim": 128,
+        "required_replicas": 8,
+        "target_qps": 100.0,
+        "replica_hourly_cost_usd": 0.25,
+        "storage_gb_monthly_cost_usd": 0.1,
+        "vector_storage_gb": 4.76837158203125,
+        "payload_storage_gb": 19.073486328125,
+        "total_storage_gb": 23.84185791015625,
+        "monthly_storage_cost_usd": 2.384185791015625,
+        "compute_cost_per_1m_queries_usd": 5.555555555555555,
+        "monthly_compute_cost_at_target_qps_usd": 1460.0,
+        "monthly_total_cost_at_target_qps_usd": 1462.3841857910156
+      },
+      "blockers": [
+        "missing_env:WAVEMIND_PGVECTOR_DSN",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "actions": [
+        "Provision the required service/index backend and set the required environment variables.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json` from the repository root.",
+        "Commit `benchmarks/production_streaming_load_pgvector_10m_results.json` only after the real run completes.",
+        "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
+      ]
+    },
+    {
+      "profile": "faiss-ivfpq-50m",
+      "status": "action_required",
+      "claim_boundary": "plan_only; not a completed latency or recall benchmark until the output artifact is produced by a real run",
+      "engine": "faiss-ivfpq-persisted",
+      "target_memories": 50000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "batch_size": 5000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7,
+      "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "checkpoint_path": "state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command_env": {
+        "WAVEMIND_FAISS_IVFPQ_PATH": "./state/wavemind-faiss-ivfpq-50m.faiss",
+        "WAVEMIND_FAISS_IVFPQ_NLIST": "4096",
+        "WAVEMIND_FAISS_IVFPQ_M": "16",
+        "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
+        "WAVEMIND_FAISS_IVFPQ_NPROBE": "1024",
+        "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000"
+      },
+      "required_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "missing_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "module_requirements": {
+        "faiss": true
+      },
+      "estimated_index_gb": 1.12,
+      "estimated_transient_runner_gb": 0.099,
+      "estimated_payload_storage_gb": 95.367,
+      "estimated_float_vector_storage_gb": 23.842,
+      "estimated_application_storage_gb": 119.209,
+      "required_local_free_gb": 1.523,
+      "disk_free_gb": 0.0,
+      "index_mode": "local persisted FAISS IVF-PQ compressed codes plus int64 ids",
+      "slo_capacity_envelope": {
+        "engine": "faiss-ivfpq-persisted",
+        "status": "scale_required",
+        "target_recall_at_k": 0.95,
+        "target_p99_ms": 100.0,
+        "target_qps": 100.0,
+        "recall_at_k": 0.95,
+        "p99_latency_ms": 100.0,
+        "avg_latency_ms": 50.0,
+        "per_replica_qps_at_headroom": 14.0,
+        "current_replicas": 3,
+        "current_capacity_qps": 42.0,
+        "required_replicas": 8,
+        "autoscaling_max_replicas": 24,
+        "autoscaled_capacity_qps": 336.0,
+        "blocking_reasons": []
+      },
+      "cost_envelope": {
+        "engine": "faiss-ivfpq-persisted",
+        "cost_status": "valid_slo",
+        "memory_count": 50000000,
+        "vector_dim": 128,
+        "required_replicas": 8,
+        "target_qps": 100.0,
+        "replica_hourly_cost_usd": 0.25,
+        "storage_gb_monthly_cost_usd": 0.1,
+        "vector_storage_gb": 23.84185791015625,
+        "payload_storage_gb": 95.367431640625,
+        "total_storage_gb": 119.20928955078125,
+        "monthly_storage_cost_usd": 11.920928955078125,
+        "compute_cost_per_1m_queries_usd": 5.555555555555555,
+        "monthly_compute_cost_at_target_qps_usd": 1460.0,
+        "monthly_total_cost_at_target_qps_usd": 1471.9209289550781
+      },
+      "blockers": [
+        "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "actions": [
+        "Provision the required service/index backend and set the required environment variables.",
+        "Keep the FAISS IVF-PQ checkpoint and index path on durable fast storage.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json` from the repository root.",
+        "Commit `benchmarks/production_streaming_load_ivfpq_50m_results.json` only after the real run completes.",
+        "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
+      ]
+    },
+    {
+      "profile": "qdrant-sharded-100m",
+      "status": "action_required",
+      "claim_boundary": "plan_only; not a completed latency or recall benchmark until the output artifact is produced by a real run",
+      "engine": "qdrant-sharded-service",
+      "target_memories": 100000000,
+      "vector_dim": 128,
+      "queries": 5000,
+      "top_k": 10,
+      "batch_size": 10000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 500.0,
+      "replicas": 8,
+      "autoscaling_max_replicas": 128,
+      "capacity_headroom": 0.7,
+      "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "checkpoint_path": "state/qdrant-sharded-service-100000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "command_env": {
+        "WAVEMIND_QDRANT_URLS": "http://qdrant-0.example:6333,http://qdrant-1.example:6333,http://qdrant-2.example:6333,http://qdrant-3.example:6333,http://qdrant-4.example:6333,http://qdrant-5.example:6333,http://qdrant-6.example:6333,http://qdrant-7.example:6333,http://qdrant-8.example:6333,http://qdrant-9.example:6333,http://qdrant-10.example:6333,http://qdrant-11.example:6333,http://qdrant-12.example:6333,http://qdrant-13.example:6333,http://qdrant-14.example:6333,http://qdrant-15.example:6333",
+        "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_100m",
+        "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
+        "WAVEMIND_QDRANT_FANOUT_WORKERS": "16",
+        "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "60",
+        "WAVEMIND_QDRANT_WARMUP_QUERIES": "250"
+      },
+      "required_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "module_requirements": {
+        "qdrant_client": true
+      },
+      "estimated_index_gb": 0.0,
+      "estimated_transient_runner_gb": 0.007,
+      "estimated_payload_storage_gb": 190.735,
+      "estimated_float_vector_storage_gb": 47.684,
+      "estimated_application_storage_gb": 238.419,
+      "required_local_free_gb": 1.0,
+      "disk_free_gb": 0.0,
+      "index_mode": "remote horizontally sharded Qdrant services for 100M-memory target",
+      "slo_capacity_envelope": {
+        "engine": "qdrant-sharded-service",
+        "status": "scale_required",
+        "target_recall_at_k": 0.95,
+        "target_p99_ms": 100.0,
+        "target_qps": 500.0,
+        "recall_at_k": 0.95,
+        "p99_latency_ms": 100.0,
+        "avg_latency_ms": 50.0,
+        "per_replica_qps_at_headroom": 14.0,
+        "current_replicas": 8,
+        "current_capacity_qps": 112.0,
+        "required_replicas": 36,
+        "autoscaling_max_replicas": 128,
+        "autoscaled_capacity_qps": 1792.0,
+        "blocking_reasons": []
+      },
+      "cost_envelope": {
+        "engine": "qdrant-sharded-service",
+        "cost_status": "valid_slo",
+        "memory_count": 100000000,
+        "vector_dim": 128,
+        "required_replicas": 36,
+        "target_qps": 500.0,
+        "replica_hourly_cost_usd": 0.25,
+        "storage_gb_monthly_cost_usd": 0.1,
+        "vector_storage_gb": 47.6837158203125,
+        "payload_storage_gb": 190.73486328125,
+        "total_storage_gb": 238.4185791015625,
+        "monthly_storage_cost_usd": 23.84185791015625,
+        "compute_cost_per_1m_queries_usd": 5.0,
+        "monthly_compute_cost_at_target_qps_usd": 6570.0,
+        "monthly_total_cost_at_target_qps_usd": 6593.841857910156
+      },
+      "blockers": [
+        "missing_env:WAVEMIND_QDRANT_URLS",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "actions": [
+        "Provision the required service/index backend and set the required environment variables.",
+        "Verify every Qdrant shard has comparable HNSW/on-disk settings before measuring fanout.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json` from the repository root.",
+        "Commit `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` only after the real run completes.",
+        "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
+      ]
+    }
+  ]
+}

@@ -11,8 +11,10 @@ from wavemind import (
     ProductionCostTarget,
     ProductionSLOTarget,
     WaveMind,
+    build_production_scale_run_plan,
     estimate_production_cost,
     evaluate_production_slo,
+    production_scale_profile_names,
 )
 from wavemind.scale import build_scale_plan, scale_status_meets_or_exceeds
 
@@ -246,3 +248,103 @@ def test_cli_scale_plan_fail_on_returns_nonzero_for_deploy_preflight(tmp_path):
 
     assert result.returncode == 3
     assert payload["status"] == "action_required"
+
+
+def test_production_scale_run_plan_reports_missing_service_env():
+    payload = build_production_scale_run_plan(
+        profiles=["qdrant-10m"],
+        env={},
+        disk_free_gb=1000.0,
+    )
+    summary = payload["summary"]
+    row = payload["profiles"][0]
+
+    assert summary["overall_status"] == "action_required"
+    assert summary["total_profiles"] == 1
+    assert row["profile"] == "qdrant-10m"
+    assert row["target_memories"] == 10_000_000
+    assert row["output_artifact"].endswith("production_streaming_load_qdrant_10m_results.json")
+    assert row["checkpoint_path"].endswith("qdrant-service-10000000.checkpoint.json")
+    assert "WAVEMIND_QDRANT_URL" in row["required_env"]
+    assert row["missing_env"] == ("WAVEMIND_QDRANT_URL",)
+    assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
+    assert "--checkpoint-path" in row["command"]
+    assert row["claim_boundary"].startswith("plan_only")
+
+
+def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
+    monkeypatch.setattr("wavemind.scale._module_available", lambda name: True)
+
+    payload = build_production_scale_run_plan(
+        profiles=["pgvector-10m"],
+        env={"WAVEMIND_PGVECTOR_DSN": "postgresql://example/wavemind"},
+        disk_free_gb=1000.0,
+    )
+    row = payload["profiles"][0]
+
+    assert payload["summary"]["overall_status"] == "ready"
+    assert row["status"] == "ready"
+    assert row["missing_env"] == ()
+    assert row["blockers"] == ()
+    assert row["slo_capacity_envelope"]["status"] in {"pass", "scale_required"}
+    assert row["slo_capacity_envelope"]["required_replicas"] <= row["autoscaling_max_replicas"]
+    assert row["cost_envelope"]["memory_count"] == 10_000_000
+    assert row["estimated_application_storage_gb"] > 20
+
+
+def test_production_scale_run_plan_all_profiles_and_known_names():
+    names = production_scale_profile_names()
+    assert "qdrant-sharded-100m" in names
+    assert "faiss-ivfpq-50m" in names
+
+    payload = build_production_scale_run_plan(
+        profiles=["all"],
+        env={},
+        disk_free_gb=0.0,
+    )
+
+    assert payload["summary"]["total_profiles"] == len(names)
+    assert payload["summary"]["target_memories_total"] >= 180_000_000
+    assert payload["summary"]["overall_status"] == "action_required"
+    profiles = {row["profile"]: row for row in payload["profiles"]}
+    assert profiles["faiss-ivfpq-50m"]["estimated_index_gb"] > 1.0
+    assert profiles["faiss-ivfpq-50m"]["required_local_free_gb"] > 1.0
+    assert profiles["qdrant-sharded-100m"]["target_qps"] == 500.0
+
+
+def test_cli_production_scale_plan_writes_deterministic_artifact(tmp_path):
+    output = tmp_path / "production-scale-plan.json"
+    result = run_cli(
+        "production-scale-plan",
+        "--profile",
+        "qdrant-10m",
+        "--disk-free-gb",
+        "0",
+        "--write-artifact",
+        "--output",
+        str(output),
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    written = json.loads(output.read_text(encoding="utf-8"))
+
+    assert payload == written
+    assert payload["summary"]["overall_status"] == "action_required"
+    assert payload["profiles"][0]["profile"] == "qdrant-10m"
+    assert payload["profiles"][0]["disk_free_gb"] == 0.0
+
+
+def test_cli_production_scale_plan_fail_on_action_required(tmp_path):
+    result = run_cli_unchecked(
+        "production-scale-plan",
+        "--profile",
+        "qdrant-10m",
+        "--disk-free-gb",
+        "0",
+        "--fail-on-action-required",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 3
+    assert payload["summary"]["overall_status"] == "action_required"
