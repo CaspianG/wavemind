@@ -122,6 +122,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Redis hot cache"]["memory_os_prewarm_warmed"] >= 2
     assert results["WaveMind Redis hot cache"]["memory_os_predictive_generated"] >= 1
     assert results["WaveMind Redis hot cache"]["memory_os_predictive_warmed"] >= 1
+    assert "risk limits" in results["WaveMind Redis hot cache"]["memory_os_transition_prefetch_queries"]
+    assert results["WaveMind Redis hot cache"]["memory_os_transition_prefetch_hit"] is True
     assert results["WaveMind Redis hot cache"]["memory_os_user_feedback_events"] >= 2
     assert results["WaveMind Redis hot cache"]["memory_os_positive_feedback_priority_delta"] > 0.0
     assert results["WaveMind Redis hot cache"]["memory_os_negative_feedback_priority_delta"] < 0.0
@@ -156,6 +158,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Memory OS"]["predictive_prefetch_generated"] >= 1
     assert results["WaveMind Memory OS"]["predictive_prefetch_warmed"] >= 1
     assert results["WaveMind Memory OS"]["predictive_prefetch_queries"]
+    assert "risk limits" in results["WaveMind Memory OS"]["transition_prefetch_queries"]
+    assert results["WaveMind Memory OS"]["transition_prefetch_hit"] is True
     assert results["WaveMind Memory OS"]["expired_purged"] == 1
     assert results["WaveMind Memory OS"]["concepts_created"] == 1
     assert results["WaveMind Memory OS"]["user_feedback_events"] >= 2

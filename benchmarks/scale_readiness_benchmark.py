@@ -1117,6 +1117,11 @@ def run_redis_cache_profile() -> dict[str, object]:
                 namespace=os_namespace,
                 tags=["preference"],
             )
+            memory.remember(
+                "risk limits follow budget recall in real sessions",
+                namespace=os_namespace,
+                tags=["risk"],
+            )
             cold_id = memory.remember(
                 "unused redis memory os cold note",
                 namespace=os_namespace,
@@ -1127,6 +1132,7 @@ def run_redis_cache_profile() -> dict[str, object]:
             memory.query("systems programming", namespace=os_namespace, top_k=1)
             memory.query("systems programming", namespace=os_namespace, top_k=1)
             memory.query("budget recall", namespace=os_namespace, top_k=1)
+            memory.query("risk limits", namespace=os_namespace, top_k=1)
             memory.query("budget recall", namespace=os_namespace, top_k=1)
             feedback_positive_before = memory.store.get(budget_id).priority
             memory.feedback(
@@ -1231,6 +1237,15 @@ def run_redis_cache_profile() -> dict[str, object]:
                 and os_cached[0].text == "budget recall should be prefetched"
                 and os_reader_cache.stats().hits >= 1
             )
+            os_transition_cached = os_reader_cache.get(
+                os_namespace,
+                "risk limits",
+                top_k=1,
+            )
+            os_transition_hit = (
+                bool(os_transition_cached)
+                and os_transition_cached[0].text == "risk limits follow budget recall in real sessions"
+            )
 
             invalidated = writer_cache.invalidate_namespace(namespace)
             invalidation_removed_key = invalidated >= 1 and reader_cache.get(
@@ -1263,6 +1278,10 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "memory_os_prewarm_warmed": os_report.prewarm.warmed,
                 "memory_os_predictive_generated": os_report.predictive_prefetch.generated_queries,
                 "memory_os_predictive_warmed": os_report.predictive_prefetch.warmed,
+                "memory_os_transition_prefetch_queries": list(
+                    os_report.predictive_prefetch.transition_queries
+                ),
+                "memory_os_transition_prefetch_hit": os_transition_hit,
                 "memory_os_concepts_created": os_report.concepts_created,
                 "memory_os_user_feedback_events": len(
                     memory.audit_events(
@@ -1562,6 +1581,11 @@ def run_memory_os_profile() -> dict[str, object]:
                 namespace="tenant:os",
                 tags=["preference"],
             )
+            memory.remember(
+                "risk limits follow budget recall in real sessions",
+                namespace="tenant:os",
+                tags=["risk"],
+            )
             cold_id = memory.remember(
                 "unused memory os cold note",
                 namespace="tenant:os",
@@ -1572,6 +1596,7 @@ def run_memory_os_profile() -> dict[str, object]:
             memory.query("systems programming", namespace="tenant:os", top_k=1)
             memory.query("systems programming", namespace="tenant:os", top_k=1)
             memory.query("budget recall", namespace="tenant:os", top_k=1)
+            memory.query("risk limits", namespace="tenant:os", top_k=1)
             memory.query("budget recall", namespace="tenant:os", top_k=1)
             feedback_positive_before = memory.store.get(budget_id).priority
             memory.feedback(
@@ -1621,6 +1646,7 @@ def run_memory_os_profile() -> dict[str, object]:
             )
             elapsed_ms = (time.perf_counter() - started) * 1000.0
             cached = cache.get("tenant:os", "budget recall", top_k=1)
+            transition_cached = cache.get("tenant:os", "risk limits", top_k=1)
             concept_results = memory.query(
                 "systems programming",
                 namespace="tenant:os",
@@ -1636,6 +1662,13 @@ def run_memory_os_profile() -> dict[str, object]:
                 "predictive_prefetch_generated": report.predictive_prefetch.generated_queries,
                 "predictive_prefetch_warmed": report.predictive_prefetch.warmed,
                 "predictive_prefetch_queries": list(report.predictive_prefetch.queries),
+                "transition_prefetch_queries": list(
+                    report.predictive_prefetch.transition_queries
+                ),
+                "transition_prefetch_hit": (
+                    bool(transition_cached)
+                    and transition_cached[0].text == "risk limits follow budget recall in real sessions"
+                ),
                 "expired_purged": report.expired_purged,
                 "concepts_created": report.concepts_created,
                 "concept_recall": bool(concept_results),
@@ -3532,6 +3565,7 @@ def main() -> int:
             print(f"| redis hot cache | shared_cache_visible | {result['shared_cache_visible_across_clients']} |")
             print(f"| redis hot cache | cache_prewarm_warmed | {result['cache_prewarm_warmed']} |")
             print(f"| redis hot cache | memory_os_prewarm_warmed | {result['memory_os_prewarm_warmed']} |")
+            print(f"| redis hot cache | memory_os_transition_prefetch_hit | {result['memory_os_transition_prefetch_hit']} |")
             print(f"| redis hot cache | memory_os_forgetting_demotions | {result['memory_os_forgetting_demotions']} |")
             print(f"| redis hot cache | memory_os_cross_worker_hit | {result['memory_os_cross_worker_hit']} |")
             print(f"| redis hot cache | namespace_invalidation_removed | {result['namespace_invalidation_removed']} |")
@@ -3552,6 +3586,7 @@ def main() -> int:
             print(f"| memory os | ok | {result['ok']} |")
             print(f"| memory os | hot_queries | {result['hot_queries']} |")
             print(f"| memory os | prewarm_warmed | {result['prewarm_warmed']} |")
+            print(f"| memory os | transition_prefetch_hit | {result['transition_prefetch_hit']} |")
             print(f"| memory os | concepts_created | {result['concepts_created']} |")
             print(f"| memory os | forgetting_demotions | {result['forgetting_demotions']} |")
         elif result["engine"] == "WaveMind distributed sharding":

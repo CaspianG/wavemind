@@ -523,6 +523,7 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os.add_argument("--no-predictive-prefetch", action="store_true")
     memory_os.add_argument("--max-predictive-queries", type=int, default=16)
     memory_os.add_argument("--predictive-terms-per-hot-query", type=int, default=3)
+    memory_os.add_argument("--transition-prefetch-window-seconds", type=float, default=15 * 60)
     memory_os.add_argument("--no-rebuild-index", action="store_true")
     memory_os.add_argument("--memory-pressure-threshold", type=int, default=50_000)
     memory_os.add_argument("--no-architecture-advice", action="store_true")
@@ -1955,6 +1956,7 @@ def main(argv: list[str] | None = None) -> int:
             predictive_prefetch=not args.no_predictive_prefetch,
             max_predictive_queries=args.max_predictive_queries,
             predictive_terms_per_hot_query=args.predictive_terms_per_hot_query,
+            transition_prefetch_window_seconds=args.transition_prefetch_window_seconds,
             rebuild_unhealthy_index=not args.no_rebuild_index,
             memory_pressure_threshold=args.memory_pressure_threshold,
             architecture_advice=not args.no_architecture_advice,

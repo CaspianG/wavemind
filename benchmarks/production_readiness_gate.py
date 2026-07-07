@@ -1084,6 +1084,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(redis_cache.get("memory_os_prewarm_warmed", 0)) >= 2
                 and int(redis_cache.get("memory_os_predictive_generated", 0)) >= 1
                 and int(redis_cache.get("memory_os_predictive_warmed", 0)) >= 1
+                and "risk limits"
+                in set(redis_cache.get("memory_os_transition_prefetch_queries") or [])
+                and redis_cache.get("memory_os_transition_prefetch_hit")
                 and int(redis_cache.get("memory_os_user_feedback_events", 0)) >= 2
                 and float(
                     redis_cache.get("memory_os_positive_feedback_priority_delta", 0.0)
@@ -1110,7 +1113,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "Production cache must be shareable across workers, support "
                 "query-audit prewarm, support Memory OS prewarm, guard "
                 "adaptive Memory OS mutation cycles with a Redis-compatible "
-                "single-flight lock, apply explicit useful/not-useful recall "
+                "single-flight lock, learn observed follow-up query transitions, apply explicit useful/not-useful recall "
                 "feedback, invalidate a namespace after memory changes, and preserve architecture advice for production-scale "
                 "deployments."
             ),
@@ -1119,6 +1122,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"prewarm hit {redis_cache.get('cache_prewarm_cross_worker_hit')}, "
                 f"Memory OS warmed {redis_cache.get('memory_os_prewarm_warmed')}, "
                 f"predictive warmed {redis_cache.get('memory_os_predictive_warmed')}, "
+                f"transition hit {redis_cache.get('memory_os_transition_prefetch_hit')}, "
+                f"transition queries {redis_cache.get('memory_os_transition_prefetch_queries')}, "
                 f"feedback events {redis_cache.get('memory_os_user_feedback_events')}, "
                 f"lock acquired {redis_cache.get('memory_os_lock_acquired')}, "
                 f"busy skipped {redis_cache.get('memory_os_busy_lock_skipped')}, "
@@ -1268,6 +1273,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and memory_os.get("prewarm_hit")
                 and int(memory_os.get("predictive_prefetch_generated", 0)) >= 1
                 and int(memory_os.get("predictive_prefetch_warmed", 0)) >= 1
+                and "risk limits" in set(memory_os.get("transition_prefetch_queries") or [])
+                and memory_os.get("transition_prefetch_hit")
                 and int(memory_os.get("expired_purged", 0)) >= 1
                 and int(memory_os.get("concepts_created", 0)) >= 1
                 and int(memory_os.get("user_feedback_events", 0)) >= 2
@@ -1281,11 +1288,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and memory_os_architecture_pass
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
+            requirement="Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
                 f"predictive warmed {memory_os.get('predictive_prefetch_warmed')}, "
+                f"transition hit {memory_os.get('transition_prefetch_hit')}, "
+                f"transition queries {memory_os.get('transition_prefetch_queries')}, "
                 f"expired {memory_os.get('expired_purged')}, "
                 f"concepts {memory_os.get('concepts_created')}, "
                 f"feedback events {memory_os.get('user_feedback_events')}, "

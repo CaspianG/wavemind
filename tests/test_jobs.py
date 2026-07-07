@@ -604,6 +604,57 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         memory.close()
 
 
+def test_memory_os_worker_prefetches_observed_follow_up_queries(tmp_path):
+    namespace = "tenant:sequence"
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-transitions.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    cache = HotMemoryCache(capacity=8, ttl_seconds=60)
+    try:
+        memory.remember("budget recall primary memory", namespace=namespace)
+        memory.remember("risk limits follow up memory", namespace=namespace)
+        for query in (
+            "budget recall",
+            "risk limits",
+            "budget recall",
+            "risk limits",
+            "budget recall",
+        ):
+            memory.query(query, namespace=namespace, top_k=1)
+
+        report = MemoryOSWorker(memory, cache).run_once(
+            namespace=namespace,
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=3,
+            top_k=1,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            predict_priorities=False,
+            adaptive_forgetting=False,
+            max_predictive_queries=4,
+            predictive_terms_per_hot_query=0,
+            transition_prefetch_window_seconds=60,
+            architecture_advice=False,
+        )
+        cached_follow_up = cache.get(namespace, "risk limits", top_k=1)
+
+        assert report.ok
+        assert [query.query for query in report.hot_queries] == ["budget recall"]
+        assert "risk limits" in report.predictive_prefetch.transition_queries
+        assert "risk limits" in report.predictive_prefetch.queries
+        assert cached_follow_up is not None
+        assert cached_follow_up[0].text == "risk limits follow up memory"
+        assert "predictive_prefetch" in report.actions
+    finally:
+        memory.close()
+
+
 def test_memory_os_worker_embeds_architecture_advice_for_production_targets(tmp_path):
     memory = WaveMind(
         db_path=tmp_path / "memory-os-architecture.sqlite3",

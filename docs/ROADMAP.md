@@ -267,8 +267,9 @@ policy matters more than raw vector-database scale:
   `query_with_cache()`, `query_with_vector_cache()`, `CachePrewarmWorker`, and
   `MemoryMaintenanceWorker` provide the first worker/cache primitives for hot
   namespaces, encoded query vectors, query-audit-driven cache prewarm,
-  predictive prefetch, TTL purge, field consolidation, concept consolidation,
-  architecture-advice reporting, and index-health repair loops.
+  transition-learned predictive prefetch, TTL purge, field consolidation,
+  concept consolidation, architecture-advice reporting, and index-health
+  repair loops.
 - Structured payload helpers cover image captions, audio transcripts, video
   transcripts/scenes, 3D asset descriptors, tables, events, and knowledge graph
   triples while preserving modality metadata in the same memory API. The first
@@ -297,7 +298,8 @@ policy matters more than raw vector-database scale:
   portable-archive verification, S3-compatible object-store upload,
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
-  prewarm, predictive prefetch, query-vector cache, Redis-compatible shared rate limiting, hot-cache
+  prewarm, transition-learned predictive prefetch, query-vector cache,
+  Redis-compatible shared rate limiting, hot-cache
   behavior, API cache mutation safety, batch recall feedback, structured-payload retrieval,
   cross-modal target-modality/provenance checks, external precomputed-vector
   compatibility checks, and object-store-backed asset manifest verification.

@@ -234,6 +234,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Query-vector cache avoids repeated encoder work" in report
     assert "Redis-compatible shared rate limiter works across workers" in report
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report
+    assert "transition hit True" in report
     assert "API cache does not serve stale memory after mutations" in report
     assert "Batch recall feedback updates priority, audit, and cache" in report
     assert "Real Redis multi-process API load passes SLO" in report

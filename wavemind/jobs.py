@@ -591,6 +591,7 @@ class PredictivePrefetchReport:
     skipped: int = 0
     errors: dict[str, str] = field(default_factory=dict)
     queries: tuple[str, ...] = ()
+    transition_queries: tuple[str, ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -604,6 +605,7 @@ class PredictivePrefetchReport:
             "skipped": self.skipped,
             "errors": dict(self.errors),
             "queries": list(self.queries),
+            "transition_queries": list(self.transition_queries),
             "ok": self.ok,
         }
 
@@ -1756,6 +1758,7 @@ class MemoryOSWorker:
         predictive_prefetch: bool = True,
         max_predictive_queries: int = 16,
         predictive_terms_per_hot_query: int = 3,
+        transition_prefetch_window_seconds: float = 15 * 60,
         rebuild_unhealthy_index: bool = True,
         memory_pressure_threshold: int = 50_000,
         architecture_advice: bool = True,
@@ -1839,6 +1842,7 @@ class MemoryOSWorker:
                 predictive_prefetch=predictive_prefetch,
                 max_predictive_queries=max_predictive_queries,
                 predictive_terms_per_hot_query=predictive_terms_per_hot_query,
+                transition_prefetch_window_seconds=transition_prefetch_window_seconds,
                 rebuild_unhealthy_index=rebuild_unhealthy_index,
                 memory_pressure_threshold=memory_pressure_threshold,
                 architecture_advice=architecture_advice,
@@ -1889,6 +1893,7 @@ class MemoryOSWorker:
         predictive_prefetch: bool,
         max_predictive_queries: int,
         predictive_terms_per_hot_query: int,
+        transition_prefetch_window_seconds: float,
         rebuild_unhealthy_index: bool,
         memory_pressure_threshold: int,
         architecture_advice: bool,
@@ -2017,10 +2022,12 @@ class MemoryOSWorker:
         if predictive_prefetch and self.cache is not None and hot_queries:
             predictive = self._predictive_prefetch(
                 hot_queries,
+                events=events,
                 top_k=top_k,
                 min_score=min_score,
                 max_queries=max_predictive_queries,
                 terms_per_hot_query=predictive_terms_per_hot_query,
+                transition_window_seconds=transition_prefetch_window_seconds,
             )
             if predictive.warmed:
                 actions.append("predictive_prefetch")
@@ -2250,21 +2257,33 @@ class MemoryOSWorker:
         self,
         hot_queries: list[MemoryOSHotQuery],
         *,
+        events: Iterable[Any],
         top_k: int,
         min_score: float | None,
         max_queries: int,
         terms_per_hot_query: int,
+        transition_window_seconds: float,
     ) -> PredictivePrefetchReport:
         if self.cache is None or not hasattr(self.memory, "query"):
             return PredictivePrefetchReport(scanned_hot_queries=len(hot_queries))
 
         max_queries = max(0, int(max_queries))
         terms_per_hot_query = max(0, int(terms_per_hot_query))
-        if max_queries <= 0 or terms_per_hot_query <= 0:
+        if max_queries <= 0:
             return PredictivePrefetchReport(scanned_hot_queries=len(hot_queries))
 
         planned: OrderedDict[tuple[str, str], None] = OrderedDict()
         errors: dict[str, str] = {}
+        transition_planned = self._transition_queries(
+            events,
+            hot_queries,
+            max_queries=max_queries,
+            window_seconds=transition_window_seconds,
+        )
+        for key in transition_planned:
+            if len(planned) >= max_queries:
+                break
+            planned[key] = None
         for hot_query in hot_queries:
             if len(planned) >= max_queries:
                 break
@@ -2326,7 +2345,60 @@ class MemoryOSWorker:
             skipped=skipped,
             errors=errors,
             queries=tuple(warmed_queries),
+            transition_queries=tuple(query for _namespace, query in transition_planned),
         )
+
+    def _transition_queries(
+        self,
+        events: Iterable[Any],
+        hot_queries: list[MemoryOSHotQuery],
+        *,
+        max_queries: int,
+        window_seconds: float,
+    ) -> tuple[tuple[str, str], ...]:
+        if max_queries <= 0 or window_seconds <= 0 or not hot_queries:
+            return ()
+        hot_keys = {(query.namespace, query.query) for query in hot_queries}
+        ordered = sorted(
+            events,
+            key=lambda event: (
+                float(getattr(event, "created_at", 0.0) or 0.0),
+                int(getattr(event, "id", 0) or 0),
+            ),
+        )
+        previous_by_namespace: dict[str, tuple[str, float]] = {}
+        transition_counts: OrderedDict[tuple[str, str], int] = OrderedDict()
+        last_seen: dict[tuple[str, str], float] = {}
+        for event in ordered:
+            metadata = getattr(event, "metadata", {}) or {}
+            query = str(metadata.get("query") or "").strip()
+            if not query:
+                continue
+            namespace = str(getattr(event, "namespace", None) or "default")
+            created_at = float(getattr(event, "created_at", 0.0) or 0.0)
+            previous = previous_by_namespace.get(namespace)
+            if previous is not None:
+                previous_query, previous_at = previous
+                elapsed = created_at - previous_at
+                if (
+                    previous_query != query
+                    and 0.0 <= elapsed <= float(window_seconds)
+                    and (namespace, previous_query) in hot_keys
+                ):
+                    key = (namespace, query)
+                    transition_counts[key] = transition_counts.get(key, 0) + 1
+                    last_seen[key] = max(created_at, last_seen.get(key, 0.0))
+            previous_by_namespace[namespace] = (query, created_at)
+        ordered_transitions = sorted(
+            transition_counts.items(),
+            key=lambda item: (
+                -item[1],
+                -last_seen.get(item[0], 0.0),
+                item[0][0],
+                item[0][1],
+            ),
+        )
+        return tuple(key for key, _count in ordered_transitions[:max_queries])
 
     def _neighbor_queries(
         self,

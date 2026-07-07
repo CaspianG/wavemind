@@ -582,6 +582,7 @@ class MemoryOSRequest(BaseModel):
     predictive_prefetch: bool = True
     max_predictive_queries: int = Field(default=16, ge=0, le=1000)
     predictive_terms_per_hot_query: int = Field(default=3, ge=0, le=50)
+    transition_prefetch_window_seconds: float = Field(default=15 * 60, ge=0.0)
     rebuild_unhealthy_index: bool = True
     memory_pressure_threshold: int = Field(default=50000, ge=0)
     architecture_advice: bool = True
@@ -1488,6 +1489,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 predictive_prefetch=request.predictive_prefetch,
                 max_predictive_queries=request.max_predictive_queries,
                 predictive_terms_per_hot_query=request.predictive_terms_per_hot_query,
+                transition_prefetch_window_seconds=request.transition_prefetch_window_seconds,
                 rebuild_unhealthy_index=request.rebuild_unhealthy_index,
                 memory_pressure_threshold=request.memory_pressure_threshold,
                 architecture_advice=request.architecture_advice,
