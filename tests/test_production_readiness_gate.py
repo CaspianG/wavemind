@@ -119,6 +119,12 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "watermark health pass" in criteria["active_active_field_crdt"]["evidence"]
     assert "missing detected True" in criteria["active_active_field_crdt"]["evidence"]
     assert "lag detected True" in criteria["active_active_field_crdt"]["evidence"]
+    assert criteria["backup_restore_dr"]["status"] == "pass"
+    assert "point-in-time recovery" in criteria["backup_restore_dr"]["requirement"]
+    assert "append-only mutation journal" in criteria["backup_restore_dr"]["requirement"]
+    assert "PITR full True" in criteria["backup_restore_dr"]["evidence"]
+    assert "PITR point True" in criteria["backup_restore_dr"]["evidence"]
+    assert "journal entries" in criteria["backup_restore_dr"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]

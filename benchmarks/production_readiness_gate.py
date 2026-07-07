@@ -470,6 +470,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     http_active_active = scale.get("WaveMind HTTP active-active service-region sync", {})
     field_crdt = scale.get("WaveMind field-state CRDT", {})
     snapshot = scale.get("WaveMind replicated snapshot", {})
+    recovery_journal = scale.get("WaveMind recovery journal", {})
     payloads = scale.get("WaveMind structured payloads", {})
     advisor = advise_memory_architecture(
         {
@@ -1360,15 +1361,31 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and snapshot.get("archive_verified")
                 and snapshot.get("object_store_drill_ok")
                 and snapshot.get("recalled_after_restore_node_loss")
+                and recovery_journal.get("full_restore_ok")
+                and recovery_journal.get("point_in_time_restore_ok")
+                and int(recovery_journal.get("full_deleted_records", 0)) >= 2
+                and int(recovery_journal.get("full_restored_records", 0)) >= 1
+                and int(recovery_journal.get("point_restored_records", 0)) >= 1
                 else "fail"
             ),
-            requirement="Backups must be checksummed, restorable, offsite-capable, and recover recall after restore.",
+            requirement=(
+                "Backups must be checksummed, restorable, offsite-capable, "
+                "recover recall after restore, and support SQLite point-in-time "
+                "recovery from an append-only mutation journal."
+            ),
             evidence=(
                 f"archive {snapshot.get('archive_verified')}, "
                 f"object-store DR {snapshot.get('object_store_drill_ok')}, "
-                f"restored files {snapshot.get('restored_files')}"
+                f"restored files {snapshot.get('restored_files')}, "
+                f"PITR full {recovery_journal.get('full_restore_ok')}, "
+                f"PITR point {recovery_journal.get('point_in_time_restore_ok')}, "
+                f"journal entries {recovery_journal.get('journal_entries')}, "
+                f"deleted {recovery_journal.get('full_deleted_records')}"
             ),
-            next_step="Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps.",
+            next_step=(
+                "Repeat the drill with real S3-compatible storage, larger SQLite "
+                "journals, and database-native Postgres PITR runbooks."
+            ),
         ),
         _criterion(
             criterion_id="structured_multimodal_payloads",

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T11:33:10Z",
+  "generated_at": "2026-07-07T12:12:27Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -153,7 +153,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.002900022082030773 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -241,7 +241,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 196.23 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 202.66 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -249,7 +249,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.3965999241918325 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 2.06540001090616 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
@@ -264,9 +264,9 @@
       "id": "backup_restore_dr",
       "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
       "status": "pass",
-      "requirement": "Backups must be checksummed, restorable, offsite-capable, and recover recall after restore.",
-      "evidence": "archive True, object-store DR True, restored files 3",
-      "next_step": "Repeat the drill with real S3-compatible storage and larger SQLite/Postgres dumps."
+      "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal.",
+      "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2",
+      "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, and database-native Postgres PITR runbooks."
     },
     {
       "id": "structured_multimodal_payloads",

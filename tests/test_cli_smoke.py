@@ -112,6 +112,63 @@ def test_cli_timestamped_backup_retention_and_restore(tmp_path):
     assert "backup restore cli memory" in queried.stdout
 
 
+def test_cli_recovery_journal_restore_replays_mutations(tmp_path):
+    db_path = tmp_path / "cli.sqlite3"
+    journal_path = tmp_path / "cli.recovery.jsonl"
+    restored_path = tmp_path / "restored.sqlite3"
+
+    run_cli(
+        "--db",
+        str(db_path),
+        "--recovery-journal",
+        str(journal_path),
+        "remember",
+        "cli recovery first memory",
+        "--namespace",
+        "ops",
+    )
+    run_cli(
+        "--db",
+        str(db_path),
+        "--recovery-journal",
+        str(journal_path),
+        "remember",
+        "cli recovery second memory",
+        "--namespace",
+        "ops",
+    )
+    run_cli(
+        "--db",
+        str(db_path),
+        "--recovery-journal",
+        str(journal_path),
+        "forget",
+        "--text",
+        "cli recovery first memory",
+        "--namespace",
+        "ops",
+    )
+
+    restored = run_cli(
+        "recovery-restore",
+        "--from",
+        str(journal_path),
+        "--to",
+        str(restored_path),
+        "--overwrite",
+        "--json",
+    )
+    payload = json.loads(restored.stdout)
+
+    assert payload["applied_entries"] == 3
+    assert payload["deleted_records"] == 1
+    assert payload["restored_records"] == 1
+
+    queried = run_cli("--db", str(restored_path), "query", "second memory", "--namespace", "ops")
+    assert "cli recovery second memory" in queried.stdout
+    assert "cli recovery first memory" not in queried.stdout
+
+
 def test_legacy_script_delegates_to_new_cli(tmp_path):
     result = subprocess.run(
         [sys.executable, "wavemind_v2.py", "--help"],

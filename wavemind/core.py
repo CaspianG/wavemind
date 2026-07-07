@@ -22,7 +22,12 @@ from .field_graph import MemoryFieldGraph
 from .indexes import create_vector_index
 from .observability import trace_span
 from .scale import ScalePlan, build_scale_plan
-from .storage import AuditEvent, MemoryRecord, create_memory_store
+from .storage import (
+    AuditEvent,
+    MemoryRecord,
+    append_recovery_journal_entry,
+    create_memory_store,
+)
 
 
 LEXICAL_STOPWORDS = DEFAULT_TOKEN_STOPWORDS
@@ -165,6 +170,7 @@ class WaveMind:
         persist_access_on_query: bool = False,
         query_feedback_strength: float = 0.0,
         audit_queries: bool = False,
+        recovery_journal_path: str | Path | None = None,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
@@ -192,6 +198,7 @@ class WaveMind:
         self.persist_access_on_query = bool(persist_access_on_query)
         self.query_feedback_strength = float(query_feedback_strength)
         self.audit_queries = bool(audit_queries)
+        self.recovery_journal_path = Path(recovery_journal_path) if recovery_journal_path else None
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
         self._token_ids: dict[str, set[int]] = {}
@@ -260,6 +267,7 @@ class WaveMind:
                 "text_length": len(text),
             },
         )
+        self._append_recovery_journal("remember", [record])
         return id
 
     def query(
@@ -445,6 +453,7 @@ class WaveMind:
                     "text_length": len(record.text),
                 },
             )
+        self._append_recovery_journal("forget", records)
         return len(records)
 
     def feedback(
@@ -571,6 +580,24 @@ class WaveMind:
                 self.field.evolve(self._evolve_n)
             self._refresh_field_magnitude()
 
+    def _append_recovery_journal(
+        self,
+        action: str,
+        records: Iterable[MemoryRecord],
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        if self.recovery_journal_path is None:
+            return
+        records = list(records)
+        if not records:
+            return
+        append_recovery_journal_entry(
+            self.recovery_journal_path,
+            action,
+            records,
+            metadata=metadata,
+        )
+
     def index_health(self) -> dict[str, Any]:
         expected_ids = set(self._records_by_id)
         health = getattr(self.index, "health", None)
@@ -627,10 +654,18 @@ class WaveMind:
         return health
 
     def purge_expired(self) -> int:
+        expired_records = [
+            record for record in self.store.list(include_expired=True) if record.is_expired
+        ]
         purged = self.store.purge_expired()
         if purged:
             self.load()
             self.store.log_audit_event("purge_expired", metadata={"deleted": purged})
+            self._append_recovery_journal(
+                "purge_expired",
+                expired_records,
+                metadata={"deleted": purged},
+            )
         return purged
 
     def consolidate(self, steps: int = 40) -> None:

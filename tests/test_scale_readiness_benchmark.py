@@ -285,6 +285,22 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind replicated snapshot"]["object_store_drill_ok"] is True
     assert results["WaveMind replicated snapshot"]["restored_files"] == 3
     assert results["WaveMind replicated snapshot"]["recalled_after_restore_node_loss"] is True
+    assert results["WaveMind recovery journal"]["journal_entries"] == 5
+    assert results["WaveMind recovery journal"]["actions"] == [
+        "remember",
+        "remember",
+        "remember",
+        "forget",
+        "purge_expired",
+    ]
+    assert results["WaveMind recovery journal"]["full_restore_ok"] is True
+    assert results["WaveMind recovery journal"]["point_in_time_restore_ok"] is True
+    assert results["WaveMind recovery journal"]["full_deleted_records"] == 2
+    assert results["WaveMind recovery journal"]["full_restored_records"] == 1
+    assert results["WaveMind recovery journal"]["point_applied_entries"] == 1
+    assert results["WaveMind recovery journal"]["point_restored_records"] == 1
+    assert results["WaveMind recovery journal"]["vector_dim_preserved"] == 64
+    assert results["WaveMind recovery journal"]["pattern_shape_preserved"] == [16, 16]
     assert results["WaveMind structured payloads"]["precision_at_1"] == 1.0
     assert results["WaveMind structured payloads"]["modalities"] == [
         "image",

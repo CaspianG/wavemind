@@ -46,6 +46,7 @@ from wavemind import (
     ReplicatedSnapshotWorker,
     S3AssetStore,
     S3SnapshotStore,
+    SQLiteMemoryStore,
     WaveMind,
     asset3d_payload,
     audio_payload,
@@ -2721,6 +2722,140 @@ def run_replicated_snapshot_profile() -> dict[str, object]:
             memory.close()
 
 
+def run_recovery_journal_profile() -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        journal_path = root / "recovery.jsonl"
+        namespace = "tenant:pitr"
+        memory = WaveMind(
+            db_path=root / "source.sqlite3",
+            encoder=HashingTextEncoder(vector_dim=64),
+            width=16,
+            height=16,
+            layers=1,
+            recovery_journal_path=journal_path,
+        )
+        full_restored = None
+        point_restored = None
+        try:
+            first_id = memory.remember(
+                "point in time recovery keeps the first checkpoint",
+                namespace=namespace,
+                tags=["pitr"],
+                metadata={"checkpoint": "first"},
+            )
+            journal_entries = [
+                json.loads(line)
+                for line in journal_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            first_checkpoint = float(journal_entries[-1]["created_at"])
+            time.sleep(0.001)
+            second_id = memory.remember(
+                "full replay keeps the second durable memory",
+                namespace=namespace,
+                tags=["pitr"],
+            )
+            expired_id = memory.remember(
+                "expired pitr memory should not survive full replay",
+                namespace=namespace,
+                ttl_seconds=-1,
+            )
+            forgotten = memory.forget(id=first_id, namespace=namespace)
+            purged = memory.purge_expired()
+
+            full_started = time.perf_counter()
+            full_report = SQLiteMemoryStore.restore_recovery_journal(
+                journal_path,
+                root / "full-restore.sqlite3",
+            )
+            full_restore_ms = (time.perf_counter() - full_started) * 1000.0
+            full_restored = WaveMind(
+                db_path=root / "full-restore.sqlite3",
+                encoder=HashingTextEncoder(vector_dim=64),
+                width=16,
+                height=16,
+                layers=1,
+            )
+            full_results = full_restored.query(
+                "second durable memory",
+                namespace=namespace,
+                top_k=1,
+            )
+            full_restore_ok = (
+                forgotten == 1
+                and purged == 1
+                and full_report.deleted_records == 2
+                and full_report.restored_records == 1
+                and full_restored.store.get(first_id) is None
+                and full_restored.store.get(expired_id) is None
+                and bool(full_results)
+                and full_results[0].id == second_id
+            )
+
+            point_started = time.perf_counter()
+            point_report = SQLiteMemoryStore.restore_recovery_journal(
+                journal_path,
+                root / "point-restore.sqlite3",
+                until=first_checkpoint,
+            )
+            point_restore_ms = (time.perf_counter() - point_started) * 1000.0
+            point_restored = WaveMind(
+                db_path=root / "point-restore.sqlite3",
+                encoder=HashingTextEncoder(vector_dim=64),
+                width=16,
+                height=16,
+                layers=1,
+            )
+            point_record = point_restored.store.get(first_id)
+            point_restore_ok = (
+                point_report.applied_entries == 1
+                and point_report.skipped_entries >= 1
+                and point_report.restored_records == 1
+                and point_record is not None
+                and point_record.metadata == {"checkpoint": "first"}
+                and point_restored.store.get(second_id) is None
+            )
+
+            entries = [
+                json.loads(line)
+                for line in journal_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            return {
+                "engine": "WaveMind recovery journal",
+                "journal_entries": len(entries),
+                "journal_bytes": journal_path.stat().st_size,
+                "actions": [entry["action"] for entry in entries],
+                "full_restore_ok": full_restore_ok,
+                "point_in_time_restore_ok": point_restore_ok,
+                "full_restore_ms": full_restore_ms,
+                "point_in_time_restore_ms": point_restore_ms,
+                "full_applied_entries": full_report.applied_entries,
+                "full_deleted_records": full_report.deleted_records,
+                "full_restored_records": full_report.restored_records,
+                "point_applied_entries": point_report.applied_entries,
+                "point_skipped_entries": point_report.skipped_entries,
+                "point_restored_records": point_report.restored_records,
+                "vector_dim_preserved": (
+                    int(point_record.vector.shape[0])
+                    if point_record is not None
+                    else 0
+                ),
+                "pattern_shape_preserved": (
+                    list(point_record.pattern.shape)
+                    if point_record is not None
+                    else []
+                ),
+            }
+        finally:
+            memory.close()
+            if full_restored is not None:
+                full_restored.close()
+            if point_restored is not None:
+                point_restored.close()
+
+
 def run_multimodal_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -3093,6 +3228,7 @@ def run_benchmark(
         run_http_active_active_service_region_profile(),
         run_field_crdt_profile(),
         run_replicated_snapshot_profile(),
+        run_recovery_journal_profile(),
         run_multimodal_profile(),
         run_100m_capacity_profile(),
     ]
@@ -3115,7 +3251,8 @@ def run_benchmark(
                 "HTTP service-region active-active sync, "
                 "replicated snapshot/offsite/archive "
                 "restore, S3-compatible object-store upload/latest-metadata/"
-                "download/retention/DR-drill verification, query-vector cache, "
+                "download/retention/DR-drill verification, SQLite point-in-time "
+                "recovery journal replay, query-vector cache, "
                 "Redis-compatible shared rate limiting, Memory OS adaptive "
                 "prewarm/consolidation/forgetting, local and Redis-compatible "
                 "hot-cache behavior, API cache mutation safety, and structured "
@@ -3277,6 +3414,11 @@ def main() -> int:
             print(f"| replicated snapshot | object_store_download_verified | {result['object_store_download_verified']} |")
             print(f"| replicated snapshot | object_store_drill_ok | {result['object_store_drill_ok']} |")
             print(f"| replicated snapshot | recalled_after_restore_node_loss | {result['recalled_after_restore_node_loss']} |")
+        elif result["engine"] == "WaveMind recovery journal":
+            print(f"| recovery journal | full_restore_ok | {result['full_restore_ok']} |")
+            print(f"| recovery journal | point_in_time_restore_ok | {result['point_in_time_restore_ok']} |")
+            print(f"| recovery journal | journal_entries | {result['journal_entries']} |")
+            print(f"| recovery journal | restored_records | {result['full_restored_records']} |")
         elif result["engine"] == "WaveMind structured payloads":
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
         elif result["engine"] == "WaveMind 100M capacity envelope":

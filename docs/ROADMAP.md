@@ -481,11 +481,13 @@ Enterprise requirements:
 - encryption at rest and in transit;
 - audit logs for remember, query, recall feedback, and forget;
 - backup, restore, and point-in-time recovery. SQLite backup/restore and
-  replicated snapshot/restore, offsite-mirrored snapshot jobs, and portable
-  snapshot archives with S3-compatible upload, latest-archive lookup, remote
-  download verification, object-store disaster-recovery drills, and retention
-  are implemented; point-in-time recovery, real multi-region cloud
-  disaster-recovery drills, and network-service consensus remain future work;
+  SQLite point-in-time recovery through an append-only mutation journal are
+  implemented. Replicated snapshot/restore, offsite-mirrored snapshot jobs, and
+  portable snapshot archives with S3-compatible upload, latest-archive lookup,
+  remote download verification, object-store disaster-recovery drills, and
+  retention are also implemented; Postgres-native PITR runbooks, real
+  multi-region cloud disaster-recovery drills, and network-service consensus
+  remain future work;
 - data residency controls;
 - SSO/OAuth integration;
 - SLOs for latency, throughput, and durability;

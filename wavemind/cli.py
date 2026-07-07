@@ -70,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
+    parser.add_argument(
+        "--recovery-journal",
+        default=os.environ.get("WAVEMIND_RECOVERY_JOURNAL"),
+        help="Append remember/forget/purge mutations to a SQLite recovery journal JSONL file.",
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--store", default=None, choices=["sqlite", "postgres"])
     parser.add_argument("--postgres-dsn", default=None)
@@ -552,6 +557,16 @@ def build_parser() -> argparse.ArgumentParser:
     restore.add_argument("--to", dest="destination")
     restore.add_argument("--overwrite", action="store_true")
 
+    recovery_restore = sub.add_parser(
+        "recovery-restore",
+        help="Restore a SQLite database from a WaveMind recovery journal",
+    )
+    recovery_restore.add_argument("--from", dest="source", required=True)
+    recovery_restore.add_argument("--to", dest="destination")
+    recovery_restore.add_argument("--until", type=float)
+    recovery_restore.add_argument("--overwrite", action="store_true")
+    recovery_restore.add_argument("--json", action="store_true")
+
     replicated_snapshot = sub.add_parser(
         "replicated-snapshot",
         help="Snapshot a ReplicatedWaveMind root with optional offsite mirror/archive",
@@ -674,6 +689,7 @@ def make_mind(args) -> WaveMind:
         graph_weight=args.graph_weight,
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
+        recovery_journal_path=args.recovery_journal,
     )
 
 
@@ -937,6 +953,25 @@ def main(argv: list[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(f"restored: {path}")
+        return 0
+
+    if args.command == "recovery-restore":
+        destination = Path(args.destination) if args.destination else (
+            Path(args.db) if args.db else Path.cwd() / "wavemind.sqlite3"
+        )
+        report = SQLiteMemoryStore.restore_recovery_journal(
+            journal_path=args.source,
+            destination=destination,
+            until=args.until,
+            overwrite=args.overwrite,
+        )
+        payload = report.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"restored: {payload['destination_path']}")
+            print(f"applied_entries: {payload['applied_entries']}")
+            print(f"restored_records: {payload['restored_records']}")
         return 0
 
     if args.command == "replicated-snapshot":

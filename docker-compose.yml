@@ -4,10 +4,11 @@ services:
       context: .
       args:
         INSTALL_OPTIONAL: "false"
-    image: wavemind:2.4.22
+    image: wavemind:2.4.23
     restart: unless-stopped
     environment:
       WAVEMIND_DB: /data/wavemind.sqlite3
+      WAVEMIND_RECOVERY_JOURNAL: /data/wavemind.recovery.jsonl
       WAVEMIND_ENCODER: hash
       WAVEMIND_INDEX: numpy
       WAVEMIND_SCORE_THRESHOLD: "0.05"

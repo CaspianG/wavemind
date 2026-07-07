@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from wavemind import HashingTextEncoder, QueryResult, SQLiteMemoryStore, WaveMind
@@ -182,6 +183,114 @@ def test_restore_refuses_to_overwrite_without_explicit_flag(tmp_path):
         assert restored == destination
     finally:
         mind.close()
+
+
+def test_recovery_journal_restores_full_and_point_in_time(tmp_path):
+    db_path = tmp_path / "memory.sqlite3"
+    journal_path = tmp_path / "recovery.jsonl"
+    full_restore_path = tmp_path / "full-restore.sqlite3"
+    point_restore_path = tmp_path / "point-restore.sqlite3"
+    mind = make_mind(db_path, recovery_journal_path=journal_path)
+    full_restored = None
+    point_restored = None
+
+    try:
+        first_id = mind.remember(
+            "first point in time memory",
+            namespace="ops",
+            tags=["pitr"],
+            metadata={"checkpoint": "first"},
+        )
+        first_checkpoint = json.loads(
+            journal_path.read_text(encoding="utf-8").splitlines()[-1]
+        )["created_at"]
+        second_id = mind.remember(
+            "second durable memory survives full replay",
+            namespace="ops",
+            tags=["pitr"],
+        )
+        assert mind.forget(id=first_id, namespace="ops") == 1
+
+        full_report = SQLiteMemoryStore.restore_recovery_journal(
+            journal_path,
+            full_restore_path,
+        )
+        full_restored = make_mind(full_restore_path)
+        full_results = full_restored.query("second durable", namespace="ops", top_k=1)
+
+        assert full_report.ok is True
+        assert full_report.applied_entries == 3
+        assert full_report.remembered_records == 2
+        assert full_report.deleted_records == 1
+        assert full_report.restored_records == 1
+        assert full_restored.store.get(first_id) is None
+        assert full_results[0].id == second_id
+        assert full_results[0].text == "second durable memory survives full replay"
+
+        point_report = SQLiteMemoryStore.restore_recovery_journal(
+            journal_path,
+            point_restore_path,
+            until=first_checkpoint,
+        )
+        point_restored = make_mind(point_restore_path)
+        first_record = point_restored.store.get(first_id)
+
+        assert point_report.applied_entries == 1
+        assert point_report.skipped_entries == 2
+        assert point_report.restored_records == 1
+        assert first_record is not None
+        assert first_record.text == "first point in time memory"
+        assert first_record.tags == ("pitr",)
+        assert first_record.metadata == {"checkpoint": "first"}
+        assert point_restored.store.get(second_id) is None
+    finally:
+        mind.close()
+        if full_restored is not None:
+            full_restored.close()
+        if point_restored is not None:
+            point_restored.close()
+
+
+def test_recovery_journal_replays_expired_purge_and_overwrite_guard(tmp_path):
+    journal_path = tmp_path / "recovery.jsonl"
+    destination = tmp_path / "restored.sqlite3"
+    mind = make_mind(tmp_path / "source.sqlite3", recovery_journal_path=journal_path)
+    restored = None
+
+    try:
+        expired_id = mind.remember(
+            "expired journal memory",
+            namespace="ops",
+            ttl_seconds=-1,
+        )
+        keep_id = mind.remember("kept journal memory", namespace="ops")
+        assert mind.purge_expired() == 1
+        assert mind.store.get(expired_id) is None
+
+        destination.write_text("existing", encoding="utf-8")
+        try:
+            SQLiteMemoryStore.restore_recovery_journal(journal_path, destination)
+            raised = False
+        except FileExistsError:
+            raised = True
+        assert raised is True
+
+        report = SQLiteMemoryStore.restore_recovery_journal(
+            journal_path,
+            destination,
+            overwrite=True,
+        )
+        restored = make_mind(destination)
+
+        assert report.applied_entries == 3
+        assert report.deleted_records == 1
+        assert report.restored_records == 1
+        assert restored.store.get(expired_id) is None
+        assert restored.store.get(keep_id) is not None
+    finally:
+        mind.close()
+        if restored is not None:
+            restored.close()
 
 
 def test_close_releases_sqlite_file(tmp_path):

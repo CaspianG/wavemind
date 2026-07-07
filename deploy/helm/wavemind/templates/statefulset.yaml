@@ -50,6 +50,8 @@ spec:
               value: {{ .Values.runtime.logLevel | quote }}
             - name: WAVEMIND_AUDIT_QUERIES
               value: {{ .Values.runtime.auditQueries | quote }}
+            - name: WAVEMIND_RECOVERY_JOURNAL
+              value: {{ .Values.runtime.recoveryJournal | quote }}
             - name: WAVEMIND_CACHE_CAPACITY
               value: {{ .Values.runtime.cacheCapacity | quote }}
             - name: WAVEMIND_CACHE_TTL_SECONDS
@@ -124,4 +126,3 @@ spec:
           requests:
             storage: {{ .Values.persistence.size | quote }}
   {{- end }}
-

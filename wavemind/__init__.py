@@ -162,11 +162,14 @@ from .storage import (
     AuditEvent,
     MemoryRecord,
     PostgresMemoryStore,
+    RecoveryJournalReport,
     SQLiteMemoryStore,
+    append_recovery_journal_entry,
     create_memory_store,
+    restore_recovery_journal,
 )
 
-__version__ = "2.4.22"
+__version__ = "2.4.23"
 
 __all__ = [
     "FieldProjector",
@@ -240,6 +243,7 @@ __all__ = [
     "ProductionSLOTarget",
     "PredictivePrefetchReport",
     "ReadQuorumError",
+    "RecoveryJournalReport",
     "QueryVectorCache",
     "RedisHotMemoryCache",
     "RedisMemoryOSLock",
@@ -280,6 +284,7 @@ __all__ = [
     "audio_payload",
     "audit_field_state_watermarks",
     "advice_status_meets_or_exceeds",
+    "append_recovery_journal_entry",
     "advise_memory_architecture",
     "build_scale_plan",
     "build_cluster_autoscale_plan",
@@ -306,6 +311,7 @@ __all__ = [
     "query_with_cache",
     "query_with_vector_cache",
     "remember_payload",
+    "restore_recovery_journal",
     "run_control_plane_consensus_profile",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",

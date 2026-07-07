@@ -831,6 +831,7 @@ def build_default_mind() -> WaveMind:
         graph_expand_k=int(os.environ.get("WAVEMIND_GRAPH_EXPAND_K", "10")),
         audit_queries=os.environ.get("WAVEMIND_AUDIT_QUERIES", "0").lower()
         in {"1", "true", "yes", "on"},
+        recovery_journal_path=os.environ.get("WAVEMIND_RECOVERY_JOURNAL"),
     )
 
 

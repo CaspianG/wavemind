@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -44,12 +45,196 @@ class AuditEvent:
     id: int | None = None
 
 
+@dataclass(frozen=True)
+class RecoveryJournalReport:
+    journal_path: str
+    destination_path: str
+    until: float | None
+    applied_entries: int
+    skipped_entries: int
+    remembered_records: int
+    deleted_records: int
+    restored_records: int
+
+    @property
+    def ok(self) -> bool:
+        return self.applied_entries > 0
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "journal_path": self.journal_path,
+            "destination_path": self.destination_path,
+            "until": self.until,
+            "applied_entries": self.applied_entries,
+            "skipped_entries": self.skipped_entries,
+            "remembered_records": self.remembered_records,
+            "deleted_records": self.deleted_records,
+            "restored_records": self.restored_records,
+            "ok": self.ok,
+        }
+
+
 def _array_to_blob(array: np.ndarray) -> bytes:
     return np.asarray(array, dtype=np.float32).tobytes()
 
 
 def _array_from_blob(blob: bytes, shape: Iterable[int]) -> np.ndarray:
     return np.frombuffer(blob, dtype=np.float32).copy().reshape(tuple(shape))
+
+
+def _array_to_payload(array: np.ndarray) -> dict[str, Any]:
+    array = np.asarray(array, dtype=np.float32)
+    return {
+        "shape": list(array.shape),
+        "data_b64": base64.b64encode(_array_to_blob(array)).decode("ascii"),
+    }
+
+
+def _array_from_payload(payload: dict[str, Any]) -> np.ndarray:
+    return _array_from_blob(
+        base64.b64decode(str(payload["data_b64"]).encode("ascii")),
+        tuple(int(value) for value in payload["shape"]),
+    )
+
+
+def _record_to_journal_payload(record: MemoryRecord) -> dict[str, Any]:
+    if record.id is None:
+        raise ValueError("Recovery journal records require a persisted memory id")
+    return {
+        "id": int(record.id),
+        "namespace": record.namespace,
+        "text": record.text,
+        "vector": _array_to_payload(record.vector),
+        "pattern": _array_to_payload(record.pattern),
+        "tags": list(record.tags),
+        "metadata": record.metadata,
+        "created_at": float(record.created_at),
+        "updated_at": float(record.updated_at),
+        "expires_at": record.expires_at,
+        "priority": float(record.priority),
+        "access_count": int(record.access_count),
+    }
+
+
+def _record_from_journal_payload(payload: dict[str, Any]) -> MemoryRecord:
+    return MemoryRecord(
+        id=int(payload["id"]),
+        namespace=str(payload["namespace"]),
+        text=str(payload["text"]),
+        vector=_array_from_payload(payload["vector"]),
+        pattern=_array_from_payload(payload["pattern"]),
+        tags=tuple(str(tag) for tag in payload.get("tags", [])),
+        metadata=dict(payload.get("metadata") or {}),
+        created_at=float(payload["created_at"]),
+        updated_at=float(payload["updated_at"]),
+        expires_at=payload.get("expires_at"),
+        priority=float(payload.get("priority", 1.0)),
+        access_count=int(payload.get("access_count", 0)),
+    )
+
+
+def _journal_entries(path: str | Path) -> list[dict[str, Any]]:
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Recovery journal does not exist: {path}")
+    entries = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            if payload.get("schema") != "wavemind.recovery_journal.v1":
+                raise ValueError(
+                    f"Unsupported recovery journal schema at {path}:{line_number}"
+                )
+            entries.append(payload)
+    return entries
+
+
+def append_recovery_journal_entry(
+    path: str | Path,
+    action: str,
+    records: Iterable[MemoryRecord],
+    *,
+    created_at: float | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if action not in {"remember", "forget", "purge_expired"}:
+        raise ValueError(
+            "Recovery journal action must be remember, forget, or purge_expired"
+        )
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "schema": "wavemind.recovery_journal.v1",
+        "created_at": float(created_at or time.time()),
+        "action": action,
+        "records": [_record_to_journal_payload(record) for record in records],
+        "metadata": metadata or {},
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False, sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    return entry
+
+
+def restore_recovery_journal(
+    journal_path: str | Path,
+    destination: str | Path,
+    *,
+    until: float | None = None,
+    overwrite: bool = False,
+) -> RecoveryJournalReport:
+    journal_path = Path(journal_path)
+    destination = Path(destination)
+    if destination.exists() and not overwrite:
+        raise FileExistsError(
+            f"Destination already exists: {destination}. Pass overwrite=True to replace it."
+        )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        destination.unlink()
+
+    store = SQLiteMemoryStore(destination)
+    applied = 0
+    skipped = 0
+    remembered = 0
+    deleted = 0
+    try:
+        for entry in _journal_entries(journal_path):
+            if until is not None and float(entry["created_at"]) > float(until):
+                skipped += 1
+                continue
+            applied += 1
+            records = [
+                _record_from_journal_payload(payload)
+                for payload in entry.get("records", [])
+            ]
+            if entry["action"] == "remember":
+                for record in records:
+                    store.insert_recovered(record)
+                    remembered += 1
+            elif entry["action"] in {"forget", "purge_expired"}:
+                for record in records:
+                    deleted += len(store.delete(id=record.id))
+            else:
+                raise ValueError(f"Unsupported recovery journal action: {entry['action']}")
+        restored = store.count(include_expired=True)
+    finally:
+        store.close()
+
+    return RecoveryJournalReport(
+        journal_path=str(journal_path),
+        destination_path=str(destination),
+        until=until,
+        applied_entries=applied,
+        skipped_entries=skipped,
+        remembered_records=remembered,
+        deleted_records=deleted,
+        restored_records=restored,
+    )
 
 
 def _safe_identifier(value: str, label: str) -> str:
@@ -159,6 +344,36 @@ class SQLiteMemoryStore:
         self.conn.commit()
         record.id = int(cur.lastrowid)
         return record.id
+
+    def insert_recovered(self, record: MemoryRecord) -> int:
+        if record.id is None:
+            raise ValueError("Recovered records require an explicit id")
+        self.conn.execute(
+            """
+            INSERT INTO memories (
+                id, namespace, text, vector, vector_dim, pattern, pattern_shape,
+                tags, metadata, created_at, updated_at, expires_at, priority, access_count
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(record.id),
+                record.namespace,
+                record.text,
+                _array_to_blob(record.vector),
+                int(record.vector.shape[0]),
+                _array_to_blob(record.pattern),
+                json.dumps(list(record.pattern.shape)),
+                json.dumps(list(record.tags), ensure_ascii=False),
+                json.dumps(record.metadata, ensure_ascii=False),
+                float(record.created_at),
+                float(record.updated_at),
+                record.expires_at,
+                float(record.priority),
+                int(record.access_count),
+            ),
+        )
+        self.conn.commit()
+        return int(record.id)
 
     def get(self, id: int) -> MemoryRecord | None:
         row = self.conn.execute("SELECT * FROM memories WHERE id = ?", (int(id),)).fetchone()
@@ -405,6 +620,8 @@ class SQLiteMemoryStore:
             destination.unlink()
         shutil.copy2(source, destination)
         return destination
+
+    restore_recovery_journal = staticmethod(restore_recovery_journal)
 
     def commit(self) -> None:
         self.conn.commit()

@@ -29,6 +29,7 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "repository: ghcr.io/caspiang/wavemind" in values
     assert "replicaCount: 3" in values
     assert "replicationFactor: 2" in values
+    assert "recoveryJournal: /data/wavemind.recovery.jsonl" in values
     assert "autoscaling:" in values
     assert "maxReplicas: 12" in values
     assert "memoryOs:" in values
@@ -47,6 +48,7 @@ def test_helm_chart_templates_define_cluster_network_and_state():
     assert "serviceName: {{ include \"wavemind.headlessServiceName\" . }}" in statefulset
     assert "volumeClaimTemplates:" in statefulset
     assert "WAVEMIND_DB" in statefulset
+    assert "WAVEMIND_RECOVERY_JOURNAL" in statefulset
     assert "WAVEMIND_API_KEYS" in statefulset
     assert "WAVEMIND_ADMIN_KEYS" in statefulset
     assert "tcpSocket:" in statefulset

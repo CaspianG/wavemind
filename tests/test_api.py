@@ -186,6 +186,24 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
         mind.close()
 
 
+def test_fastapi_default_mind_uses_recovery_journal_env(tmp_path, monkeypatch):
+    db_path = tmp_path / "api-env.sqlite3"
+    journal_path = tmp_path / "api-env.recovery.jsonl"
+    monkeypatch.setenv("WAVEMIND_DB", str(db_path))
+    monkeypatch.setenv("WAVEMIND_RECOVERY_JOURNAL", str(journal_path))
+    monkeypatch.setenv("WAVEMIND_VECTOR_DIM", "64")
+
+    with TestClient(create_app()) as client:
+        remembered = client.post(
+            "/remember",
+            json={"text": "api recovery journal memory", "namespace": "ops"},
+        )
+        assert remembered.status_code == 200
+
+    assert journal_path.exists()
+    assert '"action": "remember"' in journal_path.read_text(encoding="utf-8")
+
+
 def test_fastapi_forget_invalidates_local_query_cache(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
     monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)

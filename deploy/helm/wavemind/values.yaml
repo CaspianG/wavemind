@@ -3,7 +3,7 @@ replicationFactor: 2
 
 image:
   repository: ghcr.io/caspiang/wavemind
-  tag: "2.4.22"
+  tag: "2.4.23"
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -37,6 +37,7 @@ runtime:
   scoreThreshold: "0.05"
   logLevel: INFO
   auditQueries: "1"
+  recoveryJournal: /data/wavemind.recovery.jsonl
   cacheCapacity: "512"
   cacheTtlSeconds: "60"
   redisUrl: ""
