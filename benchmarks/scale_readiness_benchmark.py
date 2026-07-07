@@ -1112,12 +1112,12 @@ def run_redis_cache_profile() -> dict[str, object]:
                 namespace=os_namespace,
                 tags=["systems"],
             )
-            memory.remember(
+            budget_id = memory.remember(
                 "budget recall should be prefetched",
                 namespace=os_namespace,
                 tags=["preference"],
             )
-            memory.remember(
+            cold_id = memory.remember(
                 "unused redis memory os cold note",
                 namespace=os_namespace,
                 tags=["cold"],
@@ -1128,6 +1128,26 @@ def run_redis_cache_profile() -> dict[str, object]:
             memory.query("systems programming", namespace=os_namespace, top_k=1)
             memory.query("budget recall", namespace=os_namespace, top_k=1)
             memory.query("budget recall", namespace=os_namespace, top_k=1)
+            feedback_positive_before = memory.store.get(budget_id).priority
+            memory.feedback(
+                budget_id,
+                namespace=os_namespace,
+                useful=True,
+                strength=0.4,
+                query="budget recall",
+                reason="scale benchmark accepted recall",
+            )
+            feedback_positive_after = memory.store.get(budget_id).priority
+            feedback_negative_before = memory.store.get(cold_id).priority
+            memory.feedback(
+                cold_id,
+                namespace=os_namespace,
+                useful=False,
+                strength=0.3,
+                query="cold note",
+                reason="scale benchmark rejected recall",
+            )
+            feedback_negative_after = memory.store.get(cold_id).priority
 
             os_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
             os_reader_cache = RedisHotMemoryCache(client, prefix="wm:scale", ttl_seconds=120)
@@ -1244,6 +1264,19 @@ def run_redis_cache_profile() -> dict[str, object]:
                 "memory_os_predictive_generated": os_report.predictive_prefetch.generated_queries,
                 "memory_os_predictive_warmed": os_report.predictive_prefetch.warmed,
                 "memory_os_concepts_created": os_report.concepts_created,
+                "memory_os_user_feedback_events": len(
+                    memory.audit_events(
+                        namespace=os_namespace,
+                        action="feedback",
+                        limit=8,
+                    )
+                ),
+                "memory_os_positive_feedback_priority_delta": (
+                    feedback_positive_after - feedback_positive_before
+                ),
+                "memory_os_negative_feedback_priority_delta": (
+                    feedback_negative_after - feedback_negative_before
+                ),
                 "memory_os_priority_predictions": os_report.priority_predictions,
                 "memory_os_priority_boost_total": os_report.priority_boost_total,
                 "memory_os_forgetting_demotions": os_report.forgetting_demotions,
@@ -1337,6 +1370,29 @@ def run_api_cache_mutation_profile() -> dict[str, object]:
                 second_results = second_query.json()["results"]
                 cache_keys_after_second_query = len(client.items)
 
+                feedback_response = api.post(
+                    "/feedback",
+                    json={
+                        "id": fresh_id,
+                        "namespace": namespace,
+                        "useful": False,
+                        "strength": 10.0,
+                        "query": "budget recall",
+                        "reason": "scale benchmark rejected stale priority",
+                    },
+                )
+                feedback_response.raise_for_status()
+                cache_keys_after_feedback = len(client.items)
+
+                started = time.perf_counter()
+                feedback_query = api.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": namespace, "top_k": 1},
+                )
+                feedback_query.raise_for_status()
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                feedback_results = feedback_query.json()["results"]
+
                 delete_response = api.request(
                     "DELETE",
                     "/forget",
@@ -1355,6 +1411,7 @@ def run_api_cache_mutation_profile() -> dict[str, object]:
                 third_results = third_query.json()["results"]
 
                 stale_prevented_after_remember = bool(second_results) and second_results[0]["id"] == fresh_id
+                feedback_demoted_fresh = bool(feedback_results) and feedback_results[0]["id"] != fresh_id
                 stale_prevented_after_forget = all(result["id"] != fresh_id for result in third_results)
                 old_recall_after_forget = any(result["id"] == old_id for result in third_results)
                 return {
@@ -1365,6 +1422,8 @@ def run_api_cache_mutation_profile() -> dict[str, object]:
                     and first_results[0]["id"] == old_id,
                     "cache_invalidated_on_remember": cache_keys_after_remember == 0,
                     "stale_prevented_after_remember": stale_prevented_after_remember,
+                    "cache_invalidated_on_feedback": cache_keys_after_feedback == 0,
+                    "feedback_demoted_rejected_memory": feedback_demoted_fresh,
                     "cache_invalidated_on_forget": cache_keys_after_forget == 0,
                     "stale_prevented_after_forget": stale_prevented_after_forget,
                     "old_recall_after_forget": old_recall_after_forget,
@@ -1401,12 +1460,12 @@ def run_memory_os_profile() -> dict[str, object]:
                 namespace="tenant:os",
                 tags=["systems"],
             )
-            memory.remember(
+            budget_id = memory.remember(
                 "budget recall should be prefetched",
                 namespace="tenant:os",
                 tags=["preference"],
             )
-            memory.remember(
+            cold_id = memory.remember(
                 "unused memory os cold note",
                 namespace="tenant:os",
                 tags=["cold"],
@@ -1417,6 +1476,26 @@ def run_memory_os_profile() -> dict[str, object]:
             memory.query("systems programming", namespace="tenant:os", top_k=1)
             memory.query("budget recall", namespace="tenant:os", top_k=1)
             memory.query("budget recall", namespace="tenant:os", top_k=1)
+            feedback_positive_before = memory.store.get(budget_id).priority
+            memory.feedback(
+                budget_id,
+                namespace="tenant:os",
+                useful=True,
+                strength=0.4,
+                query="budget recall",
+                reason="scale benchmark accepted recall",
+            )
+            feedback_positive_after = memory.store.get(budget_id).priority
+            feedback_negative_before = memory.store.get(cold_id).priority
+            memory.feedback(
+                cold_id,
+                namespace="tenant:os",
+                useful=False,
+                strength=0.3,
+                query="cold note",
+                reason="scale benchmark rejected recall",
+            )
+            feedback_negative_after = memory.store.get(cold_id).priority
 
             started = time.perf_counter()
             report = MemoryOSWorker(memory, cache).run_once(
@@ -1463,6 +1542,19 @@ def run_memory_os_profile() -> dict[str, object]:
                 "expired_purged": report.expired_purged,
                 "concepts_created": report.concepts_created,
                 "concept_recall": bool(concept_results),
+                "user_feedback_events": len(
+                    memory.audit_events(
+                        namespace="tenant:os",
+                        action="feedback",
+                        limit=8,
+                    )
+                ),
+                "positive_feedback_priority_delta": (
+                    feedback_positive_after - feedback_positive_before
+                ),
+                "negative_feedback_priority_delta": (
+                    feedback_negative_after - feedback_negative_before
+                ),
                 "priority_predictions": report.priority_predictions,
                 "priority_boost_total": report.priority_boost_total,
                 "forgetting_demotions": report.forgetting_demotions,

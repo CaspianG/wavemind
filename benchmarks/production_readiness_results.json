@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T12:46:20Z",
+  "generated_at": "2026-07-07T13:25:56Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T12:45:51Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T13:14:48Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -153,7 +153,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.003200024366378784 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -176,16 +176,16 @@
       "id": "redis_shared_cache_memory_os",
       "title": "Redis-compatible shared cache and Memory OS prewarm work",
       "status": "pass",
-      "requirement": "Production cache must be shareable across workers, support query-audit prewarm, support Memory OS prewarm, guard adaptive Memory OS mutation cycles with a Redis-compatible single-flight lock, invalidate a namespace after memory changes, and preserve architecture advice for production-scale deployments.",
-      "evidence": "shared True, prewarm hit True, Memory OS warmed 2, predictive warmed 5, lock acquired True, busy skipped True, Memory OS hit True, invalidation True, architecture architecture_required",
+      "requirement": "Production cache must be shareable across workers, support query-audit prewarm, support Memory OS prewarm, guard adaptive Memory OS mutation cycles with a Redis-compatible single-flight lock, apply explicit useful/not-useful recall feedback, invalidate a namespace after memory changes, and preserve architecture advice for production-scale deployments.",
+      "evidence": "shared True, prewarm hit True, Memory OS warmed 2, predictive warmed 5, feedback events 7, lock acquired True, busy skipped True, Memory OS hit True, invalidation True, architecture architecture_required",
       "next_step": "Keep the real Redis multi-process API load workflow green."
     },
     {
       "id": "api_cache_mutation_safety",
       "title": "API cache does not serve stale memory after mutations",
       "status": "pass",
-      "requirement": "FastAPI workers must invalidate shared query cache on remember and forget so mutations cannot leave stale cached recall.",
-      "evidence": "cached True, remember invalidation True, remember stale prevented True, forget invalidation True, forget stale prevented True",
+      "requirement": "FastAPI workers must invalidate shared query cache on remember, feedback, and forget so mutations cannot leave stale cached recall.",
+      "evidence": "cached True, remember invalidation True, remember stale prevented True, feedback invalidation True, feedback demoted True, forget invalidation True, forget stale prevented True",
       "next_step": "Keep the real Redis multi-process API load workflow green."
     },
     {
@@ -216,8 +216,8 @@
       "id": "memory_os_worker",
       "title": "Memory OS worker prewarms, consolidates, and cleans up",
       "status": "pass",
-      "requirement": "Background intelligence must turn audited hot queries into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
-      "evidence": "hot queries 2, prewarm 2, predictive warmed 5, expired 1, concepts 1, priority predictions 2, forgetting demotions 3, architecture architecture_required",
+      "requirement": "Background intelligence must turn audited hot queries and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
+      "evidence": "hot queries 2, prewarm 2, predictive warmed 5, expired 1, concepts 1, feedback events 7, priority predictions 2, forgetting demotions 3, architecture architecture_required",
       "next_step": "Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments."
     },
     {
@@ -241,7 +241,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 202.66 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 176.84 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -249,7 +249,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 2.06540001090616 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.3747999910265207 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

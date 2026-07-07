@@ -85,6 +85,11 @@ policy matters more than raw vector-database scale:
   distributed-lock requirements, and commands for prewarm, predictive prefetch,
   consolidation, adaptive forgetting, maintenance, and architecture-advice
   loops without mutating memory state.
+- `POST /feedback` and `wavemind feedback` now expose explicit useful/not-useful
+  recall signals. They update priority/hotness, persist state, emit audit
+  events, and invalidate API cache entries for the affected namespace, so agent
+  feedback can become an operational memory signal instead of a Studio-only UI
+  action.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path

@@ -389,6 +389,24 @@ class ForgetResponse(BaseModel):
     deleted: int
 
 
+class FeedbackRequest(BaseModel):
+    id: int
+    namespace: str | None = None
+    useful: bool = True
+    strength: float = Field(default=0.25, ge=0.0, le=10.0)
+    query: str | None = None
+    reason: str | None = None
+
+
+class FeedbackResponse(BaseModel):
+    ok: bool
+    id: int
+    namespace: str
+    priority: float
+    access_count: int
+    cache_invalidated: int = 0
+
+
 class ImportRequest(BaseModel):
     path: str
     namespace: str = "default"
@@ -682,12 +700,6 @@ class ConsolidateResponse(BaseModel):
     concepts: list[dict[str, Any]]
 
 
-class FeedbackRequest(BaseModel):
-    id: int
-    useful: bool = True
-    strength: float = Field(default=0.25, ge=0.0, le=10.0)
-
-
 def _remember_response_id(result: Any) -> int:
     if isinstance(result, int):
         return result
@@ -890,10 +902,46 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             request.id,
             useful=request.useful,
             strength=request.strength,
+            namespace=request.namespace,
+            query=request.query,
+            reason=request.reason,
         )
         if not accepted:
             raise HTTPException(status_code=404, detail="Memory not found")
         return {"ok": True}
+
+    @app.post("/feedback", response_model=FeedbackResponse, dependencies=[Depends(require_role("write"))])
+    def feedback(request: FeedbackRequest) -> FeedbackResponse:
+        with _api_operation(app, "feedback"):
+            accepted = app.state.mind.feedback(
+                request.id,
+                useful=request.useful,
+                strength=request.strength,
+                namespace=request.namespace,
+                query=request.query,
+                reason=request.reason,
+            )
+            if not accepted:
+                raise HTTPException(status_code=404, detail="Memory not found")
+            record = app.state.mind.store.get(request.id)
+            if record is None:
+                raise HTTPException(status_code=404, detail="Memory not found")
+            invalidated = _invalidate_cache(app, record.namespace)
+        logger.info(
+            "feedback id=%s namespace=%s useful=%s cache_invalidated=%s",
+            request.id,
+            record.namespace,
+            request.useful,
+            invalidated,
+        )
+        return FeedbackResponse(
+            ok=True,
+            id=int(record.id),
+            namespace=record.namespace,
+            priority=float(record.priority),
+            access_count=int(record.access_count),
+            cache_invalidated=invalidated,
+        )
 
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])
     def remember(request: RememberRequest) -> RememberResponse:

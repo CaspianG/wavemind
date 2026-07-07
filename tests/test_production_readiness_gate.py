@@ -65,9 +65,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]
+    assert "explicit user recall feedback" in criteria["memory_os_worker"]["requirement"]
     assert "adaptive forgetting" in criteria["memory_os_worker"]["requirement"]
     assert "priority predictions" in criteria["memory_os_worker"]["evidence"]
     assert "predictive warmed" in criteria["memory_os_worker"]["evidence"]
+    assert "feedback events" in criteria["memory_os_worker"]["evidence"]
     assert "forgetting demotions" in criteria["memory_os_worker"]["evidence"]
     assert "production architecture advice" in criteria["memory_os_worker"]["requirement"]
     assert "architecture architecture_required" in criteria["memory_os_worker"]["evidence"]
@@ -80,10 +82,13 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["redis_shared_cache_memory_os"]["status"] == "pass"
     assert "shareable across workers" in criteria["redis_shared_cache_memory_os"]["requirement"]
     assert "architecture advice" in criteria["redis_shared_cache_memory_os"]["requirement"]
+    assert "useful/not-useful recall feedback" in criteria["redis_shared_cache_memory_os"]["requirement"]
     assert "predictive warmed" in criteria["redis_shared_cache_memory_os"]["evidence"]
+    assert "feedback events" in criteria["redis_shared_cache_memory_os"]["evidence"]
     assert "architecture architecture_required" in criteria["redis_shared_cache_memory_os"]["evidence"]
     assert criteria["api_cache_mutation_safety"]["status"] == "pass"
-    assert "cannot leave stale cached recall" in criteria["api_cache_mutation_safety"]["requirement"]
+    assert "feedback" in criteria["api_cache_mutation_safety"]["requirement"]
+    assert "feedback invalidation True" in criteria["api_cache_mutation_safety"]["evidence"]
     assert criteria["real_redis_api_load_ci"]["status"] == "pass"
     assert "multiple uvicorn workers" in criteria["real_redis_api_load_ci"]["requirement"]
     assert "success_rate 1.0" in criteria["real_redis_api_load_ci"]["evidence"]

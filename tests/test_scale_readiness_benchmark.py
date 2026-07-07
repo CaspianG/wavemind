@@ -122,6 +122,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Redis hot cache"]["memory_os_prewarm_warmed"] >= 2
     assert results["WaveMind Redis hot cache"]["memory_os_predictive_generated"] >= 1
     assert results["WaveMind Redis hot cache"]["memory_os_predictive_warmed"] >= 1
+    assert results["WaveMind Redis hot cache"]["memory_os_user_feedback_events"] >= 2
+    assert results["WaveMind Redis hot cache"]["memory_os_positive_feedback_priority_delta"] > 0.0
+    assert results["WaveMind Redis hot cache"]["memory_os_negative_feedback_priority_delta"] < 0.0
     assert results["WaveMind Redis hot cache"]["memory_os_priority_predictions"] >= 1
     assert results["WaveMind Redis hot cache"]["memory_os_priority_boost_total"] > 0.0
     assert results["WaveMind Redis hot cache"]["memory_os_forgetting_demotions"] >= 1
@@ -133,6 +136,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind API cache mutation safety"]["first_query_cached"] is True
     assert results["WaveMind API cache mutation safety"]["cache_invalidated_on_remember"] is True
     assert results["WaveMind API cache mutation safety"]["stale_prevented_after_remember"] is True
+    assert results["WaveMind API cache mutation safety"]["cache_invalidated_on_feedback"] is True
+    assert results["WaveMind API cache mutation safety"]["feedback_demoted_rejected_memory"] is True
     assert results["WaveMind API cache mutation safety"]["cache_invalidated_on_forget"] is True
     assert results["WaveMind API cache mutation safety"]["stale_prevented_after_forget"] is True
     assert results["WaveMind Memory OS"]["ok"] is True
@@ -144,6 +149,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Memory OS"]["predictive_prefetch_queries"]
     assert results["WaveMind Memory OS"]["expired_purged"] == 1
     assert results["WaveMind Memory OS"]["concepts_created"] == 1
+    assert results["WaveMind Memory OS"]["user_feedback_events"] >= 2
+    assert results["WaveMind Memory OS"]["positive_feedback_priority_delta"] > 0.0
+    assert results["WaveMind Memory OS"]["negative_feedback_priority_delta"] < 0.0
     assert results["WaveMind Memory OS"]["priority_predictions"] >= 1
     assert results["WaveMind Memory OS"]["priority_boost_total"] > 0.0
     assert results["WaveMind Memory OS"]["forgetting_demotions"] >= 1

@@ -137,6 +137,15 @@ def build_parser() -> argparse.ArgumentParser:
     forget.add_argument("--text")
     forget.add_argument("--namespace")
 
+    feedback = sub.add_parser("feedback", help="Record useful/not-useful recall feedback")
+    feedback.add_argument("--id", type=int, required=True)
+    feedback.add_argument("--namespace")
+    feedback.add_argument("--strength", type=float, default=0.25)
+    feedback.add_argument("--query")
+    feedback.add_argument("--reason")
+    feedback.add_argument("--not-useful", action="store_true")
+    feedback.add_argument("--json", action="store_true")
+
     stats = sub.add_parser("stats", help="Show memory stats")
     stats.add_argument("--namespace")
 
@@ -1581,6 +1590,35 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "forget":
         print(f"deleted={mind.forget(id=args.id, text=args.text, namespace=args.namespace)}")
         return 0
+
+    if args.command == "feedback":
+        accepted = mind.feedback(
+            args.id,
+            useful=not args.not_useful,
+            strength=args.strength,
+            namespace=args.namespace,
+            query=args.query,
+            reason=args.reason,
+        )
+        record = mind.store.get(args.id) if accepted else None
+        payload = {
+            "ok": bool(accepted),
+            "id": int(args.id),
+            "namespace": record.namespace if record is not None else args.namespace,
+            "priority": float(record.priority) if record is not None else None,
+            "access_count": int(record.access_count) if record is not None else None,
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            if not accepted:
+                print(f"ok=false id={int(args.id)}")
+            else:
+                print(
+                    f"ok=true id={int(args.id)} namespace={record.namespace} "
+                    f"priority={record.priority:.4f} access_count={record.access_count}"
+                )
+        return 0 if accepted else 4
 
     if args.command == "stats":
         print_stats(mind.stats(namespace=args.namespace))

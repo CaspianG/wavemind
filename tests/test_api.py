@@ -258,6 +258,70 @@ def test_fastapi_forget_invalidates_local_query_cache(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_feedback_updates_memory_and_invalidates_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-feedback.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            remembered = client.post(
+                "/remember",
+                json={"text": "explicit user feedback should train hot memory", "namespace": "tenant:fb"},
+            )
+            assert remembered.status_code == 200
+            memory_id = remembered.json()["id"]
+
+            first = client.post(
+                "/query",
+                json={"text": "user feedback hot memory", "namespace": "tenant:fb", "top_k": 1},
+            )
+            assert first.status_code == 200
+            before = mind.store.get(memory_id)
+            assert before is not None
+
+            mismatch = client.post(
+                "/feedback",
+                json={"id": memory_id, "namespace": "tenant:other", "useful": True},
+            )
+            assert mismatch.status_code == 404
+
+            response = client.post(
+                "/feedback",
+                json={
+                    "id": memory_id,
+                    "namespace": "tenant:fb",
+                    "useful": True,
+                    "strength": 0.75,
+                    "query": "user feedback hot memory",
+                    "reason": "accepted by agent",
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            assert payload["ok"] is True
+            assert payload["id"] == memory_id
+            assert payload["namespace"] == "tenant:fb"
+            assert payload["priority"] > before.priority
+            assert payload["access_count"] >= before.access_count + 1
+            assert payload["cache_invalidated"] >= 1
+
+            event = mind.audit_events(namespace="tenant:fb", action="feedback", limit=1)[0]
+            assert event.memory_id == memory_id
+            assert event.metadata["useful"] is True
+            assert event.metadata["reason"] == "accepted by agent"
+            assert event.metadata["query"] == "user feedback hot memory"
+    finally:
+        mind.close()
+
+
 def test_fastapi_consolidate_creates_durable_concept_memory(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api-consolidate.sqlite3",

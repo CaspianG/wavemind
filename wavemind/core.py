@@ -461,9 +461,14 @@ class WaveMind:
         id: int,
         useful: bool = True,
         strength: float = 0.25,
+        namespace: str | None = None,
+        query: str | None = None,
+        reason: str | None = None,
     ) -> bool:
         record = self._records_by_id.get(int(id))
         if record is None or record.is_expired:
+            return False
+        if namespace is not None and record.namespace != namespace:
             return False
         delta = abs(float(strength))
         if useful:
@@ -482,16 +487,24 @@ class WaveMind:
             )
         self.field.evolve(1)
         self._refresh_field_magnitude()
+        metadata: dict[str, object] = {
+            "useful": bool(useful),
+            "strength": delta,
+            "priority": float(record.priority),
+            "access_count": int(record.access_count),
+        }
+        if reason:
+            metadata["reason"] = str(reason)
+        if query:
+            if self.audit_queries:
+                metadata["query"] = str(query)
+            else:
+                metadata["query_length"] = len(str(query))
         self.store.log_audit_event(
             "feedback",
             namespace=record.namespace,
             memory_id=record.id,
-            metadata={
-                "useful": bool(useful),
-                "strength": delta,
-                "priority": float(record.priority),
-                "access_count": int(record.access_count),
-            },
+            metadata=metadata,
         )
         return True
 

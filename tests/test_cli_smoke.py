@@ -71,6 +71,85 @@ def test_module_cli_remember_query_stats_and_backup(tmp_path):
     assert backup_path.exists()
 
 
+def test_cli_feedback_records_user_signal(tmp_path):
+    db_path = tmp_path / "feedback.sqlite3"
+
+    remembered = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "remember",
+        "cli feedback should boost this memory",
+        "--namespace",
+        "cli-feedback",
+    )
+    memory_id = int(remembered.stdout.split("id=", 1)[1].split()[0])
+
+    response = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "feedback",
+        "--id",
+        str(memory_id),
+        "--namespace",
+        "cli-feedback",
+        "--strength",
+        "0.5",
+        "--query",
+        "boost this memory",
+        "--reason",
+        "accepted answer",
+        "--json",
+    )
+    payload = json.loads(response.stdout)
+    assert payload["ok"] is True
+    assert payload["id"] == memory_id
+    assert payload["namespace"] == "cli-feedback"
+    assert payload["priority"] > 1.0
+    assert payload["access_count"] == 1
+
+    audit = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "audit",
+        "--namespace",
+        "cli-feedback",
+        "--action",
+        "feedback",
+        "--json",
+    )
+    events = json.loads(audit.stdout)
+    assert events[0]["memory_id"] == memory_id
+    assert events[0]["metadata"]["query"] == "boost this memory"
+    assert events[0]["metadata"]["reason"] == "accepted answer"
+
+    rejected = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "--db",
+            str(db_path),
+            "feedback",
+            "--id",
+            str(memory_id),
+            "--namespace",
+            "wrong-namespace",
+            "--json",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=False,
+    )
+    assert rejected.returncode == 4
+    assert json.loads(rejected.stdout)["ok"] is False
+
+
 def test_cli_timestamped_backup_retention_and_restore(tmp_path):
     db_path = tmp_path / "cli.sqlite3"
     backup_dir = tmp_path / "backups"
