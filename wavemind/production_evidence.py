@@ -191,6 +191,93 @@ def _first_plan(root: Path, plan_artifact: str) -> dict[str, Any]:
     return {}
 
 
+def _production_scale_run_contract(root: Path) -> dict[str, Any]:
+    artifact = "benchmarks/production_scale_run_plan.json"
+    payload = _load_optional_json(root / artifact)
+    expected_profiles = {
+        "qdrant-10m",
+        "qdrant-sharded-10m",
+        "pgvector-10m",
+        "faiss-ivfpq-50m",
+        "qdrant-sharded-100m",
+    }
+    issues: list[str] = []
+    if not payload:
+        issues.append(f"missing {artifact}")
+        return {
+            "status": "action_required",
+            "artifact": artifact,
+            "profile_count": 0,
+            "ready_count": 0,
+            "action_required_count": 0,
+            "target_memories_total": 0,
+            "profiles": [],
+            "issues": issues,
+        }
+
+    if payload.get("schema") != "wavemind.production_scale_run_plan.v1":
+        issues.append("schema must be wavemind.production_scale_run_plan.v1")
+    rows = payload.get("profiles")
+    if not isinstance(rows, list):
+        issues.append("profiles must be a list")
+        rows = []
+    names = {str(row.get("profile")) for row in rows if isinstance(row, dict)}
+    missing_profiles = sorted(expected_profiles - names)
+    if missing_profiles:
+        issues.append("missing profiles: " + ", ".join(missing_profiles))
+
+    target_total = 0
+    ready_count = 0
+    action_required_count = 0
+    profiles: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            issues.append("profile rows must be objects")
+            continue
+        profile = str(row.get("profile") or "unknown")
+        status = str(row.get("status") or "missing")
+        target_memories = int(row.get("target_memories") or 0)
+        target_total += target_memories
+        if status == "ready":
+            ready_count += 1
+        elif status == "action_required":
+            action_required_count += 1
+        else:
+            issues.append(f"{profile} has unknown status {status}")
+        for key in ("command", "output_artifact", "checkpoint_path", "claim_boundary"):
+            if not row.get(key):
+                issues.append(f"{profile} missing {key}")
+        if not str(row.get("claim_boundary") or "").startswith("plan_only"):
+            issues.append(f"{profile} claim_boundary must mark this as plan_only")
+        profiles.append(
+            {
+                "profile": profile,
+                "status": status,
+                "engine": row.get("engine"),
+                "target_memories": target_memories,
+                "output_artifact": row.get("output_artifact"),
+                "required_env": list(row.get("required_env") or []),
+                "missing_env": list(row.get("missing_env") or []),
+                "blockers": list(row.get("blockers") or []),
+            }
+        )
+
+    if target_total < 180_000_000:
+        issues.append("target_memories_total must cover at least 180000000 memories")
+
+    return {
+        "status": "available" if not issues else "action_required",
+        "artifact": artifact,
+        "schema": payload.get("schema"),
+        "profile_count": len(profiles),
+        "ready_count": ready_count,
+        "action_required_count": action_required_count,
+        "target_memories_total": target_total,
+        "profiles": profiles,
+        "issues": list(dict.fromkeys(issues)),
+    }
+
+
 def _disk_free_gb_for_path(path_value: str) -> float | None:
     if not path_value:
         return None
@@ -959,6 +1046,7 @@ def evaluate_production_evidence_bundle(
     readiness = _load_optional_json(root / "benchmarks" / "production_readiness_results.json")
     audit = _load_optional_json(root / "benchmarks" / "benchmark_artifact_audit.json")
     matrix = _load_optional_json(root / "benchmarks" / "benchmark_matrix_results.json")
+    scale_run_contract = _production_scale_run_contract(root)
 
     strict_by_id = {
         str(row.get("id")): row
@@ -1027,12 +1115,16 @@ def evaluate_production_evidence_bundle(
             "production_readiness_score": readiness.get("readiness_score"),
             "artifact_audit_status": audit_status,
             "implemented_benchmarks": implemented_count,
+            "production_scale_run_contract_status": scale_run_contract.get("status"),
+            "production_scale_run_profile_count": scale_run_contract.get("profile_count"),
+            "production_scale_run_target_memories_total": scale_run_contract.get("target_memories_total"),
             "next_action_count": len(next_actions),
         },
         "strict_production_evidence": strict,
         "production_evidence_preflight": preflight,
         "production_readiness": readiness,
         "artifact_audit": audit,
+        "production_scale_run_contract": scale_run_contract,
         "next_actions": next_actions,
         "claim_boundaries": [
             {
@@ -1049,6 +1141,13 @@ def evaluate_production_evidence_bundle(
                 "claim": "Remote multi-region active-active convergence",
                 "status": "unlocked" if strict_by_id.get("external_http_active_active", {}).get("status") == "pass" else "locked",
                 "evidence": "benchmarks/external_http_active_active_results.json",
+            },
+            {
+                "claim": "Large-N production run contracts",
+                "status": "available"
+                if scale_run_contract.get("status") == "available"
+                else "locked",
+                "evidence": "benchmarks/production_scale_run_plan.json",
             },
             {
                 "claim": "10M-100M service-backed production scale",
@@ -1122,6 +1221,9 @@ def render_bundle_markdown(payload: dict[str, Any]) -> str:
         f"| readiness score | `{summary['production_readiness_score']}` |",
         f"| artifact audit | `{summary['artifact_audit_status']}` |",
         f"| implemented benchmarks | `{summary['implemented_benchmarks']}` |",
+        f"| production scale run contract | `{summary.get('production_scale_run_contract_status', 'missing')}` |",
+        f"| production scale profiles | `{summary.get('production_scale_run_profile_count', 0)}` |",
+        f"| production scale target memories | `{summary.get('production_scale_run_target_memories_total', 0)}` |",
         f"| next actions | `{summary['next_action_count']}` |",
         "",
         "## Claim Boundaries",
@@ -1133,6 +1235,26 @@ def render_bundle_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {row['claim']} | `{row['status']}` | `{row['evidence']}` |"
         )
+    contract = payload.get("production_scale_run_contract") or {}
+    if contract:
+        lines.extend(
+            [
+                "",
+                "## Production Scale Run Contract",
+                "",
+                "| profile | status | engine | target memories | output artifact | missing env |",
+                "|---|---|---|---:|---|---|",
+            ]
+        )
+        for row in contract.get("profiles", []):
+            missing_env = ", ".join(row.get("missing_env") or ())
+            lines.append(
+                f"| {row.get('profile')} | `{row.get('status')}` | `{row.get('engine')}` | "
+                f"{row.get('target_memories')} | `{row.get('output_artifact')}` | `{missing_env}` |"
+            )
+        issues = ", ".join(contract.get("issues") or ())
+        if issues:
+            lines.extend(["", f"Contract issues: {issues}"])
     lines.extend(
         [
             "",

@@ -146,6 +146,11 @@ jobs:
             --write-artifacts \
             --output benchmarks/production_evidence_preflight_results.json \
             --markdown-output benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+          python -m wavemind production-scale-plan \
+            --disk-free-gb 0 \
+            --write-artifact \
+            --output benchmarks/production_scale_run_plan.json \
+            --json
           python -m wavemind production-evidence-bundle \
             --write-artifacts \
             --output benchmarks/production_evidence_bundle_results.json \

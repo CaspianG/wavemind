@@ -649,6 +649,7 @@ def build_production_scale_run_plan(
 
     ready_count = sum(1 for plan in plans if plan.status == "ready")
     summary = {
+        "schema": "wavemind.production_scale_run_plan.v1",
         "overall_status": "ready" if ready_count == len(plans) else "action_required",
         "ready_count": ready_count,
         "action_required_count": len(plans) - ready_count,
@@ -658,6 +659,7 @@ def build_production_scale_run_plan(
         "claim_boundary": "preflight plans only; real benchmark claims require the output artifacts",
     }
     return {
+        "schema": "wavemind.production_scale_run_plan.v1",
         "summary": summary,
         "profiles": [plan.as_dict() for plan in plans],
     }

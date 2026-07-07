@@ -23,6 +23,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    scale_run_plan = _load_json(
+        root / "benchmarks" / "production_scale_run_plan.json",
+        load_errors,
+        required=False,
+    )
     preflight = _load_json(
         root / "benchmarks" / "production_evidence_preflight_results.json",
         load_errors,
@@ -110,6 +115,20 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "next_action_count": len(evidence_bundle.get("next_actions", []))
             if isinstance(evidence_bundle.get("next_actions"), list)
             else 0,
+            "production_scale_run_contract": evidence_bundle.get(
+                "production_scale_run_contract", {}
+            ),
+        },
+        "production_scale_run_plan": {
+            "schema": scale_run_plan.get("schema"),
+            "overall_status": (scale_run_plan.get("summary") or {}).get("overall_status", "missing"),
+            "ready_count": (scale_run_plan.get("summary") or {}).get("ready_count", 0),
+            "action_required_count": (scale_run_plan.get("summary") or {}).get("action_required_count", 0),
+            "total_profiles": (scale_run_plan.get("summary") or {}).get("total_profiles", 0),
+            "target_memories_total": (scale_run_plan.get("summary") or {}).get(
+                "target_memories_total", 0
+            ),
+            "profiles": (scale_run_plan.get("summary") or {}).get("profiles", []),
         },
         "production_evidence_preflight": {
             "schema": preflight.get("schema"),
@@ -123,6 +142,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "benchmarks/production_evidence_results.json",
             "benchmarks/production_evidence_preflight_results.json",
             "benchmarks/production_evidence_bundle_results.json",
+            "benchmarks/production_scale_run_plan.json",
         ],
         "load_errors": load_errors,
     }

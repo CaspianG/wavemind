@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-07T22:37:41Z",
+  "generated_at": "2026-07-07T23:21:11Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -14,11 +14,14 @@
     "production_readiness_score": 1.0,
     "artifact_audit_status": "pass",
     "implemented_benchmarks": 28,
+    "production_scale_run_contract_status": "available",
+    "production_scale_run_profile_count": 5,
+    "production_scale_run_target_memories_total": 180000000,
     "next_action_count": 8
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-07T22:37:41Z",
+    "generated_at": "2026-07-07T23:21:11Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -129,7 +132,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-07T22:37:41Z",
+    "generated_at": "2026-07-07T23:21:11Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -671,6 +674,103 @@
     "planned_count": 6,
     "errors": []
   },
+  "production_scale_run_contract": {
+    "status": "available",
+    "artifact": "benchmarks/production_scale_run_plan.json",
+    "schema": "wavemind.production_scale_run_plan.v1",
+    "profile_count": 5,
+    "ready_count": 0,
+    "action_required_count": 5,
+    "target_memories_total": 180000000,
+    "profiles": [
+      {
+        "profile": "qdrant-10m",
+        "status": "action_required",
+        "engine": "qdrant-service",
+        "target_memories": 10000000,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "required_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URL",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ]
+      },
+      {
+        "profile": "qdrant-sharded-10m",
+        "status": "action_required",
+        "engine": "qdrant-sharded-service",
+        "target_memories": 10000000,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URLS",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ]
+      },
+      {
+        "profile": "pgvector-10m",
+        "status": "action_required",
+        "engine": "pgvector-service",
+        "target_memories": 10000000,
+        "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "required_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "missing_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_PGVECTOR_DSN",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ]
+      },
+      {
+        "profile": "faiss-ivfpq-50m",
+        "status": "action_required",
+        "engine": "faiss-ivfpq-persisted",
+        "target_memories": 50000000,
+        "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "required_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "missing_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ]
+      },
+      {
+        "profile": "qdrant-sharded-100m",
+        "status": "action_required",
+        "engine": "qdrant-sharded-service",
+        "target_memories": 100000000,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URLS",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ]
+      }
+    ],
+    "issues": []
+  },
   "next_actions": [
     {
       "id": "external_http_cluster",
@@ -833,6 +933,11 @@
       "claim": "Remote multi-region active-active convergence",
       "status": "locked",
       "evidence": "benchmarks/external_http_active_active_results.json"
+    },
+    {
+      "claim": "Large-N production run contracts",
+      "status": "available",
+      "evidence": "benchmarks/production_scale_run_plan.json"
     },
     {
       "claim": "10M-100M service-backed production scale",

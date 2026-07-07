@@ -1,5 +1,7 @@
 {
+  "schema": "wavemind.production_scale_run_plan.v1",
   "summary": {
+    "schema": "wavemind.production_scale_run_plan.v1",
     "overall_status": "action_required",
     "ready_count": 0,
     "action_required_count": 5,

@@ -13,6 +13,9 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 | readiness score | `1.0` |
 | artifact audit | `pass` |
 | implemented benchmarks | `28` |
+| production scale run contract | `available` |
+| production scale profiles | `5` |
+| production scale target memories | `180000000` |
 | next actions | `8` |
 
 ## Claim Boundaries
@@ -22,7 +25,18 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 | Core library/API readiness | `unlocked` | `production_readiness_results.json and benchmark_artifact_audit.json` |
 | Remote service-node cluster SLO | `locked` | `benchmarks/http_cluster_load_results.json` |
 | Remote multi-region active-active convergence | `locked` | `benchmarks/external_http_active_active_results.json` |
+| Large-N production run contracts | `available` | `benchmarks/production_scale_run_plan.json` |
 | 10M-100M service-backed production scale | `locked` | `large-N production_streaming_load result artifacts` |
+
+## Production Scale Run Contract
+
+| profile | status | engine | target memories | output artifact | missing env |
+|---|---|---|---:|---|---|
+| qdrant-10m | `action_required` | `qdrant-service` | 10000000 | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` |
+| qdrant-sharded-10m | `action_required` | `qdrant-sharded-service` | 10000000 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` |
+| pgvector-10m | `action_required` | `pgvector-service` | 10000000 | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` |
+| faiss-ivfpq-50m | `action_required` | `faiss-ivfpq-persisted` | 50000000 | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` |
+| qdrant-sharded-100m | `action_required` | `qdrant-sharded-service` | 100000000 | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS` |
 
 ## Next Actions
 

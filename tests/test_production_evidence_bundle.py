@@ -46,10 +46,16 @@ def test_production_evidence_bundle_keeps_claims_limited_without_remote_artifact
     assert payload["summary"]["strict_overall_status"] == "action_required"
     assert payload["summary"]["production_readiness_status"] == "pass"
     assert payload["summary"]["artifact_audit_status"] == "pass"
+    assert payload["summary"]["production_scale_run_contract_status"] == "available"
+    assert payload["summary"]["production_scale_run_profile_count"] == 5
+    assert payload["summary"]["production_scale_run_target_memories_total"] == 180_000_000
     assert payload["summary"]["next_action_count"] == 8
+    assert payload["production_scale_run_contract"]["status"] == "available"
+    assert payload["production_scale_run_contract"]["profile_count"] == 5
 
     claims = {row["claim"]: row for row in payload["claim_boundaries"]}
     assert claims["Core library/API readiness"]["status"] == "unlocked"
+    assert claims["Large-N production run contracts"]["status"] == "available"
     assert claims["Remote service-node cluster SLO"]["status"] == "locked"
     assert claims["10M-100M service-backed production scale"]["status"] == "locked"
 
@@ -77,6 +83,8 @@ def test_production_evidence_bundle_markdown_lists_claim_boundaries():
     assert "# WaveMind Production Evidence Bundle" in markdown
     assert "Claim Boundaries" in markdown
     assert "Remote multi-region active-active convergence" in markdown
+    assert "Production Scale Run Contract" in markdown
+    assert "qdrant-sharded-100m" in markdown
     assert "Next Actions" in markdown
 
 

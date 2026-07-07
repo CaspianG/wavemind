@@ -22,6 +22,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/production_evidence_gate.py" in workflow
     assert "--output benchmarks/production_evidence_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE.md" in workflow
+    assert "python -m wavemind production-scale-plan" in workflow
+    assert "--output benchmarks/production_scale_run_plan.json" in workflow
+    assert workflow.index("production-scale-plan") < workflow.index("production-evidence-bundle")
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(

@@ -42,6 +42,11 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     )
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
     assert payload["production_evidence_bundle"]["next_action_count"] == 8
+    assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
+    assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
+    assert payload["production_scale_run_plan"]["total_profiles"] == 5
+    assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000
+    assert "qdrant-sharded-100m" in payload["production_scale_run_plan"]["profiles"]
     assert {
         "external_http_active_active",
         "qdrant_sharded_10m_service",
@@ -52,6 +57,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/benchmark_matrix_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_bundle_results.json" in payload["source_files"]
+    assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert payload["load_errors"] == []
 
 
@@ -71,3 +77,4 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "claims_limited",
         "claims_unlocked",
     }
+    assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
