@@ -190,6 +190,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include docs/assets/benchmark-summary.svg" in manifest
     assert "include benchmarks/*.json" in manifest
     assert "include docs/assets/wavemind-demo.gif" in manifest
+    assert "include benchmarks/*.py" in manifest
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest
     assert "recursive-include examples/production-index-profile *" in manifest
@@ -225,6 +226,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_streaming_load_qdrant_10m_results.json" in readme
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in readme
     assert "production-streaming-load.yml" in readme
+    assert "ingest_production_streaming_artifact.py" in readme
     assert "production_streaming_load_pgvector_10m_results.json" in readme
     assert "deploy/serverless/observed-telemetry.loopback.json" in readme
     assert "observed-telemetry.remote.json" in readme
@@ -311,6 +313,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_streaming_load_qdrant_sharded_10m_plan.json" in roadmap
     assert "production_streaming_load_qdrant_sharded_100m_plan.json" in roadmap
     assert "production-streaming-load.yml" in roadmap
+    assert "ingest_production_streaming_artifact.py" in roadmap
     assert "production_streaming_load_pgvector_10m_plan.json" in roadmap
     assert "production_pgvector_tuning_results.json" in roadmap
     assert "pgvector-iterative" in roadmap
@@ -327,6 +330,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json" in benchmark_brief
     assert ".github/workflows/production-streaming-load.yml" in benchmark_brief
+    assert "ingest_production_streaming_artifact.py" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_10m_plan.json" in benchmark_brief
     assert "benchmarks/production_pgvector_tuning_results.json" in benchmark_brief
@@ -334,6 +338,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "--planned-result-output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_pgvector_10m_results.json" in benchmark_brief
     assert Path(".github/workflows/production-streaming-load.yml").exists()
+    assert Path("benchmarks/ingest_production_streaming_artifact.py").exists()
     assert "examples/qdrant-sharded-streaming/docker-compose.yml" in benchmark_brief
     assert "pgvector iterative tuning recall@10: 0.970" in benchmark_brief
     assert "cost $1.39 / 1M queries" in benchmark_brief

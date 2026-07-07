@@ -62,7 +62,13 @@ artifact is checked in, scale-readiness prefers it over loopback telemetry.
 Large-N streaming service runs can be executed through
 `.github/workflows/production-streaming-load.yml`, which uploads checkpoint and
 result artifacts and can commit refreshed benchmark/evidence reports after a
-real 10M/50M/100M run.
+real 10M/50M/100M run. The safer maintainer flow is to keep
+`commit_results=false`, download the `production-streaming-load-results`
+artifact, and run
+`python benchmarks/ingest_production_streaming_artifact.py --artifact-dir state/large-run --refresh`.
+That gate only accepts strict large-N result filenames, the expected engine and
+vector count, recall at or above `0.95`, p99 at or below `100 ms`, and valid
+SLO/cost rows before it refreshes the public leaderboard and evidence reports.
 
 ## What This Proves
 

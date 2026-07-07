@@ -1545,6 +1545,20 @@ Manual large-N runner: `.github/workflows/production-streaming-load.yml` runs
 those checkpointed Qdrant, sharded Qdrant, pgvector, or FAISS IVF-PQ profiles on
 a sized GitHub or self-hosted runner, uploads checkpoint/result artifacts, and
 can commit refreshed benchmark/evidence reports when `commit_results=true`.
+The preferred review path is to leave `commit_results=false`, download the
+`production-streaming-load-results` artifact, and ingest it locally with the
+strict artifact gate:
+
+```bash
+gh run download RUN_ID --name production-streaming-load-results --dir state/large-run
+python benchmarks/ingest_production_streaming_artifact.py --artifact-dir state/large-run --refresh
+python -m pytest tests/test_ingest_production_streaming_artifact.py tests/test_production_evidence_gate.py -q
+```
+
+The ingest command only accepts real large-N proof filenames such as
+`production_streaming_load_qdrant_sharded_100m_results.json`; it rejects smoke
+artifacts, wrong engines, wrong vector counts, skipped rows, recall below
+`0.95`, p99 above `100 ms`, and failed SLO/cost rows.
 CLI preflight: `wavemind production-evidence --strict`.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard

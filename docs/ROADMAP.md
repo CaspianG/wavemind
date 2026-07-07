@@ -62,6 +62,12 @@ policy matters more than raw vector-database scale:
   Qdrant, sharded Qdrant, pgvector, or FAISS IVF-PQ profiles on a sized runner,
   upload checkpoint/result artifacts, and optionally commit refreshed benchmark
   and strict-evidence reports after a real service run.
+- `benchmarks/ingest_production_streaming_artifact.py` is the maintainer-side
+  promotion gate for those large-N artifacts. It validates downloaded
+  `production-streaming-load-results` artifacts before they become checked-in
+  evidence, rejects smoke files or mismatched engine/size/SLO rows, copies only
+  recognized 10M/50M/100M result JSON files, and can refresh the public
+  leaderboard/readiness/evidence artifacts from the accepted result.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
   production verdict. The current WaveMind core gate is `1.000` (`36/36` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
