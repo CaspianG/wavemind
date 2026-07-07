@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-07T03:09:50Z",
-  "source_ref": "d665e3f0c9d0",
+  "generated_at": "2026-07-07T03:23:06Z",
+  "source_ref": "5992f8196de5",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -943,7 +943,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
+      "dataset": "Memory-bounded streaming generator for 10M and 50M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, a real two-service sharded Qdrant smoke, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, and a 50M FAISS IVF-PQ plan-only resource/command preflight.",
       "competitors": [
         "FAISS persisted streaming",
         "FAISS IVF-PQ persisted streaming",
@@ -978,7 +978,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_total_cost_at_target_qps_usd": 182.50238418579102,
-          "estimated_storage_gb": 0.02384185791015625
+          "estimated_storage_gb": 0.02384185791015625,
+          "memory_mode": "stores full matrix; smoke/testing only"
         },
         "100k compressed / WaveMind faiss-ivfpq-persisted streaming": {
           "recall_at_k": 0.96,
@@ -994,7 +995,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_total_cost_at_target_qps_usd": 182.52384185791016,
-          "estimated_storage_gb": 0.2384185791015625
+          "estimated_storage_gb": 0.2384185791015625,
+          "memory_mode": "streaming IVF-PQ; compressed codes plus query source vectors only"
         },
         "1M compressed / WaveMind faiss-ivfpq-persisted streaming": {
           "recall_at_k": 0.99,
@@ -1010,7 +1012,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_total_cost_at_target_qps_usd": 182.73841857910156,
-          "estimated_storage_gb": 2.384185791015625
+          "estimated_storage_gb": 2.384185791015625,
+          "memory_mode": "streaming IVF-PQ; compressed codes plus query source vectors only"
         },
         "10M compressed / WaveMind faiss-ivfpq-persisted streaming": {
           "recall_at_k": 0.99,
@@ -1026,7 +1029,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 4.861111111111111,
           "monthly_total_cost_at_target_qps_usd": 1279.8841857910156,
-          "estimated_storage_gb": 23.84185791015625
+          "estimated_storage_gb": 23.84185791015625,
+          "memory_mode": "streaming IVF-PQ; compressed codes plus query source vectors only"
         },
         "50M preflight / WaveMind faiss-ivfpq-persisted streaming": {
           "status": "action_required",
@@ -1060,7 +1064,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 1.3888888888888888,
           "monthly_total_cost_at_target_qps_usd": 365.00020265579224,
-          "estimated_storage_gb": 0.0020265579223632812
+          "estimated_storage_gb": 0.0020265579223632812,
+          "memory_mode": "streaming upsert; query source vectors only"
         },
         "1M Qdrant cold / Qdrant service streaming": {
           "recall_at_k": 0.99,
@@ -1076,7 +1081,8 @@
           "cost_status": "invalid_slo",
           "compute_cost_per_1m_queries_usd": 16.666666666666664,
           "monthly_total_cost_at_target_qps_usd": 4380.238418579102,
-          "estimated_storage_gb": 2.384185791015625
+          "estimated_storage_gb": 2.384185791015625,
+          "memory_mode": "streaming upsert; query source vectors only"
         },
         "1M Qdrant tuned / Qdrant service streaming": {
           "recall_at_k": 1,
@@ -1092,7 +1098,27 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 2.083333333333333,
           "monthly_total_cost_at_target_qps_usd": 547.7384185791016,
-          "estimated_storage_gb": 2.384185791015625
+          "estimated_storage_gb": 2.384185791015625,
+          "memory_mode": "streaming upsert; query source vectors only"
+        },
+        "Qdrant sharded smoke / Qdrant sharded service streaming": {
+          "recall_at_k": 1,
+          "target_recall_at_k": 1,
+          "target_recall_at_1": 1,
+          "avg_latency_ms": 9.103320009307936,
+          "p95_latency_ms": 15.568500035442412,
+          "p99_latency_ms": 16.01940009277314,
+          "build_ms": 3681.3279000343755,
+          "slo_status": "pass",
+          "slo_required_replicas": 2,
+          "slo_autoscaled_qps": 1845.4805480662421,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 1.3888888888888888,
+          "monthly_total_cost_at_target_qps_usd": 365.00107288360596,
+          "estimated_storage_gb": 0.010728836059570312,
+          "shard_count": 2,
+          "fanout_workers": 2,
+          "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge"
         },
         "10M Qdrant preflight / Qdrant service streaming": {
           "status": "action_required",
@@ -1144,7 +1170,8 @@
           "cost_status": "valid_slo",
           "compute_cost_per_1m_queries_usd": 0.6944444444444444,
           "monthly_total_cost_at_target_qps_usd": 182.50020265579224,
-          "estimated_storage_gb": 0.0020265579223632812
+          "estimated_storage_gb": 0.0020265579223632812,
+          "memory_mode": "streaming PostgreSQL insert; query source vectors only"
         },
         "10M pgvector preflight / WaveMind pgvector streaming": {
           "status": "action_required",
@@ -1165,7 +1192,7 @@
           ]
         }
       },
-      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, and 50M FAISS preflights reproducible, then run those service profiles on hardware sized for the index.",
+      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant, sharded Qdrant, and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, and 50M FAISS preflights reproducible, then run those service profiles on hardware sized for the index.",
       "next_step": "Set service credentials and run the checked 10M Qdrant, sharded Qdrant, and pgvector reproduction commands, then run the 50M compressed FAISS command on hardware sized for the index."
     },
     {

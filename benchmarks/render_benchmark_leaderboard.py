@@ -427,6 +427,12 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    qdrant_sharded_smoke = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json")
+    qdrant_sharded_smoke_result = _first_result(qdrant_sharded_smoke)
+    if qdrant_sharded_smoke_result and isinstance(qdrant_sharded_smoke_result.get("results"), list):
+        nested_results = qdrant_sharded_smoke_result["results"]
+        if nested_results:
+            qdrant_sharded_smoke_result = nested_results[0]
     qdrant_sharded_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json")
     qdrant_sharded_plan_row = {}
     if (
@@ -437,17 +443,19 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
         first_plan = qdrant_sharded_plan["plans"][0]
         if isinstance(first_plan, dict):
             qdrant_sharded_plan_row = first_plan
-    if qdrant_sharded_plan_row:
+    if qdrant_sharded_smoke_result and qdrant_sharded_plan_row:
         shard_urls = qdrant_sharded_plan_row.get("command_env", {}).get("WAVEMIND_QDRANT_URLS", "")
         shard_count = len([part for part in str(shard_urls).split(",") if part.strip()])
         blockers = ", ".join(qdrant_sharded_plan_row.get("blockers", [])) or "none"
         rows.append(
             (
                 "Qdrant sharded streaming",
-                "horizontal Qdrant service fanout preflight",
+                "real two-service fanout smoke plus horizontal Qdrant preflight",
                 (
+                    f"smoke recall `{fmt(qdrant_sharded_smoke_result.get('target_recall_at_k'))}`, "
+                    f"smoke p99 `{fmt(qdrant_sharded_smoke_result.get('p99_latency_ms'))} ms`; "
                     f"10M preflight `{qdrant_sharded_plan_row.get('status', 'unknown')}`; "
-                    f"shards `{shard_count}`; blockers `{blockers}`"
+                    f"planned shards `{shard_count}`; blockers `{blockers}`"
                 ),
                 "Run the embedded sharded 10M command against multiple Qdrant service nodes.",
             )

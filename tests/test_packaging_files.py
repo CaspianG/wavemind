@@ -192,6 +192,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "include examples/*.py" in manifest
     assert "recursive-include examples/observability *" in manifest
     assert "recursive-include examples/production-index-profile *" in manifest
+    assert "recursive-include examples/qdrant-sharded-streaming *" in manifest
     assert "recursive-include deploy/helm/wavemind *" in manifest
     assert "recursive-include deploy/operator *" in manifest
     assert "recursive-include deploy/serverless *" in manifest
@@ -209,6 +210,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/production_streaming_load_qdrant_smoke_results.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_1m_results.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json" in readme
+    assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_10m_plan.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json" in readme
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in readme
@@ -229,6 +231,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "examples/research_notebook_memory.py" in readme
     assert "docs/assets/wavemind-demo.gif" in readme
     assert Path("docs/assets/wavemind-demo.gif").exists()
+    assert Path("examples/qdrant-sharded-streaming/docker-compose.yml").exists()
+    assert Path("examples/qdrant-sharded-streaming/README.md").exists()
     assert "docs/OBSERVABILITY.md" in readme
     assert "deploy/helm/wavemind" in readme
     assert "deploy/operator" in readme
@@ -278,6 +282,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "SLO and cost gates" in roadmap
     assert "production_streaming_load_50m_plan.json" in roadmap
     assert "production_streaming_load_qdrant_1m_tuned_results.json" in roadmap
+    assert "production_streaming_load_qdrant_sharded_smoke_results.json" in roadmap
     assert "production_streaming_load_qdrant_10m_plan.json" in roadmap
     assert "production_streaming_load_qdrant_sharded_10m_plan.json" in roadmap
     assert "production_streaming_load_pgvector_10m_plan.json" in roadmap
@@ -291,6 +296,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/production_streaming_load_qdrant_smoke_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_1m_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json" in benchmark_brief
+    assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_10m_plan.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in benchmark_brief
@@ -299,5 +305,6 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "--planned-result-output benchmarks/production_streaming_load_qdrant_10m_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json" in benchmark_brief
     assert "--planned-result-output benchmarks/production_streaming_load_pgvector_10m_results.json" in benchmark_brief
+    assert "examples/qdrant-sharded-streaming/docker-compose.yml" in benchmark_brief
     assert "pgvector iterative tuning recall@10: 0.970" in benchmark_brief
     assert "cost $1.39 / 1M queries" in benchmark_brief

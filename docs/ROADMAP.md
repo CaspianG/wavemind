@@ -44,6 +44,10 @@ policy matters more than raw vector-database scale:
   p99 `7.62 ms` over the same smoke shape. The tuned streaming 1M Qdrant service
   run reaches target recall@10 `1.000`, p99 `26.37 ms`, and valid SLO/cost
   status in `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json`.
+  The sharded Qdrant service smoke now runs against two real Qdrant services,
+  reaches target recall@10 `1.000`, p99 `16.02 ms`, and records id routing plus
+  parallel fanout merge in
+  `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json`.
   Checked 10M plan-only contracts live in
   `benchmarks/production_streaming_load_qdrant_10m_plan.json`,
   `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json`, and
@@ -453,11 +457,12 @@ Enterprise requirements:
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.
 - LoCoMo and LongMemEval answer-quality runs with a local or configured LLM.
-- Service-mode Qdrant streaming now has a real smoke, a tuned 1M passing run,
-  and single-service plus sharded 10M preflight contracts; the next step is
-  producing `production_streaming_load_qdrant_10m_results.json` on sized
-  Qdrant storage and `production_streaming_load_qdrant_sharded_10m_results.json`
-  on multiple Qdrant service nodes.
+- Service-mode Qdrant streaming now has a real smoke, a real two-node sharded
+  smoke, a tuned 1M passing run, and single-service plus sharded 10M preflight
+  contracts; the next step is producing
+  `production_streaming_load_qdrant_10m_results.json` on sized Qdrant storage
+  and `production_streaming_load_qdrant_sharded_10m_results.json` on multiple
+  Qdrant service nodes.
 - Service-mode Qdrant latency baseline beyond the checked-in 50000-vector
   profile.
 - Better README examples for non-agent use cases.

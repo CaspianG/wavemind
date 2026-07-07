@@ -28,6 +28,7 @@ include benchmarks/*.md
 include examples/*.py
 recursive-include examples/observability *
 recursive-include examples/production-index-profile *
+recursive-include examples/qdrant-sharded-streaming *
 recursive-include deploy/helm/wavemind *
 recursive-include deploy/cluster *
 recursive-include deploy/operator *

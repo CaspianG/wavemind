@@ -16,6 +16,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/production_streaming_load_qdrant_smoke_results.json",
         "benchmarks/production_streaming_load_qdrant_1m_results.json",
         "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+        "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
         "benchmarks/production_streaming_load_qdrant_10m_plan.json",
         "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json",
         "benchmarks/production_streaming_load_pgvector_smoke_results.json",
@@ -31,6 +32,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "python benchmarks/open_retrieval_benchmark.py",
         "python benchmarks/nomiracl_russian_benchmark.py",
         "docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark",
+        "docker compose -f examples/qdrant-sharded-streaming/docker-compose.yml up -d",
         "python benchmarks/ann_index_curve_benchmark.py --sizes 10000 50000",
         "python benchmarks/production_streaming_load_benchmark.py --plan-only --sizes 10000000",
     ]
@@ -51,5 +53,6 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "iterative HNSW reaches `0.970`" in brief
     assert "35/35" in brief
     assert "Qdrant 1M streaming" in brief
+    assert "two-service sharded Qdrant smoke" in brief
     assert "qdrant 10M service profiles are complete" in brief
     assert "pgvector 10M service profile is complete" in brief

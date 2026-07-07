@@ -120,6 +120,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert qdrant_1m_tuned["target_recall_at_k"] >= 0.95
     assert qdrant_1m_tuned["p99_latency_ms"] < 100.0
     assert qdrant_1m_tuned["slo_status"] == "pass"
+    qdrant_sharded_smoke = entries["production_streaming_load_runner"]["current"][
+        "Qdrant sharded smoke / Qdrant sharded service streaming"
+    ]
+    assert qdrant_sharded_smoke["target_recall_at_k"] >= 0.95
+    assert qdrant_sharded_smoke["p99_latency_ms"] < 100.0
+    assert qdrant_sharded_smoke["slo_status"] == "pass"
+    assert qdrant_sharded_smoke["shard_count"] == 2
     pgvector_smoke = entries["production_streaming_load_runner"]["current"][
         "pgvector smoke / WaveMind pgvector streaming"
     ]
