@@ -1300,6 +1300,12 @@ def run_qdrant_sharded_streaming(
         upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
     except ValueError as exc:
         return skipped_result(engine, str(exc))
+    target_urls = _split_env_list(os.environ.get("WAVEMIND_QDRANT_URLS"))
+    if len(target_urls) < 2:
+        return skipped_result(
+            engine,
+            "Set WAVEMIND_QDRANT_URLS to at least two comma-separated Qdrant service URLs",
+        )
     try:
         from qdrant_client import QdrantClient
         from qdrant_client.models import (
@@ -1315,7 +1321,6 @@ def run_qdrant_sharded_streaming(
 
     collection_config = _qdrant_collection_config_from_env()
     checkpoint_path = _checkpoint_path_from_env()
-    target_urls = _split_env_list(os.environ.get("WAVEMIND_QDRANT_URLS"))
     signature = _checkpoint_signature(
         engine=engine,
         count=count,
