@@ -51,7 +51,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "$1.39` per 1M queries" in brief
     assert "$4.17` per 1M queries" in brief
     assert "iterative HNSW reaches `0.970`" in brief
-    assert "36/36" in brief
+    assert "38/38" in brief
     assert "Qdrant 1M streaming" in brief
     assert "two-service sharded Qdrant smoke" in brief
     assert "qdrant 10M service profiles are complete" in brief
