@@ -4,6 +4,7 @@ from benchmarks.redis_api_load_benchmark import (
     build_worker_env,
     enforce_slo,
     percentile,
+    redis_delete_namespace,
     redis_delete_prefix,
     redis_key_count,
 )
@@ -41,7 +42,12 @@ def test_redis_key_count_and_prefix_delete_are_scoped():
 
     assert redis_key_count(redis, "wm:test", "tenant:a") == 2
     assert redis_key_count(redis, "wm:test") == 3
-    assert redis_delete_prefix(redis, "wm:test") == 3
+    assert redis_delete_namespace(redis, "wm:test", "tenant:a") == 2
+    assert redis.values == {
+        "wm:test:tenant:b:1": "three",
+        "other:tenant:a:1": "ignored",
+    }
+    assert redis_delete_prefix(redis, "wm:test") == 1
     assert redis.values == {"other:tenant:a:1": "ignored"}
 
 
@@ -57,6 +63,9 @@ def test_build_worker_env_sets_production_cache_controls(tmp_path):
     assert env["WAVEMIND_DB"] == str(db_path)
     assert env["WAVEMIND_REDIS_URL"] == "redis://127.0.0.1:6379/0"
     assert env["WAVEMIND_REDIS_PREFIX"] == "wm:test"
+    assert env["WAVEMIND_VECTOR_CACHE_REDIS_URL"] == "redis://127.0.0.1:6379/0"
+    assert env["WAVEMIND_VECTOR_CACHE_REDIS_PREFIX"] == "wm:test:qvec"
+    assert env["WAVEMIND_VECTOR_CACHE_TTL_SECONDS"] == "300"
     assert env["WAVEMIND_AUDIT_QUERIES"] == "1"
     assert env["WAVEMIND_ENCODER"] == "hash"
     assert "127.0.0.1" in env["NO_PROXY"]

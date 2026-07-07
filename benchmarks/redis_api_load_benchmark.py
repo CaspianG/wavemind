@@ -88,6 +88,9 @@ def build_worker_env(
             "WAVEMIND_REDIS_URL": redis_url,
             "WAVEMIND_REDIS_PREFIX": redis_prefix,
             "WAVEMIND_CACHE_TTL_SECONDS": "120",
+            "WAVEMIND_VECTOR_CACHE_REDIS_URL": redis_url,
+            "WAVEMIND_VECTOR_CACHE_REDIS_PREFIX": f"{redis_prefix}:qvec",
+            "WAVEMIND_VECTOR_CACHE_TTL_SECONDS": "300",
             "WAVEMIND_AUDIT_QUERIES": "1",
             "WAVEMIND_ENCODER": "hash",
             "WAVEMIND_INDEX": "numpy",
@@ -124,6 +127,13 @@ def redis_key_count(client: Any, prefix: str, namespace: str | None = None) -> i
 
 def redis_delete_prefix(client: Any, prefix: str) -> int:
     keys = list(client.scan_iter(match=f"{prefix}:*"))
+    if keys:
+        client.delete(*keys)
+    return len(keys)
+
+
+def redis_delete_namespace(client: Any, prefix: str, namespace: str) -> int:
+    keys = list(client.scan_iter(match=f"{prefix}:{namespace}:*"))
     if keys:
         client.delete(*keys)
     return len(keys)
@@ -225,6 +235,25 @@ def _query(worker: WorkerProcess, text: str, namespace: str, *, top_k: int = 1) 
     )
 
 
+def _query_batch(
+    worker: WorkerProcess,
+    queries: list[str],
+    namespace: str,
+    *,
+    top_k: int = 1,
+) -> dict[str, Any]:
+    return request_json(
+        "POST",
+        f"{worker.base_url}/query/batch",
+        {
+            "queries": [
+                {"text": text, "namespace": namespace, "top_k": top_k}
+                for text in queries
+            ]
+        },
+    )
+
+
 def _forget(worker: WorkerProcess, memory_id: int, namespace: str) -> int:
     payload = request_json(
         "DELETE",
@@ -266,11 +295,31 @@ def _parse_metric(text: str, metric: str) -> float:
     return 0.0
 
 
+def _collect_metrics(workers: list[WorkerProcess]) -> dict[str, float]:
+    metrics_texts = {
+        worker.index: request_text(f"{worker.base_url}/metrics")
+        for worker in workers
+    }
+    names = (
+        "wavemind_cache_hits_total",
+        "wavemind_cache_misses_total",
+        "wavemind_vector_cache_hits_total",
+        "wavemind_vector_cache_misses_total",
+        "wavemind_api_query_requests_total",
+        "wavemind_api_query_batch_requests_total",
+    )
+    return {
+        name: sum(_parse_metric(text, name) for text in metrics_texts.values())
+        for name in names
+    }
+
+
 def run_benchmark(
     *,
     redis_url: str,
     workers: int = 2,
     requests: int = 40,
+    batch_size: int = 12,
     base_port: int = 8210,
     timeout_seconds: float = 30.0,
     namespace: str = "tenant:redis-api-load",
@@ -279,9 +328,12 @@ def run_benchmark(
         raise ValueError("workers must be at least 2")
     if requests < 1:
         raise ValueError("requests must be positive")
+    if batch_size < 2:
+        raise ValueError("batch_size must be at least 2")
 
     client = redis_client(redis_url)
     redis_prefix = f"wm:redis-api-load:{uuid.uuid4().hex[:12]}"
+    vector_prefix = f"{redis_prefix}:qvec"
     start_time = time.time()
     latencies: list[float] = []
     worker_processes: list[WorkerProcess] = []
@@ -415,14 +467,74 @@ def run_benchmark(
                     latencies.append(latency_ms)
                     worker_counts[worker_index] += 1
 
-            metrics_texts = {
-                worker.index: request_text(f"{worker.base_url}/metrics")
-                for worker in worker_processes
-            }
-            cache_hits = sum(_parse_metric(text, "wavemind_cache_hits_total") for text in metrics_texts.values())
-            cache_misses = sum(
-                _parse_metric(text, "wavemind_cache_misses_total") for text in metrics_texts.values()
+            batch_namespace = namespace + ":batch-query"
+            batch_queries: list[str] = []
+            batch_expected: dict[str, str] = {}
+            for index in range(batch_size):
+                text = f"redis batch query fact {index} unique batch marker {index}"
+                query = f"unique batch marker {index}"
+                for worker in worker_processes:
+                    _remember(worker, text, batch_namespace)
+                batch_queries.append(query)
+                batch_expected[query] = text
+
+            batch_before_metrics = _collect_metrics(worker_processes)
+            for query in batch_queries:
+                warmed = _query(writer, query, batch_namespace)
+                if _first_text(warmed) != batch_expected[query]:
+                    raise RuntimeError(f"batch warm query failed for {query!r}: {warmed}")
+            batch_after_warm_metrics = _collect_metrics(worker_processes)
+            batch_vector_keys_after_warm = redis_key_count(client, vector_prefix)
+
+            redis_delete_namespace(client, redis_prefix, batch_namespace)
+            individual_latencies: list[float] = []
+            individual_ok = 0
+            for query in batch_queries:
+                started = time.perf_counter()
+                payload = _query(reader, query, batch_namespace)
+                individual_latencies.append((time.perf_counter() - started) * 1000.0)
+                individual_ok += 1 if _first_text(payload) == batch_expected[query] else 0
+            batch_after_individual_metrics = _collect_metrics(worker_processes)
+
+            redis_delete_namespace(client, redis_prefix, batch_namespace)
+            batch_started = time.perf_counter()
+            batch_payload = _query_batch(reader, batch_queries, batch_namespace)
+            batch_latency_ms = (time.perf_counter() - batch_started) * 1000.0
+            batch_items = batch_payload.get("items", [])
+            batch_returned_texts = [
+                item.get("results", [{}])[0].get("text")
+                if item.get("results")
+                else None
+                for item in batch_items
+            ]
+            batch_ok = (
+                batch_payload.get("count") == batch_size
+                and len(batch_items) == batch_size
+                and batch_returned_texts
+                == [batch_expected[query] for query in batch_queries]
             )
+            batch_after_batch_metrics = _collect_metrics(worker_processes)
+
+            warm_vector_misses = (
+                batch_after_warm_metrics["wavemind_vector_cache_misses_total"]
+                - batch_before_metrics["wavemind_vector_cache_misses_total"]
+            )
+            individual_vector_hits = (
+                batch_after_individual_metrics["wavemind_vector_cache_hits_total"]
+                - batch_after_warm_metrics["wavemind_vector_cache_hits_total"]
+            )
+            batch_vector_hits = (
+                batch_after_batch_metrics["wavemind_vector_cache_hits_total"]
+                - batch_after_individual_metrics["wavemind_vector_cache_hits_total"]
+            )
+            individual_total_ms = sum(individual_latencies)
+            request_reduction_ratio = 1.0 - (1.0 / float(batch_size))
+
+            metrics = _collect_metrics(worker_processes)
+            cache_hits = metrics["wavemind_cache_hits_total"]
+            cache_misses = metrics["wavemind_cache_misses_total"]
+            vector_cache_hits = metrics["wavemind_vector_cache_hits_total"]
+            vector_cache_misses = metrics["wavemind_vector_cache_misses_total"]
             final_keys = redis_key_count(client, redis_prefix, namespace)
             success_rate = ok_count / requests
             elapsed_ms = (time.time() - start_time) * 1000.0
@@ -433,8 +545,10 @@ def run_benchmark(
                 "redis_url": _redact_redis_url(redis_url),
                 "workers": workers,
                 "requests": requests,
+                "batch_query_size": batch_size,
                 "namespace": namespace,
                 "cache_prefix": redis_prefix,
+                "vector_cache_prefix": vector_prefix,
                 "old_id": old_id,
                 "fresh_id": fresh_id,
                 "warm_old_result": _first_text(warm_old),
@@ -462,8 +576,29 @@ def run_benchmark(
                 "p95_latency_ms": percentile(latencies, 95),
                 "p99_latency_ms": percentile(latencies, 99),
                 "max_latency_ms": max(latencies) if latencies else 0.0,
+                "batch_query_success": batch_ok,
+                "batch_query_individual_success": individual_ok == batch_size,
+                "batch_query_individual_http_requests": batch_size,
+                "batch_query_batch_http_requests": 1,
+                "batch_query_request_reduction_ratio": request_reduction_ratio,
+                "batch_query_warm_vector_misses": warm_vector_misses,
+                "batch_query_individual_vector_hits": individual_vector_hits,
+                "batch_query_batch_vector_hits": batch_vector_hits,
+                "batch_query_vector_keys_after_warm": batch_vector_keys_after_warm,
+                "batch_query_individual_total_ms": individual_total_ms,
+                "batch_query_batch_ms": batch_latency_ms,
+                "batch_query_total_speedup": (
+                    individual_total_ms / batch_latency_ms
+                    if batch_latency_ms > 0
+                    else 0.0
+                ),
+                "batch_query_individual_p95_ms": percentile(individual_latencies, 95),
+                "batch_query_individual_p99_ms": percentile(individual_latencies, 99),
+                "batch_query_batch_p99_ms": batch_latency_ms,
                 "cache_hits_total": cache_hits,
                 "cache_misses_total": cache_misses,
+                "vector_cache_hits_total": vector_cache_hits,
+                "vector_cache_misses_total": vector_cache_misses,
                 "redis_keys_after_load": final_keys,
                 "worker_query_counts": worker_counts,
                 "elapsed_ms": elapsed_ms,
@@ -485,6 +620,12 @@ def run_benchmark(
                     and no_stale_after_forget
                     and success_rate == 1.0
                     and cache_hits >= requests
+                    and batch_ok
+                    and individual_ok == batch_size
+                    and request_reduction_ratio >= 0.9
+                    and warm_vector_misses >= batch_size
+                    and individual_vector_hits >= batch_size
+                    and batch_vector_hits >= batch_size
                 ),
             }
             return result
@@ -530,6 +671,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--requests", type=int, default=40)
+    parser.add_argument("--batch-size", type=int, default=12)
     parser.add_argument("--base-port", type=int, default=8210)
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--output", type=Path)
@@ -546,6 +688,7 @@ def main() -> int:
             redis_url=args.redis_url,
             workers=args.workers,
             requests=args.requests,
+            batch_size=args.batch_size,
             base_port=args.base_port,
             timeout_seconds=args.timeout,
         )

@@ -1,7 +1,7 @@
 # WaveMind Benchmark Report
 
 This report is generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-07T17:55:12Z` from `6208882af29e`.
+Last refresh: `2026-07-07T18:32:50Z` from `b2e0cd202b25`.
 It separates completed local runs from runner-ready public benchmarks and planned external evaluations.
 
 Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.

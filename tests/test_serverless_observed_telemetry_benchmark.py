@@ -41,6 +41,12 @@ def test_serverless_observed_telemetry_benchmark_emits_capacity(monkeypatch):
             "3",
             "--max-scale",
             "4",
+            "--target-rps",
+            "1",
+            "--target-p99-ms",
+            "10000",
+            "--cold-start-budget-ms",
+            "10000",
         ]
     )
     payload = benchmark.run_from_args(args)

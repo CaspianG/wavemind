@@ -103,10 +103,15 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["real_redis_api_load_ci"]["status"] == "pass"
     assert "multiple uvicorn workers" in criteria["real_redis_api_load_ci"]["requirement"]
     assert "batch feedback" in criteria["real_redis_api_load_ci"]["requirement"]
+    assert "batch recall" in criteria["real_redis_api_load_ci"]["requirement"]
+    assert "shared query-vector cache" in criteria["real_redis_api_load_ci"]["requirement"]
     assert "success_rate 1.0" in criteria["real_redis_api_load_ci"]["evidence"]
     assert "batch accepted 2" in criteria["real_redis_api_load_ci"]["evidence"]
     assert "batch rejected 1" in criteria["real_redis_api_load_ci"]["evidence"]
     assert "batch cache invalidated True" in criteria["real_redis_api_load_ci"]["evidence"]
+    assert "batch query True" in criteria["real_redis_api_load_ci"]["evidence"]
+    assert "batch HTTP 12 -> 1" in criteria["real_redis_api_load_ci"]["evidence"]
+    assert "batch vector hits 12" in criteria["real_redis_api_load_ci"]["evidence"]
     assert criteria["real_local_http_cluster_ci"]["status"] == "pass"
     assert "multiple real localhost WaveMind API processes" in criteria["real_local_http_cluster_ci"]["requirement"]
     assert "health True" in criteria["real_local_http_cluster_ci"]["evidence"]

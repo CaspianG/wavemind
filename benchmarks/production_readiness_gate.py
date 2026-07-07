@@ -125,6 +125,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "redis-api-load:" in full_check_workflow
         and "image: redis:7-alpine" in full_check_workflow
         and "benchmarks/redis_api_load_benchmark.py" in full_check_workflow
+        and "--batch-size" in full_check_workflow
         and "--fail-on-slo" in full_check_workflow
     )
     redis_api_load = artifacts["redis_api_load"]
@@ -147,6 +148,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and redis_api_load.get("stale_prevented_after_forget")
         and float(redis_api_load.get("success_rate", 0.0)) >= 1.0
         and float(redis_api_load.get("p99_latency_ms", float("inf"))) <= 1000.0
+        and redis_api_load.get("batch_query_success")
+        and redis_api_load.get("batch_query_individual_success")
+        and int(redis_api_load.get("batch_query_individual_http_requests", 0)) >= 10
+        and int(redis_api_load.get("batch_query_batch_http_requests", 999999)) == 1
+        and float(redis_api_load.get("batch_query_request_reduction_ratio", 0.0)) >= 0.9
+        and float(redis_api_load.get("batch_query_individual_vector_hits", 0.0))
+        >= int(redis_api_load.get("batch_query_size", 999999))
+        and float(redis_api_load.get("batch_query_batch_vector_hits", 0.0))
+        >= int(redis_api_load.get("batch_query_size", 999999))
+        and float(redis_api_load.get("batch_query_batch_p99_ms", float("inf"))) <= 1000.0
         and int(redis_api_load.get("workers", 0)) >= 2
     )
     local_http_cluster_script_exists = (root / "benchmarks" / "local_http_cluster_smoke.py").exists()
@@ -1110,8 +1121,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"metrics {api_batch_query.get('batch_metrics_exposed')}"
             ),
             next_step=(
-                "Run batch recall under multi-worker Redis-backed API load and compare "
-                "p95/p99 against individual query fanout."
+                "Keep the real Redis multi-process batch recall profile green, "
+                "then repeat it with larger batches on remote Kubernetes/serverless nodes."
             ),
         ),
         _criterion(
@@ -1269,7 +1280,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             requirement=(
                 "CI must start a real Redis service, launch multiple uvicorn "
                 "workers, verify cross-process cache visibility, and fail on "
-                "stale-cache, batch feedback, or p99 SLO regression."
+                "stale-cache, batch feedback, batch recall, shared query-vector "
+                "cache, or p99 SLO regression."
             ),
             evidence=(
                 f"workflow {redis_api_load_ci_configured}, "
@@ -1279,9 +1291,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"batch accepted {redis_api_load.get('batch_feedback_accepted')}, "
                 f"batch rejected {redis_api_load.get('batch_feedback_rejected')}, "
                 f"batch cache invalidated {redis_api_load.get('batch_feedback_cache_invalidated')}, "
+                f"batch query {redis_api_load.get('batch_query_success')}, "
+                f"batch HTTP {redis_api_load.get('batch_query_individual_http_requests')} -> "
+                f"{redis_api_load.get('batch_query_batch_http_requests')}, "
+                f"batch vector hits {redis_api_load.get('batch_query_batch_vector_hits')}, "
+                f"batch p99 {redis_api_load.get('batch_query_batch_p99_ms')} ms, "
                 f"stale prevented {redis_api_load.get('stale_prevented_after_forget')}"
             ),
-            next_step="Refresh redis_api_load_results.json from the CI artifact on every release candidate.",
+            next_step=(
+                "Scale this Redis-backed batch recall profile to more workers, larger "
+                "batch sizes, and remote Kubernetes/serverless API nodes."
+            ),
         ),
         _criterion(
             criterion_id="real_local_http_cluster_ci",
