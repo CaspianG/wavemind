@@ -1,0 +1,172 @@
+{
+  "scenario": {
+    "name": "production_streaming_load_profile",
+    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",
+    "sizes": [
+      1000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 100,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "batch_size": 50000,
+    "target_recall_definition": "source id appears in top-k for a noisy copy of that source vector",
+    "memory_model": "streaming batches; stores only selected query source vectors outside the index",
+    "default_target_sizes": [
+      10000000,
+      50000000
+    ],
+    "slo_targets": {
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0
+    }
+  },
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": true,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": true,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": "512",
+      "WAVEMIND_QDRANT_EXACT": null,
+      "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
+      "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
+      "WAVEMIND_QDRANT_HNSW_M": null,
+      "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
+      "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD": null,
+      "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
+      "WAVEMIND_QDRANT_ON_DISK_PAYLOAD": "1",
+      "WAVEMIND_QDRANT_SHARD_NUMBER": null
+    },
+    "disk": {
+      "root": "C:\\",
+      "free_gb": 4.96,
+      "total_gb": 231.85
+    }
+  },
+  "results": [
+    {
+      "vectors": 1000000,
+      "vector_dim": 128,
+      "queries": 100,
+      "top_k": 10,
+      "noise": 0.08,
+      "batch_size": 50000,
+      "results": [
+        {
+          "engine": "Qdrant service streaming",
+          "vectors": 1000000,
+          "vector_dim": 128,
+          "batch_size": 50000,
+          "recall_at_k": 1,
+          "target_recall_at_k": 1,
+          "target_recall_at_1": 1,
+          "avg_latency_ms": 16.16433600662276,
+          "p50_latency_ms": 14.38780000898987,
+          "p95_latency_ms": 24.365799967199564,
+          "p99_latency_ms": 26.373000000603497,
+          "max_latency_ms": 27.82449999358505,
+          "build_ms": 373952.7594000101,
+          "queries": 100,
+          "recall_definition": "source vector id appears in top_k for a noisy copy of that vector",
+          "collection_name": "streaming_1m_tuned",
+          "warmup_queries": 100,
+          "wait_after_build_seconds": 30.0,
+          "search_params": {
+            "hnsw_ef": 512,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {
+              "on_disk": true
+            },
+            "optimizers": {},
+            "vector_on_disk": true,
+            "on_disk_payload": true,
+            "shard_number": null
+          },
+          "upsert_batch_size": 2000,
+          "memory_mode": "streaming upsert; query source vectors only",
+          "slo_status": "pass",
+          "slo_required_replicas": 3,
+          "slo_autoscaled_qps": 1039.325091554444,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 2.083333333333333,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 547.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
+        }
+      ],
+      "slo": [
+        {
+          "engine": "Qdrant service streaming",
+          "status": "pass",
+          "target_recall_at_k": 0.95,
+          "target_p99_ms": 100.0,
+          "target_qps": 100.0,
+          "recall_at_k": 1.0,
+          "p99_latency_ms": 26.373000000603497,
+          "avg_latency_ms": 16.16433600662276,
+          "per_replica_qps_at_headroom": 43.30521214810184,
+          "current_replicas": 3,
+          "current_capacity_qps": 129.9156364443055,
+          "required_replicas": 3,
+          "autoscaling_max_replicas": 24,
+          "autoscaled_capacity_qps": 1039.325091554444,
+          "blocking_reasons": [],
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 2.083333333333333,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 547.7384185791016,
+          "estimated_storage_gb": 2.384185791015625
+        }
+      ],
+      "cost": [
+        {
+          "engine": "Qdrant service streaming",
+          "cost_status": "valid_slo",
+          "memory_count": 1000000,
+          "vector_dim": 128,
+          "required_replicas": 3,
+          "target_qps": 100.0,
+          "replica_hourly_cost_usd": 0.25,
+          "storage_gb_monthly_cost_usd": 0.1,
+          "vector_storage_gb": 0.476837158203125,
+          "payload_storage_gb": 1.9073486328125,
+          "total_storage_gb": 2.384185791015625,
+          "monthly_storage_cost_usd": 0.2384185791015625,
+          "compute_cost_per_1m_queries_usd": 2.083333333333333,
+          "monthly_compute_cost_at_target_qps_usd": 547.5,
+          "monthly_total_cost_at_target_qps_usd": 547.7384185791016
+        }
+      ]
+    }
+  ]
+}

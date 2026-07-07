@@ -14,6 +14,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/production_index_profile_results.json",
         "benchmarks/production_pgvector_tuning_results.json",
         "benchmarks/production_streaming_load_qdrant_smoke_results.json",
+        "benchmarks/production_streaming_load_qdrant_1m_results.json",
+        "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
         "benchmarks/production_streaming_load_qdrant_10m_plan.json",
         "benchmarks/production_streaming_load_pgvector_smoke_results.json",
         "benchmarks/production_streaming_load_pgvector_10m_plan.json",
@@ -46,6 +48,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "$1.39` per 1M queries" in brief
     assert "$4.17` per 1M queries" in brief
     assert "iterative HNSW reaches `0.970`" in brief
-    assert "34/34" in brief
+    assert "35/35" in brief
+    assert "Qdrant 1M streaming" in brief
     assert "qdrant 10M service profile is complete" in brief
     assert "pgvector 10M service profile is complete" in brief

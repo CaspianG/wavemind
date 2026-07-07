@@ -76,6 +76,13 @@ def _int_env(name: str, default: int) -> int:
     return int(value)
 
 
+def _positive_int_env(name: str, default: int) -> int:
+    value = _int_env(name, default)
+    if value <= 0:
+        raise ValueError(f"{name} must be positive")
+    return value
+
+
 def _without_none(values: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
@@ -93,6 +100,13 @@ def _vector_literal(vector: np.ndarray) -> str:
 
 def _module_available(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
+
+
+def _chunks(items: list[Any], size: int) -> Iterable[list[Any]]:
+    if size <= 0:
+        raise ValueError("chunk size must be positive")
+    for start in range(0, len(items), size):
+        yield items[start : start + size]
 
 
 def _pgvector_config_from_env() -> dict[str, Any]:
@@ -794,6 +808,10 @@ def run_qdrant_streaming(
         )
     except ImportError as exc:
         return skipped_result("Qdrant service streaming", f"Install qdrant-client: {exc}")
+    try:
+        upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
+    except ValueError as exc:
+        return skipped_result("Qdrant service streaming", str(exc))
 
     source_ids = choose_source_ids(count, query_count, seed)
     source_vectors: dict[int, np.ndarray] = {}
@@ -846,7 +864,8 @@ def run_qdrant_streaming(
                 PointStruct(id=int(id), vector=vector.tolist())
                 for id, vector in zip(ids, vectors)
             ]
-            client.upsert(collection_name=collection_name, points=points)
+            for point_chunk in _chunks(points, upsert_batch_size):
+                client.upsert(collection_name=collection_name, points=point_chunk)
             source_vectors.update(captured)
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
@@ -918,6 +937,7 @@ def run_qdrant_streaming(
                     "exact": exact,
                 },
                 "collection_params": collection_config,
+                "upsert_batch_size": upsert_batch_size,
                 "memory_mode": "streaming upsert; query source vectors only",
             },
         )

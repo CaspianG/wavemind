@@ -102,6 +102,17 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert qdrant_plan["status"] == "action_required"
     assert qdrant_plan["estimated_index_gb"] == 0.0
     assert "WAVEMIND_QDRANT_URL" in qdrant_plan["missing_env"]
+    qdrant_1m = entries["production_streaming_load_runner"]["current"][
+        "1M Qdrant cold / Qdrant service streaming"
+    ]
+    assert qdrant_1m["target_recall_at_k"] >= 0.95
+    assert qdrant_1m["p99_latency_ms"] > 100.0
+    qdrant_1m_tuned = entries["production_streaming_load_runner"]["current"][
+        "1M Qdrant tuned / Qdrant service streaming"
+    ]
+    assert qdrant_1m_tuned["target_recall_at_k"] >= 0.95
+    assert qdrant_1m_tuned["p99_latency_ms"] < 100.0
+    assert qdrant_1m_tuned["slo_status"] == "pass"
     pgvector_smoke = entries["production_streaming_load_runner"]["current"][
         "pgvector smoke / WaveMind pgvector streaming"
     ]

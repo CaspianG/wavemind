@@ -118,6 +118,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "memory-bounded streaming runner" in criteria["qdrant_streaming_path"]["requirement"]
     assert "smoke recall 1" in criteria["qdrant_streaming_path"]["evidence"]
     assert "missing_env:WAVEMIND_QDRANT_URL" in criteria["qdrant_streaming_path"]["evidence"]
+    assert criteria["qdrant_streaming_1m_slo"]["status"] == "pass"
+    assert "1M vectors" in criteria["qdrant_streaming_1m_slo"]["requirement"]
+    assert "cold p99" in criteria["qdrant_streaming_1m_slo"]["evidence"]
+    assert "tuned p99" in criteria["qdrant_streaming_1m_slo"]["evidence"]
+    assert "SLO pass" in criteria["qdrant_streaming_1m_slo"]["evidence"]
     assert criteria["pgvector_streaming_path"]["status"] == "pass"
     assert "memory-bounded streaming runner" in criteria["pgvector_streaming_path"]["requirement"]
     assert "smoke recall 1" in criteria["pgvector_streaming_path"]["evidence"]
@@ -162,7 +167,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 34
+    assert payload["summary"]["total_criteria"] == 35
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report
@@ -179,6 +184,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Sustained HTTP cluster load survives failover and repair" in report
     assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
+    assert "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate" in report
     assert "pgvector streaming runner has service smoke and 10M preflight" in report
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report

@@ -207,6 +207,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "benchmarks/production_streaming_load_50m_plan.json" in readme
     assert "benchmarks/production_pgvector_tuning_results.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_smoke_results.json" in readme
+    assert "benchmarks/production_streaming_load_qdrant_1m_results.json" in readme
+    assert "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json" in readme
     assert "benchmarks/production_streaming_load_qdrant_10m_plan.json" in readme
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in readme
     assert "benchmarks/production_streaming_load_pgvector_10m_plan.json" in readme
@@ -273,6 +275,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "estimate_production_cost" in readme
     assert "SLO and cost gates" in roadmap
     assert "production_streaming_load_50m_plan.json" in roadmap
+    assert "production_streaming_load_qdrant_1m_tuned_results.json" in roadmap
     assert "production_streaming_load_qdrant_10m_plan.json" in roadmap
     assert "production_streaming_load_pgvector_10m_plan.json" in roadmap
     assert "production_pgvector_tuning_results.json" in roadmap
@@ -282,6 +285,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_streaming_load_pgvector_10m_results.json" in roadmap
     assert "benchmarks/production_streaming_load_50m_plan.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_smoke_results.json" in benchmark_brief
+    assert "benchmarks/production_streaming_load_qdrant_1m_results.json" in benchmark_brief
+    assert "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_qdrant_10m_plan.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_smoke_results.json" in benchmark_brief
     assert "benchmarks/production_streaming_load_pgvector_10m_plan.json" in benchmark_brief

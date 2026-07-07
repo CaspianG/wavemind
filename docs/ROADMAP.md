@@ -31,19 +31,25 @@ policy matters more than raw vector-database scale:
   Qdrant and 1M-vector persisted FAISS runs. Qdrant reaches `recall@10 1.000`,
   p99 `21.26 ms` at 100k with a checked-in estimate of `$1.39` per 1M queries.
   Persisted FAISS reaches `recall@10 1.000`, p99 `57.71 ms` at 1M, and an
-  estimated `$4.17` per 1M queries with 6 replicas for 100 qps. Tuned 1M
-  Qdrant reaches `recall@10 0.984` but still misses the p99 gate at `137.86 ms`.
+  estimated `$4.17` per 1M queries with 6 replicas for 100 qps. The older tuned
+  1M Qdrant load profile reaches `recall@10 0.984` but misses the p99 gate at
+  `137.86 ms`; the newer streaming 1M Qdrant profile passes with `recall@10
+  1.000`, p99 `26.37 ms`, safe upsert chunks, wait-after-build, and 100 warmup
+  queries.
 - The streaming compressed FAISS IVF-PQ profile now has a checked-in 10M run:
   target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status.
 - The streaming runner now also has real service smokes for Qdrant and
   PostgreSQL/pgvector. Qdrant reaches target recall@10 `1.000`, p99 `17.90 ms`
   over 1000 vectors / 20 queries; pgvector reaches target recall@10 `1.000`,
-  p99 `7.62 ms` over the same smoke shape. Checked 10M plan-only contracts live
-  in `benchmarks/production_streaming_load_qdrant_10m_plan.json` and
+  p99 `7.62 ms` over the same smoke shape. The tuned streaming 1M Qdrant service
+  run reaches target recall@10 `1.000`, p99 `26.37 ms`, and valid SLO/cost
+  status in `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json`.
+  Checked 10M plan-only contracts live in
+  `benchmarks/production_streaming_load_qdrant_10m_plan.json` and
   `benchmarks/production_streaming_load_pgvector_10m_plan.json`. These plans are
   not completed 10M benchmarks; they are exact service-backed run contracts.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`34/34` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`35/35` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -259,9 +265,10 @@ Priorities:
 - Keep pgvector as an optional candidate-index backend and harden the separate
   Postgres source-of-truth backend for multi-tenant storage.
 - Support external vector services such as Qdrant for larger deployments.
-  The 100k service-mode Qdrant benchmark is checked in and healthy; the 1M
-  service-mode Qdrant run is recall-credible but not production-grade yet
-  because tuned p99 still misses the SLO gate.
+  The 100k service-mode Qdrant benchmark is checked in and healthy; the tuned
+  1M streaming Qdrant service run now passes recall/p99 after safe chunks,
+  wait-after-build, and warmup. The next promotion step is the same tuned
+  profile at 10M on sized hardware.
 - Rebuild and persist ANN indexes safely after batch imports or recovery. The
   first persisted FAISS snapshot path and production profile are implemented,
   including a 1M-vector checked-in load result that passes recall and p99.

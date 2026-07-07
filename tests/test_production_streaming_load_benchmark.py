@@ -67,6 +67,37 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
     assert rows["WaveMind pgvector streaming"]["slo_status"] == "skipped"
 
 
+def test_streaming_load_qdrant_chunks_large_upsert_batches():
+    from benchmarks.production_streaming_load_benchmark import _chunks
+
+    assert list(_chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
+    with pytest.raises(ValueError, match="chunk size must be positive"):
+        list(_chunks([1], 0))
+
+
+def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import run_streaming_load
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_URL", "http://127.0.0.1:6333")
+    monkeypatch.setenv("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", "0")
+
+    payload = run_streaming_load(
+        sizes=[64],
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+        engines=["qdrant-service"],
+    )
+
+    row = payload["results"][0]["results"][0]
+    assert row["engine"] == "Qdrant service streaming"
+    assert row["skipped"] is True
+    assert "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE must be positive" in row["reason"]
+
+
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     pytest.importorskip("faiss")
 

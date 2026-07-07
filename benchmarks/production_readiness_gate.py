@@ -79,6 +79,8 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "load_10m_streaming": _load_optional_json(benchmark_dir / "production_streaming_load_ivfpq_10m_results.json"),
         "load_50m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_50m_plan.json"),
         "qdrant_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_smoke_results.json"),
+        "qdrant_streaming_1m": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_1m_results.json"),
+        "qdrant_streaming_1m_tuned": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_1m_tuned_results.json"),
         "qdrant_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_10m_plan.json"),
         "pgvector_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_smoke_results.json"),
         "pgvector_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_10m_plan.json"),
@@ -320,6 +322,25 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "production_streaming_load_qdrant_10m_results.json"
         in str(qdrant_streaming_plan_row.get("command", ""))
         and str(qdrant_streaming_plan_row.get("claim_boundary", "")).startswith("preflight only")
+    )
+    qdrant_streaming_1m = _size_results(artifacts["qdrant_streaming_1m"]).get(
+        "Qdrant service streaming",
+        {},
+    )
+    qdrant_streaming_1m_tuned = _size_results(artifacts["qdrant_streaming_1m_tuned"]).get(
+        "Qdrant service streaming",
+        {},
+    )
+    qdrant_streaming_1m_tuned_pass = (
+        bool(qdrant_streaming_1m_tuned)
+        and int(qdrant_streaming_1m_tuned.get("vectors", 0)) >= 1_000_000
+        and int(qdrant_streaming_1m_tuned.get("queries", 0)) >= 100
+        and float(qdrant_streaming_1m_tuned.get("recall_at_k", 0.0)) >= 0.95
+        and float(qdrant_streaming_1m_tuned.get("p99_latency_ms", float("inf"))) <= 100.0
+        and qdrant_streaming_1m_tuned.get("cost_status") == "valid_slo"
+        and int(qdrant_streaming_1m_tuned.get("warmup_queries", 0)) >= 100
+        and float(qdrant_streaming_1m_tuned.get("wait_after_build_seconds", 0.0)) >= 30.0
+        and int(qdrant_streaming_1m_tuned.get("upsert_batch_size", 0)) <= 5000
     )
     pgvector_streaming_smoke = _size_results(artifacts["pgvector_streaming_smoke"]).get(
         "WaveMind pgvector streaming",
@@ -625,6 +646,30 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             next_step=(
                 "Run the embedded 10M Qdrant command against a sized Qdrant "
                 "service and commit production_streaming_load_qdrant_10m_results.json."
+            ),
+        ),
+        _criterion(
+            criterion_id="qdrant_streaming_1m_slo",
+            title="Qdrant streaming 1M tuned profile passes recall, p99, and cost gate",
+            status="pass" if qdrant_streaming_1m_tuned_pass else "action_required",
+            requirement=(
+                "A real Qdrant service streaming profile at 1M vectors must use "
+                "safe upsert chunks, warm the service, and meet recall@10 >= 0.95, "
+                "p99 <= 100 ms, and valid cost SLO over at least 100 queries."
+            ),
+            evidence=(
+                f"cold recall {qdrant_streaming_1m.get('recall_at_k')}, "
+                f"cold p99 {qdrant_streaming_1m.get('p99_latency_ms')} ms, "
+                f"tuned recall {qdrant_streaming_1m_tuned.get('recall_at_k')}, "
+                f"tuned p99 {qdrant_streaming_1m_tuned.get('p99_latency_ms')} ms, "
+                f"warmup {qdrant_streaming_1m_tuned.get('warmup_queries')}, "
+                f"wait {qdrant_streaming_1m_tuned.get('wait_after_build_seconds')} s, "
+                f"upsert chunk {qdrant_streaming_1m_tuned.get('upsert_batch_size')}, "
+                f"SLO {qdrant_streaming_1m_tuned.get('slo_status')}"
+            ),
+            next_step=(
+                "Promote the same warmup/chunking profile into the checked 10M "
+                "Qdrant service run on storage sized for the index."
             ),
         ),
         _criterion(

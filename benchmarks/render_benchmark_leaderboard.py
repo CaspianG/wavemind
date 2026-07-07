@@ -427,6 +427,33 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
             )
         )
 
+    qdrant_1m = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_1m_results.json")
+    qdrant_1m_tuned = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json")
+    qdrant_1m_result = _first_result(qdrant_1m)
+    if qdrant_1m_result and isinstance(qdrant_1m_result.get("results"), list):
+        nested_results = qdrant_1m_result["results"]
+        if nested_results:
+            qdrant_1m_result = nested_results[0]
+    qdrant_1m_tuned_result = _first_result(qdrant_1m_tuned)
+    if qdrant_1m_tuned_result and isinstance(qdrant_1m_tuned_result.get("results"), list):
+        nested_results = qdrant_1m_tuned_result["results"]
+        if nested_results:
+            qdrant_1m_tuned_result = nested_results[0]
+    if qdrant_1m_result and qdrant_1m_tuned_result:
+        rows.append(
+            (
+                "Qdrant 1M streaming",
+                "real Qdrant service run before and after warmup/chunking tuning",
+                (
+                    f"cold p99 `{fmt(qdrant_1m_result.get('p99_latency_ms'))} ms`; "
+                    f"tuned recall `{fmt(qdrant_1m_tuned_result.get('target_recall_at_k'))}`, "
+                    f"tuned p99 `{fmt(qdrant_1m_tuned_result.get('p99_latency_ms'))} ms`, "
+                    f"SLO `{qdrant_1m_tuned_result.get('slo_status', 'unknown')}`"
+                ),
+                "Use the tuned warmup/chunking profile for the 10M Qdrant service run.",
+            )
+        )
+
     pgvector_streaming = load_json_if_exists(root, "benchmarks/production_streaming_load_pgvector_smoke_results.json")
     pgvector_streaming_result = _first_result(pgvector_streaming)
     if pgvector_streaming_result and isinstance(pgvector_streaming_result.get("results"), list):
