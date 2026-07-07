@@ -65,6 +65,12 @@ policy matters more than raw vector-database scale:
   The current strict gate is intentionally `action_required` until real remote
   and large-service artifacts are committed. `wavemind production-evidence
   --strict` exposes the same gate as an operator/release preflight.
+- `wavemind memory-os-plan` is now the read-only scheduler preflight for the
+  adaptive Memory OS worker set. It turns stats and query-audit traffic into
+  concrete cadences, worker counts, Redis/shared-cache requirements,
+  distributed-lock requirements, and commands for prewarm, predictive prefetch,
+  consolidation, adaptive forgetting, maintenance, and architecture-advice
+  loops without mutating memory state.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path

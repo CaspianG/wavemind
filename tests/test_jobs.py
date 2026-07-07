@@ -14,6 +14,7 @@ from wavemind import (
     HotMemoryCache,
     HTTPActiveActiveSyncWorker,
     MemoryMaintenanceWorker,
+    MemoryOSScheduler,
     MemoryOSWorker,
     QueryVectorCache,
     QueryResult,
@@ -721,6 +722,62 @@ def test_memory_os_worker_demotes_cold_memories_from_usage_patterns(tmp_path):
         assert memory.store.get(cold_id).priority < cold_before
         assert memory.store.get(hot_id).priority >= hot_before
         assert "adaptive_forgetting" in report.actions
+    finally:
+        memory.close()
+
+
+def test_memory_os_scheduler_plans_production_workers_without_mutation(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-scheduler.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        memory.remember("scheduler should prewarm budget recall", namespace="ops")
+        memory.remember("scheduler should preserve cold note", namespace="ops")
+        for _ in range(3):
+            memory.query("budget recall", namespace="ops", top_k=1)
+        before_stats = memory.stats(namespace="ops")
+
+        plan = MemoryOSScheduler(memory).plan(
+            namespace="ops",
+            audit_limit=20,
+            max_hot_queries=8,
+            min_frequency=2,
+            top_k=1,
+            target_memories=2_000_000,
+            namespace_count=4096,
+            node_count=2,
+            deployment="production",
+            cache_mode="auto",
+            target_qps=500.0,
+            observed_p99_ms=150.0,
+            multimodal=True,
+        )
+        after_stats = memory.stats(namespace="ops")
+        task_by_id = {task.id: task for task in plan.tasks}
+
+        assert plan.status == "architecture_required"
+        assert plan.effective_cache_mode == "redis"
+        assert plan.worker_count >= 5
+        assert plan.hot_query_count == 1
+        assert "Redis-compatible shared hot-query cache" in plan.required_infrastructure
+        assert task_by_id["memory-os"].enabled is True
+        assert task_by_id["memory-os"].requires_distributed_lock is True
+        assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"].command
+        assert task_by_id["cache-prewarm"].enabled is True
+        assert task_by_id["predictive-prefetch"].enabled is True
+        assert task_by_id["architecture-advice"].enabled is True
+        assert "service-index" in {
+            item["id"]
+            for item in plan.architecture_advice["recommendations"]
+            if isinstance(item, dict)
+        }
+        assert before_stats["active_memories"] == after_stats["active_memories"]
+        assert memory.audit_events(namespace="ops", action="memory_os", limit=1) == []
     finally:
         memory.close()
 

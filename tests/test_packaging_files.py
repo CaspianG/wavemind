@@ -232,6 +232,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "PRODUCTION_EVIDENCE.md" in readme
     assert "production_evidence_gate.py" in readme
     assert "wavemind production-evidence --strict" in readme
+    assert "wavemind memory-os-plan" in readme
     assert "examples/chroma_migration.py" in readme
     assert "examples/customer_support_memory.py" in readme
     assert "examples/research_notebook_memory.py" in readme
@@ -272,6 +273,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "PRODUCTION_EVIDENCE.md" in benchmark_brief
     assert "production_evidence_gate.py" in benchmark_brief
     assert "wavemind production-evidence --strict" in benchmark_brief
+    assert "memory-os-plan" in roadmap
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert Path("benchmarks/production_readiness_gate.py").exists()
     assert Path("benchmarks/production_evidence_gate.py").exists()

@@ -329,6 +329,113 @@ def test_cli_memory_os_runs_adaptive_cycle(tmp_path):
     assert "production-controls" in recommendation_ids
 
 
+def test_cli_memory_os_plan_is_read_only_production_preflight(tmp_path):
+    db_path = tmp_path / "memory-os-plan.sqlite3"
+    run_cli(
+        "--db",
+        str(db_path),
+        "remember",
+        "cli memory os plan warms budget recall",
+        "--namespace",
+        "ops",
+    )
+    for _ in range(2):
+        run_cli(
+            "--db",
+            str(db_path),
+            "--audit-queries",
+            "query",
+            "budget recall",
+            "--namespace",
+            "ops",
+            "--top-k",
+            "1",
+        )
+
+    result = run_cli(
+        "--db",
+        str(db_path),
+        "memory-os-plan",
+        "--namespace",
+        "ops",
+        "--min-frequency",
+        "2",
+        "--top-k",
+        "1",
+        "--target-memories",
+        "2000000",
+        "--namespace-count",
+        "4096",
+        "--node-count",
+        "2",
+        "--deployment",
+        "production",
+        "--cache-mode",
+        "auto",
+        "--target-qps",
+        "500",
+        "--observed-p99-ms",
+        "150",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    task_by_id = {task["id"]: task for task in payload["tasks"]}
+
+    assert payload["status"] == "architecture_required"
+    assert payload["effective_cache_mode"] == "redis"
+    assert payload["hot_query_count"] == 1
+    assert payload["worker_count"] >= 5
+    assert "Redis-compatible shared hot-query cache" in payload["required_infrastructure"]
+    assert "memory-os" in payload["enabled_task_ids"]
+    assert "cache-prewarm" in payload["enabled_task_ids"]
+    assert task_by_id["memory-os"]["requires_distributed_lock"] is True
+    assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"]["command"]
+
+    audit = run_cli(
+        "--db",
+        str(db_path),
+        "audit",
+        "--namespace",
+        "ops",
+        "--json",
+    )
+    events = json.loads(audit.stdout)
+    assert all(event["action"] != "memory_os" for event in events)
+
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+    strict = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "--db",
+            str(db_path),
+            "memory-os-plan",
+            "--namespace",
+            "ops",
+            "--target-memories",
+            "2000000",
+            "--namespace-count",
+            "4096",
+            "--deployment",
+            "production",
+            "--cache-mode",
+            "auto",
+            "--strict",
+            "--json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+    )
+    assert strict.returncode == 3
+    assert json.loads(strict.stdout)["status"] == "architecture_required"
+
+
 def test_cli_cluster_repair_wires_service_mode_worker(monkeypatch, capsys):
     seen = {}
 

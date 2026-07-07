@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import json
 import hashlib
+import math
 import shutil
 from collections import OrderedDict
 from dataclasses import asdict, dataclass, field
@@ -674,6 +675,76 @@ class MemoryOSReport:
             "architecture_advice": dict(self.architecture_advice),
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
+class MemoryOSScheduleTask:
+    id: str
+    title: str
+    enabled: bool
+    cadence_seconds: int
+    worker_count: int
+    timeout_seconds: int
+    command: str
+    reason: str
+    priority: str = "normal"
+    requires_shared_cache: bool = False
+    requires_distributed_lock: bool = False
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MemoryOSSchedulePlan:
+    status: str
+    namespace: str | None
+    deployment: str
+    cache_mode: str
+    effective_cache_mode: str
+    target_memories: int
+    namespace_count: int
+    active_memories: int
+    hot_query_count: int
+    observed_p99_ms: float | None
+    target_p99_ms: float
+    target_qps: float
+    worker_count: int
+    tasks: tuple[MemoryOSScheduleTask, ...]
+    required_infrastructure: tuple[str, ...] = ()
+    recommendations: tuple[str, ...] = ()
+    architecture_advice: dict[str, object] = field(default_factory=dict)
+
+    @property
+    def enabled_tasks(self) -> tuple[MemoryOSScheduleTask, ...]:
+        return tuple(task for task in self.tasks if task.enabled)
+
+    @property
+    def ok(self) -> bool:
+        return self.status in {"ok", "watch", "architecture_required"}
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "namespace": self.namespace,
+            "deployment": self.deployment,
+            "cache_mode": self.cache_mode,
+            "effective_cache_mode": self.effective_cache_mode,
+            "target_memories": self.target_memories,
+            "namespace_count": self.namespace_count,
+            "active_memories": self.active_memories,
+            "hot_query_count": self.hot_query_count,
+            "observed_p99_ms": self.observed_p99_ms,
+            "target_p99_ms": self.target_p99_ms,
+            "target_qps": self.target_qps,
+            "worker_count": self.worker_count,
+            "required_infrastructure": list(self.required_infrastructure),
+            "recommendations": list(self.recommendations),
+            "architecture_advice": dict(self.architecture_advice),
+            "tasks": [task.as_dict() for task in self.tasks],
+            "enabled_task_ids": [task.id for task in self.enabled_tasks],
             "ok": self.ok,
         }
 
@@ -2165,6 +2236,417 @@ class MemoryOSWorker:
             )
         except Exception:
             pass
+
+
+class MemoryOSScheduler:
+    """Read-only Memory OS scheduler/preflight for production workers.
+
+    The scheduler inspects current stats and query-audit traffic, then returns a
+    concrete task plan for CronJobs, queue workers, or external orchestrators.
+    It intentionally does not mutate memory state.
+    """
+
+    def __init__(self, memory: Any):
+        self.memory = memory
+
+    def plan(
+        self,
+        *,
+        namespace: str | None = None,
+        audit_limit: int = 512,
+        max_hot_queries: int = 32,
+        min_frequency: int = 2,
+        top_k: int = 3,
+        min_score: float | None = None,
+        target_memories: int | None = None,
+        namespace_count: int | None = None,
+        node_count: int | None = None,
+        replication_factor: int = 3,
+        read_quorum: int = 1,
+        read_fanout: int | None = None,
+        target_qps: float = 100.0,
+        target_p99_ms: float = 100.0,
+        observed_p99_ms: float | None = None,
+        deployment: str = "local",
+        cache_mode: str = "auto",
+        multimodal: bool = False,
+        memory_pressure_threshold: int = 50_000,
+    ) -> MemoryOSSchedulePlan:
+        helper = MemoryOSWorker(self.memory)
+        stats = helper._stats(namespace)
+        events = helper._query_events(namespace=namespace, limit=audit_limit)
+        hot_queries = helper._hot_queries(
+            events,
+            max_hot_queries=max_hot_queries,
+            min_frequency=min_frequency,
+        )
+        active = int(stats.get("active_memories", 0) or 0)
+        target = int(target_memories or active or 0)
+        namespaces = int(namespace_count or stats.get("namespaces", 0) or (1 if namespace else 0) or 1)
+        deployment_name = str(deployment or "local").lower()
+        production_like = deployment_name in {"production", "prod", "staging"}
+        qps = max(0.0, float(target_qps))
+        p99_target = max(1.0, float(target_p99_ms))
+        p99_observed = None if observed_p99_ms is None else max(0.0, float(observed_p99_ms))
+        pressure = target >= int(memory_pressure_threshold) or active >= int(memory_pressure_threshold)
+        shared_cache_needed = (
+            production_like
+            or pressure
+            or qps >= 50.0
+            or namespaces >= 32
+            or len(hot_queries) >= max(4, int(max_hot_queries) // 2)
+        )
+        cache_requested = str(cache_mode or "auto").lower()
+        if cache_requested not in {"auto", "disabled", "local", "redis"}:
+            raise ValueError("cache_mode must be auto, disabled, local, or redis")
+        effective_cache = (
+            "redis"
+            if cache_requested == "auto" and shared_cache_needed
+            else "local"
+            if cache_requested == "auto"
+            else cache_requested
+        )
+        cache_enabled = effective_cache != "disabled"
+        worker_count = self._worker_count(
+            target_memories=target,
+            namespace_count=namespaces,
+            target_qps=qps,
+            production_like=production_like,
+        )
+        redis_arg = " --redis-url $WAVEMIND_REDIS_URL" if effective_cache == "redis" else ""
+        namespace_arg = f" --namespace {namespace}" if namespace else ""
+        min_score_arg = "" if min_score is None else f" --min-score {float(min_score):g}"
+        common_targets = (
+            f" --target-memories {target}"
+            f" --namespace-count {namespaces}"
+            f" --deployment {deployment_name}"
+            f" --target-qps {qps:g}"
+            f" --target-p99-ms {p99_target:g}"
+        )
+        if node_count is not None:
+            common_targets += f" --node-count {int(node_count)}"
+        if multimodal:
+            common_targets += " --multimodal"
+
+        architecture = helper._architecture_advice(
+            stats_after=stats,
+            namespace=namespace,
+            target_memories=target or None,
+            target_p99_ms=p99_target,
+            observed_p99_ms=p99_observed,
+            namespace_count=namespaces,
+            node_count=node_count,
+            replication_factor=replication_factor,
+            read_quorum=read_quorum,
+            read_fanout=read_fanout,
+            target_qps=qps,
+            deployment=deployment_name,
+            multimodal=multimodal,
+        ).as_dict()
+
+        hot_cadence = 15 if production_like and hot_queries else 60 if hot_queries else 300
+        maintenance_cadence = 300 if pressure else 900 if production_like else 1800
+        forgetting_cadence = 900 if pressure else 3600
+        consolidation_cadence = 300 if hot_queries and pressure else 900 if hot_queries else 3600
+        advice_cadence = 300 if architecture.get("status") == "architecture_required" else 1800
+        tasks = [
+            self._task(
+                "memory-os",
+                "Adaptive Memory OS cycle",
+                True,
+                hot_cadence,
+                worker_count,
+                max(60, hot_cadence * 2),
+                (
+                    "wavemind memory-os"
+                    f"{namespace_arg}{redis_arg}"
+                    f" --audit-limit {int(audit_limit)}"
+                    f" --max-hot-queries {int(max_hot_queries)}"
+                    f" --min-frequency {int(min_frequency)}"
+                    f" --top-k {int(top_k)}{min_score_arg}{common_targets}"
+                ),
+                "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
+                priority="critical" if production_like else "high",
+                requires_shared_cache=effective_cache == "redis",
+                requires_distributed_lock=worker_count > 1 or production_like,
+            ),
+            self._task(
+                "cache-prewarm",
+                "Hot query cache prewarm",
+                bool(cache_enabled and hot_queries),
+                hot_cadence,
+                max(1, min(worker_count, 4)),
+                max(30, hot_cadence * 2),
+                (
+                    "wavemind cache-prewarm"
+                    f"{namespace_arg}{redis_arg}"
+                    f" --audit-limit {int(audit_limit)}"
+                    f" --max-queries {int(max_hot_queries)}"
+                    f" --min-frequency {int(min_frequency)}"
+                    f" --top-k {int(top_k)}{min_score_arg}"
+                ),
+                "Keeps repeated recall paths hot across API workers.",
+                priority="high" if hot_queries else "normal",
+                requires_shared_cache=effective_cache == "redis",
+                requires_distributed_lock=False,
+            ),
+            self._task(
+                "predictive-prefetch",
+                "Predictive neighbor prefetch",
+                bool(cache_enabled and hot_queries),
+                max(60, hot_cadence * 2),
+                max(1, min(worker_count, 4)),
+                120,
+                (
+                    "wavemind memory-os"
+                    f"{namespace_arg}{redis_arg}"
+                    " --consolidate-steps 0 --no-consolidate-concepts"
+                    " --no-adaptive-forgetting"
+                    f" --audit-limit {int(audit_limit)}"
+                    f" --max-hot-queries {int(max_hot_queries)}"
+                    f" --min-frequency {int(min_frequency)}"
+                    f" --top-k {int(top_k)}{min_score_arg}{common_targets}"
+                ),
+                "Warms likely follow-up queries from hot recall paths.",
+                priority="high" if production_like else "normal",
+                requires_shared_cache=effective_cache == "redis",
+                requires_distributed_lock=production_like,
+            ),
+            self._task(
+                "adaptive-forgetting",
+                "Adaptive forgetting",
+                active > 0 or target > 0,
+                forgetting_cadence,
+                1,
+                300,
+                (
+                    "wavemind memory-os"
+                    f"{namespace_arg}"
+                    " --no-predictive-prefetch --no-predict-priorities"
+                    " --consolidate-steps 0 --no-consolidate-concepts"
+                    f"{common_targets}"
+                ),
+                "Demotes old unused memories before they compete with current context.",
+                priority="high" if pressure else "normal",
+                requires_shared_cache=False,
+                requires_distributed_lock=production_like,
+            ),
+            self._task(
+                "consolidation",
+                "Field and concept consolidation",
+                active >= 2 or bool(hot_queries),
+                consolidation_cadence,
+                1,
+                300,
+                (
+                    "wavemind memory-os"
+                    f"{namespace_arg}"
+                    " --no-predictive-prefetch --no-adaptive-forgetting"
+                    f" --audit-limit {int(audit_limit)}"
+                    f" --min-frequency {int(min_frequency)}{common_targets}"
+                ),
+                "Creates durable higher-level concept memories from active clusters.",
+                priority="high" if hot_queries else "normal",
+                requires_shared_cache=False,
+                requires_distributed_lock=True,
+            ),
+            self._task(
+                "maintenance",
+                "Expired memory and index maintenance",
+                True,
+                maintenance_cadence,
+                1,
+                300,
+                f"wavemind maintenance{namespace_arg}",
+                "Purges TTL-expired memories and repairs unhealthy local indexes.",
+                priority="high" if not bool(stats.get("index_healthy", True)) else "normal",
+                requires_shared_cache=False,
+                requires_distributed_lock=production_like,
+            ),
+            self._task(
+                "architecture-advice",
+                "Architecture advisor preflight",
+                True,
+                advice_cadence,
+                1,
+                120,
+                (
+                    "wavemind advise"
+                    f" --target-memories {target}"
+                    f" --namespace-count {namespaces}"
+                    f" --deployment {deployment_name}"
+                    f" --replication-factor {int(replication_factor)}"
+                    f" --read-quorum {int(read_quorum)}"
+                    f" --target-qps {qps:g}"
+                    f" --target-p99-ms {p99_target:g}"
+                    " --json"
+                ),
+                "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
+                priority="critical" if architecture.get("status") == "architecture_required" else "normal",
+                requires_shared_cache=False,
+                requires_distributed_lock=False,
+            ),
+        ]
+
+        infrastructure = self._required_infrastructure(
+            effective_cache_mode=effective_cache,
+            worker_count=worker_count,
+            production_like=production_like,
+        )
+        recommendations = self._schedule_recommendations(
+            hot_queries=hot_queries,
+            effective_cache_mode=effective_cache,
+            shared_cache_needed=shared_cache_needed,
+            production_like=production_like,
+            architecture=architecture,
+            stats=stats,
+            target_memories=target,
+            observed_p99_ms=p99_observed,
+            target_p99_ms=p99_target,
+        )
+        status = self._schedule_status(
+            architecture=architecture,
+            stats=stats,
+            recommendations=recommendations,
+            production_like=production_like,
+            effective_cache_mode=effective_cache,
+            shared_cache_needed=shared_cache_needed,
+        )
+        return MemoryOSSchedulePlan(
+            status=status,
+            namespace=namespace,
+            deployment=deployment_name,
+            cache_mode=cache_requested,
+            effective_cache_mode=effective_cache,
+            target_memories=target,
+            namespace_count=namespaces,
+            active_memories=active,
+            hot_query_count=len(hot_queries),
+            observed_p99_ms=p99_observed,
+            target_p99_ms=p99_target,
+            target_qps=qps,
+            worker_count=worker_count,
+            tasks=tuple(tasks),
+            required_infrastructure=tuple(infrastructure),
+            recommendations=tuple(recommendations),
+            architecture_advice=architecture,
+        )
+
+    def _worker_count(
+        self,
+        *,
+        target_memories: int,
+        namespace_count: int,
+        target_qps: float,
+        production_like: bool,
+    ) -> int:
+        if not production_like and target_memories < 50_000 and target_qps <= 50:
+            return 1
+        by_qps = max(1, int(math.ceil(max(1.0, target_qps) / 100.0)))
+        by_namespace = max(1, int(math.ceil(max(1, namespace_count) / 1024.0)))
+        by_memory = max(1, int(math.ceil(max(1, target_memories) / 1_000_000.0)))
+        return max(1, min(64, max(by_qps, by_namespace, by_memory)))
+
+    def _task(
+        self,
+        id: str,
+        title: str,
+        enabled: bool,
+        cadence_seconds: int,
+        worker_count: int,
+        timeout_seconds: int,
+        command: str,
+        reason: str,
+        *,
+        priority: str,
+        requires_shared_cache: bool,
+        requires_distributed_lock: bool,
+    ) -> MemoryOSScheduleTask:
+        return MemoryOSScheduleTask(
+            id=id,
+            title=title,
+            enabled=bool(enabled),
+            cadence_seconds=max(1, int(cadence_seconds)),
+            worker_count=max(1, int(worker_count)),
+            timeout_seconds=max(1, int(timeout_seconds)),
+            command=command.strip(),
+            reason=reason,
+            priority=priority,
+            requires_shared_cache=bool(requires_shared_cache),
+            requires_distributed_lock=bool(requires_distributed_lock),
+        )
+
+    def _required_infrastructure(
+        self,
+        *,
+        effective_cache_mode: str,
+        worker_count: int,
+        production_like: bool,
+    ) -> list[str]:
+        required: list[str] = []
+        if effective_cache_mode == "redis":
+            required.append("Redis-compatible shared hot-query cache")
+        if production_like or worker_count > 1:
+            required.append("distributed worker lock or single-flight scheduler")
+            required.append("durable queue or Kubernetes CronJobs")
+        if production_like:
+            required.append("OpenTelemetry metrics for worker duration, errors, and warmed queries")
+        return required
+
+    def _schedule_recommendations(
+        self,
+        *,
+        hot_queries: list[MemoryOSHotQuery],
+        effective_cache_mode: str,
+        shared_cache_needed: bool,
+        production_like: bool,
+        architecture: dict[str, object],
+        stats: dict[str, object],
+        target_memories: int,
+        observed_p99_ms: float | None,
+        target_p99_ms: float,
+    ) -> list[str]:
+        recommendations: list[str] = []
+        if shared_cache_needed and effective_cache_mode != "redis":
+            recommendations.append("Use Redis cache mode before scaling multiple API workers.")
+        if production_like and effective_cache_mode == "local":
+            recommendations.append("Local cache is process-local; use Redis for production Memory OS workers.")
+        if not hot_queries:
+            recommendations.append("Enable query audit traffic before relying on prewarm or predictive prefetch.")
+        if not bool(stats.get("index_healthy", True)):
+            recommendations.append("Run maintenance with index rebuild before enabling high-QPS scheduler loops.")
+        if observed_p99_ms is not None and observed_p99_ms > target_p99_ms:
+            recommendations.append("Observed p99 is above target; increase worker cadence only after index/cache tuning.")
+        if target_memories >= 10_000_000:
+            recommendations.append("Back Memory OS with service-mode ANN indexes and external production evidence runs.")
+        for item in architecture.get("recommendations", []):
+            if isinstance(item, dict) and item.get("severity") not in {None, "ok"}:
+                title = str(item.get("title") or item.get("id") or "architecture recommendation")
+                action = str(item.get("action") or "").strip()
+                recommendations.append(f"Architecture advisor: {title}" + (f" - {action}" if action else ""))
+        if not recommendations:
+            recommendations.append("Memory OS schedule is ready; keep task reports in release evidence.")
+        return list(dict.fromkeys(recommendations))
+
+    def _schedule_status(
+        self,
+        *,
+        architecture: dict[str, object],
+        stats: dict[str, object],
+        recommendations: Iterable[str],
+        production_like: bool,
+        effective_cache_mode: str,
+        shared_cache_needed: bool,
+    ) -> str:
+        if not bool(stats.get("index_healthy", True)):
+            return "action_required"
+        if architecture.get("status") == "architecture_required":
+            return "architecture_required"
+        if production_like and effective_cache_mode != "redis" and shared_cache_needed:
+            return "architecture_required"
+        if any("Enable query audit" in item for item in recommendations):
+            return "watch"
+        return "ok"
 
 
 class DistributedRepairWorker:

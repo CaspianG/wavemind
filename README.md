@@ -841,6 +841,7 @@ Maintenance workers:
 
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
+wavemind memory-os-plan --namespace user:42 --deployment production --target-memories 2000000 --namespace-count 4096 --cache-mode auto --json
 wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --min-frequency 2 --max-hot-queries 32 --json
 wavemind cluster-health --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --fail-on-degraded --json
 wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --json
@@ -874,6 +875,15 @@ S3-compatible object store, verify newest-archive metadata, run an object-store
 disaster-recovery drill, and apply local and object-store retention. Production
 deployments can call these commands from cron, systemd, Kubernetes CronJobs,
 Celery, RQ, or Temporal.
+
+The `memory-os-plan` command is the read-only scheduler preflight for that
+worker set. It inspects current stats and audited query traffic without
+mutating memory, then emits concrete task cadences, worker counts, Redis/shared
+cache requirements, distributed-lock requirements, and exact commands for
+`memory-os`, `cache-prewarm`, consolidation, forgetting, maintenance, and
+architecture-advice loops. In production mode it automatically promotes
+`--cache-mode auto` to Redis when QPS, namespace count, memory count, or hot
+query volume require cross-worker cache sharing.
 
 Hot-cache options:
 

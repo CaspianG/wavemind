@@ -27,6 +27,7 @@ from .jobs import (
     DistributedRepairWorker,
     HotMemoryCache,
     MemoryMaintenanceWorker,
+    MemoryOSScheduler,
     MemoryOSWorker,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
@@ -486,6 +487,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     memory_os.add_argument("--no-cache", action="store_true")
     memory_os.add_argument("--json", action="store_true")
+
+    memory_os_plan = sub.add_parser(
+        "memory-os-plan",
+        help="Build a read-only production schedule for Memory OS workers",
+    )
+    memory_os_plan.add_argument("--namespace")
+    memory_os_plan.add_argument("--audit-limit", type=int, default=512)
+    memory_os_plan.add_argument("--max-hot-queries", type=int, default=32)
+    memory_os_plan.add_argument("--min-frequency", type=int, default=2)
+    memory_os_plan.add_argument("--top-k", type=int, default=3)
+    memory_os_plan.add_argument("--min-score", type=float)
+    memory_os_plan.add_argument("--target-memories", type=int)
+    memory_os_plan.add_argument("--namespace-count", type=int)
+    memory_os_plan.add_argument("--node-count", type=int)
+    memory_os_plan.add_argument("--replication-factor", type=int, default=3)
+    memory_os_plan.add_argument("--read-quorum", type=int, default=1)
+    memory_os_plan.add_argument("--read-fanout", type=int)
+    memory_os_plan.add_argument("--target-qps", type=float, default=100.0)
+    memory_os_plan.add_argument("--target-p99-ms", type=float, default=100.0)
+    memory_os_plan.add_argument("--observed-p99-ms", type=float)
+    memory_os_plan.add_argument(
+        "--deployment",
+        choices=["local", "staging", "production", "prod"],
+        default="local",
+    )
+    memory_os_plan.add_argument(
+        "--cache-mode",
+        choices=["auto", "disabled", "local", "redis"],
+        default="auto",
+    )
+    memory_os_plan.add_argument("--multimodal", action="store_true")
+    memory_os_plan.add_argument("--memory-pressure-threshold", type=int, default=50_000)
+    memory_os_plan.add_argument("--strict", action="store_true")
+    memory_os_plan.add_argument("--json", action="store_true")
 
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
@@ -1564,6 +1599,37 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
         return 0 if report.ok else 4
+
+    if args.command == "memory-os-plan":
+        plan = MemoryOSScheduler(mind).plan(
+            namespace=args.namespace,
+            audit_limit=args.audit_limit,
+            max_hot_queries=args.max_hot_queries,
+            min_frequency=args.min_frequency,
+            top_k=args.top_k,
+            min_score=args.min_score,
+            target_memories=args.target_memories,
+            namespace_count=args.namespace_count,
+            node_count=args.node_count,
+            replication_factor=args.replication_factor,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            target_qps=args.target_qps,
+            target_p99_ms=args.target_p99_ms,
+            observed_p99_ms=args.observed_p99_ms,
+            deployment=args.deployment,
+            cache_mode=args.cache_mode,
+            multimodal=args.multimodal,
+            memory_pressure_threshold=args.memory_pressure_threshold,
+        )
+        payload = plan.as_dict()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_stats(payload)
+        if args.strict and plan.status not in {"ok", "watch"}:
+            return 3
+        return 0 if plan.ok else 4
 
     if args.command == "memory-os":
         cache = None
