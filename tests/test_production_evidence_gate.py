@@ -20,6 +20,7 @@ def test_production_evidence_gate_tracks_strict_external_claims():
     assert "real remote/staging/production" in " ".join(
         by_id["external_http_cluster"]["issues"]
     )
+    assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["external_http_active_active"]["artifact"] == (
         "benchmarks/external_http_active_active_results.json"
     )

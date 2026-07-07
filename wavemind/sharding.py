@@ -306,6 +306,30 @@ class HTTPNamespaceShardClient:
         response = self._request("POST", address, "/query", payload)
         return [_query_result_from_payload(item) for item in response.get("results", [])]
 
+    def query_batch(
+        self,
+        address: str,
+        *,
+        queries: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        payload = {"queries": queries}
+        response = self._request("POST", address, "/query/batch", payload)
+        return {
+            "count": int(response.get("count", 0)),
+            "items": [
+                {
+                    "index": int(item.get("index", index)),
+                    "text": item.get("text"),
+                    "namespace": item.get("namespace"),
+                    "results": [
+                        _query_result_from_payload(result)
+                        for result in item.get("results", [])
+                    ],
+                }
+                for index, item in enumerate(response.get("items", []))
+            ],
+        }
+
     def forget(
         self,
         address: str,

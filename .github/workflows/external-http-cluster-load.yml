@@ -28,6 +28,11 @@ on:
         required: true
         default: "8"
         type: string
+      batch_query_size:
+        description: "External /query requests to compare against one /query/batch request."
+        required: true
+        default: "24"
+        type: string
       replication_factor:
         description: "Replica count per namespace."
         required: true
@@ -83,6 +88,7 @@ jobs:
           NAMESPACE_COUNT: ${{ inputs.namespace_count }}
           MEMORIES_PER_NAMESPACE: ${{ inputs.memories_per_namespace }}
           WORKERS: ${{ inputs.workers }}
+          BATCH_QUERY_SIZE: ${{ inputs.batch_query_size }}
           REPLICATION_FACTOR: ${{ inputs.replication_factor }}
           READ_QUORUM: ${{ inputs.read_quorum }}
           READ_FANOUT: ${{ inputs.read_fanout }}
@@ -104,6 +110,8 @@ jobs:
               os.environ["MEMORIES_PER_NAMESPACE"],
               "--workers",
               os.environ["WORKERS"],
+              "--batch-query-size",
+              os.environ["BATCH_QUERY_SIZE"],
               "--replication-factor",
               os.environ["REPLICATION_FACTOR"],
               "--read-quorum",

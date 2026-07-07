@@ -228,6 +228,7 @@ def _validate_external_cluster_payload(
     min_nodes: int = 4,
     min_namespaces: int = 32,
     min_memories_per_namespace: int = 8,
+    min_batch_query_size: int = 12,
     min_success_rate: float = 1.0,
     min_failover_hit_rate: float = 0.95,
     p99_slo_ms: float = 1000.0,
@@ -287,7 +288,24 @@ def _validate_external_cluster_payload(
         require(int(result.get("repair_repaired_total", 0)) >= 1, "repair_repaired_total must be >= 1")
         require(bool(result.get("slo_pass")), "slo_pass must be true")
         require(float(result.get("p99_operation_ms", float("inf"))) <= p99_slo_ms, "p99_operation_ms above SLO")
+        batch_query = result.get("batch_query")
+        require(isinstance(batch_query, dict), "batch_query result is required")
+        if isinstance(batch_query, dict):
+            require(bool(batch_query.get("success")), "batch_query success must be true")
+            require(bool(batch_query.get("individual_success")), "batch_query individual_success must be true")
+            require(bool(batch_query.get("batch_success")), "batch_query batch_success must be true")
+            require(
+                int(batch_query.get("batch_size", 0)) >= min_batch_query_size,
+                f"batch_query batch_size must be >= {min_batch_query_size}",
+            )
+            require(int(batch_query.get("batch_http_requests", 0)) == 1, "batch_query batch_http_requests must be 1")
+            require(
+                float(batch_query.get("request_reduction_ratio", 0.0)) >= 0.9,
+                "batch_query request_reduction_ratio below 0.9",
+            )
+            require(float(batch_query.get("batch_p99_ms", float("inf"))) <= p99_slo_ms, "batch_query p99 above SLO")
 
+    batch_query = result.get("batch_query") if result else {}
     evidence = (
         f"nodes {scenario.get('node_count')}, "
         f"deployment {scenario.get('deployment_id')}, "
@@ -296,7 +314,11 @@ def _validate_external_cluster_payload(
         f"namespaces {scenario.get('namespace_count')}, "
         f"success {result.get('success_rate')}, "
         f"failover {result.get('failover_hit_rate')}, "
-        f"p99 {result.get('p99_operation_ms')} ms"
+        f"p99 {result.get('p99_operation_ms')} ms, "
+        f"batch query {batch_query.get('success') if isinstance(batch_query, dict) else None}, "
+        f"batch HTTP {batch_query.get('individual_http_requests') if isinstance(batch_query, dict) else None} -> "
+        f"{batch_query.get('batch_http_requests') if isinstance(batch_query, dict) else None}, "
+        f"batch p99 {batch_query.get('batch_p99_ms') if isinstance(batch_query, dict) else None} ms"
         if result
         else "invalid external HTTP cluster load artifact"
     )
@@ -420,6 +442,7 @@ def _external_cluster_requirement(root: Path) -> EvidenceRequirement:
             "-f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,"
             "node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" "
             "-f replication_factor=3 -f read_quorum=1 -f read_fanout=1 "
+            "-f batch_query_size=24 "
             "-f fail_on_slo=true -f commit_results=true"
         ),
         claim_unlocked="Remote service-node cluster load SLO.",
@@ -770,7 +793,8 @@ def evaluate_production_evidence_preflight(
             label="cluster node",
             command=(
                 "gh workflow run external-http-cluster-load.yml "
-                "-f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f commit_results=true"
+                "-f nodes=\"$WAVEMIND_CLUSTER_NODES\" "
+                "-f batch_query_size=24 -f commit_results=true"
             ),
             output_artifact="benchmarks/http_cluster_load_results.json",
             env=environment,

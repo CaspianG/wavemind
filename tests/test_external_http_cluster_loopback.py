@@ -28,6 +28,7 @@ def _args(**overrides):
         "namespace_count": 32,
         "memories_per_namespace": 8,
         "workers": 8,
+        "batch_query_size": 24,
         "timeout": 15.0,
         "readiness_timeout": 20.0,
         "min_success_rate": 1.0,
@@ -78,6 +79,7 @@ def test_loopback_external_runner_starts_nodes_and_uses_external_payload(monkeyp
                 "namespace_count": args.namespace_count,
                 "memories_per_namespace": args.memories_per_namespace,
                 "workers": args.workers,
+                "batch_query_size": args.batch_query_size,
                 "deployment_id": args.deployment_id,
                 "environment": args.environment,
                 "source": args.source,
@@ -123,6 +125,7 @@ def test_loopback_external_runner_starts_nodes_and_uses_external_payload(monkeyp
         "node-003=http://127.0.0.1:9203",
     ]
     assert external_args.source == "loopback-api-processes"
+    assert external_args.batch_query_size == 24
     assert payload["scenario"]["name"] == "http_cluster_load"
     assert payload["scenario"]["started_api_processes"] == 4
     assert payload["results"][0]["engine"] == "WaveMind external HTTP cluster load"
@@ -137,3 +140,8 @@ def test_loopback_external_runner_rejects_invalid_replication_factor():
 def test_loopback_external_runner_rejects_read_fanout_below_quorum():
     with pytest.raises(ValueError, match="cannot be smaller"):
         loopback.run_from_args(_args(read_quorum=2, read_fanout=1))
+
+
+def test_loopback_external_runner_rejects_tiny_batch_query_size():
+    with pytest.raises(ValueError, match="batch-query-size"):
+        loopback.run_from_args(_args(batch_query_size=1))

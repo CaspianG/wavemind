@@ -702,12 +702,14 @@ python benchmarks/http_cluster_load_benchmark.py \
   --namespace-count 32 \
   --memories-per-namespace 8 \
   --workers 8 \
+  --batch-query-size 24 \
   --fail-on-slo
 ```
 
 This runs the same mixed workload against user-supplied API nodes: quorum
 writes, normal queries, simulated node failover queries, missing-replica repair,
-replicated forget, delete suppression, p99 latency, and an explicit SLO verdict.
+replicated forget, delete suppression, external `/query/batch` recall, p99
+latency, and an explicit SLO verdict.
 Use this before claiming that a deployment is production-ready outside the
 local readiness smoke profile.
 `deploy/cluster/external-http-cluster.sample.json` defines the repeatable node
@@ -1703,8 +1705,9 @@ reviewed benchmark refreshes should be committed from a maintainer account.
 normal CI and package releases.
 External cluster benchmark refresh: `.github/workflows/external-http-cluster-load.yml`
 runs `benchmarks/http_cluster_load_benchmark.py` against real API-node URLs or a
-JSON node manifest and can commit `benchmarks/http_cluster_load_results.json`
-plus refreshed leaderboard artifacts when `commit_results=true`.
+JSON node manifest, including the external `/query/batch` recall check, and can
+commit `benchmarks/http_cluster_load_results.json` plus refreshed leaderboard
+artifacts when `commit_results=true`.
 External active-active refresh: `.github/workflows/external-http-active-active.yml`
 runs `benchmarks/local_http_active_active_smoke.py` against real API-region URLs
 or a JSON region manifest and can commit
@@ -1735,7 +1738,7 @@ public claim boundaries stable:
 | pgvector tuning | Real PostgreSQL/pgvector service profile now separates baseline HNSW, exact recall floor, and iterative HNSW tuning. | `benchmarks/production_pgvector_tuning_results.json` | This is a 50k service-backed tuning profile, not yet the 100k/1M production load SLO artifact. |
 | Qdrant streaming | Real Qdrant streaming smoke exists, a tuned 1M service run passes SLO after warmup/chunking, a real two-service sharded Qdrant smoke passes, and single-service plus horizontally sharded 10M/100M plan-only contracts are checked in. | `benchmarks/production_streaming_load_qdrant_smoke_results.json`, `benchmarks/production_streaming_load_qdrant_1m_results.json`, `benchmarks/production_streaming_load_qdrant_1m_tuned_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json`, `benchmarks/production_streaming_load_qdrant_10m_plan.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json`, `benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json` | The 10M/100M Qdrant service results are not claimed until the matching result artifacts are produced by real runs. |
 | pgvector streaming | Real PostgreSQL/pgvector streaming smoke exists, and a 10M plan-only service contract is checked in. | `benchmarks/production_streaming_load_pgvector_smoke_results.json`, `benchmarks/production_streaming_load_pgvector_10m_plan.json` | The 10M pgvector service result is not claimed until `production_streaming_load_pgvector_10m_results.json` is produced by a real run. |
-| HTTP cluster load | Local multi-process API-node evidence exists; the external workflow can run the same contract against real API URLs. | `benchmarks/http_cluster_load_results.json`, `.github/workflows/external-http-cluster-load.yml` | Local loopback evidence is not a remote Kubernetes or multi-region production result. |
+| HTTP cluster load | Local multi-process API-node evidence exists, including external batch recall `24 -> 1`; the external workflow can run the same contract against real API URLs. | `benchmarks/http_cluster_load_results.json`, `.github/workflows/external-http-cluster-load.yml` | Local loopback evidence is not a remote Kubernetes or multi-region production result. |
 | HTTP active-active regions | Local multi-process API-region evidence exists, and the external URL-based contract now has a loopback artifact. The external workflow can run the same namespace-delta contract against real regional API URLs. | `benchmarks/local_http_active_active_smoke_results.json`, `benchmarks/external_http_active_active_loopback_results.json`, `.github/workflows/external-http-active-active.yml` | Local/loopback active-active evidence is not a remote Kubernetes/serverless multi-region result until `benchmarks/external_http_active_active_results.json` is produced by a real run. |
 | Serverless telemetry | Loopback replica telemetry exists; remote telemetry has a dedicated manual workflow and artifact path. | `deploy/serverless/observed-telemetry.loopback.json`, `.github/workflows/serverless-observed-telemetry.yml` | Loopback evidence is not a hosted managed-serverless claim until `observed-telemetry.remote.json` is committed. |
 | Competitor adapters | Local Mem0/LangGraph/GraphRAG-style adapters run; optional Zep evidence is skipped until configured. | `benchmarks/memory_competitor_results.json` | Not a full independent Mem0/Zep/Letta leaderboard without live service credentials and public runner parity. |
@@ -1821,7 +1824,7 @@ by the production gate.
 | Local HTTP cluster smoke | Starts real localhost API-node processes and runs the service-mode sustained mixed workload through HTTP with `read_fanout=1`, then probes `/stats` on every node for health/circuit state. | implemented | WaveMind local API nodes | Keep success, failover, repair, forget, delete suppression, and cluster health at 1.00; GitHub CI uses a 2000 ms p99 ceiling for runner variance while checked-in local evidence stays below 1000 ms. |
 | Local HTTP active-active service-region smoke | Starts real localhost API region processes, each serving a replicated WaveMind runtime, then syncs namespace deltas through HTTP export/import endpoints. | implemented | WaveMind local replicated API regions | Keep convergence, delete suppression, and pair-sync success at 1.00, final no-op imports at 0, and p99 below 1500 ms in CI. |
 | External HTTP active-active loopback | Starts real localhost API regions and feeds their URLs into the external active-active runner, proving the same URL-based transport contract used by remote deployments. | implemented | WaveMind URL-based API regions | Keep convergence, delete suppression, success, and final no-op sync green in CI while remote Kubernetes/serverless regions are provisioned. |
-| External HTTP cluster load runner | `benchmarks/http_cluster_load_benchmark.py` runs the sustained mixed workload against user-supplied WaveMind API node URLs and reports success rate, failover hit rate, delete suppression, repair count, p99, and `slo_pass`. | implemented | WaveMind remote service nodes | Check in the first real remote service-node artifact, then use it as the deployment gate for production clusters. |
+| External HTTP cluster load runner | `benchmarks/http_cluster_load_benchmark.py` runs the sustained mixed workload against user-supplied WaveMind API node URLs and reports success rate, failover hit rate, delete suppression, repair count, external `/query/batch` recall, p99, and `slo_pass`. | implemented | WaveMind remote service nodes | Check in the first real remote service-node artifact with batch recall, then use it as the deployment gate for production clusters. |
 | External HTTP active-active runner | Manual GitHub workflow and CLI path for user-supplied remote API regions. It writes `benchmarks/external_http_active_active_results.json` and validates convergence, delete propagation, cursor idempotency, final no-op sync, and p99. | implemented | WaveMind remote API regions | Check in a real remote Kubernetes/serverless active-active region artifact with convergence, delete suppression, and success at 1.00. |
 | Production readiness gate | Machine-readable gate over production artifacts, with pass/action_required/fail criteria. | implemented | WaveMind-only gate | Reach `readiness_score 1.000` before claiming complete million-plus production readiness. |
 | Memory competitor adapter profile | Dynamic-memory scenario wired for external memory frameworks. | implemented | Mem0 / Zep / LangGraph persistent memory | Report real competitor results only when their packages/services are explicitly configured. |

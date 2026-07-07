@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-07T12:46:06Z",
+  "generated_at": "2026-07-07T19:34:23Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -14,9 +14,9 @@
       "id": "external_http_cluster",
       "title": "External HTTP service-node load",
       "status": "action_required",
-      "evidence": "nodes 4, deployment loopback-2026-07-07, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 739.9693999905139 ms",
+      "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
       "artifact": "benchmarks/http_cluster_load_results.json",
-      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true -f commit_results=true",
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true",
       "claim_unlocked": "Remote service-node cluster load SLO.",
       "issues": [
         "environment must be a real remote/staging/production deployment",

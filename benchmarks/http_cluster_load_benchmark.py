@@ -138,6 +138,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--namespace-count", type=int, default=32)
     parser.add_argument("--memories-per-namespace", type=int, default=8)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument(
+        "--batch-query-size",
+        type=int,
+        default=24,
+        help="Queries used to compare individual /query calls with one /query/batch call.",
+    )
     parser.add_argument("--min-success-rate", type=float, default=1.0)
     parser.add_argument("--min-failover-hit-rate", type=float, default=0.95)
     parser.add_argument("--p99-slo-ms", type=float, default=1000.0)
@@ -148,6 +154,101 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/http_cluster_load_results.json"),
     )
     return parser
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * (percentile / 100.0)
+    lower = int(rank)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = rank - lower
+    return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
+def run_external_batch_query_profile(
+    *,
+    nodes: list[ClusterNode],
+    client: HTTPNamespaceShardClient,
+    namespace: str,
+    batch_size: int,
+) -> dict[str, Any]:
+    write_nodes = [node.address for node in nodes]
+    individual_node = nodes[0]
+    batch_node = nodes[1] if len(nodes) > 1 else nodes[0]
+    expected: list[str] = []
+    queries: list[str] = []
+    write_started = time.perf_counter()
+    for index in range(batch_size):
+        text = f"external batch recall memory item {index:04d}"
+        query = f"item {index:04d}"
+        expected.append(text)
+        queries.append(query)
+        for address in write_nodes:
+            client.remember(
+                address,
+                text=text,
+                namespace=namespace,
+                tags=("external-batch-query",),
+            )
+    write_ms = (time.perf_counter() - write_started) * 1000.0
+
+    individual_latencies: list[float] = []
+    individual_texts: list[str | None] = []
+    for query in queries:
+        started = time.perf_counter()
+        results = client.query(
+            individual_node.address,
+            text=query,
+            namespace=namespace,
+            top_k=1,
+        )
+        individual_latencies.append((time.perf_counter() - started) * 1000.0)
+        individual_texts.append(results[0].text if results else None)
+
+    batch_payload_queries = [
+        {"text": query, "namespace": namespace, "top_k": 1}
+        for query in queries
+    ]
+    batch_started = time.perf_counter()
+    batch_payload = client.query_batch(batch_node.address, queries=batch_payload_queries)
+    batch_ms = (time.perf_counter() - batch_started) * 1000.0
+    batch_items = list(batch_payload.get("items") or [])
+    batch_texts = [
+        item["results"][0].text if item.get("results") else None
+        for item in batch_items
+    ]
+    individual_success = individual_texts == expected
+    batch_success = (
+        int(batch_payload.get("count", 0)) == batch_size
+        and len(batch_items) == batch_size
+        and batch_texts == expected
+    )
+    request_reduction_ratio = 1.0 - (1.0 / float(batch_size))
+    individual_total_ms = sum(individual_latencies)
+    return {
+        "namespace": namespace,
+        "write_node_count": len(write_nodes),
+        "individual_node": individual_node.id,
+        "batch_node": batch_node.id,
+        "batch_size": batch_size,
+        "individual_http_requests": batch_size,
+        "batch_http_requests": 1,
+        "request_reduction_ratio": request_reduction_ratio,
+        "individual_success": individual_success,
+        "batch_success": batch_success,
+        "success": individual_success and batch_success,
+        "write_ms": write_ms,
+        "individual_total_ms": individual_total_ms,
+        "individual_p95_ms": _percentile(individual_latencies, 95),
+        "individual_p99_ms": _percentile(individual_latencies, 99),
+        "batch_ms": batch_ms,
+        "batch_p99_ms": batch_ms,
+        "total_speedup": individual_total_ms / batch_ms if batch_ms > 0 else 0.0,
+    }
 
 
 def run_from_args(args: argparse.Namespace) -> dict[str, object]:
@@ -162,17 +263,20 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
     nodes = parse_node_specs(node_specs, zone_specs)
     if args.replication_factor > len(nodes):
         raise ValueError("replication_factor cannot exceed the number of nodes")
+    if args.batch_query_size < 2:
+        raise ValueError("batch_query_size must be at least 2")
     namespace_prefix = args.namespace_prefix or f"tenant:http-load:{int(time.time())}"
     deployment_id = args.deployment_id or manifest.get("deployment_id")
     environment = args.environment or manifest.get("environment")
     source = args.source or manifest.get("source") or "manual"
+    client = HTTPNamespaceShardClient(
+        api_key=args.api_key,
+        timeout=args.timeout,
+        trust_env=False,
+    )
     result = run_sustained_http_cluster_workload(
         nodes,
-        client=HTTPNamespaceShardClient(
-            api_key=args.api_key,
-            timeout=args.timeout,
-            trust_env=False,
-        ),
+        client=client,
         engine="WaveMind external HTTP cluster load",
         namespace_prefix=namespace_prefix,
         namespace_count=args.namespace_count,
@@ -183,6 +287,13 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
         read_fanout=args.read_fanout,
         max_workers=args.workers,
     )
+    batch_query = run_external_batch_query_profile(
+        nodes=nodes,
+        client=client,
+        namespace=f"{namespace_prefix}:batch-query",
+        batch_size=args.batch_query_size,
+    )
+    result["batch_query"] = batch_query
     result["slo_min_success_rate"] = args.min_success_rate
     result["slo_min_failover_hit_rate"] = args.min_failover_hit_rate
     result["slo_p99_ms"] = args.p99_slo_ms
@@ -190,6 +301,8 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
         float(result["success_rate"]) >= args.min_success_rate
         and float(result["failover_hit_rate"]) >= args.min_failover_hit_rate
         and float(result["p99_operation_ms"]) <= args.p99_slo_ms
+        and bool(batch_query["success"])
+        and float(batch_query["batch_p99_ms"]) <= args.p99_slo_ms
     )
     return {
         "scenario": {
@@ -207,6 +320,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
             "namespace_count": args.namespace_count,
             "memories_per_namespace": args.memories_per_namespace,
             "workers": args.workers,
+            "batch_query_size": args.batch_query_size,
             "deployment_id": deployment_id,
             "environment": environment,
             "source": source,
@@ -225,6 +339,7 @@ def validate_external_cluster_payload(
     min_nodes: int = 4,
     min_namespaces: int = 32,
     min_memories_per_namespace: int = 8,
+    min_batch_query_size: int = 12,
     min_success_rate: float = 1.0,
     min_failover_hit_rate: float = 0.95,
     p99_slo_ms: float = 1000.0,
@@ -275,8 +390,29 @@ def validate_external_cluster_payload(
         require(int(result.get("repair_repaired_total", 0)) >= 1, "repair_repaired_total must be >= 1")
         require(bool(result.get("slo_pass")), "slo_pass must be true")
         require(float(result.get("p99_operation_ms", float("inf"))) <= p99_slo_ms, "p99_operation_ms above SLO")
+        batch_query = result.get("batch_query")
+        require(isinstance(batch_query, dict), "batch_query result is required")
+        if isinstance(batch_query, dict):
+            require(bool(batch_query.get("success")), "batch_query success must be true")
+            require(bool(batch_query.get("individual_success")), "batch_query individual_success must be true")
+            require(bool(batch_query.get("batch_success")), "batch_query batch_success must be true")
+            require(
+                int(batch_query.get("batch_size", 0)) >= min_batch_query_size,
+                f"batch_query batch_size must be >= {min_batch_query_size}",
+            )
+            require(
+                int(batch_query.get("individual_http_requests", 0)) >= min_batch_query_size,
+                f"batch_query individual_http_requests must be >= {min_batch_query_size}",
+            )
+            require(int(batch_query.get("batch_http_requests", 0)) == 1, "batch_query batch_http_requests must be 1")
+            require(
+                float(batch_query.get("request_reduction_ratio", 0.0)) >= 0.9,
+                "batch_query request_reduction_ratio below 0.9",
+            )
+            require(float(batch_query.get("batch_p99_ms", float("inf"))) <= p99_slo_ms, "batch_query p99 above SLO")
 
     status = "pass" if not issues else "fail"
+    batch_query = result.get("batch_query") if result else {}
     evidence = (
         f"nodes {scenario.get('node_count')}, "
         f"deployment {scenario.get('deployment_id')}, "
@@ -285,7 +421,11 @@ def validate_external_cluster_payload(
         f"namespaces {scenario.get('namespace_count')}, "
         f"success {result.get('success_rate')}, "
         f"failover {result.get('failover_hit_rate')}, "
-        f"p99 {result.get('p99_operation_ms')} ms"
+        f"p99 {result.get('p99_operation_ms')} ms, "
+        f"batch query {batch_query.get('success') if isinstance(batch_query, dict) else None}, "
+        f"batch HTTP {batch_query.get('individual_http_requests') if isinstance(batch_query, dict) else None} -> "
+        f"{batch_query.get('batch_http_requests') if isinstance(batch_query, dict) else None}, "
+        f"batch p99 {batch_query.get('batch_p99_ms') if isinstance(batch_query, dict) else None} ms"
         if result
         else "invalid external HTTP cluster load artifact"
     )
@@ -322,6 +462,10 @@ def main() -> int:
     print(f"| external HTTP cluster | failover_hit_rate | {result['failover_hit_rate']:.3f} |")
     print(f"| external HTTP cluster | p99_operation_ms | {result['p99_operation_ms']:.2f} |")
     print(f"| external HTTP cluster | repair_repaired_total | {result['repair_repaired_total']} |")
+    batch_query = result["batch_query"]
+    print(f"| external HTTP cluster | batch_query_success | {batch_query['success']} |")
+    print(f"| external HTTP cluster | batch_query_http_requests | {batch_query['individual_http_requests']} -> {batch_query['batch_http_requests']} |")
+    print(f"| external HTTP cluster | batch_query_p99_ms | {batch_query['batch_p99_ms']:.2f} |")
     print(f"| external HTTP cluster | slo_pass | {result['slo_pass']} |")
     print(f"\nWrote {args.output}")
     if args.fail_on_slo and not result["slo_pass"]:

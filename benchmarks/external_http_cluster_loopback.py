@@ -34,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--namespace-count", type=int, default=32)
     parser.add_argument("--memories-per-namespace", type=int, default=8)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--batch-query-size", type=int, default=24)
     parser.add_argument("--timeout", type=float, default=15.0)
     parser.add_argument("--readiness-timeout", type=float, default=20.0)
     parser.add_argument("--min-success-rate", type=float, default=1.0)
@@ -72,6 +73,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--memories-per-namespace must be at least 2")
     if args.workers <= 0:
         raise ValueError("--workers must be positive")
+    if args.batch_query_size < 2:
+        raise ValueError("--batch-query-size must be at least 2")
 
 
 def _external_args(args: argparse.Namespace, nodes: list[LocalAPINode]) -> argparse.Namespace:
@@ -94,6 +97,7 @@ def _external_args(args: argparse.Namespace, nodes: list[LocalAPINode]) -> argpa
         namespace_count=args.namespace_count,
         memories_per_namespace=args.memories_per_namespace,
         workers=args.workers,
+        batch_query_size=args.batch_query_size,
         min_success_rate=args.min_success_rate,
         min_failover_hit_rate=args.min_failover_hit_rate,
         p99_slo_ms=args.p99_slo_ms,
@@ -155,6 +159,10 @@ def main() -> int:
     print(f"| external loopback HTTP cluster | failover_hit_rate | {result['failover_hit_rate']:.3f} |")
     print(f"| external loopback HTTP cluster | p99_operation_ms | {result['p99_operation_ms']:.2f} |")
     print(f"| external loopback HTTP cluster | repair_repaired_total | {result['repair_repaired_total']} |")
+    batch_query = result["batch_query"]
+    print(f"| external loopback HTTP cluster | batch_query_success | {batch_query['success']} |")
+    print(f"| external loopback HTTP cluster | batch_query_http_requests | {batch_query['individual_http_requests']} -> {batch_query['batch_http_requests']} |")
+    print(f"| external loopback HTTP cluster | batch_query_p99_ms | {batch_query['batch_p99_ms']:.2f} |")
     print(f"| external loopback HTTP cluster | slo_pass | {result['slo_pass']} |")
     print(f"\nWrote {args.output}")
     if args.fail_on_slo and not result["slo_pass"]:

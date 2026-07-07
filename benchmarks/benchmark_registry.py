@@ -34,6 +34,46 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
     return {key: result[key] for key in keys if key in result}
 
 
+def _external_http_cluster_summary(result: dict[str, Any] | None) -> dict[str, Any] | None:
+    summary = _metric_summary(
+        result,
+        (
+            "nodes",
+            "namespaces",
+            "memories_per_namespace",
+            "replication_factor",
+            "read_fanout",
+            "workers",
+            "success_rate",
+            "write_success_rate",
+            "query_hit_rate",
+            "failover_hit_rate",
+            "delete_suppression_rate",
+            "repair_repaired_total",
+            "p99_operation_ms",
+            "slo_pass",
+        ),
+    )
+    if summary is None:
+        return None
+    batch_query = result.get("batch_query") if result else None
+    if isinstance(batch_query, dict):
+        summary.update(
+            {
+                "batch_query_success": batch_query.get("success"),
+                "batch_query_size": batch_query.get("batch_size"),
+                "batch_query_http_requests": (
+                    f"{batch_query.get('individual_http_requests')} -> "
+                    f"{batch_query.get('batch_http_requests')}"
+                ),
+                "batch_query_request_reduction_ratio": batch_query.get("request_reduction_ratio"),
+                "batch_query_p99_ms": batch_query.get("batch_p99_ms"),
+                "batch_query_total_speedup": batch_query.get("total_speedup"),
+            }
+        )
+    return summary
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -1689,7 +1729,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/http_cluster_load_benchmark.py",
-            "dataset": "Real WaveMind HTTP API-node sustained workload: quorum writes, normal queries, simulated node failover queries, missing-replica repair, replicated forget, delete suppression, and SLO verdict over user-supplied node URLs.",
+            "dataset": "Real WaveMind HTTP API-node sustained workload: quorum writes, normal queries, simulated node failover queries, missing-replica repair, replicated forget, delete suppression, external /query/batch recall, and SLO verdict over user-supplied node URLs.",
             "competitors": ["WaveMind remote service nodes"],
             "metrics": [
                 "success_rate",
@@ -1699,37 +1739,25 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "delete_suppression_rate",
                 "repair_repaired_total",
                 "p99_operation_ms",
+                "batch_query_success",
+                "batch_query_http_requests",
+                "batch_query_request_reduction_ratio",
+                "batch_query_p99_ms",
                 "slo_pass",
             ],
             "current": {
                 "WaveMind external HTTP cluster load": (
-                    _metric_summary(
-                        external_http_cluster_results.get("WaveMind external HTTP cluster load"),
-                        (
-                            "nodes",
-                            "namespaces",
-                            "memories_per_namespace",
-                            "replication_factor",
-                            "read_fanout",
-                            "workers",
-                            "success_rate",
-                            "write_success_rate",
-                            "query_hit_rate",
-                            "failover_hit_rate",
-                            "delete_suppression_rate",
-                            "repair_repaired_total",
-                            "p99_operation_ms",
-                            "slo_pass",
-                        ),
+                    _external_http_cluster_summary(
+                        external_http_cluster_results.get("WaveMind external HTTP cluster load")
                     )
                     or {
                         "runner_ready": True,
                         "checked_in_result": False,
-                        "requires": "--nodes-file deploy/cluster/external-http-cluster.sample.json or --node id=https://host for each real API node",
+                        "requires": "--nodes-file deploy/cluster/external-http-cluster.sample.json or --node id=https://host for each real API node, plus --batch-query-size",
                     }
                 ),
             },
-            "target": "Keep the service-node workload green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
+            "target": "Keep the service-node workload and external batch recall green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
             "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment.",
         },
         {

@@ -10,6 +10,7 @@ from wavemind import (
     HTTPNamespaceShardClient,
     DistributedRepairReport,
     NamespaceShardRouter,
+    QueryResult,
     ShardedWaveMind,
     WaveMind,
 )
@@ -193,6 +194,61 @@ def test_http_namespace_shard_client_bypasses_proxy_env_by_default():
     assert client._opener is not None
     assert trusted.trust_env is True
     assert trusted._opener is None
+
+
+def test_http_namespace_shard_client_query_batch_decodes_results(monkeypatch):
+    client = HTTPNamespaceShardClient()
+    captured = {}
+
+    def fake_request(method, address, path, payload):
+        captured.update(
+            {
+                "method": method,
+                "address": address,
+                "path": path,
+                "payload": payload,
+            }
+        )
+        return {
+            "count": 1,
+            "items": [
+                {
+                    "index": 0,
+                    "text": "budget",
+                    "namespace": "tenant:a",
+                    "results": [
+                        {
+                            "id": 7,
+                            "text": "user budget is 2000",
+                            "score": 0.91,
+                            "vector_score": 0.9,
+                            "field_score": 0.01,
+                            "graph_score": 0.0,
+                            "namespace": "tenant:a",
+                            "tags": ["profile"],
+                            "metadata": {"source": "test"},
+                        }
+                    ],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    payload = client.query_batch(
+        "https://node-a.test",
+        queries=[{"text": "budget", "namespace": "tenant:a", "top_k": 1}],
+    )
+
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/query/batch"
+    assert captured["payload"]["queries"][0]["text"] == "budget"
+    assert payload["count"] == 1
+    result = payload["items"][0]["results"][0]
+    assert isinstance(result, QueryResult)
+    assert result.text == "user budget is 2000"
+    assert result.tags == ("profile",)
+    assert result.metadata == {"source": "test"}
 
 
 def test_sharded_wavemind_routes_namespaces_to_isolated_databases(tmp_path):

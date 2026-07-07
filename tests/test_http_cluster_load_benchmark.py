@@ -7,6 +7,7 @@ import pytest
 from benchmarks.http_cluster_load_benchmark import (
     load_node_manifest,
     parse_node_specs,
+    run_external_batch_query_profile,
     run_from_args,
     validate_external_cluster_payload,
 )
@@ -59,7 +60,7 @@ class FakeHTTPClusterClient:
                 QueryResult(
                     id=int(record["id"]),
                     text=str(record["text"]),
-                    score=1.0 if text == record["text"] else 0.5,
+                    score=1.0 if text == record["text"] or text in record["text"] else 0.5,
                     vector_score=1.0,
                     field_score=0.0,
                     graph_score=0.0,
@@ -69,6 +70,27 @@ class FakeHTTPClusterClient:
                 )
             )
         return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]
+
+    def query_batch(self, address, *, queries):
+        items = []
+        for index, item in enumerate(queries):
+            results = self.query(
+                address,
+                text=item["text"],
+                namespace=item["namespace"],
+                top_k=int(item.get("top_k", 3)),
+                tags=tuple(item.get("tags") or ()),
+                min_score=item.get("min_score"),
+            )
+            items.append(
+                {
+                    "index": index,
+                    "text": item["text"],
+                    "namespace": item["namespace"],
+                    "results": results,
+                }
+            )
+        return {"count": len(items), "items": items}
 
     def forget(self, address, *, namespace, id=None, text=None):
         records = self.records[address][namespace]
@@ -205,6 +227,31 @@ def test_sustained_http_cluster_workload_reports_slo_ready_metrics():
     assert result["error_count"] == 0
 
 
+def test_external_batch_query_profile_compares_individual_and_batch_requests():
+    nodes = [
+        ClusterNode(id="node-a", address="http://node-a.test", zone="zone-a"),
+        ClusterNode(id="node-b", address="http://node-b.test", zone="zone-b"),
+        ClusterNode(id="node-c", address="http://node-c.test", zone="zone-c"),
+    ]
+
+    result = run_external_batch_query_profile(
+        nodes=nodes,
+        client=FakeHTTPClusterClient(),
+        namespace="tenant:test-external-batch",
+        batch_size=12,
+    )
+
+    assert result["success"] is True
+    assert result["individual_success"] is True
+    assert result["batch_success"] is True
+    assert result["individual_node"] == "node-a"
+    assert result["batch_node"] == "node-b"
+    assert result["write_node_count"] == 3
+    assert result["individual_http_requests"] == 12
+    assert result["batch_http_requests"] == 1
+    assert result["request_reduction_ratio"] >= 0.9
+
+
 def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
     output = tmp_path / "http_cluster_load.json"
     args = argparse.Namespace(
@@ -229,6 +276,7 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
         namespace_count=2,
         memories_per_namespace=2,
         workers=2,
+        batch_query_size=12,
         min_success_rate=1.0,
         min_failover_hit_rate=0.95,
         p99_slo_ms=1000.0,
@@ -254,6 +302,10 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
     result = payload["results"][0]
     assert result["engine"] == "WaveMind external HTTP cluster load"
     assert result["slo_pass"] is True
+    assert result["batch_query"]["success"] is True
+    assert result["batch_query"]["individual_http_requests"] == 12
+    assert result["batch_query"]["batch_http_requests"] == 1
+    assert result["batch_query"]["request_reduction_ratio"] >= 0.9
     output.write_text(json.dumps(payload), encoding="utf-8")
     assert json.loads(output.read_text(encoding="utf-8"))["results"][0]["slo_pass"] is True
 
@@ -293,6 +345,7 @@ def test_http_cluster_load_cli_accepts_nodes_file(tmp_path):
         namespace_count=2,
         memories_per_namespace=2,
         workers=2,
+        batch_query_size=12,
         min_success_rate=1.0,
         min_failover_hit_rate=0.95,
         p99_slo_ms=1000.0,
@@ -344,6 +397,7 @@ def test_external_cluster_payload_validator_reports_missing_and_pass(tmp_path):
         namespace_count=32,
         memories_per_namespace=8,
         workers=2,
+        batch_query_size=12,
         min_success_rate=1.0,
         min_failover_hit_rate=0.95,
         p99_slo_ms=1000.0,
