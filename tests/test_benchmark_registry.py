@@ -225,6 +225,10 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert structured["precomputed_vector_precision_at_1"] == 1.0
     assert structured["precomputed_vector_persisted_rate"] == 1.0
     assert structured["precomputed_vector_embedding_dim"] == 4
+    assert structured["knowledge_graph_precision_at_1"] == 1.0
+    assert structured["knowledge_graph_path_precision_at_1"] == 1.0
+    assert structured["knowledge_graph_persistence_rate"] == 1.0
+    assert structured["knowledge_graph_provenance_rate"] == 1.0
     active_active = entries["scale_readiness"]["current"]["WaveMind sustained active-active sync"]
     assert active_active["regions"] == 3
     assert active_active["namespaces"] == 3

@@ -1616,6 +1616,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and payloads.get("temporal_event_interval_precision_at_1") == 1
                 and payloads.get("temporal_event_persistence_rate") == 1.0
                 and payloads.get("temporal_event_provenance_rate") == 1.0
+                and payloads.get("knowledge_graph_precision_at_1") == 1.0
+                and payloads.get("knowledge_graph_path_precision_at_1") == 1.0
+                and payloads.get("knowledge_graph_direct_precision_at_1") == 1
+                and payloads.get("knowledge_graph_two_hop_precision_at_1") == 1
+                and payloads.get("knowledge_graph_three_hop_precision_at_1") == 1
+                and payloads.get("knowledge_graph_predicate_precision_at_1") == 1
+                and payloads.get("knowledge_graph_persistence_rate") == 1.0
+                and payloads.get("knowledge_graph_provenance_rate") == 1.0
                 and payloads.get("asset_manifest_verified")
                 and payloads.get("asset_manifest_sha256_present")
                 and payloads.get("asset_manifest_provenance_rate") == 1
@@ -1641,7 +1649,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "actor filters, interval overlap, around-time reranking, "
                 "recency reranking, persistence, and provenance. Large media "
                 "assets must be backed by verified content-addressed object-store "
-                "manifests."
+                "manifests. Knowledge graphs must support entity/predicate filters, "
+                "multi-hop path traversal, persistence, and provenance."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
@@ -1658,10 +1667,19 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"{payloads.get('temporal_event_interval_precision_at_1')}, "
                 f"temporal persisted {payloads.get('temporal_event_persistence_rate')}, "
                 f"temporal provenance {payloads.get('temporal_event_provenance_rate')}, "
+                f"knowledge graph precision@1 {payloads.get('knowledge_graph_precision_at_1')}, "
+                f"knowledge graph direct/two-hop/three-hop/predicate "
+                f"{payloads.get('knowledge_graph_direct_precision_at_1')}/"
+                f"{payloads.get('knowledge_graph_two_hop_precision_at_1')}/"
+                f"{payloads.get('knowledge_graph_three_hop_precision_at_1')}/"
+                f"{payloads.get('knowledge_graph_predicate_precision_at_1')}, "
+                f"knowledge graph paths {payloads.get('knowledge_graph_path_precision_at_1')}, "
+                f"knowledge graph persisted {payloads.get('knowledge_graph_persistence_rate')}, "
+                f"knowledge graph provenance {payloads.get('knowledge_graph_provenance_rate')}, "
                 f"asset manifest verified {payloads.get('asset_manifest_verified')}, "
                 f"asset provenance {payloads.get('asset_manifest_provenance_rate')}"
             ),
-            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal and temporal-event retrieval tests against object-store-backed assets.",
+            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal, temporal-event, and knowledge-graph retrieval tests against object-store-backed assets.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

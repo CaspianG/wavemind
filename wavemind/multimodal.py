@@ -105,6 +105,42 @@ class TemporalEventQueryResult:
         }
 
 
+@dataclass(frozen=True)
+class KnowledgeGraphQueryResult:
+    id: int
+    text: str
+    score: float
+    base_score: float
+    graph_score: float
+    namespace: str
+    tags: tuple[str, ...]
+    metadata: dict[str, Any]
+    subject: str
+    predicate: str
+    object: str
+    depth: int
+    path: tuple[dict[str, str], ...]
+    provenance: dict[str, Any]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "text": self.text,
+            "score": self.score,
+            "base_score": self.base_score,
+            "graph_score": self.graph_score,
+            "namespace": self.namespace,
+            "tags": list(self.tags),
+            "metadata": self.metadata,
+            "subject": self.subject,
+            "predicate": self.predicate,
+            "object": self.object,
+            "depth": self.depth,
+            "path": list(self.path),
+            "provenance": self.provenance,
+        }
+
+
 class CrossModalEncoder(Protocol):
     name: str
     vector_dim: int
@@ -607,6 +643,261 @@ class TemporalEventMemoryLayer:
         return scored[:top_k]
 
 
+class KnowledgeGraphMemoryLayer:
+    """Knowledge-graph retrieval layer over WaveMind graph payloads.
+
+    Graphs remain ordinary WaveMind memories. This layer builds a query-time
+    adjacency view from persisted triples so backups, replication, TTL, tags,
+    and namespaces keep the same storage contract as text and multimodal memory.
+    """
+
+    def __init__(
+        self,
+        memory: Any,
+        *,
+        base_weight: float = 0.35,
+        graph_weight: float = 0.65,
+    ) -> None:
+        self.memory = memory
+        self.base_weight = float(base_weight)
+        self.graph_weight = float(graph_weight)
+
+    def remember_triples(
+        self,
+        triples: Sequence[tuple[str, str, str] | dict[str, Any]],
+        *,
+        namespace: str = "default",
+        title: str,
+        summary: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        tags: Iterable[str] | None = None,
+        ttl_seconds: float | None = None,
+        priority: float = 1.0,
+    ) -> int:
+        payload = graph_payload(
+            triples,
+            title=title,
+            summary=summary,
+            metadata=metadata,
+            tags=tags,
+        )
+        return remember_payload(
+            self.memory,
+            payload,
+            namespace=namespace,
+            ttl_seconds=ttl_seconds,
+            priority=priority,
+        )
+
+    def query(
+        self,
+        query: str,
+        *,
+        namespace: str = "default",
+        top_k: int = 3,
+        candidate_k: int | None = None,
+        subject: str | None = None,
+        predicate: str | None = None,
+        object: str | None = None,
+        max_depth: int = 1,
+        tags: Iterable[str] | None = None,
+        min_score: float | None = None,
+    ) -> list[KnowledgeGraphQueryResult]:
+        if top_k <= 0:
+            return []
+        depth_limit = max(1, int(max_depth))
+        required_tags = tuple(dict.fromkeys(("graph", *(tags or ()))))
+        records = [
+            record
+            for record in self.memory.store.list(namespace=namespace, tags=required_tags)
+            if record.id is not None and not record.is_expired
+        ]
+        if not records:
+            return []
+
+        base_scores = self._base_scores(
+            query,
+            namespace=namespace,
+            tags=required_tags,
+            candidate_k=max(candidate_k or top_k * 12, top_k),
+        )
+        query_tokens = _tokens(query)
+        subject_key = _graph_key(subject)
+        predicate_key = _graph_key(predicate)
+        object_key = _graph_key(object)
+
+        scored: list[KnowledgeGraphQueryResult] = []
+        seen: set[tuple[int, tuple[tuple[str, str, str], ...]]] = set()
+
+        for record in records:
+            record_id = int(record.id)
+            for triple in _metadata_triples(record.metadata):
+                if not _triple_matches(
+                    triple,
+                    subject=subject_key,
+                    predicate=predicate_key,
+                    object=object_key,
+                ):
+                    continue
+                graph_score = _direct_graph_score(
+                    triple,
+                    query_tokens=query_tokens,
+                    subject=subject_key,
+                    predicate=predicate_key,
+                    object=object_key,
+                )
+                self._append_result(
+                    scored,
+                    seen,
+                    record=record,
+                    triple=triple,
+                    path=(triple,),
+                    depth=1,
+                    graph_score=graph_score,
+                    base_score=base_scores.get(record_id, 0.0),
+                    min_score=min_score,
+                )
+
+        if depth_limit > 1 and subject_key is not None:
+            for record, triple, path in self._traverse(
+                records,
+                start=subject_key,
+                target=object_key,
+                predicate=predicate_key,
+                max_depth=depth_limit,
+            ):
+                record_id = int(record.id)
+                graph_score = _path_graph_score(
+                    path,
+                    query_tokens=query_tokens,
+                    target=object_key,
+                )
+                self._append_result(
+                    scored,
+                    seen,
+                    record=record,
+                    triple=triple,
+                    path=tuple(path),
+                    depth=len(path),
+                    graph_score=graph_score,
+                    base_score=base_scores.get(record_id, 0.0),
+                    min_score=min_score,
+                )
+
+        scored.sort(key=lambda item: (item.score, -item.depth), reverse=True)
+        return scored[:top_k]
+
+    def _base_scores(
+        self,
+        query: str,
+        *,
+        namespace: str,
+        tags: Iterable[str],
+        candidate_k: int,
+    ) -> dict[int, float]:
+        if not str(query or "").strip():
+            return {}
+        try:
+            return {
+                int(result.id): float(result.score)
+                for result in self.memory.query(
+                    query,
+                    namespace=namespace,
+                    tags=tags,
+                    top_k=candidate_k,
+                    min_score=0.0,
+                )
+            }
+        except Exception:
+            return {}
+
+    def _append_result(
+        self,
+        scored: list[KnowledgeGraphQueryResult],
+        seen: set[tuple[int, tuple[tuple[str, str, str], ...]]],
+        *,
+        record: Any,
+        triple: dict[str, str],
+        path: tuple[dict[str, str], ...],
+        depth: int,
+        graph_score: float,
+        base_score: float,
+        min_score: float | None,
+    ) -> None:
+        record_id = int(record.id)
+        path_key = tuple(
+            (
+                _graph_key(step.get("subject")) or "",
+                _graph_key(step.get("predicate")) or "",
+                _graph_key(step.get("object")) or "",
+            )
+            for step in path
+        )
+        key = (record_id, path_key)
+        if key in seen:
+            return
+        seen.add(key)
+        bounded_base = _bounded_score(base_score)
+        bounded_graph = max(0.0, min(1.0, float(graph_score)))
+        score = self.base_weight * bounded_base + self.graph_weight * bounded_graph
+        if min_score is not None and score < min_score:
+            return
+        scored.append(
+            KnowledgeGraphQueryResult(
+                id=record_id,
+                text=record.text,
+                score=float(score),
+                base_score=float(bounded_base),
+                graph_score=float(bounded_graph),
+                namespace=record.namespace,
+                tags=record.tags,
+                metadata=record.metadata,
+                subject=triple.get("subject", ""),
+                predicate=triple.get("predicate", ""),
+                object=triple.get("object", ""),
+                depth=int(depth),
+                path=tuple(dict(step) for step in path),
+                provenance=_graph_provenance(record.metadata, record_id, triple, path),
+            )
+        )
+
+    def _traverse(
+        self,
+        records: Sequence[Any],
+        *,
+        start: str,
+        target: str | None,
+        predicate: str | None,
+        max_depth: int,
+    ) -> list[tuple[Any, dict[str, str], list[dict[str, str]]]]:
+        edges_by_subject: dict[str, list[tuple[Any, dict[str, str]]]] = {}
+        for record in records:
+            for triple in _metadata_triples(record.metadata):
+                triple_subject = _graph_key(triple.get("subject"))
+                if not triple_subject:
+                    continue
+                edges_by_subject.setdefault(triple_subject, []).append((record, triple))
+
+        matches: list[tuple[Any, dict[str, str], list[dict[str, str]]]] = []
+        frontier: list[tuple[str, list[dict[str, str]], set[str]]] = [(start, [], {start})]
+        for depth in range(max_depth):
+            next_frontier: list[tuple[str, list[dict[str, str]], set[str]]] = []
+            for current, path, visited in frontier:
+                for record, triple in edges_by_subject.get(current, []):
+                    object_key = _graph_key(triple.get("object"))
+                    if not object_key:
+                        continue
+                    new_path = [*path, triple]
+                    predicate_ok = predicate is None or _graph_key(triple.get("predicate")) == predicate
+                    target_ok = target is None or object_key == target
+                    if predicate_ok and target_ok:
+                        matches.append((record, triple, new_path))
+                    if depth + 1 < max_depth and object_key not in visited:
+                        next_frontier.append((object_key, new_path, {*visited, object_key}))
+            frontier = next_frontier
+        return matches
+
+
 def image_payload(
     uri: str | Path,
     *,
@@ -707,15 +998,17 @@ def graph_payload(
     tags: Iterable[str] | None = None,
 ) -> MemoryPayload:
     normalized = [_normalize_triple(triple) for triple in triples]
+    preview = json.dumps(normalized[:12], ensure_ascii=False, sort_keys=True)
+    persisted = json.dumps(normalized, ensure_ascii=False, sort_keys=True)
     return _payload(
         "graph",
         {
             "title": title,
             "summary": summary or "",
-            "triples": json.dumps(normalized[:12], ensure_ascii=False, sort_keys=True),
+            "triples": preview,
             "triple_count": str(len(normalized)),
         },
-        metadata={**(metadata or {}), "triple_count": len(normalized)},
+        metadata={**(metadata or {}), "triples": persisted, "triple_count": len(normalized)},
         tags=tags,
     )
 
@@ -1107,3 +1400,113 @@ def _normalize_triple(triple: tuple[str, str, str] | dict[str, Any]) -> dict[str
         "predicate": str(predicate),
         "object": str(object_value),
     }
+
+
+def _metadata_triples(metadata: dict[str, Any]) -> list[dict[str, str]]:
+    value = metadata.get("triples")
+    if value in (None, ""):
+        return []
+    try:
+        if isinstance(value, str):
+            parsed = json.loads(value)
+        else:
+            parsed = value
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    triples: list[dict[str, str]] = []
+    for item in parsed:
+        try:
+            triple = _normalize_triple(item)
+        except (TypeError, ValueError):
+            continue
+        if triple["subject"].strip() and triple["predicate"].strip() and triple["object"].strip():
+            triples.append(triple)
+    return triples
+
+
+def _graph_key(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    if not text:
+        return None
+    text = re.sub(r"[_\s]+", " ", text)
+    return text
+
+
+def _triple_matches(
+    triple: dict[str, str],
+    *,
+    subject: str | None,
+    predicate: str | None,
+    object: str | None,
+) -> bool:
+    return (
+        (subject is None or _graph_key(triple.get("subject")) == subject)
+        and (predicate is None or _graph_key(triple.get("predicate")) == predicate)
+        and (object is None or _graph_key(triple.get("object")) == object)
+    )
+
+
+def _direct_graph_score(
+    triple: dict[str, str],
+    *,
+    query_tokens: set[str],
+    subject: str | None,
+    predicate: str | None,
+    object: str | None,
+) -> float:
+    requested = [value for value in (subject, predicate, object) if value is not None]
+    tokens = _tokens(
+        " ".join(
+            (
+                triple.get("subject", ""),
+                triple.get("predicate", ""),
+                triple.get("object", ""),
+            )
+        )
+    )
+    if query_tokens and tokens:
+        overlap_score = len(query_tokens & tokens) / max(1, min(len(query_tokens), len(tokens)))
+    else:
+        overlap_score = 0.0
+    if requested:
+        return max(0.80, min(1.0, 0.80 + overlap_score * 0.20))
+    return min(1.0, overlap_score)
+
+
+def _path_graph_score(
+    path: Sequence[dict[str, str]],
+    *,
+    query_tokens: set[str],
+    target: str | None,
+) -> float:
+    if not path:
+        return 0.0
+    path_text = " ".join(
+        " ".join((step.get("subject", ""), step.get("predicate", ""), step.get("object", "")))
+        for step in path
+    )
+    path_tokens = _tokens(path_text)
+    if query_tokens and path_tokens:
+        overlap = len(query_tokens & path_tokens) / max(1, min(len(query_tokens), len(path_tokens)))
+    else:
+        overlap = 0.0
+    target_bonus = 0.30 if target is not None and _graph_key(path[-1].get("object")) == target else 0.0
+    depth_penalty = max(0.0, (len(path) - 1) * 0.08)
+    return max(0.0, min(1.0, 0.78 + target_bonus + overlap * 0.18 - depth_penalty))
+
+
+def _graph_provenance(
+    metadata: dict[str, Any],
+    memory_id: int,
+    triple: dict[str, str],
+    path: Sequence[dict[str, str]],
+) -> dict[str, Any]:
+    provenance = _provenance(metadata, memory_id, "graph")
+    provenance["triple"] = dict(triple)
+    provenance["path"] = [dict(step) for step in path]
+    provenance["depth"] = len(path)
+    if "triple_count" in metadata:
+        provenance["triple_count"] = metadata["triple_count"]
+    return provenance

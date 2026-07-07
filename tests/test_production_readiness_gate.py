@@ -172,6 +172,14 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "interval overlap" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "around-time reranking" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "content-addressed object-store manifests" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "multi-hop path traversal" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "knowledge graph precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1" in criteria[
+        "structured_multimodal_payloads"
+    ]["evidence"]
+    assert "knowledge graph paths 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "knowledge graph persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "knowledge graph provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "asset manifest verified True" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "asset provenance 1" in criteria["structured_multimodal_payloads"]["evidence"]
     assert criteria["ten_million_load_profile"]["status"] == "pass"

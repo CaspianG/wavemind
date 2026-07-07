@@ -5,6 +5,7 @@ import numpy as np
 from wavemind import (
     CrossModalMemoryLayer,
     HashingTextEncoder,
+    KnowledgeGraphMemoryLayer,
     ObjectStoreAssetReport,
     PrecomputedCrossModalEncoder,
     SentenceTransformersCrossModalEncoder,
@@ -526,6 +527,174 @@ def test_sentence_transformers_cross_modal_encoder_uses_descriptor_for_remote_as
         assert results[0].id == image_id
         assert calls == []
         assert results[0].metadata["cross_modal_vector"] == _one_hot(0)
+    finally:
+        memory.close()
+
+
+def test_knowledge_graph_memory_layer_filters_triples(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "knowledge-graph.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = KnowledgeGraphMemoryLayer(memory)
+        graph_id = layer.remember_triples(
+            [
+                ("Andrey", "works_on", "trading agent"),
+                ("trading agent", "uses", "WaveMind memory"),
+                ("WaveMind memory", "stores", "dynamic preferences"),
+            ],
+            namespace="graph",
+            title="agent memory graph",
+            summary="Andrey's trading agent uses WaveMind memory",
+            tags=["agent"],
+        )
+
+        results = layer.query(
+            "what does the trading agent use?",
+            namespace="graph",
+            subject="trading agent",
+            predicate="uses",
+            top_k=1,
+        )
+
+        assert results[0].id == graph_id
+        assert results[0].subject == "trading agent"
+        assert results[0].predicate == "uses"
+        assert results[0].object == "WaveMind memory"
+        assert results[0].depth == 1
+        assert results[0].path == ({"subject": "trading agent", "predicate": "uses", "object": "WaveMind memory"},)
+        assert results[0].provenance["memory_id"] == graph_id
+        assert results[0].provenance["modality"] == "graph"
+        assert results[0].provenance["triple"]["object"] == "WaveMind memory"
+    finally:
+        memory.close()
+
+
+def test_knowledge_graph_memory_layer_traverses_paths(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "knowledge-graph-path.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = KnowledgeGraphMemoryLayer(memory)
+        layer.remember_triples(
+            [("Andrey", "works_on", "trading agent")],
+            namespace="graph",
+            title="person project edge",
+            tags=["agent"],
+        )
+        final_id = layer.remember_triples(
+            [("trading agent", "uses", "WaveMind memory")],
+            namespace="graph",
+            title="project memory edge",
+            tags=["agent"],
+        )
+
+        results = layer.query(
+            "how is Andrey connected to WaveMind memory?",
+            namespace="graph",
+            subject="Andrey",
+            object="WaveMind memory",
+            max_depth=2,
+            top_k=1,
+        )
+
+        assert results[0].id == final_id
+        assert results[0].depth == 2
+        assert [step["predicate"] for step in results[0].path] == ["works_on", "uses"]
+        assert results[0].subject == "trading agent"
+        assert results[0].object == "WaveMind memory"
+        assert results[0].provenance["path"][0]["subject"] == "Andrey"
+    finally:
+        memory.close()
+
+
+def test_knowledge_graph_memory_layer_persists_graph_records(tmp_path):
+    db_path = tmp_path / "knowledge-graph-persist.sqlite3"
+    first = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = KnowledgeGraphMemoryLayer(first)
+        stored_id = layer.remember_triples(
+            [
+                ("research agent", "reads", "market filings"),
+                ("market filings", "contain", "risk disclosures"),
+            ],
+            namespace="graph",
+            title="research graph",
+            tags=["research"],
+        )
+    finally:
+        first.close()
+
+    second = WaveMind(
+        db_path=db_path,
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = KnowledgeGraphMemoryLayer(second)
+        results = layer.query(
+            "risk disclosures",
+            namespace="graph",
+            subject="research agent",
+            object="risk disclosures",
+            max_depth=2,
+            top_k=1,
+        )
+
+        assert results[0].id == stored_id
+        assert results[0].depth == 2
+        assert results[0].provenance["triple_count"] == 2
+    finally:
+        second.close()
+
+
+def test_knowledge_graph_memory_layer_uses_full_persisted_graph_not_preview(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "knowledge-graph-full.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = KnowledgeGraphMemoryLayer(memory)
+        triples = [(f"node-{index}", "connects_to", f"node-{index + 1}") for index in range(14)]
+        graph_id = layer.remember_triples(
+            triples,
+            namespace="graph",
+            title="long graph",
+            tags=["long"],
+        )
+
+        results = layer.query(
+            "node 14",
+            namespace="graph",
+            subject="node-0",
+            object="node-14",
+            max_depth=14,
+            top_k=1,
+        )
+
+        assert results[0].id == graph_id
+        assert results[0].depth == 14
+        assert results[0].path[-1]["object"] == "node-14"
+        assert results[0].provenance["triple_count"] == 14
     finally:
         memory.close()
 

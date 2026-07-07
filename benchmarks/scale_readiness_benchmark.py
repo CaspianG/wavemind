@@ -35,6 +35,7 @@ from wavemind import (
     HTTPActiveActiveSyncWorker,
     HTTPNamespaceShardClient,
     HotMemoryCache,
+    KnowledgeGraphMemoryLayer,
     MemoryOSWorker,
     PrecomputedCrossModalEncoder,
     QueryVectorCache,
@@ -3592,6 +3593,83 @@ def run_multimodal_profile() -> dict[str, object]:
                 ):
                     temporal_provenance += 1
 
+            knowledge_graph_layer = KnowledgeGraphMemoryLayer(memory)
+            knowledge_graph_layer.remember_triples(
+                [("Andrey", "works_on", "trading agent")],
+                namespace="kg",
+                title="person project edge",
+                summary="Andrey works on a trading agent",
+                tags=["agent"],
+            )
+            memory_edge_id = knowledge_graph_layer.remember_triples(
+                [
+                    ("trading agent", "uses", "WaveMind memory"),
+                    ("WaveMind memory", "stores", "dynamic preferences"),
+                ],
+                namespace="kg",
+                title="agent memory graph",
+                summary="trading agent uses WaveMind memory for dynamic preferences",
+                tags=["agent"],
+            )
+            knowledge_graph_checks = [
+                (
+                    "direct",
+                    "what does the trading agent use?",
+                    {"subject": "trading agent", "predicate": "uses"},
+                    memory_edge_id,
+                    1,
+                ),
+                (
+                    "two-hop",
+                    "how is Andrey connected to WaveMind memory?",
+                    {"subject": "Andrey", "object": "WaveMind memory", "max_depth": 2},
+                    memory_edge_id,
+                    2,
+                ),
+                (
+                    "three-hop",
+                    "what does Andrey's memory system store?",
+                    {"subject": "Andrey", "object": "dynamic preferences", "max_depth": 3},
+                    memory_edge_id,
+                    3,
+                ),
+                (
+                    "predicate",
+                    "what stores dynamic preferences?",
+                    {"subject": "WaveMind memory", "predicate": "stores"},
+                    memory_edge_id,
+                    1,
+                ),
+            ]
+            knowledge_graph_latencies = []
+            knowledge_graph_correct = 0
+            knowledge_graph_path_correct = 0
+            knowledge_graph_kind_correct: dict[str, int] = {}
+            knowledge_graph_provenance = 0
+            for kind, query, kwargs, expected_id, expected_depth in knowledge_graph_checks:
+                started = time.perf_counter()
+                results = knowledge_graph_layer.query(
+                    query,
+                    namespace="kg",
+                    top_k=1,
+                    **kwargs,
+                )
+                knowledge_graph_latencies.append((time.perf_counter() - started) * 1000.0)
+                ok = bool(results and results[0].id == expected_id)
+                depth_ok = bool(ok and results[0].depth == expected_depth)
+                knowledge_graph_kind_correct[kind] = int(ok and depth_ok)
+                if ok:
+                    knowledge_graph_correct += 1
+                if depth_ok:
+                    knowledge_graph_path_correct += 1
+                if (
+                    results
+                    and results[0].provenance.get("memory_id") == results[0].id
+                    and results[0].provenance.get("path")
+                    and results[0].provenance.get("triple")
+                ):
+                    knowledge_graph_provenance += 1
+
             reopened = WaveMind(
                 db_path=Path(directory) / "payloads.sqlite3",
                 encoder=HashingTextEncoder(vector_dim=64),
@@ -3614,6 +3692,22 @@ def run_multimodal_profile() -> dict[str, object]:
                     top_k=1,
                 )
                 temporal_persistence_rate = float(bool(persisted and persisted[0].id == latest_risk_id))
+                persisted_graph_layer = KnowledgeGraphMemoryLayer(reopened)
+                persisted_graph = persisted_graph_layer.query(
+                    "how is Andrey connected to WaveMind memory?",
+                    namespace="kg",
+                    subject="Andrey",
+                    object="WaveMind memory",
+                    max_depth=2,
+                    top_k=1,
+                )
+                knowledge_graph_persistence_rate = float(
+                    bool(
+                        persisted_graph
+                        and persisted_graph[0].id == memory_edge_id
+                        and persisted_graph[0].depth == 2
+                    )
+                )
             finally:
                 reopened.close()
 
@@ -3645,6 +3739,15 @@ def run_multimodal_profile() -> dict[str, object]:
                 "temporal_event_interval_precision_at_1": temporal_kind_correct.get("interval", 0),
                 "temporal_event_persistence_rate": temporal_persistence_rate,
                 "temporal_event_provenance_rate": temporal_provenance / len(temporal_checks),
+                "knowledge_graph_queries": len(knowledge_graph_checks),
+                "knowledge_graph_precision_at_1": knowledge_graph_correct / len(knowledge_graph_checks),
+                "knowledge_graph_path_precision_at_1": knowledge_graph_path_correct / len(knowledge_graph_checks),
+                "knowledge_graph_direct_precision_at_1": knowledge_graph_kind_correct.get("direct", 0),
+                "knowledge_graph_two_hop_precision_at_1": knowledge_graph_kind_correct.get("two-hop", 0),
+                "knowledge_graph_three_hop_precision_at_1": knowledge_graph_kind_correct.get("three-hop", 0),
+                "knowledge_graph_predicate_precision_at_1": knowledge_graph_kind_correct.get("predicate", 0),
+                "knowledge_graph_persistence_rate": knowledge_graph_persistence_rate,
+                "knowledge_graph_provenance_rate": knowledge_graph_provenance / len(knowledge_graph_checks),
                 "avg_latency_ms": statistics.mean(latencies),
                 "p99_latency_ms": percentile(latencies, 99),
                 "cross_modal_avg_latency_ms": statistics.mean(cross_latencies),
@@ -3653,6 +3756,8 @@ def run_multimodal_profile() -> dict[str, object]:
                 "precomputed_vector_p99_latency_ms": percentile(precomputed_latencies, 99),
                 "temporal_event_avg_latency_ms": statistics.mean(temporal_latencies),
                 "temporal_event_p99_latency_ms": percentile(temporal_latencies, 99),
+                "knowledge_graph_avg_latency_ms": statistics.mean(knowledge_graph_latencies),
+                "knowledge_graph_p99_latency_ms": percentile(knowledge_graph_latencies, 99),
             }
         finally:
             memory.close()
@@ -4000,6 +4105,9 @@ def main() -> int:
             print(f"| recovery journal | restored_records | {result['full_restored_records']} |")
         elif result["engine"] == "WaveMind structured payloads":
             print(f"| structured payloads | precision@1 | {result['precision_at_1']:.3f} |")
+            print(f"| structured payloads | knowledge_graph_precision@1 | {result['knowledge_graph_precision_at_1']:.3f} |")
+            print(f"| structured payloads | knowledge_graph_path_precision@1 | {result['knowledge_graph_path_precision_at_1']:.3f} |")
+            print(f"| structured payloads | knowledge_graph_persistence | {result['knowledge_graph_persistence_rate']:.3f} |")
         elif result["engine"] == "WaveMind 100M capacity envelope":
             print(f"| 100M capacity | valid_capacity_plan | {result['valid_capacity_plan']} |")
             print(f"| 100M capacity | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")

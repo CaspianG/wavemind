@@ -400,6 +400,15 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind structured payloads"]["temporal_event_interval_precision_at_1"] == 1
     assert results["WaveMind structured payloads"]["temporal_event_persistence_rate"] == 1.0
     assert results["WaveMind structured payloads"]["temporal_event_provenance_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["knowledge_graph_queries"] == 4
+    assert results["WaveMind structured payloads"]["knowledge_graph_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["knowledge_graph_path_precision_at_1"] == 1.0
+    assert results["WaveMind structured payloads"]["knowledge_graph_direct_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["knowledge_graph_two_hop_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["knowledge_graph_three_hop_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["knowledge_graph_predicate_precision_at_1"] == 1
+    assert results["WaveMind structured payloads"]["knowledge_graph_persistence_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["knowledge_graph_provenance_rate"] == 1.0
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
     assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3
