@@ -288,6 +288,10 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind structured payloads"]["cross_modal_embedding_dim"] == 64
     assert results["WaveMind structured payloads"]["cross_modal_vectors_persisted_rate"] == 1.0
     assert results["WaveMind structured payloads"]["cross_modal_provenance_rate"] == 1.0
+    assert results["WaveMind structured payloads"]["asset_manifest_verified"] is True
+    assert results["WaveMind structured payloads"]["asset_manifest_sha256_present"] is True
+    assert results["WaveMind structured payloads"]["asset_manifest_media_type"] == "video/mp4"
+    assert results["WaveMind structured payloads"]["asset_manifest_provenance_rate"] == 1
     assert results["WaveMind structured payloads"]["cross_modal_target_modalities"] == [
         "image",
         "audio",

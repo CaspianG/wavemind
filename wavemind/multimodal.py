@@ -758,6 +758,11 @@ def _provenance(metadata: dict[str, Any], memory_id: int, modality: str) -> dict
         "actor",
         "source",
         "cross_modal_version",
+        "asset_uri",
+        "asset_sha256",
+        "asset_bytes",
+        "asset_media_type",
+        "asset_verified",
     )
     provenance = {
         "memory_id": int(memory_id),

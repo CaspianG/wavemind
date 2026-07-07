@@ -1017,6 +1017,29 @@ results = layer.query(
 )
 ```
 
+For production media, keep large files in S3-compatible object storage and store
+a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
+as metadata source of truth while video, audio, image, and 3D bytes live in S3,
+R2, or MinIO:
+
+```python
+from wavemind import S3AssetStore, video_payload
+
+assets = S3AssetStore.from_uri("s3://wavemind-assets/media")
+asset = assets.upload_asset("demo.mp4", kind="video")
+
+payload = video_payload(
+    asset.uri,
+    summary="memory graph demo",
+    metadata=asset.payload_metadata(),
+)
+```
+
+`asset.payload_metadata()` includes `asset_sha256`, `asset_bytes`,
+`asset_media_type`, and `asset_verified`; cross-modal results return those fields
+in provenance so downstream agents can audit the exact media object behind a
+recall.
+
 For a built-in CLIP-style image/text backend, install the multimodal extra:
 
 ```sh

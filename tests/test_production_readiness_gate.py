@@ -123,6 +123,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "vectors persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "precomputed precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "content-addressed object-store manifests" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "asset manifest verified True" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "asset provenance 1" in criteria["structured_multimodal_payloads"]["evidence"]
     assert criteria["ten_million_load_profile"]["status"] == "pass"
     assert criteria["pgvector_tuning_path"]["status"] == "pass"
     assert "iterative HNSW recall@10 >= 0.95" in criteria["pgvector_tuning_path"]["requirement"]

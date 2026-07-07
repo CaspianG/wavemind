@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from wavemind import S3SnapshotStore, parse_object_store_uri
+from wavemind import S3AssetStore, S3SnapshotStore, parse_object_store_uri
 
 
 class FakeS3Client:
@@ -22,6 +22,16 @@ class FakeS3Client:
             "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
         }
 
+    def put_object(self, Bucket, Key, Body, ContentType=None, Metadata=None):
+        self.counter += 1
+        payload = Body.read() if hasattr(Body, "read") else Body
+        self.objects[(Bucket, Key)] = {
+            "Body": bytes(payload),
+            "ContentType": ContentType,
+            "Metadata": dict(Metadata or {}),
+            "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
+        }
+
     def download_file(self, bucket, key, filename):
         Path(filename).write_bytes(self.objects[(bucket, key)]["Body"])
 
@@ -30,6 +40,7 @@ class FakeS3Client:
         return {
             "ContentLength": len(payload["Body"]),
             "Metadata": dict(payload["Metadata"]),
+            "ContentType": payload.get("ContentType"),
             "ETag": '"fake-etag"',
         }
 
@@ -160,3 +171,54 @@ def test_s3_snapshot_store_lists_latest_and_prunes_archives(tmp_path):
     assert all(archive.verified for archive in archives)
     assert [archive.key for archive in pruned] == [reports[1].key, reports[0].key]
     assert [archive.key for archive in remaining] == [reports[2].key]
+
+
+def test_s3_asset_store_uploads_content_addressed_asset(tmp_path):
+    asset = tmp_path / "demo.mp4"
+    asset.write_bytes(b"video-bytes")
+    client = FakeS3Client()
+    store = S3AssetStore.from_uri("s3://wavemind-assets/media", client=client)
+
+    report = store.upload_asset(asset, kind="video")
+    described = store.describe_asset(report.uri)
+
+    assert report.uri.startswith("s3://wavemind-assets/media/")
+    assert report.key.endswith(".mp4")
+    assert report.sha256 in report.key
+    assert report.media_type == "video/mp4"
+    assert report.kind == "video"
+    assert report.total_bytes == len(b"video-bytes")
+    assert report.verified is True
+    assert described == report
+    assert store.verify_asset_object(
+        key=report.key,
+        sha256=report.sha256,
+        total_bytes=report.total_bytes,
+    )
+    assert report.payload_metadata() == {
+        "asset_uri": report.uri,
+        "asset_bucket": "wavemind-assets",
+        "asset_key": report.key,
+        "asset_bytes": report.total_bytes,
+        "asset_sha256": report.sha256,
+        "asset_media_type": "video/mp4",
+        "asset_verified": True,
+        "asset_kind": "video",
+    }
+
+
+def test_s3_asset_store_puts_bytes_with_custom_media_type():
+    client = FakeS3Client()
+    store = S3AssetStore.from_uri("s3://wavemind-assets/assets", client=client)
+
+    report = store.put_asset_bytes(
+        b"glb-bytes",
+        filename="robot.glb",
+        media_type="model/gltf-binary",
+        kind="3d",
+    )
+
+    assert report.media_type == "model/gltf-binary"
+    assert report.kind == "3d"
+    assert report.key.endswith(".glb")
+    assert store.describe_asset(report.key).verified is True

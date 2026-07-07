@@ -44,6 +44,7 @@ from wavemind import (
     ReplicatedObjectStoreDrillWorker,
     ReplicatedWaveMind,
     ReplicatedSnapshotWorker,
+    S3AssetStore,
     S3SnapshotStore,
     WaveMind,
     asset3d_payload,
@@ -104,7 +105,18 @@ class InMemoryS3Client:
         self.counter += 1
         self.objects[(bucket, key)] = {
             "Body": Path(filename).read_bytes(),
+            "ContentType": (ExtraArgs or {}).get("ContentType"),
             "Metadata": dict((ExtraArgs or {}).get("Metadata") or {}),
+            "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
+        }
+
+    def put_object(self, Bucket: str, Key: str, Body, ContentType=None, Metadata=None):
+        self.counter += 1
+        payload = Body.read() if hasattr(Body, "read") else Body
+        self.objects[(Bucket, Key)] = {
+            "Body": bytes(payload),
+            "ContentType": ContentType,
+            "Metadata": dict(Metadata or {}),
             "LastModified": f"2026-01-01T00:00:{self.counter:02d}Z",
         }
 
@@ -114,6 +126,7 @@ class InMemoryS3Client:
         return {
             "ContentLength": len(body),
             "Metadata": dict(payload["Metadata"]),
+            "ContentType": payload.get("ContentType"),
             "ETag": '"benchmark-etag"',
         }
 
@@ -2687,6 +2700,17 @@ def run_multimodal_profile() -> dict[str, object]:
         )
         try:
             layer = CrossModalMemoryLayer(memory, vector_dim=64)
+            asset_store = S3AssetStore.from_uri(
+                "s3://wavemind-assets/media",
+                client=InMemoryS3Client(),
+            )
+            demo_video_asset = asset_store.put_asset_bytes(
+                b"memory-field-demo-video-bytes",
+                filename="memory-field-demo.mp4",
+                media_type="video/mp4",
+                kind="video",
+            )
+            described_video_asset = asset_store.describe_asset(demo_video_asset.uri)
             expected = {
                 "enterprise expansion chart": layer.remember(
                     image_payload(
@@ -2723,11 +2747,12 @@ def run_multimodal_profile() -> dict[str, object]:
                 ),
                 "memory graph stale fact suppression": layer.remember(
                     video_payload(
-                        "s3://demo/memory-field-demo.mp4",
+                        demo_video_asset.uri,
                         summary="agent memory graph heatmap demo",
                         transcript="the agent suppresses stale facts after user corrections",
                         scenes=["memory graph heatmap", "stale fact suppression"],
                         duration_seconds=38.0,
+                        metadata=demo_video_asset.payload_metadata(),
                         tags=["video"],
                     ),
                     namespace="scale",
@@ -2776,6 +2801,7 @@ def run_multimodal_profile() -> dict[str, object]:
             cross_latencies = []
             cross_correct = 0
             provenance_complete = 0
+            asset_manifest_provenance = 0
             for query, modality, expected_id in cross_modal_checks:
                 started = time.perf_counter()
                 results = layer.query(
@@ -2789,6 +2815,15 @@ def run_multimodal_profile() -> dict[str, object]:
                     cross_correct += 1
                 if results and results[0].provenance.get("memory_id") == results[0].id:
                     provenance_complete += 1
+                if (
+                    results
+                    and modality == "video"
+                    and results[0].provenance.get("asset_sha256") == demo_video_asset.sha256
+                    and results[0].provenance.get("asset_bytes") == demo_video_asset.total_bytes
+                    and results[0].provenance.get("asset_media_type") == "video/mp4"
+                    and results[0].provenance.get("asset_verified") is True
+                ):
+                    asset_manifest_provenance += 1
             descriptor_records = memory.store.list(namespace="scale", tags=["multimodal"])
             persisted_vectors = sum(
                 1
@@ -2873,6 +2908,10 @@ def run_multimodal_profile() -> dict[str, object]:
                 "cross_modal_embedding_dim": layer.vector_dim,
                 "cross_modal_vectors_persisted_rate": persisted_vectors / len(descriptor_records),
                 "cross_modal_provenance_rate": provenance_complete / len(cross_modal_checks),
+                "asset_manifest_verified": described_video_asset.verified,
+                "asset_manifest_sha256_present": bool(described_video_asset.sha256),
+                "asset_manifest_media_type": described_video_asset.media_type,
+                "asset_manifest_provenance_rate": asset_manifest_provenance,
                 "precomputed_vector_queries": len(precomputed_checks),
                 "precomputed_vector_precision_at_1": precomputed_correct / len(precomputed_checks),
                 "precomputed_vector_embedding_dim": precomputed_layer.vector_dim,

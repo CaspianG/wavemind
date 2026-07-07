@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,44 @@ class ObjectStoreUploadReport:
             "sha256": self.sha256,
             "verified": self.verified,
             "etag": self.etag,
+        }
+
+
+@dataclass(frozen=True)
+class ObjectStoreAssetReport:
+    uri: str
+    bucket: str
+    key: str
+    total_bytes: int
+    sha256: str
+    media_type: str
+    verified: bool
+    kind: str | None = None
+    etag: str | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "uri": self.uri,
+            "bucket": self.bucket,
+            "key": self.key,
+            "total_bytes": self.total_bytes,
+            "sha256": self.sha256,
+            "media_type": self.media_type,
+            "verified": self.verified,
+            "kind": self.kind,
+            "etag": self.etag,
+        }
+
+    def payload_metadata(self) -> dict[str, object]:
+        return {
+            "asset_uri": self.uri,
+            "asset_bucket": self.bucket,
+            "asset_key": self.key,
+            "asset_bytes": self.total_bytes,
+            "asset_sha256": self.sha256,
+            "asset_media_type": self.media_type,
+            "asset_verified": self.verified,
+            **({"asset_kind": self.kind} if self.kind else {}),
         }
 
 
@@ -409,8 +448,326 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+class S3AssetStore:
+    """S3-compatible content-addressed storage for multimodal memory assets.
+
+    WaveMind keeps vectors, text descriptors, and metadata in the memory store.
+    Large media files should live in object storage and be referenced by a
+    verified sha256/byte-size manifest. This class intentionally uses the same
+    S3-compatible client contract as S3SnapshotStore, so AWS S3, R2, MinIO, and
+    tests can share the same operational path.
+    """
+
+    def __init__(
+        self,
+        *,
+        bucket: str,
+        prefix: str = "assets",
+        client: Any,
+        scheme: str = "s3",
+    ):
+        if not bucket:
+            raise ValueError("bucket is required")
+        if scheme != "s3":
+            raise ValueError("only s3-compatible stores are supported")
+        self.bucket = bucket
+        self.prefix = prefix.strip("/")
+        self.client = client
+        self.scheme = scheme
+
+    @classmethod
+    def from_uri(
+        cls,
+        uri: str,
+        *,
+        endpoint_url: str | None = None,
+        region_name: str | None = None,
+        client: Any | None = None,
+        **client_kwargs: Any,
+    ) -> "S3AssetStore":
+        location = parse_object_store_uri(uri)
+        if client is None:
+            try:
+                import boto3
+            except ImportError as exc:
+                raise RuntimeError(
+                    'Install S3 support with: pip install "wavemind[s3]"'
+                ) from exc
+            client = boto3.client(
+                "s3",
+                endpoint_url=endpoint_url,
+                region_name=region_name,
+                **client_kwargs,
+            )
+        return cls(
+            bucket=location.bucket,
+            prefix=location.key,
+            client=client,
+            scheme=location.scheme,
+        )
+
+    def upload_asset(
+        self,
+        asset_path: str | Path,
+        *,
+        media_type: str | None = None,
+        kind: str | None = None,
+        key: str | None = None,
+        metadata: dict[str, str] | None = None,
+        verify: bool = True,
+    ) -> ObjectStoreAssetReport:
+        path = Path(asset_path)
+        if not path.exists():
+            raise FileNotFoundError(f"asset does not exist: {path}")
+        if not path.is_file():
+            raise ValueError(f"asset path is not a file: {path}")
+        digest = _sha256_file(path)
+        total_bytes = path.stat().st_size
+        resolved_media_type = media_type or _guess_media_type(path.name)
+        resolved_key = self._resolve_asset_key(
+            key=key,
+            digest=digest,
+            suffix=path.suffix,
+        )
+        self._upload_file(
+            path,
+            key=resolved_key,
+            media_type=resolved_media_type,
+            total_bytes=total_bytes,
+            sha256=digest,
+            kind=kind,
+            metadata=metadata,
+        )
+        return self._report(
+            key=resolved_key,
+            total_bytes=total_bytes,
+            sha256=digest,
+            media_type=resolved_media_type,
+            kind=kind,
+            verify=verify,
+        )
+
+    def put_asset_bytes(
+        self,
+        data: bytes,
+        *,
+        filename: str,
+        media_type: str | None = None,
+        kind: str | None = None,
+        key: str | None = None,
+        metadata: dict[str, str] | None = None,
+        verify: bool = True,
+    ) -> ObjectStoreAssetReport:
+        payload = bytes(data)
+        digest = hashlib.sha256(payload).hexdigest()
+        total_bytes = len(payload)
+        suffix = Path(filename).suffix
+        resolved_media_type = media_type or _guess_media_type(filename)
+        resolved_key = self._resolve_asset_key(
+            key=key,
+            digest=digest,
+            suffix=suffix,
+        )
+        self._upload_bytes(
+            payload,
+            key=resolved_key,
+            media_type=resolved_media_type,
+            total_bytes=total_bytes,
+            sha256=digest,
+            kind=kind,
+            metadata=metadata,
+        )
+        return self._report(
+            key=resolved_key,
+            total_bytes=total_bytes,
+            sha256=digest,
+            media_type=resolved_media_type,
+            kind=kind,
+            verify=verify,
+        )
+
+    def describe_asset(
+        self,
+        uri_or_key: str,
+        *,
+        verify_metadata: bool = True,
+    ) -> ObjectStoreAssetReport:
+        key = self._key_from_uri_or_key(uri_or_key)
+        head = self._head(key)
+        metadata = _lower_metadata(head)
+        total_bytes = int(head.get("ContentLength", -1))
+        sha256 = metadata.get("wavemind-sha256", "")
+        media_type = metadata.get("wavemind-media-type") or str(
+            head.get("ContentType") or "application/octet-stream"
+        )
+        verified = True
+        if verify_metadata:
+            verified = (
+                total_bytes >= 0
+                and bool(sha256)
+                and metadata.get("wavemind-bytes") == str(total_bytes)
+                and bool(media_type)
+            )
+        return ObjectStoreAssetReport(
+            uri=f"{self.scheme}://{self.bucket}/{key}",
+            bucket=self.bucket,
+            key=key,
+            total_bytes=total_bytes,
+            sha256=sha256,
+            media_type=media_type,
+            kind=metadata.get("wavemind-asset-kind") or None,
+            verified=verified,
+            etag=str(head.get("ETag") or "") or None,
+        )
+
+    def verify_asset_object(
+        self,
+        *,
+        key: str,
+        sha256: str,
+        total_bytes: int,
+    ) -> bool:
+        report = self.describe_asset(key)
+        return (
+            report.sha256 == sha256
+            and report.total_bytes == int(total_bytes)
+            and report.verified
+        )
+
+    def _resolve_asset_key(self, *, key: str | None, digest: str, suffix: str) -> str:
+        if key:
+            return key.strip("/")
+        suffix = suffix if suffix.startswith(".") else f".{suffix}" if suffix else ""
+        filename = f"{digest}{suffix}"
+        return f"{self.prefix.rstrip('/')}/{digest[:2]}/{filename}" if self.prefix else f"{digest[:2]}/{filename}"
+
+    def _upload_bytes(
+        self,
+        data: bytes,
+        *,
+        key: str,
+        media_type: str,
+        total_bytes: int,
+        sha256: str,
+        kind: str | None,
+        metadata: dict[str, str] | None,
+    ) -> None:
+        object_metadata = {
+            "wavemind-sha256": sha256,
+            "wavemind-bytes": str(total_bytes),
+            "wavemind-media-type": media_type,
+        }
+        if kind:
+            object_metadata["wavemind-asset-kind"] = str(kind)
+        object_metadata.update(metadata or {})
+        self.client.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=data,
+            ContentType=media_type,
+            Metadata=object_metadata,
+        )
+
+    def _upload_file(
+        self,
+        path: Path,
+        *,
+        key: str,
+        media_type: str,
+        total_bytes: int,
+        sha256: str,
+        kind: str | None,
+        metadata: dict[str, str] | None,
+    ) -> None:
+        object_metadata = {
+            "wavemind-sha256": sha256,
+            "wavemind-bytes": str(total_bytes),
+            "wavemind-media-type": media_type,
+        }
+        if kind:
+            object_metadata["wavemind-asset-kind"] = str(kind)
+        object_metadata.update(metadata or {})
+        extra_args = {
+            "ContentType": media_type,
+            "Metadata": object_metadata,
+        }
+        if hasattr(self.client, "upload_file"):
+            self.client.upload_file(
+                str(path),
+                self.bucket,
+                key,
+                ExtraArgs=extra_args,
+            )
+            return
+        with path.open("rb") as handle:
+            self.client.put_object(
+                Bucket=self.bucket,
+                Key=key,
+                Body=handle.read(),
+                ContentType=media_type,
+                Metadata=object_metadata,
+            )
+
+    def _report(
+        self,
+        *,
+        key: str,
+        total_bytes: int,
+        sha256: str,
+        media_type: str,
+        kind: str | None,
+        verify: bool,
+    ) -> ObjectStoreAssetReport:
+        head = self._head(key) if verify else {}
+        metadata = _lower_metadata(head)
+        verified = True
+        if verify:
+            verified = (
+                int(head.get("ContentLength", -1)) == int(total_bytes)
+                and metadata.get("wavemind-sha256") == sha256
+                and metadata.get("wavemind-bytes") == str(int(total_bytes))
+                and metadata.get("wavemind-media-type") == media_type
+            )
+        return ObjectStoreAssetReport(
+            uri=f"{self.scheme}://{self.bucket}/{key}",
+            bucket=self.bucket,
+            key=key,
+            total_bytes=total_bytes,
+            sha256=sha256,
+            media_type=media_type,
+            kind=kind,
+            verified=verified,
+            etag=head.get("ETag") if head else None,
+        )
+
+    def _key_from_uri_or_key(self, uri_or_key: str) -> str:
+        if uri_or_key.startswith("s3://"):
+            location = parse_object_store_uri(uri_or_key)
+            if location.bucket != self.bucket:
+                raise ValueError(
+                    f"object bucket mismatch: expected {self.bucket!r}, got {location.bucket!r}"
+                )
+            return location.key
+        return uri_or_key.strip("/")
+
+    def _head(self, key: str) -> dict[str, Any]:
+        return dict(self.client.head_object(Bucket=self.bucket, Key=key))
+
+
 def _is_snapshot_archive_key(key: str) -> bool:
     return key.endswith(".tar.gz") or key.endswith(".tgz")
+
+
+def _guess_media_type(filename: str) -> str:
+    media_type, _encoding = mimetypes.guess_type(filename)
+    return media_type or "application/octet-stream"
+
+
+def _lower_metadata(head: dict[str, Any]) -> dict[str, str]:
+    return {
+        str(k).lower(): str(v)
+        for k, v in dict(head.get("Metadata") or {}).items()
+    }
 
 
 def _format_last_modified(value: Any) -> str | None:

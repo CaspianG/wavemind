@@ -252,7 +252,10 @@ policy matters more than raw vector-database scale:
   precomputed-vector path for externally computed CLIP/audio/video/3D
   embeddings. `SentenceTransformersCrossModalEncoder` adds an optional
   CLIP-style local image/text backend without making sentence-transformers or
-  Pillow mandatory for the base install.
+  Pillow mandatory for the base install. `S3AssetStore` adds verified
+  content-addressed object-store manifests for large media assets, so
+  multimodal memories can carry sha256, byte-size, media-type, and verification
+  provenance without storing binary payloads in SQLite or Postgres.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
   namespace placement, control-plane majority lease/config revision safety,
   quorum-replicated runtime behavior, cursor-based
@@ -269,8 +272,8 @@ policy matters more than raw vector-database scale:
   deterministic object-store disaster-recovery drill, query-audit cache
   prewarm, predictive prefetch, query-vector cache, Redis-compatible shared rate limiting, hot-cache
   behavior, API cache mutation safety, structured-payload retrieval,
-  cross-modal target-modality/provenance checks, and external precomputed-vector
-  compatibility checks.
+  cross-modal target-modality/provenance checks, external precomputed-vector
+  compatibility checks, and object-store-backed asset manifest verification.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,

@@ -5,6 +5,7 @@ import numpy as np
 from wavemind import (
     CrossModalMemoryLayer,
     HashingTextEncoder,
+    ObjectStoreAssetReport,
     PrecomputedCrossModalEncoder,
     SentenceTransformersCrossModalEncoder,
     WaveMind,
@@ -269,6 +270,55 @@ def test_cross_modal_memory_layer_uses_persisted_payload_metadata(tmp_path):
         assert results[0].provenance["source"] == "wavemind_cross_modal"
     finally:
         second.close()
+
+
+def test_cross_modal_payload_provenance_includes_verified_asset_manifest(tmp_path):
+    asset = ObjectStoreAssetReport(
+        uri="s3://wavemind-assets/media/aa/demo.mp4",
+        bucket="wavemind-assets",
+        key="media/aa/demo.mp4",
+        total_bytes=1024,
+        sha256="a" * 64,
+        media_type="video/mp4",
+        kind="video",
+        verified=True,
+        etag='"asset-etag"',
+    )
+    memory = WaveMind(
+        db_path=tmp_path / "asset-provenance.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+    )
+    try:
+        layer = CrossModalMemoryLayer(memory, vector_dim=64)
+        stored_id = layer.remember(
+            video_payload(
+                asset.uri,
+                summary="verified product demo video",
+                transcript="customer watches the product demo",
+                metadata=asset.payload_metadata(),
+                tags=["video"],
+            ),
+            namespace="workspace",
+        )
+
+        results = layer.query(
+            "product demo video",
+            namespace="workspace",
+            target_modality="video",
+            top_k=1,
+        )
+
+        assert results[0].id == stored_id
+        assert results[0].provenance["asset_uri"] == asset.uri
+        assert results[0].provenance["asset_sha256"] == asset.sha256
+        assert results[0].provenance["asset_bytes"] == asset.total_bytes
+        assert results[0].provenance["asset_media_type"] == "video/mp4"
+        assert results[0].provenance["asset_verified"] is True
+    finally:
+        memory.close()
 
 
 def test_cross_modal_memory_layer_uses_precomputed_vectors_without_descriptor_fallback(tmp_path):

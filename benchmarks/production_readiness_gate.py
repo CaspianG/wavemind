@@ -1366,6 +1366,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and payloads.get("cross_modal_vectors_persisted_rate") == 1.0
                 and payloads.get("precomputed_vector_precision_at_1") == 1.0
                 and payloads.get("precomputed_vector_persisted_rate") == 1.0
+                and payloads.get("asset_manifest_verified")
+                and payloads.get("asset_manifest_sha256_present")
+                and payloads.get("asset_manifest_provenance_rate") == 1
                 and int(payloads.get("cross_modal_embedding_dim", 0)) >= 64
                 and int(payloads.get("precomputed_vector_embedding_dim", 0)) >= 4
                 and {
@@ -1384,7 +1387,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "and graph facts must be storable, retrievable through the same "
                 "memory API, queryable through a shared cross-modal embedding "
                 "space, returned with provenance, and compatible with externally "
-                "computed multimodal vectors."
+                "computed multimodal vectors. Large media assets must be backed "
+                "by verified content-addressed object-store manifests."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
@@ -1392,9 +1396,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"cross-modal precision@1 {payloads.get('cross_modal_precision_at_1')}, "
                 f"vectors persisted {payloads.get('cross_modal_vectors_persisted_rate')}, "
                 f"precomputed precision@1 {payloads.get('precomputed_vector_precision_at_1')}, "
-                f"provenance {payloads.get('cross_modal_provenance_rate')}"
+                f"provenance {payloads.get('cross_modal_provenance_rate')}, "
+                f"asset manifest verified {payloads.get('asset_manifest_verified')}, "
+                f"asset provenance {payloads.get('asset_manifest_provenance_rate')}"
             ),
-            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal retrieval tests.",
+            next_step="Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal retrieval tests against object-store-backed assets.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

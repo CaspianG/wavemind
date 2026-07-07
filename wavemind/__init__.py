@@ -105,8 +105,10 @@ from .multimodal import (
 )
 from .object_store import (
     ObjectStoreArchive,
+    ObjectStoreAssetReport,
     ObjectStoreLocation,
     ObjectStoreUploadReport,
+    S3AssetStore,
     S3SnapshotStore,
     parse_object_store_uri,
 )
@@ -224,6 +226,7 @@ __all__ = [
     "NamespaceDeltaSyncReport",
     "NamespaceShardRouter",
     "ObjectStoreArchive",
+    "ObjectStoreAssetReport",
     "ObjectStoreLocation",
     "ObjectStoreUploadReport",
     "NamespacePlacement",
@@ -258,6 +261,7 @@ __all__ = [
     "ShardedWaveMind",
     "SQLiteMemoryStore",
     "ScalePlan",
+    "S3AssetStore",
     "S3SnapshotStore",
     "SecretEnvRef",
     "ServerlessObservedTelemetry",
