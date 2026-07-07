@@ -150,6 +150,112 @@ def test_cli_feedback_records_user_signal(tmp_path):
     assert json.loads(rejected.stdout)["ok"] is False
 
 
+def test_cli_feedback_batch_records_multiple_signals(tmp_path):
+    db_path = tmp_path / "feedback-batch.sqlite3"
+    batch_path = tmp_path / "feedback.json"
+
+    first = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "remember",
+        "cli batch useful memory",
+        "--namespace",
+        "cli-batch",
+    )
+    second = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "remember",
+        "cli batch stale memory",
+        "--namespace",
+        "cli-batch",
+    )
+    first_id = int(first.stdout.split("id=", 1)[1].split()[0])
+    second_id = int(second.stdout.split("id=", 1)[1].split()[0])
+    batch_path.write_text(
+        json.dumps(
+            {
+                "namespace": "cli-batch",
+                "items": [
+                    {
+                        "id": first_id,
+                        "useful": True,
+                        "strength": 0.5,
+                        "query": "useful memory",
+                        "reason": "accepted",
+                    },
+                    {
+                        "id": second_id,
+                        "useful": False,
+                        "strength": 0.25,
+                        "query": "stale memory",
+                        "reason": "rejected",
+                    },
+                    {"id": first_id, "namespace": "wrong", "useful": True},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "feedback-batch",
+        "--file",
+        str(batch_path),
+        "--json",
+    )
+    payload = json.loads(response.stdout)
+    assert payload["ok"] is False
+    assert payload["accepted"] == 2
+    assert payload["rejected"] == 1
+    assert payload["accepted_ids"] == [first_id, second_id]
+    assert payload["rejected_ids"] == [first_id]
+    assert payload["namespaces"] == ["cli-batch"]
+
+    audit = run_cli(
+        "--db",
+        str(db_path),
+        "--audit-queries",
+        "audit",
+        "--namespace",
+        "cli-batch",
+        "--action",
+        "feedback",
+        "--json",
+    )
+    events = json.loads(audit.stdout)
+    assert len(events) == 2
+    assert {event["memory_id"] for event in events} == {first_id, second_id}
+
+    strict = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "--db",
+            str(db_path),
+            "feedback-batch",
+            "--file",
+            str(batch_path),
+            "--fail-on-rejected",
+            "--json",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=False,
+    )
+    assert strict.returncode == 4
+    assert json.loads(strict.stdout)["rejected"] == 1
+
+
 def test_cli_timestamped_backup_retention_and_restore(tmp_path):
     db_path = tmp_path / "cli.sqlite3"
     backup_dir = tmp_path / "backups"

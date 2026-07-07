@@ -146,6 +146,20 @@ def build_parser() -> argparse.ArgumentParser:
     feedback.add_argument("--not-useful", action="store_true")
     feedback.add_argument("--json", action="store_true")
 
+    feedback_batch = sub.add_parser("feedback-batch", help="Record recall feedback from a JSON batch")
+    feedback_batch.add_argument(
+        "--file",
+        required=True,
+        help="JSON file, or '-', containing a list of feedback items or an object with an items list.",
+    )
+    feedback_batch.add_argument("--namespace")
+    feedback_batch.add_argument(
+        "--fail-on-rejected",
+        action="store_true",
+        help="Exit non-zero when any batch item is rejected.",
+    )
+    feedback_batch.add_argument("--json", action="store_true")
+
     stats = sub.add_parser("stats", help="Show memory stats")
     stats.add_argument("--namespace")
 
@@ -1619,6 +1633,49 @@ def main(argv: list[str] | None = None) -> int:
                     f"priority={record.priority:.4f} access_count={record.access_count}"
                 )
         return 0 if accepted else 4
+
+    if args.command == "feedback-batch":
+        if args.file == "-":
+            raw_payload = sys.stdin.read()
+        else:
+            raw_payload = Path(args.file).read_text(encoding="utf-8")
+        payload = json.loads(raw_payload)
+        if isinstance(payload, dict):
+            items = payload.get("items", [])
+            namespace = payload.get("namespace", args.namespace)
+        else:
+            items = payload
+            namespace = args.namespace
+        if not isinstance(items, list) or not items:
+            print("feedback batch requires at least one item", file=sys.stderr)
+            return 2
+        report = mind.feedback_batch(items, namespace=namespace)
+        output = {
+            "ok": int(report["rejected"]) == 0,
+            "accepted": int(report["accepted"]),
+            "rejected": int(report["rejected"]),
+            "accepted_ids": list(report["accepted_ids"]),
+            "rejected_ids": list(report["rejected_ids"]),
+            "namespaces": list(report["namespaces"]),
+            "results": list(report["results"]),
+            "errors": list(report["errors"]),
+        }
+        if args.json:
+            print(json.dumps(output, ensure_ascii=False, indent=2))
+        else:
+            print(
+                f"accepted={output['accepted']} "
+                f"rejected={output['rejected']} "
+                f"namespaces={','.join(output['namespaces']) or '-'}"
+            )
+            for error in output["errors"]:
+                print(
+                    f"rejected id={error.get('id')} "
+                    f"namespace={error.get('namespace') or '-'} "
+                    f"error={error.get('error')}",
+                    file=sys.stderr,
+                )
+        return 4 if args.fail_on_rejected and output["rejected"] else 0
 
     if args.command == "stats":
         print_stats(mind.stats(namespace=args.namespace))

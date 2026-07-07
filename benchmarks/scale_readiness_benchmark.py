@@ -1434,6 +1434,103 @@ def run_api_cache_mutation_profile() -> dict[str, object]:
             memory.close()
 
 
+def run_batch_feedback_profile() -> dict[str, object]:
+    from fastapi.testclient import TestClient
+
+    from wavemind.api import create_app
+
+    client = RedisLikeCacheClient()
+    latencies: list[float] = []
+
+    with tempfile.TemporaryDirectory() as directory:
+        memory = WaveMind(
+            db_path=Path(directory) / "batch-feedback.sqlite3",
+            encoder=MemoryOSEncoder(),
+            width=16,
+            height=16,
+            layers=1,
+            audit_queries=True,
+        )
+        app = create_app(mind=memory)
+        app.state.cache = RedisHotMemoryCache(client, prefix="wm:batch-feedback", ttl_seconds=120)
+        namespace = "tenant:batch-feedback"
+        try:
+            with TestClient(app) as api:
+                useful = api.post(
+                    "/remember",
+                    json={"text": "batch feedback useful budget recall", "namespace": namespace},
+                )
+                stale = api.post(
+                    "/remember",
+                    json={"text": "batch feedback stale recall", "namespace": namespace},
+                )
+                useful.raise_for_status()
+                stale.raise_for_status()
+                useful_id = useful.json()["id"]
+                stale_id = stale.json()["id"]
+
+                cached = api.post(
+                    "/query",
+                    json={"text": "budget recall", "namespace": namespace, "top_k": 1},
+                )
+                cached.raise_for_status()
+                cache_keys_after_query = len(client.items)
+
+                useful_before_record = memory.store.get(useful_id)
+                stale_before_record = memory.store.get(stale_id)
+                if useful_before_record is None or stale_before_record is None:
+                    raise RuntimeError("feedback profile setup did not persist memories")
+                useful_before = useful_before_record.priority
+                stale_before = stale_before_record.priority
+                started = time.perf_counter()
+                response = api.post(
+                    "/feedback/batch",
+                    json={
+                        "namespace": namespace,
+                        "items": [
+                            {
+                                "id": useful_id,
+                                "useful": True,
+                                "strength": 0.5,
+                                "query": "budget recall",
+                                "reason": "accepted",
+                            },
+                            {
+                                "id": stale_id,
+                                "useful": False,
+                                "strength": 0.25,
+                                "query": "stale recall",
+                                "reason": "rejected",
+                            },
+                            {"id": useful_id, "namespace": "tenant:wrong", "useful": True},
+                        ],
+                    },
+                )
+                response.raise_for_status()
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                payload = response.json()
+                useful_after = memory.store.get(useful_id).priority
+                stale_after = memory.store.get(stale_id).priority
+                events = memory.audit_events(namespace=namespace, action="feedback", limit=8)
+                return {
+                    "engine": "WaveMind batch feedback",
+                    "client": "fastapi+redis-compatible-cache",
+                    "items": 3,
+                    "accepted": payload["accepted"],
+                    "rejected": payload["rejected"],
+                    "ok": payload["accepted"] == 2 and payload["rejected"] == 1,
+                    "cache_was_warmed": cache_keys_after_query >= 1,
+                    "cache_invalidated": payload["cache_invalidated"] >= 1,
+                    "audit_events": len(events),
+                    "positive_feedback_priority_delta": useful_after - useful_before,
+                    "negative_feedback_priority_delta": stale_after - stale_before,
+                    "avg_api_ms": statistics.mean(latencies) if latencies else 0.0,
+                    "p99_api_ms": percentile(latencies, 99),
+                }
+        finally:
+            memory.close()
+
+
 def run_memory_os_profile() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -3310,6 +3407,7 @@ def run_benchmark(
         run_shared_rate_limit_profile(),
         run_redis_cache_profile(),
         run_api_cache_mutation_profile(),
+        run_batch_feedback_profile(),
         run_memory_os_profile(),
         run_distributed_sharding_profile(),
         run_distributed_http_sharding_profile(),
@@ -3347,7 +3445,8 @@ def run_benchmark(
                 "recovery journal replay, query-vector cache, "
                 "Redis-compatible shared rate limiting, Memory OS adaptive "
                 "prewarm/consolidation/forgetting, local and Redis-compatible "
-                "hot-cache behavior, API cache mutation safety, and structured "
+                "hot-cache behavior, API cache mutation safety, batch recall "
+                "feedback updates, and structured "
                 "payload retrieval, plus a deterministic 100M-memory capacity envelope. "
                 "This is not a 10M-vector database load test."
             ),
@@ -3442,6 +3541,13 @@ def main() -> int:
             print(f"| api cache mutation safety | stale_prevented_after_remember | {result['stale_prevented_after_remember']} |")
             print(f"| api cache mutation safety | cache_invalidated_on_forget | {result['cache_invalidated_on_forget']} |")
             print(f"| api cache mutation safety | stale_prevented_after_forget | {result['stale_prevented_after_forget']} |")
+        elif result["engine"] == "WaveMind batch feedback":
+            print(f"| batch feedback | ok | {result['ok']} |")
+            print(f"| batch feedback | accepted | {result['accepted']} |")
+            print(f"| batch feedback | rejected | {result['rejected']} |")
+            print(f"| batch feedback | cache_invalidated | {result['cache_invalidated']} |")
+            print(f"| batch feedback | audit_events | {result['audit_events']} |")
+            print(f"| batch feedback | p99_api_ms | {result['p99_api_ms']:.2f} |")
         elif result["engine"] == "WaveMind Memory OS":
             print(f"| memory os | ok | {result['ok']} |")
             print(f"| memory os | hot_queries | {result['hot_queries']} |")

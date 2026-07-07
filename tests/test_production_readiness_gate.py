@@ -89,6 +89,11 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["api_cache_mutation_safety"]["status"] == "pass"
     assert "feedback" in criteria["api_cache_mutation_safety"]["requirement"]
     assert "feedback invalidation True" in criteria["api_cache_mutation_safety"]["evidence"]
+    assert criteria["batch_recall_feedback"]["status"] == "pass"
+    assert "feedback in batches" in criteria["batch_recall_feedback"]["requirement"]
+    assert "accepted 2" in criteria["batch_recall_feedback"]["evidence"]
+    assert "rejected 1" in criteria["batch_recall_feedback"]["evidence"]
+    assert "cache invalidated True" in criteria["batch_recall_feedback"]["evidence"]
     assert criteria["real_redis_api_load_ci"]["status"] == "pass"
     assert "multiple uvicorn workers" in criteria["real_redis_api_load_ci"]["requirement"]
     assert "success_rate 1.0" in criteria["real_redis_api_load_ci"]["evidence"]
@@ -211,7 +216,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     report = markdown.read_text(encoding="utf-8")
 
     assert "pass" in completed.stdout
-    assert payload["summary"]["total_criteria"] == 36
+    assert payload["summary"]["total_criteria"] == 37
     assert "# WaveMind Production Readiness Gate" in report
     assert "Agent coherence benchmark proves behavioral lift" in report
     assert "LongMemEval answer generation beats static RAG baselines" in report
@@ -223,6 +228,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "Redis-compatible shared rate limiter works across workers" in report
     assert "Redis-compatible shared cache and Memory OS prewarm work" in report
     assert "API cache does not serve stale memory after mutations" in report
+    assert "Batch recall feedback updates priority, audit, and cache" in report
     assert "Real Redis multi-process API load passes SLO" in report
     assert "Real local HTTP cluster smoke passes SLO" in report
     assert "Sustained HTTP cluster load survives failover and repair" in report

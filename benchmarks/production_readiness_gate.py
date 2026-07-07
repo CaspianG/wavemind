@@ -449,6 +449,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     shared_rate_limiter = scale.get("WaveMind shared rate limiter", {})
     redis_cache = scale.get("WaveMind Redis hot cache", {})
     api_cache_mutations = scale.get("WaveMind API cache mutation safety", {})
+    batch_feedback = scale.get("WaveMind batch feedback", {})
     memory_os = scale.get("WaveMind Memory OS", {})
     redis_memory_os_advice_ids = set(
         redis_cache.get("memory_os_architecture_recommendations", [])
@@ -1120,6 +1121,39 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"forget stale prevented {api_cache_mutations.get('stale_prevented_after_forget')}"
             ),
             next_step="Keep the real Redis multi-process API load workflow green.",
+        ),
+        _criterion(
+            criterion_id="batch_recall_feedback",
+            title="Batch recall feedback updates priority, audit, and cache",
+            status=(
+                "pass"
+                if batch_feedback.get("ok")
+                and int(batch_feedback.get("accepted", 0)) >= 2
+                and int(batch_feedback.get("rejected", 0)) >= 1
+                and batch_feedback.get("cache_was_warmed")
+                and batch_feedback.get("cache_invalidated")
+                and int(batch_feedback.get("audit_events", 0)) >= 2
+                and float(batch_feedback.get("positive_feedback_priority_delta", 0.0)) > 0.0
+                and float(batch_feedback.get("negative_feedback_priority_delta", 0.0)) < 0.0
+                and float(batch_feedback.get("p99_api_ms", float("inf"))) <= 100.0
+                else "fail"
+            ),
+            requirement=(
+                "Production agents must record recall feedback in batches, reject "
+                "bad namespace items, update positive and negative memory priority, "
+                "write audit events, and invalidate shared cache once per affected namespace."
+            ),
+            evidence=(
+                f"accepted {batch_feedback.get('accepted')}, "
+                f"rejected {batch_feedback.get('rejected')}, "
+                f"cache warmed {batch_feedback.get('cache_was_warmed')}, "
+                f"cache invalidated {batch_feedback.get('cache_invalidated')}, "
+                f"audit {batch_feedback.get('audit_events')}, "
+                f"positive delta {batch_feedback.get('positive_feedback_priority_delta')}, "
+                f"negative delta {batch_feedback.get('negative_feedback_priority_delta')}, "
+                f"p99 {batch_feedback.get('p99_api_ms')} ms"
+            ),
+            next_step="Exercise the same batch feedback endpoint under multi-worker Redis API load.",
         ),
         _criterion(
             criterion_id="real_redis_api_load_ci",

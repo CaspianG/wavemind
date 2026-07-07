@@ -322,6 +322,77 @@ def test_fastapi_feedback_updates_memory_and_invalidates_cache(tmp_path, monkeyp
         mind.close()
 
 
+def test_fastapi_feedback_batch_updates_once_and_invalidates_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-feedback-batch.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            first = client.post(
+                "/remember",
+                json={"text": "batch useful answer memory", "namespace": "tenant:batch"},
+            )
+            second = client.post(
+                "/remember",
+                json={"text": "batch rejected stale memory", "namespace": "tenant:batch"},
+            )
+            assert first.status_code == 200
+            assert second.status_code == 200
+            first_id = first.json()["id"]
+            second_id = second.json()["id"]
+
+            cached = client.post(
+                "/query",
+                json={"text": "batch useful answer", "namespace": "tenant:batch", "top_k": 1},
+            )
+            assert cached.status_code == 200
+
+            response = client.post(
+                "/feedback/batch",
+                json={
+                    "namespace": "tenant:batch",
+                    "items": [
+                        {
+                            "id": first_id,
+                            "useful": True,
+                            "strength": 0.5,
+                            "query": "batch useful answer",
+                            "reason": "accepted",
+                        },
+                        {
+                            "id": second_id,
+                            "useful": False,
+                            "strength": 0.25,
+                            "query": "batch stale answer",
+                            "reason": "rejected",
+                        },
+                        {"id": first_id, "namespace": "wrong", "useful": True},
+                    ],
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+            assert payload["ok"] is False
+            assert payload["accepted"] == 2
+            assert payload["rejected"] == 1
+            assert payload["cache_invalidated"] >= 1
+            assert [item["ok"] for item in payload["results"]].count(True) == 2
+            assert [item["ok"] for item in payload["results"]].count(False) == 1
+            assert mind.store.get(first_id).priority > 1.0
+            assert mind.store.get(second_id).priority < 1.0
+            assert len(mind.audit_events(namespace="tenant:batch", action="feedback", limit=4)) == 2
+    finally:
+        mind.close()
+
+
 def test_fastapi_consolidate_creates_durable_concept_memory(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "api-consolidate.sqlite3",

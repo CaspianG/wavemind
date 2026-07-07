@@ -6,7 +6,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import numpy as np
 
@@ -470,8 +470,103 @@ class WaveMind:
             return False
         if namespace is not None and record.namespace != namespace:
             return False
+        self._apply_feedback_signal(
+            record,
+            useful=useful,
+            strength=strength,
+            query=query,
+            reason=reason,
+        )
+        self.field.evolve(1)
+        self._refresh_field_magnitude()
+        return True
+
+    def feedback_batch(
+        self,
+        signals: Iterable[Mapping[str, Any]],
+        *,
+        namespace: str | None = None,
+    ) -> dict[str, object]:
+        accepted: list[dict[str, object]] = []
+        rejected: list[dict[str, object]] = []
+        for raw_signal in signals:
+            signal = dict(raw_signal)
+            try:
+                memory_id = int(signal["id"])
+            except Exception:
+                rejected.append(
+                    {
+                        "id": signal.get("id"),
+                        "namespace": signal.get("namespace", namespace),
+                        "error": "invalid_id",
+                    }
+                )
+                continue
+            signal_namespace = signal.get("namespace", namespace)
+            record = self._records_by_id.get(memory_id)
+            if record is None or record.is_expired:
+                rejected.append(
+                    {
+                        "id": memory_id,
+                        "namespace": signal_namespace,
+                        "error": "memory_not_found",
+                    }
+                )
+                continue
+            if signal_namespace is not None and record.namespace != str(signal_namespace):
+                rejected.append(
+                    {
+                        "id": memory_id,
+                        "namespace": signal_namespace,
+                        "error": "namespace_mismatch",
+                    }
+                )
+                continue
+            self._apply_feedback_signal(
+                record,
+                useful=bool(signal.get("useful", True)),
+                strength=float(signal.get("strength", 0.25)),
+                query=signal.get("query"),
+                reason=signal.get("reason"),
+            )
+            accepted.append(
+                {
+                    "id": memory_id,
+                    "namespace": record.namespace,
+                    "priority": float(record.priority),
+                    "access_count": int(record.access_count),
+                }
+            )
+        if accepted:
+            self.field.evolve(1)
+            self._refresh_field_magnitude()
+        return {
+            "accepted": len(accepted),
+            "rejected": len(rejected),
+            "accepted_ids": tuple(int(item["id"]) for item in accepted),
+            "rejected_ids": tuple(
+                int(item["id"])
+                for item in rejected
+                if isinstance(item.get("id"), int)
+            ),
+            "namespaces": tuple(
+                sorted({str(item["namespace"]) for item in accepted if item.get("namespace")})
+            ),
+            "results": tuple(accepted),
+            "errors": tuple(rejected),
+        }
+
+    def _apply_feedback_signal(
+        self,
+        record: MemoryRecord,
+        *,
+        useful: bool,
+        strength: float,
+        query: object | None = None,
+        reason: object | None = None,
+    ) -> None:
         delta = abs(float(strength))
-        if useful:
+        if bool(useful):
             record.priority += delta
             record.access_count += 1
             self.field.feed(record.pattern, strength=delta)
@@ -485,8 +580,6 @@ class WaveMind:
                 priority=record.priority,
                 access_count=record.access_count,
             )
-        self.field.evolve(1)
-        self._refresh_field_magnitude()
         metadata: dict[str, object] = {
             "useful": bool(useful),
             "strength": delta,
@@ -506,7 +599,6 @@ class WaveMind:
             memory_id=record.id,
             metadata=metadata,
         )
-        return True
 
     def save(
         self,

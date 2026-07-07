@@ -407,6 +407,28 @@ class FeedbackResponse(BaseModel):
     cache_invalidated: int = 0
 
 
+class FeedbackBatchRequest(BaseModel):
+    namespace: str | None = None
+    items: list[FeedbackRequest] = Field(min_length=1, max_length=10000)
+
+
+class FeedbackBatchItemResponse(BaseModel):
+    ok: bool
+    id: int | str | None
+    namespace: str | None = None
+    priority: float | None = None
+    access_count: int | None = None
+    error: str | None = None
+
+
+class FeedbackBatchResponse(BaseModel):
+    ok: bool
+    accepted: int
+    rejected: int
+    cache_invalidated: int = 0
+    results: list[FeedbackBatchItemResponse]
+
+
 class ImportRequest(BaseModel):
     path: str
     namespace: str = "default"
@@ -941,6 +963,42 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             priority=float(record.priority),
             access_count=int(record.access_count),
             cache_invalidated=invalidated,
+        )
+
+    @app.post(
+        "/feedback/batch",
+        response_model=FeedbackBatchResponse,
+        dependencies=[Depends(require_role("write"))],
+    )
+    def feedback_batch(request: FeedbackBatchRequest) -> FeedbackBatchResponse:
+        with _api_operation(app, "feedback_batch"):
+            report = app.state.mind.feedback_batch(
+                [item.model_dump() for item in request.items],
+                namespace=request.namespace,
+            )
+            invalidated = 0
+            for namespace in report.get("namespaces", ()):
+                invalidated += _invalidate_cache(app, str(namespace))
+        accepted_results = [
+            FeedbackBatchItemResponse(ok=True, **dict(item))
+            for item in report.get("results", ())
+        ]
+        rejected_results = [
+            FeedbackBatchItemResponse(ok=False, **dict(item))
+            for item in report.get("errors", ())
+        ]
+        logger.info(
+            "feedback_batch accepted=%s rejected=%s cache_invalidated=%s",
+            report.get("accepted", 0),
+            report.get("rejected", 0),
+            invalidated,
+        )
+        return FeedbackBatchResponse(
+            ok=int(report.get("rejected", 0)) == 0,
+            accepted=int(report.get("accepted", 0)),
+            rejected=int(report.get("rejected", 0)),
+            cache_invalidated=invalidated,
+            results=accepted_results + rejected_results,
         )
 
     @app.post("/remember", response_model=RememberResponse, dependencies=[Depends(require_role("write"))])

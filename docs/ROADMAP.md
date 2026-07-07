@@ -69,7 +69,7 @@ policy matters more than raw vector-database scale:
   recognized 10M/50M/100M result JSON files, and can refresh the public
   leaderboard/readiness/evidence artifacts from the accepted result.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`36/36` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`37/37` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -85,11 +85,12 @@ policy matters more than raw vector-database scale:
   distributed-lock requirements, and commands for prewarm, predictive prefetch,
   consolidation, adaptive forgetting, maintenance, and architecture-advice
   loops without mutating memory state.
-- `POST /feedback` and `wavemind feedback` now expose explicit useful/not-useful
-  recall signals. They update priority/hotness, persist state, emit audit
-  events, and invalidate API cache entries for the affected namespace, so agent
-  feedback can become an operational memory signal instead of a Studio-only UI
-  action.
+- `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
+  `wavemind feedback-batch` now expose explicit useful/not-useful recall
+  signals. They update priority/hotness, persist state, emit audit events,
+  reject bad namespace items, and invalidate API cache entries for the affected
+  namespace, so agent feedback can become an operational memory signal instead
+  of a Studio-only UI action.
 - `benchmarks/vectordbbench_dataset.py` exports a VectorDBBench custom dataset
   with `train.parquet`, `test.parquet`, `neighbors.parquet`, and
   `scalar_labels.parquet`. This makes the public vector-database benchmark path
@@ -278,7 +279,7 @@ policy matters more than raw vector-database scale:
   latest-archive metadata, remote download, retention verification, and a
   deterministic object-store disaster-recovery drill, query-audit cache
   prewarm, predictive prefetch, query-vector cache, Redis-compatible shared rate limiting, hot-cache
-  behavior, API cache mutation safety, structured-payload retrieval,
+  behavior, API cache mutation safety, batch recall feedback, structured-payload retrieval,
   cross-modal target-modality/provenance checks, external precomputed-vector
   compatibility checks, and object-store-backed asset manifest verification.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
@@ -365,7 +366,7 @@ memory policy also needs to become cheaper:
 
 - rerank only the top candidate window;
 - cache hot namespaces and hot query patterns;
-- batch recall feedback updates;
+- multi-worker batch recall feedback load profiles;
 - run decay, graph edge updates, and consolidation in background jobs;
 - keep maintenance jobs deterministic so Celery/RQ/Temporal wrappers can call
   the same `MemoryMaintenanceWorker.run_once()` path in production;

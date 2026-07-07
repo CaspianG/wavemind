@@ -75,6 +75,61 @@ def test_namespace_tags_threshold_ttl_and_forget(tmp_path):
     mind.close()
 
 
+def test_feedback_batch_updates_state_and_rejects_bad_items(tmp_path):
+    db_path = tmp_path / "feedback-batch.sqlite3"
+    mind = make_mind(db_path, audit_queries=True)
+    try:
+        useful_id = mind.remember("batch feedback useful memory", namespace="tenant:batch")
+        stale_id = mind.remember(
+            "batch feedback stale memory",
+            namespace="tenant:batch",
+            priority=2.0,
+        )
+        before_useful = mind.store.get(useful_id)
+        before_stale = mind.store.get(stale_id)
+        assert before_useful is not None
+        assert before_stale is not None
+        before_useful_priority = before_useful.priority
+        before_stale_priority = before_stale.priority
+
+        report = mind.feedback_batch(
+            [
+                {
+                    "id": useful_id,
+                    "useful": True,
+                    "strength": 0.5,
+                    "query": "useful memory",
+                    "reason": "accepted",
+                },
+                {
+                    "id": stale_id,
+                    "useful": False,
+                    "strength": 0.25,
+                    "query": "stale memory",
+                    "reason": "rejected",
+                },
+                {"id": useful_id, "namespace": "wrong", "useful": True},
+                {"id": 999999, "useful": True},
+            ],
+            namespace="tenant:batch",
+        )
+
+        assert report["accepted"] == 2
+        assert report["rejected"] == 2
+        assert report["accepted_ids"] == (useful_id, stale_id)
+        assert report["rejected_ids"] == (useful_id, 999999)
+        assert report["namespaces"] == ("tenant:batch",)
+        assert mind.store.get(useful_id).priority > before_useful_priority
+        assert mind.store.get(stale_id).priority < before_stale_priority
+
+        events = mind.audit_events(namespace="tenant:batch", action="feedback", limit=4)
+        assert len(events) == 2
+        assert {event.memory_id for event in events} == {useful_id, stale_id}
+        assert events[0].metadata["query"] in {"useful memory", "stale memory"}
+    finally:
+        mind.close()
+
+
 def test_audit_events_track_mutations_without_query_audit_by_default(tmp_path):
     db_path = tmp_path / "audit.sqlite3"
     mind = make_mind(db_path)

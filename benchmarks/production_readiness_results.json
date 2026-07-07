@@ -1,15 +1,15 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T13:25:56Z",
+  "generated_at": "2026-07-07T14:00:18Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
     "overall_status": "pass",
     "readiness_score": 1.0,
-    "pass_count": 36,
+    "pass_count": 37,
     "action_required_count": 0,
     "fail_count": 0,
-    "total_criteria": 36
+    "total_criteria": 37
   },
   "criteria": [
     {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-07T13:14:48Z",
+      "evidence": "audit status pass, generated_at 2026-07-07T13:48:12Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -153,7 +153,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.003200024366378784 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.004800036549568176 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -187,6 +187,14 @@
       "requirement": "FastAPI workers must invalidate shared query cache on remember, feedback, and forget so mutations cannot leave stale cached recall.",
       "evidence": "cached True, remember invalidation True, remember stale prevented True, feedback invalidation True, feedback demoted True, forget invalidation True, forget stale prevented True",
       "next_step": "Keep the real Redis multi-process API load workflow green."
+    },
+    {
+      "id": "batch_recall_feedback",
+      "title": "Batch recall feedback updates priority, audit, and cache",
+      "status": "pass",
+      "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
+      "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 37.95209992676973 ms",
+      "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
     },
     {
       "id": "real_redis_api_load_ci",
@@ -241,7 +249,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 176.84 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 221.87 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -249,7 +257,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.3747999910265207 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.3598999939858913 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

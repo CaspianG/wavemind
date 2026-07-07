@@ -140,6 +140,15 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind API cache mutation safety"]["feedback_demoted_rejected_memory"] is True
     assert results["WaveMind API cache mutation safety"]["cache_invalidated_on_forget"] is True
     assert results["WaveMind API cache mutation safety"]["stale_prevented_after_forget"] is True
+    assert results["WaveMind batch feedback"]["ok"] is True
+    assert results["WaveMind batch feedback"]["accepted"] == 2
+    assert results["WaveMind batch feedback"]["rejected"] == 1
+    assert results["WaveMind batch feedback"]["cache_was_warmed"] is True
+    assert results["WaveMind batch feedback"]["cache_invalidated"] is True
+    assert results["WaveMind batch feedback"]["audit_events"] == 2
+    assert results["WaveMind batch feedback"]["positive_feedback_priority_delta"] > 0.0
+    assert results["WaveMind batch feedback"]["negative_feedback_priority_delta"] < 0.0
+    assert results["WaveMind batch feedback"]["p99_api_ms"] <= 100.0
     assert results["WaveMind Memory OS"]["ok"] is True
     assert results["WaveMind Memory OS"]["hot_queries"] == 2
     assert results["WaveMind Memory OS"]["prewarm_warmed"] == 2
