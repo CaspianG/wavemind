@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import logging
 import socket
 import statistics
 import subprocess
@@ -75,6 +76,9 @@ from wavemind import (
     stable_memory_key,
 )
 from wavemind.api import RedisRateLimiter, create_app
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("wavemind.api").setLevel(logging.WARNING)
 
 
 SERVERLESS_LOOPBACK_OBSERVED_TELEMETRY_PATH = (
@@ -914,6 +918,7 @@ def run_cache_profile(*, queries: int, capacity: int) -> dict[str, object]:
 def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
     local_latencies: list[float] = []
     redis_latencies: list[float] = []
+    service_latencies: list[float] = []
     client = RedisLikeCacheClient()
     redis_writer = RedisQueryVectorCache(client, prefix="wm:qvec-scale", ttl_seconds=120)
     redis_reader = RedisQueryVectorCache(client, prefix="wm:qvec-scale", ttl_seconds=120)
@@ -935,10 +940,22 @@ def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
             height=16,
             layers=1,
         )
+        service_encoder = CountingMemoryOSEncoder()
+        service_memory = WaveMind(
+            db_path=Path(directory) / "query-vector-service.sqlite3",
+            encoder=service_encoder,
+            width=16,
+            height=16,
+            layers=1,
+        )
         try:
             namespace = "tenant:qvec"
             local_memory.remember("budget recall should reuse encoded query vectors", namespace=namespace)
             redis_memory.remember("budget recall should reuse redis query vectors", namespace=namespace)
+            service_memory.remember(
+                "budget recall should reuse service query vectors",
+                namespace=namespace,
+            )
 
             local_encoder.calls = 0
             local_cache = QueryVectorCache(capacity=32, ttl_seconds=120)
@@ -983,6 +1000,45 @@ def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
                 and reader_stats.hits >= 1
                 and redis_encoder.calls == 1
             )
+            from fastapi.testclient import TestClient
+
+            service_encoder.calls = 0
+            service_cache = QueryVectorCache(capacity=32, ttl_seconds=120)
+            app = create_app(mind=service_memory)
+            app.state.cache = None
+            app.state.vector_cache = service_cache
+            service_results_ok = True
+            service_query_count = max(1, int(queries))
+            with TestClient(app) as api:
+                for _ in range(service_query_count):
+                    started = time.perf_counter()
+                    response = api.post(
+                        "/query",
+                        json={
+                            "text": "budget recall",
+                            "namespace": namespace,
+                            "top_k": 1,
+                        },
+                    )
+                    service_latencies.append((time.perf_counter() - started) * 1000.0)
+                    service_results_ok = (
+                        service_results_ok
+                        and response.status_code == 200
+                        and bool(response.json().get("results"))
+                        and response.json()["results"][0]["text"]
+                        == "budget recall should reuse service query vectors"
+                    )
+                metrics_response = api.get("/metrics")
+            service_stats = service_cache.stats()
+            metrics_text = metrics_response.text if metrics_response.status_code == 200 else ""
+            service_metrics_exposed = all(
+                token in metrics_text
+                for token in (
+                    "wavemind_vector_cache_hits_total",
+                    "wavemind_vector_cache_misses_total",
+                    "wavemind_vector_cache_hit_rate",
+                )
+            )
             return {
                 "engine": "WaveMind query vector cache",
                 "queries": int(queries),
@@ -999,10 +1055,27 @@ def run_query_vector_cache_profile(*, queries: int = 200) -> dict[str, object]:
                 "p99_local_query_ms": percentile(local_latencies, 99),
                 "avg_redis_query_ms": statistics.mean(redis_latencies) if redis_latencies else 0.0,
                 "p99_redis_query_ms": percentile(redis_latencies, 99),
+                "service_boundary": "FastAPI TestClient",
+                "service_queries": service_query_count,
+                "service_results_ok": service_results_ok,
+                "service_encoder_calls": service_encoder.calls,
+                "service_saved_encode_calls": max(
+                    0,
+                    service_query_count - int(service_encoder.calls),
+                ),
+                "service_cache_hits": service_stats.hits,
+                "service_cache_misses": service_stats.misses,
+                "service_hit_rate": service_stats.hit_rate,
+                "service_metrics_exposed": service_metrics_exposed,
+                "avg_service_query_ms": statistics.mean(service_latencies)
+                if service_latencies
+                else 0.0,
+                "p99_service_query_ms": percentile(service_latencies, 99),
             }
         finally:
             local_memory.close()
             redis_memory.close()
+            service_memory.close()
 
 
 class _RateLimitClient:

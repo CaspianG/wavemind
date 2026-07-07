@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-07T16:57:19Z",
+  "generated_at": "2026-07-07T17:34:15Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -161,16 +161,16 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.003100023604929447 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.0030999071896076202 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
       "id": "query_vector_cache",
       "title": "Query-vector cache avoids repeated encoder work",
       "status": "pass",
-      "requirement": "Repeated hot queries must reuse encoded query vectors locally and across Redis-backed workers before hitting the vector index.",
-      "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1",
-      "next_step": "Add service-mode vector-cache load evidence with a sentence-transformer encoder."
+      "requirement": "Repeated hot queries must reuse encoded query vectors locally across Redis-backed workers, and through the FastAPI service before hitting the vector index.",
+      "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 5.722200032323599 ms, service metrics True",
+      "next_step": "Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test."
     },
     {
       "id": "shared_rate_limiter",
@@ -201,7 +201,7 @@
       "title": "Batch recall feedback updates priority, audit, and cache",
       "status": "pass",
       "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
-      "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 53.147600032389164 ms",
+      "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 40.6823999946937 ms",
       "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
     },
     {
@@ -257,7 +257,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 196.05 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 257.56 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -265,7 +265,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 2.7070000069215894 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.8954999977722764 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {

@@ -110,6 +110,16 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind query vector cache"]["redis_shared_across_workers"] is True
     assert results["WaveMind query vector cache"]["redis_encode_calls"] == 1
     assert results["WaveMind query vector cache"]["redis_reader_hits"] == 1
+    assert results["WaveMind query vector cache"]["service_boundary"] == "FastAPI TestClient"
+    assert results["WaveMind query vector cache"]["service_queries"] == 200
+    assert results["WaveMind query vector cache"]["service_results_ok"] is True
+    assert results["WaveMind query vector cache"]["service_encoder_calls"] == 1
+    assert results["WaveMind query vector cache"]["service_saved_encode_calls"] == 199
+    assert results["WaveMind query vector cache"]["service_cache_hits"] >= 199
+    assert results["WaveMind query vector cache"]["service_cache_misses"] == 1
+    assert results["WaveMind query vector cache"]["service_hit_rate"] >= 0.99
+    assert results["WaveMind query vector cache"]["service_metrics_exposed"] is True
+    assert results["WaveMind query vector cache"]["p99_service_query_ms"] < 100.0
     assert results["WaveMind shared rate limiter"]["shared_across_workers"] is True
     assert results["WaveMind shared rate limiter"]["workers"] == 2
     assert results["WaveMind shared rate limiter"]["allowed"] == 4

@@ -1056,19 +1056,29 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and float(query_vector_cache.get("local_hit_rate", 0.0)) >= 0.95
                 and query_vector_cache.get("redis_shared_across_workers")
                 and int(query_vector_cache.get("redis_encode_calls", 999999)) == 1
+                and query_vector_cache.get("service_results_ok")
+                and query_vector_cache.get("service_metrics_exposed")
+                and int(query_vector_cache.get("service_encoder_calls", 999999)) == 1
+                and float(query_vector_cache.get("service_hit_rate", 0.0)) >= 0.95
+                and float(query_vector_cache.get("p99_service_query_ms", 999999.0)) < 100.0
                 else "fail"
             ),
             requirement=(
                 "Repeated hot queries must reuse encoded query vectors locally "
-                "and across Redis-backed workers before hitting the vector index."
+                "across Redis-backed workers, and through the FastAPI service "
+                "before hitting the vector index."
             ),
             evidence=(
                 f"local encode calls {query_vector_cache.get('local_encode_calls')}, "
                 f"local hit rate {query_vector_cache.get('local_hit_rate')}, "
                 f"Redis shared {query_vector_cache.get('redis_shared_across_workers')}, "
-                f"Redis encode calls {query_vector_cache.get('redis_encode_calls')}"
+                f"Redis encode calls {query_vector_cache.get('redis_encode_calls')}, "
+                f"service encode calls {query_vector_cache.get('service_encoder_calls')}, "
+                f"service hit rate {query_vector_cache.get('service_hit_rate')}, "
+                f"service p99 {query_vector_cache.get('p99_service_query_ms')} ms, "
+                f"service metrics {query_vector_cache.get('service_metrics_exposed')}"
             ),
-            next_step="Add service-mode vector-cache load evidence with a sentence-transformer encoder.",
+            next_step="Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test.",
         ),
         _criterion(
             criterion_id="shared_rate_limiter",
