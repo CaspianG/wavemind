@@ -7,10 +7,15 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  pages: write
 
 jobs:
   update-leaderboard:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     services:
       qdrant-0:
         image: qdrant/qdrant:v1.15.1
@@ -170,6 +175,31 @@ jobs:
           fi
           echo "::notice::Benchmark artifacts changed. Download the benchmark-leaderboard artifact and commit the reviewed files from a maintainer account."
           git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html deploy/serverless/observed-telemetry.loopback.json
+
+      - name: Build GitHub Pages leaderboard
+        run: |
+          rm -rf site
+          mkdir -p site/assets site/benchmarks site/data
+          cp docs/benchmark-dashboard.html site/index.html
+          cp docs/assets/benchmark-summary.svg site/assets/benchmark-summary.svg
+          cp benchmarks/BENCHMARK_LEADERBOARD.md site/benchmarks/BENCHMARK_LEADERBOARD.md
+          cp benchmarks/BENCHMARK_REPORT.md site/benchmarks/BENCHMARK_REPORT.md
+          cp benchmarks/PRODUCTION_READINESS.md site/benchmarks/PRODUCTION_READINESS.md
+          cp benchmarks/PRODUCTION_EVIDENCE.md site/benchmarks/PRODUCTION_EVIDENCE.md
+          cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
+          cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
+          cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
+          cp benchmarks/production_evidence_results.json site/data/production_evidence_results.json
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy living leaderboard to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - uses: actions/upload-artifact@v7
         if: always()

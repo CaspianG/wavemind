@@ -206,6 +206,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "### Current Evidence Status" in readme
     assert "benchmarks/BENCHMARK_LEADERBOARD.md" in readme
     assert "docs/benchmark-dashboard.html" in readme
+    assert "https://caspiang.github.io/wavemind/" in readme
+    assert "actions/upload-pages-artifact@v3" in readme
+    assert "actions/deploy-pages@v4" in readme
     assert "benchmarks/production_streaming_load_ivfpq_10m_results.json" in readme
     assert "benchmarks/production_streaming_load_50m_plan.json" in readme
     assert "benchmarks/production_pgvector_tuning_results.json" in readme
@@ -272,7 +275,10 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "serverless-sample" in roadmap
     assert "valid KEDA Deployment" in benchmark_brief
     assert "freshness/audit gate" in roadmap
+    assert "GitHub Pages living leaderboard" in roadmap
+    assert "without scheduled bot commits" in roadmap
     assert "benchmark_artifact_audit.json" in benchmark_brief
+    assert "GitHub Pages living leaderboard" in benchmark_brief
     assert "--max-age-days 8" in benchmark_brief
     assert "PRODUCTION_READINESS.md" in benchmark_brief
     assert "PRODUCTION_EVIDENCE.md" in benchmark_brief

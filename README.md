@@ -1530,6 +1530,9 @@ Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/BENCHMARK_REPORT.md).
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
+The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
+[`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
+writing scheduled bot commits to `main`.
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)
@@ -1549,9 +1552,11 @@ the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 production-readiness report, and the strict production-evidence report,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, and uploads changed benchmark
-artifacts for maintainer review. It does not push scheduled bot commits to
-`main`; reviewed benchmark refreshes should be committed from a maintainer
-account.
+artifacts for maintainer review. It also builds a static GitHub Pages bundle
+from the dashboard, reports, summary SVG, and machine-readable JSON evidence,
+then deploys the living leaderboard with `actions/upload-pages-artifact@v3` and
+`actions/deploy-pages@v4`. It does not push scheduled bot commits to `main`;
+reviewed benchmark refreshes should be committed from a maintainer account.
 `full-check` and the release workflow also run the same freshness gate with
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.

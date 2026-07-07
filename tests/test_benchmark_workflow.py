@@ -9,6 +9,11 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cron: \"17 4 * * 1\"" in workflow
     assert "workflow_dispatch" in workflow
     assert "contents: read" in workflow
+    assert "pages: write" in workflow
+    assert "id-token: write" in workflow
+    assert "environment:" in workflow
+    assert "name: github-pages" in workflow
+    assert "url: ${{ steps.deployment.outputs.page_url }}" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
@@ -37,6 +42,12 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "Benchmark artifacts changed" in workflow
     assert "commit the reviewed files from a maintainer account" in workflow
     assert "git push" not in workflow
+    assert "Build GitHub Pages leaderboard" in workflow
+    assert "cp docs/benchmark-dashboard.html site/index.html" in workflow
+    assert "cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json" in workflow
+    assert "actions/configure-pages@v5" in workflow
+    assert "actions/upload-pages-artifact@v3" in workflow
+    assert "actions/deploy-pages@v4" in workflow
     assert "docs/assets/benchmark-summary.svg" in workflow
     assert "docs/benchmark-dashboard.html" in workflow
     assert "benchmarks/production_evidence_results.json" in workflow
