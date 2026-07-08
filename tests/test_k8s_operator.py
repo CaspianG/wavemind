@@ -425,6 +425,10 @@ def test_operator_loop_applies_reconciled_resources_once():
     assert report["applied_count"] == 4
     assert report["statuses"][0]["ready"] is True
     assert report["statuses"][0]["phase"] == "Ready"
+    assert report["statuses"][0]["memoryOsReady"] is True
+    assert report["statuses"][0]["memoryOsRedisRequired"] is False
+    assert report["statuses"][0]["memoryOsRedisConfigured"] is False
+    assert report["statuses"][0]["controlPlaneReady"] is True
     assert len(client.status_patches) == 1
     assert client.status_patches[0]["name"] == "wm-loop"
     assert client.status_patches[0]["status"]["ready"] is True
@@ -434,6 +438,40 @@ def test_operator_loop_applies_reconciled_resources_once():
         "StatefulSet",
         "CronJob",
     ]
+
+
+def test_operator_loop_reports_memory_os_redis_blocker_once():
+    spec = WaveMindClusterSpec(
+        name="wm-loop-os-blocked",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=2,
+        namespace_count=2,
+        memory_os_enabled=True,
+        memory_os_cache_mode="auto",
+        memory_os_target_memories=2_000_000,
+    )
+    client = RecordingKubernetesClient([spec.custom_resource()])
+
+    report = operator_loop(
+        namespace="wavemind-system",
+        client=client,
+        once=True,
+    )
+
+    status = report["statuses"][0]
+    assert status["ready"] is False
+    assert status["phase"] == "Degraded"
+    assert status["memoryOsReady"] is False
+    assert status["memoryOsRedisRequired"] is True
+    assert status["memoryOsRedisConfigured"] is False
+    assert status["controlPlaneReady"] is True
+    assert len(client.status_patches) == 1
+    assert client.status_patches[0]["status"]["memoryOs"]["ready"] is False
+    assert any(
+        "cache.redisUrl" in action
+        for action in client.status_patches[0]["status"]["actions"]
+    )
 
 
 def test_operator_cli_sample_bundle_and_reconcile(tmp_path):

@@ -1648,6 +1648,10 @@ def operator_loop(
                     "ready": bool(status.get("ready")),
                     "phase": status.get("phase"),
                     "requiredReplicas": dict(status.get("capacity") or {}).get("requiredReplicas"),
+                    "memoryOsReady": dict(status.get("memoryOs") or {}).get("ready"),
+                    "memoryOsRedisRequired": dict(status.get("memoryOs") or {}).get("redisRequired"),
+                    "memoryOsRedisConfigured": dict(status.get("memoryOs") or {}).get("redisConfigured"),
+                    "controlPlaneReady": dict(status.get("controlPlane") or {}).get("ready"),
                 }
             )
             patch_status = getattr(client, "patch_wavemind_cluster_status", None)
