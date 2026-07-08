@@ -176,10 +176,11 @@ policy matters more than raw vector-database scale:
   scale-readiness profile prefers this remote artifact over loopback telemetry
   when it exists.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
-  envelope: 32768 namespace buckets, 128 nodes, 8 zones, replication factor 3,
-  node/zone-loss availability `1.000`, bounded placement skew, and bounded
-  per-node storage. This is capacity planning evidence, not a 100M latency
-  benchmark.
+  envelope: 32768 namespace buckets, weighted rendezvous zone-aware placement,
+  128 nodes, 8 zones, replication factor 3, node/zone-loss availability `1.000`,
+  distinct replica rate `1.000`, zone-spread rate `1.000`, bounded placement
+  skew, bounded per-node storage, and a 128-to-160-node scale-out movement audit.
+  This is capacity planning evidence, not a 100M latency benchmark.
 - pgvector now exposes HNSW `m`, `ef_construction`, `ef_search`, iterative-scan
   controls, scan bounds, and an explicit exact-search mode for recall audits.
   The checked-in HNSW profile uses `ef_search=400`, which improves

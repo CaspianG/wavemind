@@ -87,6 +87,102 @@ def test_cluster_plan_prefers_distinct_zones_and_reports_quorum():
     assert quorum["zone_loss_min_availability"] == 1.0
 
 
+def test_cluster_plan_reports_placement_health():
+    nodes = [
+        ClusterNode(id="node-a", address="10.0.0.1:8000", zone="zone-a"),
+        ClusterNode(id="node-b", address="10.0.0.2:8000", zone="zone-b"),
+        ClusterNode(id="node-c", address="10.0.0.3:8000", zone="zone-c"),
+        ClusterNode(id="node-d", address="10.0.0.4:8000", zone="zone-d"),
+    ]
+    plan = build_cluster_plan(
+        namespaces=[f"tenant:{index}" for index in range(512)],
+        nodes=nodes,
+        replication_factor=3,
+    )
+
+    health = plan.placement_health_report()
+    payload = plan.as_dict()
+
+    assert health["namespace_count"] == 512
+    assert health["node_count"] == 4
+    assert health["zone_count"] == 4
+    assert health["failure_domain_count"] == 4
+    assert health["distinct_replica_rate"] == 1.0
+    assert health["zone_spread_rate"] == 1.0
+    assert health["primary_load_skew"] <= 1.25
+    assert health["replica_load_skew"] <= 1.25
+    assert payload["placement_health"] == health
+
+
+def test_cluster_plan_uses_nodes_as_failure_domains_without_zones():
+    plan = build_cluster_plan(
+        namespaces=[f"tenant:{index}" for index in range(64)],
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=2,
+    )
+
+    health = plan.placement_health_report()
+
+    assert health["zone_count"] == 0
+    assert health["failure_domain_count"] == 3
+    assert health["distinct_replica_rate"] == 1.0
+    assert health["zone_spread_rate"] == 1.0
+
+
+def test_cluster_plan_reports_stable_scale_out_movement():
+    namespaces = [f"tenant:{index}" for index in range(1024)]
+    source = build_cluster_plan(
+        namespaces=namespaces,
+        nodes=[
+            ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+            ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+            ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+            ClusterNode(id="node-d", address="node-d", zone="zone-d"),
+        ],
+        replication_factor=3,
+    )
+    target = build_cluster_plan(
+        namespaces=namespaces,
+        nodes=[
+            ClusterNode(id="node-a", address="node-a", zone="zone-a"),
+            ClusterNode(id="node-b", address="node-b", zone="zone-b"),
+            ClusterNode(id="node-c", address="node-c", zone="zone-c"),
+            ClusterNode(id="node-d", address="node-d", zone="zone-d"),
+            ClusterNode(id="node-e", address="node-e", zone="zone-e"),
+        ],
+        replication_factor=3,
+    )
+
+    report = source.movement_report(target)
+
+    assert report["shared_namespace_count"] == 1024
+    assert report["new_node_count"] == 1
+    assert report["removed_node_count"] == 0
+    assert report["replica_set_moves"] > 0
+    assert report["moved_to_new_node"] == report["replica_set_moves"]
+    assert 0.0 < report["replica_set_movement_ratio"] < 0.75
+
+
+def test_weighted_rendezvous_prefers_larger_nodes_without_duplicate_replicas():
+    nodes = [
+        ClusterNode(id="small-a", address="small-a", zone="zone-a", weight=1.0),
+        ClusterNode(id="small-b", address="small-b", zone="zone-b", weight=1.0),
+        ClusterNode(id="large", address="large", zone="zone-c", weight=4.0),
+    ]
+    plan = build_cluster_plan(
+        namespaces=[f"tenant:{index}" for index in range(4000)],
+        nodes=nodes,
+        replication_factor=1,
+    )
+    health = plan.placement_health_report()
+    primary_load = plan.primary_load
+
+    assert primary_load["large"] > primary_load["small-a"] * 2.5
+    assert primary_load["large"] > primary_load["small-b"] * 2.5
+    assert health["distinct_replica_rate"] == 1.0
+    assert health["max_primary_weight_error"] <= 0.12
+
+
 def test_cluster_plan_rejects_impossible_replication():
     with pytest.raises(ValueError, match="replication_factor"):
         build_cluster_plan(

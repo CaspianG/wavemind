@@ -3957,8 +3957,24 @@ def run_100m_capacity_profile() -> dict[str, object]:
         nodes=nodes,
         replication_factor=replication_factor,
     )
+    expanded_nodes = [
+        ClusterNode(
+            id=f"node-{index:03d}",
+            address=f"https://wavemind-{index:03d}.internal",
+            zone=f"zone-{index % 8}",
+        )
+        for index in range(node_count + 32)
+    ]
+    expanded_plan = build_cluster_plan(
+        namespaces=namespaces,
+        nodes=expanded_nodes,
+        replication_factor=replication_factor,
+    )
     placement_ms = (time.perf_counter() - started) * 1000.0
     quorum = plan.quorum_report()
+    health = plan.placement_health_report()
+    expanded_health = expanded_plan.placement_health_report()
+    scale_out_movement = plan.movement_report(expanded_plan)
     primary_load = list(plan.primary_load.values())
     replica_load = list(plan.node_load.values())
     avg_primary_load = statistics.mean(primary_load)
@@ -3980,6 +3996,7 @@ def run_100m_capacity_profile() -> dict[str, object]:
     )
     return {
         "engine": "WaveMind 100M capacity envelope",
+        "placement_algorithm": "weighted-rendezvous-zone-aware",
         "target_memories": target_memories,
         "namespace_count": namespace_count,
         "node_count": node_count,
@@ -4000,6 +4017,17 @@ def run_100m_capacity_profile() -> dict[str, object]:
         "replica_load_min": min_replica_load,
         "replica_load_max": max_replica_load,
         "replica_load_skew": replica_skew,
+        "distinct_replica_rate": health["distinct_replica_rate"],
+        "zone_spread_rate": health["zone_spread_rate"],
+        "max_primary_weight_error": health["max_primary_weight_error"],
+        "max_replica_weight_error": health["max_replica_weight_error"],
+        "scale_out_target_node_count": expanded_health["node_count"],
+        "scale_out_new_node_count": scale_out_movement["new_node_count"],
+        "scale_out_primary_movement_ratio": scale_out_movement["primary_movement_ratio"],
+        "scale_out_replica_set_movement_ratio": scale_out_movement["replica_set_movement_ratio"],
+        "scale_out_moved_to_new_node": scale_out_movement["moved_to_new_node"],
+        "scale_out_target_replica_load_skew": expanded_health["replica_load_skew"],
+        "scale_out_target_zone_spread_rate": expanded_health["zone_spread_rate"],
         "recommended_autoscaling_max_replicas": recommended_autoscaling_max_replicas,
         "placement_ms": placement_ms,
         "valid_capacity_plan": (
@@ -4007,6 +4035,9 @@ def run_100m_capacity_profile() -> dict[str, object]:
             and quorum["zone_loss_min_availability"] == 1.0
             and replica_skew <= 1.25
             and primary_skew <= 1.25
+            and health["distinct_replica_rate"] == 1.0
+            and health["zone_spread_rate"] == 1.0
+            and expanded_health["zone_spread_rate"] == 1.0
             and max_storage_per_node_gb <= 256.0
         ),
         "scope": (

@@ -497,11 +497,20 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind structured payloads"]["knowledge_graph_persistence_rate"] == 1.0
     assert results["WaveMind structured payloads"]["knowledge_graph_provenance_rate"] == 1.0
     assert results["WaveMind 100M capacity envelope"]["target_memories"] == 100_000_000
+    assert results["WaveMind 100M capacity envelope"]["placement_algorithm"] == "weighted-rendezvous-zone-aware"
     assert results["WaveMind 100M capacity envelope"]["node_count"] == 128
     assert results["WaveMind 100M capacity envelope"]["replication_factor"] == 3
     assert results["WaveMind 100M capacity envelope"]["node_loss_min_availability"] == 1.0
     assert results["WaveMind 100M capacity envelope"]["zone_loss_min_availability"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["distinct_replica_rate"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["zone_spread_rate"] == 1.0
     assert results["WaveMind 100M capacity envelope"]["replica_load_skew"] <= 1.25
+    assert results["WaveMind 100M capacity envelope"]["scale_out_target_node_count"] == 160
+    assert results["WaveMind 100M capacity envelope"]["scale_out_new_node_count"] == 32
+    assert 0.0 < results["WaveMind 100M capacity envelope"]["scale_out_replica_set_movement_ratio"] < 0.75
+    assert results["WaveMind 100M capacity envelope"]["scale_out_moved_to_new_node"] > 0
+    assert results["WaveMind 100M capacity envelope"]["scale_out_target_zone_spread_rate"] == 1.0
+    assert results["WaveMind 100M capacity envelope"]["scale_out_target_replica_load_skew"] <= 1.25
     assert results["WaveMind 100M capacity envelope"]["valid_capacity_plan"] is True
     assert payload["scenario"]["simulated_memories"] == 100_000
 

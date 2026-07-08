@@ -142,6 +142,124 @@ class ClusterPlan:
             "zone_loss": zone_losses,
         }
 
+    def placement_health_report(self) -> dict[str, object]:
+        namespace_count = len(self.placements)
+        zone_by_node = {node.id: node.zone for node in self.nodes}
+        failure_domain_by_node = {
+            node.id: node.zone or node.id
+            for node in self.nodes
+        }
+        zone_count = len({node.zone for node in self.nodes if node.zone})
+        failure_domain_count = len(set(failure_domain_by_node.values()))
+        max_distinct_zones = (
+            min(self.replication_factor, failure_domain_count)
+            if failure_domain_count
+            else self.replication_factor
+        )
+
+        distinct_replica_count = 0
+        zone_spread_count = 0
+        for placement in self.placements:
+            if len(set(placement.replicas)) == len(placement.replicas):
+                distinct_replica_count += 1
+            replica_domains = {
+                failure_domain_by_node.get(node_id)
+                for node_id in placement.replicas
+                if failure_domain_by_node.get(node_id)
+            }
+            if len(replica_domains) >= max_distinct_zones:
+                zone_spread_count += 1
+
+        primary_load = self.primary_load
+        replica_load = self.node_load
+        primary_weight_error = _max_relative_weight_error(
+            primary_load,
+            self.nodes,
+            total_assignments=namespace_count,
+        )
+        replica_weight_error = _max_relative_weight_error(
+            replica_load,
+            self.nodes,
+            total_assignments=namespace_count * self.replication_factor,
+        )
+        return {
+            "namespace_count": namespace_count,
+            "node_count": len(self.nodes),
+            "zone_count": zone_count,
+            "failure_domain_count": failure_domain_count,
+            "replication_factor": self.replication_factor,
+            "distinct_replica_rate": (
+                1.0 if namespace_count == 0 else distinct_replica_count / namespace_count
+            ),
+            "zone_spread_rate": (
+                1.0 if namespace_count == 0 else zone_spread_count / namespace_count
+            ),
+            "primary_load_skew": _load_skew(primary_load),
+            "replica_load_skew": _load_skew(replica_load),
+            "max_primary_weight_error": primary_weight_error,
+            "max_replica_weight_error": replica_weight_error,
+        }
+
+    def movement_report(self, target: "ClusterPlan") -> dict[str, object]:
+        source_by_namespace = {
+            placement.namespace: placement
+            for placement in self.placements
+        }
+        target_by_namespace = {
+            placement.namespace: placement
+            for placement in target.placements
+        }
+        shared_namespaces = sorted(
+            set(source_by_namespace).intersection(target_by_namespace)
+        )
+        added_namespaces = sorted(set(target_by_namespace) - set(source_by_namespace))
+        removed_namespaces = sorted(set(source_by_namespace) - set(target_by_namespace))
+        source_nodes = {node.id for node in self.nodes}
+        target_nodes = {node.id for node in target.nodes}
+        new_nodes = target_nodes - source_nodes
+        removed_nodes = source_nodes - target_nodes
+
+        primary_moves = 0
+        replica_set_moves = 0
+        moved_to_new_node = 0
+        moved_off_removed_node = 0
+        for namespace in shared_namespaces:
+            source = source_by_namespace[namespace]
+            destination = target_by_namespace[namespace]
+            if source.primary != destination.primary:
+                primary_moves += 1
+            if source.replicas != destination.replicas:
+                replica_set_moves += 1
+                if any(node_id in new_nodes for node_id in destination.replicas):
+                    moved_to_new_node += 1
+                if any(node_id in removed_nodes for node_id in source.replicas):
+                    moved_off_removed_node += 1
+
+        shared_count = len(shared_namespaces)
+        return {
+            "source_node_count": len(self.nodes),
+            "target_node_count": len(target.nodes),
+            "source_namespace_count": len(source_by_namespace),
+            "target_namespace_count": len(target_by_namespace),
+            "shared_namespace_count": shared_count,
+            "added_namespace_count": len(added_namespaces),
+            "removed_namespace_count": len(removed_namespaces),
+            "new_node_count": len(new_nodes),
+            "removed_node_count": len(removed_nodes),
+            "primary_moves": primary_moves,
+            "replica_set_moves": replica_set_moves,
+            "moved_to_new_node": moved_to_new_node,
+            "moved_off_removed_node": moved_off_removed_node,
+            "primary_movement_ratio": (
+                0.0 if shared_count == 0 else primary_moves / shared_count
+            ),
+            "replica_set_movement_ratio": (
+                0.0 if shared_count == 0 else replica_set_moves / shared_count
+            ),
+            "new_nodes": sorted(new_nodes),
+            "removed_nodes": sorted(removed_nodes),
+        }
+
     def kubernetes_manifest(
         self,
         image: str = "wavemind:latest",
@@ -280,6 +398,7 @@ class ClusterPlan:
             "node_load": self.node_load,
             "primary_load": self.primary_load,
             "quorum": self.quorum_report(),
+            "placement_health": self.placement_health_report(),
             "warnings": list(self.warnings),
         }
 
@@ -860,6 +979,28 @@ def _load_skew(node_load: dict[str, int]) -> float:
     return max(values) / average
 
 
+def _max_relative_weight_error(
+    observed_load: dict[str, int],
+    nodes: tuple[ClusterNode, ...],
+    *,
+    total_assignments: int,
+) -> float:
+    if not nodes or total_assignments <= 0:
+        return 0.0
+    total_weight = sum(node.weight for node in nodes)
+    if total_weight <= 0:
+        return 0.0
+    errors: list[float] = []
+    for node in nodes:
+        expected = float(total_assignments) * (node.weight / total_weight)
+        observed = float(observed_load.get(node.id, 0))
+        if expected <= 0:
+            errors.append(0.0 if observed == 0 else 1.0)
+        else:
+            errors.append(abs(observed - expected) / expected)
+    return max(errors, default=0.0)
+
+
 def _place_namespace(
     namespace: str,
     nodes: tuple[ClusterNode, ...],
@@ -867,7 +1008,7 @@ def _place_namespace(
 ) -> NamespacePlacement:
     scores = sorted(
         (
-            (_rendezvous_score(namespace, node) * node.weight, node.id, node.zone or "")
+            (_rendezvous_score(namespace, node), node.id, node.zone or "")
             for node in nodes
         ),
         reverse=True,
@@ -900,4 +1041,9 @@ def _place_namespace(
 
 def _rendezvous_score(namespace: str, node: ClusterNode) -> float:
     digest = hashlib.sha256(f"{namespace}|{node.id}".encode("utf-8")).digest()
-    return int.from_bytes(digest[:8], "big") / float(2**64 - 1)
+    raw = int.from_bytes(digest[:8], "big")
+    # Weighted rendezvous hashing: weight / -log(u) is equivalent to selecting
+    # the lowest exponential race time and gives selection probability
+    # proportional to node.weight while keeping placement deterministic.
+    u = (raw + 1) / float(2**64)
+    return node.weight / (-math.log(u))

@@ -143,8 +143,8 @@
         "path": "benchmarks/scale_readiness_results.json",
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T13:46:38Z",
-        "age_days": 0.06746527777777778,
+        "timestamp": "2026-07-08T15:59:03Z",
+        "age_days": 0.0,
         "status": "pass"
       }
     ]
