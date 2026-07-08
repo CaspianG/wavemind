@@ -288,6 +288,238 @@ def _memory_os_lock(
     return RedisMemoryOSLock.from_url(redis_url, key=key, ttl_seconds=ttl_seconds)
 
 
+def _memory_os_insights_payload(
+    mind: WaveMind,
+    *,
+    namespace: str | None,
+    audit_limit: int,
+    max_hot_queries: int,
+    min_frequency: int,
+    top_k: int,
+    min_score: float | None,
+    target_memories: int | None,
+    namespace_count: int | None,
+    node_count: int | None,
+    replication_factor: int,
+    read_quorum: int,
+    read_fanout: int | None,
+    target_qps: float,
+    target_p99_ms: float,
+    observed_p99_ms: float | None,
+    deployment: str,
+    cache_mode: str,
+    multimodal: bool,
+    memory_pressure_threshold: int,
+) -> dict[str, object]:
+    """Build a read-only Memory OS dashboard payload.
+
+    This intentionally uses the scheduler/preflight path and query-audit reads
+    only. It must not call MemoryOSWorker.run_once(), because Studio should
+    surface operator advice without mutating priorities, concepts, or TTL state.
+    """
+
+    worker = MemoryOSWorker(mind)
+    events = worker._query_events(namespace=namespace, limit=audit_limit)
+    hot_queries = worker._hot_queries(
+        events,
+        max_hot_queries=max_hot_queries,
+        min_frequency=min_frequency,
+    )
+    plan = MemoryOSScheduler(mind).plan(
+        namespace=namespace,
+        audit_limit=audit_limit,
+        max_hot_queries=max_hot_queries,
+        min_frequency=min_frequency,
+        top_k=top_k,
+        min_score=min_score,
+        target_memories=target_memories,
+        namespace_count=namespace_count,
+        node_count=node_count,
+        replication_factor=replication_factor,
+        read_quorum=read_quorum,
+        read_fanout=read_fanout,
+        target_qps=target_qps,
+        target_p99_ms=target_p99_ms,
+        observed_p99_ms=observed_p99_ms,
+        deployment=deployment,
+        cache_mode=cache_mode,
+        multimodal=multimodal,
+        memory_pressure_threshold=memory_pressure_threshold,
+    )
+    plan_payload = plan.as_dict()
+    suggestions = _memory_os_dashboard_suggestions(plan_payload, hot_queries)
+    return {
+        "namespace": namespace,
+        "read_only": True,
+        "status": plan_payload["status"],
+        "deployment": plan_payload["deployment"],
+        "effective_cache_mode": plan_payload["effective_cache_mode"],
+        "active_memories": plan_payload["active_memories"],
+        "target_memories": plan_payload["target_memories"],
+        "hot_query_count": len(hot_queries),
+        "hot_queries": [query.as_dict() for query in hot_queries],
+        "suggestions": suggestions,
+        "suggestion_count": len(suggestions),
+        "policy_manifest": plan_payload["policy_manifest"],
+        "policy_history": plan_payload["policy_history"],
+        "execution_plan": plan_payload["execution_plan"],
+        "architecture_advice": plan_payload["architecture_advice"],
+        "required_infrastructure": plan_payload["required_infrastructure"],
+        "recommendations": plan_payload["recommendations"],
+        "enabled_task_ids": plan_payload["enabled_task_ids"],
+        "plan": plan_payload,
+        "ok": plan_payload["ok"],
+    }
+
+
+def _memory_os_dashboard_suggestions(
+    plan_payload: dict[str, object],
+    hot_queries: list[Any],
+) -> list[dict[str, object]]:
+    suggestions: list[dict[str, object]] = []
+    seen: set[str] = set()
+
+    def add(
+        id: str,
+        severity: str,
+        title: str,
+        rationale: str,
+        action: str,
+        evidence: dict[str, object] | None = None,
+    ) -> None:
+        if id in seen:
+            return
+        seen.add(id)
+        suggestions.append(
+            {
+                "id": id,
+                "severity": _memory_os_dashboard_severity(severity),
+                "title": title,
+                "rationale": rationale,
+                "action": action,
+                "evidence": evidence or {},
+            }
+        )
+
+    namespace = plan_payload.get("namespace") or "all namespaces"
+    if hot_queries:
+        add(
+            "hot-query-prewarm-candidate",
+            "ok",
+            "Hot recall paths are visible",
+            "Query audit found repeated recalls that Memory OS can prewarm and learn from.",
+            "Keep query audit enabled and schedule Memory OS or cache-prewarm for this namespace.",
+            {
+                "namespace": namespace,
+                "hot_queries": len(hot_queries),
+                "top_query": hot_queries[0].query,
+                "top_frequency": hot_queries[0].frequency,
+            },
+        )
+    else:
+        add(
+            "query-audit-required",
+            "watch",
+            "Collect query audit traffic",
+            "Memory OS needs query audit events before it can identify hot memories, follow-up queries, or priority signals.",
+            "Enable query audit in staging and rerun the insight check after real user traffic.",
+            {"namespace": namespace},
+        )
+
+    policy_manifest = plan_payload.get("policy_manifest") or {}
+    if isinstance(policy_manifest, dict):
+        for decision in policy_manifest.get("decisions") or []:
+            if not isinstance(decision, dict):
+                continue
+            decision_id = str(decision.get("id") or "policy")
+            strategy = str(decision.get("strategy") or decision_id)
+            add(
+                f"policy:{decision_id}",
+                str(decision.get("status") or "watch"),
+                _humanize_slug(strategy),
+                str(decision.get("rationale") or "Memory OS policy preflight produced a decision."),
+                str(decision.get("action") or "Review the Memory OS policy manifest."),
+                dict(decision.get("evidence") or {}),
+            )
+
+    architecture = plan_payload.get("architecture_advice") or {}
+    if isinstance(architecture, dict):
+        for recommendation in architecture.get("recommendations") or []:
+            if not isinstance(recommendation, dict):
+                continue
+            severity = str(recommendation.get("severity") or "watch")
+            if severity == "ok":
+                continue
+            rec_id = str(recommendation.get("id") or "architecture")
+            add(
+                f"architecture:{rec_id}",
+                severity,
+                str(recommendation.get("title") or _humanize_slug(rec_id)),
+                str(
+                    recommendation.get("rationale")
+                    or "Architecture advisor raised a production recommendation."
+                ),
+                str(
+                    recommendation.get("action")
+                    or "Review architecture advisor output before scaling."
+                ),
+                {
+                    "namespace": namespace,
+                    "source": "architecture_advisor",
+                    "recommendation_id": rec_id,
+                },
+            )
+
+    execution = plan_payload.get("execution_plan") or {}
+    if isinstance(execution, dict):
+        warnings = [str(item) for item in execution.get("warnings") or []]
+        for warning in warnings:
+            add(
+                f"execution-warning:{warning}",
+                "action_required",
+                _humanize_slug(warning),
+                "The Memory OS execution plan requires an operator check before production scheduling.",
+                "Resolve the execution-plan warning or keep this worker disabled for production.",
+                {
+                    "namespace": namespace,
+                    "deployment": plan_payload.get("deployment"),
+                    "warning": warning,
+                },
+            )
+        if execution.get("safe_to_run") is True:
+            add(
+                "execution-plan-safe",
+                "ok",
+                "Execution plan is schedulable",
+                "The read-only planner found no blocked Memory OS tasks.",
+                "Use the generated commands in your scheduler or Kubernetes Memory OS CronJob.",
+                {
+                    "namespace": namespace,
+                    "enabled_task_ids": list(execution.get("enabled_task_ids") or []),
+                    "singleton_task_ids": list(execution.get("singleton_task_ids") or []),
+                },
+            )
+
+    return suggestions
+
+
+def _memory_os_dashboard_severity(value: str) -> str:
+    normalized = str(value or "watch").lower()
+    if normalized in {"ok", "watch", "action_required", "architecture_required"}:
+        return normalized
+    if normalized in {"required", "error", "failed", "fail", "blocked"}:
+        return "action_required"
+    return "watch"
+
+
+def _humanize_slug(value: str) -> str:
+    text = str(value or "").replace("_", "-").replace(":", "-")
+    words = [word for word in text.split("-") if word]
+    if not words:
+        return "Memory OS recommendation"
+    return " ".join(word.capitalize() for word in words)
+
+
 def _rate_limiter_from_env() -> InMemoryRateLimiter | RedisRateLimiter | None:
     raw_limit = os.environ.get("WAVEMIND_RATE_LIMIT_PER_MINUTE", "0")
     limit = int(raw_limit or "0")
@@ -1696,6 +1928,52 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 memory_pressure_threshold=request.memory_pressure_threshold,
             )
         return plan.as_dict()
+
+    @app.get("/memory-os/insights", dependencies=[Depends(require_role("read"))])
+    def memory_os_insights(
+        namespace: str | None = None,
+        audit_limit: int = Query(default=512, ge=0, le=10000),
+        max_hot_queries: int = Query(default=32, ge=0, le=1000),
+        min_frequency: int = Query(default=2, ge=1),
+        top_k: int = Query(default=3, ge=1, le=100),
+        min_score: float | None = Query(default=None),
+        target_memories: int | None = Query(default=None, ge=0),
+        namespace_count: int | None = Query(default=None, ge=0),
+        node_count: int | None = Query(default=None, ge=0),
+        replication_factor: int = Query(default=3, ge=1),
+        read_quorum: int = Query(default=1, ge=1),
+        read_fanout: int | None = Query(default=None, ge=1),
+        target_qps: float = Query(default=100.0, ge=0.0),
+        target_p99_ms: float = Query(default=100.0, ge=0.0),
+        observed_p99_ms: float | None = Query(default=None, ge=0.0),
+        deployment: str = "local",
+        cache_mode: str = "auto",
+        multimodal: bool = False,
+        memory_pressure_threshold: int = Query(default=50000, ge=0),
+    ):
+        with _api_operation(app, "memory_os_insights"):
+            return _memory_os_insights_payload(
+                app.state.mind,
+                namespace=namespace,
+                audit_limit=audit_limit,
+                max_hot_queries=max_hot_queries,
+                min_frequency=min_frequency,
+                top_k=top_k,
+                min_score=min_score,
+                target_memories=target_memories,
+                namespace_count=namespace_count,
+                node_count=node_count,
+                replication_factor=replication_factor,
+                read_quorum=read_quorum,
+                read_fanout=read_fanout,
+                target_qps=target_qps,
+                target_p99_ms=target_p99_ms,
+                observed_p99_ms=observed_p99_ms,
+                deployment=deployment,
+                cache_mode=cache_mode,
+                multimodal=multimodal,
+                memory_pressure_threshold=memory_pressure_threshold,
+            )
 
     @app.post("/memory-os/run", dependencies=[Depends(require_role("admin"))])
     def memory_os_run(request: MemoryOSRequest):

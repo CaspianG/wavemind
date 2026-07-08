@@ -279,6 +279,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "deploy/helm/wavemind" in readme
     assert "memoryOs.enabled=true" in readme
     assert "/memory-os/plan" in readme
+    assert "/memory-os/insights" in readme
     assert "deploy/operator" in readme
     assert "deploy/serverless" in readme
     assert "wavemind operator-bundle" in readme

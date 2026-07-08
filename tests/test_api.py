@@ -1035,6 +1035,77 @@ def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monke
         mind.close()
 
 
+def test_fastapi_memory_os_insights_are_read_only_operator_surface(tmp_path, monkeypatch):
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    mind = WaveMind(
+        db_path=tmp_path / "api-memory-os-insights.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        hot_id = mind.remember("memory os insight should detect budget recall", namespace="tenant:os", priority=1.0)
+        cold_id = mind.remember("memory os insight cold memory is not demoted", namespace="tenant:os", priority=1.0)
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+        mind.query("budget recall", namespace="tenant:os", top_k=1)
+        hot_before = mind.store.get(hot_id).priority
+        cold_before = mind.store.get(cold_id).priority
+        before = mind.stats(namespace="tenant:os")
+
+        with TestClient(create_app(mind=mind)) as client:
+            response = client.get(
+                "/memory-os/insights",
+                params={
+                    "namespace": "tenant:os",
+                    "min_frequency": 2,
+                    "top_k": 1,
+                    "target_memories": 2000000,
+                    "namespace_count": 4096,
+                    "node_count": 2,
+                    "deployment": "production",
+                    "cache_mode": "auto",
+                    "target_qps": 500,
+                    "observed_p99_ms": 150,
+                    "multimodal": True,
+                },
+            )
+            assert response.status_code == 200
+            payload = response.json()
+
+            assert payload["read_only"] is True
+            assert payload["status"] == "architecture_required"
+            assert payload["effective_cache_mode"] == "redis"
+            assert payload["hot_query_count"] == 1
+            assert payload["hot_queries"][0]["query"] == "budget recall"
+            assert payload["policy_manifest"]["status"] == "architecture_required"
+            assert payload["execution_plan"]["safe_to_run"] is True
+            assert "memory-os" in payload["enabled_task_ids"]
+            suggestion_ids = {item["id"] for item in payload["suggestions"]}
+            assert "hot-query-prewarm-candidate" in suggestion_ids
+            assert "policy:prefetch-policy" in suggestion_ids
+            assert "architecture:namespace-sharding" in suggestion_ids
+            assert "execution-plan-safe" in suggestion_ids
+            assert all(item["title"] and item["action"] for item in payload["suggestions"])
+            assert any(
+                item["evidence"].get("namespace") in {"tenant:os", "all namespaces"}
+                for item in payload["suggestions"]
+            )
+
+            after = mind.stats(namespace="tenant:os")
+            assert before["active_memories"] == after["active_memories"]
+            assert mind.store.get(hot_id).priority == hot_before
+            assert mind.store.get(cold_id).priority == cold_before
+            assert mind.audit_events(namespace="tenant:os", action="memory_os", limit=1) == []
+
+            metrics = client.get("/metrics")
+            assert "wavemind_api_memory_os_insights_requests_total 1" in metrics.text
+    finally:
+        mind.close()
+
+
 def test_fastapi_cache_can_use_redis_from_env(tmp_path, monkeypatch):
     class FakeRedisClient:
         values = {}
@@ -1378,6 +1449,8 @@ def test_fastapi_studio_dashboard_state_heatmap_and_feedback(tmp_path):
             page = client.get("/studio")
             assert page.status_code == 200
             assert "WaveMind Studio" in page.text
+            assert "Memory OS Insights" in page.text
+            assert "/memory-os/insights" in page.text
 
             state = client.get("/studio/state", params={"namespace": "studio"})
             assert state.status_code == 200

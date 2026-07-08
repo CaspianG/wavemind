@@ -144,6 +144,7 @@ It opens `http://127.0.0.1:8000/studio` and gives you:
 | Import/export | Import local files and export a namespace snapshot. |
 | Backup | Create SQLite backups from the browser. |
 | Conflict visualizer | Inspect correction groups when memories disagree. |
+| Memory OS Insights | See read-only hot-query, policy, execution-plan, and architecture suggestions before running background workers. |
 
 For a server-safe local bind:
 
@@ -1020,20 +1021,22 @@ disaster-recovery drill, and apply local and object-store retention. Production
 deployments can call these commands from cron, systemd, Kubernetes CronJobs,
 Celery, RQ, or Temporal.
 
-The `memory-os-plan` command is the read-only scheduler preflight for that
-worker set. It inspects current stats, audited query traffic, and previous
-Memory OS policy outcomes without mutating memory, then emits concrete task
-cadences, worker counts, Redis/shared-cache requirements, distributed-lock
-requirements, and exact commands for `memory-os`, `cache-prewarm`,
-consolidation, forgetting, maintenance, and architecture-advice loops. In
-production mode it automatically promotes `--cache-mode auto` to Redis when
-QPS, namespace count, memory count, hot query volume, or repeated prefetch
-policy gaps require cross-worker cache sharing. Plans also include
-`policy_manifest`, `policy_history`, `policy_escalation_ids`, and
-`policy_auto_adjustments`, so operators can see when repeated Memory OS gaps
-changed cadence, priority, cache mode, or lock requirements. Production
-`memory-os` commands emitted by the planner include `--lock-required` whenever
-the plan requires a distributed single-flight lock.
+The `memory-os-plan` command and `GET /memory-os/insights` endpoint are the
+read-only scheduler preflight for that worker set. They inspect current stats,
+audited query traffic, and previous Memory OS policy outcomes without mutating
+memory, then emit concrete task cadences, worker counts, Redis/shared-cache
+requirements, distributed-lock requirements, and exact commands for
+`memory-os`, `cache-prewarm`, consolidation, forgetting, maintenance, and
+architecture-advice loops. The insights endpoint additionally returns
+dashboard-ready typed suggestions with ids, severity, action text, and evidence
+for Studio and operator consoles. In production mode the planner automatically
+promotes `--cache-mode auto` to Redis when QPS, namespace count, memory count,
+hot query volume, or repeated prefetch policy gaps require cross-worker cache
+sharing. Plans also include `policy_manifest`, `policy_history`,
+`policy_escalation_ids`, and `policy_auto_adjustments`, so operators can see
+when repeated Memory OS gaps changed cadence, priority, cache mode, or lock
+requirements. Production `memory-os` commands emitted by the planner include
+`--lock-required` whenever the plan requires a distributed single-flight lock.
 
 Hot-cache options:
 

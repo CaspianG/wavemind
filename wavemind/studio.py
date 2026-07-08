@@ -274,6 +274,25 @@ STUDIO_HTML = r"""<!doctype html>
       min-height: 30px;
       padding: 5px 8px;
     }
+    .suggestion {
+      border-top: 1px solid var(--border);
+      padding: 10px 0;
+    }
+    .suggestion:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .suggestion-title {
+      color: var(--strong);
+      font-weight: 780;
+    }
+    .suggestion.action_required .suggestion-title,
+    .suggestion.architecture_required .suggestion-title {
+      color: var(--warn);
+    }
+    .suggestion.ok .suggestion-title {
+      color: var(--accent);
+    }
     @media (max-width: 920px) {
       .shell { padding: 14px; }
       header { flex-direction: column; }
@@ -374,6 +393,21 @@ STUDIO_HTML = r"""<!doctype html>
             <div id="conflicts" style="margin-top:14px"></div>
           </div>
         </div>
+      </section>
+
+      <section class="panel">
+        <h2>Memory OS Insights</h2>
+        <div class="toolbar">
+          <select id="memoryOsDeployment">
+            <option value="local">local</option>
+            <option value="production">production</option>
+            <option value="serverless">serverless</option>
+          </select>
+          <input id="memoryOsTarget" type="number" min="0" value="50000" aria-label="Target memories">
+          <button id="memoryOsButton">Analyze</button>
+        </div>
+        <div id="memoryOsSummary" class="meta"></div>
+        <div id="memoryOsSuggestions" style="margin-top:10px"></div>
       </section>
     </main>
   </div>
@@ -479,6 +513,45 @@ STUDIO_HTML = r"""<!doctype html>
       `;
     }
 
+    function renderMemoryOs(data) {
+      const execution = data.execution_plan || {};
+      $("memoryOsSummary").innerHTML = `
+        <span class="pill ${data.ok ? "ok" : "warn"}">status ${esc(data.status)}</span>
+        <span class="pill">cache ${esc(data.effective_cache_mode)}</span>
+        <span class="pill">hot queries ${number(data.hot_query_count)}</span>
+        <span class="pill">workers ${number(execution.max_parallel_workers || 0)}</span>
+        <span class="pill">${data.read_only ? "read-only" : "mutable"}</span>
+      `;
+      const suggestions = data.suggestions || [];
+      $("memoryOsSuggestions").innerHTML = suggestions.length ? suggestions.slice(0, 8).map((item) => `
+        <div class="suggestion ${esc(item.severity)}">
+          <div class="suggestion-title">${esc(item.title)}</div>
+          <p>${esc(item.rationale)}</p>
+          <div class="meta">
+            <span class="pill">${esc(item.severity)}</span>
+            <span class="pill">${esc(item.id)}</span>
+          </div>
+          <p>${esc(item.action)}</p>
+        </div>
+      `).join("") : `<div class="empty">No Memory OS suggestions yet.</div>`;
+    }
+
+    async function refreshMemoryOs() {
+      $("memoryOsSuggestions").innerHTML = `<div class="empty">Analyzing memory policy...</div>`;
+      try {
+        const ns = encodeURIComponent(namespaceValue());
+        const deployment = encodeURIComponent($("memoryOsDeployment").value || "local");
+        const target = Math.max(0, Number($("memoryOsTarget").value || 0));
+        const data = await request(
+          `/memory-os/insights?namespace=${ns}&deployment=${deployment}&target_memories=${target}&cache_mode=auto&min_frequency=2&max_hot_queries=8`
+        );
+        renderMemoryOs(data);
+      } catch (error) {
+        $("memoryOsSummary").innerHTML = "";
+        $("memoryOsSuggestions").innerHTML = `<div class="empty danger">${esc(error.message)}</div>`;
+      }
+    }
+
     async function renderHeatmap() {
       const heatmap = await request(`/studio/heatmap?bins=18`);
       $("heatmap").style.setProperty("--bins", heatmap.bins);
@@ -496,6 +569,7 @@ STUDIO_HTML = r"""<!doctype html>
       renderMemories();
       renderConflicts(snapshot);
       await renderHeatmap();
+      await refreshMemoryOs();
     }
 
     async function runQuery() {
@@ -605,6 +679,7 @@ STUDIO_HTML = r"""<!doctype html>
     $("backupButton").onclick = backup;
     $("importButton").onclick = importPath;
     $("exportJson").onclick = exportJson;
+    $("memoryOsButton").onclick = refreshMemoryOs;
     $("namespace").onchange = refresh;
     $("filter").oninput = renderMemories;
     $("apiKey").onchange = () => localStorage.setItem("wavemindApiKey", $("apiKey").value);
