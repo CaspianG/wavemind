@@ -6,9 +6,11 @@ from pathlib import Path
 
 from wavemind.production_evidence import (
     build_release_claims_manifest,
+    build_scale_gap_manifest,
     evaluate_production_evidence_bundle,
     render_release_claims_markdown,
     render_bundle_markdown,
+    render_scale_gap_markdown,
 )
 
 
@@ -120,6 +122,47 @@ def test_release_claims_markdown_lists_allowed_and_locked_claims():
     assert "Locked Claims" in markdown
     assert "core_release_ready" in markdown
     assert "10M-100M service-backed production scale" in markdown
+
+
+def test_scale_gap_manifest_tracks_large_n_proof_gaps():
+    root = Path(__file__).resolve().parents[1]
+    payload = build_scale_gap_manifest(root, env={})
+
+    assert payload["schema"] == "wavemind.scale_gap.v1"
+    assert payload["overall_status"] == "action_required"
+    assert payload["summary"]["total_profiles"] == 5
+    assert payload["summary"]["planned_target_memories"] == 180_000_000
+    assert payload["summary"]["proven_target_memories"] == 0
+    assert payload["summary"]["nearest_baseline_max_memories"] >= 10_000_000
+
+    gaps = {row["profile"]: row for row in payload["profile_gaps"]}
+    assert set(gaps) == {
+        "qdrant-10m",
+        "qdrant-sharded-10m",
+        "pgvector-10m",
+        "faiss-ivfpq-50m",
+        "qdrant-sharded-100m",
+    }
+    assert gaps["qdrant-10m"]["requirement_id"] == "qdrant_10m_service"
+    assert gaps["qdrant-10m"]["output_artifact"].endswith(
+        "production_streaming_load_qdrant_10m_results.json"
+    )
+    assert gaps["qdrant-10m"]["nearest_baseline"]["vectors"] >= 1_000_000
+    assert gaps["faiss-ivfpq-50m"]["nearest_baseline"]["vectors"] >= 10_000_000
+    assert gaps["faiss-ivfpq-50m"]["target_gap_multiplier"] == 5.0
+    assert "WAVEMIND_QDRANT_URL" in gaps["qdrant-10m"]["missing_env"]
+    assert gaps["qdrant-sharded-100m"]["status"] == "blocked_by_env"
+
+
+def test_scale_gap_markdown_lists_profiles_and_commands():
+    root = Path(__file__).resolve().parents[1]
+    payload = build_scale_gap_manifest(root, env={})
+    markdown = render_scale_gap_markdown(payload)
+
+    assert "# WaveMind Scale Gap Matrix" in markdown
+    assert "qdrant-sharded-100m" in markdown
+    assert "production_streaming_load_qdrant_sharded_100m_results.json" in markdown
+    assert "python benchmarks/production_streaming_load_benchmark.py" in markdown
 
 
 def test_cli_production_evidence_bundle_writes_reports(tmp_path):
@@ -252,3 +295,68 @@ def test_cli_release_claims_strict_exits_nonzero():
     payload = json.loads(result.stdout)
     assert result.returncode == 2
     assert payload["release_status"] == "core_release_ready"
+
+
+def test_cli_scale_gap_writes_reports(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "scale_gap.json"
+    markdown = tmp_path / "scale_gap.md"
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "scale-gap",
+            "--root",
+            str(project_root),
+            "--write-artifacts",
+            "--output",
+            str(output),
+            "--markdown-output",
+            str(markdown),
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    report = markdown.read_text(encoding="utf-8")
+
+    assert "overall_status: action_required" in result.stdout
+    assert payload["schema"] == "wavemind.scale_gap.v1"
+    assert "# WaveMind Scale Gap Matrix" in report
+
+
+def test_cli_scale_gap_fail_on_action_required_exits_nonzero():
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "scale-gap",
+            "--root",
+            str(project_root),
+            "--fail-on-action-required",
+            "--json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["overall_status"] == "action_required"

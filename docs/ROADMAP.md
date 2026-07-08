@@ -94,6 +94,11 @@ policy matters more than raw vector-database scale:
   allows core library releases when readiness/audit pass, and keeps remote,
   managed-serverless, 50M, and 100M production claims locked until strict
   evidence artifacts pass.
+- `wavemind scale-gap --write-artifacts` is the large-N proof gap contract. It
+  joins the 10M/50M/100M production run plan with strict evidence, preflight
+  state, exact commands, missing environment, and nearest checked baselines, so
+  the next scale work is a ranked execution queue rather than a loose roadmap
+  note.
 - `wavemind memory-os-plan` is now the read-only scheduler preflight for the
   adaptive Memory OS worker set. It turns stats and query-audit traffic into
   concrete cadences, worker counts, Redis/shared-cache requirements,

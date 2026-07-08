@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T02:07:17Z",
+  "generated_at": "2026-07-08T02:28:30Z",
   "source_ref": "dd75c758e64e",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -37,9 +37,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T02:07:17Z",
-    "age_days": 0.012960478587962964,
-    "max_age_days": 3650.0,
+    "checked_at": "2026-07-08T02:28:30Z",
+    "age_days": 0.02769546903935185,
+    "max_age_days": 8.0,
     "errors": []
   },
   "production_readiness": {
@@ -329,6 +329,219 @@
       }
     ]
   },
+  "scale_gap": {
+    "schema": "wavemind.scale_gap.v1",
+    "overall_status": "action_required",
+    "summary": {
+      "total_profiles": 5,
+      "complete_count": 0,
+      "ready_to_run_count": 0,
+      "blocked_by_env_count": 5,
+      "blocked_by_preflight_count": 0,
+      "missing_plan_count": 0,
+      "planned_target_memories": 180000000,
+      "proven_target_memories": 0,
+      "nearest_baseline_max_memories": 10000000,
+      "claim_status": "claims_limited"
+    },
+    "profile_gaps": [
+      {
+        "profile": "qdrant-10m",
+        "requirement_id": "qdrant_10m_service",
+        "status": "blocked_by_env",
+        "strict_status": "action_required",
+        "plan_status": "action_required",
+        "preflight_status": "action_required",
+        "engine": "qdrant-service",
+        "target_memories": 10000000,
+        "target_recall_at_k": null,
+        "target_p99_ms": null,
+        "target_qps": null,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "output_artifact_exists": false,
+        "checkpoint_path": null,
+        "missing_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URL",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+        "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
+        "nearest_baseline": {
+          "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+          "engine": "Qdrant service streaming",
+          "vectors": 1000000,
+          "recall_at_k": 1.0,
+          "target_recall_at_k": 1.0,
+          "p99_latency_ms": 26.373000000603497,
+          "avg_latency_ms": 16.16433600662276,
+          "slo_status": "pass",
+          "cost_status": "valid_slo"
+        },
+        "baseline_progress_ratio": 0.1,
+        "target_gap_multiplier": 10.0,
+        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      },
+      {
+        "profile": "qdrant-sharded-10m",
+        "requirement_id": "qdrant_sharded_10m_service",
+        "status": "blocked_by_env",
+        "strict_status": "action_required",
+        "plan_status": "action_required",
+        "preflight_status": "action_required",
+        "engine": "qdrant-sharded-service",
+        "target_memories": 10000000,
+        "target_recall_at_k": null,
+        "target_p99_ms": null,
+        "target_qps": null,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "output_artifact_exists": false,
+        "checkpoint_path": null,
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URLS",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+        "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
+        "nearest_baseline": {
+          "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+          "engine": "Qdrant service streaming",
+          "vectors": 1000000,
+          "recall_at_k": 1.0,
+          "target_recall_at_k": 1.0,
+          "p99_latency_ms": 26.373000000603497,
+          "avg_latency_ms": 16.16433600662276,
+          "slo_status": "pass",
+          "cost_status": "valid_slo"
+        },
+        "baseline_progress_ratio": 0.1,
+        "target_gap_multiplier": 10.0,
+        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      },
+      {
+        "profile": "pgvector-10m",
+        "requirement_id": "pgvector_10m_service",
+        "status": "blocked_by_env",
+        "strict_status": "action_required",
+        "plan_status": "action_required",
+        "preflight_status": "action_required",
+        "engine": "pgvector-service",
+        "target_memories": 10000000,
+        "target_recall_at_k": null,
+        "target_p99_ms": null,
+        "target_qps": null,
+        "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "output_artifact_exists": false,
+        "checkpoint_path": null,
+        "missing_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_PGVECTOR_DSN",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+        "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
+        "nearest_baseline": {
+          "artifact": "benchmarks/production_pgvector_tuning_results.json",
+          "engine": "WaveMind pgvector-iterative",
+          "vectors": 50000,
+          "recall_at_k": 0.97,
+          "target_recall_at_k": null,
+          "p99_latency_ms": 55.18779996782541,
+          "avg_latency_ms": 38.32061400171369,
+          "slo_status": null,
+          "cost_status": null
+        },
+        "baseline_progress_ratio": 0.005,
+        "target_gap_multiplier": 200.0,
+        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      },
+      {
+        "profile": "faiss-ivfpq-50m",
+        "requirement_id": "faiss_ivfpq_50m",
+        "status": "blocked_by_env",
+        "strict_status": "action_required",
+        "plan_status": "action_required",
+        "preflight_status": "action_required",
+        "engine": "faiss-ivfpq-persisted",
+        "target_memories": 50000000,
+        "target_recall_at_k": null,
+        "target_p99_ms": null,
+        "target_qps": null,
+        "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "output_artifact_exists": false,
+        "checkpoint_path": null,
+        "missing_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+        "claim_unlocked": "50M compressed local/persistent FAISS profile.",
+        "nearest_baseline": {
+          "artifact": "benchmarks/production_streaming_load_ivfpq_10m_results.json",
+          "engine": "WaveMind faiss-ivfpq-persisted streaming",
+          "vectors": 10000000,
+          "recall_at_k": 0.99,
+          "target_recall_at_k": 0.99,
+          "p99_latency_ms": 60.12930005090311,
+          "avg_latency_ms": 45.804024002864026,
+          "slo_status": "scale_required",
+          "cost_status": "valid_slo"
+        },
+        "baseline_progress_ratio": 0.2,
+        "target_gap_multiplier": 5.0,
+        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      },
+      {
+        "profile": "qdrant-sharded-100m",
+        "requirement_id": "hundred_million_remote_load",
+        "status": "blocked_by_env",
+        "strict_status": "action_required",
+        "plan_status": "action_required",
+        "preflight_status": "action_required",
+        "engine": "qdrant-sharded-service",
+        "target_memories": 100000000,
+        "target_recall_at_k": null,
+        "target_p99_ms": null,
+        "target_qps": null,
+        "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "output_artifact_exists": false,
+        "checkpoint_path": null,
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "blockers": [
+          "missing_env:WAVEMIND_QDRANT_URLS",
+          "insufficient_local_disk_for_index_and_transient_batches"
+        ],
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+        "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+        "nearest_baseline": {
+          "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+          "engine": "Qdrant service streaming",
+          "vectors": 1000000,
+          "recall_at_k": 1.0,
+          "target_recall_at_k": 1.0,
+          "p99_latency_ms": 26.373000000603497,
+          "avg_latency_ms": 16.16433600662276,
+          "slo_status": "pass",
+          "cost_status": "valid_slo"
+        },
+        "baseline_progress_ratio": 0.01,
+        "target_gap_multiplier": 100.0,
+        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      }
+    ]
+  },
   "source_files": [
     "benchmarks/benchmark_matrix_results.json",
     "benchmarks/benchmark_artifact_audit.json",
@@ -337,6 +550,7 @@
     "benchmarks/production_evidence_preflight_results.json",
     "benchmarks/production_evidence_bundle_results.json",
     "benchmarks/release_claims_results.json",
+    "benchmarks/scale_gap_results.json",
     "benchmarks/production_scale_run_plan.json"
   ],
   "load_errors": []

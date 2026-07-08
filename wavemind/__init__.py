@@ -163,6 +163,10 @@ from .scale import (
     production_scale_profile_names,
     scale_status_meets_or_exceeds,
 )
+from .production_evidence import (
+    build_scale_gap_manifest,
+    render_scale_gap_markdown,
+)
 from .serverless import (
     SecretEnvRef,
     ServerlessObservedTelemetry,
@@ -326,6 +330,7 @@ __all__ = [
     "build_postgres_pitr_plan",
     "build_production_scale_run_plan",
     "build_scale_plan",
+    "build_scale_gap_manifest",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
     "build_cluster_rebalance_plan",
@@ -354,6 +359,7 @@ __all__ = [
     "query_with_vector_cache",
     "remember_payload",
     "restore_recovery_journal",
+    "render_scale_gap_markdown",
     "run_control_plane_consensus_profile",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",

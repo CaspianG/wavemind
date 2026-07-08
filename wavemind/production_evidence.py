@@ -1260,6 +1260,286 @@ def build_release_claims_manifest(
     }
 
 
+_SCALE_GAP_REQUIREMENTS = {
+    "qdrant-10m": "qdrant_10m_service",
+    "qdrant-sharded-10m": "qdrant_sharded_10m_service",
+    "pgvector-10m": "pgvector_10m_service",
+    "faiss-ivfpq-50m": "faiss_ivfpq_50m",
+    "qdrant-sharded-100m": "hundred_million_remote_load",
+}
+
+
+_SCALE_GAP_BASELINES = {
+    "qdrant-10m": (
+        ("benchmarks/production_streaming_load_qdrant_1m_tuned_results.json", "qdrant"),
+        ("benchmarks/production_streaming_load_qdrant_1m_results.json", "qdrant"),
+        ("benchmarks/production_streaming_load_qdrant_smoke_results.json", "qdrant"),
+    ),
+    "qdrant-sharded-10m": (
+        ("benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json", "qdrant"),
+        ("benchmarks/production_streaming_load_qdrant_1m_tuned_results.json", "qdrant"),
+    ),
+    "pgvector-10m": (
+        ("benchmarks/production_pgvector_tuning_results.json", "pgvector-iterative"),
+        ("benchmarks/production_streaming_load_pgvector_smoke_results.json", "pgvector"),
+    ),
+    "faiss-ivfpq-50m": (
+        ("benchmarks/production_streaming_load_ivfpq_10m_results.json", "ivfpq"),
+        ("benchmarks/production_streaming_load_ivfpq_1m_results.json", "ivfpq"),
+        ("benchmarks/production_streaming_load_ivfpq_100k_results.json", "ivfpq"),
+    ),
+    "qdrant-sharded-100m": (
+        ("benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json", "qdrant"),
+        ("benchmarks/production_streaming_load_qdrant_1m_tuned_results.json", "qdrant"),
+    ),
+}
+
+
+def _artifact_exists(root: Path, artifact: str) -> bool:
+    return bool(artifact) and (root / artifact).exists()
+
+
+def _result_metric(row: dict[str, Any], key: str) -> float | None:
+    value = row.get(key)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _best_scale_baseline(
+    root: Path,
+    candidates: tuple[tuple[str, str], ...],
+) -> dict[str, Any]:
+    best: dict[str, Any] = {}
+    for artifact, engine_hint in candidates:
+        payload = _load_optional_json(root / artifact)
+        if not payload:
+            continue
+        hint = engine_hint.lower()
+        for result in _size_results(payload):
+            engine = str(result.get("engine") or "").lower()
+            if hint and hint not in engine:
+                continue
+            vectors = int(result.get("vectors") or 0)
+            if vectors <= int(best.get("vectors") or 0):
+                continue
+            best = {
+                "artifact": artifact,
+                "engine": result.get("engine"),
+                "vectors": vectors,
+                "recall_at_k": _result_metric(result, "recall_at_k"),
+                "target_recall_at_k": _result_metric(result, "target_recall_at_k"),
+                "p99_latency_ms": _result_metric(result, "p99_latency_ms"),
+                "avg_latency_ms": _result_metric(result, "avg_latency_ms"),
+                "slo_status": result.get("slo_status") or result.get("status"),
+                "cost_status": result.get("cost_status"),
+            }
+    return best
+
+
+def _scale_gap_status(
+    *,
+    strict_status: str,
+    plan_status: str,
+    preflight_status: str,
+    missing_env: list[str],
+    blockers: list[str],
+) -> str:
+    if strict_status == "pass":
+        return "complete"
+    if plan_status in {"", "missing"}:
+        return "missing_plan"
+    if preflight_status == "ready":
+        return "ready_to_run"
+    if missing_env:
+        return "blocked_by_env"
+    if blockers:
+        return "blocked_by_preflight"
+    return "planned"
+
+
+def build_scale_gap_manifest(
+    root: Path = PROJECT_ROOT,
+    *,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Build the large-scale benchmark gap matrix.
+
+    The production scale run plan says which 10M/50M/100M jobs should be run.
+    Strict production evidence says which results are already claim-worthy.
+    This manifest joins the two so the public dashboard can show exactly which
+    scale claims are proven, plan-only, or blocked by missing environment.
+    """
+
+    root = Path(root)
+    bundle = evaluate_production_evidence_bundle(root, env=env)
+    strict_requirements = {
+        str(row.get("id")): row
+        for row in bundle.get("strict_production_evidence", {}).get("requirements", [])
+        if isinstance(row, dict)
+    }
+    preflight_checks = {
+        str(row.get("id")): row
+        for row in bundle.get("production_evidence_preflight", {}).get("checks", [])
+        if isinstance(row, dict)
+    }
+    scale_contract = bundle.get("production_scale_run_contract") or {}
+    plans = {
+        str(row.get("profile")): row
+        for row in scale_contract.get("profiles", [])
+        if isinstance(row, dict)
+    }
+
+    profile_gaps: list[dict[str, Any]] = []
+    for profile, requirement_id in _SCALE_GAP_REQUIREMENTS.items():
+        plan = plans.get(profile, {})
+        requirement = strict_requirements.get(requirement_id, {})
+        preflight = preflight_checks.get(requirement_id, {})
+        target_memories = int(plan.get("target_memories") or 0)
+        output_artifact = str(
+            plan.get("output_artifact")
+            or requirement.get("artifact")
+            or ""
+        )
+        strict_status = str(requirement.get("status") or "missing")
+        plan_status = str(plan.get("status") or "missing")
+        preflight_status = str(preflight.get("status") or "missing")
+        missing_env = list(preflight.get("missing_env") or plan.get("missing_env") or [])
+        blockers = list(plan.get("blockers") or [])
+        baseline = _best_scale_baseline(root, _SCALE_GAP_BASELINES.get(profile, ()))
+        baseline_vectors = int(baseline.get("vectors") or 0)
+        progress_ratio = (
+            round(baseline_vectors / target_memories, 6)
+            if target_memories > 0 and baseline_vectors > 0
+            else 0.0
+        )
+        gap_multiplier = (
+            round(target_memories / baseline_vectors, 3)
+            if baseline_vectors > 0 and target_memories > 0
+            else None
+        )
+        profile_gaps.append(
+            {
+                "profile": profile,
+                "requirement_id": requirement_id,
+                "status": _scale_gap_status(
+                    strict_status=strict_status,
+                    plan_status=plan_status,
+                    preflight_status=preflight_status,
+                    missing_env=missing_env,
+                    blockers=blockers,
+                ),
+                "strict_status": strict_status,
+                "plan_status": plan_status,
+                "preflight_status": preflight_status,
+                "engine": plan.get("engine"),
+                "target_memories": target_memories,
+                "target_recall_at_k": plan.get("target_recall_at_k"),
+                "target_p99_ms": plan.get("target_p99_ms"),
+                "target_qps": plan.get("target_qps"),
+                "output_artifact": output_artifact,
+                "output_artifact_exists": _artifact_exists(root, output_artifact),
+                "checkpoint_path": plan.get("checkpoint_path"),
+                "missing_env": missing_env,
+                "blockers": blockers,
+                "command": plan.get("command") or preflight.get("command") or requirement.get("command"),
+                "claim_unlocked": requirement.get("claim_unlocked"),
+                "nearest_baseline": baseline,
+                "baseline_progress_ratio": progress_ratio,
+                "target_gap_multiplier": gap_multiplier,
+                "next_action": (
+                    "Strict result artifact already passes."
+                    if strict_status == "pass"
+                    else "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+                ),
+            }
+        )
+
+    status_counts: dict[str, int] = {}
+    for row in profile_gaps:
+        status = str(row["status"])
+        status_counts[status] = status_counts.get(status, 0) + 1
+    proven_target_memories = sum(
+        int(row["target_memories"])
+        for row in profile_gaps
+        if row["status"] == "complete"
+    )
+    planned_target_memories = sum(int(row["target_memories"]) for row in profile_gaps)
+    baseline_max_memories = max(
+        (int((row.get("nearest_baseline") or {}).get("vectors") or 0) for row in profile_gaps),
+        default=0,
+    )
+
+    return {
+        "schema": "wavemind.scale_gap.v1",
+        "generated_at": _utc_now(),
+        "overall_status": "complete" if proven_target_memories == planned_target_memories else "action_required",
+        "summary": {
+            "total_profiles": len(profile_gaps),
+            "complete_count": status_counts.get("complete", 0),
+            "ready_to_run_count": status_counts.get("ready_to_run", 0),
+            "blocked_by_env_count": status_counts.get("blocked_by_env", 0),
+            "blocked_by_preflight_count": status_counts.get("blocked_by_preflight", 0),
+            "missing_plan_count": status_counts.get("missing_plan", 0),
+            "planned_target_memories": planned_target_memories,
+            "proven_target_memories": proven_target_memories,
+            "nearest_baseline_max_memories": baseline_max_memories,
+            "claim_status": bundle.get("claim_status"),
+        },
+        "profile_gaps": profile_gaps,
+        "source_artifacts": {
+            "production_scale_run_plan": "benchmarks/production_scale_run_plan.json",
+            "production_evidence_bundle": "benchmarks/production_evidence_bundle_results.json",
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+        },
+    }
+
+
+def render_scale_gap_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Scale Gap Matrix",
+        "",
+        "This report joins the large-N production run contracts with the strict",
+        "production evidence gate. It shows which 10M, 50M, and 100M scale claims",
+        "are proven, which are plan-only, and what must run next.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| overall status | `{payload['overall_status']}` |",
+        f"| complete profiles | `{summary['complete_count']}/{summary['total_profiles']}` |",
+        f"| ready to run | `{summary['ready_to_run_count']}` |",
+        f"| blocked by env | `{summary['blocked_by_env_count']}` |",
+        f"| planned target memories | `{summary['planned_target_memories']}` |",
+        f"| proven target memories | `{summary['proven_target_memories']}` |",
+        f"| nearest baseline max memories | `{summary['nearest_baseline_max_memories']}` |",
+        f"| claim status | `{summary['claim_status']}` |",
+        "",
+        "| profile | status | target | nearest baseline | gap | artifact | missing env |",
+        "|---|---|---:|---:|---:|---|---|",
+    ]
+    for row in payload.get("profile_gaps", []):
+        baseline = row.get("nearest_baseline") or {}
+        missing_env = ", ".join(row.get("missing_env") or ())
+        baseline_vectors = baseline.get("vectors") or 0
+        gap = row.get("target_gap_multiplier")
+        lines.append(
+            f"| {row['profile']} | `{row['status']}` | {row['target_memories']} | "
+            f"{baseline_vectors} | {gap if gap is not None else ''} | "
+            f"`{row['output_artifact']}` | `{missing_env}` |"
+        )
+    lines.extend(["", "## Commands", ""])
+    for row in payload.get("profile_gaps", []):
+        command = str(row.get("command") or "").replace("|", "\\|")
+        lines.append(f"- `{row['profile']}`: `{command}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_release_claims_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [

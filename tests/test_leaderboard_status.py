@@ -52,6 +52,14 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         row["claim"] == "10M-100M service-backed production scale"
         for row in payload["release_claims"]["locked_claims"]
     )
+    assert payload["scale_gap"]["schema"] == "wavemind.scale_gap.v1"
+    assert payload["scale_gap"]["overall_status"] == "action_required"
+    assert payload["scale_gap"]["summary"]["total_profiles"] == 5
+    assert payload["scale_gap"]["summary"]["planned_target_memories"] == 180_000_000
+    assert any(
+        row["profile"] == "qdrant-sharded-100m"
+        for row in payload["scale_gap"]["profile_gaps"]
+    )
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["production_scale_run_plan"]["total_profiles"] == 5
     assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000
@@ -67,6 +75,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/production_evidence_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_bundle_results.json" in payload["source_files"]
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
+    assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert payload["load_errors"] == []
 
@@ -91,4 +100,5 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "core_release_ready",
         "full_production_claims_ready",
     }
+    assert payload["scale_gap"]["schema"] == "wavemind.scale_gap.v1"
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"

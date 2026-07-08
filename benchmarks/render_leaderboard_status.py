@@ -38,6 +38,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    scale_gap = _load_json(
+        root / "benchmarks" / "scale_gap_results.json",
+        load_errors,
+        required=False,
+    )
 
     benchmarks = matrix.get("benchmarks") if isinstance(matrix.get("benchmarks"), list) else []
     status_counts = Counter(
@@ -148,6 +153,12 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "allowed_claims": release_claims.get("allowed_claims", []),
             "locked_claims": release_claims.get("locked_claims", []),
         },
+        "scale_gap": {
+            "schema": scale_gap.get("schema"),
+            "overall_status": scale_gap.get("overall_status", "missing"),
+            "summary": scale_gap.get("summary", {}),
+            "profile_gaps": scale_gap.get("profile_gaps", []),
+        },
         "source_files": [
             "benchmarks/benchmark_matrix_results.json",
             "benchmarks/benchmark_artifact_audit.json",
@@ -156,6 +167,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "benchmarks/production_evidence_preflight_results.json",
             "benchmarks/production_evidence_bundle_results.json",
             "benchmarks/release_claims_results.json",
+            "benchmarks/scale_gap_results.json",
             "benchmarks/production_scale_run_plan.json",
         ],
         "load_errors": load_errors,

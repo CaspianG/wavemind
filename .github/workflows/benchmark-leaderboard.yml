@@ -160,6 +160,10 @@ jobs:
             --fail-on-blocked \
             --output benchmarks/release_claims_results.json \
             --markdown-output benchmarks/RELEASE_CLAIMS.md
+          python -m wavemind scale-gap \
+            --write-artifacts \
+            --output benchmarks/scale_gap_results.json \
+            --markdown-output benchmarks/SCALE_GAP.md
           python benchmarks/benchmark_registry.py \
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
@@ -221,6 +225,7 @@ jobs:
           cp benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md site/benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
           cp benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md site/benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
+          cp benchmarks/SCALE_GAP.md site/benchmarks/SCALE_GAP.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
           cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
@@ -228,6 +233,7 @@ jobs:
           cp benchmarks/production_evidence_preflight_results.json site/data/production_evidence_preflight_results.json
           cp benchmarks/production_evidence_bundle_results.json site/data/production_evidence_bundle_results.json
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
+          cp benchmarks/scale_gap_results.json site/data/scale_gap_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
       - uses: actions/configure-pages@v5
@@ -269,6 +275,8 @@ jobs:
             benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
             benchmarks/release_claims_results.json
             benchmarks/RELEASE_CLAIMS.md
+            benchmarks/scale_gap_results.json
+            benchmarks/SCALE_GAP.md
             docs/benchmark-dashboard.html
             docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

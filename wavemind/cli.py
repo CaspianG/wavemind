@@ -50,6 +50,7 @@ from .k8s_operator import (
 from .object_store import S3SnapshotStore
 from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import (
+    build_scale_gap_manifest,
     build_release_claims_manifest,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
@@ -58,6 +59,7 @@ from .production_evidence import (
     render_markdown,
     render_preflight_markdown,
     render_release_claims_markdown,
+    render_scale_gap_markdown,
 )
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
@@ -399,6 +401,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/RELEASE_CLAIMS.md"),
     )
     release_claims.add_argument("--json", action="store_true")
+
+    scale_gap = sub.add_parser(
+        "scale-gap",
+        help="Build the large-N benchmark gap matrix for 10M/50M/100M claims",
+    )
+    scale_gap.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    scale_gap.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown scale-gap reports to the output paths.",
+    )
+    scale_gap.add_argument(
+        "--fail-on-action-required",
+        action="store_true",
+        help="Exit non-zero unless every large-N profile has strict passing evidence.",
+    )
+    scale_gap.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/scale_gap_results.json"),
+    )
+    scale_gap.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/SCALE_GAP.md"),
+    )
+    scale_gap.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1718,6 +1752,40 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_blocked and payload["release_status"] == "release_blocked":
             return 2
         return 0 if payload["release_status"] != "release_blocked" else 1
+
+    if args.command == "scale-gap":
+        payload = build_scale_gap_manifest(args.root)
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_scale_gap_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            summary = payload["summary"]
+            print(f"overall_status: {payload['overall_status']}")
+            print(f"complete_profiles: {summary['complete_count']}/{summary['total_profiles']}")
+            print(f"planned_target_memories: {summary['planned_target_memories']}")
+            print(f"proven_target_memories: {summary['proven_target_memories']}")
+            print(f"nearest_baseline_max_memories: {summary['nearest_baseline_max_memories']}")
+            for row in payload["profile_gaps"]:
+                print(
+                    f"- {row['profile']}: {row['status']} "
+                    f"target={row['target_memories']} artifact={row['output_artifact']}"
+                )
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["overall_status"] != "complete":
+            return 2
+        return 0
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

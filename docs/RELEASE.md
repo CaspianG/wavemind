@@ -13,6 +13,7 @@ pytest -q
 python -m build
 python -m twine check dist/*
 wavemind release-claims --write-artifacts --fail-on-blocked
+wavemind scale-gap --write-artifacts
 ```
 
 On Windows PowerShell:
@@ -22,6 +23,7 @@ pytest -q
 python -m build
 python -m twine check dist\*
 wavemind release-claims --write-artifacts --fail-on-blocked
+wavemind scale-gap --write-artifacts
 ```
 
 4. Commit the version bump.
@@ -53,6 +55,9 @@ git push origin main --tags
 - Do not publish a release with failing tests.
 - Do not publish a release when `wavemind release-claims --fail-on-blocked`
   reports `release_blocked`.
+- Do not claim 10M/50M/100M production scale unless
+  `wavemind scale-gap --fail-on-action-required` passes or the release notes
+  explicitly say the remaining rows are plan-only.
 - Do not add benchmark claims to release notes unless the result JSON is
   committed under `benchmarks/`.
 - If the release changes public benchmark numbers, update README and

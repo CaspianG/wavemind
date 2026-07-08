@@ -41,6 +41,11 @@ jobs:
             --fail-on-blocked \
             --output /tmp/release_claims_results.json \
             --markdown-output /tmp/RELEASE_CLAIMS.md
+          python -m wavemind scale-gap \
+            --root "$GITHUB_WORKSPACE" \
+            --write-artifacts \
+            --output /tmp/scale_gap_results.json \
+            --markdown-output /tmp/SCALE_GAP.md
 
       - name: Build and verify package
         run: |
@@ -56,5 +61,7 @@ jobs:
             dist/*
             /tmp/release_claims_results.json
             /tmp/RELEASE_CLAIMS.md
+            /tmp/scale_gap_results.json
+            /tmp/SCALE_GAP.md
             /tmp/production_evidence_bundle_results.json
             /tmp/PRODUCTION_EVIDENCE_BUNDLE.md
