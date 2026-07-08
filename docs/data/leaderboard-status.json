@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T03:33:50Z",
+  "generated_at": "2026-07-08T04:02:25Z",
   "source_ref": "dd75c758e64e",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -37,8 +37,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T03:33:50Z",
-    "age_days": 0.07306057239583334,
+    "checked_at": "2026-07-08T04:02:25Z",
+    "age_days": 0.09291474241898148,
     "max_age_days": 8.0,
     "errors": []
   },
@@ -120,6 +120,7 @@
     "history_trend": "first_run",
     "history_previous_runs": 0,
     "repeated_required_ids": [],
+    "history_escalations": 0,
     "required_decisions_present": true,
     "source": "benchmarks/scale_readiness_results.json"
   },

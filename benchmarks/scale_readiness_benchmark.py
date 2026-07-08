@@ -1985,6 +1985,13 @@ def run_memory_os_profile() -> dict[str, object]:
                 "policy_repeated_required_ids": list(
                     report.policy_history.repeated_required_ids
                 ),
+                "policy_history_escalations": len(
+                    [
+                        suggestion
+                        for suggestion in report.suggestions
+                        if suggestion.id.startswith("policy-history:")
+                    ]
+                ),
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),

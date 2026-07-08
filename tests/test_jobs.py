@@ -694,8 +694,24 @@ def test_memory_os_worker_learns_repeated_policy_required_from_history(tmp_path)
         assert "prefetch-policy" in second.policy_history.repeated_required_ids
         assert second.policy_history.status_counts["action_required"] >= 2
         assert second.as_dict()["policy_history"]["previous_runs"] == 1
+        assert "escalate_policy_history" in second.actions
+        assert any(
+            "prefetch-policy repeated" in recommendation
+            for recommendation in second.recommendations
+        )
+        history_suggestion = next(
+            suggestion
+            for suggestion in second.suggestions
+            if suggestion.id == "policy-history:prefetch-policy"
+        )
+        assert history_suggestion.severity == "action_required"
+        assert history_suggestion.evidence["history_trend"] == (
+            "repeated_action_required"
+        )
+        assert history_suggestion.evidence["previous_runs"] == 1
         assert audit[0].metadata["policy_history_trend"] == "repeated_action_required"
         assert "prefetch-policy" in audit[0].metadata["policy_repeated_required_ids"]
+        assert audit[0].metadata["policy_history_escalations"] >= 1
     finally:
         memory.close()
 

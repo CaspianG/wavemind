@@ -2217,6 +2217,20 @@ class MemoryOSWorker:
             current=policy_manifest,
             window=5,
         )
+        history_suggestions = self._policy_history_suggestions(
+            namespace=namespace,
+            current=policy_manifest,
+            history=policy_history,
+        )
+        if history_suggestions:
+            actions.append("escalate_policy_history")
+            recommendations.extend(
+                self._policy_history_recommendations(
+                    current=policy_manifest,
+                    history=policy_history,
+                )
+            )
+            suggestions = tuple([*suggestions, *history_suggestions])
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -3207,6 +3221,70 @@ class MemoryOSWorker:
             }
         return {}
 
+    def _policy_history_suggestions(
+        self,
+        *,
+        namespace: str | None,
+        current: MemoryOSPolicyManifest,
+        history: MemoryOSPolicyHistory,
+    ) -> tuple[MemoryOSImprovementSuggestion, ...]:
+        if not history.repeated_required_ids:
+            return ()
+        namespace_label = namespace or "all namespaces"
+        current_by_id = {decision.id: decision for decision in current.decisions}
+        suggestions: list[MemoryOSImprovementSuggestion] = []
+        for decision_id in history.repeated_required_ids:
+            decision = current_by_id.get(decision_id)
+            if decision is None:
+                continue
+            severity = (
+                "architecture_required"
+                if decision_id in history.repeated_architecture_required_ids
+                else "action_required"
+            )
+            suggestions.append(
+                MemoryOSImprovementSuggestion(
+                    id=f"policy-history:{decision_id}",
+                    severity=severity,
+                    title=f"Resolve repeated {decision_id}",
+                    rationale=(
+                        "Memory OS saw the same required policy state in repeated "
+                        "worker runs, so this is no longer a one-off maintenance signal."
+                    ),
+                    action=decision.action,
+                    evidence={
+                        "namespace": namespace_label,
+                        "policy_id": decision_id,
+                        "policy_status": decision.status,
+                        "policy_strategy": decision.strategy,
+                        "history_trend": history.trend,
+                        "previous_runs": history.previous_runs,
+                    },
+                )
+            )
+        return tuple(suggestions)
+
+    def _policy_history_recommendations(
+        self,
+        *,
+        current: MemoryOSPolicyManifest,
+        history: MemoryOSPolicyHistory,
+    ) -> list[str]:
+        if not history.repeated_required_ids:
+            return []
+        current_by_id = {decision.id: decision for decision in current.decisions}
+        rows: list[str] = []
+        for decision_id in history.repeated_required_ids:
+            decision = current_by_id.get(decision_id)
+            if decision is None:
+                continue
+            rows.append(
+                "Memory OS policy history: "
+                f"[{decision.status}] {decision_id} repeated across "
+                f"{history.previous_runs + 1} runs - {decision.action}"
+            )
+        return rows
+
     def _architecture_advice(
         self,
         *,
@@ -3296,6 +3374,13 @@ class MemoryOSWorker:
                     "policy_history_previous_runs": report.policy_history.previous_runs,
                     "policy_repeated_required_ids": list(
                         report.policy_history.repeated_required_ids
+                    ),
+                    "policy_history_escalations": len(
+                        [
+                            suggestion
+                            for suggestion in report.suggestions
+                            if suggestion.id.startswith("policy-history:")
+                        ]
                     ),
                     "actions": list(report.actions),
                     "ok": report.ok,
