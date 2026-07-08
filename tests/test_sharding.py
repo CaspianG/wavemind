@@ -10,6 +10,7 @@ from wavemind import (
     HTTPNamespaceShardClient,
     DistributedRepairReport,
     DistributedQueryBatchResult,
+    DistributedRememberBatchResult,
     NamespaceShardRouter,
     QueryResult,
     ShardedWaveMind,
@@ -54,6 +55,32 @@ class LocalWaveMindServiceClient:
             metadata=metadata,
             priority=priority,
         )
+
+    def remember_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict],
+    ):
+        mind = self._mind(address)
+        response_items = []
+        for index, item in enumerate(items):
+            response_items.append(
+                {
+                    "index": index,
+                    "id": mind.remember(
+                        item["text"],
+                        namespace=item.get("namespace", "default"),
+                        tags=tuple(item.get("tags", ())),
+                        ttl_seconds=item.get("ttl_seconds"),
+                        metadata=item.get("metadata"),
+                        priority=item.get("priority", 1.0),
+                    ),
+                    "text": item["text"],
+                    "namespace": item.get("namespace", "default"),
+                }
+            )
+        return {"count": len(response_items), "items": response_items}
 
     def query(
         self,
@@ -277,6 +304,53 @@ def test_http_namespace_shard_client_query_batch_decodes_results(monkeypatch):
     assert result.metadata == {"source": "test"}
 
 
+def test_http_namespace_shard_client_remember_batch_decodes_ids(monkeypatch):
+    client = HTTPNamespaceShardClient()
+    captured = {}
+
+    def fake_request(method, address, path, payload):
+        captured.update(
+            {
+                "method": method,
+                "address": address,
+                "path": path,
+                "payload": payload,
+            }
+        )
+        return {
+            "count": 2,
+            "items": [
+                {"index": 0, "id": 11, "text": "first", "namespace": "tenant:a"},
+                {"index": 1, "id": 12, "text": "second", "namespace": "tenant:a"},
+            ],
+        }
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    payload = client.remember_batch(
+        "https://node-a.test",
+        items=[
+            {
+                "text": "first",
+                "namespace": "tenant:a",
+                "tags": ["profile"],
+                "metadata": {"source": "test"},
+            },
+            {
+                "text": "second",
+                "namespace": "tenant:a",
+                "tags": ["profile"],
+            },
+        ],
+    )
+
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/remember/batch"
+    assert captured["payload"]["items"][0]["text"] == "first"
+    assert payload["count"] == 2
+    assert [item["id"] for item in payload["items"]] == [11, 12]
+
+
 def test_sharded_wavemind_routes_namespaces_to_isolated_databases(tmp_path):
     router = NamespaceShardRouter(tmp_path / "shards", shard_count=8)
     left, right = _two_namespaces_on_different_shards(router)
@@ -455,6 +529,64 @@ def test_distributed_sharded_wavemind_batches_queries_across_service_nodes(tmp_p
         assert batch.query_http_requests == 1
         assert batch.individual_query_http_requests == 3
         assert batch.request_reduction_ratio == pytest.approx(2 / 3)
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_batches_writes_across_service_nodes(tmp_path):
+    class CountingClient(LocalWaveMindServiceClient):
+        def __init__(self, tmp_path):
+            super().__init__(tmp_path)
+            self.remember_addresses = []
+            self.remember_batch_addresses = []
+
+        def remember(self, address, **kwargs):
+            self.remember_addresses.append(address)
+            return super().remember(address, **kwargs)
+
+        def remember_batch(self, address, **kwargs):
+            self.remember_batch_addresses.append(address)
+            return super().remember_batch(address, **kwargs)
+
+    client = CountingClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        write_quorum=2,
+        read_quorum=1,
+        read_fanout=1,
+        client=client,
+    )
+    try:
+        namespace = "tenant:write-batch"
+        batch = memory.remember_batch(
+            [
+                {
+                    "text": f"batch write memory item {item}",
+                    "namespace": namespace,
+                    "tags": ["batch"],
+                }
+                for item in range(4)
+            ]
+        )
+
+        assert isinstance(batch, DistributedRememberBatchResult)
+        assert batch.ok
+        assert len(batch.results) == 4
+        assert all(len(result.writes) == 3 for result in batch.results)
+        assert len(client.remember_batch_addresses) == 3
+        assert client.remember_addresses == []
+        assert batch.write_http_requests == 3
+        assert batch.individual_write_http_requests == 12
+        assert batch.request_reduction_ratio == pytest.approx(0.75)
+
+        query = memory.query(
+            "batch write memory item 2",
+            namespace=namespace,
+            top_k=1,
+            tags=("batch",),
+        )
+        assert query[0].text == "batch write memory item 2"
     finally:
         client.close()
 

@@ -335,6 +335,19 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind sustained HTTP cluster load"]["failover_hit_rate"] == 1.0
     assert results["WaveMind sustained HTTP cluster load"]["forget_success_rate"] == 1.0
     assert results["WaveMind sustained HTTP cluster load"]["delete_suppression_rate"] == 1.0
+    assert results["WaveMind sustained HTTP cluster load"]["write_batches"] == 1
+    assert (
+        results["WaveMind sustained HTTP cluster load"]["write_batch_http_requests"]
+        < results["WaveMind sustained HTTP cluster load"][
+            "write_batch_individual_http_requests"
+        ]
+    )
+    assert (
+        results["WaveMind sustained HTTP cluster load"][
+            "write_batch_request_reduction_ratio"
+        ]
+        > 0.0
+    )
     assert results["WaveMind sustained HTTP cluster load"]["query_batches"] == 1
     assert results["WaveMind sustained HTTP cluster load"]["failover_query_batches"] == 1
     assert results["WaveMind sustained HTTP cluster load"]["delete_suppression_query_batches"] == 1

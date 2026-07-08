@@ -168,6 +168,35 @@ class DistributedWriteResult:
 
 
 @dataclass(frozen=True)
+class DistributedRememberBatchResult:
+    results: tuple[DistributedWriteResult, ...]
+    write_http_requests: int = 0
+    individual_write_http_requests: int = 0
+
+    @property
+    def ok(self) -> bool:
+        return all(result.ok for result in self.results)
+
+    @property
+    def request_reduction_ratio(self) -> float:
+        if self.individual_write_http_requests <= 0:
+            return 0.0
+        return 1.0 - (
+            float(self.write_http_requests)
+            / float(self.individual_write_http_requests)
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "items": [result.as_dict() for result in self.results],
+            "write_http_requests": self.write_http_requests,
+            "individual_write_http_requests": self.individual_write_http_requests,
+            "request_reduction_ratio": self.request_reduction_ratio,
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class DistributedForgetResult:
     namespace: str
     primary_node: str
@@ -322,6 +351,27 @@ class HTTPNamespaceShardClient:
         }
         response = self._request("POST", address, "/remember", payload)
         return int(response["id"])
+
+    def remember_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        payload = {"items": items}
+        response = self._request("POST", address, "/remember/batch", payload)
+        return {
+            "count": int(response.get("count", 0)),
+            "items": [
+                {
+                    "index": int(item.get("index", index)),
+                    "id": int(item["id"]),
+                    "text": item.get("text"),
+                    "namespace": item.get("namespace"),
+                }
+                for index, item in enumerate(response.get("items", []))
+            ],
+        }
 
     def query(
         self,
@@ -637,6 +687,127 @@ class DistributedShardedWaveMind:
             writes=writes,
             failed_nodes=failed,
             write_quorum=self.write_quorum,
+        )
+
+    def remember_batch(
+        self,
+        items: list[dict[str, Any]],
+    ) -> DistributedRememberBatchResult:
+        if not items:
+            return DistributedRememberBatchResult(
+                results=(),
+                write_http_requests=0,
+                individual_write_http_requests=0,
+            )
+
+        normalized: list[dict[str, Any]] = []
+        placements: list[NamespacePlacement] = []
+        writes_by_index: list[dict[str, int]] = [{} for _ in items]
+        failed_by_index: list[dict[str, str]] = [{} for _ in items]
+        by_node: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+
+        for index, raw_item in enumerate(items):
+            namespace = str(raw_item.get("namespace", "default"))
+            text = str(raw_item["text"])
+            item = {
+                "text": text,
+                "namespace": namespace,
+                "tags": list(raw_item.get("tags", ())),
+                "ttl_seconds": raw_item.get("ttl_seconds"),
+                "metadata": dict(raw_item.get("metadata") or {}),
+                "priority": float(raw_item.get("priority", 1.0)),
+            }
+            normalized.append(item)
+            placement = self.placement(namespace)
+            placements.append(placement)
+            for node_id in placement.replicas:
+                if not self._available.get(node_id, False):
+                    failed_by_index[index][node_id] = "node unavailable"
+                    continue
+                by_node.setdefault(node_id, []).append((index, item))
+
+        write_http_requests = 0
+        for node_id, node_items in by_node.items():
+            batch_payload = [item for _, item in node_items]
+            try:
+                remember_batch = getattr(self.client, "remember_batch", None)
+                if callable(remember_batch):
+                    response = remember_batch(
+                        self._address(node_id),
+                        items=batch_payload,
+                    )
+                    write_http_requests += 1
+                else:
+                    response_items = []
+                    for local_index, item in enumerate(batch_payload):
+                        response_items.append(
+                            {
+                                "index": local_index,
+                                "id": self.client.remember(
+                                    self._address(node_id),
+                                    text=str(item["text"]),
+                                    namespace=str(item["namespace"]),
+                                    tags=tuple(item.get("tags", ())),
+                                    ttl_seconds=item.get("ttl_seconds"),
+                                    metadata=dict(item.get("metadata") or {}),
+                                    priority=float(item.get("priority", 1.0)),
+                                ),
+                                "text": item["text"],
+                                "namespace": item["namespace"],
+                            }
+                        )
+                        write_http_requests += 1
+                    response = {"count": len(response_items), "items": response_items}
+                self._mark_node_success(node_id)
+            except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
+                for original_index, _ in node_items:
+                    failed_by_index[original_index][node_id] = str(exc)
+                continue
+
+            seen_local_indexes: set[int] = set()
+            for item in response.get("items", []):
+                local_index = int(item.get("index", len(seen_local_indexes)))
+                if local_index < 0 or local_index >= len(node_items):
+                    continue
+                seen_local_indexes.add(local_index)
+                original_index, _ = node_items[local_index]
+                writes_by_index[original_index][node_id] = int(item["id"])
+            missing_local_indexes = set(range(len(node_items))) - seen_local_indexes
+            for local_index in missing_local_indexes:
+                original_index, _ = node_items[local_index]
+                failed_by_index[original_index][node_id] = "batch item missing"
+
+        results: list[DistributedWriteResult] = []
+        for index, item in enumerate(normalized):
+            writes = writes_by_index[index]
+            failed = failed_by_index[index]
+            namespace = str(item["namespace"])
+            placement = placements[index]
+            if len(writes) < self.write_quorum:
+                raise DistributedWriteQuorumError(
+                    f"Write quorum {self.write_quorum} was not reached for "
+                    f"batch item {index} in namespace {namespace!r}; "
+                    f"successful writes: {len(writes)}; failures: {failed}"
+                )
+            results.append(
+                DistributedWriteResult(
+                    namespace=namespace,
+                    primary_node=placement.primary,
+                    writes=dict(writes),
+                    failed_nodes=dict(failed),
+                    write_quorum=self.write_quorum,
+                )
+            )
+
+        individual_write_http_requests = sum(
+            len(placement.replicas)
+            for placement in placements
+        )
+        return DistributedRememberBatchResult(
+            results=tuple(results),
+            write_http_requests=write_http_requests,
+            individual_write_http_requests=individual_write_http_requests,
         )
 
     def query(

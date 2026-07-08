@@ -186,6 +186,65 @@ def test_fastapi_remember_query_forget_and_stats(tmp_path):
         mind.close()
 
 
+def test_fastapi_remember_batch_persists_items_and_invalidates_cache(tmp_path):
+    mind = WaveMind(
+        db_path=tmp_path / "api-remember-batch.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+        score_threshold=0.05,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            batch = client.post(
+                "/remember/batch",
+                json={
+                    "items": [
+                        {
+                            "text": "batch API memory about budget",
+                            "namespace": "tenant:batch-api",
+                            "tags": ["profile"],
+                            "metadata": {"source": "test"},
+                        },
+                        {
+                            "text": "batch API memory about writing style",
+                            "namespace": "tenant:batch-api",
+                            "tags": ["profile"],
+                        },
+                    ]
+                },
+            )
+
+            assert batch.status_code == 200
+            payload = batch.json()
+            assert payload["count"] == 2
+            assert payload["items"][0]["index"] == 0
+            assert payload["items"][0]["text"] == "batch API memory about budget"
+            assert payload["items"][0]["namespace"] == "tenant:batch-api"
+            assert payload["items"][1]["index"] == 1
+            assert payload["items"][0]["id"] != payload["items"][1]["id"]
+
+            query = client.post(
+                "/query",
+                json={
+                    "text": "budget",
+                    "namespace": "tenant:batch-api",
+                    "top_k": 2,
+                    "tags": ["profile"],
+                },
+            )
+            assert query.status_code == 200
+            texts = {item["text"] for item in query.json()["results"]}
+            assert "batch API memory about budget" in texts
+
+            stats = client.get("/stats", params={"namespace": "tenant:batch-api"})
+            assert stats.status_code == 200
+            assert stats.json()["active_memories"] == 2
+    finally:
+        mind.close()
+
+
 def test_fastapi_default_mind_uses_recovery_journal_env(tmp_path, monkeypatch):
     db_path = tmp_path / "api-env.sqlite3"
     journal_path = tmp_path / "api-env.recovery.jsonl"

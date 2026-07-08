@@ -2502,21 +2502,28 @@ def run_sustained_http_cluster_workload(
         for namespace in namespaces
         for text in texts[namespace]
     ]
-
-    def write_one(task: tuple[str, str]) -> bool:
-        namespace, text = task
-        op_started = time.perf_counter()
-        try:
-            result = memory.remember(text, namespace=namespace, tags=("sustained",))
-            return result.ok and len(result.writes) >= memory.write_quorum
-        except Exception as exc:  # pragma: no cover - service boundary
-            errors.append(f"write {namespace}: {exc}")
-            return False
-        finally:
-            write_latencies.append((time.perf_counter() - op_started) * 1000.0)
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        write_results = list(pool.map(write_one, write_tasks))
+    write_batch_report = None
+    write_started = time.perf_counter()
+    try:
+        write_batch_report = memory.remember_batch(
+            [
+                {
+                    "text": text,
+                    "namespace": namespace,
+                    "tags": ["sustained"],
+                }
+                for namespace, text in write_tasks
+            ]
+        )
+        write_results = [
+            result.ok and len(result.writes) >= memory.write_quorum
+            for result in write_batch_report.results
+        ]
+    except Exception as exc:  # pragma: no cover - service boundary
+        errors.append(f"write batch: {exc}")
+        write_results = [False for _ in write_tasks]
+    finally:
+        write_latencies.append((time.perf_counter() - write_started) * 1000.0)
 
     def batch_query_tasks(
         tasks: list[tuple[str, str]],
@@ -2670,6 +2677,22 @@ def run_sustained_http_cluster_workload(
         "queries": len(query_results),
         "failover_queries": len(failover_results),
         "forgets": len(forget_results),
+        "write_batches": int(write_batch_report is not None),
+        "write_batch_http_requests": (
+            int(getattr(write_batch_report, "write_http_requests", 0))
+            if write_batch_report is not None
+            else 0
+        ),
+        "write_batch_individual_http_requests": (
+            int(getattr(write_batch_report, "individual_write_http_requests", 0))
+            if write_batch_report is not None
+            else 0
+        ),
+        "write_batch_request_reduction_ratio": (
+            float(getattr(write_batch_report, "request_reduction_ratio", 0.0))
+            if write_batch_report is not None
+            else 0.0
+        ),
         "query_batches": int(query_batch_report is not None),
         "failover_query_batches": int(failover_batch_report is not None),
         "delete_suppression_query_batches": int(delete_batch_report is not None),
@@ -4396,6 +4419,11 @@ def main() -> int:
         elif result["engine"] == "WaveMind sustained HTTP cluster load":
             print(f"| sustained HTTP cluster | success_rate | {result['success_rate']:.3f} |")
             print(f"| sustained HTTP cluster | failover_hit_rate | {result['failover_hit_rate']:.3f} |")
+            print(
+                "| sustained HTTP cluster | write_batch_http_requests | "
+                f"{result['write_batch_individual_http_requests']} -> "
+                f"{result['write_batch_http_requests']} |"
+            )
             print(
                 "| sustained HTTP cluster | query_batch_http_requests | "
                 f"{result['query_batch_individual_http_requests']} -> "

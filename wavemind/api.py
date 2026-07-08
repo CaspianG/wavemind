@@ -355,6 +355,23 @@ class RememberResponse(BaseModel):
     id: int
 
 
+class RememberBatchRequest(BaseModel):
+    items: list[RememberRequest] = Field(default_factory=list)
+
+
+class RememberBatchItemResponse(BaseModel):
+    index: int
+    id: int
+    text: str
+    namespace: str
+
+
+class RememberBatchResponse(BaseModel):
+    count: int
+    cache_invalidated: int = 0
+    items: list[RememberBatchItemResponse]
+
+
 class QueryRequest(BaseModel):
     text: str = Field(validation_alias=AliasChoices("text", "query"))
     namespace: str = "default"
@@ -1079,6 +1096,57 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
             invalidated = _invalidate_cache(app, request.namespace)
         logger.info("remembered id=%s namespace=%s cache_invalidated=%s", id, request.namespace, invalidated)
         return RememberResponse(id=id)
+
+    @app.post(
+        "/remember/batch",
+        response_model=RememberBatchResponse,
+        dependencies=[Depends(require_role("write"))],
+    )
+    def remember_batch(request: RememberBatchRequest) -> RememberBatchResponse:
+        if not request.items:
+            raise HTTPException(status_code=400, detail="remember batch must contain at least one item")
+        max_items = int(os.environ.get("WAVEMIND_REMEMBER_BATCH_MAX_ITEMS", "1000") or "1000")
+        if len(request.items) > max_items:
+            raise HTTPException(
+                status_code=413,
+                detail=f"remember batch exceeds WAVEMIND_REMEMBER_BATCH_MAX_ITEMS={max_items}",
+            )
+        items: list[RememberBatchItemResponse] = []
+        invalidated_namespaces: set[str] = set()
+        with _api_operation(app, "remember_batch"):
+            for index, item in enumerate(request.items):
+                remember_result = app.state.mind.remember(
+                    item.text,
+                    namespace=item.namespace,
+                    tags=item.tags,
+                    ttl_seconds=item.ttl_seconds,
+                    metadata=item.metadata,
+                    priority=item.priority,
+                )
+                items.append(
+                    RememberBatchItemResponse(
+                        index=index,
+                        id=_remember_response_id(remember_result),
+                        text=item.text,
+                        namespace=item.namespace,
+                    )
+                )
+                invalidated_namespaces.add(item.namespace)
+            invalidated = sum(
+                _invalidate_cache(app, namespace)
+                for namespace in sorted(invalidated_namespaces)
+            )
+        logger.info(
+            "remember_batch count=%s namespaces=%s cache_invalidated=%s",
+            len(items),
+            len(invalidated_namespaces),
+            invalidated,
+        )
+        return RememberBatchResponse(
+            count=len(items),
+            cache_invalidated=invalidated,
+            items=items,
+        )
 
     @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_role("read"))])
     def query(request: QueryRequest) -> QueryResponse:
