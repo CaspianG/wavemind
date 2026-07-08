@@ -59,6 +59,9 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["memory_os_policy"]["scale_strategy"] == (
         "external-index-sharding-and-production-controls"
     )
+    assert payload["memory_os_policy"]["history_trend"] == "first_run"
+    assert payload["memory_os_policy"]["history_previous_runs"] == 0
+    assert payload["memory_os_policy"]["repeated_required_ids"] == []
     assert payload["strict_production_evidence"]["overall_status"] == "action_required"
     assert payload["strict_production_evidence"]["summary"]["total_requirements"] == 8
     assert payload["strict_production_evidence"]["action_required"]

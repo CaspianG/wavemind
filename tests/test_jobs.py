@@ -631,12 +631,71 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         assert policy_by_id["scale-policy"].status == "action_required"
         assert policy_by_id["scale-policy"].evidence["recommendation_ids"]
         assert report.as_dict()["policy_manifest"]["decision_count"] >= 6
+        assert report.policy_history.previous_runs == 0
+        assert report.policy_history.trend == "first_run"
+        assert report.as_dict()["policy_history"]["trend"] == "first_run"
         assert any("persisted ANN backend" in item for item in report.recommendations)
         assert audit and audit[0].metadata["ok"] is True
         assert audit[0].metadata["priority_predictions"] >= 1
         assert audit[0].metadata["predictive_prefetch_warmed"] >= 1
         assert audit[0].metadata["policy_status"] == "action_required"
         assert "prefetch-policy" in audit[0].metadata["policy_decision_ids"]
+        assert audit[0].metadata["policy_decision_status_by_id"]["prefetch-policy"] == "ok"
+        assert audit[0].metadata["policy_history_trend"] == "first_run"
+    finally:
+        memory.close()
+
+
+def test_memory_os_worker_learns_repeated_policy_required_from_history(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-policy-history.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        memory.remember("budget preference hot memory", namespace="agent")
+        memory.query("budget preference", namespace="agent", top_k=1)
+        memory.query("budget preference", namespace="agent", top_k=1)
+
+        worker = MemoryOSWorker(memory, cache=None)
+        first = worker.run_once(
+            namespace="agent",
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=2,
+            top_k=1,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            adaptive_forgetting=False,
+            memory_pressure_threshold=1000,
+        )
+        second = worker.run_once(
+            namespace="agent",
+            audit_limit=10,
+            max_hot_queries=4,
+            min_frequency=2,
+            top_k=1,
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            adaptive_forgetting=False,
+            memory_pressure_threshold=1000,
+        )
+        audit = memory.audit_events(namespace="agent", action="memory_os", limit=1)
+
+        assert first.policy_history.previous_runs == 0
+        assert first.policy_history.trend == "first_run"
+        assert first.policy_manifest.as_dict()["decisions"]
+        assert second.policy_history.previous_runs == 1
+        assert second.policy_history.trend == "repeated_action_required"
+        assert "prefetch-policy" in second.policy_history.repeated_action_required_ids
+        assert "prefetch-policy" in second.policy_history.repeated_required_ids
+        assert second.policy_history.status_counts["action_required"] >= 2
+        assert second.as_dict()["policy_history"]["previous_runs"] == 1
+        assert audit[0].metadata["policy_history_trend"] == "repeated_action_required"
+        assert "prefetch-policy" in audit[0].metadata["policy_repeated_required_ids"]
     finally:
         memory.close()
 

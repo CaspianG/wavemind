@@ -250,6 +250,9 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Memory OS"]["policy_decision_strategies"][
         "scale-policy"
     ] == "external-index-sharding-and-production-controls"
+    assert results["WaveMind Memory OS"]["policy_history_trend"] == "first_run"
+    assert results["WaveMind Memory OS"]["policy_history_previous_runs"] == 0
+    assert results["WaveMind Memory OS"]["policy_repeated_required_ids"] == []
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predictive_prefetch" in results["WaveMind Memory OS"]["actions"]

@@ -285,6 +285,9 @@ def _memory_os_policy_status(payload: dict[str, Any]) -> dict[str, Any]:
         "decision_strategies": strategies,
         "scale_strategy": strategies.get("scale-policy"),
         "coordination_strategy": strategies.get("coordination-policy"),
+        "history_trend": row.get("policy_history_trend", "missing"),
+        "history_previous_runs": int(row.get("policy_history_previous_runs", 0) or 0),
+        "repeated_required_ids": list(row.get("policy_repeated_required_ids", []) or []),
         "required_decisions_present": required.issubset(set(decision_ids)),
         "source": "benchmarks/scale_readiness_results.json",
     }

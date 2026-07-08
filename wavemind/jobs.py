@@ -6,7 +6,7 @@ import hashlib
 import math
 import shutil
 import uuid
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -819,6 +819,42 @@ class MemoryOSPolicyManifest:
 
 
 @dataclass(frozen=True)
+class MemoryOSPolicyHistory:
+    previous_runs: int = 0
+    window: int = 5
+    trend: str = "first_run"
+    repeated_action_required_ids: tuple[str, ...] = ()
+    repeated_architecture_required_ids: tuple[str, ...] = ()
+    stable_ok_ids: tuple[str, ...] = ()
+    status_counts: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def repeated_required_ids(self) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(
+                [
+                    *self.repeated_action_required_ids,
+                    *self.repeated_architecture_required_ids,
+                ]
+            )
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "previous_runs": self.previous_runs,
+            "window": self.window,
+            "trend": self.trend,
+            "repeated_action_required_ids": list(self.repeated_action_required_ids),
+            "repeated_architecture_required_ids": list(
+                self.repeated_architecture_required_ids
+            ),
+            "repeated_required_ids": list(self.repeated_required_ids),
+            "stable_ok_ids": list(self.stable_ok_ids),
+            "status_counts": dict(self.status_counts),
+        }
+
+
+@dataclass(frozen=True)
 class MemoryOSReport:
     namespace: str | None
     scanned_events: int
@@ -849,6 +885,9 @@ class MemoryOSReport:
     suggestions: tuple[MemoryOSImprovementSuggestion, ...] = ()
     policy_manifest: MemoryOSPolicyManifest = field(
         default_factory=MemoryOSPolicyManifest
+    )
+    policy_history: MemoryOSPolicyHistory = field(
+        default_factory=MemoryOSPolicyHistory
     )
 
     @property
@@ -884,6 +923,7 @@ class MemoryOSReport:
             "recommendations": list(self.recommendations),
             "suggestions": [suggestion.as_dict() for suggestion in self.suggestions],
             "policy_manifest": self.policy_manifest.as_dict(),
+            "policy_history": self.policy_history.as_dict(),
             "ok": self.ok,
         }
 
@@ -2172,6 +2212,11 @@ class MemoryOSWorker:
             lock_report=lock_report,
             deployment=deployment,
         )
+        policy_history = self._policy_history(
+            namespace=namespace,
+            current=policy_manifest,
+            window=5,
+        )
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -2199,6 +2244,7 @@ class MemoryOSWorker:
             recommendations=tuple(recommendations),
             suggestions=suggestions,
             policy_manifest=policy_manifest,
+            policy_history=policy_history,
         )
         self._log_report(report)
         return report
@@ -3053,6 +3099,114 @@ class MemoryOSWorker:
             decisions=tuple(decisions),
         )
 
+    def _policy_history(
+        self,
+        *,
+        namespace: str | None,
+        current: MemoryOSPolicyManifest,
+        window: int,
+    ) -> MemoryOSPolicyHistory:
+        events: list[Any] = []
+        if hasattr(self.memory, "audit_events"):
+            try:
+                events = list(
+                    self.memory.audit_events(
+                        namespace=namespace,
+                        action="memory_os",
+                        limit=max(0, int(window)),
+                    )
+                )
+            except Exception:
+                events = []
+        previous_by_id: dict[str, Counter[str]] = {}
+        status_counts: Counter[str] = Counter()
+        for decision in current.decisions:
+            status_counts.update([decision.status])
+        for event in events:
+            metadata = getattr(event, "metadata", {}) or {}
+            status_by_id = self._policy_status_by_id_from_metadata(metadata)
+            for decision_id, status in status_by_id.items():
+                previous_by_id.setdefault(decision_id, Counter()).update([status])
+                status_counts.update([status])
+
+        current_by_id = {decision.id: decision.status for decision in current.decisions}
+        repeated_action = tuple(
+            sorted(
+                decision_id
+                for decision_id, status in current_by_id.items()
+                if status == "action_required"
+                and previous_by_id.get(decision_id, Counter()).get("action_required", 0) > 0
+            )
+        )
+        repeated_architecture = tuple(
+            sorted(
+                decision_id
+                for decision_id, status in current_by_id.items()
+                if status == "architecture_required"
+                and previous_by_id.get(decision_id, Counter()).get("architecture_required", 0) > 0
+            )
+        )
+        stable_ok = tuple(
+            sorted(
+                decision_id
+                for decision_id, status in current_by_id.items()
+                if status == "ok"
+                and previous_by_id.get(decision_id, Counter()).get("ok", 0) > 0
+            )
+        )
+        previous_required = any(
+            count
+            for counter in previous_by_id.values()
+            for status, count in counter.items()
+            if status in {"action_required", "architecture_required"}
+        )
+        current_required = any(
+            status in {"action_required", "architecture_required"}
+            for status in current_by_id.values()
+        )
+        if not events:
+            trend = "first_run"
+        elif repeated_architecture:
+            trend = "repeated_architecture_required"
+        elif repeated_action:
+            trend = "repeated_action_required"
+        elif previous_required and not current_required:
+            trend = "improving"
+        elif stable_ok:
+            trend = "stable"
+        else:
+            trend = "watch"
+        return MemoryOSPolicyHistory(
+            previous_runs=len(events),
+            window=max(0, int(window)),
+            trend=trend,
+            repeated_action_required_ids=repeated_action,
+            repeated_architecture_required_ids=repeated_architecture,
+            stable_ok_ids=stable_ok,
+            status_counts=dict(sorted(status_counts.items())),
+        )
+
+    def _policy_status_by_id_from_metadata(
+        self,
+        metadata: dict[str, object],
+    ) -> dict[str, str]:
+        by_id = metadata.get("policy_decision_status_by_id")
+        if isinstance(by_id, dict):
+            return {
+                str(decision_id): str(status)
+                for decision_id, status in by_id.items()
+                if decision_id is not None and status is not None
+            }
+        ids = metadata.get("policy_decision_ids")
+        statuses = metadata.get("policy_decision_statuses")
+        if isinstance(ids, list) and isinstance(statuses, list):
+            return {
+                str(decision_id): str(status)
+                for decision_id, status in zip(ids, statuses)
+                if decision_id is not None and status is not None
+            }
+        return {}
+
     def _architecture_advice(
         self,
         *,
@@ -3131,6 +3285,18 @@ class MemoryOSWorker:
                     "policy_decision_ids": [
                         decision.id for decision in report.policy_manifest.decisions
                     ],
+                    "policy_decision_statuses": [
+                        decision.status for decision in report.policy_manifest.decisions
+                    ],
+                    "policy_decision_status_by_id": {
+                        decision.id: decision.status
+                        for decision in report.policy_manifest.decisions
+                    },
+                    "policy_history_trend": report.policy_history.trend,
+                    "policy_history_previous_runs": report.policy_history.previous_runs,
+                    "policy_repeated_required_ids": list(
+                        report.policy_history.repeated_required_ids
+                    ),
                     "actions": list(report.actions),
                     "ok": report.ok,
                 },

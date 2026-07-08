@@ -1980,6 +1980,11 @@ def run_memory_os_profile() -> dict[str, object]:
                     decision.id: decision.strategy
                     for decision in report.policy_manifest.decisions
                 },
+                "policy_history_trend": report.policy_history.trend,
+                "policy_history_previous_runs": report.policy_history.previous_runs,
+                "policy_repeated_required_ids": list(
+                    report.policy_history.repeated_required_ids
+                ),
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),
