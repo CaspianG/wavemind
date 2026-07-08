@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T01:48:52Z",
+  "generated_at": "2026-07-08T02:07:17Z",
   "source_ref": "dd75c758e64e",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -37,8 +37,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T01:48:52Z",
-    "age_days": 0.0001730018287037037,
+    "checked_at": "2026-07-08T02:07:17Z",
+    "age_days": 0.012960478587962964,
     "max_age_days": 3650.0,
     "errors": []
   },
@@ -285,6 +285,50 @@
       "total_checks": 8
     }
   },
+  "release_claims": {
+    "schema": "wavemind.release_claims.v1",
+    "release_status": "core_release_ready",
+    "claim_status": "claims_limited",
+    "summary": {
+      "release_status": "core_release_ready",
+      "claim_status": "claims_limited",
+      "strict_overall_status": "action_required",
+      "production_readiness_status": "pass",
+      "artifact_audit_status": "pass",
+      "allowed_claim_count": 2,
+      "locked_claim_count": 3,
+      "next_action_count": 8
+    },
+    "allowed_claims": [
+      {
+        "claim": "Core library/API readiness",
+        "status": "unlocked",
+        "evidence": "production_readiness_results.json and benchmark_artifact_audit.json"
+      },
+      {
+        "claim": "Large-N production run contracts",
+        "status": "available",
+        "evidence": "benchmarks/production_scale_run_plan.json"
+      }
+    ],
+    "locked_claims": [
+      {
+        "claim": "Remote service-node cluster SLO",
+        "status": "locked",
+        "evidence": "benchmarks/http_cluster_load_results.json"
+      },
+      {
+        "claim": "Remote multi-region active-active convergence",
+        "status": "locked",
+        "evidence": "benchmarks/external_http_active_active_results.json"
+      },
+      {
+        "claim": "10M-100M service-backed production scale",
+        "status": "locked",
+        "evidence": "large-N production_streaming_load result artifacts"
+      }
+    ]
+  },
   "source_files": [
     "benchmarks/benchmark_matrix_results.json",
     "benchmarks/benchmark_artifact_audit.json",
@@ -292,6 +336,7 @@
     "benchmarks/production_evidence_results.json",
     "benchmarks/production_evidence_preflight_results.json",
     "benchmarks/production_evidence_bundle_results.json",
+    "benchmarks/release_claims_results.json",
     "benchmarks/production_scale_run_plan.json"
   ],
   "load_errors": []

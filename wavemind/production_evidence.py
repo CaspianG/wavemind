@@ -1169,6 +1169,159 @@ def evaluate_production_evidence_bundle(
     }
 
 
+def build_release_claims_manifest(
+    root: Path = PROJECT_ROOT,
+    *,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Build the compact release-facing claim contract.
+
+    The production evidence bundle is intentionally verbose because operators
+    need every command, missing environment variable, and evidence artifact.
+    Release automation needs a smaller contract: whether the package can be
+    released, which claims are safe to repeat, and which claims remain locked.
+    """
+
+    bundle = evaluate_production_evidence_bundle(root, env=env)
+    summary = bundle.get("summary", {})
+    claim_status = str(bundle.get("claim_status") or summary.get("claim_status") or "missing")
+    readiness_status = str(summary.get("production_readiness_status") or "missing")
+    artifact_audit_status = str(summary.get("artifact_audit_status") or "missing")
+    strict_status = str(summary.get("strict_overall_status") or "missing")
+
+    if claim_status == "claims_unlocked":
+        release_status = "full_production_claims_ready"
+    elif (
+        claim_status == "claims_limited"
+        and readiness_status == "pass"
+        and artifact_audit_status == "pass"
+    ):
+        release_status = "core_release_ready"
+    else:
+        release_status = "release_blocked"
+
+    allowed_claims: list[dict[str, Any]] = []
+    locked_claims: list[dict[str, Any]] = []
+    for row in bundle.get("claim_boundaries", []):
+        if not isinstance(row, dict):
+            continue
+        normalized = {
+            "claim": row.get("claim"),
+            "status": row.get("status"),
+            "evidence": row.get("evidence"),
+        }
+        if row.get("status") in {"unlocked", "available"}:
+            allowed_claims.append(normalized)
+        else:
+            locked_claims.append(normalized)
+
+    next_actions: list[dict[str, Any]] = []
+    for row in bundle.get("next_actions", []):
+        if not isinstance(row, dict):
+            continue
+        next_actions.append(
+            {
+                "id": row.get("id"),
+                "title": row.get("title"),
+                "strict_status": row.get("strict_status"),
+                "preflight_status": row.get("preflight_status"),
+                "artifact": row.get("artifact"),
+                "missing_env": list(row.get("missing_env") or []),
+                "command": row.get("command"),
+                "claim_unlocked": row.get("claim_unlocked"),
+            }
+        )
+
+    return {
+        "schema": "wavemind.release_claims.v1",
+        "generated_at": _utc_now(),
+        "release_status": release_status,
+        "claim_status": claim_status,
+        "summary": {
+            "release_status": release_status,
+            "claim_status": claim_status,
+            "strict_overall_status": strict_status,
+            "production_readiness_status": readiness_status,
+            "artifact_audit_status": artifact_audit_status,
+            "allowed_claim_count": len(allowed_claims),
+            "locked_claim_count": len(locked_claims),
+            "next_action_count": len(next_actions),
+        },
+        "allowed_claims": allowed_claims,
+        "locked_claims": locked_claims,
+        "next_actions": next_actions,
+        "source_artifacts": {
+            "bundle": "benchmarks/production_evidence_bundle_results.json",
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+            "readiness": "benchmarks/production_readiness_results.json",
+            "artifact_audit": "benchmarks/benchmark_artifact_audit.json",
+        },
+    }
+
+
+def render_release_claims_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Release Claims",
+        "",
+        "This is the compact release-facing claim contract. It separates what a",
+        "release may safely claim from production-scale claims that remain locked",
+        "until strict external evidence artifacts pass.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| release status | `{summary['release_status']}` |",
+        f"| claim status | `{summary['claim_status']}` |",
+        f"| strict evidence | `{summary['strict_overall_status']}` |",
+        f"| production readiness | `{summary['production_readiness_status']}` |",
+        f"| artifact audit | `{summary['artifact_audit_status']}` |",
+        f"| allowed claims | `{summary['allowed_claim_count']}` |",
+        f"| locked claims | `{summary['locked_claim_count']}` |",
+        f"| next actions | `{summary['next_action_count']}` |",
+        "",
+        "## Allowed Claims",
+        "",
+        "| claim | status | evidence |",
+        "|---|---|---|",
+    ]
+    for row in payload.get("allowed_claims", []):
+        lines.append(
+            f"| {row['claim']} | `{row['status']}` | `{row['evidence']}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Locked Claims",
+            "",
+            "| claim | status | evidence |",
+            "|---|---|---|",
+        ]
+    )
+    for row in payload.get("locked_claims", []):
+        lines.append(
+            f"| {row['claim']} | `{row['status']}` | `{row['evidence']}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Next Actions",
+            "",
+            "| item | strict | preflight | artifact | missing env | command |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
+    for row in payload.get("next_actions", []):
+        missing_env = ", ".join(row.get("missing_env") or ())
+        command = str(row.get("command") or "").replace("|", "\\|")
+        lines.append(
+            f"| {row['title']} | `{row['strict_status']}` | `{row['preflight_status']}` | "
+            f"`{row['artifact']}` | `{missing_env}` | `{command}` |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [

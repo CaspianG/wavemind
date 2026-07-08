@@ -145,6 +145,11 @@ def test_release_workflow_builds_and_creates_github_release():
 
     assert 'tags:' in workflow
     assert '"v*"' in workflow
+    assert "wavemind production-evidence-bundle" in workflow
+    assert "wavemind release-claims" in workflow
+    assert "--fail-on-blocked" in workflow
+    assert "release_claims_results.json" in workflow
+    assert "RELEASE_CLAIMS.md" in workflow
     assert "python -m build" in workflow
     assert "python -m twine check dist/*" in workflow
     assert "softprops/action-gh-release" in workflow
@@ -246,6 +251,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_evidence_preflight_results.json" in readme
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in readme
     assert "wavemind production-evidence-preflight" in readme
+    assert "release_claims_results.json" in readme
+    assert "RELEASE_CLAIMS.md" in readme
+    assert "wavemind release-claims --write-artifacts --fail-on-blocked" in readme
     assert "faiss-persisted" in readme
     assert "SHA-256 checksum of normalized source" in readme
     assert "rebuilds it from the durable store" in readme
@@ -300,7 +308,16 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind production-evidence --strict" in benchmark_brief
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in benchmark_brief
     assert "production-evidence-preflight" in benchmark_brief
+    assert "RELEASE_CLAIMS.md" in benchmark_brief
+    assert "release-claims --write-artifacts --fail-on-blocked" in benchmark_brief
+    assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
     assert "production-evidence-preflight" in roadmap
+    leaderboard_workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "wavemind release-claims" in leaderboard_workflow
+    assert "benchmarks/release_claims_results.json" in leaderboard_workflow
+    assert "benchmarks/RELEASE_CLAIMS.md" in leaderboard_workflow
     assert "memory-os-plan" in roadmap
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert Path("benchmarks/render_leaderboard_status.py").exists()
@@ -309,6 +326,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/production_evidence_gate.py").exists()
     assert Path("benchmarks/production_evidence_preflight_results.json").exists()
     assert Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md").exists()
+    assert Path("benchmarks/release_claims_results.json").exists()
+    assert Path("benchmarks/RELEASE_CLAIMS.md").exists()
     assert Path("wavemind/production_evidence.py").exists()
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases

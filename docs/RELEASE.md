@@ -12,6 +12,7 @@ WaveMind uses Git tags for releases.
 pytest -q
 python -m build
 python -m twine check dist/*
+wavemind release-claims --write-artifacts --fail-on-blocked
 ```
 
 On Windows PowerShell:
@@ -20,6 +21,7 @@ On Windows PowerShell:
 pytest -q
 python -m build
 python -m twine check dist\*
+wavemind release-claims --write-artifacts --fail-on-blocked
 ```
 
 4. Commit the version bump.
@@ -39,7 +41,8 @@ git push origin main --tags
 ## Automation
 
 - `.github/workflows/release.yml` creates a GitHub Release and uploads built
-  artifacts for tags that match `v*`.
+  artifacts for tags that match `v*`. It also uploads the release claims
+  manifest and production evidence bundle.
 - `.github/release.yml` groups generated release notes into production,
   indexing, integrations, and documentation sections.
 - `.github/workflows/publish.yml` publishes to PyPI through trusted publishing
@@ -48,7 +51,14 @@ git push origin main --tags
 ## Rules
 
 - Do not publish a release with failing tests.
+- Do not publish a release when `wavemind release-claims --fail-on-blocked`
+  reports `release_blocked`.
 - Do not add benchmark claims to release notes unless the result JSON is
   committed under `benchmarks/`.
 - If the release changes public benchmark numbers, update README and
   `benchmarks/BENCHMARK_REPORT.md` before tagging.
+- `core_release_ready` is acceptable for a library release: it means core
+  readiness and artifact audit pass, while strict remote/large-N production
+  claims remain locked. `full_production_claims_ready` is required only when
+  release notes claim strict remote, managed-serverless, 50M, or 100M
+  production scale.

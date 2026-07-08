@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-07T23:21:11Z",
+  "generated_at": "2026-07-08T02:06:39Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-07T23:21:11Z",
+    "generated_at": "2026-07-08T02:06:39Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -132,7 +132,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-07T23:21:11Z",
+    "generated_at": "2026-07-08T02:06:39Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -310,7 +310,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-07T22:09:42Z",
+    "generated_at": "2026-07-08T01:31:40Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -327,7 +327,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-07T21:53:58Z",
+        "evidence": "audit status pass, generated_at 2026-07-08T01:00:15Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -430,9 +430,9 @@
         "id": "cluster_autoscale_planner",
         "title": "Cluster autoscaler plans node additions within headroom",
         "status": "pass",
-        "requirement": "Autoscale planning must convert target memories, RF, and per-node capacity into required node count, bounded target load, and namespace movement actions.",
-        "evidence": "current 4, required 50, target max 678711, moves 25+4069",
-        "next_step": "Connect this planner to operator reconciliation status and real HPA/load metrics."
+        "requirement": "Autoscale planning must convert target memories, RF, and per-node capacity into required node count, bounded target load, and a complete rolling namespace movement plan with quorum, checkpoint, repair, and validation safeguards.",
+        "evidence": "current 4, required 50, target max 678711, moves 4094+0, rebalance ready, batches 82, write quorum 2",
+        "next_step": "Connect rolling rebalance execution to operator reconciliation status and real HPA/load metrics."
       },
       {
         "id": "control_plane_consensus",
@@ -454,8 +454,8 @@
         "id": "operator_autoscaling_repair",
         "title": "Kubernetes operator bundle includes HPA and repair job",
         "status": "pass",
-        "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, and status conditions for readiness/autoscaling/capacity/repair plus control-plane consensus safety.",
-        "evidence": "CRD True, HPA True, repair True, replicas 34, required 34, target max 678711, status Ready, control-plane True",
+        "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, and status conditions for readiness/autoscaling/capacity/rebalance/repair plus control-plane consensus safety.",
+        "evidence": "CRD True, HPA True, repair True, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, control-plane True",
         "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
       },
       {
@@ -471,7 +471,7 @@
         "title": "Hot cache and query-audit prewarm work",
         "status": "pass",
         "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-        "evidence": "hit rate 0.92, prewarm hit True, p99 0.002800021320581436 ms",
+        "evidence": "hit rate 0.92, prewarm hit True, p99 0.00409991480410099 ms",
         "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
       },
       {
@@ -479,7 +479,7 @@
         "title": "Query-vector cache avoids repeated encoder work",
         "status": "pass",
         "requirement": "Repeated hot queries must reuse encoded query vectors locally across Redis-backed workers, and through the FastAPI service before hitting the vector index.",
-        "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 5.607399973087013 ms, service metrics True",
+        "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 5.8970000827685 ms, service metrics True",
         "next_step": "Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test."
       },
       {
@@ -487,7 +487,7 @@
         "title": "Batch query API amortizes service recall overhead",
         "status": "pass",
         "requirement": "FastAPI must support production batch recall so agents can issue many memory lookups with one HTTP request while preserving vector-cache reuse.",
-        "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 11.680788280389637, metrics True",
+        "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 8.706312708258936, metrics True",
         "next_step": "Keep the real Redis multi-process batch recall profile green, then repeat it with larger batches on remote Kubernetes/serverless nodes."
       },
       {
@@ -519,7 +519,7 @@
         "title": "Batch recall feedback updates priority, audit, and cache",
         "status": "pass",
         "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
-        "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 34.689399995841086 ms",
+        "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 58.41499997768551 ms",
         "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
       },
       {
@@ -550,9 +550,9 @@
         "id": "memory_os_worker",
         "title": "Memory OS worker prewarms, consolidates, and cleans up",
         "status": "pass",
-        "requirement": "Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
-        "evidence": "hot queries 2, prewarm 2, predictive warmed 6, transition hit True, transition queries ['risk limits'], transition edge True, expired 1, concepts 1, feedback events 8, priority predictions 2, forgetting demotions 4, architecture architecture_required",
-        "next_step": "Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments."
+        "requirement": "Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, production architecture advice, and typed self-improvement suggestions with evidence.",
+        "evidence": "hot queries 2, prewarm 2, predictive warmed 6, transition hit True, transition queries ['risk limits'], transition edge True, expired 1, concepts 1, feedback events 8, priority predictions 2, forgetting demotions 4, architecture architecture_required, suggestions 12 ['service-index-and-sharding', 'review-consolidated-concepts', 'predictive-prefetch-active', 'priority-learning-active', 'adaptive-forgetting-active', 'architecture:scale-plan', 'architecture:service-index', 'architecture:namespace-sharding', 'architecture:production-controls', 'architecture:replication-capacity', 'architecture:load-test', 'architecture:multimodal-payloads']",
+        "next_step": "Surface typed suggestions in Studio/operator dashboards and keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments."
       },
       {
         "id": "distributed_repair_tombstones",
@@ -575,7 +575,7 @@
         "title": "Sustained HTTP cluster load survives failover and repair",
         "status": "pass",
         "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-        "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 187.29 ms",
+        "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 218.16 ms",
         "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
       },
       {
@@ -583,7 +583,7 @@
         "title": "Runtime replica quorum survives node loss",
         "status": "pass",
         "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-        "evidence": "recall after loss True, repair copied 1, p99 1.8033001106232405 ms, concurrent hit rate 1.0",
+        "evidence": "recall after loss True, repair copied 1, p99 1.5153000131249428 ms, concurrent hit rate 1.0",
         "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
       },
       {
@@ -606,9 +606,9 @@
         "id": "structured_multimodal_payloads",
         "title": "Structured and multimodal payload retrieval works",
         "status": "pass",
-        "requirement": "Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable, retrievable through the same memory API, queryable through a shared cross-modal embedding space, returned with provenance, and compatible with externally computed multimodal vectors. Temporal events must support actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance. Large media assets must be backed by verified content-addressed object-store manifests. Knowledge graphs must support entity/predicate filters, multi-hop path traversal, persistence, and provenance.",
-        "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
-        "next_step": "Wire real CLIP/audio/video/3D encoder implementations into the precomputed-vector contract and run larger multimodal, temporal-event, and knowledge-graph retrieval tests against object-store-backed assets."
+        "requirement": "Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable, retrievable through the same memory API, queryable through a shared cross-modal embedding space, returned with provenance, and compatible with externally computed multimodal vectors. Temporal events must support actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance. Large media assets must be backed by verified content-addressed object-store manifests. Knowledge graphs must support entity/predicate filters, multi-hop path traversal, persistence, and provenance. External multimodal encoders must pass a precomputed-vector contract that checks global retrieval, target-modality routing, persisted finite normalized vectors, provenance, and vector separation margin.",
+        "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, encoder contract True, encoder global@1 1.0, encoder target@1 1.0, encoder margin 0.8113214611371999, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
+        "next_step": "Run the same encoder contract with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora."
       },
       {
         "id": "ten_million_load_profile",
@@ -662,13 +662,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-07T22:31:23Z",
-    "generated_at": "2026-07-07T22:09:42Z",
-    "source_ref": "7adba2eee923",
+    "checked_at": "2026-07-08T01:48:52Z",
+    "generated_at": "2026-07-08T01:48:38Z",
+    "source_ref": "dd75c758e64e",
     "workflow_run_id": null,
     "refresh_profile": "local",
-    "max_age_days": null,
-    "age_days": 0.015057927013888889,
+    "max_age_days": 3650.0,
+    "age_days": 0.0001730018287037037,
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,

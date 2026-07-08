@@ -30,6 +30,17 @@ jobs:
           python benchmarks/production_readiness_gate.py \
             --output /tmp/production_readiness_results.json \
             --markdown-output /tmp/PRODUCTION_READINESS.md
+          python -m wavemind production-evidence-bundle \
+            --root "$GITHUB_WORKSPACE" \
+            --write-artifacts \
+            --output /tmp/production_evidence_bundle_results.json \
+            --markdown-output /tmp/PRODUCTION_EVIDENCE_BUNDLE.md
+          python -m wavemind release-claims \
+            --root "$GITHUB_WORKSPACE" \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output /tmp/release_claims_results.json \
+            --markdown-output /tmp/RELEASE_CLAIMS.md
 
       - name: Build and verify package
         run: |
@@ -41,4 +52,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: dist/*
+          files: |
+            dist/*
+            /tmp/release_claims_results.json
+            /tmp/RELEASE_CLAIMS.md
+            /tmp/production_evidence_bundle_results.json
+            /tmp/PRODUCTION_EVIDENCE_BUNDLE.md

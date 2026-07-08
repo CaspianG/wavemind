@@ -5,7 +5,9 @@ import sys
 from pathlib import Path
 
 from wavemind.production_evidence import (
+    build_release_claims_manifest,
     evaluate_production_evidence_bundle,
+    render_release_claims_markdown,
     render_bundle_markdown,
 )
 
@@ -88,6 +90,38 @@ def test_production_evidence_bundle_markdown_lists_claim_boundaries():
     assert "Next Actions" in markdown
 
 
+def test_release_claims_manifest_allows_core_release_without_strict_claims():
+    root = Path(__file__).resolve().parents[1]
+    payload = build_release_claims_manifest(root, env={})
+
+    assert payload["schema"] == "wavemind.release_claims.v1"
+    assert payload["release_status"] == "core_release_ready"
+    assert payload["claim_status"] == "claims_limited"
+    assert payload["summary"]["production_readiness_status"] == "pass"
+    assert payload["summary"]["artifact_audit_status"] == "pass"
+    assert payload["summary"]["allowed_claim_count"] >= 1
+    assert payload["summary"]["locked_claim_count"] >= 1
+
+    allowed = {row["claim"]: row for row in payload["allowed_claims"]}
+    locked = {row["claim"]: row for row in payload["locked_claims"]}
+    assert allowed["Core library/API readiness"]["status"] == "unlocked"
+    assert allowed["Large-N production run contracts"]["status"] == "available"
+    assert locked["10M-100M service-backed production scale"]["status"] == "locked"
+    assert payload["next_actions"]
+
+
+def test_release_claims_markdown_lists_allowed_and_locked_claims():
+    root = Path(__file__).resolve().parents[1]
+    payload = build_release_claims_manifest(root, env={})
+    markdown = render_release_claims_markdown(payload)
+
+    assert "# WaveMind Release Claims" in markdown
+    assert "Allowed Claims" in markdown
+    assert "Locked Claims" in markdown
+    assert "core_release_ready" in markdown
+    assert "10M-100M service-backed production scale" in markdown
+
+
 def test_cli_production_evidence_bundle_writes_reports(tmp_path):
     project_root = Path(__file__).resolve().parents[1]
     output = tmp_path / "bundle.json"
@@ -151,3 +185,70 @@ def test_cli_production_evidence_bundle_strict_exits_nonzero():
     payload = json.loads(result.stdout)
     assert result.returncode == 2
     assert payload["claim_status"] == "claims_limited"
+
+
+def test_cli_release_claims_writes_reports_and_allows_core_release(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "release_claims.json"
+    markdown = tmp_path / "release_claims.md"
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "release-claims",
+            "--root",
+            str(project_root),
+            "--write-artifacts",
+            "--fail-on-blocked",
+            "--output",
+            str(output),
+            "--markdown-output",
+            str(markdown),
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    report = markdown.read_text(encoding="utf-8")
+
+    assert "release_status: core_release_ready" in result.stdout
+    assert payload["schema"] == "wavemind.release_claims.v1"
+    assert payload["release_status"] == "core_release_ready"
+    assert "# WaveMind Release Claims" in report
+
+
+def test_cli_release_claims_strict_exits_nonzero():
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "release-claims",
+            "--root",
+            str(project_root),
+            "--strict",
+            "--json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["release_status"] == "core_release_ready"

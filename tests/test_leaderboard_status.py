@@ -43,6 +43,15 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
     assert payload["production_evidence_bundle"]["next_action_count"] == 8
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
+    assert payload["release_claims"]["schema"] == "wavemind.release_claims.v1"
+    assert payload["release_claims"]["release_status"] == "core_release_ready"
+    assert payload["release_claims"]["claim_status"] == "claims_limited"
+    assert payload["release_claims"]["summary"]["allowed_claim_count"] >= 1
+    assert payload["release_claims"]["summary"]["locked_claim_count"] >= 1
+    assert any(
+        row["claim"] == "10M-100M service-backed production scale"
+        for row in payload["release_claims"]["locked_claims"]
+    )
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["production_scale_run_plan"]["total_profiles"] == 5
     assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000
@@ -57,6 +66,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/benchmark_matrix_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_bundle_results.json" in payload["source_files"]
+    assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert payload["load_errors"] == []
 
@@ -76,5 +86,9 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",
         "claims_unlocked",
+    }
+    assert payload["release_claims"]["release_status"] in {
+        "core_release_ready",
+        "full_production_claims_ready",
     }
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"

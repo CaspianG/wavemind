@@ -1,0 +1,152 @@
+{
+  "schema": "wavemind.release_claims.v1",
+  "generated_at": "2026-07-08T02:06:40Z",
+  "release_status": "core_release_ready",
+  "claim_status": "claims_limited",
+  "summary": {
+    "release_status": "core_release_ready",
+    "claim_status": "claims_limited",
+    "strict_overall_status": "action_required",
+    "production_readiness_status": "pass",
+    "artifact_audit_status": "pass",
+    "allowed_claim_count": 2,
+    "locked_claim_count": 3,
+    "next_action_count": 8
+  },
+  "allowed_claims": [
+    {
+      "claim": "Core library/API readiness",
+      "status": "unlocked",
+      "evidence": "production_readiness_results.json and benchmark_artifact_audit.json"
+    },
+    {
+      "claim": "Large-N production run contracts",
+      "status": "available",
+      "evidence": "benchmarks/production_scale_run_plan.json"
+    }
+  ],
+  "locked_claims": [
+    {
+      "claim": "Remote service-node cluster SLO",
+      "status": "locked",
+      "evidence": "benchmarks/http_cluster_load_results.json"
+    },
+    {
+      "claim": "Remote multi-region active-active convergence",
+      "status": "locked",
+      "evidence": "benchmarks/external_http_active_active_results.json"
+    },
+    {
+      "claim": "10M-100M service-backed production scale",
+      "status": "locked",
+      "evidence": "large-N production_streaming_load result artifacts"
+    }
+  ],
+  "next_actions": [
+    {
+      "id": "external_http_cluster",
+      "title": "External HTTP service-node load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/http_cluster_load_results.json",
+      "missing_env": [
+        "WAVEMIND_CLUSTER_NODES",
+        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+      ],
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f batch_query_size=24 -f commit_results=true",
+      "claim_unlocked": "Remote service-node cluster load SLO."
+    },
+    {
+      "id": "external_http_active_active",
+      "title": "External HTTP active-active regions",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/external_http_active_active_results.json",
+      "missing_env": [
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+      ],
+      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+      "claim_unlocked": "Remote multi-region active-active memory convergence."
+    },
+    {
+      "id": "serverless_remote_telemetry",
+      "title": "Managed/serverless remote telemetry",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "deploy/serverless/observed-telemetry.remote.json",
+      "missing_env": [
+        "WAVEMIND_SERVERLESS_NODES"
+      ],
+      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
+      "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
+    },
+    {
+      "id": "qdrant_10m_service",
+      "title": "10M Qdrant service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "missing_env": [
+        "WAVEMIND_QDRANT_URL"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "claim_unlocked": "10M Qdrant service-backed candidate index SLO."
+    },
+    {
+      "id": "qdrant_sharded_10m_service",
+      "title": "10M sharded Qdrant service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO."
+    },
+    {
+      "id": "pgvector_10m_service",
+      "title": "10M pgvector service load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+      "missing_env": [
+        "WAVEMIND_PGVECTOR_DSN"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."
+    },
+    {
+      "id": "faiss_ivfpq_50m",
+      "title": "50M FAISS IVF-PQ streaming load",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+      "missing_env": [
+        "WAVEMIND_FAISS_IVFPQ_PATH"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "claim_unlocked": "50M compressed local/persistent FAISS profile."
+    },
+    {
+      "id": "hundred_million_remote_load",
+      "title": "100M remote load result",
+      "strict_status": "action_required",
+      "preflight_status": "action_required",
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO."
+    }
+  ],
+  "source_artifacts": {
+    "bundle": "benchmarks/production_evidence_bundle_results.json",
+    "strict_evidence": "benchmarks/production_evidence_results.json",
+    "preflight": "benchmarks/production_evidence_preflight_results.json",
+    "readiness": "benchmarks/production_readiness_results.json",
+    "artifact_audit": "benchmarks/benchmark_artifact_audit.json"
+  }
+}

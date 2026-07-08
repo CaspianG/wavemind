@@ -71,7 +71,7 @@ policy matters more than raw vector-database scale:
   recognized 10M/50M/100M result JSON files, and can refresh the public
   leaderboard/readiness/evidence artifacts from the accepted result.
 - `benchmarks/production_readiness_gate.py` turns checked-in artifacts into a
-  production verdict. The current WaveMind core gate is `1.000` (`38/38` pass,
+  production verdict. The current WaveMind core gate is `1.000` (`39/39` pass,
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
@@ -88,6 +88,12 @@ policy matters more than raw vector-database scale:
   service index env, FAISS storage paths, plan artifacts, disk headroom, and
   exact output-producing commands, and can fail deployments with
   `--fail-on-action-required`.
+- `wavemind release-claims --write-artifacts --fail-on-blocked` is the compact
+  release-facing claim contract. It writes
+  `benchmarks/release_claims_results.json` and `benchmarks/RELEASE_CLAIMS.md`,
+  allows core library releases when readiness/audit pass, and keeps remote,
+  managed-serverless, 50M, and 100M production claims locked until strict
+  evidence artifacts pass.
 - `wavemind memory-os-plan` is now the read-only scheduler preflight for the
   adaptive Memory OS worker set. It turns stats and query-audit traffic into
   concrete cadences, worker counts, Redis/shared-cache requirements,

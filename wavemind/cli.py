@@ -50,12 +50,14 @@ from .k8s_operator import (
 from .object_store import S3SnapshotStore
 from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import (
+    build_release_claims_manifest,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
     render_bundle_markdown,
     render_markdown,
     render_preflight_markdown,
+    render_release_claims_markdown,
 )
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
@@ -360,6 +362,43 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md"),
     )
     production_evidence_bundle.add_argument("--json", action="store_true")
+
+    release_claims = sub.add_parser(
+        "release-claims",
+        help="Build a compact release-safe public claims manifest",
+    )
+    release_claims.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    release_claims.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown release-claims reports to the output paths.",
+    )
+    release_claims.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero unless strict production claims are unlocked.",
+    )
+    release_claims.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero only when the release claim contract is blocked.",
+    )
+    release_claims.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/release_claims_results.json"),
+    )
+    release_claims.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/RELEASE_CLAIMS.md"),
+    )
+    release_claims.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1053,6 +1092,37 @@ def print_production_evidence_bundle(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_release_claims(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"release_status: {summary['release_status']}")
+    print(f"claim_status: {summary['claim_status']}")
+    print(f"readiness: {summary['production_readiness_status']}")
+    print(f"artifact_audit: {summary['artifact_audit_status']}")
+    print(f"allowed_claims: {summary['allowed_claim_count']}")
+    print(f"locked_claims: {summary['locked_claim_count']}")
+    print("allowed:")
+    for row in payload.get("allowed_claims", []):
+        print(f"- [{row['status']}] {row['claim']}")
+    locked = payload.get("locked_claims", [])
+    if locked:
+        print("locked:")
+    for row in locked:
+        print(f"- [{row['status']}] {row['claim']}")
+        print(f"  evidence: {row['evidence']}")
+    next_actions = payload.get("next_actions", [])
+    if next_actions:
+        print("next_actions:")
+    for row in next_actions:
+        print(f"- [{row['strict_status']}/{row['preflight_status']}] {row['title']}")
+        print(f"  artifact: {row['artifact']}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        command = row.get("command")
+        if command:
+            print(f"  command: {command}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -1622,6 +1692,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.strict and payload["claim_status"] != "claims_unlocked":
             return 2
         return 0 if payload["claim_status"] in {"claims_unlocked", "claims_limited"} else 1
+
+    if args.command == "release-claims":
+        payload = build_release_claims_manifest(args.root)
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_release_claims_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_release_claims(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.strict and payload["claim_status"] != "claims_unlocked":
+            return 2
+        if args.fail_on_blocked and payload["release_status"] == "release_blocked":
+            return 2
+        return 0 if payload["release_status"] != "release_blocked" else 1
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)
