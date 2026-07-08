@@ -50,10 +50,12 @@
     .section-title { margin: 30px 0 12px; }
     .rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .rules p { padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+    .publication-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; align-items: start; }
+    .check-list { display: flex; flex-wrap: wrap; gap: 8px; }
     footer { margin-top: 30px; color: var(--muted); font-size: 0.9rem; }
     @media (max-width: 760px) {
       main { padding: 22px 14px 36px; }
-      .cards, .rules { grid-template-columns: 1fr; }
+      .cards, .rules, .publication-grid { grid-template-columns: 1fr; }
       th, td { padding: 9px 10px; }
     }
   </style>
@@ -68,13 +70,15 @@
   <div class="cards">
     <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>39/39 criteria pass</p></section>
 <section class="metric-card"><h2>Implemented</h2><strong>28</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
-<section class="metric-card"><h2>Refresh</h2><strong>2026-07-08T05:14:25Z</strong><p>source 5ae8f4785b1a</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-07-08T05:47:15Z</strong><p>source a2a8e78aabe1</p></section>
   </div>
 
   <section class="panel">
     <h2>Visual Summary</h2>
     <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
   </section>
+
+  <section class="panel"><h2>Publication Contract</h2><p>The leaderboard is generated from artifacts, freshness-checked, published to GitHub Pages, and claim-limited until strict production evidence passes.</p><div class="publication-grid"><div><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Weekly schedule</th><td>17 4 * * 1</td></tr><tr><th>Refresh profile</th><td>local</td></tr><tr><th>Pages URL</th><td>https://caspiang.github.io/wavemind/</td></tr><tr><th>Source ref</th><td>a2a8e78aabe1</td></tr><tr><th>Workflow run</th><td>local or manual artifact</td></tr></tbody></table></div><div class="check-list"><span class="badge pass">weekly schedule: true</span><span class="badge pass">manual dispatch: true</span><span class="badge pass">github pages upload: true</span><span class="badge pass">github pages deploy: true</span><span class="badge pass">review artifact uploaded: true</span><span class="badge pass">no scheduled bot commit to main: true</span><span class="badge pass">strict freshness gate: true</span><span class="badge pass">machine status published: true</span></div></div></section>
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">
@@ -99,8 +103,8 @@
 <td>Agent coherence and token savings</td>
 <td>agent-memory</td>
 <td>task success</td>
-<td>WaveMind: 0.917 / 2.984 ms</td>
-<td>Chroma static: 0.417 / 3.637 ms</td>
+<td>WaveMind: 0.917 / 2.49 ms</td>
+<td>Static vector: 0.333 / 0.645 ms</td>
 <td><span class="badge pass">WaveMind leads on quality</span></td>
 </tr>
 <tr>
@@ -235,7 +239,7 @@
 <td>Scale readiness profile</td>
 <td>production-scale</td>
 <td>precision@1</td>
-<td>WaveMind structured payloads: 1 / 0.617 ms</td>
+<td>WaveMind structured payloads: 1 / 0.61 ms</td>
 <td>-</td>
 <td>WaveMind-only check</td>
 </tr>
@@ -277,8 +281,8 @@
 </tr></thead><tbody>
 <tr>
 <td>Artifact freshness</td>
-<td>local matrix refresh at 2026-07-08T05:14:25Z</td>
-<td>source 5ae8f4785b1a; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>local matrix refresh at 2026-07-08T05:47:15Z</td>
+<td>source a2a8e78aabe1; audit gate enforced by validate_benchmark_artifacts.py</td>
 <td>Keep weekly refresh green before public claims.</td>
 </tr>
 <tr>

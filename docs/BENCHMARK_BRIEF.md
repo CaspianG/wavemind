@@ -62,15 +62,18 @@ The large-N scale gap matrix is in `benchmarks/SCALE_GAP.md`.
 `benchmarks/benchmark_artifact_audit.json` records the latest freshness and
 synchronization check for the generated benchmark artifacts.
 `docs/data/leaderboard-status.json` is the compact machine-readable public
-status contract for the GitHub Pages dashboard: publishability, artifact
-freshness, production readiness, strict production claim boundaries, and
-production evidence bundle status. It also exposes agent-quality lift and the
-active Memory OS policy manifest so external dashboards can track behavioral
-quality and self-management decisions without parsing Markdown.
+status contract for the GitHub Pages dashboard: publication workflow, Pages
+deployment contract, publishability, artifact freshness, production readiness,
+strict production claim boundaries, and production evidence bundle status. It
+also exposes agent-quality lift and the active Memory OS policy manifest so
+external dashboards can track behavioral quality and self-management decisions
+without parsing Markdown.
 The weekly leaderboard workflow refreshes these artifacts, uploads them for
 maintainer review, and deploys `docs/benchmark-dashboard.html` plus the
 machine-readable JSON evidence as a GitHub Pages living leaderboard instead of
-pushing scheduled bot commits to `main`.
+pushing scheduled bot commits to `main`. The `publication_contract` section
+records the cron schedule, expected refresh profile, Pages actions, artifact
+review policy, and claim policy in JSON.
 `full-check` plus the release workflow block stale or unsynchronized public
 benchmark artifacts with `benchmarks/validate_benchmark_artifacts.py
 --max-age-days 8`. Remote

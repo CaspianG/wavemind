@@ -1816,9 +1816,10 @@ Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/da
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
-The status JSON exposes first-class `freshness_gate`, `agent_quality`, and
-`memory_os_policy` sections, so dashboards can track stale or missing public
-evidence, task success, stale-error suppression, context savings, and active
+The status JSON exposes first-class `publication_contract`, `freshness_gate`,
+`agent_quality`, and `memory_os_policy` sections, so dashboards can verify the
+weekly GitHub Pages publication path, detect stale or missing public evidence,
+and track task success, stale-error suppression, context savings, and active
 Memory OS policy decisions without scraping Markdown.
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
@@ -1875,8 +1876,11 @@ validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 maintainer review. It also builds a static GitHub Pages bundle from the
 dashboard, reports, summary SVG, public status JSON, and machine-readable JSON evidence,
 then deploys the living leaderboard with `actions/upload-pages-artifact@v3` and
-`actions/deploy-pages@v4`. It does not push scheduled bot commits to `main`;
-reviewed benchmark refreshes should be committed from a maintainer account.
+`actions/deploy-pages@v4`. `docs/data/leaderboard-status.json` records this as a
+machine-readable `publication_contract`, including the cron schedule, Pages
+deployment actions, status JSON path, review policy, and claim boundary. The
+workflow does not push scheduled bot commits to `main`; reviewed benchmark
+refreshes should be committed from a maintainer account.
 `full-check` and the release workflow also run the same freshness gate with
 `--max-age-days 8`, so stale or manually edited public benchmark artifacts block
 normal CI and package releases.

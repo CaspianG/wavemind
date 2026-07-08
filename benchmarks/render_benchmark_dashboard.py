@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import html
 import re
 import sys
@@ -127,8 +128,57 @@ def _summary_cards(payload: dict[str, Any]) -> str:
     )
 
 
+def _load_leaderboard_status(root: Path) -> dict[str, Any]:
+    path = root / "docs" / "data" / "leaderboard-status.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _publication_contract_panel(status: dict[str, Any]) -> str:
+    contract = status.get("publication_contract", {})
+    checks = contract.get("checks", {}) if isinstance(contract, dict) else {}
+    rows = [
+        ("Status", contract.get("status", "missing")),
+        ("Weekly schedule", contract.get("schedule_cron", "missing")),
+        ("Refresh profile", contract.get("refresh_profile", "missing")),
+        ("Pages URL", contract.get("public_url", "missing")),
+        ("Source ref", contract.get("source_ref", "missing")),
+        ("Workflow run", contract.get("workflow_run_id") or "local or manual artifact"),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    check_items = []
+    for key, value in checks.items():
+        label = key.replace("_", " ")
+        css = "pass" if value else "warn"
+        check_items.append(
+            f'<span class="badge {css}">{html.escape(label)}: {str(bool(value)).lower()}</span>'
+        )
+    return (
+        '<section class="panel">'
+        "<h2>Publication Contract</h2>"
+        "<p>The leaderboard is generated from artifacts, freshness-checked, "
+        "published to GitHub Pages, and claim-limited until strict production evidence passes.</p>"
+        '<div class="publication-grid">'
+        f"<div>{''.join(table)}</div>"
+        f"<div class=\"check-list\">{''.join(check_items)}</div>"
+        "</div>"
+        "</section>"
+    )
+
+
 def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     payload = load_matrix(root)
+    status = _load_leaderboard_status(root)
     leaderboard = render_leaderboard(root)
     benchmark_table = _markdown_table_to_html(
         _table_lines(
@@ -195,10 +245,12 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     .section-title {{ margin: 30px 0 12px; }}
     .rules {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }}
     .rules p {{ padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }}
+    .publication-grid {{ display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; align-items: start; }}
+    .check-list {{ display: flex; flex-wrap: wrap; gap: 8px; }}
     footer {{ margin-top: 30px; color: var(--muted); font-size: 0.9rem; }}
     @media (max-width: 760px) {{
       main {{ padding: 22px 14px 36px; }}
-      .cards, .rules {{ grid-template-columns: 1fr; }}
+      .cards, .rules, .publication-grid {{ grid-template-columns: 1fr; }}
       th, td {{ padding: 9px 10px; }}
     }}
   </style>
@@ -218,6 +270,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     <h2>Visual Summary</h2>
     <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
   </section>
+
+  {_publication_contract_panel(status)}
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">

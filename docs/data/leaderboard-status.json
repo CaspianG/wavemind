@@ -6,6 +6,36 @@
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
   "publishing_status": "publishable_with_claim_limits",
+  "publication_contract": {
+    "schema": "wavemind.leaderboard_publication.v1",
+    "status": "pass",
+    "workflow": ".github/workflows/benchmark-leaderboard.yml",
+    "schedule_cron": "17 4 * * 1",
+    "timezone": "UTC",
+    "public_url": "https://caspiang.github.io/wavemind/",
+    "publishing_status": "publishable_with_claim_limits",
+    "source_ref": "a2a8e78aabe1",
+    "workflow_run_id": null,
+    "refresh_profile": "local",
+    "expected_scheduled_refresh_profile": "weekly-fast",
+    "github_pages": {
+      "artifact_action": "actions/upload-pages-artifact@v3",
+      "deploy_action": "actions/deploy-pages@v4",
+      "status_json": "data/leaderboard-status.json"
+    },
+    "review_policy": "Scheduled runs publish GitHub Pages and upload the benchmark-leaderboard artifact for maintainer review; they do not commit generated benchmark artifacts back to main.",
+    "claim_policy": "Dashboard rows may publish checked-in benchmark evidence; remote, managed-serverless, 50M, and 100M production claims stay locked until strict evidence artifacts pass.",
+    "checks": {
+      "weekly_schedule": true,
+      "manual_dispatch": true,
+      "github_pages_upload": true,
+      "github_pages_deploy": true,
+      "review_artifact_uploaded": true,
+      "no_scheduled_bot_commit_to_main": true,
+      "strict_freshness_gate": true,
+      "machine_status_published": true
+    }
+  },
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
