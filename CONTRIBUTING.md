@@ -53,6 +53,17 @@ Do not add a README claim unless it has:
 It is acceptable to add planned benchmark rows, but they must be marked as
 planned and must not be phrased as wins.
 
+Strict production evidence artifacts must go through the ingest gate before
+they are committed:
+
+```bash
+wavemind ingest-production-evidence --artifact-dir state/large-run --dry-run
+```
+
+Use the non-dry-run form only after the artifact passes. The gate rejects local
+or loopback evidence for remote Kubernetes/serverless claims, so a transport
+smoke cannot accidentally become a production-scale claim.
+
 ## Development Checks
 
 Before opening a PR, run:

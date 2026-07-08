@@ -61,6 +61,10 @@ from .production_evidence import (
     render_release_claims_markdown,
     render_scale_gap_markdown,
 )
+from .production_evidence_ingest import (
+    ProductionEvidenceIngestError,
+    ingest_production_evidence_artifacts,
+)
 from .replication import ReplicatedWaveMind
 from .sharding import DistributedShardedWaveMind, HTTPNamespaceShardClient
 from .storage import SQLiteMemoryStore
@@ -364,6 +368,35 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md"),
     )
     production_evidence_bundle.add_argument("--json", action="store_true")
+
+    ingest_production_evidence = sub.add_parser(
+        "ingest-production-evidence",
+        help="Validate and ingest strict production-evidence artifacts from remote runs",
+    )
+    ingest_production_evidence.add_argument(
+        "--artifact-dir",
+        type=Path,
+        required=True,
+        help="Directory containing downloaded GitHub Actions or remote benchmark artifacts.",
+    )
+    ingest_production_evidence.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    ingest_production_evidence.add_argument("--dry-run", action="store_true")
+    ingest_production_evidence.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Refresh benchmark reports, evidence gates, and leaderboard status after ingest.",
+    )
+    ingest_production_evidence.add_argument(
+        "--manifest",
+        type=Path,
+        default=Path("benchmarks/production_evidence_artifact_ingest.json"),
+    )
+    ingest_production_evidence.add_argument("--json", action="store_true")
 
     release_claims = sub.add_parser(
         "release-claims",
@@ -1726,6 +1759,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.strict and payload["claim_status"] != "claims_unlocked":
             return 2
         return 0 if payload["claim_status"] in {"claims_unlocked", "claims_limited"} else 1
+
+    if args.command == "ingest-production-evidence":
+        manifest_path = args.manifest
+        if manifest_path is not None and not manifest_path.is_absolute():
+            manifest_path = args.root / manifest_path
+        try:
+            payload = ingest_production_evidence_artifacts(
+                artifact_dir=args.artifact_dir,
+                output_root=args.root,
+                dry_run=args.dry_run,
+                refresh=args.refresh,
+                manifest_path=manifest_path,
+            )
+        except (ProductionEvidenceIngestError, FileNotFoundError, NotADirectoryError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"ingested: {payload['ingested_count']}")
+            print(f"dry_run: {payload['dry_run']}")
+            for row in payload["ingested"]:
+                print(f"- {row['requirement_id']}: {row['artifact']} ({row['description']})")
+            if not args.dry_run:
+                print(f"manifest: {manifest_path}")
+        return 0
 
     if args.command == "release-claims":
         payload = build_release_claims_manifest(args.root)

@@ -1811,24 +1811,29 @@ next actions into one publishable status contract.
 Large-N service plans include resumable `--checkpoint-path` commands so
 interrupted 10M/50M/100M ingest runs can continue from completed batches instead
 of restarting from zero.
-Manual large-N runner: `.github/workflows/production-streaming-load.yml` runs
-those checkpointed Qdrant, sharded Qdrant, pgvector, or FAISS IVF-PQ profiles on
-a sized GitHub or self-hosted runner, uploads checkpoint/result artifacts, and
-can commit refreshed benchmark/evidence reports when `commit_results=true`.
-The preferred review path is to leave `commit_results=false`, download the
-`production-streaming-load-results` artifact, and ingest it locally with the
-strict artifact gate:
+Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
+`.github/workflows/external-http-cluster-load.yml`,
+`.github/workflows/external-http-active-active.yml`, and
+`.github/workflows/serverless-observed-telemetry.yml`. They run checkpointed
+Qdrant, sharded Qdrant, pgvector, FAISS IVF-PQ, remote API-node, remote
+active-active, or serverless telemetry profiles on sized infrastructure. The
+preferred review path is to leave `commit_results=false`, download the Actions
+artifact, and ingest it locally with the strict artifact gate:
 
 ```bash
 gh run download RUN_ID --name production-streaming-load-results --dir state/large-run
-python benchmarks/ingest_production_streaming_artifact.py --artifact-dir state/large-run --refresh
-python -m pytest tests/test_ingest_production_streaming_artifact.py tests/test_production_evidence_gate.py -q
+wavemind ingest-production-evidence --artifact-dir state/large-run --refresh
+python -m pytest tests/test_production_evidence_ingest.py tests/test_production_evidence_gate.py -q
 ```
 
-The ingest command only accepts real large-N proof filenames such as
-`production_streaming_load_qdrant_sharded_100m_results.json`; it rejects smoke
-artifacts, wrong engines, wrong vector counts, skipped rows, recall below
-`0.95`, p99 above `100 ms`, and failed SLO/cost rows.
+The ingest command accepts only strict production evidence filenames:
+`http_cluster_load_results.json`, `external_http_active_active_results.json`,
+`observed-telemetry.remote.json`, or real large-N proof filenames such as
+`production_streaming_load_qdrant_sharded_100m_results.json`. It rejects smoke
+artifacts, local/loopback active-active runs, sample endpoints, wrong engines,
+wrong vector counts, skipped rows, recall below `0.95`, p99 above `100 ms`, and
+failed SLO/cost rows. This prevents a local transport smoke from accidentally
+unlocking a remote Kubernetes/serverless production claim.
 Prerequisite preflight: `wavemind production-evidence-preflight --write-artifacts`.
 This writes `benchmarks/production_evidence_preflight_results.json` and
 `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, checks the required remote URLs,

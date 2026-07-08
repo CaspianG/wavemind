@@ -238,7 +238,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_streaming_load_qdrant_10m_results.json" in readme
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in readme
     assert "production-streaming-load.yml" in readme
-    assert "ingest_production_streaming_artifact.py" in readme
+    assert "ingest-production-evidence" in readme
+    assert "ingest_production_evidence_artifacts.py" in benchmark_brief
     assert "production_streaming_load_pgvector_10m_results.json" in readme
     assert "deploy/serverless/observed-telemetry.loopback.json" in readme
     assert "observed-telemetry.remote.json" in readme

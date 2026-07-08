@@ -57,7 +57,7 @@ class EvidencePreflightCheck:
 def _load_optional_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _utc_now() -> str:
@@ -459,8 +459,13 @@ def _validate_external_active_active_payload(
     require(bool(scenario.get("deployment_id")), "deployment_id is required")
     require(bool(scenario.get("environment")), "environment is required")
     require(
-        str(scenario.get("evidence_source") or "").lower() not in {"", "fixture", "sample"},
-        "evidence_source is required and cannot be fixture/sample",
+        str(scenario.get("environment") or "").lower() not in {"", "local", "local-loopback", "loopback"},
+        "environment must be a real remote/staging/production deployment",
+    )
+    require(
+        str(scenario.get("evidence_source") or "").lower()
+        not in {"", "fixture", "sample", "loopback-api-regions"},
+        "evidence_source is required and cannot be fixture/sample/loopback",
     )
     require(int(scenario.get("namespace_count", 0)) >= min_namespaces, f"namespace_count must be >= {min_namespaces}")
     require(bool(result), "WaveMind real HTTP active-active service-region sync result is required")
