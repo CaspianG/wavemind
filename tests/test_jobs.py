@@ -597,6 +597,16 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         assert "prewarm_cache" in report.actions
         assert "predictive_prefetch" in report.actions
         assert "consolidate_concepts" in report.actions
+        suggestion_ids = {suggestion.id for suggestion in report.suggestions}
+        assert "review-consolidated-concepts" in suggestion_ids
+        assert "predictive-prefetch-active" in suggestion_ids
+        assert "priority-learning-active" in suggestion_ids
+        assert any(
+            suggestion.evidence.get("namespace") == "agent"
+            for suggestion in report.suggestions
+        )
+        assert all(suggestion.action for suggestion in report.suggestions)
+        assert report.as_dict()["suggestions"][0]["id"] in suggestion_ids
         assert any("persisted ANN backend" in item for item in report.recommendations)
         assert audit and audit[0].metadata["ok"] is True
         assert audit[0].metadata["priority_predictions"] >= 1
@@ -740,6 +750,13 @@ def test_memory_os_worker_embeds_architecture_advice_for_production_targets(tmp_
         assert "service-index" in recommendation_ids
         assert "production-controls" in recommendation_ids
         assert "load-test" in recommendation_ids
+        suggestion_ids = {suggestion.id for suggestion in report.suggestions}
+        suggestion_severities = {suggestion.severity for suggestion in report.suggestions}
+        assert "architecture:namespace-sharding" in suggestion_ids
+        assert "architecture:service-index" in suggestion_ids
+        assert "architecture:production-controls" in suggestion_ids
+        assert "architecture_required" in suggestion_severities
+        assert all(suggestion.evidence for suggestion in report.suggestions)
         assert any("Architecture advisor:" in item for item in report.recommendations)
     finally:
         memory.close()

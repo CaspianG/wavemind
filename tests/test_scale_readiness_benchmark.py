@@ -228,6 +228,13 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert "namespace-sharding" in results["WaveMind Memory OS"]["architecture_advice_recommendation_ids"]
     assert "production-controls" in results["WaveMind Memory OS"]["architecture_advice_recommendation_ids"]
     assert results["WaveMind Memory OS"]["architecture_next_commands"] >= 1
+    assert results["WaveMind Memory OS"]["suggestion_count"] >= 5
+    assert "predictive-prefetch-active" in results["WaveMind Memory OS"]["suggestion_ids"]
+    assert "priority-learning-active" in results["WaveMind Memory OS"]["suggestion_ids"]
+    assert "adaptive-forgetting-active" in results["WaveMind Memory OS"]["suggestion_ids"]
+    assert "architecture:namespace-sharding" in results["WaveMind Memory OS"]["suggestion_ids"]
+    assert "architecture_required" in results["WaveMind Memory OS"]["suggestion_severities"]
+    assert results["WaveMind Memory OS"]["suggestions_with_evidence"] >= 5
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predictive_prefetch" in results["WaveMind Memory OS"]["actions"]

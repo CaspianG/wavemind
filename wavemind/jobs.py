@@ -758,6 +758,26 @@ class RedisMemoryOSLock:
 
 
 @dataclass(frozen=True)
+class MemoryOSImprovementSuggestion:
+    id: str
+    severity: str
+    title: str
+    rationale: str
+    action: str
+    evidence: dict[str, object] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "severity": self.severity,
+            "title": self.title,
+            "rationale": self.rationale,
+            "action": self.action,
+            "evidence": dict(self.evidence),
+        }
+
+
+@dataclass(frozen=True)
 class MemoryOSReport:
     namespace: str | None
     scanned_events: int
@@ -785,6 +805,7 @@ class MemoryOSReport:
     lock: MemoryOSLockReport = field(default_factory=MemoryOSLockReport)
     actions: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
+    suggestions: tuple[MemoryOSImprovementSuggestion, ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -817,6 +838,7 @@ class MemoryOSReport:
             "lock": self.lock.as_dict(),
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
+            "suggestions": [suggestion.as_dict() for suggestion in self.suggestions],
             "ok": self.ok,
         }
 
@@ -2077,6 +2099,19 @@ class MemoryOSWorker:
             if architecture_recommendations:
                 actions.append("advise_architecture")
                 recommendations.extend(architecture_recommendations)
+        suggestions = self._improvement_suggestions(
+            namespace=namespace,
+            hot_queries=hot_queries,
+            prewarm=prewarm,
+            predictive=predictive,
+            stats_after=stats_after,
+            memory_pressure_threshold=memory_pressure_threshold,
+            cache_enabled=self.cache is not None,
+            concepts_created=len(concepts),
+            priority_predictions=len(boosted_ids),
+            forgetting_demotions=len(demoted_ids),
+            architecture_payload=architecture_payload,
+        )
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -2102,6 +2137,7 @@ class MemoryOSWorker:
             lock=lock_report,
             actions=tuple(dict.fromkeys(actions)),
             recommendations=tuple(recommendations),
+            suggestions=suggestions,
         )
         self._log_report(report)
         return report
@@ -2531,6 +2567,204 @@ class MemoryOSWorker:
         if not recommendations:
             recommendations.append("Memory OS run is healthy; keep the worker scheduled.")
         return recommendations
+
+    def _improvement_suggestions(
+        self,
+        *,
+        namespace: str | None,
+        hot_queries: list[MemoryOSHotQuery],
+        prewarm: CachePrewarmReport,
+        predictive: PredictivePrefetchReport,
+        stats_after: dict[str, object],
+        memory_pressure_threshold: int,
+        cache_enabled: bool,
+        concepts_created: int,
+        priority_predictions: int,
+        forgetting_demotions: int,
+        architecture_payload: dict[str, object],
+    ) -> tuple[MemoryOSImprovementSuggestion, ...]:
+        suggestions: list[MemoryOSImprovementSuggestion] = []
+        seen: set[str] = set()
+
+        def add(
+            id: str,
+            severity: str,
+            title: str,
+            rationale: str,
+            action: str,
+            evidence: dict[str, object] | None = None,
+        ) -> None:
+            if id in seen:
+                return
+            seen.add(id)
+            suggestions.append(
+                MemoryOSImprovementSuggestion(
+                    id=id,
+                    severity=severity,
+                    title=title,
+                    rationale=rationale,
+                    action=action,
+                    evidence=evidence or {},
+                )
+            )
+
+        active = int(stats_after.get("active_memories", 0) or 0)
+        expired = int(stats_after.get("expired_memories", 0) or 0)
+        index_healthy = bool(stats_after.get("index_healthy", True))
+        namespace_label = namespace or "all namespaces"
+        hot_count = len(hot_queries)
+
+        if hot_queries and not cache_enabled:
+            add(
+                "shared-cache-required",
+                "action_required",
+                "Enable shared hot-query cache",
+                "Audited hot queries exist, but this Memory OS run had no cache attached.",
+                "Attach RedisHotMemoryCache for production workers so repeated recalls warm across API processes.",
+                {
+                    "namespace": namespace_label,
+                    "hot_queries": hot_count,
+                    "top_query": hot_queries[0].query,
+                },
+            )
+
+        if not hot_queries:
+            add(
+                "query-audit-required",
+                "watch",
+                "Collect query audit traffic",
+                "The worker cannot learn hot memories or follow-up query transitions without audited query events.",
+                "Enable query audit in staging before relying on prewarm, priority prediction, or adaptive forgetting.",
+                {"namespace": namespace_label, "scanned_events": prewarm.scanned_events},
+            )
+
+        if cache_enabled and hot_queries and prewarm.warmed == 0 and prewarm.skipped == 0:
+            add(
+                "prewarm-not-warming",
+                "action_required",
+                "Fix cache prewarm filters",
+                "Hot queries were found, but no cache entries were warmed or skipped.",
+                "Inspect cache capacity, namespace filters, min_frequency, and min_score before increasing worker cadence.",
+                {
+                    "namespace": namespace_label,
+                    "hot_queries": hot_count,
+                    "prewarm_candidates": prewarm.candidates,
+                },
+            )
+
+        if active >= int(memory_pressure_threshold):
+            add(
+                "service-index-and-sharding",
+                "architecture_required",
+                "Move pressure-heavy memory to service index and sharding",
+                "This namespace or cluster crossed the configured memory-pressure threshold.",
+                "Use Qdrant, pgvector, or persisted FAISS for candidate generation and shard by namespace before further growth.",
+                {
+                    "namespace": namespace_label,
+                    "active_memories": active,
+                    "threshold": int(memory_pressure_threshold),
+                },
+            )
+
+        if expired > 0:
+            add(
+                "expired-memory-leftover",
+                "watch",
+                "Increase expiry maintenance cadence",
+                "Expired memories remain after the current Memory OS run.",
+                "Run Memory OS maintenance more frequently or inspect TTL filters for this namespace.",
+                {"namespace": namespace_label, "expired_memories": expired},
+            )
+
+        if not index_healthy:
+            add(
+                "index-health-repair",
+                "architecture_required",
+                "Repair unhealthy candidate index",
+                "The source-of-truth memory count and candidate index are not in a healthy state.",
+                "Run index-health and rebuild-index before serving production traffic.",
+                {"namespace": namespace_label, "index_healthy": False},
+            )
+
+        if concepts_created:
+            add(
+                "review-consolidated-concepts",
+                "watch",
+                "Review newly consolidated concept memories",
+                "Memory OS formed higher-level concept memories from active field clusters.",
+                "Surface these concept memories in Studio/API review before promoting them to high-priority production context.",
+                {"namespace": namespace_label, "concepts_created": concepts_created},
+            )
+
+        if predictive.generated_queries:
+            add(
+                "predictive-prefetch-active",
+                "ok",
+                "Keep predictive prefetch enabled",
+                "Observed recall paths produced likely follow-up queries.",
+                "Track predictive prefetch hit rate and keep transition edges in the benchmark artifact.",
+                {
+                    "namespace": namespace_label,
+                    "generated_queries": predictive.generated_queries,
+                    "warmed_queries": predictive.warmed,
+                    "transition_queries": list(predictive.transition_queries),
+                },
+            )
+
+        if priority_predictions:
+            add(
+                "priority-learning-active",
+                "ok",
+                "Keep usage-pattern priority learning enabled",
+                "Hot audited queries produced deterministic priority boosts for recalled memories.",
+                "Keep feedback and priority deltas in the Memory OS evidence artifact.",
+                {
+                    "namespace": namespace_label,
+                    "priority_predictions": priority_predictions,
+                },
+            )
+
+        if forgetting_demotions:
+            add(
+                "adaptive-forgetting-active",
+                "ok",
+                "Keep adaptive forgetting enabled",
+                "Unused low-access memories were demoted before they could compete with hot context.",
+                "Track demotion counts and stale-recall regressions in release evidence.",
+                {"namespace": namespace_label, "forgetting_demotions": forgetting_demotions},
+            )
+
+        for item in architecture_payload.get("recommendations", []):
+            if not isinstance(item, dict):
+                continue
+            severity = str(item.get("severity") or "watch")
+            if severity == "ok":
+                continue
+            rec_id = str(item.get("id") or "architecture")
+            add(
+                f"architecture:{rec_id}",
+                severity,
+                str(item.get("title") or rec_id),
+                str(item.get("rationale") or "Architecture advisor raised a production recommendation."),
+                str(item.get("action") or "Review architecture advisor output before scaling."),
+                {
+                    "namespace": namespace_label,
+                    "source": "architecture_advisor",
+                    "recommendation_id": rec_id,
+                },
+            )
+
+        if not suggestions:
+            add(
+                "memory-os-steady-state",
+                "ok",
+                "Memory OS steady state",
+                "The current worker run found no immediate memory-policy or architecture changes.",
+                "Keep the worker scheduled and keep readiness artifacts fresh.",
+                {"namespace": namespace_label, "active_memories": active},
+            )
+
+        return tuple(suggestions)
 
     def _architecture_advice(
         self,

@@ -734,6 +734,15 @@ def test_fastapi_memory_os_runs_adaptive_worker(tmp_path, monkeypatch):
             assert advice["status"] == "architecture_required"
             assert "namespace-sharding" in recommendation_ids
             assert "production-controls" in recommendation_ids
+            suggestion_ids = {item["id"] for item in payload["suggestions"]}
+            assert "predictive-prefetch-active" in suggestion_ids
+            assert "priority-learning-active" in suggestion_ids
+            assert "adaptive-forgetting-active" in suggestion_ids
+            assert "architecture:namespace-sharding" in suggestion_ids
+            assert any(
+                item["evidence"].get("namespace") == "tenant:os"
+                for item in payload["suggestions"]
+            )
 
             query = client.post(
                 "/query",

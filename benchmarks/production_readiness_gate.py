@@ -492,6 +492,19 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "advise_architecture" in set(memory_os.get("actions", []))
         and int(memory_os.get("architecture_next_commands", 0)) >= 1
     )
+    memory_os_suggestion_ids = set(memory_os.get("suggestion_ids", []))
+    memory_os_suggestion_severities = set(memory_os.get("suggestion_severities", []))
+    memory_os_suggestions_pass = (
+        int(memory_os.get("suggestion_count", 0)) >= 5
+        and {
+            "predictive-prefetch-active",
+            "priority-learning-active",
+            "adaptive-forgetting-active",
+            "architecture:namespace-sharding",
+        }.issubset(memory_os_suggestion_ids)
+        and "architecture_required" in memory_os_suggestion_severities
+        and int(memory_os.get("suggestions_with_evidence", 0)) >= 5
+    )
     def has_budget_risk_transition(edges: object) -> bool:
         if not isinstance(edges, list):
             return False
@@ -1406,9 +1419,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and float(memory_os.get("forgetting_decay_total", 0.0)) > 0.0
                 and memory_os.get("concept_recall")
                 and memory_os_architecture_pass
+                and memory_os_suggestions_pass
                 else "fail"
             ),
-            requirement="Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, and production architecture advice.",
+            requirement="Background intelligence must turn audited hot queries, observed query transitions, and explicit user recall feedback into exact and predictive prewarm actions, usage-pattern priority boosts, adaptive forgetting, cleanup, durable concept memories, production architecture advice, and typed self-improvement suggestions with evidence.",
             evidence=(
                 f"hot queries {memory_os.get('hot_queries')}, "
                 f"prewarm {memory_os.get('prewarm_warmed')}, "
@@ -1421,9 +1435,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"feedback events {memory_os.get('user_feedback_events')}, "
                 f"priority predictions {memory_os.get('priority_predictions')}, "
                 f"forgetting demotions {memory_os.get('forgetting_demotions')}, "
-                f"architecture {memory_os.get('architecture_advice_status')}"
+                f"architecture {memory_os.get('architecture_advice_status')}, "
+                f"suggestions {memory_os.get('suggestion_count')} "
+                f"{memory_os.get('suggestion_ids')}"
             ),
-            next_step="Keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments.",
+            next_step="Surface typed suggestions in Studio/operator dashboards and keep usage-pattern priority prediction and adaptive forgetting green under Redis-backed service deployments.",
         ),
         _criterion(
             criterion_id="distributed_repair_tombstones",

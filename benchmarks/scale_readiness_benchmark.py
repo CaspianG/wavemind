@@ -1960,6 +1960,14 @@ def run_memory_os_profile() -> dict[str, object]:
                 "architecture_next_commands": len(
                     report.architecture_advice.get("next_commands", [])
                 ),
+                "suggestion_count": len(report.suggestions),
+                "suggestion_ids": [suggestion.id for suggestion in report.suggestions],
+                "suggestion_severities": [
+                    suggestion.severity for suggestion in report.suggestions
+                ],
+                "suggestions_with_evidence": sum(
+                    1 for suggestion in report.suggestions if suggestion.evidence
+                ),
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),
