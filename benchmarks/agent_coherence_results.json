@@ -1,5 +1,6 @@
 {
   "schema": "wavemind.agent_coherence_benchmark.v1",
+  "generated_at": "2026-07-08T05:45:21Z",
   "scenario": {
     "name": "agent_coherence",
     "memories": 500,
@@ -42,8 +43,8 @@
         "project": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 2.983625017805025,
-      "p95_latency_ms": 5.801200051791966,
+      "avg_latency_ms": 2.490399987436831,
+      "p95_latency_ms": 2.5692000053822994,
       "tasks": 12
     },
     {
@@ -65,31 +66,31 @@
         "project": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 0.7857499779978147,
-      "p95_latency_ms": 1.0001999326050282,
+      "avg_latency_ms": 0.6453166715800762,
+      "p95_latency_ms": 0.6763000274077058,
       "tasks": 12
     },
     {
       "engine": "Chroma static",
-      "task_success_rate": 0.4166666666666667,
-      "decision_success_at_1": 0.4166666666666667,
-      "stale_error_rate": 0.18181818181818182,
+      "task_success_rate": 0.3333333333333333,
+      "decision_success_at_1": 0.3333333333333333,
+      "stale_error_rate": 0.6363636363636364,
       "namespace_leak_rate": 0,
-      "coherent_turns": 3,
-      "coherent_turn_rate": 0.25,
-      "context_tokens_returned": 1169,
+      "coherent_turns": 1,
+      "coherent_turn_rate": 0.08333333333333333,
+      "context_tokens_returned": 983,
       "full_context_tokens": 13427,
-      "context_budget_saved": 0.9129366202427944,
+      "context_budget_saved": 0.9267893051314515,
       "category_success": {
-        "correction": 0.3333333333333333,
-        "namespace": 0.5,
-        "personalization": 0.0,
+        "correction": 0.0,
+        "namespace": 1.0,
+        "personalization": 0.5,
         "profile": 1.0,
-        "project": 0.5,
-        "ttl": 0.5
+        "project": 0.0,
+        "ttl": 0.0
       },
-      "avg_latency_ms": 3.6366000034225485,
-      "p95_latency_ms": 10.993700008839369,
+      "avg_latency_ms": 2.892608337181931,
+      "p95_latency_ms": 11.074900045059621,
       "tasks": 12
     }
   ]

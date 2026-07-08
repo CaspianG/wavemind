@@ -1,14 +1,119 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
   "generated_at": "2026-07-08T04:02:25Z",
-  "source_ref": "5ae8f4785b1a",
+  "source_ref": "a2a8e78aabe1",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
   "publishing_status": "publishable_with_claim_limits",
+  "freshness_gate": {
+    "schema": "wavemind.leaderboard_freshness.v1",
+    "status": "pass",
+    "checked_at": "2026-07-08T04:02:25Z",
+    "max_age_days": 8.0,
+    "source_count": 11,
+    "fresh_count": 11,
+    "stale_count": 0,
+    "missing_count": 0,
+    "no_timestamp_count": 0,
+    "load_error_count": 0,
+    "stale_sources": [],
+    "missing_sources": [],
+    "no_timestamp_sources": [],
+    "sources": [
+      {
+        "path": "benchmarks/benchmark_matrix_results.json",
+        "schema": "wavemind.benchmark_matrix.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:47:15Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/benchmark_artifact_audit.json",
+        "schema": "wavemind.benchmark_artifact_audit.v1",
+        "timestamp_key": "checked_at",
+        "timestamp": "2026-07-08T04:02:25Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_readiness_results.json",
+        "schema": "wavemind.production_readiness.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T04:52:52Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_evidence_results.json",
+        "schema": "wavemind.production_evidence.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:05:59Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_evidence_preflight_results.json",
+        "schema": "wavemind.production_evidence_preflight.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:06:00Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_evidence_bundle_results.json",
+        "schema": "wavemind.production_evidence_bundle.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T02:06:39Z",
+        "age_days": 0.08039351851851852,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/release_claims_results.json",
+        "schema": "wavemind.release_claims.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:06:00Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/scale_gap_results.json",
+        "schema": "wavemind.scale_gap.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:06:00Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_scale_run_plan.json",
+        "schema": "wavemind.production_scale_run_plan.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:45:32Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/agent_coherence_results.json",
+        "schema": "wavemind.agent_coherence_benchmark.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:45:21Z",
+        "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/scale_readiness_results.json",
+        "schema": "wavemind.scale_readiness_benchmark.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T05:46:46Z",
+        "age_days": 0.0,
+        "status": "pass"
+      }
+    ]
+  },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-08T05:14:25Z",
+    "generated_at": "2026-07-08T05:47:15Z",
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,
@@ -74,12 +179,12 @@
       "description": "Agent task simulation over long user history. It measures whether retrieved memory lets an agent choose the correct personalized action while suppressing stale facts and saving context tokens."
     },
     "wavemind_task_success_rate": 0.9166666666666666,
-    "best_baseline_task_success_rate": 0.4166666666666667,
-    "task_success_lift": 0.49999999999999994,
+    "best_baseline_task_success_rate": 0.3333333333333333,
+    "task_success_lift": 0.5833333333333333,
     "wavemind_stale_error_rate": 0.0,
     "wavemind_context_budget_saved": 0.9308855291576674,
     "wavemind_coherent_turns": 9,
-    "wavemind_avg_latency_ms": 2.983625017805025,
+    "wavemind_avg_latency_ms": 2.490399987436831,
     "baseline_engines": [
       "Chroma static",
       "Static vector"

@@ -259,6 +259,8 @@ def test_production_scale_run_plan_reports_missing_service_env():
     summary = payload["summary"]
     row = payload["profiles"][0]
 
+    assert payload["generated_at"].endswith("Z")
+    assert summary["generated_at"] == payload["generated_at"]
     assert summary["overall_status"] == "action_required"
     assert summary["total_profiles"] == 1
     assert row["profile"] == "qdrant-10m"
@@ -329,6 +331,7 @@ def test_cli_production_scale_plan_writes_deterministic_artifact(tmp_path):
     written = json.loads(output.read_text(encoding="utf-8"))
 
     assert payload == written
+    assert payload["generated_at"].endswith("Z")
     assert payload["summary"]["overall_status"] == "action_required"
     assert payload["profiles"][0]["profile"] == "qdrant-10m"
     assert payload["profiles"][0]["disk_free_gb"] == 0.0

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import importlib.util
 import math
 import os
 import shutil
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from typing import Mapping, Sequence
 
 
@@ -650,6 +651,7 @@ def build_production_scale_run_plan(
     ready_count = sum(1 for plan in plans if plan.status == "ready")
     summary = {
         "schema": "wavemind.production_scale_run_plan.v1",
+        "generated_at": _utc_now_iso(),
         "overall_status": "ready" if ready_count == len(plans) else "action_required",
         "ready_count": ready_count,
         "action_required_count": len(plans) - ready_count,
@@ -660,9 +662,14 @@ def build_production_scale_run_plan(
     }
     return {
         "schema": "wavemind.production_scale_run_plan.v1",
+        "generated_at": summary["generated_at"],
         "summary": summary,
         "profiles": [plan.as_dict() for plan in plans],
     }
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def evaluate_production_slo(

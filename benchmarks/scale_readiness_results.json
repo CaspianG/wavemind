@@ -1,4 +1,6 @@
 {
+  "schema": "wavemind.scale_readiness_benchmark.v1",
+  "generated_at": "2026-07-08T05:46:46Z",
   "scenario": {
     "name": "scale_readiness",
     "simulated_memories": 1000000,
@@ -14,7 +16,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 55.219899979420006,
+      "placement_ms": 57.52300005406141,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -56,7 +58,7 @@
       "rebalance_all_batches_checkpointed": true,
       "rebalance_all_batches_repaired": true,
       "rebalance_all_batches_validated": true,
-      "plan_ms": 3598.497200058773
+      "plan_ms": 3557.334999903105
     },
     {
       "engine": "WaveMind control-plane consensus",
@@ -274,8 +276,8 @@
       "evictions": 0,
       "prewarm_warmed": 1,
       "prewarm_hit": true,
-      "avg_lookup_ms": 0.001347899786196649,
-      "p99_lookup_ms": 0.002700020559132099
+      "avg_lookup_ms": 0.0013947494444437325,
+      "p99_lookup_ms": 0.002900022082030773
     },
     {
       "engine": "WaveMind query vector cache",
@@ -289,10 +291,10 @@
       "redis_writer_misses": 1,
       "redis_reader_hits": 1,
       "redis_keys": 1,
-      "avg_local_query_ms": 0.201639499864541,
-      "p99_local_query_ms": 0.2932999050244689,
-      "avg_redis_query_ms": 0.27300004148855805,
-      "p99_redis_query_ms": 0.32940006349235773,
+      "avg_local_query_ms": 0.15868349932134151,
+      "p99_local_query_ms": 0.24389999452978373,
+      "avg_redis_query_ms": 0.235249986872077,
+      "p99_redis_query_ms": 0.2815999323502183,
       "service_boundary": "FastAPI TestClient",
       "service_queries": 200,
       "service_results_ok": true,
@@ -302,8 +304,8 @@
       "service_cache_misses": 1,
       "service_hit_rate": 0.995,
       "service_metrics_exposed": true,
-      "avg_service_query_ms": 3.4661110007436946,
-      "p99_service_query_ms": 4.959499929100275
+      "avg_service_query_ms": 3.374346498749219,
+      "p99_service_query_ms": 6.41700008418411
     },
     {
       "engine": "WaveMind API batch query",
@@ -321,11 +323,11 @@
       "batch_cache_misses": 1,
       "batch_hit_rate": 0.99,
       "batch_metrics_exposed": true,
-      "individual_total_ms": 365.95669959206134,
-      "batch_total_ms": 24.325600010342896,
-      "batch_total_speedup": 15.044097553049536,
-      "individual_p99_query_ms": 5.526499939151108,
-      "batch_request_ms": 24.325600010342896
+      "individual_total_ms": 382.4067998211831,
+      "batch_total_ms": 23.770399973727763,
+      "batch_total_speedup": 16.08752062413078,
+      "individual_p99_query_ms": 7.334699970670044,
+      "batch_request_ms": 23.770399973727763
     },
     {
       "engine": "WaveMind shared rate limiter",
@@ -341,8 +343,8 @@
       "writer_allowed": 2,
       "reader_allowed": 2,
       "reader_limited": 0,
-      "avg_check_ms": 0.014959997497498989,
-      "p99_check_ms": 0.0439999857917428
+      "avg_check_ms": 0.01775999553501606,
+      "p99_check_ms": 0.05719996988773346
     },
     {
       "engine": "WaveMind Redis hot cache",
@@ -369,7 +371,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783486320.934858
+          "last_seen": 1783489565.9418263
         }
       ],
       "memory_os_transition_prefetch_hit": true,
@@ -378,7 +380,7 @@
       "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
       "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
       "memory_os_priority_predictions": 2,
-      "memory_os_priority_boost_total": 0.19999975576971907,
+      "memory_os_priority_boost_total": 0.19999976238416425,
       "memory_os_forgetting_demotions": 4,
       "memory_os_forgetting_decay_total": 0.4,
       "memory_os_architecture_advice_status": "architecture_required",
@@ -392,7 +394,7 @@
         "multimodal-payloads"
       ],
       "memory_os_cross_worker_hit": true,
-      "memory_os_run_ms": 256.6153999650851,
+      "memory_os_run_ms": 256.7581000039354,
       "namespace_invalidation_removed": true,
       "redis_keys": 8,
       "writer_hits": 0,
@@ -400,8 +402,8 @@
       "reader_hits": 1,
       "os_hits": 0,
       "os_reader_hits": 2,
-      "avg_lookup_ms": 0.09155005682259798,
-      "p99_lookup_ms": 0.11370005086064339
+      "avg_lookup_ms": 0.07925002137199044,
+      "p99_lookup_ms": 0.10459998156875372
     },
     {
       "engine": "WaveMind API cache mutation safety",
@@ -414,8 +416,8 @@
       "cache_invalidated_on_forget": true,
       "stale_prevented_after_forget": true,
       "old_recall_after_forget": true,
-      "avg_api_ms": 3.118099964922294,
-      "p99_api_ms": 3.7299999967217445
+      "avg_api_ms": 4.26989997504279,
+      "p99_api_ms": 6.027199910022318
     },
     {
       "engine": "WaveMind batch feedback",
@@ -429,8 +431,8 @@
       "audit_events": 2,
       "positive_feedback_priority_delta": 0.55,
       "negative_feedback_priority_delta": -0.25,
-      "avg_api_ms": 34.06199999153614,
-      "p99_api_ms": 34.06199999153614
+      "avg_api_ms": 31.451899907551706,
+      "p99_api_ms": 31.451899907551706
     },
     {
       "engine": "WaveMind Memory OS",
@@ -458,7 +460,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783486321.8416748
+          "last_seen": 1783489566.8435445
         }
       ],
       "transition_prefetch_hit": true,
@@ -469,7 +471,7 @@
       "positive_feedback_priority_delta": 0.3999999999999999,
       "negative_feedback_priority_delta": -0.30000000000000004,
       "priority_predictions": 2,
-      "priority_boost_total": 0.1999997384703413,
+      "priority_boost_total": 0.1999997415038246,
       "forgetting_demotions": 4,
       "forgetting_decay_total": 0.4,
       "architecture_advice_status": "architecture_required",
@@ -564,7 +566,7 @@
         "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
         "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
       ],
-      "run_ms": 281.51250001974404
+      "run_ms": 257.25070002954453
     },
     {
       "engine": "WaveMind distributed sharding",
@@ -595,8 +597,8 @@
       "anti_entropy_worker_ok": true,
       "anti_entropy_worker_repaired_total": 1,
       "anti_entropy_worker_tombstone_deleted": 1,
-      "write_ms": 162.37689997069538,
-      "query_after_primary_loss_ms": 1.2085000053048134
+      "write_ms": 154.05339992139488,
+      "query_after_primary_loss_ms": 1.1928000021725893
     },
     {
       "engine": "WaveMind distributed HTTP sharding",
@@ -620,10 +622,10 @@
       "concurrent_writes": 12,
       "concurrent_write_ok": true,
       "concurrent_query_hit_rate": 1.0,
-      "concurrent_ms": 798.924500006251,
-      "write_ms": 73.26480001211166,
-      "query_after_primary_loss_ms": 17.70840003155172,
-      "repair_ms": 48.4434999525547
+      "concurrent_ms": 815.7615000382066,
+      "write_ms": 67.3194999108091,
+      "query_after_primary_loss_ms": 30.692199943587184,
+      "repair_ms": 54.551800014451146
     },
     {
       "engine": "WaveMind sustained HTTP cluster load",
@@ -653,10 +655,10 @@
       "total_checks": 36,
       "errors": [],
       "error_count": 0,
-      "elapsed_ms": 1492.7986999973655,
-      "avg_operation_ms": 81.98016060332796,
-      "p95_operation_ms": 183.7723000207916,
-      "p99_operation_ms": 197.75930000469089
+      "elapsed_ms": 1615.5814999947324,
+      "avg_operation_ms": 87.81034849711101,
+      "p95_operation_ms": 181.31820007693022,
+      "p99_operation_ms": 349.21780007425696
     },
     {
       "engine": "WaveMind replicated runtime",
@@ -673,9 +675,9 @@
       "concurrent_writes": 12,
       "concurrent_write_ok": true,
       "concurrent_query_hit_rate": 1.0,
-      "concurrent_ms": 1526.2300999602303,
-      "avg_query_after_loss_ms": 1.436999998986721,
-      "p99_query_after_loss_ms": 1.436999998986721
+      "concurrent_ms": 903.5195000469685,
+      "avg_query_after_loss_ms": 1.5282999956980348,
+      "p99_query_after_loss_ms": 1.5282999956980348
     },
     {
       "engine": "WaveMind active-active delta sync",
@@ -683,9 +685,9 @@
       "replication_factor_per_region": 3,
       "records_imported": 6,
       "converged_after_bidirectional_sync": true,
-      "sync_ms": 205.0581999355927,
-      "incremental_from_cursor": 1783486341.72593,
-      "incremental_to_cursor": 1783486342.0394537,
+      "sync_ms": 113.99490002077073,
+      "incremental_from_cursor": 1783489586.6920295,
+      "incremental_to_cursor": 1783489586.8717477,
       "incremental_records_exported": 1,
       "incremental_records_imported": 3,
       "incremental_skipped_records": 0,
@@ -717,8 +719,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 1660.4337999597192,
-      "avg_sync_ms": 631.1438199831173
+      "p99_sync_ms": 1067.3773000016809,
+      "avg_sync_ms": 495.17824000213295
     },
     {
       "engine": "WaveMind HTTP active-active service-region sync",
@@ -745,8 +747,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 887.5241000205278,
-      "avg_sync_ms": 415.1446500327438
+      "p99_sync_ms": 875.3845999017358,
+      "avg_sync_ms": 403.10062500066124
     },
     {
       "engine": "WaveMind field-state CRDT",
@@ -770,7 +772,7 @@
       "watermark_lag_detected": true,
       "budget_activation": 5.0,
       "suppressed_report_activation": 0.75,
-      "merge_ms": 0.1105000264942646
+      "merge_ms": 0.10840001050382853
     },
     {
       "engine": "WaveMind replicated snapshot",
@@ -784,15 +786,15 @@
       "object_store_download_verified": true,
       "object_store_drill_ok": true,
       "total_bytes": 110592,
-      "snapshot_ms": 119.25630003679544,
-      "restore_ms": 65.74410002212971,
+      "snapshot_ms": 127.72400001995265,
+      "restore_ms": 76.84080000035465,
       "restored_files": 3,
       "recalled_after_restore_node_loss": true
     },
     {
       "engine": "WaveMind recovery journal",
       "journal_entries": 5,
-      "journal_bytes": 11015,
+      "journal_bytes": 11012,
       "actions": [
         "remember",
         "remember",
@@ -802,8 +804,8 @@
       ],
       "full_restore_ok": true,
       "point_in_time_restore_ok": true,
-      "full_restore_ms": 101.60139994695783,
-      "point_in_time_restore_ms": 62.71309999283403,
+      "full_restore_ms": 229.22159999143332,
+      "point_in_time_restore_ms": 62.17980000656098,
       "full_applied_entries": 5,
       "full_deleted_records": 2,
       "full_restored_records": 1,
@@ -876,7 +878,7 @@
       "encoder_contract_normalized_vector_rate": 1.0,
       "encoder_contract_finite_vector_rate": 1.0,
       "encoder_contract_provenance_rate": 1.0,
-      "encoder_contract_min_global_margin": 0.8113161988200623,
+      "encoder_contract_min_global_margin": 0.8113270619729266,
       "encoder_contract_min_required_margin": 0.2,
       "encoder_contract_failures": [],
       "temporal_event_queries": 4,
@@ -896,16 +898,16 @@
       "knowledge_graph_predicate_precision_at_1": 1,
       "knowledge_graph_persistence_rate": 1.0,
       "knowledge_graph_provenance_rate": 1.0,
-      "avg_latency_ms": 0.617042849106448,
-      "p99_latency_ms": 0.8200000738725066,
-      "cross_modal_avg_latency_ms": 1.8622285653171795,
-      "cross_modal_p99_latency_ms": 2.113400027155876,
-      "precomputed_vector_avg_latency_ms": 0.7572500326205045,
-      "precomputed_vector_p99_latency_ms": 0.9886000771075487,
-      "temporal_event_avg_latency_ms": 0.834399979794398,
-      "temporal_event_p99_latency_ms": 1.19420001283288,
-      "knowledge_graph_avg_latency_ms": 1.0069250129163265,
-      "knowledge_graph_p99_latency_ms": 1.3810000382363796
+      "avg_latency_ms": 0.6102000063817415,
+      "p99_latency_ms": 0.8155000396072865,
+      "cross_modal_avg_latency_ms": 1.8569285748526454,
+      "cross_modal_p99_latency_ms": 2.035600016824901,
+      "precomputed_vector_avg_latency_ms": 0.7814249838702381,
+      "precomputed_vector_p99_latency_ms": 0.9830000344663858,
+      "temporal_event_avg_latency_ms": 1.018099981592968,
+      "temporal_event_p99_latency_ms": 1.348900026641786,
+      "knowledge_graph_avg_latency_ms": 0.9100499737542123,
+      "knowledge_graph_p99_latency_ms": 1.1217000428587198
     },
     {
       "engine": "WaveMind 100M capacity envelope",
@@ -930,7 +932,7 @@
       "replica_load_max": 840,
       "replica_load_skew": 1.09375,
       "recommended_autoscaling_max_replicas": 192,
-      "placement_ms": 9681.192499934696,
+      "placement_ms": 9385.100200073794,
       "valid_capacity_plan": true,
       "scope": "Deterministic 100M-memory capacity envelope. This proves shard placement, replication overhead, storage envelope, and failure-domain availability; it is not a 100M vector-query latency benchmark."
     }

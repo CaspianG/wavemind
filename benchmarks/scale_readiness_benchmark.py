@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -4025,6 +4026,8 @@ def run_benchmark(
         run_100m_capacity_profile(),
     ]
     return {
+        "schema": "wavemind.scale_readiness_benchmark.v1",
+        "generated_at": _utc_now_iso(),
         "scenario": {
             "name": "scale_readiness",
             "simulated_memories": simulated_memories,
@@ -4055,6 +4058,10 @@ def run_benchmark(
         },
         "results": results,
     }
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def main() -> int:

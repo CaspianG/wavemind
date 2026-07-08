@@ -1795,10 +1795,10 @@ Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/da
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
-The status JSON exposes first-class `agent_quality` and `memory_os_policy`
-sections, so dashboards can track task success, stale-error suppression,
-context savings, and active Memory OS policy decisions without scraping
-Markdown.
+The status JSON exposes first-class `freshness_gate`, `agent_quality`, and
+`memory_os_policy` sections, so dashboards can track stale or missing public
+evidence, task success, stale-error suppression, context savings, and active
+Memory OS policy decisions without scraping Markdown.
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)

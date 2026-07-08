@@ -27,6 +27,22 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["schema"] == "wavemind.leaderboard_status.v1"
     assert payload["public_url"] == "https://caspiang.github.io/wavemind/"
     assert payload["publishing_status"] == "publishable_with_claim_limits"
+    assert payload["freshness_gate"]["schema"] == "wavemind.leaderboard_freshness.v1"
+    assert payload["freshness_gate"]["status"] == "pass"
+    assert payload["freshness_gate"]["source_count"] == len(payload["source_files"])
+    assert payload["freshness_gate"]["fresh_count"] == payload["freshness_gate"]["source_count"]
+    assert payload["freshness_gate"]["stale_count"] == 0
+    assert payload["freshness_gate"]["missing_count"] == 0
+    assert payload["freshness_gate"]["no_timestamp_count"] == 0
+    assert payload["freshness_gate"]["load_error_count"] == 0
+    assert payload["freshness_gate"]["stale_sources"] == []
+    assert payload["freshness_gate"]["missing_sources"] == []
+    assert payload["freshness_gate"]["no_timestamp_sources"] == []
+    assert {
+        "benchmarks/production_scale_run_plan.json",
+        "benchmarks/agent_coherence_results.json",
+        "benchmarks/scale_readiness_results.json",
+    }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
     assert payload["benchmark_matrix"]["schema"] == "wavemind.benchmark_matrix.v1"
     assert payload["benchmark_matrix"]["implemented_count"] >= 20
     assert payload["benchmark_matrix"]["runner_ready_count"] >= 1
@@ -121,6 +137,10 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "publishable",
         "publishable_with_claim_limits",
     }
+    assert payload["freshness_gate"]["status"] == "pass"
+    assert payload["freshness_gate"]["no_timestamp_count"] == 0
+    assert payload["freshness_gate"]["missing_count"] == 0
+    assert payload["freshness_gate"]["stale_count"] == 0
     assert payload["artifact_audit"]["status"] == "pass"
     assert payload["production_readiness"]["overall_status"] == "pass"
     assert payload["agent_quality"]["status"] == "pass"

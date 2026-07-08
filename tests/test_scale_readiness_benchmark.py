@@ -22,6 +22,8 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     )
     results = {result["engine"]: result for result in payload["results"]}
 
+    assert payload["schema"] == "wavemind.scale_readiness_benchmark.v1"
+    assert payload["generated_at"].endswith("Z")
     assert results["WaveMind cluster planner"]["node_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["zone_loss_min_availability"] == 1.0
     assert results["WaveMind cluster planner"]["write_quorum"] == 2

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +71,19 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     readiness_status = str(readiness.get("overall_status", "missing"))
     evidence_status = str(evidence.get("overall_status", "missing"))
     preflight_status = str(preflight.get("overall_status", "missing"))
+    source_payloads = {
+        "benchmarks/benchmark_matrix_results.json": matrix,
+        "benchmarks/benchmark_artifact_audit.json": audit,
+        "benchmarks/production_readiness_results.json": readiness,
+        "benchmarks/production_evidence_results.json": evidence,
+        "benchmarks/production_evidence_preflight_results.json": preflight,
+        "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
+        "benchmarks/release_claims_results.json": release_claims,
+        "benchmarks/scale_gap_results.json": scale_gap,
+        "benchmarks/production_scale_run_plan.json": scale_run_plan,
+        "benchmarks/agent_coherence_results.json": agent_coherence,
+        "benchmarks/scale_readiness_results.json": scale_readiness,
+    }
     publishing_status = _publishing_status(
         audit_status=audit_status,
         readiness_status=readiness_status,
@@ -98,6 +112,12 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "refresh_profile": matrix.get("refresh_profile"),
         "public_url": "https://caspiang.github.io/wavemind/",
         "publishing_status": publishing_status,
+        "freshness_gate": _freshness_gate(
+            source_payloads,
+            checked_at=str(audit.get("checked_at") or ""),
+            max_age_days=audit.get("max_age_days"),
+            load_errors=load_errors,
+        ),
         "benchmark_matrix": {
             "schema": matrix.get("schema"),
             "generated_at": matrix.get("generated_at"),
@@ -171,19 +191,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "summary": scale_gap.get("summary", {}),
             "profile_gaps": scale_gap.get("profile_gaps", []),
         },
-        "source_files": [
-            "benchmarks/benchmark_matrix_results.json",
-            "benchmarks/benchmark_artifact_audit.json",
-            "benchmarks/production_readiness_results.json",
-            "benchmarks/production_evidence_results.json",
-            "benchmarks/production_evidence_preflight_results.json",
-            "benchmarks/production_evidence_bundle_results.json",
-            "benchmarks/release_claims_results.json",
-            "benchmarks/scale_gap_results.json",
-            "benchmarks/production_scale_run_plan.json",
-            "benchmarks/agent_coherence_results.json",
-            "benchmarks/scale_readiness_results.json",
-        ],
+        "source_files": list(source_payloads),
         "load_errors": load_errors,
     }
 
@@ -303,6 +311,102 @@ def _engine_results(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
         for row in results
         if isinstance(row, dict) and row.get("engine") is not None
     }
+
+
+def _freshness_gate(
+    source_payloads: dict[str, dict[str, Any]],
+    *,
+    checked_at: str,
+    max_age_days: Any,
+    load_errors: list[str],
+) -> dict[str, Any]:
+    reference_time = _parse_iso_timestamp(checked_at)
+    max_age = _safe_float(max_age_days)
+    sources: list[dict[str, Any]] = []
+
+    for path, payload in source_payloads.items():
+        timestamp_key, timestamp = _payload_timestamp(payload)
+        parsed = _parse_iso_timestamp(timestamp)
+        age_days = None
+        status = "pass"
+        if not payload:
+            status = "missing"
+        elif parsed is None:
+            status = "no_timestamp"
+        elif reference_time is not None:
+            age_days = max(0.0, (reference_time - parsed).total_seconds() / 86400.0)
+            if max_age is not None and age_days > max_age:
+                status = "stale"
+
+        sources.append(
+            {
+                "path": path,
+                "schema": payload.get("schema"),
+                "timestamp_key": timestamp_key,
+                "timestamp": timestamp,
+                "age_days": age_days,
+                "status": status,
+            }
+        )
+
+    stale = [row["path"] for row in sources if row["status"] == "stale"]
+    missing = [row["path"] for row in sources if row["status"] == "missing"]
+    no_timestamp = [row["path"] for row in sources if row["status"] == "no_timestamp"]
+    status = "pass"
+    if load_errors or stale or missing or no_timestamp:
+        status = "action_required"
+
+    return {
+        "schema": "wavemind.leaderboard_freshness.v1",
+        "status": status,
+        "checked_at": checked_at or None,
+        "max_age_days": max_age,
+        "source_count": len(sources),
+        "fresh_count": sum(1 for row in sources if row["status"] == "pass"),
+        "stale_count": len(stale),
+        "missing_count": len(missing),
+        "no_timestamp_count": len(no_timestamp),
+        "load_error_count": len(load_errors),
+        "stale_sources": stale,
+        "missing_sources": missing,
+        "no_timestamp_sources": no_timestamp,
+        "sources": sources,
+    }
+
+
+def _payload_timestamp(payload: dict[str, Any]) -> tuple[str | None, str | None]:
+    for key in ("checked_at", "generated_at", "created_at", "updated_at"):
+        value = payload.get(key)
+        if isinstance(value, str) and value:
+            return key, value
+    summary = payload.get("summary")
+    if isinstance(summary, dict):
+        for key in ("checked_at", "generated_at", "created_at", "updated_at"):
+            value = summary.get(key)
+            if isinstance(value, str) and value:
+                return f"summary.{key}", value
+    return None, None
+
+
+def _parse_iso_timestamp(value: str | None) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _status_timestamp(*payloads: dict[str, Any]) -> str | None:

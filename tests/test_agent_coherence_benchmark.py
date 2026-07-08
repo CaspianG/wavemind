@@ -62,6 +62,7 @@ def test_agent_coherence_benchmark_wave_outperforms_static_on_agent_tasks():
     results = {row["engine"]: row for row in payload["results"]}
 
     assert payload["schema"] == "wavemind.agent_coherence_benchmark.v1"
+    assert payload["generated_at"].endswith("Z")
     assert results["WaveMind"]["task_success_rate"] >= results["Static vector"]["task_success_rate"]
     assert results["WaveMind"]["stale_error_rate"] <= results["Static vector"]["stale_error_rate"]
     assert results["WaveMind"]["context_budget_saved"] >= 0.5
@@ -90,5 +91,6 @@ def test_agent_coherence_cli_writes_json(tmp_path):
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert "task success" in completed.stdout
+    assert payload["generated_at"].endswith("Z")
     assert payload["scenario"]["name"] == "agent_coherence"
     assert {row["engine"] for row in payload["results"]} == {"WaveMind", "Static vector"}

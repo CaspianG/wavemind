@@ -9,6 +9,7 @@ import tempfile
 import time
 from collections.abc import Iterable as IterableABC
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -500,6 +501,7 @@ def run_benchmark(
         results.append(asdict(runners[key](scenario, encoder, top_k)))
     return {
         "schema": "wavemind.agent_coherence_benchmark.v1",
+        "generated_at": _utc_now_iso(),
         "scenario": {
             "name": scenario.name,
             "memories": len(scenario.memories),
@@ -521,6 +523,10 @@ def run_benchmark(
         },
         "results": results,
     }
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def print_table(payload: dict[str, Any]) -> None:
