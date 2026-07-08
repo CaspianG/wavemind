@@ -25,6 +25,12 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind production-scale-plan" in workflow
     assert "--output benchmarks/production_scale_run_plan.json" in workflow
     assert workflow.index("production-scale-plan") < workflow.index("production-evidence-bundle")
+    assert "python -m wavemind production-evidence-dispatch" in workflow
+    assert "--output benchmarks/production_evidence_dispatch_results.json" in workflow
+    assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
+    assert workflow.index("production-evidence-dispatch") < workflow.index(
+        "production-evidence-bundle"
+    )
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(
@@ -36,6 +42,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "tests/test_benchmark_charts.py" in workflow
     assert "tests/test_leaderboard_status.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
+    assert "tests/test_production_evidence_dispatch.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
     assert "qdrant-1:" in workflow
@@ -60,6 +67,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "docs/data/leaderboard-status.json" in workflow
     assert "benchmarks/production_evidence_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
+    assert "benchmarks/production_evidence_dispatch_results.json" in workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():
@@ -99,6 +108,7 @@ def test_external_http_cluster_workflow_runs_real_node_load_profile():
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
@@ -137,6 +147,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "production_streaming_load_pgvector_10m_results.json" in workflow
     assert "production_streaming_load_ivfpq_50m_results.json" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
@@ -184,6 +195,7 @@ def test_external_http_active_active_workflow_runs_real_region_profile():
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
@@ -220,6 +232,7 @@ def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
     assert "benchmarks/validate_benchmark_artifacts.py" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
+    assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote.json" in workflow
@@ -249,6 +262,7 @@ def test_full_check_blocks_stale_public_benchmark_artifacts():
     assert "--max-age-days 8" in workflow
     assert "benchmarks/benchmark_artifact_audit_ci.json" in workflow
     assert "benchmarks/production_readiness_gate.py" in workflow
+    assert "wavemind production-evidence-dispatch" in workflow
 
 
 def test_release_blocks_stale_public_benchmark_artifacts():

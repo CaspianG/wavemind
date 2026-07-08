@@ -152,6 +152,10 @@ jobs:
             --write-artifact \
             --output benchmarks/production_scale_run_plan.json \
             --json
+          python -m wavemind production-evidence-dispatch \
+            --write-artifacts \
+            --output benchmarks/production_evidence_dispatch_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
           python -m wavemind production-evidence-bundle \
             --write-artifacts \
             --output benchmarks/production_evidence_bundle_results.json \
@@ -204,6 +208,7 @@ jobs:
             tests/test_production_readiness_gate.py \
             tests/test_production_evidence_gate.py \
             tests/test_production_evidence_preflight.py \
+            tests/test_production_evidence_dispatch.py \
             tests/test_production_evidence_bundle.py
 
       - name: Report benchmark artifact drift
@@ -226,6 +231,7 @@ jobs:
           cp benchmarks/PRODUCTION_READINESS.md site/benchmarks/PRODUCTION_READINESS.md
           cp benchmarks/PRODUCTION_EVIDENCE.md site/benchmarks/PRODUCTION_EVIDENCE.md
           cp benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md site/benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+          cp benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md site/benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
           cp benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md site/benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
           cp benchmarks/SCALE_GAP.md site/benchmarks/SCALE_GAP.md
@@ -234,6 +240,7 @@ jobs:
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
           cp benchmarks/production_evidence_results.json site/data/production_evidence_results.json
           cp benchmarks/production_evidence_preflight_results.json site/data/production_evidence_preflight_results.json
+          cp benchmarks/production_evidence_dispatch_results.json site/data/production_evidence_dispatch_results.json
           cp benchmarks/production_evidence_bundle_results.json site/data/production_evidence_bundle_results.json
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
           cp benchmarks/scale_gap_results.json site/data/scale_gap_results.json
@@ -274,6 +281,8 @@ jobs:
             benchmarks/PRODUCTION_EVIDENCE.md
             benchmarks/production_evidence_preflight_results.json
             benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+            benchmarks/production_evidence_dispatch_results.json
+            benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
             benchmarks/production_evidence_bundle_results.json
             benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
             benchmarks/release_claims_results.json

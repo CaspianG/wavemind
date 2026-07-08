@@ -1040,6 +1040,376 @@ def evaluate_production_evidence(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     }
 
 
+def _gh_workflow_command(workflow: str, inputs: dict[str, Any]) -> str:
+    parts = ["gh", "workflow", "run", workflow]
+    for key, value in inputs.items():
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            value_text = "true" if value else "false"
+        else:
+            value_text = str(value)
+        escaped = value_text.replace('"', '\\"')
+        parts.extend(["-f", f'{key}="{escaped}"'])
+    return " ".join(parts)
+
+
+def _dispatch_input_bindings(inputs: dict[str, Any]) -> dict[str, str]:
+    return {
+        key: str(value)
+        for key, value in inputs.items()
+        if isinstance(value, str) and value.startswith("$")
+    }
+
+
+def _dispatch_job_status(strict_status: str, preflight_status: str) -> str:
+    if strict_status == "pass":
+        return "complete"
+    if preflight_status == "ready":
+        return "ready_to_dispatch"
+    return "blocked_by_preflight"
+
+
+def _streaming_dispatch_inputs(
+    root: Path,
+    *,
+    plan_artifact: str,
+    engine: str,
+    size: int,
+    credential_input: str,
+    credential_placeholder: str,
+    runner_label: str,
+    commit_results: bool,
+) -> dict[str, Any]:
+    payload = _load_optional_json(root / plan_artifact)
+    scenario = payload.get("scenario") if isinstance(payload.get("scenario"), dict) else {}
+    row = _first_plan(root, plan_artifact)
+    inputs: dict[str, Any] = {
+        "engine": engine,
+        "size": str(size),
+        "dim": str(scenario.get("vector_dim") or row.get("vector_dim") or 128),
+        "queries": str(scenario.get("queries_per_size") or row.get("queries") or 2000),
+        "top_k": str(scenario.get("top_k") or row.get("top_k") or 10),
+        "batch_size": str(scenario.get("batch_size") or row.get("batch_size") or 5000),
+        "target_recall": str(scenario.get("target_recall_at_k") or 0.95),
+        "target_p99_ms": str(scenario.get("target_p99_ms") or 100.0),
+        "target_qps": str(scenario.get("target_qps") or 100.0),
+        "replicas": str(scenario.get("replicas") or 3),
+        "autoscaling_max_replicas": str(scenario.get("autoscaling_max_replicas") or 24),
+        "capacity_headroom": str(scenario.get("capacity_headroom") or 0.7),
+        "runner_label": runner_label,
+        "runner_storage_root": str(
+            row.get("runner_storage_root")
+            or scenario.get("runner_storage_root")
+            or "state"
+        ),
+        "commit_results": commit_results,
+    }
+    inputs[credential_input] = credential_placeholder
+    return inputs
+
+
+def _dispatch_config(
+    root: Path,
+    requirement_id: str,
+    *,
+    runner_label: str,
+    commit_results: bool,
+) -> dict[str, Any]:
+    if requirement_id == "external_http_cluster":
+        inputs = {
+            "nodes": "$WAVEMIND_CLUSTER_NODES",
+            "nodes_manifest_json": "$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
+            "namespace_count": "32",
+            "memories_per_namespace": "8",
+            "workers": "8",
+            "batch_query_size": "24",
+            "replication_factor": "3",
+            "read_quorum": "1",
+            "read_fanout": "1",
+            "p99_slo_ms": "1000",
+            "commit_results": commit_results,
+        }
+        return {
+            "workflow": "external-http-cluster-load.yml",
+            "wave": "remote-service",
+            "inputs": inputs,
+            "required_secrets": ["WAVEMIND_API_KEY"],
+        }
+    if requirement_id == "external_http_active_active":
+        inputs = {
+            "regions": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+            "regions_manifest_json": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
+            "namespace_count": "16",
+            "p99_slo_ms": "1500",
+            "commit_results": commit_results,
+        }
+        return {
+            "workflow": "external-http-active-active.yml",
+            "wave": "remote-service",
+            "inputs": inputs,
+            "required_secrets": ["WAVEMIND_API_KEY"],
+        }
+    if requirement_id == "serverless_remote_telemetry":
+        inputs = {
+            "nodes": "$WAVEMIND_SERVERLESS_NODES",
+            "requests": "240",
+            "workers": "4",
+            "seed_memories": "24",
+            "seed_mode": "first",
+            "max_scale": "256",
+            "target_rps": "3200",
+            "target_p99_ms": "500",
+            "external_cold_start_ms": "900",
+            "estimated_scale_out_seconds": "18",
+            "commit_results": commit_results,
+        }
+        return {
+            "workflow": "serverless-observed-telemetry.yml",
+            "wave": "remote-service",
+            "inputs": inputs,
+            "required_secrets": ["WAVEMIND_API_KEY"],
+        }
+    if requirement_id == "qdrant_10m_service":
+        return {
+            "workflow": "production-streaming-load.yml",
+            "wave": "service-scale-10m",
+            "inputs": _streaming_dispatch_inputs(
+                root,
+                plan_artifact="benchmarks/production_streaming_load_qdrant_10m_plan.json",
+                engine="qdrant-service",
+                size=10_000_000,
+                credential_input="qdrant_url",
+                credential_placeholder="$WAVEMIND_QDRANT_URL",
+                runner_label=runner_label,
+                commit_results=commit_results,
+            ),
+            "required_secrets": ["WAVEMIND_QDRANT_API_KEY"],
+        }
+    if requirement_id == "qdrant_sharded_10m_service":
+        return {
+            "workflow": "production-streaming-load.yml",
+            "wave": "service-scale-10m",
+            "inputs": _streaming_dispatch_inputs(
+                root,
+                plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json",
+                engine="qdrant-sharded-service",
+                size=10_000_000,
+                credential_input="qdrant_urls",
+                credential_placeholder="$WAVEMIND_QDRANT_URLS",
+                runner_label=runner_label,
+                commit_results=commit_results,
+            ),
+            "required_secrets": ["WAVEMIND_QDRANT_API_KEYS"],
+        }
+    if requirement_id == "pgvector_10m_service":
+        return {
+            "workflow": "production-streaming-load.yml",
+            "wave": "service-scale-10m",
+            "inputs": _streaming_dispatch_inputs(
+                root,
+                plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
+                engine="pgvector-service",
+                size=10_000_000,
+                credential_input="pgvector_dsn",
+                credential_placeholder="$WAVEMIND_PGVECTOR_DSN",
+                runner_label=runner_label,
+                commit_results=commit_results,
+            ),
+            "required_secrets": [],
+        }
+    if requirement_id == "faiss_ivfpq_50m":
+        return {
+            "workflow": "production-streaming-load.yml",
+            "wave": "large-local-index",
+            "inputs": _streaming_dispatch_inputs(
+                root,
+                plan_artifact="benchmarks/production_streaming_load_50m_plan.json",
+                engine="faiss-ivfpq-persisted",
+                size=50_000_000,
+                credential_input="faiss_ivfpq_path",
+                credential_placeholder="$WAVEMIND_FAISS_IVFPQ_PATH",
+                runner_label=runner_label,
+                commit_results=commit_results,
+            ),
+            "required_secrets": [],
+        }
+    if requirement_id == "hundred_million_remote_load":
+        return {
+            "workflow": "production-streaming-load.yml",
+            "wave": "hundred-million-service",
+            "inputs": _streaming_dispatch_inputs(
+                root,
+                plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
+                engine="qdrant-sharded-service",
+                size=100_000_000,
+                credential_input="qdrant_urls",
+                credential_placeholder="$WAVEMIND_QDRANT_URLS",
+                runner_label=runner_label,
+                commit_results=commit_results,
+            ),
+            "required_secrets": ["WAVEMIND_QDRANT_API_KEYS"],
+        }
+    return {
+        "workflow": "",
+        "wave": "unknown",
+        "inputs": {"commit_results": commit_results},
+        "required_secrets": [],
+    }
+
+
+def build_production_evidence_dispatch_plan(
+    root: Path = PROJECT_ROOT,
+    *,
+    env: dict[str, str] | None = None,
+    runner_label: str = "self-hosted-large",
+    commit_results: bool = False,
+) -> dict[str, Any]:
+    """Build a launch plan for strict production-evidence GitHub workflows.
+
+    The plan does not unlock claims by itself. It joins the strict evidence gate,
+    preflight, workflow names, workflow inputs, secret requirements, and artifact
+    promotion commands so operators can launch real remote/large-N runs without
+    manually reconstructing each workflow_dispatch payload.
+    """
+
+    root = Path(root)
+    strict = evaluate_production_evidence(root)
+    preflight = evaluate_production_evidence_preflight(root, env=env)
+    strict_by_id = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    preflight_by_id = {
+        str(row.get("id")): row
+        for row in preflight.get("checks", [])
+        if isinstance(row, dict)
+    }
+
+    jobs: list[dict[str, Any]] = []
+    for requirement in strict.get("requirements", []):
+        if not isinstance(requirement, dict):
+            continue
+        requirement_id = str(requirement.get("id") or "unknown")
+        check = preflight_by_id.get(requirement_id, {})
+        strict_status = str(requirement.get("status") or "missing")
+        preflight_status = str(check.get("status") or "missing")
+        config = _dispatch_config(
+            root,
+            requirement_id,
+            runner_label=runner_label,
+            commit_results=commit_results,
+        )
+        workflow = str(config.get("workflow") or "")
+        inputs = dict(config.get("inputs") or {})
+        status = _dispatch_job_status(strict_status, preflight_status)
+        launch_command = _gh_workflow_command(workflow, inputs) if workflow else ""
+        publish_inputs = dict(inputs)
+        publish_inputs["commit_results"] = True
+        publish_command = _gh_workflow_command(workflow, publish_inputs) if workflow else ""
+        artifact = str(requirement.get("artifact") or check.get("output_artifact") or "")
+        jobs.append(
+            {
+                "id": requirement_id,
+                "title": requirement.get("title") or check.get("title") or requirement_id,
+                "status": status,
+                "dispatch_required": status != "complete",
+                "ready": status == "ready_to_dispatch",
+                "strict_status": strict_status,
+                "preflight_status": preflight_status,
+                "wave": config.get("wave"),
+                "workflow": workflow,
+                "artifact": artifact,
+                "claim_unlocked": requirement.get("claim_unlocked"),
+                "inputs": inputs,
+                "input_bindings": _dispatch_input_bindings(inputs),
+                "required_env": list(check.get("required_env") or []),
+                "missing_env": list(check.get("missing_env") or []),
+                "required_secrets": list(config.get("required_secrets") or []),
+                "issues": list(check.get("issues") or requirement.get("issues") or []),
+                "warnings": list(check.get("warnings") or []),
+                "safe_launch_command": launch_command,
+                "publish_launch_command": publish_command,
+                "download_command": (
+                    "gh run download <run-id> --repo CaspianG/wavemind "
+                    "--dir state/production-evidence-downloads"
+                ),
+                "ingest_command": (
+                    "wavemind ingest-production-evidence "
+                    "--artifact-dir state/production-evidence-downloads --refresh"
+                ),
+            }
+        )
+
+    status_counts: dict[str, int] = {}
+    wave_counts: dict[str, int] = {}
+    for job in jobs:
+        status_counts[str(job["status"])] = status_counts.get(str(job["status"]), 0) + 1
+        wave = str(job.get("wave") or "unknown")
+        wave_counts[wave] = wave_counts.get(wave, 0) + 1
+    blocked_count = status_counts.get("blocked_by_preflight", 0)
+    ready_count = status_counts.get("ready_to_dispatch", 0)
+    complete_count = status_counts.get("complete", 0)
+    if complete_count == len(jobs):
+        overall_status = "complete"
+    elif blocked_count:
+        overall_status = "action_required"
+    else:
+        overall_status = "ready_to_dispatch"
+
+    return {
+        "schema": "wavemind.production_evidence_dispatch.v1",
+        "generated_at": _utc_now(),
+        "overall_status": overall_status,
+        "summary": {
+            "overall_status": overall_status,
+            "total_jobs": len(jobs),
+            "ready_to_dispatch_count": ready_count,
+            "blocked_by_preflight_count": blocked_count,
+            "complete_count": complete_count,
+            "commit_results_default": bool(commit_results),
+            "runner_label": runner_label,
+            "wave_counts": dict(sorted(wave_counts.items())),
+            "status_counts": dict(sorted(status_counts.items())),
+        },
+        "launch_policy": {
+            "safe_default": (
+                "safe_launch_command uses commit_results=false by default; download "
+                "the workflow artifact and promote it through ingest-production-evidence."
+            ),
+            "publish_mode": (
+                "publish_launch_command sets commit_results=true for maintainer-controlled "
+                "runs that may commit refreshed strict evidence artifacts directly."
+            ),
+            "secret_policy": (
+                "The dispatch plan contains environment-variable placeholders and secret "
+                "names only. It must not contain credential values."
+            ),
+        },
+        "jobs": jobs,
+        "promotion": {
+            "download_command": (
+                "gh run download <run-id> --repo CaspianG/wavemind "
+                "--dir state/production-evidence-downloads"
+            ),
+            "ingest_command": (
+                "wavemind ingest-production-evidence "
+                "--artifact-dir state/production-evidence-downloads --refresh"
+            ),
+            "claim_boundary": (
+                "Only artifacts that pass ingest-production-evidence and the strict "
+                "production-evidence gate may unlock remote, 50M, or 100M claims."
+            ),
+        },
+        "source_artifacts": {
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+            "scale_run_plan": "benchmarks/production_scale_run_plan.json",
+        },
+    }
+
+
 def evaluate_production_evidence_bundle(
     root: Path = PROJECT_ROOT,
     *,
@@ -1541,6 +1911,52 @@ def render_scale_gap_markdown(payload: dict[str, Any]) -> str:
     for row in payload.get("profile_gaps", []):
         command = str(row.get("command") or "").replace("|", "\\|")
         lines.append(f"- `{row['profile']}`: `{command}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_dispatch_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Production Evidence Dispatch Plan",
+        "",
+        "This report turns strict production-evidence gaps into concrete GitHub",
+        "Actions dispatch payloads. It does not unlock production claims by itself;",
+        "claims unlock only after the resulting artifacts pass the ingest gate and",
+        "strict production-evidence validation.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| overall status | `{payload['overall_status']}` |",
+        f"| ready to dispatch | `{summary['ready_to_dispatch_count']}` |",
+        f"| blocked by preflight | `{summary['blocked_by_preflight_count']}` |",
+        f"| complete | `{summary['complete_count']}` |",
+        f"| total jobs | `{summary['total_jobs']}` |",
+        f"| runner label | `{summary['runner_label']}` |",
+        f"| commit results default | `{summary['commit_results_default']}` |",
+        "",
+        "## Jobs",
+        "",
+        "| job | status | wave | workflow | artifact | missing env |",
+        "|---|---|---|---|---|---|",
+    ]
+    for row in payload.get("jobs", []):
+        missing_env = ", ".join(row.get("missing_env") or ())
+        lines.append(
+            f"| {row['title']} | `{row['status']}` | `{row['wave']}` | "
+            f"`{row['workflow']}` | `{row['artifact']}` | `{missing_env}` |"
+        )
+
+    lines.extend(["", "## Safe Launch Commands", ""])
+    for row in payload.get("jobs", []):
+        command = str(row.get("safe_launch_command") or "").replace("|", "\\|")
+        lines.append(f"- `{row['id']}`: `{command}`")
+
+    lines.extend(["", "## Promotion", ""])
+    promotion = payload.get("promotion", {})
+    lines.append(f"- Download: `{promotion.get('download_command', '')}`")
+    lines.append(f"- Ingest: `{promotion.get('ingest_command', '')}`")
+    lines.append(f"- Boundary: {promotion.get('claim_boundary', '')}")
     lines.append("")
     return "\n".join(lines)
 

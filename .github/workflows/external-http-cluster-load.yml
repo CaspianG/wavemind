@@ -168,6 +168,27 @@ jobs:
           python benchmarks/production_evidence_gate.py \
             --output benchmarks/production_evidence_results.json \
             --markdown-output benchmarks/PRODUCTION_EVIDENCE.md
+          python -m wavemind production-evidence-preflight \
+            --write-artifacts \
+            --output benchmarks/production_evidence_preflight_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+          python -m wavemind production-evidence-dispatch \
+            --write-artifacts \
+            --output benchmarks/production_evidence_dispatch_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
+          python -m wavemind production-evidence-bundle \
+            --write-artifacts \
+            --output benchmarks/production_evidence_bundle_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
+          python -m wavemind release-claims \
+            --write-artifacts \
+            --fail-on-blocked \
+            --output benchmarks/release_claims_results.json \
+            --markdown-output benchmarks/RELEASE_CLAIMS.md
+          python -m wavemind scale-gap \
+            --write-artifacts \
+            --output benchmarks/scale_gap_results.json \
+            --markdown-output benchmarks/SCALE_GAP.md
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
           python benchmarks/render_benchmark_dashboard.py \
@@ -195,10 +216,20 @@ jobs:
             benchmarks/BENCHMARK_LEADERBOARD.md
             benchmarks/BENCHMARK_REPORT.md
             benchmarks/PRODUCTION_EVIDENCE.md
+            benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+            benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
+            benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
+            benchmarks/RELEASE_CLAIMS.md
+            benchmarks/SCALE_GAP.md
             benchmarks/PRODUCTION_READINESS.md
             benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
             benchmarks/production_evidence_results.json
+            benchmarks/production_evidence_preflight_results.json
+            benchmarks/production_evidence_dispatch_results.json
+            benchmarks/production_evidence_bundle_results.json
+            benchmarks/release_claims_results.json
+            benchmarks/scale_gap_results.json
             benchmarks/production_readiness_results.json
             docs/benchmark-dashboard.html
             docs/data/leaderboard-status.json

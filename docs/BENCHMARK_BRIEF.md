@@ -44,6 +44,7 @@ purpose-built vector databases.
 | Production readiness gate | Current WaveMind core gate score is `1.000`: `39/39` criteria pass, `0` require action, `0` fail. Live Zep competitor evidence is tracked separately and remains pending until a real service is configured. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | `python benchmarks/production_readiness_gate.py --output benchmarks/production_readiness_results.json --markdown-output benchmarks/PRODUCTION_READINESS.md` |
 | Strict production evidence gate | Hard claim boundary for remote service-node load, external active-active regions, managed/serverless telemetry, 10M Qdrant/pgvector service runs, 50M FAISS, and 100M remote service-backed load. It is allowed to be `action_required` while core readiness is green, because local loopback evidence must not unlock remote production claims. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md` | `wavemind production-evidence --strict`; `python benchmarks/production_evidence_gate.py --output benchmarks/production_evidence_results.json --markdown-output benchmarks/PRODUCTION_EVIDENCE.md` |
 | Production evidence preflight | Operator prerequisite check for strict production evidence jobs. It verifies remote endpoint env, service index env, FAISS storage paths, plan artifacts, disk headroom, and exact output-producing commands before expensive remote/large-N jobs are launched. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md` | `wavemind production-evidence-preflight --write-artifacts`; `wavemind production-evidence-preflight --fail-on-action-required` |
+| Production evidence dispatch plan | Secret-safe GitHub Actions launch contract for strict production evidence. It joins the strict evidence gate, preflight state, workflow names, required env/secrets, safe `commit_results=false` launch commands, publish commands, download commands, and ingest commands. This is a launch/review contract, not a passing benchmark. | `benchmarks/production_evidence_dispatch_results.json`, `benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md` | `wavemind production-evidence-dispatch --write-artifacts`; `wavemind production-evidence-dispatch --fail-on-action-required` |
 | Production evidence ingest gate | Maintainer review path for downloaded remote/large-N artifacts. It validates remote HTTP cluster, active-active, managed/serverless, Qdrant, sharded Qdrant, pgvector, FAISS IVF-PQ, and 100M result files through the same strict production evidence rules before copying them into the repo and refreshing reports. It rejects loopback/local active-active artifacts even if they are renamed to the strict output filename. | `wavemind/production_evidence_ingest.py`, `benchmarks/ingest_production_evidence_artifacts.py`, `tests/test_production_evidence_ingest.py` | `wavemind ingest-production-evidence --artifact-dir state/large-run --refresh`; `python benchmarks/ingest_production_evidence_artifacts.py --artifact-dir state/large-run --dry-run` |
 | Production evidence bundle | Operator-facing status contract that combines strict evidence, preflight, readiness, artifact audit, claim boundaries, and exact next actions. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md` | `wavemind production-evidence-bundle --write-artifacts`; `wavemind production-evidence-bundle --strict` |
 | Release claims contract | Compact release-facing claim manifest for GitHub Releases and launch posts. It separates `core_release_ready` library claims from strict remote, managed-serverless, 50M, and 100M production claims that remain locked until real evidence artifacts pass. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md` | `wavemind release-claims --write-artifacts --fail-on-blocked`; `wavemind release-claims --strict` |
@@ -55,6 +56,8 @@ The generated matrix view is in `benchmarks/BENCHMARK_REPORT.md`; the compact
 leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
 The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 The strict production evidence gate is in `benchmarks/PRODUCTION_EVIDENCE.md`.
+The strict evidence dispatch plan is in
+`benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md`.
 The combined operator evidence bundle is in
 `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`.
 The release-safe public claim manifest is in `benchmarks/RELEASE_CLAIMS.md`.
@@ -64,7 +67,8 @@ synchronization check for the generated benchmark artifacts.
 `docs/data/leaderboard-status.json` is the compact machine-readable public
 status contract for the GitHub Pages dashboard: publication workflow, Pages
 deployment contract, publishability, artifact freshness, production readiness,
-strict production claim boundaries, and production evidence bundle status. It
+strict production claim boundaries, production evidence dispatch state, and
+production evidence bundle status. It
 also exposes agent-quality lift and the active Memory OS policy manifest so
 external dashboards can track behavioral quality and self-management decisions
 without parsing Markdown.

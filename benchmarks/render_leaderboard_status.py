@@ -44,6 +44,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    dispatch = _load_json(
+        root / "benchmarks" / "production_evidence_dispatch_results.json",
+        load_errors,
+        required=False,
+    )
     agent_coherence = _load_json(
         root / "benchmarks" / "agent_coherence_results.json",
         load_errors,
@@ -80,6 +85,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
+        "benchmarks/production_evidence_dispatch_results.json": dispatch,
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
         "benchmarks/scale_readiness_results.json": scale_readiness,
@@ -198,6 +204,12 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "schema": preflight.get("schema"),
             "overall_status": preflight_status,
             "summary": preflight.get("summary", {}),
+        },
+        "production_evidence_dispatch": {
+            "schema": dispatch.get("schema"),
+            "overall_status": dispatch.get("overall_status", "missing"),
+            "summary": dispatch.get("summary", {}),
+            "jobs": dispatch.get("jobs", []),
         },
         "release_claims": {
             "schema": release_claims.get("schema"),

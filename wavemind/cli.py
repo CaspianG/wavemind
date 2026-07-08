@@ -50,12 +50,14 @@ from .k8s_operator import (
 from .object_store import S3SnapshotStore
 from .postgres_recovery import build_postgres_pitr_plan
 from .production_evidence import (
+    build_production_evidence_dispatch_plan,
     build_scale_gap_manifest,
     build_release_claims_manifest,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
     render_bundle_markdown,
+    render_dispatch_markdown,
     render_markdown,
     render_preflight_markdown,
     render_release_claims_markdown,
@@ -359,6 +361,48 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md"),
     )
     production_evidence_preflight.add_argument("--json", action="store_true")
+
+    production_evidence_dispatch = sub.add_parser(
+        "production-evidence-dispatch",
+        help="Build GitHub Actions dispatch commands for strict production-evidence runs",
+    )
+    production_evidence_dispatch.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_evidence_dispatch.add_argument(
+        "--runner-label",
+        default="self-hosted-large",
+        help="Runner label to use for large-N production-streaming jobs.",
+    )
+    production_evidence_dispatch.add_argument(
+        "--commit-results",
+        action="store_true",
+        help="Default generated launch commands to commit refreshed results directly.",
+    )
+    production_evidence_dispatch.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown dispatch reports to the output paths.",
+    )
+    production_evidence_dispatch.add_argument(
+        "--fail-on-action-required",
+        action="store_true",
+        help="Exit non-zero unless every unfinished strict-evidence job is ready to dispatch.",
+    )
+    production_evidence_dispatch.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_evidence_dispatch_results.json"),
+    )
+    production_evidence_dispatch.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md"),
+    )
+    production_evidence_dispatch.add_argument("--json", action="store_true")
 
     production_evidence_bundle = sub.add_parser(
         "production-evidence-bundle",
@@ -1204,6 +1248,34 @@ def print_production_evidence_bundle(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_production_evidence_dispatch(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {summary['overall_status']}")
+    print(f"ready_to_dispatch: {summary['ready_to_dispatch_count']}/{summary['total_jobs']}")
+    print(f"blocked_by_preflight: {summary['blocked_by_preflight_count']}")
+    print(f"complete: {summary['complete_count']}")
+    print(f"runner_label: {summary['runner_label']}")
+    print(f"commit_results_default: {summary['commit_results_default']}")
+    print("jobs:")
+    for row in payload.get("jobs", []):
+        print(f"- [{row['status']}] {row['id']}: {row['workflow']}")
+        print(f"  artifact: {row['artifact']}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        issues = row.get("issues") or []
+        if issues:
+            print(f"  issues: {', '.join(issues)}")
+        command = row.get("safe_launch_command")
+        if command:
+            print(f"  safe_launch: {command}")
+    promotion = payload.get("promotion") or {}
+    if promotion:
+        print("promotion:")
+        print(f"  download: {promotion.get('download_command')}")
+        print(f"  ingest: {promotion.get('ingest_command')}")
+
+
 def print_release_claims(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"release_status: {summary['release_status']}")
@@ -1784,6 +1856,34 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_action_required and payload["overall_status"] != "ready":
             return 2
         return 0
+
+    if args.command == "production-evidence-dispatch":
+        payload = build_production_evidence_dispatch_plan(
+            args.root,
+            runner_label=args.runner_label,
+            commit_results=args.commit_results,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_dispatch_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_evidence_dispatch(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["overall_status"] not in {"ready_to_dispatch", "complete"}:
+            return 2
+        return 0 if payload["overall_status"] in {"complete", "ready_to_dispatch", "action_required"} else 1
 
     if args.command == "production-evidence-bundle":
         payload = evaluate_production_evidence_bundle(args.root)

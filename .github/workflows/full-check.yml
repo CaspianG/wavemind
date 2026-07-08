@@ -137,6 +137,11 @@ jobs:
           python benchmarks/production_readiness_gate.py \
             --output /tmp/production_readiness_results.json \
             --markdown-output /tmp/PRODUCTION_READINESS.md
+          python -m wavemind production-evidence-dispatch \
+            --root "$GITHUB_WORKSPACE" \
+            --write-artifacts \
+            --output /tmp/production_evidence_dispatch_results.json \
+            --markdown-output /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
 
   redis-api-load:
     runs-on: ubuntu-latest

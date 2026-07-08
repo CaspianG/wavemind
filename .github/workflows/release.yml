@@ -30,6 +30,11 @@ jobs:
           python benchmarks/production_readiness_gate.py \
             --output /tmp/production_readiness_results.json \
             --markdown-output /tmp/PRODUCTION_READINESS.md
+          python -m wavemind production-evidence-dispatch \
+            --root "$GITHUB_WORKSPACE" \
+            --write-artifacts \
+            --output /tmp/production_evidence_dispatch_results.json \
+            --markdown-output /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
           python -m wavemind production-evidence-bundle \
             --root "$GITHUB_WORKSPACE" \
             --write-artifacts \
@@ -63,5 +68,7 @@ jobs:
             /tmp/RELEASE_CLAIMS.md
             /tmp/scale_gap_results.json
             /tmp/SCALE_GAP.md
+            /tmp/production_evidence_dispatch_results.json
+            /tmp/PRODUCTION_EVIDENCE_DISPATCH.md
             /tmp/production_evidence_bundle_results.json
             /tmp/PRODUCTION_EVIDENCE_BUNDLE.md

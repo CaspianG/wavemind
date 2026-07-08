@@ -114,6 +114,19 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
     assert payload["production_evidence_bundle"]["next_action_count"] == 8
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
+    assert payload["production_evidence_dispatch"]["schema"] == (
+        "wavemind.production_evidence_dispatch.v1"
+    )
+    assert payload["production_evidence_dispatch"]["overall_status"] in {
+        "action_required",
+        "ready_to_dispatch",
+        "complete",
+    }
+    assert payload["production_evidence_dispatch"]["summary"]["total_jobs"] == 8
+    assert any(
+        row["id"] == "hundred_million_remote_load"
+        for row in payload["production_evidence_dispatch"]["jobs"]
+    )
     assert payload["release_claims"]["schema"] == "wavemind.release_claims.v1"
     assert payload["release_claims"]["release_status"] == "core_release_ready"
     assert payload["release_claims"]["claim_status"] == "claims_limited"
@@ -152,6 +165,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/benchmark_matrix_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_bundle_results.json" in payload["source_files"]
+    assert "benchmarks/production_evidence_dispatch_results.json" in payload["source_files"]
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
@@ -182,6 +196,10 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "claims_limited",
         "claims_unlocked",
     }
+    assert payload["production_evidence_dispatch"]["schema"] == (
+        "wavemind.production_evidence_dispatch.v1"
+    )
+    assert payload["production_evidence_dispatch"]["summary"]["total_jobs"] == 8
     assert payload["release_claims"]["release_status"] in {
         "core_release_ready",
         "full_production_claims_ready",

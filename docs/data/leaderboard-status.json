@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T14:43:49Z",
-  "source_ref": "dfc070473493",
+  "generated_at": "2026-07-08T15:23:47Z",
+  "source_ref": "db860186513a",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "dfc070473493",
+    "source_ref": "db860186513a",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,10 +39,10 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T14:43:49Z",
-    "max_age_days": 3650.0,
-    "source_count": 11,
-    "fresh_count": 11,
+    "checked_at": "2026-07-08T15:23:47Z",
+    "max_age_days": 8.0,
+    "source_count": 12,
+    "fresh_count": 12,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -55,15 +55,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:44:03Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T15:23:39Z",
+        "age_days": 9.259259259259259e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-08T14:43:49Z",
+        "timestamp": "2026-07-08T15:23:47Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -71,48 +71,56 @@
         "path": "benchmarks/production_readiness_results.json",
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:43:52Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T15:23:43Z",
+        "age_days": 4.6296296296296294e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_results.json",
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:43:55Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T15:23:44Z",
+        "age_days": 3.472222222222222e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_preflight_results.json",
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:32:19Z",
-        "age_days": 0.00798611111111111,
+        "timestamp": "2026-07-08T15:23:44Z",
+        "age_days": 3.472222222222222e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:44:00Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T15:23:45Z",
+        "age_days": 2.3148148148148147e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:44:01Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T15:23:46Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T14:44:02Z",
+        "timestamp": "2026-07-08T15:23:47Z",
         "age_days": 0.0,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/production_evidence_dispatch_results.json",
+        "schema": "wavemind.production_evidence_dispatch.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-08T15:23:45Z",
+        "age_days": 2.3148148148148147e-05,
         "status": "pass"
       },
       {
@@ -120,7 +128,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T14:43:22Z",
-        "age_days": 0.0003125,
+        "age_days": 0.02806712962962963,
         "status": "pass"
       },
       {
@@ -128,7 +136,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:45:21Z",
-        "age_days": 0.3739351851851852,
+        "age_days": 0.4016898148148148,
         "status": "pass"
       },
       {
@@ -136,14 +144,14 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T13:46:38Z",
-        "age_days": 0.03971064814814815,
+        "age_days": 0.06746527777777778,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-08T14:44:03Z",
+    "generated_at": "2026-07-08T15:23:39Z",
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,
@@ -172,9 +180,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T14:43:49Z",
-    "age_days": 4.6655972222222216e-05,
-    "max_age_days": 3650.0,
+    "checked_at": "2026-07-08T15:23:47Z",
+    "age_days": 9.925015046296296e-05,
+    "max_age_days": 8.0,
     "errors": []
   },
   "production_readiness": {
@@ -503,6 +511,428 @@
       "total_checks": 8
     }
   },
+  "production_evidence_dispatch": {
+    "schema": "wavemind.production_evidence_dispatch.v1",
+    "overall_status": "action_required",
+    "summary": {
+      "overall_status": "action_required",
+      "total_jobs": 8,
+      "ready_to_dispatch_count": 0,
+      "blocked_by_preflight_count": 8,
+      "complete_count": 0,
+      "commit_results_default": false,
+      "runner_label": "self-hosted-large",
+      "wave_counts": {
+        "hundred-million-service": 1,
+        "large-local-index": 1,
+        "remote-service": 3,
+        "service-scale-10m": 3
+      },
+      "status_counts": {
+        "blocked_by_preflight": 8
+      }
+    },
+    "jobs": [
+      {
+        "id": "external_http_cluster",
+        "title": "External HTTP service-node load",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "remote-service",
+        "workflow": "external-http-cluster-load.yml",
+        "artifact": "benchmarks/http_cluster_load_results.json",
+        "claim_unlocked": "Remote service-node cluster load SLO.",
+        "inputs": {
+          "nodes": "$WAVEMIND_CLUSTER_NODES",
+          "nodes_manifest_json": "$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
+          "namespace_count": "32",
+          "memories_per_namespace": "8",
+          "workers": "8",
+          "batch_query_size": "24",
+          "replication_factor": "3",
+          "read_quorum": "1",
+          "read_fanout": "1",
+          "p99_slo_ms": "1000",
+          "commit_results": false
+        },
+        "input_bindings": {
+          "nodes": "$WAVEMIND_CLUSTER_NODES",
+          "nodes_manifest_json": "$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        },
+        "required_env": [
+          "WAVEMIND_CLUSTER_NODES",
+          "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "missing_env": [
+          "WAVEMIND_CLUSTER_NODES",
+          "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "required_secrets": [
+          "WAVEMIND_API_KEY"
+        ],
+        "issues": [
+          "cluster node requires at least 4 URLs",
+          "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ],
+        "safe_launch_command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f nodes_manifest_json=\"$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON\" -f namespace_count=\"32\" -f memories_per_namespace=\"8\" -f workers=\"8\" -f batch_query_size=\"24\" -f replication_factor=\"3\" -f read_quorum=\"1\" -f read_fanout=\"1\" -f p99_slo_ms=\"1000\" -f commit_results=\"false\"",
+        "publish_launch_command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f nodes_manifest_json=\"$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON\" -f namespace_count=\"32\" -f memories_per_namespace=\"8\" -f workers=\"8\" -f batch_query_size=\"24\" -f replication_factor=\"3\" -f read_quorum=\"1\" -f read_fanout=\"1\" -f p99_slo_ms=\"1000\" -f commit_results=\"true\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "external_http_active_active",
+        "title": "External HTTP active-active regions",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "remote-service",
+        "workflow": "external-http-active-active.yml",
+        "artifact": "benchmarks/external_http_active_active_results.json",
+        "claim_unlocked": "Remote multi-region active-active memory convergence.",
+        "inputs": {
+          "regions": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "regions_manifest_json": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
+          "namespace_count": "16",
+          "p99_slo_ms": "1500",
+          "commit_results": false
+        },
+        "input_bindings": {
+          "regions": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "regions_manifest_json": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        },
+        "required_env": [
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "missing_env": [
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "required_secrets": [
+          "WAVEMIND_API_KEY"
+        ],
+        "issues": [
+          "active-active region requires at least 3 URLs",
+          "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ],
+        "safe_launch_command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f regions_manifest_json=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON\" -f namespace_count=\"16\" -f p99_slo_ms=\"1500\" -f commit_results=\"false\"",
+        "publish_launch_command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f regions_manifest_json=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON\" -f namespace_count=\"16\" -f p99_slo_ms=\"1500\" -f commit_results=\"true\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "serverless_remote_telemetry",
+        "title": "Managed/serverless remote telemetry",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "remote-service",
+        "workflow": "serverless-observed-telemetry.yml",
+        "artifact": "deploy/serverless/observed-telemetry.remote.json",
+        "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+        "inputs": {
+          "nodes": "$WAVEMIND_SERVERLESS_NODES",
+          "requests": "240",
+          "workers": "4",
+          "seed_memories": "24",
+          "seed_mode": "first",
+          "max_scale": "256",
+          "target_rps": "3200",
+          "target_p99_ms": "500",
+          "external_cold_start_ms": "900",
+          "estimated_scale_out_seconds": "18",
+          "commit_results": false
+        },
+        "input_bindings": {
+          "nodes": "$WAVEMIND_SERVERLESS_NODES"
+        },
+        "required_env": [
+          "WAVEMIND_SERVERLESS_NODES"
+        ],
+        "missing_env": [
+          "WAVEMIND_SERVERLESS_NODES"
+        ],
+        "required_secrets": [
+          "WAVEMIND_API_KEY"
+        ],
+        "issues": [
+          "serverless node requires at least 1 URLs",
+          "set WAVEMIND_SERVERLESS_NODES"
+        ],
+        "warnings": [
+          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        ],
+        "safe_launch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"false\"",
+        "publish_launch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"true\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "qdrant_10m_service",
+        "title": "10M Qdrant service load",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "service-scale-10m",
+        "workflow": "production-streaming-load.yml",
+        "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
+        "inputs": {
+          "engine": "qdrant-service",
+          "size": "10000000",
+          "dim": "128",
+          "queries": "2000",
+          "top_k": "10",
+          "batch_size": "5000",
+          "target_recall": "0.95",
+          "target_p99_ms": "100.0",
+          "target_qps": "100.0",
+          "replicas": "3",
+          "autoscaling_max_replicas": "24",
+          "capacity_headroom": "0.7",
+          "runner_label": "self-hosted-large",
+          "runner_storage_root": "state/production-runs",
+          "commit_results": false,
+          "qdrant_url": "$WAVEMIND_QDRANT_URL"
+        },
+        "input_bindings": {
+          "qdrant_url": "$WAVEMIND_QDRANT_URL"
+        },
+        "required_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URL"
+        ],
+        "required_secrets": [
+          "WAVEMIND_QDRANT_API_KEY"
+        ],
+        "issues": [
+          "set WAVEMIND_QDRANT_URL"
+        ],
+        "warnings": [],
+        "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_url=\"$WAVEMIND_QDRANT_URL\"",
+        "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_url=\"$WAVEMIND_QDRANT_URL\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "qdrant_sharded_10m_service",
+        "title": "10M sharded Qdrant service load",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "service-scale-10m",
+        "workflow": "production-streaming-load.yml",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+        "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
+        "inputs": {
+          "engine": "qdrant-sharded-service",
+          "size": "10000000",
+          "dim": "128",
+          "queries": "2000",
+          "top_k": "10",
+          "batch_size": "5000",
+          "target_recall": "0.95",
+          "target_p99_ms": "100.0",
+          "target_qps": "250.0",
+          "replicas": "4",
+          "autoscaling_max_replicas": "48",
+          "capacity_headroom": "0.7",
+          "runner_label": "self-hosted-large",
+          "runner_storage_root": "state/production-runs",
+          "commit_results": false,
+          "qdrant_urls": "$WAVEMIND_QDRANT_URLS"
+        },
+        "input_bindings": {
+          "qdrant_urls": "$WAVEMIND_QDRANT_URLS"
+        },
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "required_secrets": [
+          "WAVEMIND_QDRANT_API_KEYS"
+        ],
+        "issues": [
+          "set WAVEMIND_QDRANT_URLS"
+        ],
+        "warnings": [],
+        "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"250.0\" -f replicas=\"4\" -f autoscaling_max_replicas=\"48\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
+        "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"250.0\" -f replicas=\"4\" -f autoscaling_max_replicas=\"48\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "pgvector_10m_service",
+        "title": "10M pgvector service load",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "service-scale-10m",
+        "workflow": "production-streaming-load.yml",
+        "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
+        "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
+        "inputs": {
+          "engine": "pgvector-service",
+          "size": "10000000",
+          "dim": "128",
+          "queries": "2000",
+          "top_k": "10",
+          "batch_size": "5000",
+          "target_recall": "0.95",
+          "target_p99_ms": "100.0",
+          "target_qps": "100.0",
+          "replicas": "3",
+          "autoscaling_max_replicas": "24",
+          "capacity_headroom": "0.7",
+          "runner_label": "self-hosted-large",
+          "runner_storage_root": "state/production-runs",
+          "commit_results": false,
+          "pgvector_dsn": "$WAVEMIND_PGVECTOR_DSN"
+        },
+        "input_bindings": {
+          "pgvector_dsn": "$WAVEMIND_PGVECTOR_DSN"
+        },
+        "required_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "missing_env": [
+          "WAVEMIND_PGVECTOR_DSN"
+        ],
+        "required_secrets": [],
+        "issues": [
+          "set WAVEMIND_PGVECTOR_DSN"
+        ],
+        "warnings": [],
+        "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
+        "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "faiss_ivfpq_50m",
+        "title": "50M FAISS IVF-PQ streaming load",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "large-local-index",
+        "workflow": "production-streaming-load.yml",
+        "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        "claim_unlocked": "50M compressed local/persistent FAISS profile.",
+        "inputs": {
+          "engine": "faiss-ivfpq-persisted",
+          "size": "50000000",
+          "dim": "128",
+          "queries": "2000",
+          "top_k": "10",
+          "batch_size": "5000",
+          "target_recall": "0.95",
+          "target_p99_ms": "100.0",
+          "target_qps": "100.0",
+          "replicas": "3",
+          "autoscaling_max_replicas": "24",
+          "capacity_headroom": "0.7",
+          "runner_label": "self-hosted-large",
+          "runner_storage_root": "state/production-runs",
+          "commit_results": false,
+          "faiss_ivfpq_path": "$WAVEMIND_FAISS_IVFPQ_PATH"
+        },
+        "input_bindings": {
+          "faiss_ivfpq_path": "$WAVEMIND_FAISS_IVFPQ_PATH"
+        },
+        "required_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "missing_env": [
+          "WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "required_secrets": [],
+        "issues": [
+          "set WAVEMIND_FAISS_IVFPQ_PATH"
+        ],
+        "warnings": [],
+        "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"faiss-ivfpq-persisted\" -f size=\"50000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f faiss_ivfpq_path=\"$WAVEMIND_FAISS_IVFPQ_PATH\"",
+        "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"faiss-ivfpq-persisted\" -f size=\"50000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f faiss_ivfpq_path=\"$WAVEMIND_FAISS_IVFPQ_PATH\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      },
+      {
+        "id": "hundred_million_remote_load",
+        "title": "100M remote load result",
+        "status": "blocked_by_preflight",
+        "dispatch_required": true,
+        "ready": false,
+        "strict_status": "action_required",
+        "preflight_status": "action_required",
+        "wave": "hundred-million-service",
+        "workflow": "production-streaming-load.yml",
+        "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+        "inputs": {
+          "engine": "qdrant-sharded-service",
+          "size": "100000000",
+          "dim": "128",
+          "queries": "5000",
+          "top_k": "10",
+          "batch_size": "10000",
+          "target_recall": "0.95",
+          "target_p99_ms": "100.0",
+          "target_qps": "500.0",
+          "replicas": "8",
+          "autoscaling_max_replicas": "128",
+          "capacity_headroom": "0.7",
+          "runner_label": "self-hosted-large",
+          "runner_storage_root": "state/production-runs",
+          "commit_results": false,
+          "qdrant_urls": "$WAVEMIND_QDRANT_URLS"
+        },
+        "input_bindings": {
+          "qdrant_urls": "$WAVEMIND_QDRANT_URLS"
+        },
+        "required_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "missing_env": [
+          "WAVEMIND_QDRANT_URLS"
+        ],
+        "required_secrets": [
+          "WAVEMIND_QDRANT_API_KEYS"
+        ],
+        "issues": [
+          "set WAVEMIND_QDRANT_URLS"
+        ],
+        "warnings": [],
+        "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"100000000\" -f dim=\"128\" -f queries=\"5000\" -f top_k=\"10\" -f batch_size=\"10000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"500.0\" -f replicas=\"8\" -f autoscaling_max_replicas=\"128\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
+        "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"100000000\" -f dim=\"128\" -f queries=\"5000\" -f top_k=\"10\" -f batch_size=\"10000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"500.0\" -f replicas=\"8\" -f autoscaling_max_replicas=\"128\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
+        "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
+        "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
+      }
+    ]
+  },
   "release_claims": {
     "schema": "wavemind.release_claims.v1",
     "release_status": "core_release_ready",
@@ -769,6 +1199,7 @@
     "benchmarks/production_evidence_bundle_results.json",
     "benchmarks/release_claims_results.json",
     "benchmarks/scale_gap_results.json",
+    "benchmarks/production_evidence_dispatch_results.json",
     "benchmarks/production_scale_run_plan.json",
     "benchmarks/agent_coherence_results.json",
     "benchmarks/scale_readiness_results.json"

@@ -255,6 +255,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_evidence_preflight_results.json" in readme
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in readme
     assert "wavemind production-evidence-preflight" in readme
+    assert "production_evidence_dispatch_results.json" in readme
+    assert "PRODUCTION_EVIDENCE_DISPATCH.md" in readme
+    assert "wavemind production-evidence-dispatch" in readme
     assert "release_claims_results.json" in readme
     assert "RELEASE_CLAIMS.md" in readme
     assert "wavemind release-claims --write-artifacts --fail-on-blocked" in readme
@@ -315,6 +318,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind production-evidence --strict" in benchmark_brief
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in benchmark_brief
     assert "production-evidence-preflight" in benchmark_brief
+    assert "PRODUCTION_EVIDENCE_DISPATCH.md" in benchmark_brief
+    assert "production-evidence-dispatch" in benchmark_brief
     assert "RELEASE_CLAIMS.md" in benchmark_brief
     assert "release-claims --write-artifacts --fail-on-blocked" in benchmark_brief
     assert "SCALE_GAP.md" in benchmark_brief
@@ -325,6 +330,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
         encoding="utf-8"
     )
     assert "wavemind release-claims" in leaderboard_workflow
+    assert "wavemind production-evidence-dispatch" in leaderboard_workflow
+    assert "benchmarks/production_evidence_dispatch_results.json" in leaderboard_workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in leaderboard_workflow
     assert "benchmarks/release_claims_results.json" in leaderboard_workflow
     assert "benchmarks/RELEASE_CLAIMS.md" in leaderboard_workflow
     assert "wavemind scale-gap" in leaderboard_workflow
@@ -338,6 +346,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/production_evidence_gate.py").exists()
     assert Path("benchmarks/production_evidence_preflight_results.json").exists()
     assert Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md").exists()
+    assert Path("benchmarks/production_evidence_dispatch_results.json").exists()
+    assert Path("benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md").exists()
     assert Path("benchmarks/release_claims_results.json").exists()
     assert Path("benchmarks/RELEASE_CLAIMS.md").exists()
     assert Path("benchmarks/scale_gap_results.json").exists()

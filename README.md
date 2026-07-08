@@ -1821,15 +1821,21 @@ The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
-`agent_quality`, and `memory_os_policy` sections, so dashboards can verify the
-weekly GitHub Pages publication path, detect stale or missing public evidence,
-and track task success, stale-error suppression, context savings, and active
-Memory OS policy decisions without scraping Markdown.
+`agent_quality`, `memory_os_policy`, and `production_evidence_dispatch`
+sections, so dashboards can verify the weekly GitHub Pages publication path,
+detect stale or missing public evidence, track task success, stale-error
+suppression, context savings, active Memory OS policy decisions, and the exact
+strict-evidence workflow dispatch contract without scraping Markdown.
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)
 from `benchmarks/production_evidence_results.json`. This is the hard boundary
 for remote multi-region, managed-serverless, 50M, and 100M scale claims.
+Production evidence dispatch plan:
+[`benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md`](benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md)
+from `benchmarks/production_evidence_dispatch_results.json`. This turns the
+strict evidence gaps into secret-safe `gh workflow run ...` payloads, download
+commands, and ingest commands for maintainer-reviewed production runs.
 Operator evidence bundle: [`benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`](benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md)
 from `benchmarks/production_evidence_bundle_results.json`. This combines the
 strict gate, preflight, readiness, artifact audit, claim boundaries, and exact
@@ -1866,14 +1872,18 @@ This writes `benchmarks/production_evidence_preflight_results.json` and
 service index env vars, FAISS paths, plan artifacts, disk headroom, and exact
 large-run commands, and can fail deployments with
 `--fail-on-action-required`. Strict claim gate: `wavemind production-evidence
---strict`. Combined operator bundle: `wavemind production-evidence-bundle
---write-artifacts`, or `wavemind production-evidence-bundle --strict` when a
-release must fail unless all remote/large-N production claims are unlocked.
+--strict`. Dispatch contract: `wavemind production-evidence-dispatch
+--write-artifacts`, or `wavemind production-evidence-dispatch
+--fail-on-action-required` when the environment must already be ready to launch
+all unfinished strict-evidence jobs. Combined operator bundle:
+`wavemind production-evidence-bundle --write-artifacts`, or `wavemind
+production-evidence-bundle --strict` when a release must fail unless all
+remote/large-N production claims are unlocked.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
-production-readiness report, the strict production-evidence report, and the
-combined production-evidence bundle,
+production-readiness report, the strict production-evidence report, the
+production-evidence dispatch plan, and the combined production-evidence bundle,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, renders
 `docs/data/leaderboard-status.json`, and uploads changed benchmark artifacts for
@@ -1918,6 +1928,7 @@ public claim boundaries stable:
 | Production readiness | WaveMind core readiness is gated by checked-in artifacts before release. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | Missing external competitor credentials should not be treated as WaveMind core failure, but they still limit competitor claims. |
 | Strict production evidence | Remote service-node, active-active, serverless, 10M service, 50M, and 100M claims are separated into a hard evidence gate. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md`, `benchmarks/production_evidence_gate.py`, `wavemind production-evidence --strict` | Current status remains action-required until real remote/service artifacts are committed. |
 | Production evidence preflight | Remote endpoint/env/path prerequisites are checked before launching expensive strict-evidence jobs. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, `wavemind production-evidence-preflight --write-artifacts` | A ready preflight is not a passing evidence result; it only proves the environment is ready to run the remote/large-N jobs. |
+| Production evidence dispatch | Secret-safe workflow dispatch contract for every unfinished strict-evidence job, including safe `commit_results=false` launch commands, publish commands, required env/secrets, and artifact promotion commands. | `benchmarks/production_evidence_dispatch_results.json`, `benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md`, `wavemind production-evidence-dispatch --write-artifacts` | A dispatch plan only launches or reviews evidence runs; it does not unlock production claims until downloaded artifacts pass ingest and strict validation. |
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |

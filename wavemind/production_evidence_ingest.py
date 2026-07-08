@@ -189,6 +189,7 @@ def refresh_commands() -> list[list[str]]:
             "benchmarks/PRODUCTION_EVIDENCE.md",
         ],
         [python, "-m", "wavemind", "production-evidence-preflight", "--write-artifacts"],
+        [python, "-m", "wavemind", "production-evidence-dispatch", "--write-artifacts"],
         [python, "-m", "wavemind", "production-evidence-bundle", "--write-artifacts"],
         [python, "-m", "wavemind", "release-claims", "--write-artifacts"],
         [python, "-m", "wavemind", "scale-gap", "--write-artifacts"],
