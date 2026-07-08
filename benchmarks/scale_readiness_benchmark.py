@@ -2518,38 +2518,53 @@ def run_sustained_http_cluster_workload(
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         write_results = list(pool.map(write_one, write_tasks))
 
-    def query_one(task: tuple[str, str]) -> bool:
-        namespace, text = task
+    def batch_query_tasks(
+        tasks: list[tuple[str, str]],
+        latency_bucket: list[float],
+        label: str,
+        *,
+        expect_absent: bool = False,
+    ) -> tuple[list[bool], object | None]:
         op_started = time.perf_counter()
         try:
-            results = memory.query(text, namespace=namespace, top_k=3)
-            return any(result.text == text for result in results)
+            batch = memory.query_batch(
+                [
+                    {
+                        "text": text,
+                        "namespace": namespace,
+                        "top_k": 3,
+                        "tags": ["sustained"],
+                    }
+                    for namespace, text in tasks
+                ]
+            )
+            checks = []
+            for item_results, (_, text) in zip(batch.results, tasks):
+                if expect_absent:
+                    checks.append(all(result.text != text for result in item_results))
+                else:
+                    checks.append(any(result.text == text for result in item_results))
+            return checks, batch
         except Exception as exc:  # pragma: no cover - service boundary
-            errors.append(f"query {namespace}: {exc}")
-            return False
+            errors.append(f"{label}: {exc}")
+            return [False for _ in tasks], None
         finally:
-            query_latencies.append((time.perf_counter() - op_started) * 1000.0)
+            latency_bucket.append((time.perf_counter() - op_started) * 1000.0)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        query_results = list(pool.map(query_one, write_tasks))
+    query_results, query_batch_report = batch_query_tasks(
+        write_tasks,
+        query_latencies,
+        "query batch",
+    )
 
     failed_node = sorted(node.id for node in memory.nodes)[1]
     memory.set_node_available(failed_node, False)
 
-    def failover_query_one(task: tuple[str, str]) -> bool:
-        namespace, text = task
-        op_started = time.perf_counter()
-        try:
-            results = memory.query(text, namespace=namespace, top_k=3)
-            return any(result.text == text for result in results)
-        except Exception as exc:  # pragma: no cover - service boundary
-            errors.append(f"failover query {namespace}: {exc}")
-            return False
-        finally:
-            failover_latencies.append((time.perf_counter() - op_started) * 1000.0)
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        failover_results = list(pool.map(failover_query_one, write_tasks))
+    failover_results, failover_batch_report = batch_query_tasks(
+        write_tasks,
+        failover_latencies,
+        "failover query batch",
+    )
     memory.set_node_available(failed_node, True)
 
     repair_namespace = namespaces[0]
@@ -2607,20 +2622,12 @@ def run_sustained_http_cluster_workload(
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         forget_results = list(pool.map(forget_one, deleted_tasks))
 
-    def deleted_stays_suppressed(task: tuple[str, str]) -> bool:
-        namespace, text = task
-        op_started = time.perf_counter()
-        try:
-            results = memory.query(text, namespace=namespace, top_k=3)
-            return all(result.text != text for result in results)
-        except Exception as exc:  # pragma: no cover - service boundary
-            errors.append(f"delete suppression {namespace}: {exc}")
-            return False
-        finally:
-            query_latencies.append((time.perf_counter() - op_started) * 1000.0)
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        deletion_suppression = list(pool.map(deleted_stays_suppressed, deleted_tasks))
+    deletion_suppression, delete_batch_report = batch_query_tasks(
+        deleted_tasks,
+        query_latencies,
+        "delete suppression batch",
+        expect_absent=True,
+    )
 
     elapsed_ms = (time.perf_counter() - started) * 1000.0
     all_latencies = (
@@ -2663,6 +2670,54 @@ def run_sustained_http_cluster_workload(
         "queries": len(query_results),
         "failover_queries": len(failover_results),
         "forgets": len(forget_results),
+        "query_batches": int(query_batch_report is not None),
+        "failover_query_batches": int(failover_batch_report is not None),
+        "delete_suppression_query_batches": int(delete_batch_report is not None),
+        "query_batch_http_requests": (
+            int(getattr(query_batch_report, "query_http_requests", 0))
+            if query_batch_report is not None
+            else 0
+        ),
+        "query_batch_individual_http_requests": (
+            int(getattr(query_batch_report, "individual_query_http_requests", 0))
+            if query_batch_report is not None
+            else 0
+        ),
+        "query_batch_request_reduction_ratio": (
+            float(getattr(query_batch_report, "request_reduction_ratio", 0.0))
+            if query_batch_report is not None
+            else 0.0
+        ),
+        "failover_batch_http_requests": (
+            int(getattr(failover_batch_report, "query_http_requests", 0))
+            if failover_batch_report is not None
+            else 0
+        ),
+        "failover_batch_individual_http_requests": (
+            int(getattr(failover_batch_report, "individual_query_http_requests", 0))
+            if failover_batch_report is not None
+            else 0
+        ),
+        "failover_batch_request_reduction_ratio": (
+            float(getattr(failover_batch_report, "request_reduction_ratio", 0.0))
+            if failover_batch_report is not None
+            else 0.0
+        ),
+        "delete_suppression_batch_http_requests": (
+            int(getattr(delete_batch_report, "query_http_requests", 0))
+            if delete_batch_report is not None
+            else 0
+        ),
+        "delete_suppression_batch_individual_http_requests": (
+            int(getattr(delete_batch_report, "individual_query_http_requests", 0))
+            if delete_batch_report is not None
+            else 0
+        ),
+        "delete_suppression_batch_request_reduction_ratio": (
+            float(getattr(delete_batch_report, "request_reduction_ratio", 0.0))
+            if delete_batch_report is not None
+            else 0.0
+        ),
         "failed_node": failed_node,
         "write_success_rate": _rate(write_results),
         "query_hit_rate": _rate(query_results),
@@ -2681,6 +2736,18 @@ def run_sustained_http_cluster_workload(
         "avg_operation_ms": statistics.mean(all_latencies) if all_latencies else 0.0,
         "p95_operation_ms": percentile(all_latencies, 95),
         "p99_operation_ms": percentile(all_latencies, 99),
+        "write_avg_ms": statistics.mean(write_latencies) if write_latencies else 0.0,
+        "write_p99_ms": percentile(write_latencies, 99),
+        "query_batch_avg_ms": statistics.mean(query_latencies) if query_latencies else 0.0,
+        "query_batch_p99_ms": percentile(query_latencies, 99),
+        "failover_batch_avg_ms": (
+            statistics.mean(failover_latencies) if failover_latencies else 0.0
+        ),
+        "failover_batch_p99_ms": percentile(failover_latencies, 99),
+        "repair_avg_ms": statistics.mean(repair_latencies) if repair_latencies else 0.0,
+        "repair_p99_ms": percentile(repair_latencies, 99),
+        "forget_avg_ms": statistics.mean(forget_latencies) if forget_latencies else 0.0,
+        "forget_p99_ms": percentile(forget_latencies, 99),
     }
 
 
@@ -2705,6 +2772,7 @@ def run_sustained_http_cluster_load_profile() -> dict[str, object]:
                 namespace_count=4,
                 memories_per_namespace=2,
                 replication_factor=3,
+                read_fanout=1,
                 max_workers=2,
             )
         finally:
@@ -4328,6 +4396,16 @@ def main() -> int:
         elif result["engine"] == "WaveMind sustained HTTP cluster load":
             print(f"| sustained HTTP cluster | success_rate | {result['success_rate']:.3f} |")
             print(f"| sustained HTTP cluster | failover_hit_rate | {result['failover_hit_rate']:.3f} |")
+            print(
+                "| sustained HTTP cluster | query_batch_http_requests | "
+                f"{result['query_batch_individual_http_requests']} -> "
+                f"{result['query_batch_http_requests']} |"
+            )
+            print(
+                "| sustained HTTP cluster | failover_batch_http_requests | "
+                f"{result['failover_batch_individual_http_requests']} -> "
+                f"{result['failover_batch_http_requests']} |"
+            )
             print(f"| sustained HTTP cluster | p99_operation_ms | {result['p99_operation_ms']:.2f} |")
             print(f"| sustained HTTP cluster | repair_repaired_total | {result['repair_repaired_total']} |")
         elif result["engine"] == "WaveMind replicated runtime":

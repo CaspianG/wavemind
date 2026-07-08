@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -190,6 +191,42 @@ class DistributedForgetResult:
             "deleted": self.deleted,
             "failed_nodes": dict(self.failed_nodes),
             "write_quorum": self.write_quorum,
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
+class DistributedQueryBatchResult:
+    results: tuple[tuple[QueryResult, ...], ...]
+    failed_nodes: tuple[dict[str, str], ...] = field(default_factory=tuple)
+    read_quorum: int = 1
+    query_http_requests: int = 0
+    individual_query_http_requests: int = 0
+
+    @property
+    def ok(self) -> bool:
+        return all(len(failures) == 0 for failures in self.failed_nodes)
+
+    @property
+    def request_reduction_ratio(self) -> float:
+        if self.individual_query_http_requests <= 0:
+            return 0.0
+        return 1.0 - (
+            float(self.query_http_requests)
+            / float(self.individual_query_http_requests)
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "items": [
+                [result.text for result in item_results]
+                for item_results in self.results
+            ],
+            "failed_nodes": [dict(failures) for failures in self.failed_nodes],
+            "read_quorum": self.read_quorum,
+            "query_http_requests": self.query_http_requests,
+            "individual_query_http_requests": self.individual_query_http_requests,
+            "request_reduction_ratio": self.request_reduction_ratio,
             "ok": self.ok,
         }
 
@@ -553,12 +590,17 @@ class DistributedShardedWaveMind:
         placement = self.placement(namespace)
         writes: dict[str, int] = {}
         failed: dict[str, str] = {}
+        write_nodes = []
         for node_id in placement.replicas:
             if not self._available.get(node_id, False):
                 failed[node_id] = "node unavailable"
                 continue
-            try:
-                writes[node_id] = self.client.remember(
+            write_nodes.append(node_id)
+
+        def write_replica(node_id: str) -> tuple[str, int]:
+            return (
+                node_id,
+                self.client.remember(
                     self._address(node_id),
                     text=text,
                     namespace=namespace,
@@ -566,11 +608,23 @@ class DistributedShardedWaveMind:
                     ttl_seconds=ttl_seconds,
                     metadata=metadata,
                     priority=priority,
-                )
-                self._mark_node_success(node_id)
-            except Exception as exc:  # pragma: no cover - service boundary
-                self._mark_node_failure(node_id, exc)
-                failed[node_id] = str(exc)
+                ),
+            )
+
+        with ThreadPoolExecutor(max_workers=max(1, len(write_nodes))) as pool:
+            futures = {
+                pool.submit(write_replica, node_id): node_id
+                for node_id in write_nodes
+            }
+            for future in as_completed(futures):
+                node_id = futures[future]
+                try:
+                    _, record_id = future.result()
+                    writes[node_id] = record_id
+                    self._mark_node_success(node_id)
+                except Exception as exc:  # pragma: no cover - service boundary
+                    self._mark_node_failure(node_id, exc)
+                    failed[node_id] = str(exc)
         if len(writes) < self.write_quorum:
             raise DistributedWriteQuorumError(
                 f"Write quorum {self.write_quorum} was not reached for "
@@ -640,6 +694,124 @@ class DistributedShardedWaveMind:
             reverse=True,
         )[:top_k]
 
+    def query_batch(
+        self,
+        queries: list[dict[str, Any]],
+    ) -> DistributedQueryBatchResult:
+        if not queries:
+            return DistributedQueryBatchResult(
+                results=(),
+                failed_nodes=(),
+                read_quorum=self.read_quorum,
+                query_http_requests=0,
+                individual_query_http_requests=0,
+            )
+
+        normalized: list[dict[str, Any]] = []
+        read_nodes_by_index: list[tuple[str, ...]] = []
+        failed_by_index: list[dict[str, str]] = []
+        tombstone_cache: dict[tuple[str, tuple[str, ...]], _ServiceTombstoneState] = {}
+        best_by_index: list[dict[tuple[str, str, tuple[str, ...]], QueryResult]] = [
+            {} for _ in queries
+        ]
+        successful_reads = [0 for _ in queries]
+        by_node: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+
+        for index, raw_query in enumerate(queries):
+            namespace = str(raw_query.get("namespace", "default"))
+            text = str(raw_query["text"])
+            query = {
+                "text": text,
+                "namespace": namespace,
+                "top_k": int(raw_query.get("top_k", 3)),
+                "tags": list(raw_query.get("tags", ())),
+                "min_score": raw_query.get("min_score"),
+            }
+            normalized.append(query)
+            placement = self.placement(namespace)
+            read_node_ids = self._read_node_ids(placement)
+            read_nodes_by_index.append(read_node_ids)
+            failed: dict[str, str] = {}
+            failed_by_index.append(failed)
+            tombstone_key = (namespace, read_node_ids)
+            if tombstone_key not in tombstone_cache:
+                tombstone_cache[tombstone_key] = self._tombstone_state(
+                    namespace,
+                    read_node_ids,
+                )
+            for node_id in read_node_ids:
+                if not self._available.get(node_id, False):
+                    failed[node_id] = "node unavailable"
+                    continue
+                by_node.setdefault(node_id, []).append((index, query))
+
+        query_http_requests = 0
+        for node_id, node_queries in by_node.items():
+            batch_payload = [query for _, query in node_queries]
+            try:
+                response = self.client.query_batch(
+                    self._address(node_id),
+                    queries=batch_payload,
+                )
+                query_http_requests += 1
+                self._mark_node_success(node_id)
+            except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
+                for original_index, _ in node_queries:
+                    failed_by_index[original_index][node_id] = str(exc)
+                continue
+
+            seen_local_indexes: set[int] = set()
+            for item in response.get("items", []):
+                local_index = int(item.get("index", len(seen_local_indexes)))
+                if local_index < 0 or local_index >= len(node_queries):
+                    continue
+                seen_local_indexes.add(local_index)
+                original_index, query = node_queries[local_index]
+                successful_reads[original_index] += 1
+                namespace = str(query["namespace"])
+                tombstones = tombstone_cache[(namespace, read_nodes_by_index[original_index])]
+                for result in item.get("results", []):
+                    result_key = _query_result_key(result)
+                    if result_key in tombstones.keys or result.text in tombstones.texts:
+                        continue
+                    key = (result.namespace, result_key, tuple(sorted(result.tags)))
+                    enriched = _with_node_metadata(result, node_id)
+                    current = best_by_index[original_index].get(key)
+                    if current is None or enriched.score > current.score:
+                        best_by_index[original_index][key] = enriched
+            missing_local_indexes = set(range(len(node_queries))) - seen_local_indexes
+            for local_index in missing_local_indexes:
+                original_index, _ = node_queries[local_index]
+                failed_by_index[original_index][node_id] = "batch item missing"
+
+        result_items: list[tuple[QueryResult, ...]] = []
+        for index, query in enumerate(normalized):
+            if successful_reads[index] < self.read_quorum:
+                namespace = str(query["namespace"])
+                raise DistributedReadQuorumError(
+                    f"Read quorum {self.read_quorum} was not reached for "
+                    f"batch query {index} in namespace {namespace!r}; "
+                    f"successful reads: {successful_reads[index]}; "
+                    f"failures: {failed_by_index[index]}"
+                )
+            top_k = int(query.get("top_k", 3))
+            ordered = sorted(
+                best_by_index[index].values(),
+                key=lambda result: result.score,
+                reverse=True,
+            )[:top_k]
+            result_items.append(tuple(ordered))
+
+        individual_query_http_requests = sum(len(nodes) for nodes in read_nodes_by_index)
+        return DistributedQueryBatchResult(
+            results=tuple(result_items),
+            failed_nodes=tuple(dict(failures) for failures in failed_by_index),
+            read_quorum=self.read_quorum,
+            query_http_requests=query_http_requests,
+            individual_query_http_requests=individual_query_http_requests,
+        )
+
     def forget(
         self,
         *,
@@ -658,28 +830,42 @@ class DistributedShardedWaveMind:
         )
         deletes: dict[str, int] = {}
         failed: dict[str, str] = {}
+        delete_nodes = []
         for node_id in placement.replicas:
             if not self._available.get(node_id, False):
                 failed[node_id] = "node unavailable"
                 continue
-            try:
-                deleted = self.client.forget(
-                    self._address(node_id),
-                    namespace=namespace,
-                    id=id,
-                    text=text,
-                )
-                self.client.log_tombstone(
-                    self._address(node_id),
-                    namespace=namespace,
-                    record_keys=tuple(sorted(tombstone_keys)),
-                    texts=tuple(sorted(tombstone_texts)),
-                )
-                deletes[node_id] = deleted
-                self._mark_node_success(node_id)
-            except Exception as exc:  # pragma: no cover - service boundary
-                self._mark_node_failure(node_id, exc)
-                failed[node_id] = str(exc)
+            delete_nodes.append(node_id)
+
+        def delete_replica(node_id: str) -> tuple[str, int]:
+            deleted = self.client.forget(
+                self._address(node_id),
+                namespace=namespace,
+                id=id,
+                text=text,
+            )
+            self.client.log_tombstone(
+                self._address(node_id),
+                namespace=namespace,
+                record_keys=tuple(sorted(tombstone_keys)),
+                texts=tuple(sorted(tombstone_texts)),
+            )
+            return node_id, deleted
+
+        with ThreadPoolExecutor(max_workers=max(1, len(delete_nodes))) as pool:
+            futures = {
+                pool.submit(delete_replica, node_id): node_id
+                for node_id in delete_nodes
+            }
+            for future in as_completed(futures):
+                node_id = futures[future]
+                try:
+                    _, deleted = future.result()
+                    deletes[node_id] = deleted
+                    self._mark_node_success(node_id)
+                except Exception as exc:  # pragma: no cover - service boundary
+                    self._mark_node_failure(node_id, exc)
+                    failed[node_id] = str(exc)
         if len(deletes) < self.write_quorum:
             raise DistributedWriteQuorumError(
                 f"Forget quorum {self.write_quorum} was not reached for "
@@ -903,6 +1089,8 @@ class DistributedShardedWaveMind:
         texts: set[str] = set()
         if text is not None:
             texts.add(text)
+        if text is not None and id is None:
+            return keys, texts
         for node_id in placement.replicas:
             if not self._available.get(node_id, False):
                 continue

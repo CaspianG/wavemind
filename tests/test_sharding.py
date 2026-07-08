@@ -9,6 +9,7 @@ from wavemind import (
     HashingTextEncoder,
     HTTPNamespaceShardClient,
     DistributedRepairReport,
+    DistributedQueryBatchResult,
     NamespaceShardRouter,
     QueryResult,
     ShardedWaveMind,
@@ -71,6 +72,31 @@ class LocalWaveMindServiceClient:
             tags=tags,
             min_score=min_score,
         )
+
+    def query_batch(
+        self,
+        address: str,
+        *,
+        queries: list[dict],
+    ):
+        return {
+            "count": len(queries),
+            "items": [
+                {
+                    "index": index,
+                    "text": query["text"],
+                    "namespace": query.get("namespace", "default"),
+                    "results": self._mind(address).query(
+                        text=query["text"],
+                        namespace=query.get("namespace", "default"),
+                        top_k=query.get("top_k", 3),
+                        tags=tuple(query.get("tags", ())),
+                        min_score=query.get("min_score"),
+                    ),
+                }
+                for index, query in enumerate(queries)
+            ],
+        }
 
     def forget(
         self,
@@ -370,6 +396,108 @@ def test_distributed_sharded_wavemind_read_fanout_limits_service_reads(tmp_path)
         assert client.query_addresses == [placement.replicas[0]]
         assert client.state_addresses == [placement.replicas[0]]
         assert memory.stats()["read_fanout"] == 1
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_batches_queries_across_service_nodes(tmp_path):
+    class CountingClient(LocalWaveMindServiceClient):
+        def __init__(self, tmp_path):
+            super().__init__(tmp_path)
+            self.query_addresses = []
+            self.query_batch_addresses = []
+
+        def query(self, address, **kwargs):
+            self.query_addresses.append(address)
+            return super().query(address, **kwargs)
+
+        def query_batch(self, address, **kwargs):
+            self.query_batch_addresses.append(address)
+            return super().query_batch(address, **kwargs)
+
+    client = CountingClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        read_quorum=1,
+        read_fanout=1,
+        client=client,
+    )
+    try:
+        namespace = "tenant:batch"
+        for item in range(3):
+            memory.remember(
+                f"batch query memory item {item}",
+                namespace=namespace,
+                tags=("batch",),
+            )
+
+        batch = memory.query_batch(
+            [
+                {
+                    "text": f"batch query memory item {item}",
+                    "namespace": namespace,
+                    "top_k": 1,
+                    "tags": ["batch"],
+                }
+                for item in range(3)
+            ]
+        )
+
+        assert isinstance(batch, DistributedQueryBatchResult)
+        assert [results[0].text for results in batch.results] == [
+            "batch query memory item 0",
+            "batch query memory item 1",
+            "batch query memory item 2",
+        ]
+        assert len(client.query_batch_addresses) == 1
+        assert client.query_addresses == []
+        assert batch.query_http_requests == 1
+        assert batch.individual_query_http_requests == 3
+        assert batch.request_reduction_ratio == pytest.approx(2 / 3)
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_batch_query_honors_tombstones(tmp_path):
+    client = LocalWaveMindServiceClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        read_quorum=1,
+        read_fanout=2,
+        client=client,
+    )
+    try:
+        namespace = "tenant:batch-tombstone"
+        memory.remember("batch tombstone deleted memory", namespace=namespace)
+        memory.remember("batch tombstone surviving memory", namespace=namespace)
+        memory.forget(namespace=namespace, text="batch tombstone deleted memory")
+
+        batch = memory.query_batch(
+            [
+                {
+                    "text": "batch tombstone deleted memory",
+                    "namespace": namespace,
+                    "top_k": 3,
+                },
+                {
+                    "text": "batch tombstone surviving memory",
+                    "namespace": namespace,
+                    "top_k": 3,
+                },
+            ]
+        )
+
+        deleted_results, surviving_results = batch.results
+        assert all(
+            result.text != "batch tombstone deleted memory"
+            for result in deleted_results
+        )
+        assert any(
+            result.text == "batch tombstone surviving memory"
+            for result in surviving_results
+        )
     finally:
         client.close()
 
