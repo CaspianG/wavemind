@@ -516,6 +516,169 @@ def _production_run_command(profile: ProductionScaleRunProfile) -> str:
     return " ".join(parts)
 
 
+def _target_class(memory_count: int) -> str:
+    if memory_count >= 100_000_000:
+        return "100m_plus"
+    if memory_count >= 50_000_000:
+        return "50m"
+    if memory_count >= 10_000_000:
+        return "10m"
+    if memory_count >= 1_000_000:
+        return "1m"
+    return "sub_1m"
+
+
+def _profile_selection_metrics(row: Mapping[str, object]) -> dict[str, float]:
+    slo = row.get("slo_capacity_envelope")
+    cost = row.get("cost_envelope")
+    slo_dict = slo if isinstance(slo, Mapping) else {}
+    cost_dict = cost if isinstance(cost, Mapping) else {}
+
+    return {
+        "target_memories": float(row.get("target_memories") or 0.0),
+        "recall_at_k": float(slo_dict.get("recall_at_k") or 0.0),
+        "p99_latency_ms": float(slo_dict.get("p99_latency_ms") or float("inf")),
+        "target_qps": float(slo_dict.get("target_qps") or row.get("target_qps") or 0.0),
+        "monthly_total_cost_at_target_qps_usd": float(
+            cost_dict.get("monthly_total_cost_at_target_qps_usd") or float("inf")
+        ),
+        "monthly_total_cost_per_1m_memories_usd": float(
+            cost_dict.get("monthly_total_cost_per_1m_memories_usd") or float("inf")
+        ),
+        "compute_cost_per_1m_queries_usd": float(
+            cost_dict.get("compute_cost_per_1m_queries_usd") or float("inf")
+        ),
+    }
+
+
+def _dominates_profile(
+    candidate: Mapping[str, object],
+    other: Mapping[str, object],
+) -> bool:
+    """Return True if candidate is at least as strong and cheaper/faster.
+
+    This is a planning frontier, not a benchmark claim: it only compares the
+    explicit SLO/cost contract fields inside one generated run plan.
+    """
+
+    c = _profile_selection_metrics(candidate)
+    o = _profile_selection_metrics(other)
+    comparisons = [
+        c["target_memories"] >= o["target_memories"],
+        c["recall_at_k"] >= o["recall_at_k"],
+        c["p99_latency_ms"] <= o["p99_latency_ms"],
+        c["monthly_total_cost_per_1m_memories_usd"]
+        <= o["monthly_total_cost_per_1m_memories_usd"],
+        c["compute_cost_per_1m_queries_usd"]
+        <= o["compute_cost_per_1m_queries_usd"],
+    ]
+    if not all(comparisons):
+        return False
+    return any(
+        [
+            c["target_memories"] > o["target_memories"],
+            c["recall_at_k"] > o["recall_at_k"],
+            c["p99_latency_ms"] < o["p99_latency_ms"],
+            c["monthly_total_cost_per_1m_memories_usd"]
+            < o["monthly_total_cost_per_1m_memories_usd"],
+            c["compute_cost_per_1m_queries_usd"]
+            < o["compute_cost_per_1m_queries_usd"],
+        ]
+    )
+
+
+def _selection_sort_key(row: Mapping[str, object]) -> tuple[float, ...]:
+    cost = row.get("cost_envelope")
+    cost_dict = cost if isinstance(cost, Mapping) else {}
+    slo = row.get("slo_capacity_envelope")
+    slo_dict = slo if isinstance(slo, Mapping) else {}
+    metrics = _profile_selection_metrics(row)
+    status_penalty = 0.0 if row.get("status") == "ready" else 1.0
+    cost_penalty = 0.0 if cost_dict.get("cost_status") == "valid_slo" else 1.0
+    slo_penalty = 0.0 if slo_dict.get("status") in {"pass", "scale_required"} else 1.0
+    return (
+        status_penalty,
+        cost_penalty,
+        slo_penalty,
+        metrics["monthly_total_cost_per_1m_memories_usd"],
+        metrics["compute_cost_per_1m_queries_usd"],
+        metrics["p99_latency_ms"],
+        -metrics["target_qps"],
+    )
+
+
+def _build_production_selection_frontier(
+    profiles: list[dict[str, object]],
+) -> dict[str, object]:
+    target_groups: dict[str, list[dict[str, object]]] = {}
+    for row in profiles:
+        target = int(row.get("target_memories") or 0)
+        target_class = _target_class(target)
+        target_groups.setdefault(target_class, []).append(row)
+
+    target_class_rankings: dict[str, list[dict[str, object]]] = {}
+    best_by_target_class: dict[str, str] = {}
+    for target_class, rows in target_groups.items():
+        ranked = sorted(rows, key=_selection_sort_key)
+        target_class_rankings[target_class] = []
+        for rank, row in enumerate(ranked, start=1):
+            row["selection_rank_in_target_class"] = rank
+            if rank == 1:
+                best_by_target_class[target_class] = str(row["profile"])
+            metrics = _profile_selection_metrics(row)
+            target_class_rankings[target_class].append(
+                {
+                    "rank": rank,
+                    "profile": row["profile"],
+                    "engine": row["engine"],
+                    "status": row["status"],
+                    "cost_status": (row.get("cost_envelope") or {}).get("cost_status")
+                    if isinstance(row.get("cost_envelope"), Mapping)
+                    else None,
+                    "target_memories": row["target_memories"],
+                    "target_qps": metrics["target_qps"],
+                    "p99_latency_ms": metrics["p99_latency_ms"],
+                    "monthly_total_cost_per_1m_memories_usd": metrics[
+                        "monthly_total_cost_per_1m_memories_usd"
+                    ],
+                    "compute_cost_per_1m_queries_usd": metrics[
+                        "compute_cost_per_1m_queries_usd"
+                    ],
+                    "output_artifact": row["output_artifact"],
+                    "claim_boundary": row["claim_boundary"],
+                }
+            )
+
+    frontier_profiles: list[str] = []
+    dominated_by: dict[str, list[str]] = {}
+    for row in profiles:
+        dominators = [
+            str(other["profile"])
+            for other in profiles
+            if other is not row and _dominates_profile(other, row)
+        ]
+        if dominators:
+            dominated_by[str(row["profile"])] = sorted(dominators)
+            row["pareto_frontier"] = False
+            row["dominated_by"] = tuple(sorted(dominators))
+        else:
+            frontier_profiles.append(str(row["profile"]))
+            row["pareto_frontier"] = True
+            row["dominated_by"] = ()
+
+    return {
+        "selection_policy": (
+            "plan-only Pareto frontier over target_memories, recall_at_k, p99_latency_ms, "
+            "monthly_total_cost_per_1m_memories_usd, and compute_cost_per_1m_queries_usd; "
+            "real claims still require matching output artifacts"
+        ),
+        "frontier_profiles": sorted(frontier_profiles),
+        "dominated_by": dominated_by,
+        "best_by_target_class": best_by_target_class,
+        "target_class_rankings": target_class_rankings,
+    }
+
+
 def build_production_scale_run_plan(
     *,
     profiles: Sequence[str] | None = None,
@@ -709,6 +872,9 @@ def build_production_scale_run_plan(
             )
         )
 
+    profile_payloads = [plan.as_dict() for plan in plans]
+    frontier = _build_production_selection_frontier(profile_payloads)
+
     ready_count = sum(1 for plan in plans if plan.status == "ready")
     cost_status_counts: dict[str, int] = {}
     for plan in plans:
@@ -738,6 +904,8 @@ def build_production_scale_run_plan(
             else None
         ),
         "cost_status_counts": cost_status_counts,
+        "pareto_frontier_profiles": frontier["frontier_profiles"],
+        "best_by_target_class": frontier["best_by_target_class"],
         "profiles": [plan.profile for plan in plans],
         "claim_boundary": "preflight plans only; real benchmark claims require the output artifacts",
     }
@@ -745,7 +913,8 @@ def build_production_scale_run_plan(
         "schema": "wavemind.production_scale_run_plan.v1",
         "generated_at": summary["generated_at"],
         "summary": summary,
-        "profiles": [plan.as_dict() for plan in plans],
+        "selection_frontier": frontier,
+        "profiles": profile_payloads,
     }
 
 

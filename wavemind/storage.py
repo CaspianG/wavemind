@@ -260,6 +260,7 @@ class SQLiteMemoryStore:
         self.conn = sqlite3.connect(self.path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._closed = False
+        self._configure_connection()
         self.ensure_schema()
 
     def __enter__(self) -> "SQLiteMemoryStore":
@@ -273,6 +274,13 @@ class SQLiteMemoryStore:
             self.close()
         except Exception:
             pass
+
+    def _configure_connection(self) -> None:
+        self.conn.execute("PRAGMA busy_timeout = 5000")
+        self.conn.execute("PRAGMA temp_store = MEMORY")
+        if self.path != ":memory:":
+            self.conn.execute("PRAGMA journal_mode = WAL")
+            self.conn.execute("PRAGMA synchronous = NORMAL")
 
     def ensure_schema(self) -> None:
         self.conn.execute(
@@ -508,6 +516,48 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
         return int(cur.lastrowid)
+
+    def apply_feedback_batch(self, updates: Iterable[dict[str, Any]]) -> None:
+        rows = list(updates)
+        if not rows:
+            return
+        now = time.time()
+        with self.conn:
+            self.conn.executemany(
+                """
+                UPDATE memories
+                SET priority = ?,
+                    access_count = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                [
+                    (
+                        float(row["priority"]),
+                        int(row["access_count"]),
+                        now,
+                        int(row["id"]),
+                    )
+                    for row in rows
+                ],
+            )
+            self.conn.executemany(
+                """
+                INSERT INTO audit_events (
+                    created_at, action, namespace, memory_id, metadata
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        now,
+                        "feedback",
+                        row.get("namespace"),
+                        int(row["id"]),
+                        json.dumps(row.get("metadata") or {}, ensure_ascii=False),
+                    )
+                    for row in rows
+                ],
+            )
 
     def list_audit_events(
         self,
@@ -934,6 +984,52 @@ class PostgresMemoryStore:
             ),
         ).fetchone()
         return int(_row_get(row, "id"))
+
+    def apply_feedback_batch(self, updates: Iterable[dict[str, Any]]) -> None:
+        rows = list(updates)
+        if not rows:
+            return
+        now = time.time()
+        transaction = getattr(self.conn, "transaction", None)
+        context = transaction() if callable(transaction) else None
+        if context is None:
+            for row in rows:
+                self._apply_feedback_batch_row(row, now)
+            return
+        with context:
+            for row in rows:
+                self._apply_feedback_batch_row(row, now)
+
+    def _apply_feedback_batch_row(self, row: dict[str, Any], now: float) -> None:
+        self.conn.execute(
+            f"""
+            UPDATE {self.memories_table}
+            SET priority = %s,
+                access_count = %s,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (
+                float(row["priority"]),
+                int(row["access_count"]),
+                now,
+                int(row["id"]),
+            ),
+        )
+        self.conn.execute(
+            f"""
+            INSERT INTO {self.audit_table} (
+                created_at, action, namespace, memory_id, metadata
+            ) VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                now,
+                "feedback",
+                row.get("namespace"),
+                int(row["id"]),
+                json.dumps(row.get("metadata") or {}, ensure_ascii=False),
+            ),
+        )
 
     def list_audit_events(
         self,

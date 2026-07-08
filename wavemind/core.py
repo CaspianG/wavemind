@@ -489,6 +489,7 @@ class WaveMind:
     ) -> dict[str, object]:
         accepted: list[dict[str, object]] = []
         rejected: list[dict[str, object]] = []
+        feedback_updates: list[dict[str, object]] = []
         for raw_signal in signals:
             signal = dict(raw_signal)
             try:
@@ -522,12 +523,22 @@ class WaveMind:
                     }
                 )
                 continue
-            self._apply_feedback_signal(
+            metadata = self._apply_feedback_signal(
                 record,
                 useful=bool(signal.get("useful", True)),
                 strength=float(signal.get("strength", 0.25)),
                 query=signal.get("query"),
                 reason=signal.get("reason"),
+                persist=False,
+            )
+            feedback_updates.append(
+                {
+                    "id": memory_id,
+                    "namespace": record.namespace,
+                    "priority": float(record.priority),
+                    "access_count": int(record.access_count),
+                    "metadata": metadata,
+                }
             )
             accepted.append(
                 {
@@ -538,6 +549,24 @@ class WaveMind:
                 }
             )
         if accepted:
+            apply_feedback_batch = getattr(self.store, "apply_feedback_batch", None)
+            if callable(apply_feedback_batch):
+                apply_feedback_batch(feedback_updates)
+            else:
+                for row in feedback_updates:
+                    update_memory_state = getattr(self.store, "update_memory_state", None)
+                    if callable(update_memory_state):
+                        update_memory_state(
+                            int(row["id"]),
+                            priority=float(row["priority"]),
+                            access_count=int(row["access_count"]),
+                        )
+                    self.store.log_audit_event(
+                        "feedback",
+                        namespace=str(row["namespace"]),
+                        memory_id=int(row["id"]),
+                        metadata=dict(row["metadata"]),
+                    )
             self.field.evolve(1)
             self._refresh_field_magnitude()
         return {
@@ -564,7 +593,8 @@ class WaveMind:
         strength: float,
         query: object | None = None,
         reason: object | None = None,
-    ) -> None:
+        persist: bool = True,
+    ) -> dict[str, object]:
         delta = abs(float(strength))
         if bool(useful):
             record.priority += delta
@@ -573,13 +603,6 @@ class WaveMind:
         else:
             record.priority = max(0.0, record.priority - delta)
             self.field.forget(record.pattern, strength=delta)
-        update_memory_state = getattr(self.store, "update_memory_state", None)
-        if callable(update_memory_state):
-            update_memory_state(
-                record.id,
-                priority=record.priority,
-                access_count=record.access_count,
-            )
         metadata: dict[str, object] = {
             "useful": bool(useful),
             "strength": delta,
@@ -593,12 +616,21 @@ class WaveMind:
                 metadata["query"] = str(query)
             else:
                 metadata["query_length"] = len(str(query))
-        self.store.log_audit_event(
-            "feedback",
-            namespace=record.namespace,
-            memory_id=record.id,
-            metadata=metadata,
-        )
+        if persist:
+            update_memory_state = getattr(self.store, "update_memory_state", None)
+            if callable(update_memory_state):
+                update_memory_state(
+                    record.id,
+                    priority=record.priority,
+                    access_count=record.access_count,
+                )
+            self.store.log_audit_event(
+                "feedback",
+                namespace=record.namespace,
+                memory_id=record.id,
+                metadata=metadata,
+            )
+        return metadata
 
     def save(
         self,

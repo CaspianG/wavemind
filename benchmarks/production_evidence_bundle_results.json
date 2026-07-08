@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-08T12:13:29Z",
+  "generated_at": "2026-07-08T13:46:53Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-08T12:13:29Z",
+    "generated_at": "2026-07-08T13:46:53Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -132,7 +132,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-08T12:13:29Z",
+    "generated_at": "2026-07-08T13:46:53Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -662,13 +662,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T04:02:25Z",
-    "generated_at": "2026-07-08T01:48:38Z",
-    "source_ref": "dd75c758e64e",
+    "checked_at": "2026-07-08T12:46:02Z",
+    "generated_at": "2026-07-08T05:47:15Z",
+    "source_ref": "a2a8e78aabe1",
     "workflow_run_id": null,
     "refresh_profile": "local",
-    "max_age_days": 8.0,
-    "age_days": 0.09291474241898148,
+    "max_age_days": 3650.0,
+    "age_days": 0.29082961391203704,
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,

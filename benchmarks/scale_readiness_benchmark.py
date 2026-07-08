@@ -1742,6 +1742,7 @@ def run_batch_feedback_profile() -> dict[str, object]:
 
     client = RedisLikeCacheClient()
     latencies: list[float] = []
+    warmup_api_ms = 0.0
 
     with tempfile.TemporaryDirectory() as directory:
         memory = WaveMind(
@@ -1757,6 +1758,47 @@ def run_batch_feedback_profile() -> dict[str, object]:
         namespace = "tenant:batch-feedback"
         try:
             with TestClient(app) as api:
+                warmup_namespace = "tenant:batch-feedback-warmup"
+                warmup_useful = api.post(
+                    "/remember",
+                    json={
+                        "text": "warmup batch feedback useful budget recall",
+                        "namespace": warmup_namespace,
+                    },
+                )
+                warmup_stale = api.post(
+                    "/remember",
+                    json={
+                        "text": "warmup batch feedback stale recall",
+                        "namespace": warmup_namespace,
+                    },
+                )
+                warmup_useful.raise_for_status()
+                warmup_stale.raise_for_status()
+                warmup_started = time.perf_counter()
+                warmup_response = api.post(
+                    "/feedback/batch",
+                    json={
+                        "namespace": warmup_namespace,
+                        "items": [
+                            {
+                                "id": warmup_useful.json()["id"],
+                                "useful": True,
+                                "strength": 0.1,
+                                "query": "budget recall",
+                            },
+                            {
+                                "id": warmup_stale.json()["id"],
+                                "useful": False,
+                                "strength": 0.1,
+                                "query": "stale recall",
+                            },
+                        ],
+                    },
+                )
+                warmup_response.raise_for_status()
+                warmup_api_ms = (time.perf_counter() - warmup_started) * 1000.0
+
                 useful = api.post(
                     "/remember",
                     json={"text": "batch feedback useful budget recall", "namespace": namespace},
@@ -1827,6 +1869,8 @@ def run_batch_feedback_profile() -> dict[str, object]:
                     "negative_feedback_priority_delta": stale_after - stale_before,
                     "avg_api_ms": statistics.mean(latencies) if latencies else 0.0,
                     "p99_api_ms": percentile(latencies, 99),
+                    "warmup_api_ms": warmup_api_ms,
+                    "measured_requests": len(latencies),
                 }
         finally:
             memory.close()

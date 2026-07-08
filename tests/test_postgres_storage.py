@@ -48,6 +48,13 @@ class FakePostgresConnection:
                 self.memories.pop(row["id"], None)
             return FakeResult()
         if compact.startswith("UPDATE wm_memories"):
+            if "priority = %s" in compact and "access_count = %s" in compact:
+                id = int(params[3])
+                row = self.memories[id]
+                row["priority"] = float(params[0])
+                row["access_count"] = int(params[1])
+                row["updated_at"] = float(params[2])
+                return FakeResult()
             id = int(params[2])
             row = self.memories[id]
             row["access_count"] += 1
@@ -265,3 +272,48 @@ def test_wavemind_runs_on_postgres_store(fake_psycopg):
     with pytest.raises(NotImplementedError, match="native backup"):
         memory.save("backup.sqlite3")
     memory.close()
+
+
+def test_wavemind_batch_feedback_updates_postgres_store(fake_psycopg):
+    memory = WaveMind(
+        store_kind="postgres",
+        encoder=HashingTextEncoder(vector_dim=32),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        useful_id = memory.remember("postgres useful recall", namespace="pg")
+        stale_id = memory.remember("postgres stale recall", namespace="pg")
+        before_useful = memory.store.get(useful_id).priority
+        before_stale = memory.store.get(stale_id).priority
+
+        report = memory.feedback_batch(
+            [
+                {
+                    "id": useful_id,
+                    "useful": True,
+                    "strength": 0.5,
+                    "query": "useful recall",
+                },
+                {
+                    "id": stale_id,
+                    "useful": False,
+                    "strength": 0.25,
+                    "query": "stale recall",
+                },
+                {"id": useful_id, "namespace": "wrong", "useful": True},
+            ],
+            namespace="pg",
+        )
+
+        assert report["accepted"] == 2
+        assert report["rejected"] == 1
+        assert memory.store.get(useful_id).priority > before_useful
+        assert memory.store.get(stale_id).priority < before_stale
+        events = memory.audit_events(namespace="pg", action="feedback", limit=4)
+        assert len(events) == 2
+        assert {event.memory_id for event in events} == {useful_id, stale_id}
+    finally:
+        memory.close()

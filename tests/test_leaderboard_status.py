@@ -108,6 +108,13 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["production_scale_run_plan"]["total_profiles"] == 5
     assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000
+    assert payload["production_scale_run_plan"]["monthly_budget_usd_total"] >= 20_000.0
+    assert payload["production_scale_run_plan"]["cost_status_counts"]["valid_slo"] == 5
+    assert "faiss-ivfpq-50m" in payload["production_scale_run_plan"]["pareto_frontier_profiles"]
+    assert (
+        payload["production_scale_run_plan"]["best_by_target_class"]["50m"]
+        == "faiss-ivfpq-50m"
+    )
     assert "qdrant-sharded-100m" in payload["production_scale_run_plan"]["profiles"]
     assert {
         "external_http_active_active",

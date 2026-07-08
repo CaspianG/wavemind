@@ -1051,11 +1051,27 @@ def print_production_scale_run_plan(payload: dict[str, object]) -> None:
     print(f"status: {summary['overall_status']}")
     print(f"ready: {summary['ready_count']}/{summary['total_profiles']}")
     print(f"target_memories_total: {summary['target_memories_total']}")
+    if "estimated_monthly_total_cost_at_target_qps_usd" in summary:
+        print(
+            "estimated_monthly_total_cost_at_target_qps_usd: "
+            f"{summary['estimated_monthly_total_cost_at_target_qps_usd']:.2f}"
+        )
+    frontier_profiles = summary.get("pareto_frontier_profiles") or []
+    if frontier_profiles:
+        print(f"pareto_frontier_profiles: {', '.join(frontier_profiles)}")
+    best_by_target_class = summary.get("best_by_target_class") or {}
+    if best_by_target_class:
+        print("best_by_target_class:")
+        for target_class, profile in best_by_target_class.items():
+            print(f"- {target_class}: {profile}")
     print(f"claim_boundary: {summary['claim_boundary']}")
     for row in payload.get("profiles", []):
         print(f"- [{row['status']}] {row['profile']}")
         print(f"  engine: {row['engine']}")
         print(f"  target_memories: {row['target_memories']}")
+        print(f"  pareto_frontier: {str(row.get('pareto_frontier', False)).lower()}")
+        if row.get("selection_rank_in_target_class") is not None:
+            print(f"  target_class_rank: {row['selection_rank_in_target_class']}")
         print(f"  output: {row['output_artifact']}")
         print(f"  required_local_free_gb: {row['required_local_free_gb']}")
         missing_env = row.get("missing_env") or []

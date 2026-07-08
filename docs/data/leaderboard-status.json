@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T12:28:36Z",
+  "generated_at": "2026-07-08T13:47:05Z",
   "source_ref": "a2a8e78aabe1",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -9,7 +9,7 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T12:28:36Z",
+    "checked_at": "2026-07-08T13:47:05Z",
     "max_age_days": 3650.0,
     "source_count": 11,
     "fresh_count": 11,
@@ -26,14 +26,14 @@
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:47:15Z",
-        "age_days": 0.27871527777777777,
+        "age_days": 0.3332175925925926,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-08T12:28:36Z",
+        "timestamp": "2026-07-08T13:47:05Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -42,7 +42,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T04:52:52Z",
-        "age_days": 0.3164814814814815,
+        "age_days": 0.3709837962962963,
         "status": "pass"
       },
       {
@@ -50,7 +50,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:05:59Z",
-        "age_days": 0.3073726851851852,
+        "age_days": 0.361875,
         "status": "pass"
       },
       {
@@ -58,15 +58,15 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.3073611111111111,
+        "age_days": 0.3618634259259259,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T12:13:29Z",
-        "age_days": 0.010497685185185185,
+        "timestamp": "2026-07-08T13:46:53Z",
+        "age_days": 0.0001388888888888889,
         "status": "pass"
       },
       {
@@ -74,23 +74,23 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.3073611111111111,
+        "age_days": 0.3618634259259259,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T12:14:45Z",
-        "age_days": 0.009618055555555555,
+        "timestamp": "2026-07-08T13:46:53Z",
+        "age_days": 0.0001388888888888889,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_scale_run_plan.json",
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T12:13:02Z",
-        "age_days": 0.010810185185185185,
+        "timestamp": "2026-07-08T13:46:52Z",
+        "age_days": 0.00015046296296296297,
         "status": "pass"
       },
       {
@@ -98,15 +98,15 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:45:21Z",
-        "age_days": 0.2800347222222222,
+        "age_days": 0.334537037037037,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_readiness_results.json",
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:46:46Z",
-        "age_days": 0.27905092592592595,
+        "timestamp": "2026-07-08T13:46:38Z",
+        "age_days": 0.0003125,
         "status": "pass"
       }
     ]
@@ -142,8 +142,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T12:28:36Z",
-    "age_days": 0.27871542534722227,
+    "checked_at": "2026-07-08T13:47:05Z",
+    "age_days": 0.3332205192592592,
     "max_age_days": 3650.0,
     "errors": []
   },
@@ -441,6 +441,20 @@
     "action_required_count": 5,
     "total_profiles": 5,
     "target_memories_total": 180000000,
+    "estimated_monthly_total_cost_at_target_qps_usd": 14277.915344238281,
+    "monthly_budget_usd_total": 21000.0,
+    "cost_status_counts": {
+      "valid_slo": 5
+    },
+    "pareto_frontier_profiles": [
+      "faiss-ivfpq-50m",
+      "qdrant-sharded-100m"
+    ],
+    "best_by_target_class": {
+      "10m": "qdrant-10m",
+      "50m": "faiss-ivfpq-50m",
+      "100m_plus": "qdrant-sharded-100m"
+    },
     "profiles": [
       "qdrant-10m",
       "qdrant-sharded-10m",

@@ -327,6 +327,8 @@ def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
     assert row["cost_envelope"]["monthly_budget_usd"] == 2000.0
     assert row["cost_envelope"]["monthly_total_cost_per_1m_memories_usd"] > 0
     assert row["cost_envelope"]["compute_cost_per_1m_queries_usd"] <= 10.0
+    assert row["pareto_frontier"] is True
+    assert row["selection_rank_in_target_class"] == 1
     assert row["estimated_application_storage_gb"] > 20
 
 
@@ -346,10 +348,24 @@ def test_production_scale_run_plan_all_profiles_and_known_names():
     assert payload["summary"]["monthly_budget_usd_total"] >= 20_000.0
     assert payload["summary"]["estimated_monthly_total_cost_at_target_qps_usd"] > 0
     assert payload["summary"]["cost_status_counts"]["valid_slo"] == len(names)
+    assert payload["summary"]["pareto_frontier_profiles"] == [
+        "faiss-ivfpq-50m",
+        "qdrant-sharded-100m",
+    ]
+    assert payload["summary"]["best_by_target_class"]["10m"] == "qdrant-10m"
+    assert payload["summary"]["best_by_target_class"]["50m"] == "faiss-ivfpq-50m"
+    assert payload["selection_frontier"]["selection_policy"].startswith("plan-only")
     assert payload["summary"]["overall_status"] == "action_required"
     profiles = {row["profile"]: row for row in payload["profiles"]}
     assert profiles["faiss-ivfpq-50m"]["estimated_index_gb"] > 1.0
     assert profiles["faiss-ivfpq-50m"]["required_local_free_gb"] > 1.0
+    assert profiles["faiss-ivfpq-50m"]["pareto_frontier"] is True
+    assert profiles["qdrant-sharded-100m"]["pareto_frontier"] is True
+    assert profiles["qdrant-10m"]["pareto_frontier"] is False
+    assert "faiss-ivfpq-50m" in profiles["qdrant-10m"]["dominated_by"]
+    assert "qdrant-sharded-100m" in profiles["qdrant-10m"]["dominated_by"]
+    assert profiles["qdrant-10m"]["selection_rank_in_target_class"] == 1
+    assert profiles["qdrant-sharded-10m"]["selection_rank_in_target_class"] == 3
     assert profiles["qdrant-sharded-100m"]["target_qps"] == 500.0
 
 

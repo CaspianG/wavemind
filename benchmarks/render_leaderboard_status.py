@@ -170,6 +170,21 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "target_memories_total": (scale_run_plan.get("summary") or {}).get(
                 "target_memories_total", 0
             ),
+            "estimated_monthly_total_cost_at_target_qps_usd": (
+                scale_run_plan.get("summary") or {}
+            ).get("estimated_monthly_total_cost_at_target_qps_usd"),
+            "monthly_budget_usd_total": (scale_run_plan.get("summary") or {}).get(
+                "monthly_budget_usd_total"
+            ),
+            "cost_status_counts": (scale_run_plan.get("summary") or {}).get(
+                "cost_status_counts", {}
+            ),
+            "pareto_frontier_profiles": (scale_run_plan.get("summary") or {}).get(
+                "pareto_frontier_profiles", []
+            ),
+            "best_by_target_class": (scale_run_plan.get("summary") or {}).get(
+                "best_by_target_class", {}
+            ),
             "profiles": (scale_run_plan.get("summary") or {}).get("profiles", []),
         },
         "production_evidence_preflight": {
