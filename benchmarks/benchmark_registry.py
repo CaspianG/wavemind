@@ -34,6 +34,40 @@ def _metric_summary(result: dict[str, Any] | None, keys: tuple[str, ...]) -> dic
     return {key: result[key] for key in keys if key in result}
 
 
+def _agent_memory_os_summary(result: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not result:
+        return None
+    summary = _metric_summary(
+        result,
+        (
+            "task_success_rate",
+            "decision_success_at_1",
+            "stale_error_rate",
+            "namespace_leak_rate",
+            "context_budget_saved",
+            "coherent_turns",
+            "coherent_turn_rate",
+            "avg_latency_ms",
+            "p95_latency_ms",
+        ),
+    ) or {}
+    memory_os = result.get("memory_os")
+    if isinstance(memory_os, dict):
+        for key in (
+            "worker_ok",
+            "scanned_events",
+            "hot_queries",
+            "prewarm_warmed",
+            "predictive_prefetch_warmed",
+            "priority_predictions",
+            "cache_hit_rate",
+            "policy_status",
+        ):
+            if key in memory_os:
+                summary[f"memory_os_{key}"] = memory_os[key]
+    return summary
+
+
 def _external_http_cluster_summary(result: dict[str, Any] | None) -> dict[str, Any] | None:
     summary = _metric_summary(
         result,
@@ -382,6 +416,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "context_budget_saved",
                 "coherent_turns",
                 "avg_latency_ms",
+                "memory_os_prewarm_warmed",
+                "memory_os_predictive_prefetch_warmed",
+                "memory_os_priority_predictions",
+                "memory_os_cache_hit_rate",
             ],
             "current": {
                 "WaveMind": _metric_summary(
@@ -397,6 +435,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                         "avg_latency_ms",
                         "p95_latency_ms",
                     ),
+                ),
+                "WaveMind + Memory OS": _agent_memory_os_summary(
+                    agent_coherence_results.get("WaveMind + Memory OS")
                 ),
                 "Static vector": _metric_summary(
                     agent_coherence_results.get("Static vector"),
@@ -429,7 +470,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": (
                 "Show that dynamic memory improves agent behavior, not only retrieval: "
-                "higher task success, fewer stale errors, longer coherent runs, and compact context."
+                "higher task success, fewer stale errors, longer coherent runs, compact context, "
+                "and observable Memory OS learning signals."
             ),
             "next_step": "Move this scenario from deterministic task scoring to LLM answer-quality scoring on LoCoMo/LongMemEval-style tasks.",
         },

@@ -331,10 +331,11 @@ def _publishing_status(
 def _agent_quality_status(payload: dict[str, Any]) -> dict[str, Any]:
     results = _engine_results(payload)
     wavemind = results.get("WaveMind", {})
+    memory_os = results.get("WaveMind + Memory OS", {})
     baselines = [
         result
         for engine, result in results.items()
-        if engine != "WaveMind" and isinstance(result, dict)
+        if not engine.startswith("WaveMind") and isinstance(result, dict)
     ]
     best_baseline = max(
         (float(result.get("task_success_rate", 0.0) or 0.0) for result in baselines),
@@ -343,6 +344,11 @@ def _agent_quality_status(payload: dict[str, Any]) -> dict[str, Any]:
     wavemind_success = float(wavemind.get("task_success_rate", 0.0) or 0.0)
     wavemind_stale = float(wavemind.get("stale_error_rate", 1.0) or 0.0)
     wavemind_context_saved = float(wavemind.get("context_budget_saved", 0.0) or 0.0)
+    memory_os_payload = (
+        dict(memory_os.get("memory_os") or {})
+        if isinstance(memory_os.get("memory_os"), dict)
+        else {}
+    )
     status = "missing"
     if wavemind:
         status = "pass" if wavemind_success > best_baseline and wavemind_stale <= 0.05 else "watch"
@@ -357,8 +363,22 @@ def _agent_quality_status(payload: dict[str, Any]) -> dict[str, Any]:
         "wavemind_context_budget_saved": wavemind_context_saved,
         "wavemind_coherent_turns": int(wavemind.get("coherent_turns", 0) or 0),
         "wavemind_avg_latency_ms": float(wavemind.get("avg_latency_ms", 0.0) or 0.0),
+        "memory_os_task_success_rate": float(memory_os.get("task_success_rate", 0.0) or 0.0),
+        "memory_os_avg_latency_ms": float(memory_os.get("avg_latency_ms", 0.0) or 0.0),
+        "memory_os_worker_ok": bool(memory_os_payload.get("worker_ok", False)),
+        "memory_os_hot_queries": int(memory_os_payload.get("hot_queries", 0) or 0),
+        "memory_os_prewarm_warmed": int(memory_os_payload.get("prewarm_warmed", 0) or 0),
+        "memory_os_predictive_prefetch_warmed": int(
+            memory_os_payload.get("predictive_prefetch_warmed", 0) or 0
+        ),
+        "memory_os_priority_predictions": int(memory_os_payload.get("priority_predictions", 0) or 0),
+        "memory_os_cache_hit_rate": float(memory_os_payload.get("cache_hit_rate", 0.0) or 0.0),
+        "memory_os_policy_status": memory_os_payload.get("policy_status", "missing"),
         "baseline_engines": sorted(
-            engine for engine in results if engine != "WaveMind"
+            engine for engine in results if not engine.startswith("WaveMind")
+        ),
+        "wavemind_variant_engines": sorted(
+            engine for engine in results if engine.startswith("WaveMind")
         ),
         "source": "benchmarks/agent_coherence_results.json",
     }

@@ -68,6 +68,31 @@ def test_agent_coherence_benchmark_wave_outperforms_static_on_agent_tasks():
     assert results["WaveMind"]["context_budget_saved"] >= 0.5
 
 
+def test_agent_coherence_benchmark_memory_os_reports_agent_quality_signals():
+    payload = run_benchmark(
+        engines=["wavemind-memory-os", "static"],
+        memory_count=80,
+        encoder_kind="hash",
+        top_k=5,
+    )
+    results = {row["engine"]: row for row in payload["results"]}
+    memory_os = results["WaveMind + Memory OS"]["memory_os"]
+
+    assert results["WaveMind + Memory OS"]["task_success_rate"] >= results["Static vector"]["task_success_rate"]
+    assert results["WaveMind + Memory OS"]["stale_error_rate"] <= results["Static vector"]["stale_error_rate"]
+    assert results["WaveMind + Memory OS"]["context_budget_saved"] >= 0.5
+    assert memory_os["worker_ok"] is True
+    assert memory_os["scanned_events"] >= 4
+    assert memory_os["prewarm_warmed"] >= 1
+    assert memory_os["predictive_prefetch_generated"] >= 1
+    assert memory_os["predictive_prefetch_warmed"] >= 1
+    assert memory_os["priority_predictions"] >= 1
+    assert memory_os["cache_hits"] >= 1
+    assert memory_os["cache_hit_rate"] > 0.0
+    assert memory_os["policy_status"] in {"ok", "watch", "action_required", "architecture_required"}
+    assert "prewarm_cache" in memory_os["actions"]
+
+
 def test_agent_coherence_cli_writes_json(tmp_path):
     output = tmp_path / "agent_coherence.json"
     completed = subprocess.run(
@@ -78,6 +103,7 @@ def test_agent_coherence_cli_writes_json(tmp_path):
             "80",
             "--engines",
             "wavemind",
+            "wavemind-memory-os",
             "static",
             "--output",
             str(output),
@@ -93,4 +119,14 @@ def test_agent_coherence_cli_writes_json(tmp_path):
     assert "task success" in completed.stdout
     assert payload["generated_at"].endswith("Z")
     assert payload["scenario"]["name"] == "agent_coherence"
-    assert {row["engine"] for row in payload["results"]} == {"WaveMind", "Static vector"}
+    assert {row["engine"] for row in payload["results"]} == {
+        "WaveMind",
+        "WaveMind + Memory OS",
+        "Static vector",
+    }
+    memory_os = next(
+        row["memory_os"]
+        for row in payload["results"]
+        if row["engine"] == "WaveMind + Memory OS"
+    )
+    assert memory_os["worker_ok"] is True

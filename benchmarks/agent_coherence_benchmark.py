@@ -19,7 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from wavemind import WaveMind
+from wavemind import HotMemoryCache, MemoryOSWorker, WaveMind, query_with_cache
 from wavemind.encoders import create_text_encoder
 
 
@@ -66,6 +66,7 @@ class AgentCoherenceMetrics:
     avg_latency_ms: float
     p95_latency_ms: float
     tasks: int
+    memory_os: dict[str, Any] | None = None
 
 
 class CachedTextEncoder:
@@ -274,6 +275,7 @@ def compute_agent_metrics(
     top_k: int,
     engine: str,
     namespace_by_id: dict[str, str],
+    memory_os: dict[str, Any] | None = None,
 ) -> AgentCoherenceMetrics:
     successes: list[bool] = []
     top1_successes: list[bool] = []
@@ -327,39 +329,64 @@ def compute_agent_metrics(
         avg_latency_ms=statistics.mean(latencies_ms) if latencies_ms else 0.0,
         p95_latency_ms=sorted_latencies[p95_index] if sorted_latencies else 0.0,
         tasks=len(scenario.tasks),
+        memory_os=memory_os,
     )
+
+
+def _create_wavemind_for_agent_coherence(
+    *,
+    db_path: Path,
+    encoder,
+    top_k: int,
+    audit_queries: bool = False,
+) -> WaveMind:
+    return WaveMind(
+        db_path=db_path,
+        encoder=encoder,
+        index_kind="numpy",
+        score_threshold=0.0,
+        width=64,
+        height=64,
+        layers=3,
+        evolve_on_feed=0,
+        vector_weight=0.62,
+        field_weight=0.04,
+        priority_weight=0.28,
+        lexical_weight=0.42,
+        short_query_lexical_weight=1.8,
+        rerank_k=max(40, top_k),
+        persist_access_on_query=False,
+        query_feedback_strength=0.0,
+        audit_queries=audit_queries,
+    )
+
+
+def _load_scenario_into_wavemind(
+    memory: WaveMind,
+    scenario: AgentCoherenceScenario,
+) -> dict[str, int]:
+    ids_by_agent_id: dict[str, int] = {}
+    for item in scenario.memories:
+        ids_by_agent_id[item.id] = memory.remember(
+            item.text,
+            namespace=item.namespace,
+            tags=item.tags,
+            ttl_seconds=item.ttl_seconds,
+            priority=item.priority,
+            metadata={"agent_task_id": item.id},
+        )
+    return ids_by_agent_id
 
 
 def run_wavemind(scenario: AgentCoherenceScenario, encoder, top_k: int) -> AgentCoherenceMetrics:
     with tempfile.TemporaryDirectory() as tmp:
-        memory = WaveMind(
+        memory = _create_wavemind_for_agent_coherence(
             db_path=Path(tmp) / "agent-coherence.sqlite3",
             encoder=encoder,
-            index_kind="numpy",
-            score_threshold=0.0,
-            width=64,
-            height=64,
-            layers=3,
-            evolve_on_feed=0,
-            vector_weight=0.62,
-            field_weight=0.04,
-            priority_weight=0.28,
-            lexical_weight=0.42,
-            short_query_lexical_weight=1.8,
-            rerank_k=max(40, top_k),
-            persist_access_on_query=False,
-            query_feedback_strength=0.0,
+            top_k=top_k,
         )
         try:
-            for item in scenario.memories:
-                memory.remember(
-                    item.text,
-                    namespace=item.namespace,
-                    tags=item.tags,
-                    ttl_seconds=item.ttl_seconds,
-                    priority=item.priority,
-                    metadata={"agent_task_id": item.id},
-                )
+            _load_scenario_into_wavemind(memory, scenario)
             # Simulate repeated use before the final task sequence.
             for _ in range(4):
                 memory.query("short practical answers with direct next steps", namespace="agent-a", top_k=1)
@@ -385,6 +412,121 @@ def run_wavemind(scenario: AgentCoherenceScenario, encoder, top_k: int) -> Agent
         top_k=top_k,
         engine="WaveMind",
         namespace_by_id=namespace_by_id,
+    )
+
+
+def run_wavemind_memory_os(
+    scenario: AgentCoherenceScenario,
+    encoder,
+    top_k: int,
+) -> AgentCoherenceMetrics:
+    with tempfile.TemporaryDirectory() as tmp:
+        memory = _create_wavemind_for_agent_coherence(
+            db_path=Path(tmp) / "agent-coherence-memory-os.sqlite3",
+            encoder=encoder,
+            top_k=top_k,
+            audit_queries=True,
+        )
+        cache = HotMemoryCache(capacity=64, ttl_seconds=120)
+        try:
+            _load_scenario_into_wavemind(memory, scenario)
+
+            for _ in range(4):
+                query_with_cache(
+                    memory,
+                    cache,
+                    "short practical answers with direct next steps",
+                    namespace="agent-a",
+                    top_k=1,
+                )
+                query_with_cache(
+                    memory,
+                    cache,
+                    "WaveMind long-term memory current project",
+                    namespace="agent-a",
+                    top_k=1,
+                )
+            memory.query("budget recall", namespace="agent-a", top_k=1)
+            memory.query("risk limits", namespace="agent-a", top_k=1)
+            memory.query("budget recall", namespace="agent-a", top_k=1)
+
+            report = MemoryOSWorker(memory, cache).run_once(
+                namespace="agent-a",
+                audit_limit=64,
+                max_hot_queries=16,
+                min_frequency=2,
+                top_k=top_k,
+                consolidate_steps=0,
+                consolidate_concepts=False,
+                min_concept_energy=0.01,
+                min_concept_size=2,
+                max_concepts=2,
+                memory_pressure_threshold=64,
+                adaptive_forgetting=False,
+                forgetting_min_age_seconds=0.0,
+                forgetting_priority_decay=0.05,
+                forgetting_max_access_count=0,
+                target_memories=len(scenario.memories),
+                namespace_count=2,
+                target_qps=25.0,
+                deployment="production",
+            )
+
+            rankings: dict[str, list[str]] = {}
+            returned_texts: dict[str, list[str]] = {}
+            latencies: list[float] = []
+            for task in scenario.tasks:
+                started = time.perf_counter()
+                results = query_with_cache(
+                    memory,
+                    cache,
+                    task.prompt,
+                    namespace=task.namespace,
+                    top_k=top_k,
+                )
+                latencies.append((time.perf_counter() - started) * 1000.0)
+                rankings[task.id] = [str(result.metadata.get("agent_task_id", "")) for result in results]
+                returned_texts[task.id] = [result.text for result in results]
+
+            cache_stats = cache.stats()
+            report_dict = report.as_dict()
+            memory_os = {
+                "worker_ok": report.ok,
+                "scanned_events": report.scanned_events,
+                "hot_queries": len(report.hot_queries),
+                "prewarm_warmed": report.prewarm.warmed,
+                "predictive_prefetch_generated": report.predictive_prefetch.generated_queries,
+                "predictive_prefetch_warmed": report.predictive_prefetch.warmed,
+                "priority_predictions": report.priority_predictions,
+                "priority_boosted": len(report.priority_boosted_ids),
+                "forgetting_demotions": report.forgetting_demotions,
+                "concepts_created": report.concepts_created,
+                "cache_hits": cache_stats.hits,
+                "cache_misses": cache_stats.misses,
+                "cache_size": cache_stats.size,
+                "cache_hit_rate": (
+                    cache_stats.hits / (cache_stats.hits + cache_stats.misses)
+                    if cache_stats.hits + cache_stats.misses
+                    else 0.0
+                ),
+                "policy_status": report.policy_manifest.status,
+                "suggestions": len(report.suggestions),
+                "actions": list(report.actions),
+                "recommendations": list(report.recommendations[:3]),
+                "report": report_dict,
+            }
+        finally:
+            memory.close()
+    namespace_by_id = {memory.id: memory.namespace for memory in scenario.memories}
+    return compute_agent_metrics(
+        scenario=scenario,
+        rankings=rankings,
+        returned_texts=returned_texts,
+        latencies_ms=latencies,
+        top_k=top_k,
+        engine="WaveMind + Memory OS",
+        namespace_by_id=namespace_by_id,
+        memory_os=memory_os,
     )
 
 
@@ -488,6 +630,8 @@ def run_benchmark(
     encoder = cache_encoder_for_scenario(scenario, base_encoder)
     runners = {
         "wavemind": run_wavemind,
+        "wavemind-memory-os": run_wavemind_memory_os,
+        "memory-os": run_wavemind_memory_os,
         "static": run_static_vector,
         "static-vector": run_static_vector,
         "chroma": run_chroma_static,
@@ -552,7 +696,15 @@ def main() -> int:
     parser.add_argument(
         "--engines",
         nargs="+",
-        choices=["wavemind", "static", "static-vector", "chroma", "chroma-static"],
+        choices=[
+            "wavemind",
+            "wavemind-memory-os",
+            "memory-os",
+            "static",
+            "static-vector",
+            "chroma",
+            "chroma-static",
+        ],
         default=["wavemind", "static"],
     )
     parser.add_argument(

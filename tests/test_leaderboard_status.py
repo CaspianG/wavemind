@@ -85,6 +85,13 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["agent_quality"]["wavemind_context_budget_saved"] > 0.9
     assert payload["agent_quality"]["wavemind_stale_error_rate"] <= 0.05
     assert "Chroma static" in payload["agent_quality"]["baseline_engines"]
+    assert "WaveMind + Memory OS" not in payload["agent_quality"]["baseline_engines"]
+    assert "WaveMind + Memory OS" in payload["agent_quality"]["wavemind_variant_engines"]
+    assert payload["agent_quality"]["memory_os_worker_ok"] is True
+    assert payload["agent_quality"]["memory_os_prewarm_warmed"] >= 1
+    assert payload["agent_quality"]["memory_os_predictive_prefetch_warmed"] >= 1
+    assert payload["agent_quality"]["memory_os_priority_predictions"] >= 1
+    assert payload["agent_quality"]["memory_os_cache_hit_rate"] > 0
     assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["memory_os_policy"]["policy_status"] == "architecture_required"

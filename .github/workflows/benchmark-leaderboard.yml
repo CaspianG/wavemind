@@ -43,7 +43,7 @@ jobs:
       - name: Refresh fast benchmark artifacts
         run: |
           python benchmarks/agent_coherence_benchmark.py \
-            --engines wavemind static chroma \
+            --engines wavemind wavemind-memory-os static chroma \
             --memories 500 \
             --output benchmarks/agent_coherence_results.json
           python benchmarks/dynamic_memory_benchmark.py \

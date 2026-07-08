@@ -62,6 +62,7 @@ class WaveField:
         w = min(self.W, pattern.shape[1])
         noise = np.random.uniform(0.94, 1.06, (h, w, self.L)).astype(np.float32)
         self.state[:h, :w] += pattern[:h, :w, np.newaxis] * noise * strength
+        np.clip(self.state, -12.0, 12.0, out=self.state)
 
     def forget(self, pattern: np.ndarray, strength: float = 0.5) -> None:
         h = min(self.H, pattern.shape[0])
@@ -72,6 +73,7 @@ class WaveField:
     def evolve(self, steps: int = 1) -> None:
         rad = self.radius
         for _ in range(steps):
+            np.clip(self.state, -12.0, 12.0, out=self.state)
             state = self.state
             neighbours = np.zeros_like(state)
             count = 0
@@ -85,7 +87,7 @@ class WaveField:
             diff = average - state
             diff = np.where(np.abs(diff) < self.threshold_nl, 0.0, diff)
             diff = diff * self.speed - self.nonlin * (state ** 2) * diff
-            self.state = (state + diff) * self.decay
+            self.state = np.clip((state + diff) * self.decay, -12.0, 12.0)
 
     def field_resonance(self, pattern: np.ndarray) -> float:
         h = min(self.H, pattern.shape[0])

@@ -1,7 +1,10 @@
 import json
+import warnings
 from pathlib import Path
 
-from wavemind import HashingTextEncoder, QueryResult, SQLiteMemoryStore, WaveMind
+import numpy as np
+
+from wavemind import HashingTextEncoder, QueryResult, SQLiteMemoryStore, WaveField, WaveMind
 
 
 def make_mind(db_path: Path, **kwargs) -> WaveMind:
@@ -15,6 +18,23 @@ def make_mind(db_path: Path, **kwargs) -> WaveMind:
     }
     params.update(kwargs)
     return WaveMind(**params)
+
+
+def test_wave_field_evolve_remains_finite_after_repeated_strong_feedback():
+    field = WaveField(width=16, height=16, layers=2)
+    pattern = np.ones((16, 16), dtype=np.float32)
+
+    for _ in range(100):
+        field.feed(pattern, strength=9.0)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        field.evolve(8)
+        energy = field.energy()
+
+    assert np.all(np.isfinite(field.state))
+    assert np.isfinite(energy)
+    assert np.max(np.abs(field.state)) <= 12.0
 
 
 def test_remember_query_persist_and_load(tmp_path):

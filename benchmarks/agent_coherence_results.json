@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.agent_coherence_benchmark.v1",
-  "generated_at": "2026-07-08T05:45:21Z",
+  "generated_at": "2026-07-08T17:24:13Z",
   "scenario": {
     "name": "agent_coherence",
     "memories": 500,
@@ -43,9 +43,470 @@
         "project": 1.0,
         "ttl": 1.0
       },
-      "avg_latency_ms": 2.490399987436831,
-      "p95_latency_ms": 2.5692000053822994,
-      "tasks": 12
+      "avg_latency_ms": 2.647033310495317,
+      "p95_latency_ms": 2.9186999890953302,
+      "tasks": 12,
+      "memory_os": null
+    },
+    {
+      "engine": "WaveMind + Memory OS",
+      "task_success_rate": 0.9166666666666666,
+      "decision_success_at_1": 0.8333333333333334,
+      "stale_error_rate": 0,
+      "namespace_leak_rate": 0,
+      "coherent_turns": 9,
+      "coherent_turn_rate": 0.75,
+      "context_tokens_returned": 928,
+      "full_context_tokens": 13427,
+      "context_budget_saved": 0.9308855291576674,
+      "category_success": {
+        "correction": 1.0,
+        "namespace": 1.0,
+        "personalization": 0.5,
+        "profile": 1.0,
+        "project": 1.0,
+        "ttl": 1.0
+      },
+      "avg_latency_ms": 3.298825021677961,
+      "p95_latency_ms": 3.8723000325262547,
+      "tasks": 12,
+      "memory_os": {
+        "worker_ok": true,
+        "scanned_events": 5,
+        "hot_queries": 1,
+        "prewarm_warmed": 1,
+        "predictive_prefetch_generated": 4,
+        "predictive_prefetch_warmed": 4,
+        "priority_predictions": 5,
+        "priority_boosted": 5,
+        "forgetting_demotions": 0,
+        "concepts_created": 0,
+        "cache_hits": 6,
+        "cache_misses": 19,
+        "cache_size": 17,
+        "cache_hit_rate": 0.24,
+        "policy_status": "architecture_required",
+        "suggestions": 5,
+        "actions": [
+          "purge_expired",
+          "predict_priority",
+          "invalidate_cache",
+          "prewarm_cache",
+          "predictive_prefetch",
+          "advise_architecture"
+        ],
+        "recommendations": [
+          "Move this namespace to a persisted ANN backend and sharded deployment before further growth.",
+          "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "Architecture advisor: [architecture_required] Add enough nodes for replication - Provision enough API nodes before enabling quorum writes."
+        ],
+        "report": {
+          "namespace": "agent-a",
+          "scanned_events": 5,
+          "hot_queries": [
+            {
+              "namespace": "agent-a",
+              "query": "budget recall",
+              "frequency": 2,
+              "last_seen": 1783531451.6108146
+            }
+          ],
+          "expired_purged": 5,
+          "consolidated_steps": 0,
+          "concepts_created": 0,
+          "concept_ids": [],
+          "priority_predictions": 5,
+          "priority_boost_total": 0.4999984925947998,
+          "priority_boosted_ids": [
+            10,
+            94,
+            125,
+            194,
+            214
+          ],
+          "forgetting_demotions": 0,
+          "forgetting_decay_total": 0.0,
+          "forgetting_demoted_ids": [],
+          "index_rebuilt": false,
+          "cache_enabled": true,
+          "cache_invalidated": 2,
+          "prewarm": {
+            "scanned_events": 6,
+            "candidates": 1,
+            "warmed": 1,
+            "skipped": 0,
+            "errors": {},
+            "ok": true
+          },
+          "predictive_prefetch": {
+            "scanned_hot_queries": 1,
+            "generated_queries": 4,
+            "warmed": 4,
+            "skipped": 0,
+            "errors": {},
+            "queries": [
+              "risk limits",
+              "budget recall about",
+              "budget recall adds",
+              "budget recall agent"
+            ],
+            "transition_queries": [
+              "risk limits"
+            ],
+            "transition_edges": [
+              {
+                "namespace": "agent-a",
+                "from_query": "budget recall",
+                "to_query": "risk limits",
+                "count": 1,
+                "probability": 1.0,
+                "last_seen": 1783531451.6081438
+              }
+            ],
+            "ok": true
+          },
+          "stats_before": {
+            "active_memories": 397,
+            "expired_memories": 5,
+            "total_memories": 402,
+            "audit_events": 407,
+            "field_energy": 271676.6875,
+            "clusters": 1,
+            "field_shape": "64x64x3",
+            "index": "numpy-exact",
+            "index_healthy": true,
+            "index_expected_records": 500,
+            "index_vector_records": 500,
+            "index_missing_records": 0,
+            "index_extra_records": 0,
+            "index_health": {
+              "backend": "numpy-exact",
+              "healthy": true,
+              "exact": true,
+              "vector_dim": 384,
+              "expected_count": 500,
+              "vector_count": 500,
+              "missing_count": 0,
+              "extra_count": 0,
+              "missing_ids_sample": [],
+              "extra_ids_sample": [],
+              "dirty": false,
+              "persisted": false,
+              "loaded_from_persisted": false,
+              "path": null
+            },
+            "vector_dim": 384,
+            "graph_enabled": false,
+            "graph_nodes": 500,
+            "graph_edges": 0,
+            "graph_positive_edges": 0,
+            "graph_negative_edges": 0,
+            "graph_energy": 0.0
+          },
+          "stats_after": {
+            "active_memories": 397,
+            "expired_memories": 0,
+            "total_memories": 397,
+            "audit_events": 419,
+            "field_energy": 414343.625,
+            "clusters": 1,
+            "field_shape": "64x64x3",
+            "index": "numpy-exact",
+            "index_healthy": true,
+            "index_expected_records": 495,
+            "index_vector_records": 495,
+            "index_missing_records": 0,
+            "index_extra_records": 0,
+            "index_health": {
+              "backend": "numpy-exact",
+              "healthy": true,
+              "exact": true,
+              "vector_dim": 384,
+              "expected_count": 495,
+              "vector_count": 495,
+              "missing_count": 0,
+              "extra_count": 0,
+              "missing_ids_sample": [],
+              "extra_ids_sample": [],
+              "dirty": false,
+              "persisted": false,
+              "loaded_from_persisted": false,
+              "path": null
+            },
+            "vector_dim": 384,
+            "graph_enabled": false,
+            "graph_nodes": 495,
+            "graph_edges": 0,
+            "graph_positive_edges": 0,
+            "graph_negative_edges": 0,
+            "graph_energy": 0.0
+          },
+          "architecture_advice": {
+            "status": "architecture_required",
+            "production_ready": false,
+            "deployment": "production",
+            "namespace": "agent-a",
+            "current_memories": 397,
+            "target_memories": 500,
+            "index": "numpy-exact",
+            "vector_dim": 384,
+            "target_p99_ms": 100.0,
+            "observed_p99_ms": null,
+            "namespace_count": 2,
+            "node_count": null,
+            "replication_factor": 3,
+            "read_quorum": 1,
+            "read_fanout": 3,
+            "scale_plan": {
+              "current_memories": 397,
+              "target_memories": 500,
+              "index": "numpy-exact",
+              "vector_dim": 384,
+              "namespace": "agent-a",
+              "latency_target_ms": 100.0,
+              "tier": "small",
+              "status": "ok",
+              "recommended_index": "numpy",
+              "warnings": [],
+              "actions": [
+                "Use SQLite plus the default NumPy exact index for simplest local operation.",
+                "Keep namespaces explicit and run `wavemind index-health --json` after imports."
+              ]
+            },
+            "recommendations": [
+              {
+                "id": "production-controls",
+                "severity": "action_required",
+                "title": "Enable production controls",
+                "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+                "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+                "commands": [
+                  "python benchmarks/production_readiness_gate.py --json",
+                  "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+                ],
+                "docs": [
+                  "benchmarks/PRODUCTION_READINESS.md",
+                  "docs/OBSERVABILITY.md"
+                ]
+              },
+              {
+                "id": "replication-capacity",
+                "severity": "architecture_required",
+                "title": "Add enough nodes for replication",
+                "rationale": "Replication factor 3 requires at least 3 available nodes.",
+                "action": "Provision enough API nodes before enabling quorum writes.",
+                "commands": [
+                  "wavemind cluster-plan --namespace-count 2 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+                ],
+                "docs": []
+              }
+            ],
+            "next_commands": [
+              "python benchmarks/production_readiness_gate.py --json",
+              "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+              "wavemind cluster-plan --namespace-count 2 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+            ]
+          },
+          "lock": {
+            "required": false,
+            "acquired": false,
+            "key": null,
+            "owner": null,
+            "ttl_seconds": null,
+            "reason": null,
+            "ok": true
+          },
+          "actions": [
+            "purge_expired",
+            "predict_priority",
+            "invalidate_cache",
+            "prewarm_cache",
+            "predictive_prefetch",
+            "advise_architecture"
+          ],
+          "recommendations": [
+            "Move this namespace to a persisted ANN backend and sharded deployment before further growth.",
+            "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+            "Architecture advisor: [architecture_required] Add enough nodes for replication - Provision enough API nodes before enabling quorum writes."
+          ],
+          "suggestions": [
+            {
+              "id": "service-index-and-sharding",
+              "severity": "architecture_required",
+              "title": "Move pressure-heavy memory to service index and sharding",
+              "rationale": "This namespace or cluster crossed the configured memory-pressure threshold.",
+              "action": "Use Qdrant, pgvector, or persisted FAISS for candidate generation and shard by namespace before further growth.",
+              "evidence": {
+                "namespace": "agent-a",
+                "active_memories": 397,
+                "threshold": 64
+              }
+            },
+            {
+              "id": "predictive-prefetch-active",
+              "severity": "ok",
+              "title": "Keep predictive prefetch enabled",
+              "rationale": "Observed recall paths produced likely follow-up queries.",
+              "action": "Track predictive prefetch hit rate and keep transition edges in the benchmark artifact.",
+              "evidence": {
+                "namespace": "agent-a",
+                "generated_queries": 4,
+                "warmed_queries": 4,
+                "transition_queries": [
+                  "risk limits"
+                ]
+              }
+            },
+            {
+              "id": "priority-learning-active",
+              "severity": "ok",
+              "title": "Keep usage-pattern priority learning enabled",
+              "rationale": "Hot audited queries produced deterministic priority boosts for recalled memories.",
+              "action": "Keep feedback and priority deltas in the Memory OS evidence artifact.",
+              "evidence": {
+                "namespace": "agent-a",
+                "priority_predictions": 5
+              }
+            },
+            {
+              "id": "architecture:production-controls",
+              "severity": "action_required",
+              "title": "Enable production controls",
+              "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+              "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+              "evidence": {
+                "namespace": "agent-a",
+                "source": "architecture_advisor",
+                "recommendation_id": "production-controls"
+              }
+            },
+            {
+              "id": "architecture:replication-capacity",
+              "severity": "architecture_required",
+              "title": "Add enough nodes for replication",
+              "rationale": "Replication factor 3 requires at least 3 available nodes.",
+              "action": "Provision enough API nodes before enabling quorum writes.",
+              "evidence": {
+                "namespace": "agent-a",
+                "source": "architecture_advisor",
+                "recommendation_id": "replication-capacity"
+              }
+            }
+          ],
+          "policy_manifest": {
+            "status": "architecture_required",
+            "namespace": "agent-a",
+            "decision_count": 6,
+            "decision_ids": [
+              "prefetch-policy",
+              "priority-policy",
+              "forgetting-policy",
+              "consolidation-policy",
+              "scale-policy",
+              "coordination-policy"
+            ],
+            "decisions": [
+              {
+                "id": "prefetch-policy",
+                "status": "ok",
+                "strategy": "hot-query-and-transition-prefetch",
+                "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+                "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "hot_queries": 1,
+                  "prewarm_warmed": 1,
+                  "predictive_generated": 4,
+                  "predictive_warmed": 4,
+                  "transition_edges": 1
+                }
+              },
+              {
+                "id": "priority-policy",
+                "status": "ok",
+                "strategy": "usage-pattern-priority-boost",
+                "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+                "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "priority_predictions": 5
+                }
+              },
+              {
+                "id": "forgetting-policy",
+                "status": "action_required",
+                "strategy": "tighten-retention-under-pressure",
+                "rationale": "Memory pressure crossed the configured threshold, but this run did not demote stale records.",
+                "action": "Review TTLs, access-count thresholds, and protected ids before adding more data.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "active_memories": 397,
+                  "threshold": 64
+                }
+              },
+              {
+                "id": "consolidation-policy",
+                "status": "watch",
+                "strategy": "wait-for-stable-clusters",
+                "rationale": "No concept memories were created in this run.",
+                "action": "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "concepts_created": 0
+                }
+              },
+              {
+                "id": "scale-policy",
+                "status": "architecture_required",
+                "strategy": "external-index-sharding-and-production-controls",
+                "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+                "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "active_memories": 397,
+                  "target_memories": 500,
+                  "recommendation_ids": [
+                    "production-controls",
+                    "replication-capacity"
+                  ]
+                }
+              },
+              {
+                "id": "coordination-policy",
+                "status": "action_required",
+                "strategy": "require-distributed-lock-in-production",
+                "rationale": "Production Memory OS workers need a distributed lock to avoid overlapping consolidation and forgetting.",
+                "action": "Run Memory OS with RedisMemoryOSLock and --lock-required in production.",
+                "evidence": {
+                  "namespace": "agent-a",
+                  "deployment": "production",
+                  "lock_required": false,
+                  "lock_acquired": false,
+                  "lock_key": null,
+                  "cache_enabled": true
+                }
+              }
+            ],
+            "ok": false
+          },
+          "policy_history": {
+            "previous_runs": 0,
+            "window": 5,
+            "trend": "first_run",
+            "repeated_action_required_ids": [],
+            "repeated_architecture_required_ids": [],
+            "repeated_required_ids": [],
+            "stable_ok_ids": [],
+            "status_counts": {
+              "action_required": 2,
+              "architecture_required": 1,
+              "ok": 2,
+              "watch": 1
+            }
+          },
+          "ok": true
+        }
+      }
     },
     {
       "engine": "Static vector",
@@ -66,21 +527,22 @@
         "project": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 0.6453166715800762,
-      "p95_latency_ms": 0.6763000274077058,
-      "tasks": 12
+      "avg_latency_ms": 0.6787333404645324,
+      "p95_latency_ms": 0.7653000066056848,
+      "tasks": 12,
+      "memory_os": null
     },
     {
       "engine": "Chroma static",
       "task_success_rate": 0.3333333333333333,
       "decision_success_at_1": 0.3333333333333333,
-      "stale_error_rate": 0.6363636363636364,
+      "stale_error_rate": 0.45454545454545453,
       "namespace_leak_rate": 0,
       "coherent_turns": 1,
       "coherent_turn_rate": 0.08333333333333333,
-      "context_tokens_returned": 983,
+      "context_tokens_returned": 1001,
       "full_context_tokens": 13427,
-      "context_budget_saved": 0.9267893051314515,
+      "context_budget_saved": 0.9254487227228718,
       "category_success": {
         "correction": 0.0,
         "namespace": 1.0,
@@ -89,9 +551,10 @@
         "project": 0.0,
         "ttl": 0.0
       },
-      "avg_latency_ms": 2.892608337181931,
-      "p95_latency_ms": 11.074900045059621,
-      "tasks": 12
+      "avg_latency_ms": 5.647891686142732,
+      "p95_latency_ms": 30.282999970950186,
+      "tasks": 12,
+      "memory_os": null
     }
   ]
 }
