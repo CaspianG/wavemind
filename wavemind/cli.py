@@ -229,6 +229,21 @@ def build_parser() -> argparse.ArgumentParser:
     production_scale_plan.add_argument("--output-dir", default="benchmarks")
     production_scale_plan.add_argument("--state-dir", default="state")
     production_scale_plan.add_argument(
+        "--monthly-budget-usd",
+        type=float,
+        help="Override the monthly target budget for every selected production profile.",
+    )
+    production_scale_plan.add_argument(
+        "--max-cost-per-1m-memories-usd",
+        type=float,
+        help="Override the max monthly total cost per 1M memories for every selected profile.",
+    )
+    production_scale_plan.add_argument(
+        "--max-compute-cost-per-1m-queries-usd",
+        type=float,
+        help="Override the max compute cost per 1M queries for every selected profile.",
+    )
+    production_scale_plan.add_argument(
         "--write-artifact",
         action="store_true",
         help="Write the plan JSON to --output.",
@@ -1609,6 +1624,9 @@ def main(argv: list[str] | None = None) -> int:
             disk_free_gb=args.disk_free_gb,
             output_dir=args.output_dir,
             state_dir=args.state_dir,
+            monthly_budget_usd=args.monthly_budget_usd,
+            max_cost_per_1m_memories_usd=args.max_cost_per_1m_memories_usd,
+            max_compute_cost_per_1m_queries_usd=args.max_compute_cost_per_1m_queries_usd,
         )
         if args.write_artifact:
             args.output.parent.mkdir(parents=True, exist_ok=True)

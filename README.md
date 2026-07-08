@@ -523,9 +523,14 @@ results:
 
 Each profile includes exact command, checkpoint path, required environment,
 local runner storage estimate, application storage estimate, SLO capacity
-envelope, and cost envelope. A profile stays `action_required` until the
-service/index backend and local runner requirements are present. The artifact is
-a preflight contract, not latency or recall evidence.
+envelope, and cost envelope. The cost envelope includes target monthly budget,
+budget headroom, monthly cost per 1M memories, compute cost per 1M queries, and
+machine-readable cost blockers. Override the profile budget gates with
+`--monthly-budget-usd`, `--max-cost-per-1m-memories-usd`, and
+`--max-compute-cost-per-1m-queries-usd` when planning a specific cluster. A
+profile stays `action_required` until the service/index backend, local runner
+requirements, and cost gates are satisfied. The artifact is a preflight
+contract, not latency or recall evidence.
 
 For a concrete operator checklist, use the architecture advisor:
 
@@ -572,9 +577,19 @@ cost = estimate_production_cost(
     result,
     memory_count=1_000_000,
     vector_dim=128,
-    target=ProductionCostTarget(replica_hourly_cost_usd=0.25),
+    target=ProductionCostTarget(
+        replica_hourly_cost_usd=0.25,
+        monthly_budget_usd=1500.0,
+        max_cost_per_1m_memories_usd=500.0,
+        max_compute_cost_per_1m_queries_usd=10.0,
+    ),
 )
-print(cost.required_replicas, cost.compute_cost_per_1m_queries_usd)
+print(
+    cost.cost_status,
+    cost.required_replicas,
+    cost.monthly_total_cost_per_1m_memories_usd,
+    cost.compute_cost_per_1m_queries_usd,
+)
 ```
 
 Rule of thumb:
@@ -1892,7 +1907,7 @@ public claim boundaries stable:
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
-| Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, cost, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
+| Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, monthly budget, cost per 1M memories, compute cost per 1M queries, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
 | 50M memory-scale preflight | Checked-in plan-only artifact estimates local index/transient storage, application storage, required env, blockers, and exact resumable reproduction command with checkpointing. | `benchmarks/production_streaming_load_50m_plan.json` | Not a completed latency/recall benchmark until `production_streaming_load_ivfpq_50m_results.json` is produced by a real run. |
 | pgvector tuning | Real PostgreSQL/pgvector service profile now separates baseline HNSW, exact recall floor, and iterative HNSW tuning. | `benchmarks/production_pgvector_tuning_results.json` | This is a 50k service-backed tuning profile, not yet the 100k/1M production load SLO artifact. |

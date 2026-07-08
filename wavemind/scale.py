@@ -95,6 +95,9 @@ class ProductionCostTarget:
     memory_payload_kb: float = 2.0
     vector_dtype_bytes: int = 4
     hours_per_month: float = 730.0
+    monthly_budget_usd: float | None = None
+    max_cost_per_1m_memories_usd: float | None = None
+    max_compute_cost_per_1m_queries_usd: float | None = None
 
     def __post_init__(self) -> None:
         if self.replica_hourly_cost_usd < 0:
@@ -107,6 +110,18 @@ class ProductionCostTarget:
             raise ValueError("vector_dtype_bytes must be positive")
         if self.hours_per_month <= 0:
             raise ValueError("hours_per_month must be positive")
+        if self.monthly_budget_usd is not None and self.monthly_budget_usd < 0:
+            raise ValueError("monthly_budget_usd cannot be negative")
+        if (
+            self.max_cost_per_1m_memories_usd is not None
+            and self.max_cost_per_1m_memories_usd < 0
+        ):
+            raise ValueError("max_cost_per_1m_memories_usd cannot be negative")
+        if (
+            self.max_compute_cost_per_1m_queries_usd is not None
+            and self.max_compute_cost_per_1m_queries_usd < 0
+        ):
+            raise ValueError("max_compute_cost_per_1m_queries_usd cannot be negative")
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -116,16 +131,25 @@ class ProductionCostTarget:
 class ProductionCostResult:
     engine: str
     cost_status: str
+    cost_blocking_reasons: tuple[str, ...]
     memory_count: int
     vector_dim: int
     required_replicas: int
     target_qps: float
     replica_hourly_cost_usd: float
     storage_gb_monthly_cost_usd: float
+    monthly_budget_usd: float | None
+    monthly_budget_headroom_usd: float | None
+    max_cost_per_1m_memories_usd: float | None
+    max_compute_cost_per_1m_queries_usd: float | None
     vector_storage_gb: float
     payload_storage_gb: float
     total_storage_gb: float
     monthly_storage_cost_usd: float
+    monthly_storage_cost_per_1m_memories_usd: float
+    monthly_compute_cost_per_1m_memories_usd: float
+    monthly_total_cost_per_1m_memories_usd: float
+    monthly_queries_at_target_qps: float
     compute_cost_per_1m_queries_usd: float
     monthly_compute_cost_at_target_qps_usd: float
     monthly_total_cost_at_target_qps_usd: float
@@ -158,6 +182,9 @@ class ProductionScaleRunProfile:
     command_env: dict[str, str]
     module_requirements: tuple[str, ...]
     index_mode: str
+    monthly_budget_usd: float | None = None
+    max_cost_per_1m_memories_usd: float | None = None
+    max_compute_cost_per_1m_queries_usd: float | None = None
     claim_boundary: str = (
         "plan_only; not a completed latency or recall benchmark until the "
         "output artifact is produced by a real run"
@@ -280,6 +307,9 @@ def _production_scale_profiles(
             },
             module_requirements=("qdrant_client",),
             index_mode="remote Qdrant HNSW service; local runner stores generated batches only",
+            monthly_budget_usd=2_000.0,
+            max_cost_per_1m_memories_usd=200.0,
+            max_compute_cost_per_1m_queries_usd=10.0,
         ),
         "qdrant-sharded-10m": ProductionScaleRunProfile(
             name="qdrant-sharded-10m",
@@ -313,6 +343,9 @@ def _production_scale_profiles(
             },
             module_requirements=("qdrant_client",),
             index_mode="remote horizontally sharded Qdrant services with fanout top-k merge",
+            monthly_budget_usd=4_000.0,
+            max_cost_per_1m_memories_usd=400.0,
+            max_compute_cost_per_1m_queries_usd=10.0,
         ),
         "pgvector-10m": ProductionScaleRunProfile(
             name="pgvector-10m",
@@ -342,6 +375,9 @@ def _production_scale_profiles(
             },
             module_requirements=("psycopg",),
             index_mode="remote PostgreSQL/pgvector HNSW service",
+            monthly_budget_usd=2_000.0,
+            max_cost_per_1m_memories_usd=200.0,
+            max_compute_cost_per_1m_queries_usd=10.0,
         ),
         "faiss-ivfpq-50m": ProductionScaleRunProfile(
             name="faiss-ivfpq-50m",
@@ -373,6 +409,9 @@ def _production_scale_profiles(
             },
             module_requirements=("faiss",),
             index_mode="local persisted FAISS IVF-PQ compressed codes plus int64 ids",
+            monthly_budget_usd=3_000.0,
+            max_cost_per_1m_memories_usd=100.0,
+            max_compute_cost_per_1m_queries_usd=10.0,
         ),
         "qdrant-sharded-100m": ProductionScaleRunProfile(
             name="qdrant-sharded-100m",
@@ -406,6 +445,9 @@ def _production_scale_profiles(
             },
             module_requirements=("qdrant_client",),
             index_mode="remote horizontally sharded Qdrant services for 100M-memory target",
+            monthly_budget_usd=10_000.0,
+            max_cost_per_1m_memories_usd=125.0,
+            max_compute_cost_per_1m_queries_usd=10.0,
         ),
     }
 
@@ -481,6 +523,9 @@ def build_production_scale_run_plan(
     disk_free_gb: float | None = None,
     output_dir: str = "benchmarks",
     state_dir: str = "state",
+    monthly_budget_usd: float | None = None,
+    max_cost_per_1m_memories_usd: float | None = None,
+    max_compute_cost_per_1m_queries_usd: float | None = None,
 ) -> dict[str, object]:
     """Build reproducible preflight plans for large production load profiles.
 
@@ -587,8 +632,24 @@ def build_production_scale_run_plan(
             target=ProductionCostTarget(
                 memory_payload_kb=profile.memory_payload_kb,
                 vector_dtype_bytes=profile.vector_dtype_bytes,
+                monthly_budget_usd=(
+                    monthly_budget_usd
+                    if monthly_budget_usd is not None
+                    else profile.monthly_budget_usd
+                ),
+                max_cost_per_1m_memories_usd=(
+                    max_cost_per_1m_memories_usd
+                    if max_cost_per_1m_memories_usd is not None
+                    else profile.max_cost_per_1m_memories_usd
+                ),
+                max_compute_cost_per_1m_queries_usd=(
+                    max_compute_cost_per_1m_queries_usd
+                    if max_compute_cost_per_1m_queries_usd is not None
+                    else profile.max_compute_cost_per_1m_queries_usd
+                ),
             ),
         )
+        blockers.extend(f"cost:{reason}" for reason in cost_envelope.cost_blocking_reasons)
 
         actions = [
             "Provision the required service/index backend and set the required environment variables.",
@@ -649,6 +710,19 @@ def build_production_scale_run_plan(
         )
 
     ready_count = sum(1 for plan in plans if plan.status == "ready")
+    cost_status_counts: dict[str, int] = {}
+    for plan in plans:
+        status = str(plan.cost_envelope.get("cost_status", "unknown"))
+        cost_status_counts[status] = cost_status_counts.get(status, 0) + 1
+    monthly_budgets = [
+        plan.cost_envelope.get("monthly_budget_usd")
+        for plan in plans
+        if plan.cost_envelope.get("monthly_budget_usd") is not None
+    ]
+    monthly_total_cost = sum(
+        float(plan.cost_envelope.get("monthly_total_cost_at_target_qps_usd", 0.0))
+        for plan in plans
+    )
     summary = {
         "schema": "wavemind.production_scale_run_plan.v1",
         "generated_at": _utc_now_iso(),
@@ -657,6 +731,13 @@ def build_production_scale_run_plan(
         "action_required_count": len(plans) - ready_count,
         "total_profiles": len(plans),
         "target_memories_total": sum(plan.target_memories for plan in plans),
+        "estimated_monthly_total_cost_at_target_qps_usd": monthly_total_cost,
+        "monthly_budget_usd_total": (
+            sum(float(value) for value in monthly_budgets)
+            if monthly_budgets
+            else None
+        ),
+        "cost_status_counts": cost_status_counts,
         "profiles": [plan.profile for plan in plans],
         "claim_boundary": "preflight plans only; real benchmark claims require the output artifacts",
     }
@@ -761,24 +842,70 @@ def estimate_production_cost(
     compute_cost_per_1m_queries = (
         monthly_compute_cost / max(monthly_queries_at_target / 1_000_000.0, 0.001)
     )
-    cost_status = "valid_slo" if slo.status in {"pass", "scale_required"} else "invalid_slo"
+    monthly_total_cost = monthly_compute_cost + monthly_storage_cost
+    memory_millions = max(memories / 1_000_000.0, 0.001)
+    monthly_storage_cost_per_1m_memories = monthly_storage_cost / memory_millions
+    monthly_compute_cost_per_1m_memories = monthly_compute_cost / memory_millions
+    monthly_total_cost_per_1m_memories = monthly_total_cost / memory_millions
+    monthly_budget_headroom = (
+        target.monthly_budget_usd - monthly_total_cost
+        if target.monthly_budget_usd is not None
+        else None
+    )
+
+    cost_blocking_reasons: list[str] = []
+    if slo.status not in {"pass", "scale_required"}:
+        cost_blocking_reasons.append("invalid_slo")
+    if (
+        target.monthly_budget_usd is not None
+        and monthly_total_cost > target.monthly_budget_usd
+    ):
+        cost_blocking_reasons.append("monthly_budget_exceeded")
+    if (
+        target.max_cost_per_1m_memories_usd is not None
+        and monthly_total_cost_per_1m_memories
+        > target.max_cost_per_1m_memories_usd
+    ):
+        cost_blocking_reasons.append("cost_per_1m_memories_above_target")
+    if (
+        target.max_compute_cost_per_1m_queries_usd is not None
+        and compute_cost_per_1m_queries
+        > target.max_compute_cost_per_1m_queries_usd
+    ):
+        cost_blocking_reasons.append("compute_cost_per_1m_queries_above_target")
+
+    if slo.status not in {"pass", "scale_required"}:
+        cost_status = "invalid_slo"
+    elif cost_blocking_reasons:
+        cost_status = "cost_action_required"
+    else:
+        cost_status = "valid_slo"
 
     return ProductionCostResult(
         engine=slo.engine,
         cost_status=cost_status,
+        cost_blocking_reasons=tuple(cost_blocking_reasons),
         memory_count=memories,
         vector_dim=dim,
         required_replicas=required_replicas,
         target_qps=slo.target_qps,
         replica_hourly_cost_usd=target.replica_hourly_cost_usd,
         storage_gb_monthly_cost_usd=target.storage_gb_monthly_cost_usd,
+        monthly_budget_usd=target.monthly_budget_usd,
+        monthly_budget_headroom_usd=monthly_budget_headroom,
+        max_cost_per_1m_memories_usd=target.max_cost_per_1m_memories_usd,
+        max_compute_cost_per_1m_queries_usd=target.max_compute_cost_per_1m_queries_usd,
         vector_storage_gb=vector_storage_gb,
         payload_storage_gb=payload_storage_gb,
         total_storage_gb=total_storage_gb,
         monthly_storage_cost_usd=monthly_storage_cost,
+        monthly_storage_cost_per_1m_memories_usd=monthly_storage_cost_per_1m_memories,
+        monthly_compute_cost_per_1m_memories_usd=monthly_compute_cost_per_1m_memories,
+        monthly_total_cost_per_1m_memories_usd=monthly_total_cost_per_1m_memories,
+        monthly_queries_at_target_qps=monthly_queries_at_target,
         compute_cost_per_1m_queries_usd=compute_cost_per_1m_queries,
         monthly_compute_cost_at_target_qps_usd=monthly_compute_cost,
-        monthly_total_cost_at_target_qps_usd=monthly_compute_cost + monthly_storage_cost,
+        monthly_total_cost_at_target_qps_usd=monthly_total_cost,
     )
 
 

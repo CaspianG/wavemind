@@ -167,10 +167,42 @@ def test_production_cost_api_estimates_compute_and_storage_costs():
     )
 
     assert cost.cost_status == "valid_slo"
+    assert cost.cost_blocking_reasons == ()
     assert cost.required_replicas == 2
     assert cost.compute_cost_per_1m_queries_usd == pytest.approx(1.3888888889)
+    assert cost.monthly_queries_at_target_qps == pytest.approx(262_800_000.0)
+    assert cost.monthly_total_cost_per_1m_memories_usd > 0
     assert cost.total_storage_gb > 0
     assert cost.monthly_total_cost_at_target_qps_usd > cost.monthly_storage_cost_usd
+
+
+def test_production_cost_api_blocks_budget_overrun():
+    slo = evaluate_production_slo(
+        engine="Qdrant service",
+        recall_at_k=1.0,
+        avg_latency_ms=10.0,
+        p99_latency_ms=25.0,
+        target=ProductionSLOTarget(target_qps=100.0, replicas=3),
+    )
+
+    cost = estimate_production_cost(
+        slo=slo,
+        memory_count=100_000,
+        vector_dim=128,
+        target=ProductionCostTarget(
+            replica_hourly_cost_usd=0.25,
+            storage_gb_monthly_cost_usd=0.10,
+            monthly_budget_usd=100.0,
+            max_cost_per_1m_memories_usd=1_000.0,
+            max_compute_cost_per_1m_queries_usd=0.25,
+        ),
+    )
+
+    assert cost.cost_status == "cost_action_required"
+    assert "monthly_budget_exceeded" in cost.cost_blocking_reasons
+    assert "cost_per_1m_memories_above_target" in cost.cost_blocking_reasons
+    assert "compute_cost_per_1m_queries_above_target" in cost.cost_blocking_reasons
+    assert cost.monthly_budget_headroom_usd < 0
 
 
 def test_scale_plan_requires_service_architecture_for_million_plus_memory():
@@ -291,6 +323,10 @@ def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
     assert row["slo_capacity_envelope"]["status"] in {"pass", "scale_required"}
     assert row["slo_capacity_envelope"]["required_replicas"] <= row["autoscaling_max_replicas"]
     assert row["cost_envelope"]["memory_count"] == 10_000_000
+    assert row["cost_envelope"]["cost_status"] == "valid_slo"
+    assert row["cost_envelope"]["monthly_budget_usd"] == 2000.0
+    assert row["cost_envelope"]["monthly_total_cost_per_1m_memories_usd"] > 0
+    assert row["cost_envelope"]["compute_cost_per_1m_queries_usd"] <= 10.0
     assert row["estimated_application_storage_gb"] > 20
 
 
@@ -307,6 +343,9 @@ def test_production_scale_run_plan_all_profiles_and_known_names():
 
     assert payload["summary"]["total_profiles"] == len(names)
     assert payload["summary"]["target_memories_total"] >= 180_000_000
+    assert payload["summary"]["monthly_budget_usd_total"] >= 20_000.0
+    assert payload["summary"]["estimated_monthly_total_cost_at_target_qps_usd"] > 0
+    assert payload["summary"]["cost_status_counts"]["valid_slo"] == len(names)
     assert payload["summary"]["overall_status"] == "action_required"
     profiles = {row["profile"]: row for row in payload["profiles"]}
     assert profiles["faiss-ivfpq-50m"]["estimated_index_gb"] > 1.0
@@ -335,6 +374,30 @@ def test_cli_production_scale_plan_writes_deterministic_artifact(tmp_path):
     assert payload["summary"]["overall_status"] == "action_required"
     assert payload["profiles"][0]["profile"] == "qdrant-10m"
     assert payload["profiles"][0]["disk_free_gb"] == 0.0
+
+
+def test_cli_production_scale_plan_applies_cost_gate_overrides(tmp_path):
+    result = run_cli(
+        "production-scale-plan",
+        "--profile",
+        "qdrant-10m",
+        "--disk-free-gb",
+        "1000",
+        "--monthly-budget-usd",
+        "100",
+        "--max-cost-per-1m-memories-usd",
+        "50",
+        "--max-compute-cost-per-1m-queries-usd",
+        "1",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    row = payload["profiles"][0]
+
+    assert row["cost_envelope"]["cost_status"] == "cost_action_required"
+    assert "monthly_budget_exceeded" in row["cost_envelope"]["cost_blocking_reasons"]
+    assert "cost:monthly_budget_exceeded" in row["blockers"]
+    assert payload["summary"]["cost_status_counts"]["cost_action_required"] == 1
 
 
 def test_cli_production_scale_plan_fail_on_action_required(tmp_path):

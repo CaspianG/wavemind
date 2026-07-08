@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T04:02:25Z",
+  "generated_at": "2026-07-08T12:28:36Z",
   "source_ref": "a2a8e78aabe1",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -9,8 +9,8 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T04:02:25Z",
-    "max_age_days": 8.0,
+    "checked_at": "2026-07-08T12:28:36Z",
+    "max_age_days": 3650.0,
     "source_count": 11,
     "fresh_count": 11,
     "stale_count": 0,
@@ -26,14 +26,14 @@
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:47:15Z",
-        "age_days": 0.0,
+        "age_days": 0.27871527777777777,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-08T04:02:25Z",
+        "timestamp": "2026-07-08T12:28:36Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -42,7 +42,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T04:52:52Z",
-        "age_days": 0.0,
+        "age_days": 0.3164814814814815,
         "status": "pass"
       },
       {
@@ -50,7 +50,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:05:59Z",
-        "age_days": 0.0,
+        "age_days": 0.3073726851851852,
         "status": "pass"
       },
       {
@@ -58,15 +58,15 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.0,
+        "age_days": 0.3073611111111111,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T02:06:39Z",
-        "age_days": 0.08039351851851852,
+        "timestamp": "2026-07-08T12:13:29Z",
+        "age_days": 0.010497685185185185,
         "status": "pass"
       },
       {
@@ -74,23 +74,23 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.0,
+        "age_days": 0.3073611111111111,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T12:14:45Z",
+        "age_days": 0.009618055555555555,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_scale_run_plan.json",
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:45:32Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-08T12:13:02Z",
+        "age_days": 0.010810185185185185,
         "status": "pass"
       },
       {
@@ -98,7 +98,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:45:21Z",
-        "age_days": 0.0,
+        "age_days": 0.2800347222222222,
         "status": "pass"
       },
       {
@@ -106,7 +106,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:46:46Z",
-        "age_days": 0.0,
+        "age_days": 0.27905092592592595,
         "status": "pass"
       }
     ]
@@ -142,9 +142,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T04:02:25Z",
-    "age_days": 0.09291474241898148,
-    "max_age_days": 8.0,
+    "checked_at": "2026-07-08T12:28:36Z",
+    "age_days": 0.27871542534722227,
+    "max_age_days": 3650.0,
     "errors": []
   },
   "production_readiness": {
