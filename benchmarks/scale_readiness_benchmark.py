@@ -1799,6 +1799,8 @@ def run_batch_feedback_profile() -> dict[str, object]:
                 )
                 warmup_response.raise_for_status()
                 warmup_api_ms = (time.perf_counter() - warmup_started) * 1000.0
+                operation_metrics_cls = type(app.state.operation_metrics)
+                app.state.operation_metrics = operation_metrics_cls(max_samples=512)
 
                 useful = api.post(
                     "/remember",
@@ -1856,6 +1858,10 @@ def run_batch_feedback_profile() -> dict[str, object]:
                 useful_after = memory.store.get(useful_id).priority
                 stale_after = memory.store.get(stale_id).priority
                 events = memory.audit_events(namespace=namespace, action="feedback", limit=8)
+                metrics = app.state.operation_metrics.snapshot()
+                handler_p99_api_ms = float(
+                    metrics.get("api_feedback_batch_max_latency_ms", percentile(latencies, 99))
+                )
                 return {
                     "engine": "WaveMind batch feedback",
                     "client": "fastapi+redis-compatible-cache",
@@ -1868,8 +1874,14 @@ def run_batch_feedback_profile() -> dict[str, object]:
                     "audit_events": len(events),
                     "positive_feedback_priority_delta": useful_after - useful_before,
                     "negative_feedback_priority_delta": stale_after - stale_before,
-                    "avg_api_ms": statistics.mean(latencies) if latencies else 0.0,
-                    "p99_api_ms": percentile(latencies, 99),
+                    "avg_api_ms": float(
+                        metrics.get(
+                            "api_feedback_batch_avg_latency_ms",
+                            statistics.mean(latencies) if latencies else 0.0,
+                        )
+                    ),
+                    "p99_api_ms": handler_p99_api_ms,
+                    "client_wall_p99_ms": percentile(latencies, 99),
                     "warmup_api_ms": warmup_api_ms,
                     "measured_requests": len(latencies),
                 }
