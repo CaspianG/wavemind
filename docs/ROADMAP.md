@@ -18,8 +18,9 @@ policy matters more than raw vector-database scale:
 - PostgreSQL is available as an explicit source-of-truth backend for
   multi-tenant deployments that need managed database operations.
 - NumPy exact search is reliable but linear.
-- Quantized int8 search is available as an explicit compression experiment, but
-  the current kernel is not yet a latency win over NumPy exact search.
+- Quantized int8 search is available as an explicit compression experiment with
+  compact local storage and int32-safe scoring, but it is not yet a latency win
+  over NumPy exact search on the checked local curve.
 - Annoy exists as an ANN option, but current recall still needs tuning.
 - FAISS, pgvector, and Qdrant are exposed as explicit optional
   candidate-index backends.
@@ -411,8 +412,8 @@ Priorities:
   first persisted FAISS snapshot path and production profile are implemented,
   including a 1M-vector checked-in load result that passes recall and p99.
   Production still needs Linux/container repeat runs and deeper latency traces.
-- Tune the quantized int8 path so lower memory footprint does not increase query
-  latency on common embedding dimensions.
+- Tune the quantized int8 path so the now-safe compact candidate matrix becomes
+  a latency win, not only a memory-footprint win, on common embedding dimensions.
 - Keep the wave-field layer as a top-k re-ranker, not a full-scan scorer.
 
 ### 2. Namespace And Tenant Scale

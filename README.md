@@ -378,7 +378,7 @@ backends:
 | index | Install | Notes |
 |---|---|---|
 | `numpy` | default | Exact cosine search, local, linear scan. |
-| `quantized` | default | Local int8-compressed candidate index. Useful for memory-footprint experiments; current kernel is approximate and not yet faster than NumPy. |
+| `quantized` | default | Local int8-compressed candidate index with int32-safe scoring. Useful for memory-footprint experiments; approximate recall and latency must still be measured per workload. |
 | `annoy` | `pip install "wavemind[indexes]"` | Local ANN. Faster at larger N, but recall must be checked. |
 | `faiss` | `pip install "wavemind[indexes]"` | FAISS flat inner-product path where `faiss-cpu` is available. |
 | `faiss-persisted` | `pip install "wavemind[indexes]"` | FAISS with an explicit persisted index snapshot and id map. |
@@ -1995,7 +1995,7 @@ Current read:
 | Capacity | Static `precision@1` is `0.94` at 5000 memories; dynamic policy keeps `1.00` on the current checks. | Quality is holding on these checks, but dynamic latency must be optimized. |
 | LongMemEval full retrieval | On the official LongMemEval-S cleaned file, 470 non-abstention session-level questions, WaveMind reaches `evidence_recall@5 0.782` and `precision@1 0.696`; Chroma static reaches `0.518` / `0.355`; Qdrant static reaches `0.520` / `0.355`. | This is now the strongest public memory result in the repo. It is retrieval-only, not final answer quality. |
 | LongMemEval 50-query smoke | On the first 50 non-abstention LongMemEval-S questions, WaveMind reaches `evidence_recall@5 0.920`, `precision@1 0.760`, and `MRR@5 0.827`; Chroma/Qdrant static reach `0.600`, `0.260`, and `0.385`. | This is the fast regression profile for checking current changes before rerunning the full LongMemEval profile. WaveMind wins on quality; latency still needs work. |
-| ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `6.49 ms`; quantized int8 keeps `0.934` at `24.92 ms`; Annoy is faster at `4.92 ms` but drops to `0.730` recall; Qdrant local keeps `1.000` recall at `43.49 ms`. | Current local scale boundary is clear: quantized search needs kernel work, Annoy needs tuning/FAISS, and Qdrant should be tested in service mode for a fair production comparison. |
+| ANN/index curve | At 50000 generated 128-d vectors, NumPy exact keeps `recall@10 1.000` at `1.99 ms`; quantized int8 keeps `0.934` at `16.27 ms`; Annoy is faster at `3.21 ms` but drops to `0.730` recall; FAISS flat keeps `1.000` recall with a cold-start-inflated `80.47 ms` average and `2.42 ms` p95; Qdrant local keeps `1.000` recall at `33.82 ms`. | Current local scale boundary is clear: top-k selection is faster, quantized is memory-oriented but still not a latency win, Annoy needs recall tuning, and service-mode indexes are the production path. |
 | Production load | At 100000 generated 128-d vectors, service-mode Qdrant reaches `recall@10 1.000`, avg `10.28 ms`, p99 `21.26 ms`, passes the checked-in production SLO gate (`recall >= 0.95`, `p99 <= 100 ms`, `100 qps`, 3 replicas, HPA max 24), and estimates `$1.39` per 1M queries with `$365.02` monthly target cost. At 1M over 100 queries, persisted FAISS reaches `recall@10 1.000`, avg `39.12 ms`, p99 `57.71 ms`, and estimates `$4.17` per 1M queries with 6 replicas for 100 qps. The older 1M Qdrant tuned production-load profile reaches `recall@10 0.984`, avg `82.57 ms`, p99 `137.86 ms`; the newer streaming 1M Qdrant profile closes that p99 gap after safe upsert chunking, wait-after-build, and query warmup. | 100k Qdrant, 1M persisted FAISS, and the tuned 1M Qdrant streaming profile now pass recall/p99 production gates on the tested machine. The older Qdrant load profile stays checked in as evidence that cold/untuned service tails can fail. |
 | pgvector tuning | On a real PostgreSQL/pgvector service at 50000 vectors, baseline HNSW reaches `recall@10 0.834`, exact mode reaches `1.000` with p99 `76.98 ms`, and iterative HNSW reaches `0.970` with p99 `55.19 ms`. Qdrant service remains the speed reference at `1.000` recall and p99 `17.84 ms`. | pgvector now has a measured production tuning path. Exact mode proves correctness; iterative scan passes the 50k recall/p99 gate and should be promoted into 100k/1M load profiles next. |
 | Streaming production load | `benchmarks/production_streaming_load_benchmark.py` generates and inserts vectors in batches, stores only query source vectors outside the index, and measures target-recall, p99, SLO, and cost. The checked-in 10M compressed FAISS IVF-PQ run reaches target recall@10 `0.990`, p99 `60.13 ms`, and valid SLO/cost status; the real Qdrant service smoke reaches target recall@10 `1.000`, p99 `17.90 ms`; the cold 1M Qdrant streaming run reaches recall@10 `0.990` but fails p99 at `3013.98 ms`; the tuned 1M Qdrant run with safe upsert chunks, wait-after-build, and 100 warmup queries reaches recall@10 `1.000`, p99 `26.37 ms`, and valid SLO/cost status; the real two-service sharded Qdrant smoke reaches target recall@10 `1.000`, p99 `16.02 ms`; the real PostgreSQL/pgvector service smoke reaches target recall@10 `1.000`, p99 `7.62 ms`; the single-service Qdrant, horizontally sharded Qdrant, and pgvector 10M plan-only artifacts estimate `0.06 GB` local runner free space because storage is remote; the 50M FAISS IVF-PQ plan-only artifact estimates a `1.12 GB` compressed index, `119.209 GB` application storage, and the exact run command. | This is the first real 10M compressed production-scale artifact plus real Qdrant/pgvector service streaming evidence, real sharded Qdrant fanout smoke evidence, and checked Qdrant/pgvector/FAISS large-N run contracts. The 10M FAISS result is a compressed target-recall profile, not exact-neighbor recall; the 10M Qdrant single-service, 10M Qdrant sharded, 10M pgvector, and 50M FAISS plans are not completed benchmarks until their result JSON files are committed. |
@@ -2427,11 +2427,11 @@ Checked-in 50000-vector point:
 
 | engine | recall@10 | avg latency | p95 latency | build |
 |---|---:|---:|---:|---:|
-| WaveMind numpy | 1.000 | 6.49 ms | 6.41 ms | 744.7 ms |
-| WaveMind quantized | 0.934 | 24.92 ms | 37.36 ms | 2088.7 ms |
-| WaveMind annoy | 0.730 | 4.92 ms | 7.37 ms | 4090.1 ms |
-| WaveMind faiss | skipped | - | - | - |
-| Qdrant local | 1.000 | 43.49 ms | 59.68 ms | 17525.7 ms |
+| WaveMind numpy | 1.000 | 1.99 ms | 1.45 ms | 395.1 ms |
+| WaveMind quantized | 0.934 | 16.27 ms | 20.15 ms | 1019.3 ms |
+| WaveMind annoy | 0.730 | 3.21 ms | 4.17 ms | 2300.3 ms |
+| WaveMind faiss | 1.000 | 80.47 ms | 2.42 ms | 458.3 ms |
+| Qdrant local | 1.000 | 33.82 ms | 39.22 ms | 8336.8 ms |
 
 Checked-in production 50000-vector point:
 
@@ -2467,11 +2467,14 @@ python benchmarks/production_load_benchmark.py --sizes 1000000 --dim 128 --queri
 | 1000000 | Qdrant service tuned | 0.984 | 82.57 ms | 125.99 ms | 137.86 ms | fail: p99 | 12 | 203.5 qps | 441775.0 ms |
 | 1000000 | Qdrant `hnsw_ef=2048` sweep point | 0.977 | 64.76 ms | 91.18 ms | 103.77 ms | fail: p99 | 10 | 259.4 qps | 451912.4 ms |
 
-Read this as an engineering curve, not an official VectorDBBench result. Annoy
-is faster than exact NumPy at 50000 vectors but loses too much recall with the
-current settings. The new `quantized` backend compresses vectors and keeps
-`0.934` recall@10 on this run, but the current Python/NumPy kernel is slower
-than exact NumPy; it is a memory-footprint baseline, not a latency win yet.
+Read this as an engineering curve, not an official VectorDBBench result. NumPy
+exact improved after switching top-k selection away from full sorting. Annoy is
+fast at 50000 vectors but loses too much recall with the current settings. The
+`quantized` backend now stores the candidate matrix as int8 and uses an
+int32-safe accumulator; it keeps `0.934` recall@10 on this run, but it is still a
+memory-footprint baseline rather than a latency win. FAISS flat preserves exact
+recall and low warm p95, but the local curve includes a cold-start average
+outlier, so production claims should use the persisted/service profiles below.
 FAISS persistence and service-mode Qdrant now both preserve exact recall at
 50000 generated vectors. The checked-in pgvector/HNSW profile uses
 `WAVEMIND_PGVECTOR_EF_SEARCH=400`, which improves recall materially but still
@@ -2667,7 +2670,7 @@ If you already use Chroma for local memory, see the practical migration guide:
 
 - Optimal capacity on the current NumPy exact index is up to 1000 records.
 - At 5000 records, one-word `precision@1` is currently 0.72 with the hash encoder; many misses are ambiguous queries where another sentence containing the same word ranks first.
-- For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; the `quantized` backend reaches `0.934` recall@10 but is slower than NumPy on the current kernel. Use FAISS or a production vector service before claiming large-scale ANN quality.
+- For `N > 5000`, the NumPy exact index is still reliable but scales linearly. Annoy is faster at 50000 vectors in the local curve, but current recall is only `0.730`; the `quantized` backend reaches `0.934` recall@10 with int8 storage and int32-safe scoring, but is still slower than NumPy on this workload. Use FAISS or a production vector service before claiming large-scale ANN quality.
 - Run `wavemind scale-plan --target-memories <N>` before growing a deployment. It is a guardrail, not a benchmark replacement: it tells you when NumPy is no longer the right candidate index and which checks to run next.
 - `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` requires about 420 MB of model files. Benchmark runners cache embeddings so retrieval latency is measured separately from model encoding latency.
 - The Chroma comparison currently uses shared precomputed hash embeddings to isolate retrieval/ranking behavior; semantic model comparisons should be run separately.
@@ -2696,7 +2699,9 @@ If you already use Chroma for local memory, see the practical migration guide:
   image/text retrieval. Audio, video, and 3D perception still require external
   embeddings or strong descriptors until dedicated backends are benchmarked.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
-  reduces vector precision and must be benchmarked per workload before use.
+  reduces vector precision, stores the local candidate matrix compactly, uses an
+  int32 accumulator to avoid dot-product overflow, and must be benchmarked per
+  workload before use.
 - The synthetic long-term memory evidence benchmark is useful for regression and product-shape proof, but public claims should lean on LoCoMo and LongMemEval instead.
 - The main LongMemEval evidence result is retrieval-only. The checked-in Ollama answer-generation comparison now includes WaveMind, Chroma static, and Qdrant static over 50 questions, but it is still not a full LongMemEval leaderboard-equivalent score.
 - Qdrant baselines in this README use embedded local mode. Qdrant itself warns that local mode is not recommended above 20000 points; use the `qdrant-service` benchmark profile before making production latency claims.
@@ -2720,8 +2725,8 @@ Near-term priorities:
 - Service-mode Qdrant, pgvector, and persisted-FAISS benchmark runs on a real
   production-like machine, with SLO and cost gates checked into the repo.
 - Migration tooling and operational docs for Postgres source-of-truth storage.
-- Tune the new quantized int8 backend so compression does not cost more latency
-  than exact NumPy on common workloads.
+- Tune the quantized int8 backend so compression does not cost more latency than
+  exact NumPy on common workloads.
 - Service-mode Qdrant and FAISS latency baselines using the explicit Qdrant
   backend, not only the standalone Qdrant benchmark baseline.
 - LoCoMo and LongMemEval answer-quality evaluation, not retrieval only.

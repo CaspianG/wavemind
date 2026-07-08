@@ -182,7 +182,7 @@
 <rect x="828.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#e9edf4" />
 <rect x="828.0" y="1456.0" width="170.0" height="12.0" rx="6" fill="#0a7f5a" />
 <text x="1010.0" y="1467.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#0a7f5a">1.00</text>
-<text x="66.0" y="1482.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 6.49 ms; int8 24.92 ms; Annoy 4.92 ms; Qdrant local 43.49 ms.</text>
+<text x="66.0" y="1482.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#344054">Latency at 50000: NumPy 1.99 ms; int8 16.27 ms; Annoy 3.21 ms; Qdrant local 33.82 ms.</text>
 <rect x="40.0" y="1520.0" width="1100.0" height="155.0" rx="10" fill="#ffffff" stroke="#d7deea" />
 <text x="64.0" y="1556.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#111827">Public benchmark roadmap</text>
 <text x="64.0" y="1581.0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="400" fill="#556070">Completed public runs are evidence. Planned rows below are the next proof path, not claimed wins.</text>

@@ -140,6 +140,17 @@ def _quantize_unit_vector(vector: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(normalized * 127.0), -127, 127).astype(np.int8)
 
 
+def _top_score_positions(scores: np.ndarray, top_k: int) -> np.ndarray:
+    scores = np.asarray(scores)
+    if top_k <= 0 or scores.size == 0:
+        return np.array([], dtype=np.int64)
+    limit = min(int(top_k), int(scores.size))
+    if limit == scores.size:
+        return np.argsort(scores)[::-1]
+    candidates = np.argpartition(scores, -limit)[-limit:]
+    return candidates[np.argsort(scores[candidates])[::-1]]
+
+
 def _vector_literal(vector: np.ndarray) -> str:
     normalized = _normalize(vector)
     return json.dumps([float(value) for value in normalized], separators=(",", ":"))
@@ -240,7 +251,7 @@ class NumpyVectorIndex:
             return []
 
         scores = matrix @ query
-        order = np.argsort(scores)[::-1][:top_k]
+        order = _top_score_positions(scores, top_k)
         return [IndexResult(int(ids[int(i)]), float(scores[int(i)])) for i in order]
 
     def __len__(self) -> int:
@@ -259,14 +270,21 @@ class NumpyVectorIndex:
 class QuantizedVectorIndex:
     name = "quantized-int8"
 
-    def __init__(self, vector_dim: int):
+    def __init__(self, vector_dim: int, chunk_rows: int | None = None):
         self.vector_dim = int(vector_dim)
         self._vectors: dict[int, np.ndarray] = {}
         self._ids = np.array([], dtype=np.int64)
         self._id_to_pos: dict[int, int] = {}
-        self._matrix_dtype = np.int16 if self.vector_dim <= 8192 else np.int32
-        self._matrix = np.zeros((0, self.vector_dim), dtype=self._matrix_dtype)
+        self._matrix = np.zeros((0, self.vector_dim), dtype=np.int8)
         self._norms = np.ones((0,), dtype=np.float32)
+        self.chunk_rows = int(
+            chunk_rows
+            if chunk_rows is not None
+            else _env_positive_int("WAVEMIND_QUANTIZED_CHUNK_ROWS", 4096)
+            or 4096
+        )
+        if self.chunk_rows <= 0:
+            raise ValueError("chunk_rows must be positive")
         self._dirty = True
 
     def add(self, id: int, vector: np.ndarray) -> None:
@@ -289,14 +307,14 @@ class QuantizedVectorIndex:
         if not self._vectors:
             self._ids = np.array([], dtype=np.int64)
             self._id_to_pos = {}
-            self._matrix = np.zeros((0, self.vector_dim), dtype=self._matrix_dtype)
+            self._matrix = np.zeros((0, self.vector_dim), dtype=np.int8)
             self._norms = np.ones((0,), dtype=np.float32)
             self._dirty = False
             return
         items = sorted(self._vectors.items())
         self._ids = np.array([id for id, _ in items], dtype=np.int64)
         self._id_to_pos = {int(id): pos for pos, (id, _) in enumerate(items)}
-        self._matrix = np.stack([vector for _, vector in items]).astype(self._matrix_dtype)
+        self._matrix = np.stack([vector for _, vector in items]).astype(np.int8, copy=False)
         norms = np.linalg.norm(self._matrix.astype(np.float32), axis=1)
         self._norms = np.where(norms <= 1e-12, 1.0, norms).astype(np.float32)
         self._dirty = False
@@ -334,10 +352,21 @@ class QuantizedVectorIndex:
         if ids.size == 0:
             return []
 
-        dots = matrix @ query.astype(self._matrix_dtype)
+        dots = self._dot_int32(matrix, query)
         scores = dots.astype(np.float32) / (norms * query_norm)
-        order = np.argsort(scores)[::-1][:top_k]
+        order = _top_score_positions(scores, top_k)
         return [IndexResult(int(ids[int(i)]), float(scores[int(i)])) for i in order]
+
+    def _dot_int32(self, matrix: np.ndarray, query: np.ndarray) -> np.ndarray:
+        query_i32 = np.asarray(query, dtype=np.int32)
+        row_count = int(matrix.shape[0])
+        dots = np.empty((row_count,), dtype=np.int32)
+        chunk_rows = max(1, int(self.chunk_rows))
+        for start in range(0, row_count, chunk_rows):
+            end = min(row_count, start + chunk_rows)
+            chunk = np.asarray(matrix[start:end], dtype=np.int32)
+            dots[start:end] = chunk @ query_i32
+        return dots
 
     def __len__(self) -> int:
         return len(self._vectors)

@@ -25,39 +25,70 @@
         {
           "engine": "WaveMind numpy",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 0.117937000177335,
-          "p95_latency_ms": 0.13620000027003698,
-          "build_ms": 11.751600002753548,
+          "avg_latency_ms": 0.07595600560307503,
+          "p50_latency_ms": 0.05949998740106821,
+          "p95_latency_ms": 0.07349997758865356,
+          "p99_latency_ms": 0.11180003639310598,
+          "max_latency_ms": 1.5860999701544642,
+          "build_ms": 7.099600043147802,
           "queries": 100
         },
         {
           "engine": "WaveMind quantized",
           "recall_at_k": 0.9400000000000001,
-          "avg_latency_ms": 0.4692949998934637,
-          "p95_latency_ms": 0.6250000005820766,
-          "build_ms": 31.12139999939245,
+          "avg_latency_ms": 0.26306400657631457,
+          "p50_latency_ms": 0.23910001618787646,
+          "p95_latency_ms": 0.28899998869746923,
+          "p99_latency_ms": 0.45229995157569647,
+          "max_latency_ms": 1.7365999519824982,
+          "build_ms": 18.61779997125268,
           "queries": 100
         },
         {
           "engine": "WaveMind annoy",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 0.8744410001236247,
-          "p95_latency_ms": 1.3687999999092426,
-          "build_ms": 42.88710000037099,
+          "avg_latency_ms": 0.6987370038405061,
+          "p50_latency_ms": 0.6435500108636916,
+          "p95_latency_ms": 0.9415000677108765,
+          "p99_latency_ms": 1.0915000457316637,
+          "max_latency_ms": 1.1467000003904104,
+          "build_ms": 37.13380009867251,
           "queries": 100
         },
         {
           "engine": "WaveMind faiss",
-          "skipped": true,
-          "reason": "Install faiss-cpu to use FaissVectorIndex"
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 0.04962599836289883,
+          "p50_latency_ms": 0.04800001624971628,
+          "p95_latency_ms": 0.05259993486106396,
+          "p99_latency_ms": 0.09220000356435776,
+          "max_latency_ms": 0.13310008216649294,
+          "build_ms": 10.644599911756814,
+          "queries": 100
         },
         {
           "engine": "Qdrant local",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 1.1434049997114926,
-          "p95_latency_ms": 1.8026999969151802,
-          "build_ms": 263.6117000001832,
-          "queries": 100
+          "avg_latency_ms": 0.8040050009731203,
+          "p50_latency_ms": 0.7041999488137662,
+          "p95_latency_ms": 1.0240001138299704,
+          "p99_latency_ms": 1.6585999401286244,
+          "max_latency_ms": 5.690200021490455,
+          "build_ms": 161.27919999416918,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
         }
       ]
     },
@@ -71,39 +102,70 @@
         {
           "engine": "WaveMind numpy",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 0.6051969998225104,
-          "p95_latency_ms": 0.6475000009231735,
-          "build_ms": 53.394200000184355,
+          "avg_latency_ms": 0.35721200169064105,
+          "p50_latency_ms": 0.2813000464811921,
+          "p95_latency_ms": 0.358999939635396,
+          "p99_latency_ms": 0.4211000632494688,
+          "max_latency_ms": 7.111200015060604,
+          "build_ms": 39.31420005392283,
           "queries": 100
         },
         {
           "engine": "WaveMind quantized",
           "recall_at_k": 0.95,
-          "avg_latency_ms": 2.3824250000325264,
-          "p95_latency_ms": 3.3121999986178707,
-          "build_ms": 160.35290000218083,
+          "avg_latency_ms": 1.5574340079911053,
+          "p50_latency_ms": 1.4502000412903726,
+          "p95_latency_ms": 1.8584000645205379,
+          "p99_latency_ms": 2.443399978801608,
+          "max_latency_ms": 8.333100005984306,
+          "build_ms": 104.80279999319464,
           "queries": 100
         },
         {
           "engine": "WaveMind annoy",
           "recall_at_k": 0.996,
-          "avg_latency_ms": 1.7335370000000694,
-          "p95_latency_ms": 2.2869999993417878,
-          "build_ms": 229.0060999985144,
+          "avg_latency_ms": 1.5072849940042943,
+          "p50_latency_ms": 1.4836500049568713,
+          "p95_latency_ms": 1.7509999452158809,
+          "p99_latency_ms": 1.8991000251844525,
+          "max_latency_ms": 2.269799937494099,
+          "build_ms": 188.46550001762807,
           "queries": 100
         },
         {
           "engine": "WaveMind faiss",
-          "skipped": true,
-          "reason": "Install faiss-cpu to use FaissVectorIndex"
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 0.18677999381907284,
+          "p50_latency_ms": 0.18669996643438935,
+          "p95_latency_ms": 0.2429999876767397,
+          "p99_latency_ms": 0.421399949118495,
+          "max_latency_ms": 0.4832000704482198,
+          "build_ms": 62.46619997546077,
+          "queries": 100
         },
         {
           "engine": "Qdrant local",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 6.291531999995641,
-          "p95_latency_ms": 8.143300001393072,
-          "build_ms": 2051.9357999983185,
-          "queries": 100
+          "avg_latency_ms": 4.117578993318602,
+          "p50_latency_ms": 3.897900052834302,
+          "p95_latency_ms": 5.119999987073243,
+          "p99_latency_ms": 6.922499975189567,
+          "max_latency_ms": 9.262699983082712,
+          "build_ms": 825.0551000237465,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
         }
       ]
     },
@@ -117,39 +179,70 @@
         {
           "engine": "WaveMind numpy",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 2.3119790002238005,
-          "p95_latency_ms": 2.422000001388369,
-          "build_ms": 112.44310000256519,
+          "avg_latency_ms": 0.5906269967090338,
+          "p50_latency_ms": 0.3672500024549663,
+          "p95_latency_ms": 0.5242000333964825,
+          "p99_latency_ms": 3.9077000692486763,
+          "max_latency_ms": 18.879400100558996,
+          "build_ms": 87.83640002366155,
           "queries": 100
         },
         {
           "engine": "WaveMind quantized",
           "recall_at_k": 0.953,
-          "avg_latency_ms": 3.588376999941829,
-          "p95_latency_ms": 4.798000001756009,
-          "build_ms": 267.42599999852246,
+          "avg_latency_ms": 2.9674290015827864,
+          "p50_latency_ms": 2.780949987936765,
+          "p95_latency_ms": 3.4424999030306935,
+          "p99_latency_ms": 3.67600005120039,
+          "max_latency_ms": 17.7232000278309,
+          "build_ms": 211.91010007169098,
           "queries": 100
         },
         {
           "engine": "WaveMind annoy",
           "recall_at_k": 0.979,
-          "avg_latency_ms": 3.462477000139188,
-          "p95_latency_ms": 6.235900000319816,
-          "build_ms": 695.7647999988694,
+          "avg_latency_ms": 1.456581006059423,
+          "p50_latency_ms": 1.4446999412029982,
+          "p95_latency_ms": 1.5810000477358699,
+          "p99_latency_ms": 1.6918000765144825,
+          "max_latency_ms": 2.0129000768065453,
+          "build_ms": 357.5953000690788,
           "queries": 100
         },
         {
           "engine": "WaveMind faiss",
-          "skipped": true,
-          "reason": "Install faiss-cpu to use FaissVectorIndex"
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 0.26594600290991366,
+          "p50_latency_ms": 0.25540002388879657,
+          "p95_latency_ms": 0.33089995849877596,
+          "p99_latency_ms": 0.4320000298321247,
+          "max_latency_ms": 0.5633000982925296,
+          "build_ms": 81.17130002938211,
+          "queries": 100
         },
         {
           "engine": "Qdrant local",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 11.520437000326638,
-          "p95_latency_ms": 13.816799997584894,
-          "build_ms": 3809.156900002563,
-          "queries": 100
+          "avg_latency_ms": 7.2369900066405535,
+          "p50_latency_ms": 7.065399957355112,
+          "p95_latency_ms": 8.30149999819696,
+          "p99_latency_ms": 9.440500056371093,
+          "max_latency_ms": 9.488200070336461,
+          "build_ms": 1493.760299985297,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
         }
       ]
     },
@@ -163,39 +256,70 @@
         {
           "engine": "WaveMind numpy",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 6.485460000003513,
-          "p95_latency_ms": 6.407600001693936,
-          "build_ms": 744.6611000013945,
+          "avg_latency_ms": 1.9876310043036938,
+          "p50_latency_ms": 1.279100019019097,
+          "p95_latency_ms": 1.450899988412857,
+          "p99_latency_ms": 1.6322999726980925,
+          "max_latency_ms": 71.51729997713119,
+          "build_ms": 395.1167000923306,
           "queries": 100
         },
         {
           "engine": "WaveMind quantized",
           "recall_at_k": 0.934,
-          "avg_latency_ms": 24.921987000016088,
-          "p95_latency_ms": 37.360799997259164,
-          "build_ms": 2088.689999996859,
+          "avg_latency_ms": 16.27182200201787,
+          "p50_latency_ms": 14.581599971279502,
+          "p95_latency_ms": 20.146299968473613,
+          "p99_latency_ms": 28.186500072479248,
+          "max_latency_ms": 88.94620009232312,
+          "build_ms": 1019.3325000582263,
           "queries": 100
         },
         {
           "engine": "WaveMind annoy",
           "recall_at_k": 0.73,
-          "avg_latency_ms": 4.92407000008825,
-          "p95_latency_ms": 7.37469999876339,
-          "build_ms": 4090.066400000069,
+          "avg_latency_ms": 3.2078870048280805,
+          "p50_latency_ms": 3.030699968803674,
+          "p95_latency_ms": 4.169699968770146,
+          "p99_latency_ms": 4.4126000721007586,
+          "max_latency_ms": 4.927200032398105,
+          "build_ms": 2300.294000073336,
           "queries": 100
         },
         {
           "engine": "WaveMind faiss",
-          "skipped": true,
-          "reason": "Install faiss-cpu to use FaissVectorIndex"
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 80.46680200728588,
+          "p50_latency_ms": 1.9745000172406435,
+          "p95_latency_ms": 2.420600038021803,
+          "p99_latency_ms": 3.872399916872382,
+          "max_latency_ms": 7849.012400023639,
+          "build_ms": 458.27229996211827,
+          "queries": 100
         },
         {
           "engine": "Qdrant local",
           "recall_at_k": 1.0,
-          "avg_latency_ms": 43.48527499991178,
-          "p95_latency_ms": 59.675500000594184,
-          "build_ms": 17525.668000002042,
-          "queries": 100
+          "avg_latency_ms": 33.81783399381675,
+          "p50_latency_ms": 32.77665004134178,
+          "p95_latency_ms": 39.21920002903789,
+          "p99_latency_ms": 44.43959996569902,
+          "max_latency_ms": 46.05840006843209,
+          "build_ms": 8336.758799967356,
+          "queries": 100,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "search_params": {
+            "hnsw_ef": null,
+            "exact": false
+          },
+          "collection_params": {
+            "hnsw": {},
+            "optimizers": {},
+            "vector_on_disk": null,
+            "on_disk_payload": null,
+            "shard_number": null
+          }
         }
       ]
     }

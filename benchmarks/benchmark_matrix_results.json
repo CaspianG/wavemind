@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-08T20:14:01Z",
-  "source_ref": "f9355da0bb39",
+  "generated_at": "2026-07-08T23:05:35Z",
+  "source_ref": "432a6c48167a",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -623,31 +623,38 @@
       "current": {
         "WaveMind numpy": {
           "recall_at_k": 1.0,
-          "avg_latency_ms": 6.485460000003513,
-          "p95_latency_ms": 6.407600001693936,
-          "build_ms": 744.6611000013945
+          "avg_latency_ms": 1.9876310043036938,
+          "p95_latency_ms": 1.450899988412857,
+          "p99_latency_ms": 1.6322999726980925,
+          "build_ms": 395.1167000923306
         },
         "WaveMind quantized": {
           "recall_at_k": 0.934,
-          "avg_latency_ms": 24.921987000016088,
-          "p95_latency_ms": 37.360799997259164,
-          "build_ms": 2088.689999996859
+          "avg_latency_ms": 16.27182200201787,
+          "p95_latency_ms": 20.146299968473613,
+          "p99_latency_ms": 28.186500072479248,
+          "build_ms": 1019.3325000582263
         },
         "WaveMind annoy": {
           "recall_at_k": 0.73,
-          "avg_latency_ms": 4.92407000008825,
-          "p95_latency_ms": 7.37469999876339,
-          "build_ms": 4090.066400000069
+          "avg_latency_ms": 3.2078870048280805,
+          "p95_latency_ms": 4.169699968770146,
+          "p99_latency_ms": 4.4126000721007586,
+          "build_ms": 2300.294000073336
         },
         "WaveMind faiss": {
-          "skipped": true,
-          "reason": "Install faiss-cpu to use FaissVectorIndex"
+          "recall_at_k": 1.0,
+          "avg_latency_ms": 80.46680200728588,
+          "p95_latency_ms": 2.420600038021803,
+          "p99_latency_ms": 3.872399916872382,
+          "build_ms": 458.27229996211827
         },
         "Qdrant local": {
           "recall_at_k": 1.0,
-          "avg_latency_ms": 43.48527499991178,
-          "p95_latency_ms": 59.675500000594184,
-          "build_ms": 17525.668000002042
+          "avg_latency_ms": 33.81783399381675,
+          "p95_latency_ms": 39.21920002903789,
+          "p99_latency_ms": 44.43959996569902,
+          "build_ms": 8336.758799967356
         }
       },
       "target": "At 50000 vectors, keep recall@10 above 0.95 while reducing latency below exact NumPy or move this role to a production vector index.",

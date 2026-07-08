@@ -167,6 +167,35 @@ def test_quantized_vector_index_returns_cosine_neighbors_with_filters():
     assert filtered_results[0].score > filtered_results[1].score
 
 
+def test_quantized_vector_index_uses_int8_storage_and_int32_accumulator():
+    index = QuantizedVectorIndex(vector_dim=8192, chunk_rows=512)
+    records = [
+        SimpleNamespace(id=1, vector=np.ones(8192, dtype=np.float32)),
+        SimpleNamespace(
+            id=2,
+            vector=np.concatenate(
+                [
+                    np.ones(4096, dtype=np.float32),
+                    -np.ones(4096, dtype=np.float32),
+                ]
+            ),
+        ),
+    ]
+
+    index.build(records)
+    results = index.search(np.ones(8192, dtype=np.float32), top_k=2)
+    overflow_probe = index._dot_int32(
+        np.full((1, 8192), 127, dtype=np.int8),
+        np.full((8192,), 127, dtype=np.int8),
+    )
+
+    assert index._matrix.dtype == np.int8
+    assert overflow_probe.dtype == np.int32
+    assert int(overflow_probe[0]) == 127 * 127 * 8192
+    assert [result.id for result in results] == [1, 2]
+    assert results[0].score > 0.99
+
+
 def test_index_factory_creates_explicit_quantized_backend():
     index = create_vector_index("quantized", vector_dim=4)
     alias = create_vector_index("int8", vector_dim=4)
