@@ -422,6 +422,23 @@ class ForgetResponse(BaseModel):
     deleted: int
 
 
+class ForgetBatchRequest(BaseModel):
+    items: list[ForgetRequest] = Field(default_factory=list)
+
+
+class ForgetBatchItemResponse(BaseModel):
+    index: int
+    namespace: str | None = None
+    deleted: int
+
+
+class ForgetBatchResponse(BaseModel):
+    count: int
+    deleted: int
+    cache_invalidated: int = 0
+    items: list[ForgetBatchItemResponse]
+
+
 class FeedbackRequest(BaseModel):
     id: int
     namespace: str | None = None
@@ -526,6 +543,21 @@ class MemoryTombstoneRequest(BaseModel):
 
 class MemoryTombstoneWriteResponse(BaseModel):
     id: int
+
+
+class MemoryTombstoneBatchRequest(BaseModel):
+    items: list[MemoryTombstoneRequest] = Field(default_factory=list)
+
+
+class MemoryTombstoneBatchItemResponse(BaseModel):
+    index: int
+    namespace: str
+    id: int
+
+
+class MemoryTombstoneBatchWriteResponse(BaseModel):
+    count: int
+    items: list[MemoryTombstoneBatchItemResponse]
 
 
 class NamespaceDeltaExportRequest(BaseModel):
@@ -1201,6 +1233,63 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
         logger.info("forgot deleted=%s namespace=%s cache_invalidated=%s", deleted, payload.namespace, invalidated)
         return ForgetResponse(deleted=deleted)
 
+    @app.post(
+        "/forget/batch",
+        response_model=ForgetBatchResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def forget_batch(request: ForgetBatchRequest) -> ForgetBatchResponse:
+        if not request.items:
+            raise HTTPException(status_code=400, detail="forget batch must contain at least one item")
+        max_items = int(os.environ.get("WAVEMIND_FORGET_BATCH_MAX_ITEMS", "1000") or "1000")
+        if len(request.items) > max_items:
+            raise HTTPException(
+                status_code=413,
+                detail=f"forget batch exceeds WAVEMIND_FORGET_BATCH_MAX_ITEMS={max_items}",
+            )
+        items: list[ForgetBatchItemResponse] = []
+        invalidated_namespaces: set[str | None] = set()
+        with _api_operation(app, "forget_batch"):
+            for index, item in enumerate(request.items):
+                if item.id is None and item.text is None:
+                    raise HTTPException(status_code=400, detail=f"forget batch item {index} requires id or text")
+                forget_result = app.state.mind.forget(
+                    id=item.id,
+                    text=item.text,
+                    namespace=item.namespace,
+                )
+                deleted = _forget_response_deleted(forget_result)
+                if deleted:
+                    invalidated_namespaces.add(item.namespace)
+                items.append(
+                    ForgetBatchItemResponse(
+                        index=index,
+                        namespace=item.namespace,
+                        deleted=deleted,
+                    )
+                )
+            invalidated = sum(
+                _invalidate_cache(app, namespace)
+                for namespace in sorted(
+                    invalidated_namespaces,
+                    key=lambda value: "" if value is None else value,
+                )
+            )
+        total_deleted = sum(item.deleted for item in items)
+        logger.info(
+            "forget_batch count=%s deleted=%s namespaces=%s cache_invalidated=%s",
+            len(items),
+            total_deleted,
+            len(invalidated_namespaces),
+            invalidated,
+        )
+        return ForgetBatchResponse(
+            count=len(items),
+            deleted=total_deleted,
+            cache_invalidated=invalidated,
+            items=items,
+        )
+
     @app.get("/stats", dependencies=[Depends(require_role("read"))])
     def stats(namespace: str | None = None):
         return app.state.mind.stats(namespace=namespace)
@@ -1279,6 +1368,47 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 },
             )
         return MemoryTombstoneWriteResponse(id=event_id)
+
+    @app.post(
+        "/memories/tombstone/batch",
+        response_model=MemoryTombstoneBatchWriteResponse,
+        dependencies=[Depends(require_role("admin"))],
+    )
+    def write_memory_tombstone_batch(
+        request: MemoryTombstoneBatchRequest,
+    ) -> MemoryTombstoneBatchWriteResponse:
+        if not request.items:
+            raise HTTPException(status_code=400, detail="tombstone batch must contain at least one item")
+        max_items = int(os.environ.get("WAVEMIND_TOMBSTONE_BATCH_MAX_ITEMS", "1000") or "1000")
+        if len(request.items) > max_items:
+            raise HTTPException(
+                status_code=413,
+                detail=f"tombstone batch exceeds WAVEMIND_TOMBSTONE_BATCH_MAX_ITEMS={max_items}",
+            )
+        items: list[MemoryTombstoneBatchItemResponse] = []
+        with _api_operation(app, "memories_tombstone_batch"):
+            for index, item in enumerate(request.items):
+                if not item.record_keys and not item.texts:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"tombstone batch item {index} requires record_keys or texts",
+                    )
+                event_id = app.state.mind.store.log_audit_event(
+                    "distributed_tombstone",
+                    namespace=item.namespace,
+                    metadata={
+                        "record_keys": sorted(set(item.record_keys)),
+                        "texts": sorted(set(item.texts)),
+                    },
+                )
+                items.append(
+                    MemoryTombstoneBatchItemResponse(
+                        index=index,
+                        namespace=item.namespace,
+                        id=event_id,
+                    )
+                )
+        return MemoryTombstoneBatchWriteResponse(count=len(items), items=items)
 
     @app.post("/namespace-delta/export", dependencies=[Depends(require_role("admin"))])
     def export_namespace_delta(request: NamespaceDeltaExportRequest) -> dict[str, Any]:

@@ -225,6 +225,51 @@ class DistributedForgetResult:
 
 
 @dataclass(frozen=True)
+class DistributedForgetBatchResult:
+    results: tuple[DistributedForgetResult, ...]
+    forget_http_requests: int = 0
+    individual_forget_http_requests: int = 0
+    tombstone_http_requests: int = 0
+    individual_tombstone_http_requests: int = 0
+
+    @property
+    def ok(self) -> bool:
+        return all(result.ok for result in self.results)
+
+    @property
+    def total_http_requests(self) -> int:
+        return int(self.forget_http_requests) + int(self.tombstone_http_requests)
+
+    @property
+    def individual_total_http_requests(self) -> int:
+        return int(self.individual_forget_http_requests) + int(
+            self.individual_tombstone_http_requests
+        )
+
+    @property
+    def request_reduction_ratio(self) -> float:
+        if self.individual_total_http_requests <= 0:
+            return 0.0
+        return 1.0 - (
+            float(self.total_http_requests)
+            / float(self.individual_total_http_requests)
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "items": [result.as_dict() for result in self.results],
+            "forget_http_requests": self.forget_http_requests,
+            "individual_forget_http_requests": self.individual_forget_http_requests,
+            "tombstone_http_requests": self.tombstone_http_requests,
+            "individual_tombstone_http_requests": self.individual_tombstone_http_requests,
+            "total_http_requests": self.total_http_requests,
+            "individual_total_http_requests": self.individual_total_http_requests,
+            "request_reduction_ratio": self.request_reduction_ratio,
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class DistributedQueryBatchResult:
     results: tuple[tuple[QueryResult, ...], ...]
     failed_nodes: tuple[dict[str, str], ...] = field(default_factory=tuple)
@@ -433,6 +478,27 @@ class HTTPNamespaceShardClient:
         response = self._request("DELETE", address, "/forget", payload)
         return int(response["deleted"])
 
+    def forget_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        payload = {"items": items}
+        response = self._request("POST", address, "/forget/batch", payload)
+        return {
+            "count": int(response.get("count", 0)),
+            "deleted": int(response.get("deleted", 0)),
+            "items": [
+                {
+                    "index": int(item.get("index", index)),
+                    "namespace": item.get("namespace"),
+                    "deleted": int(item.get("deleted", 0)),
+                }
+                for index, item in enumerate(response.get("items", []))
+            ],
+        }
+
     def export_namespace(
         self,
         address: str,
@@ -485,6 +551,26 @@ class HTTPNamespaceShardClient:
         }
         response = self._request("POST", address, "/memories/tombstone", payload)
         return int(response["id"])
+
+    def log_tombstone_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        payload = {"items": items}
+        response = self._request("POST", address, "/memories/tombstone/batch", payload)
+        return {
+            "count": int(response.get("count", 0)),
+            "items": [
+                {
+                    "index": int(item.get("index", index)),
+                    "namespace": item.get("namespace"),
+                    "id": int(item["id"]),
+                }
+                for index, item in enumerate(response.get("items", []))
+            ],
+        }
 
     def export_namespace_delta(
         self,
@@ -1048,6 +1134,186 @@ class DistributedShardedWaveMind:
             deletes=deletes,
             failed_nodes=failed,
             write_quorum=self.write_quorum,
+        )
+
+    def forget_batch(
+        self,
+        items: list[dict[str, Any]],
+    ) -> DistributedForgetBatchResult:
+        if not items:
+            return DistributedForgetBatchResult(
+                results=(),
+                forget_http_requests=0,
+                individual_forget_http_requests=0,
+                tombstone_http_requests=0,
+                individual_tombstone_http_requests=0,
+            )
+
+        normalized: list[dict[str, Any]] = []
+        placements: list[NamespacePlacement] = []
+        tombstone_targets: list[tuple[set[str], set[str]]] = []
+        deletes_by_index: list[dict[str, int]] = [{} for _ in items]
+        failed_by_index: list[dict[str, str]] = [{} for _ in items]
+        by_node: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+
+        for index, raw_item in enumerate(items):
+            namespace = str(raw_item.get("namespace", "default"))
+            raw_id = raw_item.get("id")
+            raw_text = raw_item.get("text")
+            id_value = int(raw_id) if raw_id is not None else None
+            text_value = str(raw_text) if raw_text is not None else None
+            if id_value is None and text_value is None:
+                raise ValueError("forget batch items require id or text")
+            item = {
+                "namespace": namespace,
+                "id": id_value,
+                "text": text_value,
+            }
+            normalized.append(item)
+            placement = self.placement(namespace)
+            placements.append(placement)
+            tombstone_targets.append(
+                self._resolve_tombstone_targets(
+                    placement,
+                    namespace,
+                    id=id_value,
+                    text=text_value,
+                )
+            )
+            for node_id in placement.replicas:
+                if not self._available.get(node_id, False):
+                    failed_by_index[index][node_id] = "node unavailable"
+                    continue
+                by_node.setdefault(node_id, []).append((index, item))
+
+        forget_http_requests = 0
+        tombstone_http_requests = 0
+        for node_id, node_items in by_node.items():
+            address = self._address(node_id)
+            try:
+                forget_batch = getattr(self.client, "forget_batch", None)
+                if callable(forget_batch):
+                    response = forget_batch(
+                        address,
+                        items=[item for _, item in node_items],
+                    )
+                    forget_http_requests += 1
+                else:
+                    response_items = []
+                    for local_index, item in enumerate(item for _, item in node_items):
+                        response_items.append(
+                            {
+                                "index": local_index,
+                                "namespace": item["namespace"],
+                                "deleted": self.client.forget(
+                                    address,
+                                    namespace=str(item["namespace"]),
+                                    id=item.get("id"),
+                                    text=item.get("text"),
+                                ),
+                            }
+                        )
+                        forget_http_requests += 1
+                    response = {
+                        "count": len(response_items),
+                        "items": response_items,
+                    }
+
+                seen_local_indexes: set[int] = set()
+                for item in response.get("items", []):
+                    local_index = int(item.get("index", len(seen_local_indexes)))
+                    if local_index < 0 or local_index >= len(node_items):
+                        continue
+                    seen_local_indexes.add(local_index)
+                    original_index, _ = node_items[local_index]
+                    deletes_by_index[original_index][node_id] = int(
+                        item.get("deleted", 0)
+                    )
+                missing_local_indexes = set(range(len(node_items))) - seen_local_indexes
+                for local_index in missing_local_indexes:
+                    original_index, _ = node_items[local_index]
+                    failed_by_index[original_index][node_id] = "batch item missing"
+
+                tombstones_by_namespace: dict[str, dict[str, set[str]]] = {}
+                for original_index, item in node_items:
+                    keys, texts = tombstone_targets[original_index]
+                    if not keys and not texts:
+                        continue
+                    namespace = str(item["namespace"])
+                    group = tombstones_by_namespace.setdefault(
+                        namespace,
+                        {"record_keys": set(), "texts": set()},
+                    )
+                    group["record_keys"].update(keys)
+                    group["texts"].update(texts)
+
+                tombstone_items = [
+                    {
+                        "namespace": namespace,
+                        "record_keys": sorted(payload["record_keys"]),
+                        "texts": sorted(payload["texts"]),
+                    }
+                    for namespace, payload in sorted(tombstones_by_namespace.items())
+                    if payload["record_keys"] or payload["texts"]
+                ]
+                if tombstone_items:
+                    log_tombstone_batch = getattr(self.client, "log_tombstone_batch", None)
+                    if callable(log_tombstone_batch):
+                        log_tombstone_batch(address, items=tombstone_items)
+                        tombstone_http_requests += 1
+                    else:
+                        for item in tombstone_items:
+                            self.client.log_tombstone(
+                                address,
+                                namespace=str(item["namespace"]),
+                                record_keys=tuple(item["record_keys"]),
+                                texts=tuple(item["texts"]),
+                            )
+                            tombstone_http_requests += 1
+                self._mark_node_success(node_id)
+            except Exception as exc:  # pragma: no cover - service boundary
+                self._mark_node_failure(node_id, exc)
+                for original_index, _ in node_items:
+                    failed_by_index[original_index][node_id] = str(exc)
+                continue
+
+        results: list[DistributedForgetResult] = []
+        for index, item in enumerate(normalized):
+            deletes = deletes_by_index[index]
+            failed = failed_by_index[index]
+            namespace = str(item["namespace"])
+            placement = placements[index]
+            if len(deletes) < self.write_quorum:
+                raise DistributedWriteQuorumError(
+                    f"Forget quorum {self.write_quorum} was not reached for "
+                    f"batch item {index} in namespace {namespace!r}; "
+                    f"successful writes: {len(deletes)}; failures: {failed}"
+                )
+            results.append(
+                DistributedForgetResult(
+                    namespace=namespace,
+                    primary_node=placement.primary,
+                    deletes=dict(deletes),
+                    failed_nodes=dict(failed),
+                    write_quorum=self.write_quorum,
+                )
+            )
+
+        individual_forget_http_requests = sum(
+            len(placement.replicas)
+            for placement in placements
+        )
+        individual_tombstone_http_requests = sum(
+            len(placements[index].replicas)
+            for index, (keys, texts) in enumerate(tombstone_targets)
+            if keys or texts
+        )
+        return DistributedForgetBatchResult(
+            results=tuple(results),
+            forget_http_requests=forget_http_requests,
+            individual_forget_http_requests=individual_forget_http_requests,
+            tombstone_http_requests=tombstone_http_requests,
+            individual_tombstone_http_requests=individual_tombstone_http_requests,
         )
 
     def repair_namespace(

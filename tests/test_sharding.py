@@ -6,6 +6,7 @@ from wavemind import (
     ClusterNode,
     DistributedShardedWaveMind,
     DistributedWriteQuorumError,
+    DistributedForgetBatchResult,
     HashingTextEncoder,
     HTTPNamespaceShardClient,
     DistributedRepairReport,
@@ -135,6 +136,31 @@ class LocalWaveMindServiceClient:
     ) -> int:
         return self._mind(address).forget(id=id, text=text, namespace=namespace)
 
+    def forget_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict],
+    ):
+        response_items = []
+        for index, item in enumerate(items):
+            response_items.append(
+                {
+                    "index": index,
+                    "namespace": item.get("namespace", "default"),
+                    "deleted": self._mind(address).forget(
+                        id=item.get("id"),
+                        text=item.get("text"),
+                        namespace=item.get("namespace", "default"),
+                    ),
+                }
+            )
+        return {
+            "count": len(response_items),
+            "deleted": sum(item["deleted"] for item in response_items),
+            "items": response_items,
+        }
+
     def export_namespace(
         self,
         address: str,
@@ -207,6 +233,21 @@ class LocalWaveMindServiceClient:
         record_keys=(),
         texts=(),
     ) -> int:
+        return self._log_tombstone_event(
+            address,
+            namespace=namespace,
+            record_keys=record_keys,
+            texts=texts,
+        )
+
+    def _log_tombstone_event(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        record_keys=(),
+        texts=(),
+    ) -> int:
         return self._mind(address).store.log_audit_event(
             "distributed_tombstone",
             namespace=namespace,
@@ -215,6 +256,28 @@ class LocalWaveMindServiceClient:
                 "texts": sorted(texts),
             },
         )
+
+    def log_tombstone_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict],
+    ):
+        response_items = []
+        for index, item in enumerate(items):
+            response_items.append(
+                {
+                    "index": index,
+                    "namespace": item["namespace"],
+                    "id": self._log_tombstone_event(
+                        address,
+                        namespace=item["namespace"],
+                        record_keys=tuple(item.get("record_keys", ())),
+                        texts=tuple(item.get("texts", ())),
+                    ),
+                }
+            )
+        return {"count": len(response_items), "items": response_items}
 
     def close(self):
         for mind in self.minds.values():
@@ -630,6 +693,85 @@ def test_distributed_sharded_wavemind_batch_query_honors_tombstones(tmp_path):
             result.text == "batch tombstone surviving memory"
             for result in surviving_results
         )
+    finally:
+        client.close()
+
+
+def test_distributed_sharded_wavemind_batches_forgets_and_tombstones(tmp_path):
+    class CountingClient(LocalWaveMindServiceClient):
+        def __init__(self, tmp_path):
+            super().__init__(tmp_path)
+            self.forget_addresses = []
+            self.forget_batch_addresses = []
+            self.tombstone_addresses = []
+            self.tombstone_batch_addresses = []
+
+        def forget(self, address, **kwargs):
+            self.forget_addresses.append(address)
+            return super().forget(address, **kwargs)
+
+        def forget_batch(self, address, **kwargs):
+            self.forget_batch_addresses.append(address)
+            return super().forget_batch(address, **kwargs)
+
+        def log_tombstone(self, address, **kwargs):
+            self.tombstone_addresses.append(address)
+            return super().log_tombstone(address, **kwargs)
+
+        def log_tombstone_batch(self, address, **kwargs):
+            self.tombstone_batch_addresses.append(address)
+            return super().log_tombstone_batch(address, **kwargs)
+
+    client = CountingClient(tmp_path / "services")
+    memory = DistributedShardedWaveMind(
+        nodes=["node-a", "node-b", "node-c"],
+        replication_factor=3,
+        write_quorum=2,
+        read_quorum=1,
+        read_fanout=1,
+        client=client,
+    )
+    try:
+        namespace = "tenant:forget-batch"
+        for item in range(4):
+            memory.remember(
+                f"batch forget memory item {item}",
+                namespace=namespace,
+                tags=("batch",),
+            )
+
+        batch = memory.forget_batch(
+            [
+                {
+                    "text": f"batch forget memory item {item}",
+                    "namespace": namespace,
+                }
+                for item in range(4)
+            ]
+        )
+
+        assert isinstance(batch, DistributedForgetBatchResult)
+        assert batch.ok
+        assert len(batch.results) == 4
+        assert all(len(result.deletes) == 3 for result in batch.results)
+        assert all(result.deleted == 3 for result in batch.results)
+        assert len(client.forget_batch_addresses) == 3
+        assert client.forget_addresses == []
+        assert len(client.tombstone_batch_addresses) == 3
+        assert client.tombstone_addresses == []
+        assert batch.forget_http_requests == 3
+        assert batch.individual_forget_http_requests == 12
+        assert batch.tombstone_http_requests == 3
+        assert batch.individual_tombstone_http_requests == 12
+        assert batch.request_reduction_ratio == pytest.approx(0.75)
+
+        results = memory.query(
+            "batch forget memory",
+            namespace=namespace,
+            top_k=4,
+            tags=("batch",),
+        )
+        assert results == []
     finally:
         client.close()
 

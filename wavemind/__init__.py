@@ -181,6 +181,7 @@ from .serverless import (
 )
 from .sharding import (
     DistributedForgetResult,
+    DistributedForgetBatchResult,
     DistributedQueryBatchResult,
     DistributedRememberBatchResult,
     DistributedReadQuorumError,
@@ -234,6 +235,7 @@ __all__ = [
     "DistributedRepairJobReport",
     "DistributedRepairWorker",
     "DistributedForgetResult",
+    "DistributedForgetBatchResult",
     "DistributedQueryBatchResult",
     "DistributedRememberBatchResult",
     "DistributedReadQuorumError",

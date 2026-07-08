@@ -291,6 +291,32 @@ class LocalWaveMindServiceClient:
             namespace=namespace,
         )
 
+    def forget_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict[str, object]],
+    ) -> dict[str, object]:
+        response_items = []
+        for index, item in enumerate(items):
+            response_items.append(
+                {
+                    "index": index,
+                    "namespace": item.get("namespace", "default"),
+                    "deleted": self.forget(
+                        address,
+                        namespace=str(item.get("namespace", "default")),
+                        id=item.get("id"),  # type: ignore[arg-type]
+                        text=item.get("text"),  # type: ignore[arg-type]
+                    ),
+                }
+            )
+        return {
+            "count": len(response_items),
+            "deleted": sum(int(item["deleted"]) for item in response_items),
+            "items": response_items,
+        }
+
     def export_namespace(
         self,
         address: str,
@@ -363,6 +389,21 @@ class LocalWaveMindServiceClient:
         record_keys: tuple[str, ...] = (),
         texts: tuple[str, ...] = (),
     ) -> int:
+        return self._log_tombstone_event(
+            address,
+            namespace=namespace,
+            record_keys=record_keys,
+            texts=texts,
+        )
+
+    def _log_tombstone_event(
+        self,
+        address: str,
+        *,
+        namespace: str,
+        record_keys: tuple[str, ...] = (),
+        texts: tuple[str, ...] = (),
+    ) -> int:
         return self._mind(address).store.log_audit_event(
             "distributed_tombstone",
             namespace=namespace,
@@ -371,6 +412,28 @@ class LocalWaveMindServiceClient:
                 "texts": sorted(texts),
             },
         )
+
+    def log_tombstone_batch(
+        self,
+        address: str,
+        *,
+        items: list[dict[str, object]],
+    ) -> dict[str, object]:
+        response_items = []
+        for index, item in enumerate(items):
+            response_items.append(
+                {
+                    "index": index,
+                    "namespace": item["namespace"],
+                    "id": self._log_tombstone_event(
+                        address,
+                        namespace=str(item["namespace"]),
+                        record_keys=tuple(item.get("record_keys", ())),  # type: ignore[arg-type]
+                        texts=tuple(item.get("texts", ())),  # type: ignore[arg-type]
+                    ),
+                }
+            )
+        return {"count": len(response_items), "items": response_items}
 
     def close(self) -> None:
         for mind in self.minds.values():
@@ -2613,21 +2676,27 @@ def run_sustained_http_cluster_workload(
         errors.append(f"repair {repair_namespace}: {exc}")
 
     deleted_tasks = [(namespace, texts[namespace][-1]) for namespace in namespaces]
-
-    def forget_one(task: tuple[str, str]) -> bool:
-        namespace, text = task
-        op_started = time.perf_counter()
-        try:
-            result = memory.forget(namespace=namespace, text=text)
-            return result.deleted >= memory.write_quorum
-        except Exception as exc:  # pragma: no cover - service boundary
-            errors.append(f"forget {namespace}: {exc}")
-            return False
-        finally:
-            forget_latencies.append((time.perf_counter() - op_started) * 1000.0)
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        forget_results = list(pool.map(forget_one, deleted_tasks))
+    forget_batch_report = None
+    forget_started = time.perf_counter()
+    try:
+        forget_batch_report = memory.forget_batch(
+            [
+                {
+                    "namespace": namespace,
+                    "text": text,
+                }
+                for namespace, text in deleted_tasks
+            ]
+        )
+        forget_results = [
+            result.deleted >= memory.write_quorum
+            for result in forget_batch_report.results
+        ]
+    except Exception as exc:  # pragma: no cover - service boundary
+        errors.append(f"forget batch: {exc}")
+        forget_results = [False for _ in deleted_tasks]
+    finally:
+        forget_latencies.append((time.perf_counter() - forget_started) * 1000.0)
 
     deletion_suppression, delete_batch_report = batch_query_tasks(
         deleted_tasks,
@@ -2709,6 +2778,42 @@ def run_sustained_http_cluster_workload(
         "query_batch_request_reduction_ratio": (
             float(getattr(query_batch_report, "request_reduction_ratio", 0.0))
             if query_batch_report is not None
+            else 0.0
+        ),
+        "forget_batches": int(forget_batch_report is not None),
+        "forget_batch_http_requests": (
+            int(getattr(forget_batch_report, "forget_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "forget_batch_individual_http_requests": (
+            int(getattr(forget_batch_report, "individual_forget_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "tombstone_batch_http_requests": (
+            int(getattr(forget_batch_report, "tombstone_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "tombstone_batch_individual_http_requests": (
+            int(getattr(forget_batch_report, "individual_tombstone_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "forget_tombstone_batch_http_requests": (
+            int(getattr(forget_batch_report, "total_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "forget_tombstone_batch_individual_http_requests": (
+            int(getattr(forget_batch_report, "individual_total_http_requests", 0))
+            if forget_batch_report is not None
+            else 0
+        ),
+        "forget_tombstone_batch_request_reduction_ratio": (
+            float(getattr(forget_batch_report, "request_reduction_ratio", 0.0))
+            if forget_batch_report is not None
             else 0.0
         ),
         "failover_batch_http_requests": (
@@ -4433,6 +4538,11 @@ def main() -> int:
                 "| sustained HTTP cluster | failover_batch_http_requests | "
                 f"{result['failover_batch_individual_http_requests']} -> "
                 f"{result['failover_batch_http_requests']} |"
+            )
+            print(
+                "| sustained HTTP cluster | forget_tombstone_batch_http_requests | "
+                f"{result['forget_tombstone_batch_individual_http_requests']} -> "
+                f"{result['forget_tombstone_batch_http_requests']} |"
             )
             print(f"| sustained HTTP cluster | p99_operation_ms | {result['p99_operation_ms']:.2f} |")
             print(f"| sustained HTTP cluster | repair_repaired_total | {result['repair_repaired_total']} |")

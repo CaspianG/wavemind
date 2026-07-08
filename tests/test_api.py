@@ -245,6 +245,67 @@ def test_fastapi_remember_batch_persists_items_and_invalidates_cache(tmp_path):
         mind.close()
 
 
+def test_fastapi_forget_batch_deletes_items_and_invalidates_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    mind = WaveMind(
+        db_path=tmp_path / "api-forget-batch.sqlite3",
+        width=32,
+        height=32,
+        layers=2,
+        encoder=HashingTextEncoder(vector_dim=64),
+        score_threshold=0.05,
+    )
+    try:
+        with TestClient(create_app(mind=mind)) as client:
+            for item in range(3):
+                remembered = client.post(
+                    "/remember",
+                    json={
+                        "text": f"batch forget API memory {item}",
+                        "namespace": "tenant:forget-api",
+                    },
+                )
+                assert remembered.status_code == 200
+
+            warmed = client.post(
+                "/query",
+                json={"text": "batch forget API memory", "namespace": "tenant:forget-api"},
+            )
+            assert warmed.status_code == 200
+            assert warmed.json()["results"]
+
+            deleted = client.post(
+                "/forget/batch",
+                json={
+                    "items": [
+                        {
+                            "text": f"batch forget API memory {item}",
+                            "namespace": "tenant:forget-api",
+                        }
+                        for item in range(3)
+                    ]
+                },
+            )
+
+            assert deleted.status_code == 200
+            payload = deleted.json()
+            assert payload["count"] == 3
+            assert payload["deleted"] == 3
+            assert [item["index"] for item in payload["items"]] == [0, 1, 2]
+            assert all(item["deleted"] == 1 for item in payload["items"])
+            assert payload["cache_invalidated"] >= 1
+
+            empty = client.post(
+                "/query",
+                json={"text": "batch forget API memory", "namespace": "tenant:forget-api"},
+            )
+            assert empty.status_code == 200
+            assert empty.json()["results"] == []
+    finally:
+        mind.close()
+
+
 def test_fastapi_default_mind_uses_recovery_journal_env(tmp_path, monkeypatch):
     db_path = tmp_path / "api-env.sqlite3"
     journal_path = tmp_path / "api-env.recovery.jsonl"
@@ -1133,11 +1194,55 @@ def test_fastapi_admin_can_write_and_export_tombstones(tmp_path):
             assert payload["tombstones"][0]["record_keys"] == ["record-key-1"]
             assert payload["tombstones"][0]["texts"] == ["deleted memory"]
 
+            batch = client.post(
+                "/memories/tombstone/batch",
+                json={
+                    "items": [
+                        {
+                            "namespace": "tenant:tombstone",
+                            "record_keys": ["record-key-2"],
+                            "texts": ["second deleted memory"],
+                        },
+                        {
+                            "namespace": "tenant:tombstone",
+                            "texts": ["third deleted memory"],
+                        },
+                    ]
+                },
+            )
+            assert batch.status_code == 200
+            assert batch.json()["count"] == 2
+            assert [item["index"] for item in batch.json()["items"]] == [0, 1]
+
+            exported_batch = client.post(
+                "/memories/export",
+                json={
+                    "namespace": "tenant:tombstone",
+                    "include_tombstones": True,
+                },
+            )
+            tombstone_texts = {
+                text
+                for tombstone_item in exported_batch.json()["tombstones"]
+                for text in tombstone_item["texts"]
+            }
+            assert {
+                "deleted memory",
+                "second deleted memory",
+                "third deleted memory",
+            }.issubset(tombstone_texts)
+
             bad = client.post(
                 "/memories/tombstone",
                 json={"namespace": "tenant:tombstone"},
             )
             assert bad.status_code == 400
+
+            bad_batch = client.post(
+                "/memories/tombstone/batch",
+                json={"items": [{"namespace": "tenant:tombstone"}]},
+            )
+            assert bad_batch.status_code == 400
     finally:
         mind.close()
 
