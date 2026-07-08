@@ -267,6 +267,25 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Memory OS"]["policy_history_previous_runs"] == 0
     assert results["WaveMind Memory OS"]["policy_repeated_required_ids"] == []
     assert results["WaveMind Memory OS"]["policy_history_escalations"] == 0
+    assert results["WaveMind Memory OS"]["scheduler_status"] == "architecture_required"
+    assert results["WaveMind Memory OS"]["scheduler_effective_cache_mode"] == "redis"
+    assert results["WaveMind Memory OS"]["execution_safe_to_run"] is True
+    assert results["WaveMind Memory OS"]["execution_requires_shared_cache"] is True
+    assert results["WaveMind Memory OS"]["execution_requires_distributed_lock"] is True
+    assert results["WaveMind Memory OS"]["execution_max_parallel_workers"] >= 4
+    assert results["WaveMind Memory OS"]["execution_step_count"] >= 7
+    assert "cache-prewarm" in results["WaveMind Memory OS"]["execution_worker_pool_tasks"]
+    assert "memory-os" in results["WaveMind Memory OS"]["execution_singleton_tasks"]
+    assert "memory-os" in results["WaveMind Memory OS"]["execution_state_mutating_tasks"]
+    assert results["WaveMind Memory OS"]["execution_blocked_tasks"] == []
+    assert "distributed-lock-required" in results["WaveMind Memory OS"]["execution_warnings"]
+    assert "WAVEMIND_REDIS_URL" in results["WaveMind Memory OS"]["execution_required_environment"]
+    assert (
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        in results["WaveMind Memory OS"]["execution_required_environment"]
+    )
+    assert results["WaveMind Memory OS"]["execution_run_scopes"]["memory-os"] == "cluster-singleton"
+    assert results["WaveMind Memory OS"]["execution_run_scopes"]["cache-prewarm"] == "worker-pool"
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predictive_prefetch" in results["WaveMind Memory OS"]["actions"]

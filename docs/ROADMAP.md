@@ -110,6 +110,11 @@ policy matters more than raw vector-database scale:
   `--cache-mode auto` to Redis when prefetch-policy gaps repeat, and emits
   production `memory-os` commands with `--lock-required` when the planned worker
   set needs a distributed single-flight lock.
+- The same Memory OS scheduler now emits a machine-readable `execution_plan`:
+  ordered steps, singleton versus worker-pool run scopes, state-mutating task
+  ids, Redis and lock environment requirements, blocked tasks, warnings, and a
+  `safe_to_run` flag. This makes production worker rollout auditable before any
+  background job mutates memory state.
 - `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
   `wavemind feedback-batch` now expose explicit useful/not-useful recall
   signals. They update priority/hotness, persist state, emit audit events,

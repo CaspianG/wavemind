@@ -1061,6 +1061,9 @@ def test_memory_os_scheduler_plans_production_workers_without_mutation(tmp_path)
         )
         after_stats = memory.stats(namespace="ops")
         task_by_id = {task.id: task for task in plan.tasks}
+        step_by_id = {
+            step.task_id: step for step in plan.execution_plan.steps
+        }
 
         assert plan.status == "architecture_required"
         assert plan.effective_cache_mode == "redis"
@@ -1078,6 +1081,32 @@ def test_memory_os_scheduler_plans_production_workers_without_mutation(tmp_path)
         assert task_by_id["cache-prewarm"].enabled is True
         assert task_by_id["predictive-prefetch"].enabled is True
         assert task_by_id["architecture-advice"].enabled is True
+        assert plan.execution_plan.status == "architecture_required"
+        assert plan.execution_plan.safe_to_run is True
+        assert plan.execution_plan.requires_shared_cache is True
+        assert plan.execution_plan.requires_distributed_lock is True
+        assert plan.execution_plan.max_parallel_workers >= 4
+        assert plan.execution_plan.blocked_task_ids == ()
+        assert "distributed-lock-required" in plan.execution_plan.warnings
+        assert set(plan.execution_plan.enabled_task_ids) == {
+            task.id for task in plan.enabled_tasks
+        }
+        assert step_by_id["architecture-advice"].order < step_by_id["memory-os"].order
+        assert step_by_id["memory-os"].run_scope == "cluster-singleton"
+        assert step_by_id["memory-os"].state_mutation is True
+        assert step_by_id["memory-os"].idempotency_key == (
+            "wavemind:memory-os:ops:memory-os"
+        )
+        assert "WAVEMIND_REDIS_URL" in step_by_id["memory-os"].required_environment
+        assert (
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            in step_by_id["memory-os"].required_environment
+        )
+        assert step_by_id["cache-prewarm"].run_scope == "worker-pool"
+        assert step_by_id["cache-prewarm"].can_run_on_all_workers is True
+        assert step_by_id["cache-prewarm"].state_mutation is False
+        assert "cache-prewarm" in plan.execution_plan.worker_pool_task_ids
+        assert "memory-os" in plan.execution_plan.state_mutating_task_ids
         assert "service-index" in {
             item["id"]
             for item in plan.architecture_advice["recommendations"]
@@ -1130,6 +1159,7 @@ def test_memory_os_scheduler_escalates_repeated_policy_history(tmp_path):
             memory_pressure_threshold=1000,
         )
         task_by_id = {task.id: task for task in plan.tasks}
+        execution = plan.execution_plan
 
         assert plan.status == "action_required"
         assert plan.effective_cache_mode == "redis"
@@ -1141,6 +1171,11 @@ def test_memory_os_scheduler_escalates_repeated_policy_history(tmp_path):
         assert task_by_id["memory-os"].priority == "critical"
         assert task_by_id["cache-prewarm"].priority == "critical"
         assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"].command
+        assert execution.safe_to_run is True
+        assert execution.requires_shared_cache is True
+        assert "cache-prewarm" in execution.singleton_task_ids
+        assert execution.worker_pool_task_ids == ()
+        assert "distributed-lock-required" in execution.warnings
         assert any(
             "Scheduler changed auto cache mode to Redis" in item
             for item in plan.recommendations

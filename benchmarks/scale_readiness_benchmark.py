@@ -37,6 +37,7 @@ from wavemind import (
     HTTPNamespaceShardClient,
     HotMemoryCache,
     KnowledgeGraphMemoryLayer,
+    MemoryOSScheduler,
     MemoryOSWorker,
     PrecomputedCrossModalEncoder,
     QueryVectorCache,
@@ -1979,6 +1980,33 @@ def run_memory_os_profile() -> dict[str, object]:
                 tags=["concept"],
                 top_k=1,
             )
+            schedule = MemoryOSScheduler(memory).plan(
+                namespace="tenant:os",
+                audit_limit=16,
+                max_hot_queries=8,
+                min_frequency=2,
+                top_k=1,
+                target_memories=2_000_000,
+                namespace_count=4096,
+                node_count=2,
+                replication_factor=3,
+                read_quorum=1,
+                read_fanout=1,
+                target_qps=250.0,
+                observed_p99_ms=125.0,
+                deployment="production",
+                cache_mode="auto",
+                multimodal=True,
+                memory_pressure_threshold=2,
+            )
+            execution = schedule.execution_plan
+            execution_required_environment = sorted(
+                {
+                    name
+                    for step in execution.steps
+                    for name in step.required_environment
+                }
+            )
             return {
                 "engine": "WaveMind Memory OS",
                 "ok": report.ok,
@@ -2060,6 +2088,22 @@ def run_memory_os_profile() -> dict[str, object]:
                         if suggestion.id.startswith("policy-history:")
                     ]
                 ),
+                "scheduler_status": schedule.status,
+                "scheduler_effective_cache_mode": schedule.effective_cache_mode,
+                "execution_safe_to_run": execution.safe_to_run,
+                "execution_requires_shared_cache": execution.requires_shared_cache,
+                "execution_requires_distributed_lock": execution.requires_distributed_lock,
+                "execution_max_parallel_workers": execution.max_parallel_workers,
+                "execution_step_count": len(execution.steps),
+                "execution_worker_pool_tasks": list(execution.worker_pool_task_ids),
+                "execution_singleton_tasks": list(execution.singleton_task_ids),
+                "execution_state_mutating_tasks": list(execution.state_mutating_task_ids),
+                "execution_blocked_tasks": list(execution.blocked_task_ids),
+                "execution_warnings": list(execution.warnings),
+                "execution_required_environment": execution_required_environment,
+                "execution_run_scopes": {
+                    step.task_id: step.run_scope for step in execution.steps
+                },
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),

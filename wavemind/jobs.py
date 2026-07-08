@@ -947,6 +947,89 @@ class MemoryOSScheduleTask:
 
 
 @dataclass(frozen=True)
+class MemoryOSExecutionStep:
+    order: int
+    task_id: str
+    title: str
+    enabled: bool
+    priority: str
+    cadence_seconds: int
+    timeout_seconds: int
+    worker_count: int
+    run_scope: str
+    state_mutation: bool
+    requires_shared_cache: bool
+    requires_distributed_lock: bool
+    required_environment: tuple[str, ...] = ()
+    idempotency_key: str | None = None
+    command: str = ""
+    reason: str = ""
+
+    @property
+    def can_run_on_all_workers(self) -> bool:
+        return self.enabled and self.run_scope == "worker-pool"
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "order": self.order,
+            "task_id": self.task_id,
+            "title": self.title,
+            "enabled": self.enabled,
+            "priority": self.priority,
+            "cadence_seconds": self.cadence_seconds,
+            "timeout_seconds": self.timeout_seconds,
+            "worker_count": self.worker_count,
+            "run_scope": self.run_scope,
+            "state_mutation": self.state_mutation,
+            "requires_shared_cache": self.requires_shared_cache,
+            "requires_distributed_lock": self.requires_distributed_lock,
+            "required_environment": list(self.required_environment),
+            "idempotency_key": self.idempotency_key,
+            "can_run_on_all_workers": self.can_run_on_all_workers,
+            "command": self.command,
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
+class MemoryOSExecutionPlan:
+    status: str
+    namespace: str | None
+    deployment: str
+    worker_count: int
+    max_parallel_workers: int
+    requires_shared_cache: bool
+    requires_distributed_lock: bool
+    safe_to_run: bool
+    enabled_task_ids: tuple[str, ...]
+    singleton_task_ids: tuple[str, ...]
+    worker_pool_task_ids: tuple[str, ...]
+    state_mutating_task_ids: tuple[str, ...]
+    blocked_task_ids: tuple[str, ...]
+    warnings: tuple[str, ...]
+    steps: tuple[MemoryOSExecutionStep, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "namespace": self.namespace,
+            "deployment": self.deployment,
+            "worker_count": self.worker_count,
+            "max_parallel_workers": self.max_parallel_workers,
+            "requires_shared_cache": self.requires_shared_cache,
+            "requires_distributed_lock": self.requires_distributed_lock,
+            "safe_to_run": self.safe_to_run,
+            "enabled_task_ids": list(self.enabled_task_ids),
+            "singleton_task_ids": list(self.singleton_task_ids),
+            "worker_pool_task_ids": list(self.worker_pool_task_ids),
+            "state_mutating_task_ids": list(self.state_mutating_task_ids),
+            "blocked_task_ids": list(self.blocked_task_ids),
+            "warnings": list(self.warnings),
+            "steps": [step.as_dict() for step in self.steps],
+        }
+
+
+@dataclass(frozen=True)
 class MemoryOSSchedulePlan:
     status: str
     namespace: str | None
@@ -962,6 +1045,7 @@ class MemoryOSSchedulePlan:
     target_qps: float
     worker_count: int
     tasks: tuple[MemoryOSScheduleTask, ...]
+    execution_plan: MemoryOSExecutionPlan
     required_infrastructure: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
     architecture_advice: dict[str, object] = field(default_factory=dict)
@@ -1004,6 +1088,7 @@ class MemoryOSSchedulePlan:
             "policy_history": self.policy_history.as_dict(),
             "policy_escalation_ids": list(self.policy_escalation_ids),
             "policy_auto_adjustments": list(self.policy_auto_adjustments),
+            "execution_plan": self.execution_plan.as_dict(),
             "tasks": [task.as_dict() for task in self.tasks],
             "enabled_task_ids": [task.id for task in self.enabled_tasks],
             "ok": self.ok,
@@ -3752,6 +3837,16 @@ class MemoryOSScheduler:
             shared_cache_needed=shared_cache_needed,
             policy_escalation_ids=policy_escalation_ids,
         )
+        execution_plan = self._execution_plan(
+            namespace=namespace,
+            deployment=deployment_name,
+            tasks=tasks,
+            worker_count=worker_count,
+            effective_cache_mode=effective_cache,
+            production_like=production_like,
+            shared_cache_needed=shared_cache_needed,
+            status=status,
+        )
         return MemoryOSSchedulePlan(
             status=status,
             namespace=namespace,
@@ -3767,6 +3862,7 @@ class MemoryOSScheduler:
             target_qps=qps,
             worker_count=worker_count,
             tasks=tuple(tasks),
+            execution_plan=execution_plan,
             required_infrastructure=tuple(infrastructure),
             recommendations=tuple(recommendations),
             architecture_advice=architecture,
@@ -3865,6 +3961,131 @@ class MemoryOSScheduler:
             priority=priority,
             requires_shared_cache=bool(requires_shared_cache),
             requires_distributed_lock=bool(requires_distributed_lock),
+        )
+
+    def _execution_plan(
+        self,
+        *,
+        namespace: str | None,
+        deployment: str,
+        tasks: list[MemoryOSScheduleTask],
+        worker_count: int,
+        effective_cache_mode: str,
+        production_like: bool,
+        shared_cache_needed: bool,
+        status: str,
+    ) -> MemoryOSExecutionPlan:
+        order = {
+            "architecture-advice": 10,
+            "maintenance": 20,
+            "adaptive-forgetting": 30,
+            "consolidation": 40,
+            "memory-os": 50,
+            "cache-prewarm": 60,
+            "predictive-prefetch": 70,
+        }
+        state_mutating_ids = {
+            "memory-os",
+            "adaptive-forgetting",
+            "consolidation",
+            "maintenance",
+        }
+        worker_pool_ids = {"cache-prewarm", "predictive-prefetch"}
+        steps: list[MemoryOSExecutionStep] = []
+        for index, task in enumerate(tasks):
+            run_scope = (
+                "cluster-singleton"
+                if task.requires_distributed_lock
+                else "worker-pool"
+                if task.id in worker_pool_ids and task.worker_count > 1
+                else "scheduler-singleton"
+            )
+            required_environment: list[str] = []
+            if task.requires_shared_cache:
+                required_environment.append("WAVEMIND_REDIS_URL")
+            if task.requires_distributed_lock:
+                required_environment.append("WAVEMIND_MEMORY_OS_LOCK_REDIS_URL")
+            idempotency_key = None
+            if task.requires_distributed_lock:
+                idempotency_key = (
+                    "wavemind:memory-os:"
+                    + (namespace or "global")
+                    + ":"
+                    + task.id
+                )
+            steps.append(
+                MemoryOSExecutionStep(
+                    order=order.get(task.id, 100 + index),
+                    task_id=task.id,
+                    title=task.title,
+                    enabled=task.enabled,
+                    priority=task.priority,
+                    cadence_seconds=task.cadence_seconds,
+                    timeout_seconds=task.timeout_seconds,
+                    worker_count=task.worker_count,
+                    run_scope=run_scope,
+                    state_mutation=task.id in state_mutating_ids,
+                    requires_shared_cache=task.requires_shared_cache,
+                    requires_distributed_lock=task.requires_distributed_lock,
+                    required_environment=tuple(required_environment),
+                    idempotency_key=idempotency_key,
+                    command=task.command,
+                    reason=task.reason,
+                )
+            )
+        steps.sort(key=lambda step: (step.order, step.task_id))
+        enabled_steps = [step for step in steps if step.enabled]
+        requires_shared_cache = any(step.requires_shared_cache for step in enabled_steps)
+        requires_distributed_lock = any(
+            step.requires_distributed_lock for step in enabled_steps
+        )
+        warnings: list[str] = []
+        blocked_task_ids: list[str] = []
+        if shared_cache_needed and effective_cache_mode != "redis":
+            warnings.append("shared-cache-recommended")
+        if production_like and effective_cache_mode != "redis":
+            warnings.append("production-cache-not-shared")
+        if requires_shared_cache and effective_cache_mode != "redis":
+            warnings.append("redis-required-for-enabled-cache-tasks")
+            blocked_task_ids.extend(
+                step.task_id
+                for step in enabled_steps
+                if step.requires_shared_cache
+            )
+        if requires_distributed_lock:
+            warnings.append("distributed-lock-required")
+        if worker_count > 1 and effective_cache_mode == "local":
+            warnings.append("local-cache-is-not-worker-shared")
+        safe_to_run = not blocked_task_ids and status not in {"invalid"}
+        return MemoryOSExecutionPlan(
+            status=status,
+            namespace=namespace,
+            deployment=deployment,
+            worker_count=max(1, int(worker_count)),
+            max_parallel_workers=max(
+                1,
+                max((step.worker_count for step in enabled_steps), default=1),
+            ),
+            requires_shared_cache=requires_shared_cache,
+            requires_distributed_lock=requires_distributed_lock,
+            safe_to_run=safe_to_run,
+            enabled_task_ids=tuple(step.task_id for step in enabled_steps),
+            singleton_task_ids=tuple(
+                step.task_id
+                for step in enabled_steps
+                if step.run_scope in {"cluster-singleton", "scheduler-singleton"}
+            ),
+            worker_pool_task_ids=tuple(
+                step.task_id
+                for step in enabled_steps
+                if step.run_scope == "worker-pool"
+            ),
+            state_mutating_task_ids=tuple(
+                step.task_id for step in enabled_steps if step.state_mutation
+            ),
+            blocked_task_ids=tuple(dict.fromkeys(blocked_task_ids)),
+            warnings=tuple(dict.fromkeys(warnings)),
+            steps=tuple(steps),
         )
 
     def _required_infrastructure(

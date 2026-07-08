@@ -866,6 +866,10 @@ def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monke
             assert response.status_code == 200
             payload = response.json()
             task_by_id = {task["id"]: task for task in payload["tasks"]}
+            execution = payload["execution_plan"]
+            step_by_id = {
+                step["task_id"]: step for step in execution["steps"]
+            }
 
             assert payload["status"] == "architecture_required"
             assert payload["effective_cache_mode"] == "redis"
@@ -880,6 +884,26 @@ def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monke
             assert task_by_id["memory-os"]["requires_distributed_lock"] is True
             assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"]["command"]
             assert "--lock-required" in task_by_id["memory-os"]["command"]
+            assert execution["status"] == "architecture_required"
+            assert execution["safe_to_run"] is True
+            assert execution["requires_shared_cache"] is True
+            assert execution["requires_distributed_lock"] is True
+            assert execution["blocked_task_ids"] == []
+            assert "distributed-lock-required" in execution["warnings"]
+            assert set(execution["enabled_task_ids"]) == set(payload["enabled_task_ids"])
+            assert step_by_id["memory-os"]["run_scope"] == "cluster-singleton"
+            assert step_by_id["memory-os"]["state_mutation"] is True
+            assert step_by_id["memory-os"]["idempotency_key"] == (
+                "wavemind:memory-os:tenant:os:memory-os"
+            )
+            assert "WAVEMIND_REDIS_URL" in step_by_id["memory-os"]["required_environment"]
+            assert (
+                "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+                in step_by_id["memory-os"]["required_environment"]
+            )
+            assert step_by_id["cache-prewarm"]["run_scope"] == "worker-pool"
+            assert step_by_id["cache-prewarm"]["can_run_on_all_workers"] is True
+            assert step_by_id["cache-prewarm"]["state_mutation"] is False
 
             after = mind.stats(namespace="tenant:os")
             assert before["active_memories"] == after["active_memories"]
