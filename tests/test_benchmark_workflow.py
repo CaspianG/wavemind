@@ -114,8 +114,13 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "actions: read" in workflow
     assert "production_streaming_load_benchmark.py" in workflow
     assert "--checkpoint-path" in workflow
+    assert "runner_storage_root" in workflow
+    assert "RUNNER_STORAGE_ROOT" in workflow
+    assert "runner_storage_root = Path" in workflow
     assert "production-streaming-load-state" in workflow
     assert "production-streaming-load-results" in workflow
+    assert "production-streaming-runner-storage-root.txt" in workflow
+    assert "${{ inputs.runner_storage_root }}/**" in workflow
     assert "resume_run_id" in workflow
     assert "gh run download" in workflow
     assert "qdrant-service" in workflow

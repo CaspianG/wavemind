@@ -505,6 +505,7 @@ The checked-in deterministic artifact is:
 ```sh
 wavemind production-scale-plan \
   --disk-free-gb 0 \
+  --runner-storage-root state/production-runs \
   --write-artifact \
   --output benchmarks/production_scale_run_plan.json \
   --json
@@ -521,14 +522,17 @@ results:
 | `faiss-ivfpq-50m` | `faiss-ivfpq-persisted` | 50000000 | `WAVEMIND_FAISS_IVFPQ_PATH` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` |
 | `qdrant-sharded-100m` | `qdrant-sharded-service` | 100000000 | `WAVEMIND_QDRANT_URLS` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
 
-Each profile includes exact command, checkpoint path, required environment,
-local runner storage estimate, application storage estimate, SLO capacity
-envelope, and cost envelope. The cost envelope includes target monthly budget,
-budget headroom, monthly cost per 1M memories, compute cost per 1M queries, and
-machine-readable cost blockers. Override the profile budget gates with
-`--monthly-budget-usd`, `--max-cost-per-1m-memories-usd`, and
+Each profile includes exact command, checkpoint path, runner storage root,
+required environment, local runner storage estimate, application storage
+estimate, SLO capacity envelope, and cost envelope. Use
+`--runner-storage-root /mnt/fast/wavemind-runs` or
+`WAVEMIND_PRODUCTION_RUNNER_ROOT` to keep checkpoints, resumable ingest state,
+and local FAISS indexes off a small system disk. The cost envelope includes
+target monthly budget, budget headroom, monthly cost per 1M memories, compute
+cost per 1M queries, and machine-readable cost blockers. Override the profile
+budget gates with `--monthly-budget-usd`, `--max-cost-per-1m-memories-usd`, and
 `--max-compute-cost-per-1m-queries-usd` when planning a specific cluster. A
-profile stays `action_required` until the service/index backend, local runner
+profile stays `action_required` until the service/index backend, runner storage
 requirements, and cost gates are satisfied. The artifact is a preflight
 contract, not latency or recall evidence.
 

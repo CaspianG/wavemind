@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T13:47:05Z",
-  "source_ref": "a2a8e78aabe1",
+  "generated_at": "2026-07-08T14:43:49Z",
+  "source_ref": "dfc070473493",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "a2a8e78aabe1",
+    "source_ref": "dfc070473493",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,7 +39,7 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T13:47:05Z",
+    "checked_at": "2026-07-08T14:43:49Z",
     "max_age_days": 3650.0,
     "source_count": 11,
     "fresh_count": 11,
@@ -55,15 +55,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:47:15Z",
-        "age_days": 0.3332175925925926,
+        "timestamp": "2026-07-08T14:44:03Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-08T13:47:05Z",
+        "timestamp": "2026-07-08T14:43:49Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -71,56 +71,56 @@
         "path": "benchmarks/production_readiness_results.json",
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T04:52:52Z",
-        "age_days": 0.3709837962962963,
+        "timestamp": "2026-07-08T14:43:52Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_results.json",
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:05:59Z",
-        "age_days": 0.361875,
+        "timestamp": "2026-07-08T14:43:55Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_preflight_results.json",
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.3618634259259259,
+        "timestamp": "2026-07-08T14:32:19Z",
+        "age_days": 0.00798611111111111,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T13:46:53Z",
-        "age_days": 0.0001388888888888889,
+        "timestamp": "2026-07-08T14:44:00Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T05:06:00Z",
-        "age_days": 0.3618634259259259,
+        "timestamp": "2026-07-08T14:44:01Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T13:46:53Z",
-        "age_days": 0.0001388888888888889,
+        "timestamp": "2026-07-08T14:44:02Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_scale_run_plan.json",
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T13:46:52Z",
-        "age_days": 0.00015046296296296297,
+        "timestamp": "2026-07-08T14:43:22Z",
+        "age_days": 0.0003125,
         "status": "pass"
       },
       {
@@ -128,7 +128,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T05:45:21Z",
-        "age_days": 0.334537037037037,
+        "age_days": 0.3739351851851852,
         "status": "pass"
       },
       {
@@ -136,14 +136,14 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T13:46:38Z",
-        "age_days": 0.0003125,
+        "age_days": 0.03971064814814815,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-08T05:47:15Z",
+    "generated_at": "2026-07-08T14:44:03Z",
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,
@@ -172,8 +172,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T13:47:05Z",
-    "age_days": 0.3332205192592592,
+    "checked_at": "2026-07-08T14:43:49Z",
+    "age_days": 4.6655972222222216e-05,
     "max_age_days": 3650.0,
     "errors": []
   },
@@ -585,7 +585,7 @@
           "missing_env:WAVEMIND_QDRANT_URL",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
         "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
         "nearest_baseline": {
           "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -624,7 +624,7 @@
           "missing_env:WAVEMIND_QDRANT_URLS",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
         "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
         "nearest_baseline": {
           "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -663,7 +663,7 @@
           "missing_env:WAVEMIND_PGVECTOR_DSN",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
         "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
         "nearest_baseline": {
           "artifact": "benchmarks/production_pgvector_tuning_results.json",
@@ -702,7 +702,7 @@
           "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
         "claim_unlocked": "50M compressed local/persistent FAISS profile.",
         "nearest_baseline": {
           "artifact": "benchmarks/production_streaming_load_ivfpq_10m_results.json",
@@ -741,7 +741,7 @@
           "missing_env:WAVEMIND_QDRANT_URLS",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
         "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
         "nearest_baseline": {
           "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",

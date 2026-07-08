@@ -8,21 +8,24 @@
       10000000
     ],
     "vector_dim": 128,
-    "queries_per_size": 100,
+    "queries_per_size": 2000,
     "top_k": 10,
     "seed": 42,
     "noise": 0.08,
-    "batch_size": 100000,
+    "batch_size": 5000,
     "engines": [
       "qdrant-sharded-service"
     ],
     "target_recall_at_k": 0.95,
     "target_p99_ms": 100.0,
-    "target_qps": 100.0,
-    "replicas": 3,
-    "autoscaling_max_replicas": 24,
+    "target_qps": 250.0,
+    "replicas": 4,
+    "autoscaling_max_replicas": 48,
     "capacity_headroom": 0.7,
-    "plan_only": true
+    "plan_only": true,
+    "runner_storage_root": "state/production-runs",
+    "disk_free_path": "C:/work/particles/wavemind 2.0/state",
+    "disk_free_gb": 0.0
   },
   "preflight": {
     "python": "3.13.3",
@@ -58,7 +61,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 3.78,
+      "free_gb": 0.03,
       "total_gb": 231.85
     }
   },
@@ -67,17 +70,19 @@
       "engine": "Qdrant sharded service streaming",
       "vectors": 10000000,
       "vector_dim": 128,
-      "queries": 100,
+      "queries": 2000,
       "top_k": 10,
-      "batch_size": 100000,
+      "batch_size": 5000,
       "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
       "estimated_index_gb": 0.0,
-      "estimated_transient_runner_gb": 0.048,
+      "estimated_transient_runner_gb": 0.003,
       "estimated_payload_storage_gb": 19.073,
       "estimated_float_vector_storage_gb": 4.768,
       "estimated_application_storage_gb": 23.842,
-      "required_local_free_gb": 0.06,
-      "disk_free_gb": 3.78,
+      "required_local_free_gb": 0.004,
+      "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "safety_factor": 1.25,
       "module_requirements": {
         "qdrant_client": true
@@ -96,12 +101,13 @@
         "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
         "WAVEMIND_QDRANT_WARMUP_QUERIES": "100"
       },
-      "checkpoint_path": "state/qdrant-sharded-service-10000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "status": "action_required",
       "blockers": [
-        "missing_env:WAVEMIND_QDRANT_URLS"
+        "missing_env:WAVEMIND_QDRANT_URLS",
+        "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "claim_boundary": "preflight only; this is not a completed latency or recall benchmark"
     }

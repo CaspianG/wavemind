@@ -225,6 +225,8 @@ class ProductionScaleRunPlan:
     estimated_application_storage_gb: float
     required_local_free_gb: float
     disk_free_gb: float
+    runner_storage_root: str
+    disk_free_path: str
     index_mode: str
     slo_capacity_envelope: dict[str, object]
     cost_envelope: dict[str, object]
@@ -255,9 +257,21 @@ def _module_available(name: str) -> bool:
 
 def _local_disk_free_gb(path: str | os.PathLike[str] = ".") -> float:
     try:
-        return _bytes_to_gb(float(shutil.disk_usage(path).free))
+        return _bytes_to_gb(float(shutil.disk_usage(_disk_usage_path(path)).free))
     except OSError:
         return 0.0
+
+
+def _disk_usage_path(path: str | os.PathLike[str]) -> str:
+    """Return the nearest existing path suitable for disk-usage checks."""
+
+    current = os.path.abspath(os.fspath(path))
+    while current and not os.path.exists(current):
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return current or os.path.abspath(".")
 
 
 def production_scale_profile_names() -> tuple[str, ...]:
@@ -400,7 +414,9 @@ def _production_scale_profiles(
             checkpoint_path=checkpoint("faiss-ivfpq-persisted-50000000"),
             required_env=("WAVEMIND_FAISS_IVFPQ_PATH",),
             command_env={
-                "WAVEMIND_FAISS_IVFPQ_PATH": "./state/wavemind-faiss-ivfpq-50m.faiss",
+                "WAVEMIND_FAISS_IVFPQ_PATH": (
+                    f"{state_prefix}/wavemind-faiss-ivfpq-50m.faiss".replace("\\", "/")
+                ),
                 "WAVEMIND_FAISS_IVFPQ_NLIST": "4096",
                 "WAVEMIND_FAISS_IVFPQ_M": "16",
                 "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
@@ -684,6 +700,7 @@ def build_production_scale_run_plan(
     profiles: Sequence[str] | None = None,
     env: Mapping[str, str] | None = None,
     disk_free_gb: float | None = None,
+    runner_storage_root: str | os.PathLike[str] | None = None,
     output_dir: str = "benchmarks",
     state_dir: str = "state",
     monthly_budget_usd: float | None = None,
@@ -698,7 +715,19 @@ def build_production_scale_run_plan(
     ingest starts.
     """
 
-    available = _production_scale_profiles(output_dir=output_dir, state_dir=state_dir)
+    configured_runner_root = (
+        os.fspath(runner_storage_root)
+        if runner_storage_root is not None
+        else _profile_env("WAVEMIND_PRODUCTION_RUNNER_ROOT", env)
+    )
+    effective_runner_root = configured_runner_root or state_dir
+    effective_runner_root = str(effective_runner_root).replace("\\", "/")
+    disk_free_path = _disk_usage_path(effective_runner_root).replace("\\", "/")
+
+    available = _production_scale_profiles(
+        output_dir=output_dir,
+        state_dir=effective_runner_root,
+    )
     requested = list(profiles or ("all",))
     if not requested or "all" in requested:
         names = list(available)
@@ -716,7 +745,7 @@ def build_production_scale_run_plan(
     effective_disk_free_gb = (
         float(disk_free_gb)
         if disk_free_gb is not None
-        else _local_disk_free_gb(".")
+        else _local_disk_free_gb(effective_runner_root)
     )
     plans: list[ProductionScaleRunPlan] = []
     for name in names:
@@ -815,6 +844,10 @@ def build_production_scale_run_plan(
         blockers.extend(f"cost:{reason}" for reason in cost_envelope.cost_blocking_reasons)
 
         actions = [
+            (
+                f"Use runner storage root `{effective_runner_root}` for checkpoints, "
+                "large local indexes, and resumable ingest state."
+            ),
             "Provision the required service/index backend and set the required environment variables.",
             f"Run `{_production_run_command(profile)}` from the repository root.",
             f"Commit `{profile.output_artifact}` only after the real run completes.",
@@ -864,6 +897,8 @@ def build_production_scale_run_plan(
                 ),
                 required_local_free_gb=_round_gb(required_local_free_gb),
                 disk_free_gb=round(float(effective_disk_free_gb), 3),
+                runner_storage_root=effective_runner_root,
+                disk_free_path=disk_free_path,
                 index_mode=profile.index_mode,
                 slo_capacity_envelope=slo_envelope.as_dict(),
                 cost_envelope=cost_envelope.as_dict(),
@@ -904,6 +939,9 @@ def build_production_scale_run_plan(
             else None
         ),
         "cost_status_counts": cost_status_counts,
+        "runner_storage_root": effective_runner_root,
+        "disk_free_path": disk_free_path,
+        "disk_free_gb": round(float(effective_disk_free_gb), 3),
         "pareto_frontier_profiles": frontier["frontier_profiles"],
         "best_by_target_class": frontier["best_by_target_class"],
         "profiles": [plan.profile for plan in plans],

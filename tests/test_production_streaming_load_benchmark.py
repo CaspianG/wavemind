@@ -292,6 +292,9 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert payload["schema"] == "wavemind.production_streaming_load_plan.v1"
     assert payload["scenario"]["plan_only"] is True
     assert payload["scenario"]["sizes"] == [50_000_000]
+    assert payload["scenario"]["runner_storage_root"] == "state"
+    assert payload["scenario"]["disk_free_path"]
+    assert "disk_free_gb" in payload["scenario"]
     assert payload["status"] == "action_required"
     row = payload["plans"][0]
     assert row["vectors"] == 50_000_000
@@ -301,6 +304,8 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert row["required_local_free_gb"] > row["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in row["required_env"]
     assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in row["blockers"]
+    assert row["runner_storage_root"] == "state"
+    assert row["disk_free_path"]
     assert row["checkpoint_path"] == "state/faiss-ivfpq-persisted-50000000.checkpoint.json"
     assert row["resume_mode"].startswith("batch checkpoint")
     assert "--sizes 50000000" in row["command"]
@@ -309,6 +314,44 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert "--output benchmarks" in row["command"]
     assert "production_streaming_load_ivfpq_50m_results.json" in row["command"]
     assert row["claim_boundary"].startswith("preflight only")
+
+
+def test_streaming_load_plan_only_uses_runner_storage_root(tmp_path, monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import plan_streaming_load
+
+    monkeypatch.delenv("WAVEMIND_FAISS_IVFPQ_PATH", raising=False)
+    runner_root = tmp_path / "streaming-state"
+    runner_root.mkdir()
+
+    payload = plan_streaming_load(
+        sizes=[50_000_000],
+        dim=128,
+        query_count=100,
+        top_k=10,
+        seed=42,
+        noise=0.08,
+        batch_size=100_000,
+        engines=["faiss-ivfpq-persisted"],
+        output_path=Path("benchmarks/production_streaming_load_50m_plan.json"),
+        planned_result_output_path=Path("benchmarks/production_streaming_load_ivfpq_50m_results.json"),
+        runner_storage_root=runner_root,
+        disk_free_gb_override=1000.0,
+    )
+
+    row = payload["plans"][0]
+    assert payload["scenario"]["runner_storage_root"].endswith("streaming-state")
+    assert payload["scenario"]["disk_free_path"].endswith("streaming-state")
+    assert payload["scenario"]["disk_free_gb"] == 1000.0
+    assert row["runner_storage_root"].endswith("streaming-state")
+    assert row["disk_free_path"].endswith("streaming-state")
+    assert row["disk_free_gb"] == 1000.0
+    assert row["checkpoint_path"].endswith(
+        "streaming-state/faiss-ivfpq-persisted-50000000.checkpoint.json"
+    )
+    assert row["command_env"]["WAVEMIND_FAISS_IVFPQ_PATH"].endswith(
+        "streaming-state/wavemind-faiss-ivfpq-50m.faiss"
+    )
+    assert "streaming-state/faiss-ivfpq-persisted-50000000.checkpoint.json" in row["command"]
 
 
 def test_streaming_load_plan_only_cli_writes_json(tmp_path):
@@ -354,6 +397,59 @@ def test_streaming_load_plan_only_cli_writes_json(tmp_path):
     assert payload["plans"][0]["status"] == "action_required"
     assert "--checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json" in payload["plans"][0]["command"]
     assert "production_streaming_load_ivfpq_50m_results.json" in payload["plans"][0]["command"]
+
+
+def test_streaming_load_plan_only_cli_accepts_runner_storage_root(tmp_path):
+    output = tmp_path / "streaming-load-plan.json"
+    runner_root = tmp_path / "runner-state"
+    runner_root.mkdir()
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
+    env.pop("WAVEMIND_FAISS_IVFPQ_PATH", None)
+
+    subprocess.run(
+        [
+            sys.executable,
+            "benchmarks/production_streaming_load_benchmark.py",
+            "--plan-only",
+            "--sizes",
+            "50000000",
+            "--dim",
+            "128",
+            "--queries",
+            "100",
+            "--top-k",
+            "10",
+            "--batch-size",
+            "100000",
+            "--engines",
+            "faiss-ivfpq-persisted",
+            "--runner-storage-root",
+            str(runner_root),
+            "--disk-free-gb",
+            "1000",
+            "--output",
+            str(output),
+            "--planned-result-output",
+            "benchmarks/production_streaming_load_ivfpq_50m_results.json",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    row = json.loads(output.read_text(encoding="utf-8"))["plans"][0]
+    assert row["disk_free_gb"] == 1000.0
+    assert row["checkpoint_path"].endswith(
+        "runner-state/faiss-ivfpq-persisted-50000000.checkpoint.json"
+    )
+    assert row["command_env"]["WAVEMIND_FAISS_IVFPQ_PATH"].endswith(
+        "runner-state/wavemind-faiss-ivfpq-50m.faiss"
+    )
 
 
 def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):

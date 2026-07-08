@@ -109,6 +109,8 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/render_leaderboard_status.py \
+            --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit.json

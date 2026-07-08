@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.production_scale_run_plan.v1",
-  "generated_at": "2026-07-08T13:46:52Z",
+  "generated_at": "2026-07-08T14:43:22Z",
   "summary": {
     "schema": "wavemind.production_scale_run_plan.v1",
-    "generated_at": "2026-07-08T13:46:52Z",
+    "generated_at": "2026-07-08T14:43:22Z",
     "overall_status": "action_required",
     "ready_count": 0,
     "action_required_count": 5,
@@ -14,6 +14,9 @@
     "cost_status_counts": {
       "valid_slo": 5
     },
+    "runner_storage_root": "state/production-runs",
+    "disk_free_path": "C:/work/particles/wavemind 2.0/state",
+    "disk_free_gb": 0.0,
     "pareto_frontier_profiles": [
       "faiss-ivfpq-50m",
       "qdrant-sharded-100m"
@@ -153,8 +156,8 @@
       "autoscaling_max_replicas": 24,
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
-      "checkpoint_path": "state/qdrant-service-10000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/qdrant-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
       "command_env": {
         "WAVEMIND_QDRANT_URL": "http://qdrant.example:6333",
         "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
@@ -177,6 +180,8 @@
       "estimated_application_storage_gb": 23.842,
       "required_local_free_gb": 1.0,
       "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "index_mode": "remote Qdrant HNSW service; local runner stores generated batches only",
       "slo_capacity_envelope": {
         "engine": "qdrant-service",
@@ -226,8 +231,9 @@
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
+        "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Provision the required service/index backend and set the required environment variables.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json` from the repository root.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_qdrant_10m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],
@@ -255,8 +261,8 @@
       "autoscaling_max_replicas": 48,
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
-      "checkpoint_path": "state/qdrant-sharded-service-10000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "command_env": {
         "WAVEMIND_QDRANT_URLS": "http://qdrant-0.example:6333,http://qdrant-1.example:6333,http://qdrant-2.example:6333,http://qdrant-3.example:6333",
         "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_10m",
@@ -281,6 +287,8 @@
       "estimated_application_storage_gb": 23.842,
       "required_local_free_gb": 1.0,
       "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "index_mode": "remote horizontally sharded Qdrant services with fanout top-k merge",
       "slo_capacity_envelope": {
         "engine": "qdrant-sharded-service",
@@ -330,9 +338,10 @@
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
-        "Provision the required service/index backend and set the required environment variables.",
+        "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Verify every Qdrant shard has comparable HNSW/on-disk settings before measuring fanout.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json` from the repository root.",
+        "Provision the required service/index backend and set the required environment variables.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],
@@ -359,8 +368,8 @@
       "autoscaling_max_replicas": 24,
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-      "checkpoint_path": "state/pgvector-service-10000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "command_env": {
         "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
         "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
@@ -383,6 +392,8 @@
       "estimated_application_storage_gb": 23.842,
       "required_local_free_gb": 1.0,
       "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "index_mode": "remote PostgreSQL/pgvector HNSW service",
       "slo_capacity_envelope": {
         "engine": "pgvector-service",
@@ -432,8 +443,9 @@
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
+        "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Provision the required service/index backend and set the required environment variables.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json` from the repository root.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_pgvector_10m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],
@@ -461,10 +473,10 @@
       "autoscaling_max_replicas": 24,
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
-      "checkpoint_path": "state/faiss-ivfpq-persisted-50000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "command_env": {
-        "WAVEMIND_FAISS_IVFPQ_PATH": "./state/wavemind-faiss-ivfpq-50m.faiss",
+        "WAVEMIND_FAISS_IVFPQ_PATH": "state/production-runs/wavemind-faiss-ivfpq-50m.faiss",
         "WAVEMIND_FAISS_IVFPQ_NLIST": "4096",
         "WAVEMIND_FAISS_IVFPQ_M": "16",
         "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
@@ -487,6 +499,8 @@
       "estimated_application_storage_gb": 119.209,
       "required_local_free_gb": 1.523,
       "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "index_mode": "local persisted FAISS IVF-PQ compressed codes plus int64 ids",
       "slo_capacity_envelope": {
         "engine": "faiss-ivfpq-persisted",
@@ -536,9 +550,10 @@
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
-        "Provision the required service/index backend and set the required environment variables.",
+        "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Keep the FAISS IVF-PQ checkpoint and index path on durable fast storage.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json` from the repository root.",
+        "Provision the required service/index backend and set the required environment variables.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_ivfpq_50m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],
@@ -563,8 +578,8 @@
       "autoscaling_max_replicas": 128,
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
-      "checkpoint_path": "state/qdrant-sharded-service-100000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "checkpoint_path": "state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
       "command_env": {
         "WAVEMIND_QDRANT_URLS": "http://qdrant-0.example:6333,http://qdrant-1.example:6333,http://qdrant-2.example:6333,http://qdrant-3.example:6333,http://qdrant-4.example:6333,http://qdrant-5.example:6333,http://qdrant-6.example:6333,http://qdrant-7.example:6333,http://qdrant-8.example:6333,http://qdrant-9.example:6333,http://qdrant-10.example:6333,http://qdrant-11.example:6333,http://qdrant-12.example:6333,http://qdrant-13.example:6333,http://qdrant-14.example:6333,http://qdrant-15.example:6333",
         "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_100m",
@@ -589,6 +604,8 @@
       "estimated_application_storage_gb": 238.419,
       "required_local_free_gb": 1.0,
       "disk_free_gb": 0.0,
+      "runner_storage_root": "state/production-runs",
+      "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "index_mode": "remote horizontally sharded Qdrant services for 100M-memory target",
       "slo_capacity_envelope": {
         "engine": "qdrant-sharded-service",
@@ -638,9 +655,10 @@
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
-        "Provision the required service/index backend and set the required environment variables.",
+        "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Verify every Qdrant shard has comparable HNSW/on-disk settings before measuring fanout.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json` from the repository root.",
+        "Provision the required service/index backend and set the required environment variables.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],

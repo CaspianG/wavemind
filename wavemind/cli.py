@@ -226,6 +226,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         help="Override local free disk for deterministic preflight artifacts.",
     )
+    production_scale_plan.add_argument(
+        "--runner-storage-root",
+        help=(
+            "Directory or volume used for production-run checkpoints, resumable "
+            "state, and local indexes. Defaults to --state-dir or "
+            "WAVEMIND_PRODUCTION_RUNNER_ROOT."
+        ),
+    )
     production_scale_plan.add_argument("--output-dir", default="benchmarks")
     production_scale_plan.add_argument("--state-dir", default="state")
     production_scale_plan.add_argument(
@@ -1056,6 +1064,10 @@ def print_production_scale_run_plan(payload: dict[str, object]) -> None:
             "estimated_monthly_total_cost_at_target_qps_usd: "
             f"{summary['estimated_monthly_total_cost_at_target_qps_usd']:.2f}"
         )
+    if summary.get("runner_storage_root"):
+        print(f"runner_storage_root: {summary['runner_storage_root']}")
+        print(f"disk_free_path: {summary.get('disk_free_path')}")
+        print(f"disk_free_gb: {summary.get('disk_free_gb')}")
     frontier_profiles = summary.get("pareto_frontier_profiles") or []
     if frontier_profiles:
         print(f"pareto_frontier_profiles: {', '.join(frontier_profiles)}")
@@ -1073,6 +1085,8 @@ def print_production_scale_run_plan(payload: dict[str, object]) -> None:
         if row.get("selection_rank_in_target_class") is not None:
             print(f"  target_class_rank: {row['selection_rank_in_target_class']}")
         print(f"  output: {row['output_artifact']}")
+        print(f"  runner_storage_root: {row.get('runner_storage_root')}")
+        print(f"  disk_free_path: {row.get('disk_free_path')}")
         print(f"  required_local_free_gb: {row['required_local_free_gb']}")
         missing_env = row.get("missing_env") or []
         if missing_env:
@@ -1638,6 +1652,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_production_scale_run_plan(
             profiles=profiles,
             disk_free_gb=args.disk_free_gb,
+            runner_storage_root=args.runner_storage_root,
             output_dir=args.output_dir,
             state_dir=args.state_dir,
             monthly_budget_usd=args.monthly_budget_usd,

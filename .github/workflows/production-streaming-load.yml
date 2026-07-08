@@ -98,6 +98,11 @@ on:
         required: false
         default: ""
         type: string
+      runner_storage_root:
+        description: "Directory or mounted volume for checkpoints and default local index paths."
+        required: false
+        default: "state"
+        type: string
       commit_results:
         description: "Commit result and refreshed benchmark/evidence artifacts to main."
         required: true
@@ -129,6 +134,7 @@ jobs:
       INPUT_QDRANT_URLS: ${{ inputs.qdrant_urls }}
       INPUT_PGVECTOR_DSN: ${{ inputs.pgvector_dsn }}
       INPUT_FAISS_IVFPQ_PATH: ${{ inputs.faiss_ivfpq_path }}
+      RUNNER_STORAGE_ROOT: ${{ inputs.runner_storage_root }}
       SECRET_QDRANT_URL: ${{ secrets.WAVEMIND_QDRANT_URL }}
       SECRET_QDRANT_URLS: ${{ secrets.WAVEMIND_QDRANT_URLS }}
       SECRET_PGVECTOR_DSN: ${{ secrets.WAVEMIND_PGVECTOR_DSN }}
@@ -168,6 +174,8 @@ jobs:
 
           engine = os.environ["ENGINE"]
           size = int(os.environ["SIZE"])
+          runner_storage_root = Path(os.environ.get("RUNNER_STORAGE_ROOT", "state") or "state")
+          runner_storage_root.mkdir(parents=True, exist_ok=True)
 
           def pick(input_name: str, secret_name: str) -> str:
               return (os.environ.get(input_name) or os.environ.get(secret_name) or "").strip()
@@ -215,12 +223,12 @@ jobs:
               env["WAVEMIND_PGVECTOR_DSN"] = value
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
-              env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or f"state/faiss-ivfpq-{size}.faiss"
+              env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or str(runner_storage_root / f"faiss-ivfpq-{size}.faiss")
           else:
               raise SystemExit(f"unsupported engine: {engine}")
 
           output = result_path(engine, size)
-          checkpoint = Path("state") / f"{slug(engine)}-{size}.checkpoint.json"
+          checkpoint = runner_storage_root / f"{slug(engine)}-{size}.checkpoint.json"
           output.parent.mkdir(parents=True, exist_ok=True)
           checkpoint.parent.mkdir(parents=True, exist_ok=True)
 
@@ -259,6 +267,7 @@ jobs:
           subprocess.run(args, check=True, env=env)
           Path("production-streaming-output-path.txt").write_text(str(output), encoding="utf-8")
           Path("production-streaming-checkpoint-path.txt").write_text(str(checkpoint), encoding="utf-8")
+          Path("production-streaming-runner-storage-root.txt").write_text(str(runner_storage_root), encoding="utf-8")
           PY
 
       - name: Refresh benchmark and evidence reports
@@ -269,6 +278,8 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/render_leaderboard_status.py \
+            --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
             --max-age-days 8 \
             --output benchmarks/benchmark_artifact_audit.json
@@ -302,8 +313,10 @@ jobs:
           name: production-streaming-load-state
           path: |
             state/**
+            ${{ inputs.runner_storage_root }}/**
             production-streaming-output-path.txt
             production-streaming-checkpoint-path.txt
+            production-streaming-runner-storage-root.txt
 
       - uses: actions/upload-artifact@v7
         if: always()

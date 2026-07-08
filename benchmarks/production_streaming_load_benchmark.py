@@ -7,6 +7,7 @@ import json
 import math
 import os
 import re
+import shutil
 import statistics
 import sys
 import time
@@ -467,6 +468,23 @@ def _round_gb(value: float) -> float:
     return round(float(value), 3)
 
 
+def _disk_usage_path(path: Path) -> Path:
+    current = path.resolve()
+    while not current.exists():
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return current
+
+
+def _disk_free_gb(path: Path) -> float:
+    try:
+        return _bytes_to_gb(float(shutil.disk_usage(_disk_usage_path(path)).free))
+    except OSError:
+        return 0.0
+
+
 def _env_ready(names: Iterable[str]) -> tuple[bool, list[str]]:
     missing = [name for name in names if not os.environ.get(name)]
     return not missing, missing
@@ -494,6 +512,7 @@ def _streaming_plan_row(
     vector_dtype_bytes: int,
     disk_free_gb: float,
     safety_factor: float,
+    runner_storage_root: Path | None,
 ) -> dict[str, Any]:
     key = engine.lower()
     canonical = {
@@ -518,6 +537,8 @@ def _streaming_plan_row(
     transient_bytes = batch_bytes + source_vector_bytes
     index_mode = "full matrix"
     command_env: dict[str, str] = {}
+    runner_root = runner_storage_root or Path("state")
+    runner_root_arg = str(runner_root).replace("\\", "/")
 
     if key == "numpy-streaming":
         index_mode = "full float32 matrix; smoke/testing only at large N"
@@ -528,7 +549,7 @@ def _streaming_plan_row(
         required_env = ["WAVEMIND_FAISS_PATH"]
         index_bytes = vector_bytes + int(count) * 8
         index_mode = "persisted FAISS flat index plus int64 ids"
-        command_env = {"WAVEMIND_FAISS_PATH": "./state/wavemind-faiss-50m.faiss"}
+        command_env = {"WAVEMIND_FAISS_PATH": f"{runner_root_arg}/wavemind-faiss-50m.faiss"}
     elif key == "faiss-ivfpq-persisted":
         module_requirements = ["faiss"]
         required_env = ["WAVEMIND_FAISS_IVFPQ_PATH"]
@@ -547,7 +568,7 @@ def _streaming_plan_row(
         transient_bytes += training_bytes
         index_mode = "persisted FAISS IVF-PQ compressed codes plus int64 ids"
         command_env = {
-            "WAVEMIND_FAISS_IVFPQ_PATH": "./state/wavemind-faiss-ivfpq-50m.faiss",
+            "WAVEMIND_FAISS_IVFPQ_PATH": f"{runner_root_arg}/wavemind-faiss-ivfpq-50m.faiss",
             "WAVEMIND_FAISS_IVFPQ_NLIST": str(nlist),
             "WAVEMIND_FAISS_IVFPQ_M": str(pq_m),
             "WAVEMIND_FAISS_IVFPQ_NBITS": str(nbits),
@@ -610,7 +631,7 @@ def _streaming_plan_row(
 
     command_output_path = planned_result_output_path or output_path or Path("benchmarks/production_streaming_load_results.json")
     checkpoint_slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-") or "streaming"
-    checkpoint_path = Path("state") / f"{checkpoint_slug}-{int(count)}.checkpoint.json"
+    checkpoint_path = runner_root / f"{checkpoint_slug}-{int(count)}.checkpoint.json"
     checkpoint_arg = str(checkpoint_path).replace("\\", "/")
     command_parts = [
         "python",
@@ -663,6 +684,8 @@ def _streaming_plan_row(
         "estimated_application_storage_gb": _round_gb(_bytes_to_gb(vector_bytes + payload_bytes)),
         "required_local_free_gb": _round_gb(required_local_free_gb),
         "disk_free_gb": round(float(disk_free_gb), 3),
+        "runner_storage_root": runner_root_arg,
+        "disk_free_path": str(_disk_usage_path(runner_root)).replace("\\", "/"),
         "safety_factor": float(safety_factor),
         "module_requirements": module_status,
         "required_env": required_env,
@@ -698,9 +721,19 @@ def plan_streaming_load(
     memory_payload_kb: float = 2.0,
     vector_dtype_bytes: int = 4,
     safety_factor: float = 1.25,
+    runner_storage_root: Path | None = None,
+    disk_free_gb_override: float | None = None,
 ) -> dict[str, Any]:
     preflight_payload = preflight(output_path=output_path)
-    disk_free_gb = float(preflight_payload.get("disk", {}).get("free_gb", 0.0))
+    disk_free_gb = (
+        float(disk_free_gb_override)
+        if disk_free_gb_override is not None
+        else _disk_free_gb(runner_storage_root)
+        if runner_storage_root is not None
+        else float(preflight_payload.get("disk", {}).get("free_gb", 0.0))
+    )
+    effective_runner_root = runner_storage_root or Path("state")
+    disk_free_path = _disk_usage_path(effective_runner_root)
     size_list = [int(size) for size in sizes]
     rows = [
         _streaming_plan_row(
@@ -724,6 +757,7 @@ def plan_streaming_load(
             vector_dtype_bytes=vector_dtype_bytes,
             disk_free_gb=disk_free_gb,
             safety_factor=safety_factor,
+            runner_storage_root=runner_storage_root,
         )
         for size in size_list
         for engine in engines
@@ -749,6 +783,9 @@ def plan_streaming_load(
             "autoscaling_max_replicas": int(autoscaling_max_replicas),
             "capacity_headroom": float(capacity_headroom),
             "plan_only": True,
+            "runner_storage_root": str(effective_runner_root).replace("\\", "/"),
+            "disk_free_path": str(disk_free_path).replace("\\", "/"),
+            "disk_free_gb": round(float(disk_free_gb), 3),
         },
         "preflight": preflight_payload,
         "plans": rows,
@@ -1898,12 +1935,13 @@ def print_table(payload: dict[str, Any]) -> None:
 
 
 def print_plan_table(payload: dict[str, Any]) -> None:
-    print("| vectors | engine | status | local free | required local free | blockers |")
-    print("|---:|---|---|---:|---:|---|")
+    print("| vectors | engine | status | runner storage | local free | required local free | blockers |")
+    print("|---:|---|---|---|---:|---:|---|")
     for row in payload.get("plans", []):
         blockers = ", ".join(row.get("blockers", [])) or "-"
         print(
             f"| {row['vectors']} | {row['engine']} | {row['status']} | "
+            f"{row.get('runner_storage_root', 'state')} | "
             f"{row['disk_free_gb']:.2f} GB | {row['required_local_free_gb']:.2f} GB | {blockers} |"
         )
 
@@ -1930,6 +1968,13 @@ def main() -> int:
     parser.add_argument("--plan-only", action="store_true", help="Write a large-N preflight plan without generating vectors.")
     parser.add_argument("--planned-result-output", type=Path, default=None, help="Result JSON path embedded in plan-only reproduction commands.")
     parser.add_argument("--safety-factor", type=float, default=1.25, help="Disk safety factor for plan-only local index/transient storage estimates.")
+    parser.add_argument("--disk-free-gb", type=float, default=None, help="Override local free disk for deterministic plan-only artifacts.")
+    parser.add_argument(
+        "--runner-storage-root",
+        type=Path,
+        default=None,
+        help="Directory or mounted volume used for plan-only checkpoints and local index paths.",
+    )
     parser.add_argument(
         "--checkpoint-path",
         type=Path,
@@ -1977,6 +2022,8 @@ def main() -> int:
             memory_payload_kb=args.memory_payload_kb,
             vector_dtype_bytes=args.vector_dtype_bytes,
             safety_factor=args.safety_factor,
+            runner_storage_root=args.runner_storage_root,
+            disk_free_gb_override=args.disk_free_gb,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

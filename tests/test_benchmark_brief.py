@@ -19,6 +19,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
         "benchmarks/production_streaming_load_qdrant_10m_plan.json",
         "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json",
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
         "benchmarks/production_streaming_load_pgvector_smoke_results.json",
         "benchmarks/production_streaming_load_pgvector_10m_plan.json",
         "benchmarks/production_streaming_load_50m_plan.json",
@@ -34,7 +35,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "docker compose -f examples/production-index-profile/docker-compose.yml run --rm benchmark",
         "docker compose -f examples/qdrant-sharded-streaming/docker-compose.yml up -d",
         "python benchmarks/ann_index_curve_benchmark.py --sizes 10000 50000",
-        "python benchmarks/production_streaming_load_benchmark.py --plan-only --sizes 10000000",
+        "python benchmarks/production_streaming_load_benchmark.py --plan-only --runner-storage-root state/production-runs --disk-free-gb 0 --sizes 10000000",
     ]
 
     for artifact in artifacts:

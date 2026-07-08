@@ -299,6 +299,8 @@ def test_production_scale_run_plan_reports_missing_service_env():
     assert row["target_memories"] == 10_000_000
     assert row["output_artifact"].endswith("production_streaming_load_qdrant_10m_results.json")
     assert row["checkpoint_path"].endswith("qdrant-service-10000000.checkpoint.json")
+    assert row["runner_storage_root"] == "state"
+    assert row["disk_free_path"]
     assert "WAVEMIND_QDRANT_URL" in row["required_env"]
     assert row["missing_env"] == ("WAVEMIND_QDRANT_URL",)
     assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
@@ -332,6 +334,35 @@ def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
     assert row["estimated_application_storage_gb"] > 20
 
 
+def test_production_scale_run_plan_can_use_external_runner_storage_root(tmp_path, monkeypatch):
+    monkeypatch.setattr("wavemind.scale._module_available", lambda name: True)
+    runner_root = tmp_path / "large-runs"
+    runner_root.mkdir()
+
+    payload = build_production_scale_run_plan(
+        profiles=["faiss-ivfpq-50m"],
+        env={
+            "WAVEMIND_FAISS_IVFPQ_PATH": str(runner_root / "wavemind-faiss-ivfpq-50m.faiss"),
+        },
+        runner_storage_root=runner_root,
+        disk_free_gb=1000.0,
+    )
+    row = payload["profiles"][0]
+
+    assert payload["summary"]["runner_storage_root"].endswith("large-runs")
+    assert payload["summary"]["disk_free_path"].endswith("large-runs")
+    assert row["status"] == "ready"
+    assert row["runner_storage_root"].endswith("large-runs")
+    assert row["disk_free_path"].endswith("large-runs")
+    assert row["checkpoint_path"].endswith("large-runs/faiss-ivfpq-persisted-50000000.checkpoint.json")
+    assert row["command_env"]["WAVEMIND_FAISS_IVFPQ_PATH"].endswith(
+        "large-runs/wavemind-faiss-ivfpq-50m.faiss"
+    )
+    assert "--checkpoint-path" in row["command"]
+    assert "large-runs/faiss-ivfpq-persisted-50000000.checkpoint.json" in row["command"]
+    assert any("runner storage root" in action for action in row["actions"])
+
+
 def test_production_scale_run_plan_all_profiles_and_known_names():
     names = production_scale_profile_names()
     assert "qdrant-sharded-100m" in names
@@ -346,6 +377,8 @@ def test_production_scale_run_plan_all_profiles_and_known_names():
     assert payload["summary"]["total_profiles"] == len(names)
     assert payload["summary"]["target_memories_total"] >= 180_000_000
     assert payload["summary"]["monthly_budget_usd_total"] >= 20_000.0
+    assert payload["summary"]["runner_storage_root"] == "state"
+    assert payload["summary"]["disk_free_gb"] == 0.0
     assert payload["summary"]["estimated_monthly_total_cost_at_target_qps_usd"] > 0
     assert payload["summary"]["cost_status_counts"]["valid_slo"] == len(names)
     assert payload["summary"]["pareto_frontier_profiles"] == [
@@ -390,6 +423,28 @@ def test_cli_production_scale_plan_writes_deterministic_artifact(tmp_path):
     assert payload["summary"]["overall_status"] == "action_required"
     assert payload["profiles"][0]["profile"] == "qdrant-10m"
     assert payload["profiles"][0]["disk_free_gb"] == 0.0
+    assert payload["profiles"][0]["runner_storage_root"] == "state"
+
+
+def test_cli_production_scale_plan_accepts_runner_storage_root(tmp_path):
+    runner_root = tmp_path / "runner-state"
+    runner_root.mkdir()
+    result = run_cli(
+        "production-scale-plan",
+        "--profile",
+        "qdrant-10m",
+        "--runner-storage-root",
+        str(runner_root),
+        "--disk-free-gb",
+        "1000",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    row = payload["profiles"][0]
+
+    assert payload["summary"]["runner_storage_root"].endswith("runner-state")
+    assert row["checkpoint_path"].endswith("runner-state/qdrant-service-10000000.checkpoint.json")
+    assert "runner-state/qdrant-service-10000000.checkpoint.json" in row["command"]
 
 
 def test_cli_production_scale_plan_applies_cost_gate_overrides(tmp_path):

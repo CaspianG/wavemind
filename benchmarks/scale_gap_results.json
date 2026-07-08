@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-08T13:46:53Z",
+  "generated_at": "2026-07-08T14:44:02Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
@@ -37,7 +37,7 @@
         "missing_env:WAVEMIND_QDRANT_URL",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/qdrant-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
       "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -76,7 +76,7 @@
         "missing_env:WAVEMIND_QDRANT_URLS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/qdrant-sharded-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -115,7 +115,7 @@
         "missing_env:WAVEMIND_PGVECTOR_DSN",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/pgvector-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_pgvector_tuning_results.json",
@@ -154,7 +154,7 @@
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "claim_unlocked": "50M compressed local/persistent FAISS profile.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_ivfpq_10m_results.json",
@@ -193,7 +193,7 @@
         "missing_env:WAVEMIND_QDRANT_URLS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 100 --top-k 10 --seed 42 --noise 0.08 --batch-size 100000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/qdrant-sharded-service-100000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
       "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",

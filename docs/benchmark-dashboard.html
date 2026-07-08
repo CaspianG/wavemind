@@ -70,7 +70,7 @@
   <div class="cards">
     <section class="metric-card"><h2>Readiness</h2><strong>pass</strong><p>39/39 criteria pass</p></section>
 <section class="metric-card"><h2>Implemented</h2><strong>28</strong><p>2 runner-ready and 6 planned public proof paths</p></section>
-<section class="metric-card"><h2>Refresh</h2><strong>2026-07-08T05:47:15Z</strong><p>source a2a8e78aabe1</p></section>
+<section class="metric-card"><h2>Refresh</h2><strong>2026-07-08T14:44:03Z</strong><p>source dfc070473493</p></section>
   </div>
 
   <section class="panel">
@@ -78,7 +78,7 @@
     <img class="summary" src="assets/benchmark-summary.svg" alt="WaveMind benchmark summary">
   </section>
 
-  <section class="panel"><h2>Publication Contract</h2><p>The leaderboard is generated from artifacts, freshness-checked, published to GitHub Pages, and claim-limited until strict production evidence passes.</p><div class="publication-grid"><div><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Weekly schedule</th><td>17 4 * * 1</td></tr><tr><th>Refresh profile</th><td>local</td></tr><tr><th>Pages URL</th><td>https://caspiang.github.io/wavemind/</td></tr><tr><th>Source ref</th><td>a2a8e78aabe1</td></tr><tr><th>Workflow run</th><td>local or manual artifact</td></tr></tbody></table></div><div class="check-list"><span class="badge pass">weekly schedule: true</span><span class="badge pass">manual dispatch: true</span><span class="badge pass">github pages upload: true</span><span class="badge pass">github pages deploy: true</span><span class="badge pass">review artifact uploaded: true</span><span class="badge pass">no scheduled bot commit to main: true</span><span class="badge pass">strict freshness gate: true</span><span class="badge pass">machine status published: true</span></div></div></section>
+  <section class="panel"><h2>Publication Contract</h2><p>The leaderboard is generated from artifacts, freshness-checked, published to GitHub Pages, and claim-limited until strict production evidence passes.</p><div class="publication-grid"><div><table class="compact"><tbody><tr><th>Status</th><td>pass</td></tr><tr><th>Weekly schedule</th><td>17 4 * * 1</td></tr><tr><th>Refresh profile</th><td>local</td></tr><tr><th>Pages URL</th><td>https://caspiang.github.io/wavemind/</td></tr><tr><th>Source ref</th><td>dfc070473493</td></tr><tr><th>Workflow run</th><td>local or manual artifact</td></tr></tbody></table></div><div class="check-list"><span class="badge pass">weekly schedule: true</span><span class="badge pass">manual dispatch: true</span><span class="badge pass">github pages upload: true</span><span class="badge pass">github pages deploy: true</span><span class="badge pass">review artifact uploaded: true</span><span class="badge pass">no scheduled bot commit to main: true</span><span class="badge pass">strict freshness gate: true</span><span class="badge pass">machine status published: true</span></div></div></section>
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">
@@ -239,7 +239,7 @@
 <td>Scale readiness profile</td>
 <td>production-scale</td>
 <td>precision@1</td>
-<td>WaveMind structured payloads: 1 / 0.61 ms</td>
+<td>WaveMind structured payloads: 1 / 0.762 ms</td>
 <td>-</td>
 <td>WaveMind-only check</td>
 </tr>
@@ -281,8 +281,8 @@
 </tr></thead><tbody>
 <tr>
 <td>Artifact freshness</td>
-<td>local matrix refresh at 2026-07-08T05:47:15Z</td>
-<td>source a2a8e78aabe1; audit gate enforced by validate_benchmark_artifacts.py</td>
+<td>local matrix refresh at 2026-07-08T14:44:03Z</td>
+<td>source dfc070473493; audit gate enforced by validate_benchmark_artifacts.py</td>
 <td>Keep weekly refresh green before public claims.</td>
 </tr>
 <tr>
@@ -324,7 +324,7 @@
 <tr>
 <td>50M streaming preflight</td>
 <td>WaveMind faiss-ivfpq-persisted streaming plan-only contract</td>
-<td><span class="badge warn">action_required; index 1.12 GB; app storage 119.2 GB; blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH</span></td>
+<td><span class="badge warn">action_required; index 1.12 GB; app storage 119.2 GB; blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches</span></td>
 <td>Run .github/workflows/production-streaming-load.yml with faiss-ivfpq-persisted and publish benchmarks/production_streaming_load_ivfpq_50m_results.json.</td>
 </tr>
 <tr>
@@ -336,7 +336,7 @@
 <tr>
 <td>Qdrant sharded streaming</td>
 <td>real two-service fanout smoke plus horizontal Qdrant preflight</td>
-<td><span class="badge warn">smoke recall 1, smoke p99 16.0 ms; 10M preflight action_required; 100M preflight action_required; planned shards 4; blockers missing_env:WAVEMIND_QDRANT_URLS</span></td>
+<td><span class="badge warn">smoke recall 1, smoke p99 16.0 ms; 10M preflight action_required; 100M preflight action_required; planned shards 4; blockers missing_env:WAVEMIND_QDRANT_URLS, insufficient_local_disk_for_index_and_transient_batches</span></td>
 <td>Run .github/workflows/production-streaming-load.yml with qdrant-sharded-service and publish benchmarks/production_streaming_load_qdrant_sharded_10m_results.json or benchmarks/production_streaming_load_qdrant_sharded_100m_results.json.</td>
 </tr>
 <tr>
