@@ -47,6 +47,25 @@ class WaveMindClusterSpec:
     repair_enabled: bool = True
     repair_schedule: str = "*/15 * * * *"
     repair_limit: int = 1000
+    memory_os_enabled: bool = False
+    memory_os_schedule: str = "*/10 * * * *"
+    memory_os_namespace: str | None = None
+    memory_os_audit_limit: int = 512
+    memory_os_max_hot_queries: int = 32
+    memory_os_min_frequency: int = 2
+    memory_os_top_k: int = 3
+    memory_os_target_memories: int | None = None
+    memory_os_cache_mode: str = "auto"
+    memory_os_target_qps: float = 100.0
+    memory_os_target_p99_ms: float = 100.0
+    memory_os_observed_p99_ms: float | None = None
+    memory_os_multimodal: bool = False
+    memory_os_strict_plan: bool = True
+    memory_os_lock_required: bool = False
+    memory_os_lock_ttl_seconds: int = 300
+    memory_os_lock_prefix: str = "wavemind:memory-os:lock"
+    memory_os_run_on_all_replicas: bool = True
+    memory_os_timeout_seconds: float = 30.0
     control_plane_consensus_enabled: bool = True
     control_plane_lease_ttl_seconds: float = 30.0
     control_plane_config_revision: int = 0
@@ -81,6 +100,28 @@ class WaveMindClusterSpec:
             raise ValueError("service_port must be positive")
         if self.repair_limit <= 0:
             raise ValueError("repair_limit must be positive")
+        if self.memory_os_audit_limit <= 0:
+            raise ValueError("memory_os_audit_limit must be positive")
+        if self.memory_os_max_hot_queries <= 0:
+            raise ValueError("memory_os_max_hot_queries must be positive")
+        if self.memory_os_min_frequency <= 0:
+            raise ValueError("memory_os_min_frequency must be positive")
+        if self.memory_os_top_k <= 0:
+            raise ValueError("memory_os_top_k must be positive")
+        if self.memory_os_target_memories is not None and self.memory_os_target_memories < 0:
+            raise ValueError("memory_os_target_memories cannot be negative")
+        if self.memory_os_cache_mode not in {"auto", "disabled", "local", "redis"}:
+            raise ValueError("memory_os_cache_mode must be auto, disabled, local, or redis")
+        if self.memory_os_target_qps <= 0:
+            raise ValueError("memory_os_target_qps must be positive")
+        if self.memory_os_target_p99_ms <= 0:
+            raise ValueError("memory_os_target_p99_ms must be positive")
+        if self.memory_os_observed_p99_ms is not None and self.memory_os_observed_p99_ms < 0:
+            raise ValueError("memory_os_observed_p99_ms cannot be negative")
+        if self.memory_os_lock_ttl_seconds <= 0:
+            raise ValueError("memory_os_lock_ttl_seconds must be positive")
+        if self.memory_os_timeout_seconds <= 0:
+            raise ValueError("memory_os_timeout_seconds must be positive")
         if self.control_plane_lease_ttl_seconds <= 0:
             raise ValueError("control_plane_lease_ttl_seconds must be positive")
         if self.control_plane_config_revision < 0:
@@ -141,6 +182,7 @@ class WaveMindClusterSpec:
         cache = dict(spec.get("cache") or {})
         auth = dict(spec.get("auth") or {})
         repair = dict(spec.get("repair") or {})
+        memory_os = dict(spec.get("memoryOs") or {})
         control_plane = dict(spec.get("controlPlane") or {})
         consensus = dict(control_plane.get("consensus") or {})
         autoscaling = dict(spec.get("autoscaling") or {})
@@ -171,6 +213,25 @@ class WaveMindClusterSpec:
             repair_enabled=bool(repair.get("enabled", True)),
             repair_schedule=str(repair.get("schedule", "*/15 * * * *")),
             repair_limit=int(repair.get("limit", 1000)),
+            memory_os_enabled=bool(memory_os.get("enabled", False)),
+            memory_os_schedule=str(memory_os.get("schedule", "*/10 * * * *")),
+            memory_os_namespace=_optional_string(memory_os.get("namespace")),
+            memory_os_audit_limit=int(memory_os.get("auditLimit", 512)),
+            memory_os_max_hot_queries=int(memory_os.get("maxHotQueries", 32)),
+            memory_os_min_frequency=int(memory_os.get("minFrequency", 2)),
+            memory_os_top_k=int(memory_os.get("topK", 3)),
+            memory_os_target_memories=_optional_int(memory_os.get("targetMemories")),
+            memory_os_cache_mode=str(memory_os.get("cacheMode", "auto")),
+            memory_os_target_qps=float(memory_os.get("targetQps", 100.0)),
+            memory_os_target_p99_ms=float(memory_os.get("targetP99Ms", 100.0)),
+            memory_os_observed_p99_ms=_optional_float(memory_os.get("observedP99Ms")),
+            memory_os_multimodal=bool(memory_os.get("multimodal", False)),
+            memory_os_strict_plan=bool(memory_os.get("strictPlan", True)),
+            memory_os_lock_required=bool(memory_os.get("lockRequired", False)),
+            memory_os_lock_ttl_seconds=int(memory_os.get("lockTtlSeconds", 300)),
+            memory_os_lock_prefix=str(memory_os.get("lockPrefix", "wavemind:memory-os:lock")),
+            memory_os_run_on_all_replicas=bool(memory_os.get("runOnAllReplicas", True)),
+            memory_os_timeout_seconds=float(memory_os.get("timeoutSeconds", 30.0)),
             control_plane_consensus_enabled=bool(consensus.get("enabled", True)),
             control_plane_lease_ttl_seconds=float(consensus.get("leaseTtlSeconds", 30.0)),
             control_plane_config_revision=int(consensus.get("configRevision", 0)),
@@ -292,6 +353,32 @@ class WaveMindClusterSpec:
                     self.autoscaling_target_memory_utilization
                 )
             spec["autoscaling"] = autoscaling
+        if self.memory_os_enabled:
+            memory_os: dict[str, Any] = {
+                "enabled": True,
+                "schedule": self.memory_os_schedule,
+                "auditLimit": self.memory_os_audit_limit,
+                "maxHotQueries": self.memory_os_max_hot_queries,
+                "minFrequency": self.memory_os_min_frequency,
+                "topK": self.memory_os_top_k,
+                "cacheMode": self.memory_os_cache_mode,
+                "targetQps": self.memory_os_target_qps,
+                "targetP99Ms": self.memory_os_target_p99_ms,
+                "multimodal": self.memory_os_multimodal,
+                "strictPlan": self.memory_os_strict_plan,
+                "lockRequired": self.memory_os_lock_required,
+                "lockTtlSeconds": self.memory_os_lock_ttl_seconds,
+                "lockPrefix": self.memory_os_lock_prefix,
+                "runOnAllReplicas": self.memory_os_run_on_all_replicas,
+                "timeoutSeconds": self.memory_os_timeout_seconds,
+            }
+            if self.memory_os_namespace is not None:
+                memory_os["namespace"] = self.memory_os_namespace
+            if self.memory_os_target_memories is not None:
+                memory_os["targetMemories"] = self.memory_os_target_memories
+            if self.memory_os_observed_p99_ms is not None:
+                memory_os["observedP99Ms"] = self.memory_os_observed_p99_ms
+            spec["memoryOs"] = memory_os
         if self.redis_url:
             spec["cache"]["redisUrl"] = self.redis_url
         if self.auth_secret:
@@ -323,6 +410,8 @@ class WaveMindClusterSpec:
             resources.append(self._rebalance_configmap(rebalance_plan))
         if self.repair_enabled and self.namespace_count:
             resources.append(self._repair_cronjob())
+        if self.memory_os_enabled and self.namespace_count:
+            resources.append(self._memory_os_cronjob())
         return resources
 
     def capacity_autoscale_plan(self, *, max_moves: int = 25, seed_replicas: int | None = None):
@@ -381,6 +470,22 @@ class WaveMindClusterSpec:
             "ready": bool(profile.get("ok")),
             "profile": profile,
         }
+
+    def memory_os_requires_redis(self) -> bool:
+        if not self.memory_os_enabled:
+            return False
+        if self.memory_os_cache_mode == "redis" or self.memory_os_lock_required:
+            return True
+        target = (
+            self.memory_os_target_memories
+            if self.memory_os_target_memories is not None
+            else self.autoscaling_target_memories
+            if self.autoscaling_target_memories is not None
+            else 0
+        )
+        return self.memory_os_cache_mode == "auto" and (
+            self.replicas > 1 or target >= 1_000_000
+        )
 
     def as_resource_list(self, resources: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
         return {
@@ -526,6 +631,148 @@ class WaveMindClusterSpec:
         for container in manifest["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"]:
             container["imagePullPolicy"] = self.image_pull_policy
         return manifest
+
+    def _memory_os_cronjob(self) -> dict[str, Any]:
+        labels = {**self._labels(), "app.kubernetes.io/component": "memory-os"}
+        env: list[dict[str, Any]] = []
+        if self.auth_secret:
+            env.append(
+                {
+                    "name": "WAVEMIND_API_KEY",
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": self.auth_secret,
+                            "key": self.auth_secret_key,
+                        }
+                    },
+                }
+            )
+        nodes = [node.address for node in self.nodes]
+        plan_payload: dict[str, Any] = {
+            "namespace": self.memory_os_namespace,
+            "audit_limit": self.memory_os_audit_limit,
+            "max_hot_queries": self.memory_os_max_hot_queries,
+            "min_frequency": self.memory_os_min_frequency,
+            "top_k": self.memory_os_top_k,
+            "target_memories": (
+                self.memory_os_target_memories
+                if self.memory_os_target_memories is not None
+                else self.autoscaling_target_memories
+                if self.autoscaling_target_memories is not None
+                else 2_000_000
+            ),
+            "namespace_count": self.namespace_count,
+            "node_count": len(nodes),
+            "deployment": "production",
+            "cache_mode": self.memory_os_cache_mode,
+            "target_qps": self.memory_os_target_qps,
+            "target_p99_ms": self.memory_os_target_p99_ms,
+            "observed_p99_ms": self.memory_os_observed_p99_ms,
+            "multimodal": self.memory_os_multimodal,
+        }
+        script = f"""
+import json
+import os
+import sys
+import urllib.request
+
+nodes = {json.dumps(nodes)}
+plan_payload = {json.dumps(plan_payload, sort_keys=True)}
+timeout = {float(self.memory_os_timeout_seconds)!r}
+api_key = os.environ.get("WAVEMIND_API_KEY")
+headers = {{"Content-Type": "application/json"}}
+if api_key:
+    headers["x-api-key"] = api_key
+
+run_payload = dict(plan_payload)
+run_payload.pop("cache_mode", None)
+run_payload["lock_ttl_seconds"] = {int(self.memory_os_lock_ttl_seconds)}
+run_payload["lock_prefix"] = {json.dumps(self.memory_os_lock_prefix)}
+
+def post(node, path, payload):
+    data = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        node.rstrip("/") + path,
+        data=data,
+        headers=headers,
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+plan = post(nodes[0], "/memory-os/plan", plan_payload)
+print(json.dumps({{"node": nodes[0], "plan": plan}}, ensure_ascii=False))
+plan_tasks = {{
+    task.get("id"): task
+    for task in plan.get("tasks", [])
+    if isinstance(task, dict) and task.get("id")
+}}
+memory_os_task = plan_tasks.get("memory-os") or {{}}
+plan_requires_lock = bool(memory_os_task.get("requires_distributed_lock"))
+run_payload["lock_required"] = {bool(self.memory_os_lock_required)!r} or plan_requires_lock
+if plan.get("effective_cache_mode") == "redis" and not {bool(self.redis_url)!r}:
+    print(
+        json.dumps(
+            {{
+                "error": "memory-os-plan requires Redis but spec.cache.redisUrl is not configured",
+                "policy_auto_adjustments": plan.get("policy_auto_adjustments", []),
+                "policy_escalation_ids": plan.get("policy_escalation_ids", []),
+            }},
+            ensure_ascii=False,
+        ),
+        file=sys.stderr,
+    )
+    raise SystemExit(5)
+if {bool(self.memory_os_strict_plan)!r} and plan.get("status") not in {{"ok", "watch"}}:
+    raise SystemExit(3)
+
+run_nodes = nodes if {bool(self.memory_os_run_on_all_replicas)!r} else nodes[:1]
+failed = []
+for node in run_nodes:
+    report = post(node, "/memory-os/run", run_payload)
+    print(json.dumps({{"node": node, "report": report}}, ensure_ascii=False))
+    if not report.get("ok", False):
+        failed.append(node)
+if failed:
+    print(json.dumps({{"failed_nodes": failed}}), file=sys.stderr)
+    raise SystemExit(4)
+""".strip()
+        container: dict[str, Any] = {
+            "name": "memory-os",
+            "image": self.image,
+            "imagePullPolicy": self.image_pull_policy,
+            "command": ["python", "-c"],
+            "args": [script],
+        }
+        if env:
+            container["env"] = env
+        return {
+            "apiVersion": "batch/v1",
+            "kind": "CronJob",
+            "metadata": {
+                "name": f"{self.name}-memory-os",
+                "namespace": self.namespace,
+                "labels": labels,
+                "annotations": self._capacity_annotations(),
+            },
+            "spec": {
+                "schedule": self.memory_os_schedule,
+                "concurrencyPolicy": "Forbid",
+                "successfulJobsHistoryLimit": 3,
+                "failedJobsHistoryLimit": 3,
+                "jobTemplate": {
+                    "spec": {
+                        "template": {
+                            "metadata": {"labels": labels},
+                            "spec": {
+                                "restartPolicy": "OnFailure",
+                                "containers": [container],
+                            },
+                        }
+                    }
+                },
+            },
+        }
 
     def _horizontal_pod_autoscaler(self) -> dict[str, Any]:
         labels = self._labels()
@@ -717,6 +964,48 @@ def custom_resource_definition() -> dict[str, Any]:
                                         "cache": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "auth": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
                                         "repair": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
+                                        "memoryOs": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {"type": "boolean"},
+                                                "schedule": {"type": "string"},
+                                                "namespace": {"type": "string"},
+                                                "auditLimit": {"type": "integer", "minimum": 1},
+                                                "maxHotQueries": {"type": "integer", "minimum": 1},
+                                                "minFrequency": {"type": "integer", "minimum": 1},
+                                                "topK": {"type": "integer", "minimum": 1},
+                                                "targetMemories": {"type": "integer", "minimum": 0},
+                                                "cacheMode": {
+                                                    "type": "string",
+                                                    "enum": ["auto", "disabled", "local", "redis"],
+                                                },
+                                                "targetQps": {
+                                                    "type": "number",
+                                                    "exclusiveMinimum": 0,
+                                                },
+                                                "targetP99Ms": {
+                                                    "type": "number",
+                                                    "exclusiveMinimum": 0,
+                                                },
+                                                "observedP99Ms": {
+                                                    "type": "number",
+                                                    "minimum": 0,
+                                                },
+                                                "multimodal": {"type": "boolean"},
+                                                "strictPlan": {"type": "boolean"},
+                                                "lockRequired": {"type": "boolean"},
+                                                "lockTtlSeconds": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                },
+                                                "lockPrefix": {"type": "string"},
+                                                "runOnAllReplicas": {"type": "boolean"},
+                                                "timeoutSeconds": {
+                                                    "type": "number",
+                                                    "exclusiveMinimum": 0,
+                                                },
+                                            },
+                                        },
                                         "controlPlane": {
                                             "type": "object",
                                             "properties": {
@@ -1008,6 +1297,14 @@ def operator_status(
         )
     )
     repair_ready = bool(spec.repair_enabled and spec.namespace_count > 0)
+    memory_os_requires_redis = spec.memory_os_requires_redis()
+    memory_os_ready = (
+        not spec.memory_os_enabled
+        or (
+            spec.namespace_count > 0
+            and (not memory_os_requires_redis or bool(spec.redis_url))
+        )
+    )
     control_plane = spec.control_plane_consensus_report()
     control_plane_ready = bool(control_plane.get("ready"))
     ready = (
@@ -1016,6 +1313,7 @@ def operator_status(
         and rebalance_safety_ready
         and autoscaling_ready
         and repair_ready
+        and memory_os_ready
         and control_plane_ready
     )
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -1079,6 +1377,24 @@ def operator_status(
             timestamp,
         ),
         _operator_condition(
+            "MemoryOSReady",
+            memory_os_ready,
+            (
+                "MemoryOSCronJobReady"
+                if spec.memory_os_enabled and memory_os_ready
+                else "MemoryOSNotEnabled"
+                if not spec.memory_os_enabled
+                else "MemoryOSRedisRequired"
+            ),
+            (
+                f"enabled={spec.memory_os_enabled}; "
+                f"cache_mode={spec.memory_os_cache_mode}; "
+                f"redis_required={memory_os_requires_redis}; "
+                f"redis_configured={bool(spec.redis_url)}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
             "ControlPlaneReady",
             control_plane_ready,
             "ConsensusLeaseSafe" if control_plane_ready else "ConsensusBlocked",
@@ -1104,6 +1420,8 @@ def operator_status(
         actions.append("Run cluster-health and cluster-repair before declaring the cluster ready.")
     if not repair_ready:
         actions.append("Enable scheduled cluster repair for replicated namespace deployments.")
+    if spec.memory_os_enabled and not memory_os_ready:
+        actions.append("Configure cache.redisUrl before enabling production Memory OS scheduling.")
     if not control_plane_ready:
         actions.append("Enable and pass control-plane consensus safety before applying production config changes.")
     if not actions:
@@ -1166,6 +1484,17 @@ def operator_status(
                 if rebalance is not None
                 else None
             ),
+        },
+        "memoryOs": {
+            "enabled": spec.memory_os_enabled,
+            "ready": memory_os_ready,
+            "cronJobName": f"{spec.name}-memory-os" if spec.memory_os_enabled else None,
+            "cacheMode": spec.memory_os_cache_mode,
+            "redisRequired": memory_os_requires_redis,
+            "redisConfigured": bool(spec.redis_url),
+            "lockRequired": spec.memory_os_lock_required,
+            "strictPlan": spec.memory_os_strict_plan,
+            "runOnAllReplicas": spec.memory_os_run_on_all_replicas,
         },
         "controlPlane": control_plane,
         "conditions": conditions,
@@ -1377,6 +1706,12 @@ def _optional_int(value: object) -> int | None:
     if value is None or value == "":
         return None
     return int(value)
+
+
+def _optional_float(value: object) -> float | None:
+    if value is None or value == "":
+        return None
+    return float(value)
 
 
 def _observed_int(

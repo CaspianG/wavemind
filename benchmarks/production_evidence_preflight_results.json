@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_preflight.v1",
-  "generated_at": "2026-07-07T14:58:37Z",
+  "generated_at": "2026-07-08T05:06:00Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -23,7 +23,7 @@
         "WAVEMIND_CLUSTER_NODES",
         "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
       ],
-      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f commit_results=true",
+      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f batch_query_size=24 -f commit_results=true",
       "output_artifact": "benchmarks/http_cluster_load_results.json",
       "issues": [
         "cluster node requires at least 4 URLs",

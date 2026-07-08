@@ -2425,6 +2425,20 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repair-schedule", default="*/15 * * * *")
     parser.add_argument("--repair-limit", type=int, default=1000)
     parser.add_argument("--no-repair", action="store_true")
+    parser.add_argument("--memory-os", action="store_true")
+    parser.add_argument("--memory-os-schedule", default="*/10 * * * *")
+    parser.add_argument("--memory-os-namespace")
+    parser.add_argument("--memory-os-cache-mode", choices=["auto", "disabled", "local", "redis"], default="auto")
+    parser.add_argument("--memory-os-target-memories", type=int)
+    parser.add_argument("--memory-os-target-qps", type=float, default=100.0)
+    parser.add_argument("--memory-os-target-p99-ms", type=float, default=100.0)
+    parser.add_argument("--memory-os-observed-p99-ms", type=float)
+    parser.add_argument("--memory-os-multimodal", action="store_true")
+    parser.add_argument("--memory-os-lock-required", action="store_true")
+    parser.add_argument("--memory-os-lock-ttl-seconds", type=int, default=300)
+    parser.add_argument("--memory-os-lock-prefix", default="wavemind:memory-os:lock")
+    parser.add_argument("--memory-os-run-on-one-replica", action="store_true")
+    parser.add_argument("--memory-os-timeout-seconds", type=float, default=30.0)
     parser.add_argument("--no-control-plane-consensus", action="store_true")
     parser.add_argument("--control-plane-lease-ttl-seconds", type=float, default=30.0)
     parser.add_argument("--control-plane-config-revision", type=int, default=0)
@@ -2463,6 +2477,20 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         repair_enabled=not args.no_repair,
         repair_schedule=args.repair_schedule,
         repair_limit=args.repair_limit,
+        memory_os_enabled=args.memory_os,
+        memory_os_schedule=args.memory_os_schedule,
+        memory_os_namespace=args.memory_os_namespace,
+        memory_os_cache_mode=args.memory_os_cache_mode,
+        memory_os_target_memories=args.memory_os_target_memories,
+        memory_os_target_qps=args.memory_os_target_qps,
+        memory_os_target_p99_ms=args.memory_os_target_p99_ms,
+        memory_os_observed_p99_ms=args.memory_os_observed_p99_ms,
+        memory_os_multimodal=args.memory_os_multimodal,
+        memory_os_lock_required=args.memory_os_lock_required,
+        memory_os_lock_ttl_seconds=args.memory_os_lock_ttl_seconds,
+        memory_os_lock_prefix=args.memory_os_lock_prefix,
+        memory_os_run_on_all_replicas=not args.memory_os_run_on_one_replica,
+        memory_os_timeout_seconds=args.memory_os_timeout_seconds,
         control_plane_consensus_enabled=not args.no_control_plane_consensus,
         control_plane_lease_ttl_seconds=args.control_plane_lease_ttl_seconds,
         control_plane_config_revision=args.control_plane_config_revision,

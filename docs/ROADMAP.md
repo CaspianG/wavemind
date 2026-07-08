@@ -251,14 +251,22 @@ policy matters more than raw vector-database scale:
   Kubernetes operator-style control plane: a `WaveMindCluster` CRD, RBAC,
   operator Deployment, sample custom resource, deterministic reconciliation
   renderer, and an in-cluster loop that applies Services, StatefulSet,
-  rebalance ConfigMap, and repair CronJob resources.
+  rebalance ConfigMap, repair CronJob, and Memory OS CronJob resources.
+- The `WaveMindCluster` CRD now includes `spec.memoryOs`. Operator reconcile
+  renders `<cluster>-memory-os` CronJobs that call `/memory-os/plan` before
+  `/memory-os/run`, apply planned distributed-lock requirements, and exit
+  before mutation when Redis is required but `spec.cache.redisUrl` is missing.
+  Operator status exposes `MemoryOSReady`,
+  `status.memoryOs.redisRequired`, and `status.memoryOs.redisConfigured` so
+  unsafe multi-replica Memory OS scheduling is visible before state mutation.
 - The `WaveMindCluster` CRD now exposes a `status` subresource. `wavemind
   operator-status`, `operator_status()`, and the in-cluster operator loop can
   produce and patch Kubernetes-style conditions for resources, capacity,
-  autoscaling, rolling rebalance planning, scheduled repair, and control-plane
-  safety. The production readiness gate now requires status phase `Ready`,
-  `RebalancePlanned`, `ControlPlaneReady`, and all operator readiness conditions
-  before the operator criterion passes.
+  autoscaling, rolling rebalance planning, scheduled repair, Memory OS
+  scheduling, and control-plane safety. The production readiness gate now
+  requires status phase `Ready`, `RebalancePlanned`, `MemoryOSReady`,
+  `ControlPlaneReady`, and all operator readiness conditions before the
+  operator criterion passes.
 - The `WaveMindCluster` CRD now includes `spec.controlPlane.consensus`. Operator
   status embeds the same majority leader lease/config revision safety profile
   used by the standalone `wavemind control-plane-consensus` gate, so production

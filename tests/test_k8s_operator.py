@@ -72,9 +72,15 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert crd["spec"]["versions"][0]["subresources"] == {"status": {}}
     assert status_props["x-kubernetes-preserve-unknown-fields"] is True
     consensus_props = spec_props["controlPlane"]["properties"]["consensus"]["properties"]
+    memory_os_props = spec_props["memoryOs"]["properties"]
     assert "enabled" in consensus_props
     assert "leaseTtlSeconds" in consensus_props
     assert "configRevision" in consensus_props
+    assert "enabled" in memory_os_props
+    assert "schedule" in memory_os_props
+    assert memory_os_props["cacheMode"]["enum"] == ["auto", "disabled", "local", "redis"]
+    assert "lockRequired" in memory_os_props
+    assert "runOnAllReplicas" in memory_os_props
     assert "maxReplicas" in spec_props["autoscaling"]["properties"]
     assert "targetMemories" in spec_props["autoscaling"]["properties"]
     assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
@@ -194,8 +200,11 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
         "AutoscalingReady",
         "RebalancePlanned",
         "RepairScheduled",
+        "MemoryOSReady",
         "ControlPlaneReady",
     }
+    assert payload["operatorStatus"]["memoryOs"]["enabled"] is False
+    assert payload["operatorStatus"]["memoryOs"]["ready"] is True
     assert payload["operatorStatus"]["controlPlane"]["ready"] is True
     assert payload["operatorStatus"]["controlPlane"]["profile"]["minority_commit_blocked"] is True
 
@@ -241,6 +250,77 @@ def test_operator_status_reports_degraded_capacity_and_repair_actions():
     assert conditions["ControlPlaneReady"]["status"] == "True"
     assert any("Run cluster-health" in action for action in status["actions"])
     assert any("Enable scheduled cluster repair" in action for action in status["actions"])
+
+
+def test_operator_reconcile_renders_memory_os_cronjob_with_plan_gate():
+    spec = WaveMindClusterSpec(
+        name="wm-memory-os",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=2,
+        namespace_count=8,
+        redis_url="redis://redis.wavemind-system.svc.cluster.local:6379/0",
+        memory_os_enabled=True,
+        memory_os_schedule="*/5 * * * *",
+        memory_os_namespace="tenant:ops",
+        memory_os_cache_mode="auto",
+        memory_os_target_memories=2_000_000,
+        memory_os_lock_required=False,
+        memory_os_run_on_all_replicas=False,
+    )
+
+    payload = operator_reconcile(spec.custom_resource())
+    cronjobs = {
+        resource["metadata"]["name"]: resource
+        for resource in payload["items"]
+        if resource["kind"] == "CronJob"
+    }
+    memory_os = cronjobs["wm-memory-os-memory-os"]
+    container = memory_os["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    script = container["args"][0]
+
+    assert memory_os["spec"]["schedule"] == "*/5 * * * *"
+    assert "/memory-os/plan" in script
+    assert "/memory-os/run" in script
+    assert "plan_requires_lock" in script
+    assert "spec.cache.redisUrl is not configured" in script
+    assert '"namespace": "tenant:ops"' in script
+    assert '"cache_mode": "auto"' in script
+    assert '"target_memories": 2000000' in script
+    assert "run_nodes = nodes if False else nodes[:1]" in script
+    assert payload["operatorStatus"]["memoryOs"]["enabled"] is True
+    assert payload["operatorStatus"]["memoryOs"]["ready"] is True
+    assert payload["operatorStatus"]["memoryOs"]["redisRequired"] is True
+    assert payload["operatorStatus"]["memoryOs"]["redisConfigured"] is True
+    assert any(
+        condition["type"] == "MemoryOSReady" and condition["status"] == "True"
+        for condition in payload["operatorStatus"]["conditions"]
+    )
+
+
+def test_operator_status_blocks_memory_os_without_required_redis():
+    spec = WaveMindClusterSpec(
+        name="wm-memory-os-blocked",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=2,
+        namespace_count=8,
+        memory_os_enabled=True,
+        memory_os_cache_mode="auto",
+        memory_os_target_memories=2_000_000,
+    )
+
+    status = operator_status(spec.custom_resource())
+    conditions = {condition["type"]: condition for condition in status["conditions"]}
+
+    assert status["ready"] is False
+    assert status["memoryOs"]["enabled"] is True
+    assert status["memoryOs"]["ready"] is False
+    assert status["memoryOs"]["redisRequired"] is True
+    assert status["memoryOs"]["redisConfigured"] is False
+    assert conditions["MemoryOSReady"]["status"] == "False"
+    assert conditions["MemoryOSReady"]["reason"] == "MemoryOSRedisRequired"
+    assert any("cache.redisUrl" in action for action in status["actions"])
 
 
 def test_operator_status_marks_control_plane_disabled_as_not_ready():
@@ -396,6 +476,28 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     assert sample_payload["spec"]["autoscaling"]["maxReplicas"] == 18
     assert any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"])
     assert "operatorStatus" in reconciled
+
+    memory_os_sample = json.loads(
+        run_cli(
+            "operator-sample",
+            "--name",
+            "wm-cli-os",
+            "--namespace",
+            "wavemind-system",
+            "--redis-url",
+            "redis://redis.wavemind-system.svc.cluster.local:6379/0",
+            "--memory-os",
+            "--memory-os-cache-mode",
+            "auto",
+            "--memory-os-target-memories",
+            "2000000",
+            "--memory-os-run-on-one-replica",
+            "--json",
+        ).stdout
+    )
+    assert memory_os_sample["spec"]["memoryOs"]["enabled"] is True
+    assert memory_os_sample["spec"]["memoryOs"]["targetMemories"] == 2_000_000
+    assert memory_os_sample["spec"]["memoryOs"]["runOnAllReplicas"] is False
 
 
 def test_operator_cli_status_renders_observed_conditions(tmp_path):

@@ -25,12 +25,32 @@
     },
     "cache": {
       "capacity": 512,
-      "ttlSeconds": 60.0
+      "ttlSeconds": 60.0,
+      "redisUrl": "redis://redis.wavemind-system.svc.cluster.local:6379/0"
     },
     "repair": {
       "enabled": true,
       "schedule": "*/15 * * * *",
       "limit": 1000
+    },
+    "memoryOs": {
+      "enabled": true,
+      "schedule": "*/10 * * * *",
+      "auditLimit": 512,
+      "maxHotQueries": 32,
+      "minFrequency": 2,
+      "topK": 3,
+      "targetMemories": 10000000,
+      "cacheMode": "auto",
+      "targetQps": 100.0,
+      "targetP99Ms": 100.0,
+      "multimodal": false,
+      "strictPlan": true,
+      "lockRequired": false,
+      "lockTtlSeconds": 300,
+      "lockPrefix": "wavemind:memory-os:lock",
+      "runOnAllReplicas": false,
+      "timeoutSeconds": 30.0
     },
     "controlPlane": {
       "consensus": {

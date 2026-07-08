@@ -14,10 +14,11 @@ kubectl apply -f wavemind-resources.json
 
 `operator-bundle` emits the CRD, RBAC, operator Deployment, and a sample custom
 resource. `operator-reconcile` renders the concrete Kubernetes resources for a
-cluster: normal Service, headless Service, StatefulSet, optional HPA, and
-scheduled repair CronJob. When a capacity target is configured, it also renders
-a bounded `ConfigMap` named `<cluster>-rebalance-plan` with rolling namespace
-rebalance metadata and preview batches.
+cluster: normal Service, headless Service, StatefulSet, optional HPA, scheduled
+repair CronJob, and optional Memory OS CronJob. When a capacity target is
+configured, it also renders a bounded `ConfigMap` named
+`<cluster>-rebalance-plan` with rolling namespace rebalance metadata and preview
+batches.
 
 Production control-plane safety is part of the custom resource. By default,
 `spec.controlPlane.consensus.enabled` is true. Operator status only reports the
@@ -41,6 +42,33 @@ stale-revision rejection, and minority-partition rejection:
 
 The generated status includes a `ControlPlaneReady` condition and a
 `status.controlPlane.profile` object with the deterministic safety evidence.
+
+Production Memory OS scheduling is also part of the custom resource:
+
+```json
+{
+  "spec": {
+    "cache": {
+      "redisUrl": "redis://redis.wavemind-system.svc.cluster.local:6379/0"
+    },
+    "memoryOs": {
+      "enabled": true,
+      "schedule": "*/10 * * * *",
+      "targetMemories": 10000000,
+      "cacheMode": "auto",
+      "strictPlan": true,
+      "runOnAllReplicas": false
+    }
+  }
+}
+```
+
+The rendered `<cluster>-memory-os` CronJob calls `/memory-os/plan` before
+`/memory-os/run`, applies planned distributed-lock requirements, and exits
+before mutation if the plan requires Redis but `spec.cache.redisUrl` is missing.
+Operator status includes a `MemoryOSReady` condition plus
+`status.memoryOs.redisRequired` and `status.memoryOs.redisConfigured`, so unsafe
+multi-replica Memory OS scheduling is visible before it mutates cluster state.
 
 Capacity autoscaling is part of the custom resource. When
 `spec.autoscaling.targetMemories` is set, the reconciler uses WaveMind's
@@ -82,7 +110,8 @@ wavemind operator-loop --namespace wavemind-system
 ```
 
 The loop lists `WaveMindCluster` resources and applies the reconciled Services,
-StatefulSet, HPA, rebalance ConfigMap, and repair CronJob with Kubernetes
-server-side apply. Operator status includes `RebalancePlanned` and only reports
-ready when the plan is full and every batch requires checkpoint, repair, and
-validation.
+StatefulSet, HPA, rebalance ConfigMap, repair CronJob, and Memory OS CronJob
+with Kubernetes server-side apply. Operator status includes `RebalancePlanned`
+and `MemoryOSReady`, and only reports ready when the plan is full, every
+rebalance batch requires checkpoint/repair/validation, and production Memory OS
+scheduling has the required Redis/shared-lock configuration.

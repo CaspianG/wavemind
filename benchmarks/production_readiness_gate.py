@@ -986,6 +986,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("has_hpa")
                 and operator.get("has_rebalance_configmap")
                 and operator.get("has_repair_cronjob")
+                and operator.get("has_memory_os_cronjob")
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
@@ -1006,6 +1007,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("status_capacity_within_headroom")
                 and operator.get("status_rebalance_ready")
                 and operator.get("status_rebalance_full_plan")
+                and operator.get("status_memory_os_ready")
+                and operator.get("status_memory_os_redis_required")
+                and operator.get("status_memory_os_redis_configured")
+                and operator.get("memory_os_calls_plan")
+                and operator.get("memory_os_calls_run")
+                and operator.get("memory_os_applies_plan_lock")
+                and operator.get("memory_os_blocks_missing_redis")
                 and int(operator.get("status_rebalance_move_count", 0))
                 == int(operator.get("rebalance_move_count", -1))
                 and int(operator.get("status_rebalance_batches", 0))
@@ -1018,6 +1026,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                     "AutoscalingReady",
                     "CapacityPlanned",
                     "ControlPlaneReady",
+                    "MemoryOSReady",
                     "RebalancePlanned",
                     "RepairScheduled",
                     "ResourcesReady",
@@ -1028,12 +1037,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "Operator output must include CRD, StatefulSet, Service, HPA, "
                 "scheduled repair, capacity-aware replica reconciliation, a bounded "
                 "rebalance ConfigMap with full rolling namespace-move plan metadata, "
+                "Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
-                "repair plus control-plane consensus safety."
+                "repair/Memory OS plus control-plane consensus safety."
             ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
                 f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}, "
+                f"memory OS {operator.get('has_memory_os_cronjob')}, "
                 f"rebalance config {operator.get('has_rebalance_configmap')}, "
                 f"rebalance {operator.get('rebalance_status')} "
                 f"{operator.get('rebalance_move_count')} moves/"
@@ -1042,6 +1053,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"required {operator.get('capacity_required_replicas')}, "
                 f"target max {operator.get('capacity_target_max_node_memories')}, "
                 f"status {operator.get('status_phase')}, "
+                f"memory OS ready {operator.get('status_memory_os_ready')}, "
                 f"control-plane {operator.get('control_plane_ready')}"
             ),
             next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics.",

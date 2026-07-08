@@ -51,6 +51,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
     assert results["WaveMind Kubernetes operator"]["has_hpa"] is True
     assert results["WaveMind Kubernetes operator"]["has_rebalance_configmap"] is True
+    assert results["WaveMind Kubernetes operator"]["has_memory_os_cronjob"] is True
     assert results["WaveMind Kubernetes operator"]["statefulset_replicas"] >= 29
     assert results["WaveMind Kubernetes operator"]["capacity_required_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["capacity_target_max_node_memories"] <= 700_000
@@ -75,6 +76,10 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Kubernetes operator"]["status_rebalance_move_count"] == results["WaveMind Kubernetes operator"]["rebalance_move_count"]
     assert results["WaveMind Kubernetes operator"]["status_rebalance_batches"] == results["WaveMind Kubernetes operator"]["rebalance_batches"]
     assert results["WaveMind Kubernetes operator"]["status_rebalance_configmap"] == results["WaveMind Kubernetes operator"]["rebalance_configmap_name"]
+    assert results["WaveMind Kubernetes operator"]["status_memory_os_ready"] is True
+    assert results["WaveMind Kubernetes operator"]["status_memory_os_redis_required"] is True
+    assert results["WaveMind Kubernetes operator"]["status_memory_os_redis_configured"] is True
+    assert results["WaveMind Kubernetes operator"]["status_memory_os_cronjob"] == "wavemind-memory-os"
     assert results["WaveMind Kubernetes operator"]["status_degraded_nodes"] == 0
     assert results["WaveMind Kubernetes operator"]["control_plane_ready"] is True
     assert results["WaveMind Kubernetes operator"]["control_plane_voters"] >= 3
@@ -84,12 +89,18 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "AutoscalingReady",
         "CapacityPlanned",
         "ControlPlaneReady",
+        "MemoryOSReady",
         "RebalancePlanned",
         "RepairScheduled",
         "ResourcesReady",
     }
     assert results["WaveMind Kubernetes operator"]["has_repair_cronjob"] is True
     assert results["WaveMind Kubernetes operator"]["repair_namespaces"] == 64
+    assert results["WaveMind Kubernetes operator"]["memory_os_calls_plan"] is True
+    assert results["WaveMind Kubernetes operator"]["memory_os_calls_run"] is True
+    assert results["WaveMind Kubernetes operator"]["memory_os_applies_plan_lock"] is True
+    assert results["WaveMind Kubernetes operator"]["memory_os_blocks_missing_redis"] is True
+    assert results["WaveMind Kubernetes operator"]["memory_os_run_on_all_replicas"] is False
     assert results["WaveMind serverless plan"]["has_knative_service"] is True
     assert results["WaveMind serverless plan"]["has_keda_scaled_object"] is True
     assert results["WaveMind serverless plan"]["scale_to_zero"] is True

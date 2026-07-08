@@ -54,12 +54,15 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["operator_autoscaling_repair"]["status"] == "pass"
     assert "capacity-aware replica reconciliation" in criteria["operator_autoscaling_repair"]["requirement"]
     assert "rebalance ConfigMap" in criteria["operator_autoscaling_repair"]["requirement"]
+    assert "Memory OS CronJob" in criteria["operator_autoscaling_repair"]["requirement"]
     assert "status conditions" in criteria["operator_autoscaling_repair"]["requirement"]
     assert "control-plane consensus safety" in criteria["operator_autoscaling_repair"]["requirement"]
     assert "rebalance config True" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "rebalance ready" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "required" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "status Ready" in criteria["operator_autoscaling_repair"]["evidence"]
+    assert "memory OS True" in criteria["operator_autoscaling_repair"]["evidence"]
+    assert "memory OS ready True" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "control-plane True" in criteria["operator_autoscaling_repair"]["evidence"]
     assert criteria["serverless_externalized_state"]["status"] == "pass"
     assert "operational SLO/cold-start/cost profile" in criteria["serverless_externalized_state"]["requirement"]

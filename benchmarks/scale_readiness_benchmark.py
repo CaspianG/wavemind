@@ -670,6 +670,7 @@ def run_operator_profile(
         replication_factor=replication_factor,
         namespace_count=namespace_count,
         auth_secret="wavemind-api-key",
+        redis_url="redis://redis.wavemind-system.svc.cluster.local:6379/0",
         autoscaling_enabled=True,
         autoscaling_min_replicas=node_count,
         autoscaling_max_replicas=max(node_count * 4, node_count + 1),
@@ -678,6 +679,10 @@ def run_operator_profile(
         autoscaling_target_memories=target_memories,
         autoscaling_max_memories_per_node=1_000_000,
         autoscaling_headroom=0.70,
+        memory_os_enabled=True,
+        memory_os_cache_mode="auto",
+        memory_os_target_memories=target_memories,
+        memory_os_run_on_all_replicas=False,
     )
     bundle = operator_bundle(namespace="wavemind-system", sample=spec)
     custom_resource = spec.custom_resource()
@@ -701,8 +706,16 @@ def run_operator_profile(
     kinds = [str(resource["kind"]) for resource in resources]
     names = [str(resource["metadata"]["name"]) for resource in resources]
     paths = [kubernetes_resource_path(resource).api_path for resource in resources]
-    cronjob = next(resource for resource in resources if resource["kind"] == "CronJob")
-    cronjob_container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    cronjobs = {
+        str(resource["metadata"]["name"]): resource
+        for resource in resources
+        if resource["kind"] == "CronJob"
+    }
+    repair_cronjob = cronjobs[f"{spec.name}-cluster-repair"]
+    memory_os_cronjob = cronjobs[f"{spec.name}-memory-os"]
+    cronjob_container = repair_cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    memory_os_container = memory_os_cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    memory_os_script = str(memory_os_container["args"][0])
     hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
     statefulset = next(resource for resource in resources if resource["kind"] == "StatefulSet")
     rebalance_configmap = next(resource for resource in resources if resource["kind"] == "ConfigMap")
@@ -722,6 +735,7 @@ def run_operator_profile(
         "has_hpa": "HorizontalPodAutoscaler" in kinds,
         "has_rebalance_configmap": "ConfigMap" in kinds,
         "has_repair_cronjob": "CronJob" in kinds,
+        "has_memory_os_cronjob": f"{spec.name}-memory-os" in names,
         "headless_service": spec.headless_service_name in names,
         "autoscaling_min_replicas": hpa["spec"]["minReplicas"],
         "autoscaling_max_replicas": hpa["spec"]["maxReplicas"],
@@ -767,6 +781,10 @@ def run_operator_profile(
         "status_rebalance_configmap": status["rebalance"]["configMapName"],
         "status_degraded_nodes": status["degradedNodes"],
         "status_unavailable_nodes": status["unavailableNodes"],
+        "status_memory_os_ready": status["memoryOs"]["ready"],
+        "status_memory_os_redis_required": status["memoryOs"]["redisRequired"],
+        "status_memory_os_redis_configured": status["memoryOs"]["redisConfigured"],
+        "status_memory_os_cronjob": status["memoryOs"]["cronJobName"],
         "control_plane_ready": status["controlPlane"]["ready"],
         "control_plane_voters": status["controlPlane"]["profile"]["voters_initial"],
         "control_plane_final_revision": status["controlPlane"]["profile"]["final_revision"],
@@ -780,6 +798,11 @@ def run_operator_profile(
             for metric in hpa["spec"]["metrics"]
         ],
         "repair_namespaces": list(cronjob_container["args"]).count("--namespace"),
+        "memory_os_calls_plan": "/memory-os/plan" in memory_os_script,
+        "memory_os_calls_run": "/memory-os/run" in memory_os_script,
+        "memory_os_applies_plan_lock": "plan_requires_lock" in memory_os_script,
+        "memory_os_blocks_missing_redis": "spec.cache.redisUrl is not configured" in memory_os_script,
+        "memory_os_run_on_all_replicas": "run_nodes = nodes if False else nodes[:1]" not in memory_os_script,
         "api_paths": paths,
     }
 
