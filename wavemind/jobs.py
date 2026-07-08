@@ -778,6 +778,47 @@ class MemoryOSImprovementSuggestion:
 
 
 @dataclass(frozen=True)
+class MemoryOSPolicyDecision:
+    id: str
+    status: str
+    strategy: str
+    rationale: str
+    action: str
+    evidence: dict[str, object] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "status": self.status,
+            "strategy": self.strategy,
+            "rationale": self.rationale,
+            "action": self.action,
+            "evidence": dict(self.evidence),
+        }
+
+
+@dataclass(frozen=True)
+class MemoryOSPolicyManifest:
+    status: str = "watch"
+    namespace: str | None = None
+    decisions: tuple[MemoryOSPolicyDecision, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return self.status in {"ok", "watch"}
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "namespace": self.namespace,
+            "decision_count": len(self.decisions),
+            "decision_ids": [decision.id for decision in self.decisions],
+            "decisions": [decision.as_dict() for decision in self.decisions],
+            "ok": self.ok,
+        }
+
+
+@dataclass(frozen=True)
 class MemoryOSReport:
     namespace: str | None
     scanned_events: int
@@ -806,6 +847,9 @@ class MemoryOSReport:
     actions: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
     suggestions: tuple[MemoryOSImprovementSuggestion, ...] = ()
+    policy_manifest: MemoryOSPolicyManifest = field(
+        default_factory=MemoryOSPolicyManifest
+    )
 
     @property
     def ok(self) -> bool:
@@ -839,6 +883,7 @@ class MemoryOSReport:
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
             "suggestions": [suggestion.as_dict() for suggestion in self.suggestions],
+            "policy_manifest": self.policy_manifest.as_dict(),
             "ok": self.ok,
         }
 
@@ -2112,6 +2157,21 @@ class MemoryOSWorker:
             forgetting_demotions=len(demoted_ids),
             architecture_payload=architecture_payload,
         )
+        policy_manifest = self._policy_manifest(
+            namespace=namespace,
+            hot_queries=hot_queries,
+            prewarm=prewarm,
+            predictive=predictive,
+            stats_after=stats_after,
+            memory_pressure_threshold=memory_pressure_threshold,
+            cache_enabled=self.cache is not None,
+            concepts_created=len(concepts),
+            priority_predictions=len(boosted_ids),
+            forgetting_demotions=len(demoted_ids),
+            architecture_payload=architecture_payload,
+            lock_report=lock_report,
+            deployment=deployment,
+        )
         report = MemoryOSReport(
             namespace=namespace,
             scanned_events=len(events),
@@ -2138,6 +2198,7 @@ class MemoryOSWorker:
             actions=tuple(dict.fromkeys(actions)),
             recommendations=tuple(recommendations),
             suggestions=suggestions,
+            policy_manifest=policy_manifest,
         )
         self._log_report(report)
         return report
@@ -2766,6 +2827,232 @@ class MemoryOSWorker:
 
         return tuple(suggestions)
 
+    def _policy_manifest(
+        self,
+        *,
+        namespace: str | None,
+        hot_queries: list[MemoryOSHotQuery],
+        prewarm: CachePrewarmReport,
+        predictive: PredictivePrefetchReport,
+        stats_after: dict[str, object],
+        memory_pressure_threshold: int,
+        cache_enabled: bool,
+        concepts_created: int,
+        priority_predictions: int,
+        forgetting_demotions: int,
+        architecture_payload: dict[str, object],
+        lock_report: MemoryOSLockReport,
+        deployment: str,
+    ) -> MemoryOSPolicyManifest:
+        decisions: list[MemoryOSPolicyDecision] = []
+        active = int(stats_after.get("active_memories", 0) or 0)
+        hot_count = len(hot_queries)
+        namespace_label = namespace or "all namespaces"
+        production = deployment.lower() in {"production", "cluster", "serverless"}
+
+        def add(
+            id: str,
+            status: str,
+            strategy: str,
+            rationale: str,
+            action: str,
+            evidence: dict[str, object] | None = None,
+        ) -> None:
+            decisions.append(
+                MemoryOSPolicyDecision(
+                    id=id,
+                    status=status,
+                    strategy=strategy,
+                    rationale=rationale,
+                    action=action,
+                    evidence=evidence or {},
+                )
+            )
+
+        if cache_enabled and (prewarm.warmed or predictive.warmed):
+            add(
+                "prefetch-policy",
+                "ok",
+                "hot-query-and-transition-prefetch",
+                "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+                "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+                {
+                    "namespace": namespace_label,
+                    "hot_queries": hot_count,
+                    "prewarm_warmed": prewarm.warmed,
+                    "predictive_generated": predictive.generated_queries,
+                    "predictive_warmed": predictive.warmed,
+                    "transition_edges": len(predictive.transition_edges),
+                },
+            )
+        elif hot_queries and not cache_enabled:
+            add(
+                "prefetch-policy",
+                "action_required",
+                "attach-shared-hot-cache",
+                "Hot query traffic exists, but this run had no shared cache to prewarm.",
+                "Attach RedisHotMemoryCache before using Memory OS in multi-process production.",
+                {"namespace": namespace_label, "hot_queries": hot_count},
+            )
+        else:
+            add(
+                "prefetch-policy",
+                "watch",
+                "collect-query-audit-first",
+                "Memory OS needs audited query traffic before it can learn hot recalls.",
+                "Run representative traffic with query audit enabled, then rerun Memory OS.",
+                {"namespace": namespace_label, "scanned_events": prewarm.scanned_events},
+            )
+
+        if priority_predictions:
+            add(
+                "priority-policy",
+                "ok",
+                "usage-pattern-priority-boost",
+                "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+                "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+                {
+                    "namespace": namespace_label,
+                    "priority_predictions": priority_predictions,
+                },
+            )
+        else:
+            add(
+                "priority-policy",
+                "watch",
+                "wait-for-hot-recall-signal",
+                "No priority predictions fired in this run.",
+                "Keep audit collection enabled and lower min_frequency only after checking false-positive recall.",
+                {"namespace": namespace_label, "hot_queries": hot_count},
+            )
+
+        if forgetting_demotions:
+            add(
+                "forgetting-policy",
+                "ok",
+                "demote-cold-low-access-memories",
+                "Cold memories were demoted before they could compete with fresh or reinforced context.",
+                "Track stale-recall regressions and demotion counts in benchmark artifacts.",
+                {
+                    "namespace": namespace_label,
+                    "forgetting_demotions": forgetting_demotions,
+                },
+            )
+        elif active >= int(memory_pressure_threshold):
+            add(
+                "forgetting-policy",
+                "action_required",
+                "tighten-retention-under-pressure",
+                "Memory pressure crossed the configured threshold, but this run did not demote stale records.",
+                "Review TTLs, access-count thresholds, and protected ids before adding more data.",
+                {
+                    "namespace": namespace_label,
+                    "active_memories": active,
+                    "threshold": int(memory_pressure_threshold),
+                },
+            )
+        else:
+            add(
+                "forgetting-policy",
+                "watch",
+                "observe-before-demoting",
+                "Memory pressure is below threshold and no cold demotions were necessary.",
+                "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+                {"namespace": namespace_label, "active_memories": active},
+            )
+
+        if concepts_created:
+            add(
+                "consolidation-policy",
+                "ok",
+                "promote-active-clusters-to-concepts",
+                "The field graph produced higher-level concept memories from active clusters.",
+                "Review new concept memories in Studio/API before assigning very high priority.",
+                {"namespace": namespace_label, "concepts_created": concepts_created},
+            )
+        else:
+            add(
+                "consolidation-policy",
+                "watch",
+                "wait-for-stable-clusters",
+                "No concept memories were created in this run.",
+                "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+                {"namespace": namespace_label, "concepts_created": 0},
+            )
+
+        architecture_status = str(architecture_payload.get("status") or "watch")
+        if architecture_status == "architecture_required":
+            scale_strategy = "external-index-sharding-and-production-controls"
+        elif architecture_status == "action_required":
+            scale_strategy = "fix-production-gaps-before-growth"
+        else:
+            scale_strategy = "keep-current-scale-profile-under-observation"
+        add(
+            "scale-policy",
+            architecture_status,
+            scale_strategy,
+            "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+            "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+            {
+                "namespace": namespace_label,
+                "active_memories": active,
+                "target_memories": architecture_payload.get("target_memories"),
+                "recommendation_ids": [
+                    str(item.get("id"))
+                    for item in architecture_payload.get("recommendations", [])
+                    if isinstance(item, dict) and item.get("id") is not None
+                ],
+            },
+        )
+
+        if lock_report.required and not lock_report.acquired:
+            coordination_status = "action_required"
+            coordination_strategy = "do-not-overlap-memory-os-runs"
+            coordination_rationale = "A required distributed lock was not acquired, so mutation should not proceed."
+            coordination_action = "Fix lock ownership or retry after the current worker finishes."
+        elif production and not lock_report.key:
+            coordination_status = "action_required"
+            coordination_strategy = "require-distributed-lock-in-production"
+            coordination_rationale = "Production Memory OS workers need a distributed lock to avoid overlapping consolidation and forgetting."
+            coordination_action = "Run Memory OS with RedisMemoryOSLock and --lock-required in production."
+        else:
+            coordination_status = "ok" if lock_report.ok else "watch"
+            coordination_strategy = "single-writer-memory-os-cycle"
+            coordination_rationale = "The current run has a safe coordination state for this deployment mode."
+            coordination_action = "Keep one Memory OS writer per namespace window and use a shared lock for production workers."
+        add(
+            "coordination-policy",
+            coordination_status,
+            coordination_strategy,
+            coordination_rationale,
+            coordination_action,
+            {
+                "namespace": namespace_label,
+                "deployment": deployment,
+                "lock_required": lock_report.required,
+                "lock_acquired": lock_report.acquired,
+                "lock_key": lock_report.key,
+                "cache_enabled": cache_enabled,
+            },
+        )
+
+        severity_rank = {
+            "ok": 0,
+            "watch": 1,
+            "action_required": 2,
+            "architecture_required": 3,
+        }
+        status = max(
+            (decision.status for decision in decisions),
+            key=lambda item: severity_rank.get(item, 1),
+            default="watch",
+        )
+        return MemoryOSPolicyManifest(
+            status=status,
+            namespace=namespace,
+            decisions=tuple(decisions),
+        )
+
     def _architecture_advice(
         self,
         *,
@@ -2839,6 +3126,11 @@ class MemoryOSWorker:
                     "lock_acquired": report.lock.acquired,
                     "lock_key": report.lock.key,
                     "lock_reason": report.lock.reason,
+                    "policy_status": report.policy_manifest.status,
+                    "policy_decisions": len(report.policy_manifest.decisions),
+                    "policy_decision_ids": [
+                        decision.id for decision in report.policy_manifest.decisions
+                    ],
                     "actions": list(report.actions),
                     "ok": report.ok,
                 },

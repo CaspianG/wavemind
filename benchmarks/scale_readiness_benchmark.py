@@ -1968,6 +1968,18 @@ def run_memory_os_profile() -> dict[str, object]:
                 "suggestions_with_evidence": sum(
                     1 for suggestion in report.suggestions if suggestion.evidence
                 ),
+                "policy_status": report.policy_manifest.status,
+                "policy_decision_count": len(report.policy_manifest.decisions),
+                "policy_decision_ids": [
+                    decision.id for decision in report.policy_manifest.decisions
+                ],
+                "policy_decision_statuses": [
+                    decision.status for decision in report.policy_manifest.decisions
+                ],
+                "policy_decision_strategies": {
+                    decision.id: decision.strategy
+                    for decision in report.policy_manifest.decisions
+                },
                 "index_rebuilt": report.index_rebuilt,
                 "actions": list(report.actions),
                 "recommendations": list(report.recommendations),

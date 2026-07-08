@@ -235,6 +235,21 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert "architecture:namespace-sharding" in results["WaveMind Memory OS"]["suggestion_ids"]
     assert "architecture_required" in results["WaveMind Memory OS"]["suggestion_severities"]
     assert results["WaveMind Memory OS"]["suggestions_with_evidence"] >= 5
+    assert results["WaveMind Memory OS"]["policy_status"] == "architecture_required"
+    assert results["WaveMind Memory OS"]["policy_decision_count"] >= 6
+    assert "prefetch-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "priority-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "forgetting-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "consolidation-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "scale-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "coordination-policy" in results["WaveMind Memory OS"]["policy_decision_ids"]
+    assert "architecture_required" in results["WaveMind Memory OS"]["policy_decision_statuses"]
+    assert results["WaveMind Memory OS"]["policy_decision_strategies"][
+        "prefetch-policy"
+    ] == "hot-query-and-transition-prefetch"
+    assert results["WaveMind Memory OS"]["policy_decision_strategies"][
+        "scale-policy"
+    ] == "external-index-sharding-and-production-controls"
     assert results["WaveMind Memory OS"]["concept_recall"] is True
     assert "prewarm_cache" in results["WaveMind Memory OS"]["actions"]
     assert "predictive_prefetch" in results["WaveMind Memory OS"]["actions"]

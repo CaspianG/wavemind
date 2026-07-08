@@ -605,7 +605,7 @@ Checked-in result:
 | Query-vector cache | 200 repeated queries, one local encoder call, local hit rate `0.995`, Redis-compatible cache shared across workers `true`; FastAPI service path reuses the encoded query vector and exposes cache hit/miss metrics. |
 | API batch query | FastAPI `/query/batch` answers 100 recall queries in 1 HTTP request instead of 100, preserves vector-cache reuse with one encoder call and batch hit rate `0.990`, and exposes batch/cache metrics. |
 | Shared rate limiter | Redis-compatible fixed-window limiter, 2 workers, 4 allowed requests, 1 limited request, shared enforcement `true`. |
-| Redis hot cache | Redis-compatible shared cache is visible across workers, query-audit prewarm warms `1` hot query, Memory OS warms `2` observed hot queries plus `6` predictive queries, learns the observed `budget recall -> risk limits` transition, applies `8` useful/not-useful recall feedback events, demotes cold memories, emits typed self-improvement suggestions with evidence, cross-worker hit `true`, namespace invalidation `true`, production architecture advice `architecture_required`. |
+| Redis hot cache | Redis-compatible shared cache is visible across workers, query-audit prewarm warms `1` hot query, Memory OS warms `2` observed hot queries plus `6` predictive queries, learns the observed `budget recall -> risk limits` transition, applies `8` useful/not-useful recall feedback events, demotes cold memories, emits typed self-improvement suggestions plus a policy manifest with `6` decisions, cross-worker hit `true`, namespace invalidation `true`, production architecture advice `architecture_required`. |
 | API cache mutation safety | FastAPI shared cache invalidates on `/remember`, `/feedback`, and `/forget`, preventing stale cached recall after memory mutations and after rejected recall feedback. |
 | Batch feedback | FastAPI `/feedback/batch` accepts multiple recall signals in one request, rejects wrong-namespace items, writes audit events, updates positive/negative priority, and invalidates the affected namespace cache once. |
 | Distributed sharding | 3 service nodes, replication factor 2, write quorum 2, writes `2`, recall after primary loss `true`, service-mode repair copied `1` missing record, recall after repair `true`, replicated forget deletes `2`, service-mode tombstone suppression before repair `true`, tombstone repair deleted `1` stale replica record, suppression after repair `true`, anti-entropy worker repaired `1` missing record and deleted `1` stale tombstone record, query-after-primary-loss `0.84 ms`. |
@@ -631,7 +631,7 @@ shard transport, sustained mixed HTTP cluster load, replica
 repair and tombstone-aware delete repair, plus a reusable anti-entropy repair
 worker, quorum-replicated runtime behavior, query-audit cache prewarm,
 query-vector cache, Redis-compatible shared rate limiting,
-Redis-compatible shared cache behavior, Memory OS shared prewarm, explicit useful/not-useful recall feedback, batch feedback updates, transition-learned predictive prefetch, typed self-improvement suggestions, production architecture advice, and namespace
+Redis-compatible shared cache behavior, Memory OS shared prewarm, explicit useful/not-useful recall feedback, batch feedback updates, transition-learned predictive prefetch, typed self-improvement suggestions, machine-readable policy decisions for prefetch/priority/forgetting/consolidation/scale/coordination, production architecture advice, and namespace
 invalidation, API cache mutation safety on remember/feedback/feedback-batch/forget, cursor-based active-active namespace
 delta sync, sustained active-active mesh sync, HTTP service-region
 active-active sync, real multi-process active-active service-region smoke,
@@ -961,7 +961,9 @@ patterns, demotes cold unused memories with bounded adaptive forgetting, purges
 expired memories, consolidates active clusters into durable concept memories,
 checks index health, and returns operator-facing recommendations plus typed
 self-improvement suggestions with ids, severity, actions, and evidence for
-Studio/operator dashboards. When given
+Studio/operator dashboards. It also emits a policy manifest that turns runtime
+signals into explicit decisions for prefetch, priority learning, adaptive
+forgetting, consolidation, scale, and distributed coordination. When given
 production targets such as `--target-memories`, `--namespace-count`,
 `--deployment production`, and `--multimodal`, it also embeds the same
 architecture-advisor output used by release readiness gates: service-index,

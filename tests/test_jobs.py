@@ -607,10 +607,36 @@ def test_memory_os_worker_prefetches_consolidates_and_recommends(tmp_path):
         )
         assert all(suggestion.action for suggestion in report.suggestions)
         assert report.as_dict()["suggestions"][0]["id"] in suggestion_ids
+        assert report.policy_manifest.status == "action_required"
+        policy_ids = {
+            decision.id for decision in report.policy_manifest.decisions
+        }
+        assert {
+            "prefetch-policy",
+            "priority-policy",
+            "forgetting-policy",
+            "consolidation-policy",
+            "scale-policy",
+            "coordination-policy",
+        }.issubset(policy_ids)
+        policy_by_id = {
+            decision.id: decision for decision in report.policy_manifest.decisions
+        }
+        assert policy_by_id["prefetch-policy"].strategy == (
+            "hot-query-and-transition-prefetch"
+        )
+        assert policy_by_id["priority-policy"].status == "ok"
+        assert policy_by_id["consolidation-policy"].status == "ok"
+        assert policy_by_id["forgetting-policy"].status == "action_required"
+        assert policy_by_id["scale-policy"].status == "action_required"
+        assert policy_by_id["scale-policy"].evidence["recommendation_ids"]
+        assert report.as_dict()["policy_manifest"]["decision_count"] >= 6
         assert any("persisted ANN backend" in item for item in report.recommendations)
         assert audit and audit[0].metadata["ok"] is True
         assert audit[0].metadata["priority_predictions"] >= 1
         assert audit[0].metadata["predictive_prefetch_warmed"] >= 1
+        assert audit[0].metadata["policy_status"] == "action_required"
+        assert "prefetch-policy" in audit[0].metadata["policy_decision_ids"]
     finally:
         memory.close()
 

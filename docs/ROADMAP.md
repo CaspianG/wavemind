@@ -202,11 +202,13 @@ policy matters more than raw vector-database scale:
   report that handles hot-query prewarm, priority prediction, adaptive
   forgetting, TTL cleanup, and concept consolidation. The report also returns
   machine-readable self-improvement suggestions with ids, severity, actions,
-  and evidence, so Studio/operator surfaces do not need to parse prose. The
-  readiness gate now fails if the checked-in Memory OS profile does not emit
-  production-scale service-index, namespace-sharding, production-controls,
-  load-test, multimodal-readiness advice, and typed suggestions backed by
-  evidence.
+  and evidence, plus a policy manifest that makes prefetch, priority,
+  forgetting, consolidation, scale, and coordination decisions explicit. Studio
+  and operator surfaces do not need to parse prose. The readiness gate now
+  fails if the checked-in Memory OS profile does not emit production-scale
+  service-index, namespace-sharding, production-controls, load-test,
+  multimodal-readiness advice, typed suggestions backed by evidence, and the
+  policy decisions required to explain the worker's strategy.
 - `RedisMemoryOSLock`, `wavemind memory-os --lock-required`, and
   `/memory-os/run` lock fields add a Redis-backed single-flight guard for
   production Memory OS cycles. This prevents overlapping consolidation,
