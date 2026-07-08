@@ -875,20 +875,31 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 > int(cluster_autoscaler.get("current_nodes", 0))
                 and cluster_autoscaler.get("target_within_headroom")
                 and cluster_autoscaler.get("has_scale_action")
+                and cluster_autoscaler.get("rebalance_status") == "ready"
+                and cluster_autoscaler.get("rebalance_full_plan")
+                and int(cluster_autoscaler.get("rebalance_write_quorum", 0)) >= 2
+                and int(cluster_autoscaler.get("rebalance_batches", 0)) >= 1
+                and cluster_autoscaler.get("rebalance_all_batches_checkpointed")
+                and cluster_autoscaler.get("rebalance_all_batches_repaired")
+                and cluster_autoscaler.get("rebalance_all_batches_validated")
                 else "fail"
             ),
             requirement=(
                 "Autoscale planning must convert target memories, RF, and "
                 "per-node capacity into required node count, bounded target "
-                "load, and namespace movement actions."
+                "load, and a complete rolling namespace movement plan with "
+                "quorum, checkpoint, repair, and validation safeguards."
             ),
             evidence=(
                 f"current {cluster_autoscaler.get('current_nodes')}, "
                 f"required {cluster_autoscaler.get('required_nodes')}, "
                 f"target max {cluster_autoscaler.get('target_max_node_memories')}, "
-                f"moves {cluster_autoscaler.get('move_sample')}+{cluster_autoscaler.get('omitted_moves')}"
+                f"moves {cluster_autoscaler.get('move_sample')}+{cluster_autoscaler.get('omitted_moves')}, "
+                f"rebalance {cluster_autoscaler.get('rebalance_status')}, "
+                f"batches {cluster_autoscaler.get('rebalance_batches')}, "
+                f"write quorum {cluster_autoscaler.get('rebalance_write_quorum')}"
             ),
-            next_step="Connect this planner to operator reconciliation status and real HPA/load metrics.",
+            next_step="Connect rolling rebalance execution to operator reconciliation status and real HPA/load metrics.",
         ),
         _criterion(
             criterion_id="control_plane_consensus",

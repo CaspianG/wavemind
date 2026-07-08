@@ -303,6 +303,102 @@ class NamespaceMove:
 
 
 @dataclass(frozen=True)
+class NamespaceRebalanceBatch:
+    index: int
+    moves: tuple[NamespaceMove, ...]
+    source_node_pressure: tuple[tuple[str, int], ...]
+    target_node_pressure: tuple[tuple[str, int], ...]
+    requires_checkpoint: bool = True
+    requires_repair: bool = True
+    requires_validation: bool = True
+
+    @property
+    def namespaces(self) -> tuple[str, ...]:
+        return tuple(move.namespace for move in self.moves)
+
+    @property
+    def affected_from_nodes(self) -> tuple[str, ...]:
+        return tuple(node for node, _count in self.source_node_pressure)
+
+    @property
+    def affected_to_nodes(self) -> tuple[str, ...]:
+        return tuple(node for node, _count in self.target_node_pressure)
+
+    @property
+    def max_node_pressure(self) -> int:
+        counts = [count for _node, count in self.source_node_pressure]
+        counts.extend(count for _node, count in self.target_node_pressure)
+        return max(counts, default=0)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "index": self.index,
+            "move_count": len(self.moves),
+            "namespaces": list(self.namespaces),
+            "moves": [move.as_dict() for move in self.moves],
+            "affected_from_nodes": list(self.affected_from_nodes),
+            "affected_to_nodes": list(self.affected_to_nodes),
+            "source_node_pressure": dict(self.source_node_pressure),
+            "target_node_pressure": dict(self.target_node_pressure),
+            "max_node_pressure": self.max_node_pressure,
+            "requires_checkpoint": self.requires_checkpoint,
+            "requires_repair": self.requires_repair,
+            "requires_validation": self.requires_validation,
+        }
+
+
+@dataclass(frozen=True)
+class ClusterRebalancePlan:
+    status: str
+    replication_factor: int
+    read_quorum: int
+    write_quorum: int
+    move_count: int
+    omitted_moves: int
+    batch_size: int
+    max_node_moves_per_batch: int | None
+    drain_nodes: tuple[str, ...]
+    batches: tuple[NamespaceRebalanceBatch, ...]
+    warnings: tuple[str, ...] = ()
+    actions: tuple[str, ...] = ()
+
+    @property
+    def full_plan(self) -> bool:
+        return self.omitted_moves == 0
+
+    @property
+    def estimated_steps(self) -> int:
+        if not self.batches:
+            return 0
+        # checkpoint, move, repair, validation for every batch.
+        return len(self.batches) * 4
+
+    @property
+    def max_batch_node_pressure(self) -> int:
+        return max((batch.max_node_pressure for batch in self.batches), default=0)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "replication_factor": self.replication_factor,
+            "read_quorum": self.read_quorum,
+            "write_quorum": self.write_quorum,
+            "move_count": self.move_count,
+            "omitted_moves": self.omitted_moves,
+            "full_plan": self.full_plan,
+            "batch_size": self.batch_size,
+            "batch_count": len(self.batches),
+            "estimated_steps": self.estimated_steps,
+            "max_node_moves_per_batch": self.max_node_moves_per_batch,
+            "max_batch_node_pressure": self.max_batch_node_pressure,
+            "drain_nodes": list(self.drain_nodes),
+            "batches": [batch.as_dict() for batch in self.batches],
+            "warnings": list(self.warnings),
+            "actions": list(self.actions),
+        }
+
+
+@dataclass(frozen=True)
 class ClusterAutoscalePlan:
     status: str
     current_nodes: tuple[ClusterNode, ...]
@@ -322,6 +418,22 @@ class ClusterAutoscalePlan:
     omitted_moves: int = 0
     warnings: tuple[str, ...] = ()
     actions: tuple[str, ...] = ()
+
+    def rebalance_plan(
+        self,
+        *,
+        batch_size: int = 25,
+        max_node_moves_per_batch: int | None = None,
+        drain_nodes: Iterable[str] = (),
+    ) -> ClusterRebalancePlan:
+        return build_cluster_rebalance_plan(
+            self.moves,
+            replication_factor=self.replication_factor,
+            batch_size=batch_size,
+            max_node_moves_per_batch=max_node_moves_per_batch,
+            drain_nodes=drain_nodes,
+            omitted_moves=self.omitted_moves,
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -538,6 +650,137 @@ def build_cluster_autoscale_plan(
     )
 
 
+def build_cluster_rebalance_plan(
+    moves: Iterable[NamespaceMove | dict[str, object]],
+    *,
+    replication_factor: int,
+    batch_size: int = 25,
+    max_node_moves_per_batch: int | None = None,
+    drain_nodes: Iterable[str] = (),
+    omitted_moves: int = 0,
+) -> ClusterRebalancePlan:
+    if replication_factor <= 0:
+        raise ValueError("replication_factor must be positive")
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    if max_node_moves_per_batch is not None and max_node_moves_per_batch <= 0:
+        raise ValueError("max_node_moves_per_batch must be positive")
+    if omitted_moves < 0:
+        raise ValueError("omitted_moves cannot be negative")
+
+    move_list = tuple(_coerce_namespace_move(move) for move in moves)
+    drain_node_set = {str(node) for node in drain_nodes}
+    warnings: list[str] = []
+    actions: list[str] = []
+
+    for move in move_list:
+        if len(set(move.to_replicas)) != len(move.to_replicas):
+            warnings.append(f"{move.namespace} target replicas contain duplicates")
+        if len(move.to_replicas) < replication_factor:
+            warnings.append(
+                f"{move.namespace} target replicas below replication_factor={replication_factor}"
+            )
+        drained_targets = sorted(drain_node_set.intersection(move.to_replicas))
+        if drained_targets:
+            warnings.append(
+                f"{move.namespace} targets drain node(s): {', '.join(drained_targets)}"
+            )
+        if move.to_primary not in move.to_replicas:
+            warnings.append(f"{move.namespace} target primary is not in target replicas")
+
+    if omitted_moves:
+        warnings.append(
+            f"{omitted_moves} move(s) omitted; rerun with a higher max_moves for a full rebalance plan"
+        )
+
+    batches: list[NamespaceRebalanceBatch] = []
+    current: list[NamespaceMove] = []
+    current_source_pressure: dict[str, int] = {}
+    current_target_pressure: dict[str, int] = {}
+
+    def would_exceed_pressure(move: NamespaceMove) -> bool:
+        if max_node_moves_per_batch is None:
+            return False
+        source = dict(current_source_pressure)
+        target = dict(current_target_pressure)
+        for node_id in move.from_replicas:
+            source[node_id] = source.get(node_id, 0) + 1
+        for node_id in move.to_replicas:
+            target[node_id] = target.get(node_id, 0) + 1
+        max_pressure = max([*source.values(), *target.values(), 0])
+        return max_pressure > max_node_moves_per_batch
+
+    def append_to_current(move: NamespaceMove) -> None:
+        current.append(move)
+        for node_id in move.from_replicas:
+            current_source_pressure[node_id] = current_source_pressure.get(node_id, 0) + 1
+        for node_id in move.to_replicas:
+            current_target_pressure[node_id] = current_target_pressure.get(node_id, 0) + 1
+
+    def flush_current() -> None:
+        if not current:
+            return
+        batches.append(
+            NamespaceRebalanceBatch(
+                index=len(batches) + 1,
+                moves=tuple(current),
+                source_node_pressure=tuple(sorted(current_source_pressure.items())),
+                target_node_pressure=tuple(sorted(current_target_pressure.items())),
+            )
+        )
+        current.clear()
+        current_source_pressure.clear()
+        current_target_pressure.clear()
+
+    for move in move_list:
+        if current and (len(current) >= batch_size or would_exceed_pressure(move)):
+            flush_current()
+        append_to_current(move)
+    flush_current()
+
+    if move_list:
+        actions.extend(
+            [
+                f"Apply {len(batches)} rebalance batch(es) sequentially.",
+                "Checkpoint source and target replicas before every batch.",
+                "Run cluster-repair after every batch.",
+                "Run quorum and HTTP cluster validation after every batch.",
+            ]
+        )
+    else:
+        actions.append("No namespace placement changes required.")
+    if drain_node_set:
+        actions.append("Keep drain nodes out of target replicas until final validation passes.")
+    if omitted_moves:
+        actions.append("Generate a full move list before executing production rebalance.")
+
+    if warnings:
+        status = "action_required"
+    elif move_list:
+        status = "ready"
+    else:
+        status = "ok"
+
+    return ClusterRebalancePlan(
+        status=status,
+        replication_factor=int(replication_factor),
+        read_quorum=1,
+        write_quorum=int(replication_factor) // 2 + 1,
+        move_count=len(move_list),
+        omitted_moves=int(omitted_moves),
+        batch_size=int(batch_size),
+        max_node_moves_per_batch=(
+            int(max_node_moves_per_batch)
+            if max_node_moves_per_batch is not None
+            else None
+        ),
+        drain_nodes=tuple(sorted(drain_node_set)),
+        batches=tuple(batches),
+        warnings=tuple(dict.fromkeys(warnings)),
+        actions=tuple(dict.fromkeys(actions)),
+    )
+
+
 def _coerce_node(node: ClusterNode | dict[str, object] | str) -> ClusterNode:
     if isinstance(node, ClusterNode):
         return node
@@ -548,6 +791,18 @@ def _coerce_node(node: ClusterNode | dict[str, object] | str) -> ClusterNode:
         address=str(node.get("address", node["id"])),
         zone=str(node["zone"]) if node.get("zone") is not None else None,
         weight=float(node.get("weight", 1.0)),
+    )
+
+
+def _coerce_namespace_move(move: NamespaceMove | dict[str, object]) -> NamespaceMove:
+    if isinstance(move, NamespaceMove):
+        return move
+    return NamespaceMove(
+        namespace=str(move["namespace"]),
+        from_primary=str(move["from_primary"]),
+        to_primary=str(move["to_primary"]),
+        from_replicas=tuple(str(node_id) for node_id in move["from_replicas"]),
+        to_replicas=tuple(str(node_id) for node_id in move["to_replicas"]),
     )
 
 

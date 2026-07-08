@@ -611,7 +611,11 @@ def run_cluster_autoscale_profile(
         node_prefix="wavemind",
         address_template="https://{node_id}.internal",
         zones=("zone-0", "zone-1", "zone-2"),
-        max_moves=25,
+        max_moves=namespace_count,
+    )
+    rebalance = plan.rebalance_plan(
+        batch_size=50,
+        max_node_moves_per_batch=50,
     )
     plan_ms = (time.perf_counter() - started) * 1000.0
     return {
@@ -632,6 +636,21 @@ def run_cluster_autoscale_profile(
         "move_sample": len(plan.moves),
         "omitted_moves": plan.omitted_moves,
         "has_scale_action": any("Add" in action for action in plan.actions),
+        "rebalance_status": rebalance.status,
+        "rebalance_full_plan": rebalance.full_plan,
+        "rebalance_batches": len(rebalance.batches),
+        "rebalance_move_count": rebalance.move_count,
+        "rebalance_write_quorum": rebalance.write_quorum,
+        "rebalance_read_quorum": rebalance.read_quorum,
+        "rebalance_estimated_steps": rebalance.estimated_steps,
+        "rebalance_max_batch_node_pressure": rebalance.max_batch_node_pressure,
+        "rebalance_all_batches_checkpointed": all(
+            batch.requires_checkpoint for batch in rebalance.batches
+        ),
+        "rebalance_all_batches_repaired": all(batch.requires_repair for batch in rebalance.batches),
+        "rebalance_all_batches_validated": all(
+            batch.requires_validation for batch in rebalance.batches
+        ),
         "plan_ms": plan_ms,
     }
 
@@ -3984,6 +4003,12 @@ def main() -> int:
             print(f"| cluster | node_loss_min_availability | {result['node_loss_min_availability']:.3f} |")
             zone_loss = result["zone_loss_min_availability"]
             print(f"| cluster | zone_loss_min_availability | {zone_loss:.3f} |")
+        elif result["engine"] == "WaveMind cluster autoscaler":
+            print(f"| cluster autoscaler | status | {result['status']} |")
+            print(f"| cluster autoscaler | required_nodes | {result['required_nodes']} |")
+            print(f"| cluster autoscaler | rebalance_status | {result['rebalance_status']} |")
+            print(f"| cluster autoscaler | rebalance_batches | {result['rebalance_batches']} |")
+            print(f"| cluster autoscaler | rebalance_move_count | {result['rebalance_move_count']} |")
         elif result["engine"] == "WaveMind control-plane consensus":
             print(f"| control-plane consensus | ok | {result['ok']} |")
             print(f"| control-plane consensus | final_revision | {result['final_revision']} |")

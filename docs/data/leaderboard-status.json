@@ -1,14 +1,14 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
   "generated_at": "2026-07-07T22:31:23Z",
-  "source_ref": "72e26205801d",
+  "source_ref": "3ff127502704",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
   "publishing_status": "publishable_with_claim_limits",
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-07T23:46:18Z",
+    "generated_at": "2026-07-08T00:14:42Z",
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,

@@ -6,7 +6,13 @@ import sys
 
 import pytest
 
-from wavemind import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
+from wavemind import (
+    ClusterNode,
+    NamespaceMove,
+    build_cluster_autoscale_plan,
+    build_cluster_plan,
+    build_cluster_rebalance_plan,
+)
 
 
 def run_cli(*args):
@@ -252,6 +258,64 @@ def test_cluster_autoscale_plan_adds_nodes_and_plans_namespace_moves():
     assert any(f"Add {plan.additional_nodes} node" in action for action in plan.actions)
 
 
+def test_cluster_rebalance_plan_batches_moves_with_quorum_safety():
+    autoscale = build_cluster_autoscale_plan(
+        namespaces=[f"tenant:{index}" for index in range(64)],
+        nodes=[
+            ClusterNode(id="node-a", address="https://wm-a.internal", zone="zone-a"),
+            ClusterNode(id="node-b", address="https://wm-b.internal", zone="zone-b"),
+            ClusterNode(id="node-c", address="https://wm-c.internal", zone="zone-c"),
+        ],
+        replication_factor=3,
+        target_memories=8_000_000,
+        max_memories_per_node=1_000_000,
+        headroom=0.70,
+        node_prefix="wm",
+        address_template="https://{node_id}.internal",
+        zones=("zone-a", "zone-b", "zone-c"),
+        max_moves=64,
+    )
+
+    rebalance = autoscale.rebalance_plan(batch_size=4, max_node_moves_per_batch=4)
+    payload = rebalance.as_dict()
+
+    assert rebalance.status == "ready"
+    assert rebalance.write_quorum == 2
+    assert rebalance.read_quorum == 1
+    assert rebalance.full_plan
+    assert rebalance.move_count == len(autoscale.moves)
+    assert payload["batch_count"] >= 1
+    assert payload["max_batch_node_pressure"] <= 4
+    assert all(len(batch.moves) <= 4 for batch in rebalance.batches)
+    assert all(batch.requires_checkpoint for batch in rebalance.batches)
+    assert all(batch.requires_repair for batch in rebalance.batches)
+    assert all(batch.requires_validation for batch in rebalance.batches)
+    assert any("cluster-repair" in action for action in rebalance.actions)
+
+
+def test_cluster_rebalance_plan_rejects_drain_node_targets():
+    plan = build_cluster_rebalance_plan(
+        [
+            NamespaceMove(
+                namespace="tenant:a",
+                from_primary="node-a",
+                to_primary="node-b",
+                from_replicas=("node-a", "node-c"),
+                to_replicas=("node-b", "node-drain"),
+            )
+        ],
+        replication_factor=2,
+        batch_size=10,
+        drain_nodes=("node-drain",),
+    )
+
+    assert plan.status == "action_required"
+    assert plan.write_quorum == 2
+    assert plan.drain_nodes == ("node-drain",)
+    assert any("targets drain node" in warning for warning in plan.warnings)
+    assert any("drain nodes" in action for action in plan.actions)
+
+
 def test_cluster_autoscale_plan_reports_ok_when_capacity_is_enough():
     plan = build_cluster_autoscale_plan(
         namespaces=[f"tenant:{index}" for index in range(32)],
@@ -306,3 +370,48 @@ def test_cli_cluster_autoscale_plan_outputs_json():
     assert payload["additional_nodes"] == payload["required_nodes"] - 3
     assert len(payload["moves"]) == 5
     assert payload["omitted_moves"] > 0
+
+
+def test_cli_cluster_autoscale_plan_outputs_rebalance_plan_json():
+    result = run_cli(
+        "cluster-autoscale-plan",
+        "--namespace-count",
+        "16",
+        "--node",
+        "node-a=https://wm-a.internal",
+        "--node",
+        "node-b=https://wm-b.internal",
+        "--node",
+        "node-c=https://wm-c.internal",
+        "--replication-factor",
+        "3",
+        "--target-memories",
+        "5000000",
+        "--max-memories-per-node",
+        "1000000",
+        "--node-prefix",
+        "wm",
+        "--zone",
+        "zone-a",
+        "--zone",
+        "zone-b",
+        "--zone",
+        "zone-c",
+        "--max-moves",
+        "16",
+        "--rebalance-plan",
+        "--rebalance-batch-size",
+        "2",
+        "--rebalance-max-node-moves-per-batch",
+        "2",
+        "--json",
+    )
+    payload = json.loads(result.stdout)
+    rebalance = payload["rebalance_plan"]
+
+    assert rebalance["status"] == "ready"
+    assert rebalance["move_count"] == len(payload["moves"])
+    assert rebalance["full_plan"]
+    assert rebalance["batch_size"] == 2
+    assert rebalance["max_batch_node_pressure"] <= 2
+    assert rebalance["write_quorum"] == 2

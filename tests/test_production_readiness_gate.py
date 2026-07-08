@@ -43,6 +43,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["cluster_ha_placement"]["status"] == "pass"
     assert criteria["cluster_autoscale_planner"]["status"] == "pass"
     assert "required node count" in criteria["cluster_autoscale_planner"]["requirement"]
+    assert "rolling namespace movement plan" in criteria["cluster_autoscale_planner"]["requirement"]
+    assert "rebalance ready" in criteria["cluster_autoscale_planner"]["evidence"]
     assert criteria["control_plane_consensus"]["status"] == "pass"
     assert "majority leadership lease" in criteria["control_plane_consensus"]["requirement"]
     assert "minority blocked True" in criteria["control_plane_consensus"]["evidence"]

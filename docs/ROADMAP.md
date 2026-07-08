@@ -207,7 +207,9 @@ policy matters more than raw vector-database scale:
   `build_cluster_autoscale_plan()`, `wavemind cluster-autoscale-plan`, and
   `POST /cluster-autoscale-plan`: it maps target memories, replication factor,
   per-node capacity, and headroom into required node count, future nodes,
-  bounded per-node load, and namespace movement actions.
+  bounded per-node load, namespace movement actions, and an optional rolling
+  rebalance plan with bounded batches, read/write quorum, drain-node target
+  checks, and checkpoint/repair/validation requirements for every batch.
 - Control-plane config safety is available through `ControlPlaneConsensus` and
   `wavemind control-plane-consensus`: cluster membership/operator changes can
   be guarded by a majority leadership lease, monotonic terms, monotonic config
@@ -288,7 +290,8 @@ policy matters more than raw vector-database scale:
   multimodal memories can carry sha256, byte-size, media-type, and verification
   provenance without storing binary payloads in SQLite or Postgres.
 - `benchmarks/scale_readiness_benchmark.py` now checks 1M-memory simulated
-  namespace placement, control-plane majority lease/config revision safety,
+  namespace placement, full rolling autoscale rebalance planning,
+  control-plane majority lease/config revision safety,
   quorum-replicated runtime behavior, cursor-based
   active-active namespace delta sync, sustained active-active mesh sync,
   field-only hotness delta sync, actor-watermarked field-state CRDT sync with
@@ -381,6 +384,8 @@ WaveMind should scale by isolating memory early:
 - keep deletion and TTL behavior auditable.
 - use deterministic cluster placement to plan primary/replica ownership before
   a namespace is migrated to another node.
+- use rolling rebalance batches with checkpoint, repair, and validation gates
+  before moving production namespace ownership between nodes.
 
 Initial target: 100k to 1M memories on one node before horizontal clustering.
 

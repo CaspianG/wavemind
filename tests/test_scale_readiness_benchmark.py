@@ -29,6 +29,14 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind cluster autoscaler"]["required_nodes"] > 3
     assert results["WaveMind cluster autoscaler"]["target_within_headroom"] is True
     assert results["WaveMind cluster autoscaler"]["has_scale_action"] is True
+    assert results["WaveMind cluster autoscaler"]["rebalance_status"] == "ready"
+    assert results["WaveMind cluster autoscaler"]["rebalance_full_plan"] is True
+    assert results["WaveMind cluster autoscaler"]["rebalance_batches"] >= 1
+    assert results["WaveMind cluster autoscaler"]["rebalance_move_count"] == results["WaveMind cluster autoscaler"]["move_sample"]
+    assert results["WaveMind cluster autoscaler"]["rebalance_write_quorum"] == 2
+    assert results["WaveMind cluster autoscaler"]["rebalance_all_batches_checkpointed"] is True
+    assert results["WaveMind cluster autoscaler"]["rebalance_all_batches_repaired"] is True
+    assert results["WaveMind cluster autoscaler"]["rebalance_all_batches_validated"] is True
     assert results["WaveMind control-plane consensus"]["ok"] is True
     assert results["WaveMind control-plane consensus"]["stale_leader_blocked"] is True
     assert results["WaveMind control-plane consensus"]["stale_revision_blocked"] is True

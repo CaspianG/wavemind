@@ -396,6 +396,10 @@ def build_parser() -> argparse.ArgumentParser:
     cluster_autoscale.add_argument("--address-template", default="http://{node_id}:8000")
     cluster_autoscale.add_argument("--zone", action="append", default=[])
     cluster_autoscale.add_argument("--max-moves", type=int, default=100)
+    cluster_autoscale.add_argument("--rebalance-plan", action="store_true")
+    cluster_autoscale.add_argument("--rebalance-batch-size", type=int, default=25)
+    cluster_autoscale.add_argument("--rebalance-max-node-moves-per-batch", type=int)
+    cluster_autoscale.add_argument("--drain-node", action="append", default=[])
     cluster_autoscale.add_argument("--json", action="store_true")
 
     control_plane_consensus = sub.add_parser(
@@ -1069,6 +1073,14 @@ def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
         print("actions:")
         for action in plan["actions"]:
             print(f"- {action}")
+    if plan.get("rebalance_plan"):
+        rebalance = plan["rebalance_plan"]
+        print("rebalance_plan:")
+        print(f"- status: {rebalance['status']}")
+        print(f"- batches: {rebalance['batch_count']}")
+        print(f"- write_quorum: {rebalance['write_quorum']}")
+        print(f"- full_plan: {rebalance['full_plan']}")
+        print(f"- max_batch_node_pressure: {rebalance['max_batch_node_pressure']}")
 
 
 def print_quickstart() -> None:
@@ -1677,6 +1689,12 @@ def main(argv: list[str] | None = None) -> int:
             max_moves=args.max_moves,
         )
         payload = plan.as_dict()
+        if args.rebalance_plan:
+            payload["rebalance_plan"] = plan.rebalance_plan(
+                batch_size=args.rebalance_batch_size,
+                max_node_moves_per_batch=args.rebalance_max_node_moves_per_batch,
+                drain_nodes=tuple(args.drain_node),
+            ).as_dict()
         if args.json:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:

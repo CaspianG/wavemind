@@ -598,7 +598,7 @@ Checked-in result:
 | profile | result |
 |---|---:|
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`, Kubernetes `StatefulSet` + repair `CronJob` covering `4096` namespaces. |
-| Cluster autoscaler | 10M target memories, RF=3, current nodes `4`, required nodes `50`, additional nodes `46`, target max node load `678711`, headroom pass `true`, namespace move sample `25` with `4069` omitted. |
+| Cluster autoscaler | 10M target memories, RF=3, current nodes `4`, required nodes `50`, additional nodes `46`, target max node load `678711`, headroom pass `true`, full namespace rebalance plan `ready`: `4094` moves, `82` rolling batches, write quorum `2`, checkpoint/repair/validation required for every batch. |
 | Control-plane consensus | Majority leadership lease blocks stale leaders, stale revisions, and minority config commits; membership change advances voters `3 -> 5`, term `1 -> 2`, final config revision `2`. |
 | Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, and repair `CronJob`; 10M capacity target raises StatefulSet/HPA to `34` replicas with target max node load `678711`, CPU+memory metrics, status phase `Ready`, and resources/capacity/autoscaling/repair/control-plane conditions `true`. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`, query-audit prewarm warmed `1` hot query, prewarm hit `true`. |
@@ -878,13 +878,20 @@ wavemind cluster-autoscale-plan \
   --max-memories-per-node 1000000 \
   --headroom 0.70 \
   --zone zone-a --zone zone-b --zone zone-c \
+  --max-moves 4096 \
+  --rebalance-plan \
+  --rebalance-batch-size 50 \
+  --rebalance-max-node-moves-per-batch 50 \
   --json
 ```
 
 This calculates the required node count for the target memory volume, adds
 future nodes with deterministic names and addresses, checks the target max
-per-node memory load against the headroom limit, and returns a bounded sample
-of namespace moves. The HTTP surface is `POST /cluster-autoscale-plan`.
+per-node memory load against the headroom limit, and can emit a rolling
+rebalance plan. The rebalance plan groups namespace moves into bounded batches,
+tracks read/write quorum, blocks drain-node target violations, and marks every
+batch as requiring a source/target checkpoint, cluster repair, and validation
+before the next batch. The HTTP surface is `POST /cluster-autoscale-plan`.
 
 Serverless deployment:
 
