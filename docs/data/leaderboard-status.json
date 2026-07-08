@@ -1,14 +1,14 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-07T22:31:23Z",
-  "source_ref": "3ff127502704",
+  "generated_at": "2026-07-08T01:09:22Z",
+  "source_ref": "7ceb7347e94e",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
   "publishing_status": "publishable_with_claim_limits",
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-08T00:14:42Z",
+    "generated_at": "2026-07-08T01:00:15Z",
     "implemented_count": 28,
     "runner_ready_count": 2,
     "planned_count": 6,
@@ -37,9 +37,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-07T22:31:23Z",
-    "age_days": 0.015057927013888889,
-    "max_age_days": null,
+    "checked_at": "2026-07-08T01:09:22Z",
+    "age_days": 0.006331417395833333,
+    "max_age_days": 3650.0,
     "errors": []
   },
   "production_readiness": {

@@ -50,16 +50,31 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Kubernetes operator"]["has_service"] is True
     assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
     assert results["WaveMind Kubernetes operator"]["has_hpa"] is True
+    assert results["WaveMind Kubernetes operator"]["has_rebalance_configmap"] is True
     assert results["WaveMind Kubernetes operator"]["statefulset_replicas"] >= 29
     assert results["WaveMind Kubernetes operator"]["capacity_required_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["capacity_target_max_node_memories"] <= 700_000
     assert results["WaveMind Kubernetes operator"]["autoscaling_max_replicas"] >= results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["autoscaling_metrics"] == ["cpu", "memory"]
+    assert results["WaveMind Kubernetes operator"]["rebalance_status"] == "ready"
+    assert results["WaveMind Kubernetes operator"]["rebalance_full_plan"] is True
+    assert results["WaveMind Kubernetes operator"]["rebalance_move_count"] >= 1
+    assert results["WaveMind Kubernetes operator"]["rebalance_batches"] >= 1
+    assert results["WaveMind Kubernetes operator"]["rebalance_preview_batches"] == results["WaveMind Kubernetes operator"]["rebalance_preview_batch_count"]
+    assert results["WaveMind Kubernetes operator"]["rebalance_write_quorum"] == 2
+    assert results["WaveMind Kubernetes operator"]["rebalance_checkpoint_required"] is True
+    assert results["WaveMind Kubernetes operator"]["rebalance_repair_required"] is True
+    assert results["WaveMind Kubernetes operator"]["rebalance_validation_required"] is True
     assert results["WaveMind Kubernetes operator"]["status_ready"] is True
     assert results["WaveMind Kubernetes operator"]["status_phase"] == "Ready"
     assert results["WaveMind Kubernetes operator"]["status_ready_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["status_required_replicas"] == results["WaveMind Kubernetes operator"]["statefulset_replicas"]
     assert results["WaveMind Kubernetes operator"]["status_capacity_within_headroom"] is True
+    assert results["WaveMind Kubernetes operator"]["status_rebalance_ready"] is True
+    assert results["WaveMind Kubernetes operator"]["status_rebalance_full_plan"] is True
+    assert results["WaveMind Kubernetes operator"]["status_rebalance_move_count"] == results["WaveMind Kubernetes operator"]["rebalance_move_count"]
+    assert results["WaveMind Kubernetes operator"]["status_rebalance_batches"] == results["WaveMind Kubernetes operator"]["rebalance_batches"]
+    assert results["WaveMind Kubernetes operator"]["status_rebalance_configmap"] == results["WaveMind Kubernetes operator"]["rebalance_configmap_name"]
     assert results["WaveMind Kubernetes operator"]["status_degraded_nodes"] == 0
     assert results["WaveMind Kubernetes operator"]["control_plane_ready"] is True
     assert results["WaveMind Kubernetes operator"]["control_plane_voters"] >= 3
@@ -69,6 +84,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "AutoscalingReady",
         "CapacityPlanned",
         "ControlPlaneReady",
+        "RebalancePlanned",
         "RepairScheduled",
         "ResourcesReady",
     }

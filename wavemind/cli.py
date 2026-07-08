@@ -2272,6 +2272,9 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--autoscaling-target-memories", type=int)
     parser.add_argument("--autoscaling-max-memories-per-node", type=int, default=1_000_000)
     parser.add_argument("--autoscaling-headroom", type=float, default=0.70)
+    parser.add_argument("--rebalance-batch-size", type=int, default=50)
+    parser.add_argument("--rebalance-max-node-moves-per-batch", type=int, default=50)
+    parser.add_argument("--rebalance-preview-batches", type=int, default=3)
 
 
 def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
@@ -2307,6 +2310,9 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         autoscaling_target_memories=args.autoscaling_target_memories,
         autoscaling_max_memories_per_node=args.autoscaling_max_memories_per_node,
         autoscaling_headroom=args.autoscaling_headroom,
+        rebalance_batch_size=args.rebalance_batch_size,
+        rebalance_max_node_moves_per_batch=args.rebalance_max_node_moves_per_batch,
+        rebalance_preview_batches=args.rebalance_preview_batches,
     )
 
 

@@ -226,14 +226,15 @@ policy matters more than raw vector-database scale:
 - `deploy/operator` and `wavemind operator-*` commands provide the first
   Kubernetes operator-style control plane: a `WaveMindCluster` CRD, RBAC,
   operator Deployment, sample custom resource, deterministic reconciliation
-  renderer, and an in-cluster loop that applies Services, StatefulSet, and
-  repair CronJob resources.
+  renderer, and an in-cluster loop that applies Services, StatefulSet,
+  rebalance ConfigMap, and repair CronJob resources.
 - The `WaveMindCluster` CRD now exposes a `status` subresource. `wavemind
   operator-status`, `operator_status()`, and the in-cluster operator loop can
   produce and patch Kubernetes-style conditions for resources, capacity,
-  autoscaling, scheduled repair, and control-plane safety. The production
-  readiness gate now requires status phase `Ready`, `ControlPlaneReady`, and all
-  operator readiness conditions before the operator criterion passes.
+  autoscaling, rolling rebalance planning, scheduled repair, and control-plane
+  safety. The production readiness gate now requires status phase `Ready`,
+  `RebalancePlanned`, `ControlPlaneReady`, and all operator readiness conditions
+  before the operator criterion passes.
 - The `WaveMindCluster` CRD now includes `spec.controlPlane.consensus`. Operator
   status embeds the same majority leader lease/config revision safety profile
   used by the standalone `wavemind control-plane-consensus` gate, so production
@@ -242,7 +243,11 @@ policy matters more than raw vector-database scale:
 - The `WaveMindCluster` CRD is capacity-aware: `spec.autoscaling.targetMemories`
   plus `maxMemoriesPerNode` and `headroom` use the autoscale planner during
   reconciliation, raising StatefulSet replicas and HPA min/max replicas and
-  annotating resources with calculated capacity targets.
+  annotating resources with calculated capacity targets. When a target is set,
+  reconciliation also emits a bounded `<cluster>-rebalance-plan` ConfigMap with
+  full-plan metadata, move count, batch count, quorum, and
+  checkpoint/repair/validation requirements while keeping only a preview of
+  early batches inside the Kubernetes object.
 - `deploy/serverless` and `wavemind serverless-sample` provide the first
   serverless deployment planner: a Knative scale-to-zero Service plus a valid
   KEDA Deployment/Service/ScaledObject profile. The profile requires external

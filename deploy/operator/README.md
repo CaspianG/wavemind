@@ -15,7 +15,9 @@ kubectl apply -f wavemind-resources.json
 `operator-bundle` emits the CRD, RBAC, operator Deployment, and a sample custom
 resource. `operator-reconcile` renders the concrete Kubernetes resources for a
 cluster: normal Service, headless Service, StatefulSet, optional HPA, and
-scheduled repair CronJob.
+scheduled repair CronJob. When a capacity target is configured, it also renders
+a bounded `ConfigMap` named `<cluster>-rebalance-plan` with rolling namespace
+rebalance metadata and preview batches.
 
 Production control-plane safety is part of the custom resource. By default,
 `spec.controlPlane.consensus.enabled` is true. Operator status only reports the
@@ -55,7 +57,12 @@ per-node headroom:
       "enabled": true,
       "targetMemories": 10000000,
       "maxMemoriesPerNode": 1000000,
-      "headroom": 0.7
+      "headroom": 0.7,
+      "rebalance": {
+        "batchSize": 50,
+        "maxNodeMovesPerBatch": 50,
+        "previewBatches": 3
+      }
     }
   }
 }
@@ -63,7 +70,10 @@ per-node headroom:
 
 The rendered resources include `memory.wavemind.ai/capacity-*` annotations with
 the calculated replica count, target memory volume, headroom, and expected max
-node load.
+node load. The rebalance ConfigMap includes a JSON summary with move count,
+batch count, read/write quorum, full-plan status, checkpoint/repair/validation
+requirements, and a bounded preview of early batches so it stays safe for
+Kubernetes object size limits.
 
 The in-cluster operator container runs:
 
@@ -72,4 +82,7 @@ wavemind operator-loop --namespace wavemind-system
 ```
 
 The loop lists `WaveMindCluster` resources and applies the reconciled Services,
-StatefulSet, HPA, and repair CronJob with Kubernetes server-side apply.
+StatefulSet, HPA, rebalance ConfigMap, and repair CronJob with Kubernetes
+server-side apply. Operator status includes `RebalancePlanned` and only reports
+ready when the plan is full and every batch requires checkpoint, repair, and
+validation.

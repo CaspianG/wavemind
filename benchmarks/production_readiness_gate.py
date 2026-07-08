@@ -971,10 +971,19 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "pass"
                 if operator.get("bundle_has_crd")
                 and operator.get("has_hpa")
+                and operator.get("has_rebalance_configmap")
                 and operator.get("has_repair_cronjob")
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
+                and operator.get("rebalance_status") in {"ready", "ok"}
+                and operator.get("rebalance_full_plan")
+                and int(operator.get("rebalance_move_count", 0)) >= 1
+                and int(operator.get("rebalance_batches", 0)) >= 1
+                and int(operator.get("rebalance_write_quorum", 0)) >= 2
+                and operator.get("rebalance_checkpoint_required")
+                and operator.get("rebalance_repair_required")
+                and operator.get("rebalance_validation_required")
                 and operator.get("status_ready")
                 and operator.get("status_phase") == "Ready"
                 and int(operator.get("status_ready_replicas", 0))
@@ -982,6 +991,12 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(operator.get("status_required_replicas", 0))
                 == int(operator.get("statefulset_replicas", -1))
                 and operator.get("status_capacity_within_headroom")
+                and operator.get("status_rebalance_ready")
+                and operator.get("status_rebalance_full_plan")
+                and int(operator.get("status_rebalance_move_count", 0))
+                == int(operator.get("rebalance_move_count", -1))
+                and int(operator.get("status_rebalance_batches", 0))
+                == int(operator.get("rebalance_batches", -1))
                 and operator.get("control_plane_ready")
                 and int(operator.get("control_plane_voters", 0)) >= 3
                 and operator.get("control_plane_minority_blocked")
@@ -990,6 +1005,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                     "AutoscalingReady",
                     "CapacityPlanned",
                     "ControlPlaneReady",
+                    "RebalancePlanned",
                     "RepairScheduled",
                     "ResourcesReady",
                 }
@@ -997,13 +1013,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             ),
             requirement=(
                 "Operator output must include CRD, StatefulSet, Service, HPA, "
-                "scheduled repair, capacity-aware replica reconciliation, and "
-                "status conditions for readiness/autoscaling/capacity/repair plus "
-                "control-plane consensus safety."
+                "scheduled repair, capacity-aware replica reconciliation, a bounded "
+                "rebalance ConfigMap with full rolling namespace-move plan metadata, "
+                "and status conditions for readiness/autoscaling/capacity/rebalance/"
+                "repair plus control-plane consensus safety."
             ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
                 f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}, "
+                f"rebalance config {operator.get('has_rebalance_configmap')}, "
+                f"rebalance {operator.get('rebalance_status')} "
+                f"{operator.get('rebalance_move_count')} moves/"
+                f"{operator.get('rebalance_batches')} batches, "
                 f"replicas {operator.get('statefulset_replicas')}, "
                 f"required {operator.get('capacity_required_replicas')}, "
                 f"target max {operator.get('capacity_target_max_node_memories')}, "

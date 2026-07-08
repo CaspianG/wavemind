@@ -79,6 +79,10 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert "targetMemories" in spec_props["autoscaling"]["properties"]
     assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
     assert "headroom" in spec_props["autoscaling"]["properties"]
+    rebalance_props = spec_props["autoscaling"]["properties"]["rebalance"]["properties"]
+    assert "batchSize" in rebalance_props
+    assert "maxNodeMovesPerBatch" in rebalance_props
+    assert "previewBatches" in rebalance_props
 
 
 def test_operator_reconcile_renders_cluster_resources():
@@ -155,7 +159,10 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     resources = {resource["kind"]: resource for resource in payload["items"]}
     statefulset = resources["StatefulSet"]
     hpa = resources["HorizontalPodAutoscaler"]
+    configmap = resources["ConfigMap"]
     annotations = statefulset["metadata"]["annotations"]
+    rebalance_summary = json.loads(configmap["data"]["rebalance-summary.json"])
+    rebalance_preview = json.loads(configmap["data"]["rebalance-batches-preview.json"])
 
     assert statefulset["spec"]["replicas"] >= 43
     assert hpa["spec"]["minReplicas"] == statefulset["spec"]["replicas"]
@@ -163,15 +170,29 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     assert annotations["memory.wavemind.ai/capacity-target-memories"] == "10000000"
     assert int(annotations["memory.wavemind.ai/capacity-required-replicas"]) == statefulset["spec"]["replicas"]
     assert int(annotations["memory.wavemind.ai/capacity-target-max-node-memories"]) <= 700_000
+    assert configmap["metadata"]["name"] == "wm-capacity-rebalance-plan"
+    assert configmap["metadata"]["annotations"]["memory.wavemind.ai/rebalance-status"] == "ready"
+    assert configmap["metadata"]["annotations"]["memory.wavemind.ai/rebalance-full-plan"] == "true"
+    assert rebalance_summary["status"] == "ready"
+    assert rebalance_summary["full_plan"] is True
+    assert rebalance_summary["batch_count"] >= 1
+    assert rebalance_summary["move_count"] == spec.namespace_count
+    assert rebalance_summary["write_quorum"] == 2
+    assert rebalance_summary["preview_batches"] == len(rebalance_preview)
     assert payload["operatorStatus"]["ready"] is True
     assert payload["operatorStatus"]["capacity"]["requiredReplicas"] == statefulset["spec"]["replicas"]
     assert payload["operatorStatus"]["capacity"]["withinHeadroom"] is True
+    assert payload["operatorStatus"]["rebalance"]["ready"] is True
+    assert payload["operatorStatus"]["rebalance"]["fullPlan"] is True
+    assert payload["operatorStatus"]["rebalance"]["batchCount"] >= 1
+    assert payload["operatorStatus"]["rebalance"]["configMapName"] == "wm-capacity-rebalance-plan"
     assert {
         condition["type"] for condition in payload["operatorStatus"]["conditions"]
     } == {
         "ResourcesReady",
         "CapacityPlanned",
         "AutoscalingReady",
+        "RebalancePlanned",
         "RepairScheduled",
         "ControlPlaneReady",
     }
@@ -215,6 +236,7 @@ def test_operator_status_reports_degraded_capacity_and_repair_actions():
     assert status["capacity"]["requiredReplicas"] <= status["autoscaling"]["maxReplicas"]
     assert conditions["ResourcesReady"]["status"] == "False"
     assert conditions["CapacityPlanned"]["status"] == "True"
+    assert conditions["RebalancePlanned"]["status"] == "True"
     assert conditions["RepairScheduled"]["status"] == "False"
     assert conditions["ControlPlaneReady"]["status"] == "True"
     assert any("Run cluster-health" in action for action in status["actions"])
@@ -257,6 +279,7 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     args = deployment["spec"]["template"]["spec"]["containers"][0]["args"]
     assert args == ["operator-loop", "--namespace", "wavemind-system"]
     assert any(rule["apiGroups"] == [""] and rule["resources"] == ["services"] for rule in role["rules"])
+    assert any(rule["apiGroups"] == [""] and rule["resources"] == ["configmaps"] for rule in role["rules"])
     assert any(rule["apiGroups"] == ["apps"] and rule["resources"] == ["statefulsets"] for rule in role["rules"])
     assert any(rule["apiGroups"] == ["batch"] and rule["resources"] == ["cronjobs"] for rule in role["rules"])
     assert any(
@@ -288,13 +311,18 @@ def test_kubernetes_resource_path_maps_supported_resources():
         "kind": "HorizontalPodAutoscaler",
         "metadata": {"name": "wm", "namespace": "ns"},
     }
+    configmap = {
+        "kind": "ConfigMap",
+        "metadata": {"name": "wm-rebalance-plan", "namespace": "ns"},
+    }
 
     assert kubernetes_resource_path(service).api_path == "/api/v1/namespaces/ns/services/wm"
+    assert kubernetes_resource_path(configmap).api_path == "/api/v1/namespaces/ns/configmaps/wm-rebalance-plan"
     assert kubernetes_resource_path(statefulset).api_path == "/apis/apps/v1/namespaces/ns/statefulsets/wm"
     assert kubernetes_resource_path(cronjob).api_path == "/apis/batch/v1/namespaces/ns/cronjobs/wm-repair"
     assert kubernetes_resource_path(hpa).api_path == "/apis/autoscaling/v2/namespaces/ns/horizontalpodautoscalers/wm"
     with pytest.raises(ValueError, match="Unsupported"):
-        kubernetes_resource_path({"kind": "ConfigMap", "metadata": {"name": "wm"}})
+        kubernetes_resource_path({"kind": "Secret", "metadata": {"name": "wm"}})
 
 
 def test_operator_loop_applies_reconciled_resources_once():

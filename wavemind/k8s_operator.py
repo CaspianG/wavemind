@@ -58,6 +58,10 @@ class WaveMindClusterSpec:
     autoscaling_target_memories: int | None = None
     autoscaling_max_memories_per_node: int = 1_000_000
     autoscaling_headroom: float = 0.70
+    capacity_seed_replicas: int | None = None
+    rebalance_batch_size: int = 50
+    rebalance_max_node_moves_per_batch: int | None = 50
+    rebalance_preview_batches: int = 3
     resources: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -100,13 +104,21 @@ class WaveMindClusterSpec:
                 raise ValueError("autoscaling_max_memories_per_node must be positive")
             if self.autoscaling_headroom <= 0 or self.autoscaling_headroom > 1:
                 raise ValueError("autoscaling_headroom must be in (0, 1]")
-            required_replicas = self._capacity_required_replicas(
-                seed_replicas=max(
-                    self.replicas,
-                    self.replication_factor,
-                    self.autoscaling_min_replicas,
-                )
+            if self.rebalance_batch_size <= 0:
+                raise ValueError("rebalance_batch_size must be positive")
+            if (
+                self.rebalance_max_node_moves_per_batch is not None
+                and self.rebalance_max_node_moves_per_batch <= 0
+            ):
+                raise ValueError("rebalance_max_node_moves_per_batch must be positive")
+            if self.rebalance_preview_batches < 0:
+                raise ValueError("rebalance_preview_batches cannot be negative")
+            seed_replicas = max(
+                self.capacity_seed_replicas or self.replicas,
+                self.replication_factor,
             )
+            object.__setattr__(self, "capacity_seed_replicas", seed_replicas)
+            required_replicas = self._capacity_required_replicas(seed_replicas=seed_replicas)
             object.__setattr__(self, "replicas", max(self.replicas, required_replicas))
             object.__setattr__(
                 self,
@@ -132,6 +144,7 @@ class WaveMindClusterSpec:
         control_plane = dict(spec.get("controlPlane") or {})
         consensus = dict(control_plane.get("consensus") or {})
         autoscaling = dict(spec.get("autoscaling") or {})
+        rebalance = dict(autoscaling.get("rebalance") or {})
         persistence = dict(spec.get("persistence") or {})
         service = dict(spec.get("service") or {})
 
@@ -171,6 +184,19 @@ class WaveMindClusterSpec:
             autoscaling_target_memories=_optional_int(autoscaling.get("targetMemories")),
             autoscaling_max_memories_per_node=int(autoscaling.get("maxMemoriesPerNode", 1_000_000)),
             autoscaling_headroom=float(autoscaling.get("headroom", 0.70)),
+            capacity_seed_replicas=_optional_int(autoscaling.get("seedReplicas")),
+            rebalance_batch_size=int(
+                rebalance.get("batchSize", autoscaling.get("rebalanceBatchSize", 50))
+            ),
+            rebalance_max_node_moves_per_batch=_optional_int(
+                rebalance.get(
+                    "maxNodeMovesPerBatch",
+                    autoscaling.get("rebalanceMaxNodeMovesPerBatch", 50),
+                )
+            ),
+            rebalance_preview_batches=int(
+                rebalance.get("previewBatches", autoscaling.get("rebalancePreviewBatches", 3))
+            ),
             resources=dict(spec.get("resources") or {}),
         )
 
@@ -253,6 +279,12 @@ class WaveMindClusterSpec:
                     "targetMemories": self.autoscaling_target_memories,
                     "maxMemoriesPerNode": self.autoscaling_max_memories_per_node,
                     "headroom": self.autoscaling_headroom,
+                    "seedReplicas": self.capacity_seed_replicas or self.replicas,
+                    "rebalance": {
+                        "batchSize": self.rebalance_batch_size,
+                        "maxNodeMovesPerBatch": self.rebalance_max_node_moves_per_batch,
+                        "previewBatches": self.rebalance_preview_batches,
+                    },
                 }
             )
             if self.autoscaling_target_memory_utilization is not None:
@@ -279,7 +311,7 @@ class WaveMindClusterSpec:
             "spec": spec,
         }
 
-    def reconciled_resources(self) -> list[dict[str, Any]]:
+    def reconciled_resources(self, *, rebalance_plan: Any | None = None) -> list[dict[str, Any]]:
         resources = [
             self._service(headless=False),
             self._service(headless=True),
@@ -287,16 +319,29 @@ class WaveMindClusterSpec:
         ]
         if self.autoscaling_enabled:
             resources.append(self._horizontal_pod_autoscaler())
+        if self.autoscaling_target_memories is not None:
+            resources.append(self._rebalance_configmap(rebalance_plan))
         if self.repair_enabled and self.namespace_count:
             resources.append(self._repair_cronjob())
         return resources
 
-    def capacity_autoscale_plan(self):
+    def capacity_autoscale_plan(self, *, max_moves: int = 25, seed_replicas: int | None = None):
         if self.autoscaling_target_memories is None:
             return None
+        current_replicas = int(seed_replicas or self.capacity_seed_replicas or self.replicas)
+        current_nodes = tuple(
+            ClusterNode(
+                id=f"{self.name}-{index}",
+                address=(
+                    f"http://{self.name}-{index}.{self.headless_service_name}."
+                    f"{self.namespace}.svc.cluster.local:{self.service_port}"
+                ),
+            )
+            for index in range(current_replicas)
+        )
         return build_cluster_autoscale_plan(
             namespaces=self.namespaces,
-            nodes=self.nodes,
+            nodes=current_nodes,
             replication_factor=self.replication_factor,
             target_memories=self.autoscaling_target_memories,
             max_memories_per_node=self.autoscaling_max_memories_per_node,
@@ -306,7 +351,17 @@ class WaveMindClusterSpec:
                 f"http://{{node_id}}.{self.headless_service_name}."
                 f"{self.namespace}.svc.cluster.local:{self.service_port}"
             ),
-            max_moves=25,
+            max_moves=max_moves,
+        )
+
+    def capacity_rebalance_plan(self):
+        if self.autoscaling_target_memories is None:
+            return None
+        plan = self.capacity_autoscale_plan(max_moves=self.namespace_count)
+        assert plan is not None
+        return plan.rebalance_plan(
+            batch_size=self.rebalance_batch_size,
+            max_node_moves_per_batch=self.rebalance_max_node_moves_per_batch,
         )
 
     def control_plane_consensus_report(self) -> dict[str, object]:
@@ -520,6 +575,48 @@ class WaveMindClusterSpec:
             },
         }
 
+    def _rebalance_configmap(self, rebalance=None) -> dict[str, Any]:
+        labels = self._labels()
+        rebalance = rebalance or self.capacity_rebalance_plan()
+        assert rebalance is not None
+        summary = {
+            key: value
+            for key, value in rebalance.as_dict().items()
+            if key != "batches"
+        }
+        summary.update(
+            {
+                "target_memories": self.autoscaling_target_memories,
+                "required_replicas": self.replicas,
+                "preview_batches": min(
+                    self.rebalance_preview_batches,
+                    len(rebalance.batches),
+                ),
+            }
+        )
+        preview = [
+            batch.as_dict()
+            for batch in rebalance.batches[: self.rebalance_preview_batches]
+        ]
+        annotations = {
+            **self._capacity_annotations(),
+            **self._rebalance_annotations(rebalance),
+        }
+        return {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": f"{self.name}-rebalance-plan",
+                "namespace": self.namespace,
+                "labels": {**labels, "app.kubernetes.io/component": "rebalance-plan"},
+                "annotations": annotations,
+            },
+            "data": {
+                "rebalance-summary.json": json.dumps(summary, sort_keys=True),
+                "rebalance-batches-preview.json": json.dumps(preview, sort_keys=True),
+            },
+        }
+
     def _capacity_required_replicas(self, *, seed_replicas: int) -> int:
         if self.autoscaling_target_memories is None:
             return self.replicas
@@ -559,6 +656,20 @@ class WaveMindClusterSpec:
             "memory.wavemind.ai/capacity-required-replicas": str(plan.required_nodes),
             "memory.wavemind.ai/capacity-target-max-node-memories": str(plan.target_max_node_memories),
             "memory.wavemind.ai/capacity-headroom": str(self.autoscaling_headroom),
+        }
+
+    def _rebalance_annotations(self, rebalance=None) -> dict[str, str]:
+        if self.autoscaling_target_memories is None:
+            return {}
+        plan = rebalance or self.capacity_rebalance_plan()
+        assert plan is not None
+        return {
+            "memory.wavemind.ai/rebalance-status": str(plan.status),
+            "memory.wavemind.ai/rebalance-full-plan": "true" if plan.full_plan else "false",
+            "memory.wavemind.ai/rebalance-move-count": str(plan.move_count),
+            "memory.wavemind.ai/rebalance-batches": str(len(plan.batches)),
+            "memory.wavemind.ai/rebalance-write-quorum": str(plan.write_quorum),
+            "memory.wavemind.ai/rebalance-estimated-steps": str(plan.estimated_steps),
         }
 
 
@@ -648,6 +759,23 @@ def custom_resource_definition() -> dict[str, Any]:
                                                     "exclusiveMinimum": 0,
                                                     "maximum": 1,
                                                 },
+                                                "rebalance": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "batchSize": {
+                                                            "type": "integer",
+                                                            "minimum": 1,
+                                                        },
+                                                        "maxNodeMovesPerBatch": {
+                                                            "type": "integer",
+                                                            "minimum": 1,
+                                                        },
+                                                        "previewBatches": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                        },
+                                                    },
+                                                },
                                             },
                                         },
                                         "resources": {"type": "object", "x-kubernetes-preserve-unknown-fields": True},
@@ -696,6 +824,11 @@ def operator_bundle(
             {
                 "apiGroups": [""],
                 "resources": ["services"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+            {
+                "apiGroups": [""],
+                "resources": ["configmaps"],
                 "verbs": ["get", "list", "watch", "create", "patch", "update"],
             },
             {
@@ -771,8 +904,9 @@ def operator_bundle(
 
 def operator_reconcile(resource: dict[str, Any]) -> dict[str, Any]:
     spec = WaveMindClusterSpec.from_custom_resource(resource)
-    payload = spec.as_resource_list()
-    payload["operatorStatus"] = operator_status(resource)
+    rebalance = spec.capacity_rebalance_plan()
+    payload = spec.as_resource_list(spec.reconciled_resources(rebalance_plan=rebalance))
+    payload["operatorStatus"] = operator_status(resource, rebalance_plan=rebalance)
     return payload
 
 
@@ -780,6 +914,7 @@ def operator_status(
     resource: dict[str, Any],
     *,
     observed: dict[str, Any] | None = None,
+    rebalance_plan: Any | None = None,
 ) -> dict[str, Any]:
     """Build a WaveMindCluster status payload from spec and observed metrics."""
 
@@ -842,6 +977,22 @@ def operator_status(
         and spec.autoscaling_max_replicas >= required_replicas
         and capacity_within_headroom
     )
+    rebalance = rebalance_plan if rebalance_plan is not None else spec.capacity_rebalance_plan()
+    rebalance_batches = int(len(rebalance.batches) if rebalance is not None else 0)
+    rebalance_full_plan = True if rebalance is None else bool(rebalance.full_plan)
+    rebalance_safety_ready = (
+        True
+        if rebalance is None
+        else (
+            rebalance.status in {"ready", "noop", "ok"}
+            and rebalance.full_plan
+            and rebalance.omitted_moves == 0
+            and rebalance.write_quorum >= (spec.replication_factor // 2 + 1)
+            and all(batch.requires_checkpoint for batch in rebalance.batches)
+            and all(batch.requires_repair for batch in rebalance.batches)
+            and all(batch.requires_validation for batch in rebalance.batches)
+        )
+    )
     resources_ready = (
         ready_replicas >= desired_replicas
         and current_replicas >= desired_replicas
@@ -862,6 +1013,7 @@ def operator_status(
     ready = (
         resources_ready
         and capacity_ready
+        and rebalance_safety_ready
         and autoscaling_ready
         and repair_ready
         and control_plane_ready
@@ -900,6 +1052,23 @@ def operator_status(
             timestamp,
         ),
         _operator_condition(
+            "RebalancePlanned",
+            rebalance_safety_ready,
+            (
+                "RebalancePlanReady"
+                if rebalance_safety_ready and rebalance is not None
+                else "RebalanceNotRequired"
+                if rebalance is None
+                else "RebalancePlanBlocked"
+            ),
+            (
+                f"status={rebalance.status if rebalance is not None else 'not_required'}; "
+                f"full={rebalance_full_plan}; batches={rebalance_batches}; "
+                f"write_quorum={rebalance.write_quorum if rebalance is not None else None}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
             "RepairScheduled",
             repair_ready,
             "RepairCronJobEnabled" if repair_ready else "RepairDisabled",
@@ -929,6 +1098,8 @@ def operator_status(
         actions.append("Reconcile StatefulSet replicas to the calculated capacity requirement.")
     if not autoscaling_ready:
         actions.append("Fix HPA min/max bounds so capacity-required replicas fit inside autoscaling limits.")
+    if not rebalance_safety_ready:
+        actions.append("Generate a full rolling rebalance plan with checkpoint, repair, and validation gates.")
     if degraded_nodes or unavailable_nodes:
         actions.append("Run cluster-health and cluster-repair before declaring the cluster ready.")
     if not repair_ready:
@@ -963,6 +1134,38 @@ def operator_status(
             "minReplicas": spec.autoscaling_min_replicas,
             "maxReplicas": spec.autoscaling_max_replicas,
             "hpaDesiredReplicas": hpa_desired_replicas,
+        },
+        "rebalance": {
+            "required": rebalance is not None,
+            "ready": rebalance_safety_ready,
+            "status": rebalance.status if rebalance is not None else "not_required",
+            "fullPlan": rebalance_full_plan,
+            "moveCount": int(rebalance.move_count if rebalance is not None else 0),
+            "omittedMoves": int(rebalance.omitted_moves if rebalance is not None else 0),
+            "batchSize": int(rebalance.batch_size if rebalance is not None else spec.rebalance_batch_size),
+            "batchCount": rebalance_batches,
+            "estimatedSteps": int(rebalance.estimated_steps if rebalance is not None else 0),
+            "writeQuorum": int(rebalance.write_quorum if rebalance is not None else 0),
+            "checkpointRequired": (
+                all(batch.requires_checkpoint for batch in rebalance.batches)
+                if rebalance is not None
+                else False
+            ),
+            "repairRequired": (
+                all(batch.requires_repair for batch in rebalance.batches)
+                if rebalance is not None
+                else False
+            ),
+            "validationRequired": (
+                all(batch.requires_validation for batch in rebalance.batches)
+                if rebalance is not None
+                else False
+            ),
+            "configMapName": (
+                f"{spec.name}-rebalance-plan"
+                if rebalance is not None
+                else None
+            ),
         },
         "controlPlane": control_plane,
         "conditions": conditions,
@@ -1147,6 +1350,8 @@ def kubernetes_resource_path(resource: dict[str, Any]) -> KubernetesResourcePath
         raise ValueError("Kubernetes resource requires kind and metadata.name")
     if kind == "Service":
         collection = f"/api/v1/namespaces/{namespace}/services"
+    elif kind == "ConfigMap":
+        collection = f"/api/v1/namespaces/{namespace}/configmaps"
     elif kind == "StatefulSet":
         collection = f"/apis/apps/v1/namespaces/{namespace}/statefulsets"
     elif kind == "CronJob":

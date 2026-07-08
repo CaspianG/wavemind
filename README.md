@@ -600,7 +600,7 @@ Checked-in result:
 | Cluster planner | 4096 namespaces, 4 nodes, replication factor 2, node-loss availability `1.000`, zone-loss availability `1.000`, write quorum `2`, Kubernetes `StatefulSet` + repair `CronJob` covering `4096` namespaces. |
 | Cluster autoscaler | 10M target memories, RF=3, current nodes `4`, required nodes `50`, additional nodes `46`, target max node load `678711`, headroom pass `true`, full namespace rebalance plan `ready`: `4094` moves, `82` rolling batches, write quorum `2`, checkpoint/repair/validation required for every batch. |
 | Control-plane consensus | Majority leadership lease blocks stale leaders, stale revisions, and minority config commits; membership change advances voters `3 -> 5`, term `1 -> 2`, final config revision `2`. |
-| Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, and repair `CronJob`; 10M capacity target raises StatefulSet/HPA to `34` replicas with target max node load `678711`, CPU+memory metrics, status phase `Ready`, and resources/capacity/autoscaling/repair/control-plane conditions `true`. |
+| Kubernetes operator | CRD + operator deployment `true`, reconciled `StatefulSet`, `HorizontalPodAutoscaler`, rebalance `ConfigMap`, and repair `CronJob`; 10M capacity target raises StatefulSet/HPA to `34` replicas with target max node load `678711`, publishes a full rolling rebalance plan with `4048` moves and `81` batches, CPU+memory metrics, status phase `Ready`, and resources/capacity/autoscaling/rebalance/repair/control-plane conditions `true`. |
 | Hot cache | 2000 lookups, hit rate `0.920`, p99 lookup `0.003 ms`, query-audit prewarm warmed `1` hot query, prewarm hit `true`. |
 | Query-vector cache | 200 repeated queries, one local encoder call, local hit rate `0.995`, Redis-compatible cache shared across workers `true`; FastAPI service path reuses the encoded query vector and exposes cache hit/miss metrics. |
 | API batch query | FastAPI `/query/batch` answers 100 recall queries in 1 HTTP request instead of 100, preserves vector-cache reuse with one encoder call and batch hit rate `0.990`, and exposes batch/cache metrics. |
@@ -622,9 +622,10 @@ Checked-in result:
 | Structured payloads | image/audio/video/3D/table/event/graph retrieval through the standard memory API, precision@1 `1.000`; cross-modal target-modality retrieval over persisted payload vectors, precision@1 `1.000`, vector persistence `1.000`, provenance rate `1.000`, embedding dim `64`; strict external/precomputed vectors for image/audio/video/3D, precision@1 `1.000`, vector persistence `1.000`; external encoder contract over image/audio/table/event/video/3D/graph payloads passes with target precision@1 `1.000`, global precision@1 `1.000`, normalized finite persisted vectors `1.000`, provenance `1.000`, and separation margin `0.811`; temporal event retrieval covers actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance with precision@1 `1.000`; knowledge-graph memory covers entity/predicate filters, 2-hop/3-hop traversal, persistence, and provenance with precision@1 `1.000`, path precision@1 `1.000`. |
 | 100M capacity envelope | 100000000 target memories, 32768 deterministic namespace buckets, 128 nodes, 8 zones, replication factor 3, node-loss availability `1.000`, zone-loss availability `1.000`, replica-load skew `1.094`, max storage per node `5.81 GB`, valid capacity plan `true`. |
 
-This profile validates routing, cluster autoscale planning, control-plane
-majority lease/config revision safety, Kubernetes deployment, HPA autoscaling,
-operator status conditions including `ControlPlaneReady`, and scheduled repair
+This profile validates routing, cluster autoscale planning, full rolling
+rebalance planning, control-plane majority lease/config revision safety,
+Kubernetes deployment, HPA autoscaling, operator status conditions including
+`RebalancePlanned` and `ControlPlaneReady`, and scheduled repair
 manifest generation, service-mode distributed namespace sharding, real HTTP
 shard transport, sustained mixed HTTP cluster load, replica
 repair and tombstone-aware delete repair, plus a reusable anti-entropy repair
@@ -838,10 +839,10 @@ kubectl apply -f wavemind-resources.json
 `deploy/operator` contains the `WaveMindCluster` custom resource path. The
 bundle installs the CRD with a status subresource, RBAC, operator Deployment,
 and a sample cluster. The reconciler renders the concrete Service, headless
-Service, StatefulSet, HPA, and repair CronJob resources. `wavemind
+Service, StatefulSet, HPA, rebalance ConfigMap, and repair CronJob resources. `wavemind
 operator-status` turns the custom resource plus observed replicas/memory/node
 health into Kubernetes-style conditions for resources, capacity, autoscaling,
-repair, and control-plane safety. `spec.controlPlane.consensus` is enabled by
+rolling rebalance planning, repair, and control-plane safety. `spec.controlPlane.consensus` is enabled by
 default and requires majority leader lease/config revision safety before the
 cluster is reported ready. `wavemind operator-loop` can run in-cluster to keep
 resources applied and patch the `WaveMindCluster.status` subresource when the
@@ -856,12 +857,21 @@ fit the target under the requested per-node headroom:
   "enabled": true,
   "targetMemories": 10000000,
   "maxMemoriesPerNode": 1000000,
-  "headroom": 0.7
+  "headroom": 0.7,
+  "rebalance": {
+    "batchSize": 50,
+    "maxNodeMovesPerBatch": 50,
+    "previewBatches": 3
+  }
 }
 ```
 
 Rendered resources include `memory.wavemind.ai/capacity-*` annotations with the
-calculated replica count and target max node load.
+calculated replica count and target max node load. They also include
+`memory.wavemind.ai/rebalance-*` annotations plus a bounded
+`<cluster>-rebalance-plan` ConfigMap with full-plan status, move count, batch
+count, quorum, checkpoint/repair/validation requirements, and a preview of early
+batches.
 
 The same planner is available over HTTP as `POST /cluster-plan`.
 

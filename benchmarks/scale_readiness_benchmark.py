@@ -705,7 +705,11 @@ def run_operator_profile(
     cronjob_container = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
     hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
     statefulset = next(resource for resource in resources if resource["kind"] == "StatefulSet")
+    rebalance_configmap = next(resource for resource in resources if resource["kind"] == "ConfigMap")
     capacity_annotations = dict(statefulset["metadata"].get("annotations") or {})
+    rebalance_annotations = dict(rebalance_configmap["metadata"].get("annotations") or {})
+    rebalance_summary = json.loads(rebalance_configmap["data"]["rebalance-summary.json"])
+    rebalance_preview = json.loads(rebalance_configmap["data"]["rebalance-batches-preview.json"])
     return {
         "engine": "WaveMind Kubernetes operator",
         "bundle_resources": len(bundle["items"]),
@@ -716,6 +720,7 @@ def run_operator_profile(
         "has_service": "Service" in kinds,
         "has_statefulset": "StatefulSet" in kinds,
         "has_hpa": "HorizontalPodAutoscaler" in kinds,
+        "has_rebalance_configmap": "ConfigMap" in kinds,
         "has_repair_cronjob": "CronJob" in kinds,
         "headless_service": spec.headless_service_name in names,
         "autoscaling_min_replicas": hpa["spec"]["minReplicas"],
@@ -732,12 +737,34 @@ def run_operator_profile(
             capacity_annotations.get("memory.wavemind.ai/capacity-headroom", 0)
         ),
         "capacity_annotations": capacity_annotations,
+        "rebalance_configmap_name": rebalance_configmap["metadata"]["name"],
+        "rebalance_status": rebalance_summary["status"],
+        "rebalance_full_plan": rebalance_summary["full_plan"],
+        "rebalance_move_count": rebalance_summary["move_count"],
+        "rebalance_batches": rebalance_summary["batch_count"],
+        "rebalance_preview_batches": rebalance_summary["preview_batches"],
+        "rebalance_preview_batch_count": len(rebalance_preview),
+        "rebalance_write_quorum": rebalance_summary["write_quorum"],
+        "rebalance_estimated_steps": rebalance_summary["estimated_steps"],
+        "rebalance_checkpoint_required": all(
+            batch["requires_checkpoint"] for batch in rebalance_preview
+        ),
+        "rebalance_repair_required": all(batch["requires_repair"] for batch in rebalance_preview),
+        "rebalance_validation_required": all(
+            batch["requires_validation"] for batch in rebalance_preview
+        ),
+        "rebalance_annotations": rebalance_annotations,
         "status_ready": status["ready"],
         "status_phase": status["phase"],
         "status_ready_replicas": status["readyReplicas"],
         "status_desired_replicas": status["desiredReplicas"],
         "status_required_replicas": status["capacity"]["requiredReplicas"],
         "status_capacity_within_headroom": status["capacity"]["withinHeadroom"],
+        "status_rebalance_ready": status["rebalance"]["ready"],
+        "status_rebalance_full_plan": status["rebalance"]["fullPlan"],
+        "status_rebalance_move_count": status["rebalance"]["moveCount"],
+        "status_rebalance_batches": status["rebalance"]["batchCount"],
+        "status_rebalance_configmap": status["rebalance"]["configMapName"],
         "status_degraded_nodes": status["degradedNodes"],
         "status_unavailable_nodes": status["unavailableNodes"],
         "control_plane_ready": status["controlPlane"]["ready"],
