@@ -965,6 +965,14 @@ class MemoryOSSchedulePlan:
     required_infrastructure: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
     architecture_advice: dict[str, object] = field(default_factory=dict)
+    policy_manifest: MemoryOSPolicyManifest = field(
+        default_factory=MemoryOSPolicyManifest
+    )
+    policy_history: MemoryOSPolicyHistory = field(
+        default_factory=MemoryOSPolicyHistory
+    )
+    policy_escalation_ids: tuple[str, ...] = ()
+    policy_auto_adjustments: tuple[str, ...] = ()
 
     @property
     def enabled_tasks(self) -> tuple[MemoryOSScheduleTask, ...]:
@@ -992,6 +1000,10 @@ class MemoryOSSchedulePlan:
             "required_infrastructure": list(self.required_infrastructure),
             "recommendations": list(self.recommendations),
             "architecture_advice": dict(self.architecture_advice),
+            "policy_manifest": self.policy_manifest.as_dict(),
+            "policy_history": self.policy_history.as_dict(),
+            "policy_escalation_ids": list(self.policy_escalation_ids),
+            "policy_auto_adjustments": list(self.policy_auto_adjustments),
             "tasks": [task.as_dict() for task in self.tasks],
             "enabled_task_ids": [task.id for task in self.enabled_tasks],
             "ok": self.ok,
@@ -3465,7 +3477,7 @@ class MemoryOSScheduler:
             target_qps=qps,
             production_like=production_like,
         )
-        redis_arg = " --redis-url $WAVEMIND_REDIS_URL" if effective_cache == "redis" else ""
+        lock_required = worker_count > 1 or production_like
         namespace_arg = f" --namespace {namespace}" if namespace else ""
         min_score_arg = "" if min_score is None else f" --min-score {float(min_score):g}"
         common_targets = (
@@ -3496,11 +3508,71 @@ class MemoryOSScheduler:
             multimodal=multimodal,
         ).as_dict()
 
+        policy_manifest = self._schedule_policy_manifest(
+            helper=helper,
+            namespace=namespace,
+            events=events,
+            hot_queries=hot_queries,
+            stats=stats,
+            memory_pressure_threshold=memory_pressure_threshold,
+            cache_enabled=effective_cache == "redis",
+            architecture=architecture,
+            lock_required=lock_required,
+            deployment=deployment_name,
+        )
+        policy_history = helper._policy_history(
+            namespace=namespace,
+            current=policy_manifest,
+            window=5,
+        )
+        policy_escalation_ids = policy_history.repeated_required_ids
+        policy_auto_adjustments: list[str] = []
+        if (
+            cache_requested == "auto"
+            and effective_cache != "redis"
+            and "prefetch-policy" in policy_escalation_ids
+        ):
+            effective_cache = "redis"
+            cache_enabled = True
+            shared_cache_needed = True
+            policy_auto_adjustments.append("cache_mode:redis")
+            policy_manifest = self._schedule_policy_manifest(
+                helper=helper,
+                namespace=namespace,
+                events=events,
+                hot_queries=hot_queries,
+                stats=stats,
+                memory_pressure_threshold=memory_pressure_threshold,
+                cache_enabled=effective_cache == "redis",
+                architecture=architecture,
+                lock_required=lock_required,
+                deployment=deployment_name,
+            )
+            policy_history = helper._policy_history(
+                namespace=namespace,
+                current=policy_manifest,
+                window=5,
+            )
+        redis_arg = " --redis-url $WAVEMIND_REDIS_URL" if effective_cache == "redis" else ""
+        lock_arg = " --lock-required" if lock_required else ""
+        hot_policy_escalated = bool(policy_escalation_ids)
+        scale_policy_escalated = any(
+            item in policy_escalation_ids
+            for item in ("scale-policy", "coordination-policy", "forgetting-policy")
+        )
+
         hot_cadence = 15 if production_like and hot_queries else 60 if hot_queries else 300
         maintenance_cadence = 300 if pressure else 900 if production_like else 1800
         forgetting_cadence = 900 if pressure else 3600
         consolidation_cadence = 300 if hot_queries and pressure else 900 if hot_queries else 3600
         advice_cadence = 300 if architecture.get("status") == "architecture_required" else 1800
+        if hot_policy_escalated and hot_queries:
+            hot_cadence = min(hot_cadence, 30 if production_like else 45)
+            consolidation_cadence = min(consolidation_cadence, 600)
+        if scale_policy_escalated:
+            maintenance_cadence = min(maintenance_cadence, 300)
+            forgetting_cadence = min(forgetting_cadence, 600)
+            advice_cadence = min(advice_cadence, 120)
         tasks = [
             self._task(
                 "memory-os",
@@ -3512,15 +3584,16 @@ class MemoryOSScheduler:
                 (
                     "wavemind memory-os"
                     f"{namespace_arg}{redis_arg}"
+                    f"{lock_arg}"
                     f" --audit-limit {int(audit_limit)}"
                     f" --max-hot-queries {int(max_hot_queries)}"
                     f" --min-frequency {int(min_frequency)}"
                     f" --top-k {int(top_k)}{min_score_arg}{common_targets}"
                 ),
                 "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
-                priority="critical" if production_like else "high",
+                priority="critical" if production_like or hot_policy_escalated else "high",
                 requires_shared_cache=effective_cache == "redis",
-                requires_distributed_lock=worker_count > 1 or production_like,
+                requires_distributed_lock=lock_required,
             ),
             self._task(
                 "cache-prewarm",
@@ -3538,7 +3611,9 @@ class MemoryOSScheduler:
                     f" --top-k {int(top_k)}{min_score_arg}"
                 ),
                 "Keeps repeated recall paths hot across API workers.",
-                priority="high" if hot_queries else "normal",
+                priority="critical"
+                if "prefetch-policy" in policy_escalation_ids
+                else "high" if hot_queries else "normal",
                 requires_shared_cache=effective_cache == "redis",
                 requires_distributed_lock=False,
             ),
@@ -3552,6 +3627,7 @@ class MemoryOSScheduler:
                 (
                     "wavemind memory-os"
                     f"{namespace_arg}{redis_arg}"
+                    f"{lock_arg}"
                     " --consolidate-steps 0 --no-consolidate-concepts"
                     " --no-adaptive-forgetting"
                     f" --audit-limit {int(audit_limit)}"
@@ -3573,13 +3649,16 @@ class MemoryOSScheduler:
                 300,
                 (
                     "wavemind memory-os"
-                    f"{namespace_arg}"
+                    f"{namespace_arg}{redis_arg}"
+                    f"{lock_arg}"
                     " --no-predictive-prefetch --no-predict-priorities"
                     " --consolidate-steps 0 --no-consolidate-concepts"
                     f"{common_targets}"
                 ),
                 "Demotes old unused memories before they compete with current context.",
-                priority="high" if pressure else "normal",
+                priority="critical"
+                if "forgetting-policy" in policy_escalation_ids
+                else "high" if pressure else "normal",
                 requires_shared_cache=False,
                 requires_distributed_lock=production_like,
             ),
@@ -3592,13 +3671,16 @@ class MemoryOSScheduler:
                 300,
                 (
                     "wavemind memory-os"
-                    f"{namespace_arg}"
+                    f"{namespace_arg}{redis_arg}"
+                    f"{lock_arg}"
                     " --no-predictive-prefetch --no-adaptive-forgetting"
                     f" --audit-limit {int(audit_limit)}"
                     f" --min-frequency {int(min_frequency)}{common_targets}"
                 ),
                 "Creates durable higher-level concept memories from active clusters.",
-                priority="high" if hot_queries else "normal",
+                priority="critical"
+                if "consolidation-policy" in policy_escalation_ids
+                else "high" if hot_queries else "normal",
                 requires_shared_cache=False,
                 requires_distributed_lock=True,
             ),
@@ -3634,7 +3716,10 @@ class MemoryOSScheduler:
                     " --json"
                 ),
                 "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
-                priority="critical" if architecture.get("status") == "architecture_required" else "normal",
+                priority="critical"
+                if architecture.get("status") == "architecture_required"
+                or "scale-policy" in policy_escalation_ids
+                else "normal",
                 requires_shared_cache=False,
                 requires_distributed_lock=False,
             ),
@@ -3655,6 +3740,8 @@ class MemoryOSScheduler:
             target_memories=target,
             observed_p99_ms=p99_observed,
             target_p99_ms=p99_target,
+            policy_escalation_ids=policy_escalation_ids,
+            policy_auto_adjustments=tuple(policy_auto_adjustments),
         )
         status = self._schedule_status(
             architecture=architecture,
@@ -3663,6 +3750,7 @@ class MemoryOSScheduler:
             production_like=production_like,
             effective_cache_mode=effective_cache,
             shared_cache_needed=shared_cache_needed,
+            policy_escalation_ids=policy_escalation_ids,
         )
         return MemoryOSSchedulePlan(
             status=status,
@@ -3682,6 +3770,57 @@ class MemoryOSScheduler:
             required_infrastructure=tuple(infrastructure),
             recommendations=tuple(recommendations),
             architecture_advice=architecture,
+            policy_manifest=policy_manifest,
+            policy_history=policy_history,
+            policy_escalation_ids=policy_escalation_ids,
+            policy_auto_adjustments=tuple(policy_auto_adjustments),
+        )
+
+    def _schedule_policy_manifest(
+        self,
+        *,
+        helper: MemoryOSWorker,
+        namespace: str | None,
+        events: list[Any],
+        hot_queries: list[MemoryOSHotQuery],
+        stats: dict[str, object],
+        memory_pressure_threshold: int,
+        cache_enabled: bool,
+        architecture: dict[str, object],
+        lock_required: bool,
+        deployment: str,
+    ) -> MemoryOSPolicyManifest:
+        planned_warmed = len(hot_queries) if cache_enabled and hot_queries else 0
+        planned_predictive = 1 if cache_enabled and hot_queries else 0
+        active = int(stats.get("active_memories", 0) or 0)
+        pressure = active >= int(memory_pressure_threshold)
+        return helper._policy_manifest(
+            namespace=namespace,
+            hot_queries=hot_queries,
+            prewarm=CachePrewarmReport(
+                scanned_events=len(events),
+                candidates=len(hot_queries),
+                warmed=planned_warmed,
+            ),
+            predictive=PredictivePrefetchReport(
+                scanned_hot_queries=len(hot_queries),
+                generated_queries=planned_predictive,
+                warmed=planned_predictive,
+            ),
+            stats_after=stats,
+            memory_pressure_threshold=memory_pressure_threshold,
+            cache_enabled=cache_enabled,
+            concepts_created=1 if hot_queries and active >= 2 else 0,
+            priority_predictions=len(hot_queries),
+            forgetting_demotions=1 if pressure else 0,
+            architecture_payload=architecture,
+            lock_report=MemoryOSLockReport(
+                required=lock_required,
+                acquired=lock_required,
+                key="scheduler-preflight" if lock_required else None,
+                reason="scheduler_preflight",
+            ),
+            deployment=deployment,
         )
 
     def _worker_count(
@@ -3757,8 +3896,20 @@ class MemoryOSScheduler:
         target_memories: int,
         observed_p99_ms: float | None,
         target_p99_ms: float,
+        policy_escalation_ids: tuple[str, ...],
+        policy_auto_adjustments: tuple[str, ...],
     ) -> list[str]:
         recommendations: list[str] = []
+        if policy_escalation_ids:
+            recommendations.append(
+                "Escalate repeated Memory OS policy gaps: "
+                + ", ".join(policy_escalation_ids)
+            )
+        for adjustment in policy_auto_adjustments:
+            if adjustment == "cache_mode:redis":
+                recommendations.append(
+                    "Scheduler changed auto cache mode to Redis because prefetch policy gaps repeated."
+                )
         if shared_cache_needed and effective_cache_mode != "redis":
             recommendations.append("Use Redis cache mode before scaling multiple API workers.")
         if production_like and effective_cache_mode == "local":
@@ -3789,11 +3940,14 @@ class MemoryOSScheduler:
         production_like: bool,
         effective_cache_mode: str,
         shared_cache_needed: bool,
+        policy_escalation_ids: tuple[str, ...],
     ) -> str:
         if not bool(stats.get("index_healthy", True)):
             return "action_required"
         if architecture.get("status") == "architecture_required":
             return "architecture_required"
+        if policy_escalation_ids:
+            return "action_required"
         if production_like and effective_cache_mode != "redis" and shared_cache_needed:
             return "architecture_required"
         if any("Enable query audit" in item for item in recommendations):

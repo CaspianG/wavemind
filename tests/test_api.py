@@ -871,10 +871,15 @@ def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monke
             assert payload["effective_cache_mode"] == "redis"
             assert payload["hot_query_count"] == 1
             assert payload["worker_count"] >= 5
+            assert payload["policy_manifest"]["status"] == "architecture_required"
+            assert payload["policy_history"]["trend"] == "first_run"
+            assert payload["policy_escalation_ids"] == []
+            assert payload["policy_auto_adjustments"] == []
             assert "memory-os" in payload["enabled_task_ids"]
             assert "cache-prewarm" in payload["enabled_task_ids"]
             assert task_by_id["memory-os"]["requires_distributed_lock"] is True
             assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"]["command"]
+            assert "--lock-required" in task_by_id["memory-os"]["command"]
 
             after = mind.stats(namespace="tenant:os")
             assert before["active_memories"] == after["active_memories"]

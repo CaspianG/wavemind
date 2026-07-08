@@ -104,7 +104,12 @@ policy matters more than raw vector-database scale:
   concrete cadences, worker counts, Redis/shared-cache requirements,
   distributed-lock requirements, and commands for prewarm, predictive prefetch,
   consolidation, adaptive forgetting, maintenance, and architecture-advice
-  loops without mutating memory state.
+  loops without mutating memory state. It also reads previous Memory OS policy
+  audit events, exposes `policy_manifest`, `policy_history`,
+  `policy_escalation_ids`, and `policy_auto_adjustments`, promotes
+  `--cache-mode auto` to Redis when prefetch-policy gaps repeat, and emits
+  production `memory-os` commands with `--lock-required` when the planned worker
+  set needs a distributed single-flight lock.
 - `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
   `wavemind feedback-batch` now expose explicit useful/not-useful recall
   signals. They update priority/hotness, persist state, emit audit events,

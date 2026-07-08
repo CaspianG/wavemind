@@ -672,11 +672,16 @@ def test_cli_memory_os_plan_is_read_only_production_preflight(tmp_path):
     assert payload["effective_cache_mode"] == "redis"
     assert payload["hot_query_count"] == 1
     assert payload["worker_count"] >= 5
+    assert payload["policy_manifest"]["status"] == "architecture_required"
+    assert payload["policy_history"]["trend"] == "first_run"
+    assert payload["policy_escalation_ids"] == []
+    assert payload["policy_auto_adjustments"] == []
     assert "Redis-compatible shared hot-query cache" in payload["required_infrastructure"]
     assert "memory-os" in payload["enabled_task_ids"]
     assert "cache-prewarm" in payload["enabled_task_ids"]
     assert task_by_id["memory-os"]["requires_distributed_lock"] is True
     assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"]["command"]
+    assert "--lock-required" in task_by_id["memory-os"]["command"]
 
     audit = run_cli(
         "--db",

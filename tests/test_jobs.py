@@ -1066,10 +1066,15 @@ def test_memory_os_scheduler_plans_production_workers_without_mutation(tmp_path)
         assert plan.effective_cache_mode == "redis"
         assert plan.worker_count >= 5
         assert plan.hot_query_count == 1
+        assert plan.policy_manifest.status == "architecture_required"
+        assert plan.policy_history.trend == "first_run"
+        assert plan.policy_escalation_ids == ()
+        assert plan.policy_auto_adjustments == ()
         assert "Redis-compatible shared hot-query cache" in plan.required_infrastructure
         assert task_by_id["memory-os"].enabled is True
         assert task_by_id["memory-os"].requires_distributed_lock is True
         assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"].command
+        assert "--lock-required" in task_by_id["memory-os"].command
         assert task_by_id["cache-prewarm"].enabled is True
         assert task_by_id["predictive-prefetch"].enabled is True
         assert task_by_id["architecture-advice"].enabled is True
@@ -1080,6 +1085,67 @@ def test_memory_os_scheduler_plans_production_workers_without_mutation(tmp_path)
         }
         assert before_stats["active_memories"] == after_stats["active_memories"]
         assert memory.audit_events(namespace="ops", action="memory_os", limit=1) == []
+    finally:
+        memory.close()
+
+
+def test_memory_os_scheduler_escalates_repeated_policy_history(tmp_path):
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-scheduler-policy-history.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        memory.remember("scheduler learns repeated budget recall", namespace="ops")
+        memory.query("budget recall", namespace="ops", top_k=1)
+        memory.query("budget recall", namespace="ops", top_k=1)
+        worker = MemoryOSWorker(memory, cache=None)
+        for _ in range(2):
+            worker.run_once(
+                namespace="ops",
+                audit_limit=20,
+                max_hot_queries=8,
+                min_frequency=2,
+                top_k=1,
+                consolidate_steps=0,
+                consolidate_concepts=False,
+                adaptive_forgetting=False,
+                memory_pressure_threshold=1000,
+            )
+
+        plan = MemoryOSScheduler(memory).plan(
+            namespace="ops",
+            audit_limit=20,
+            max_hot_queries=32,
+            min_frequency=2,
+            top_k=1,
+            target_memories=1,
+            namespace_count=1,
+            deployment="local",
+            cache_mode="auto",
+            target_qps=1.0,
+            memory_pressure_threshold=1000,
+        )
+        task_by_id = {task.id: task for task in plan.tasks}
+
+        assert plan.status == "action_required"
+        assert plan.effective_cache_mode == "redis"
+        assert "prefetch-policy" in plan.policy_escalation_ids
+        assert "cache_mode:redis" in plan.policy_auto_adjustments
+        assert plan.policy_history.trend == "improving"
+        assert plan.policy_manifest.as_dict()["decision_count"] >= 6
+        assert task_by_id["memory-os"].cadence_seconds <= 45
+        assert task_by_id["memory-os"].priority == "critical"
+        assert task_by_id["cache-prewarm"].priority == "critical"
+        assert "--redis-url $WAVEMIND_REDIS_URL" in task_by_id["memory-os"].command
+        assert any(
+            "Scheduler changed auto cache mode to Redis" in item
+            for item in plan.recommendations
+        )
+        assert len(memory.audit_events(namespace="ops", action="memory_os", limit=10)) == 2
     finally:
         memory.close()
 
