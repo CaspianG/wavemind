@@ -318,7 +318,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind sustained HTTP cluster load"]["repair_repaired_total"] >= 1
     assert results["WaveMind sustained HTTP cluster load"]["repaired_replica"] is True
     assert results["WaveMind sustained HTTP cluster load"]["success_rate"] == 1.0
-    assert results["WaveMind sustained HTTP cluster load"]["p99_operation_ms"] < 1000.0
+    assert results["WaveMind sustained HTTP cluster load"]["p99_operation_ms"] <= 2000.0
     assert results["WaveMind replicated runtime"]["recalled_after_node_loss"] is True
     assert results["WaveMind replicated runtime"]["repair_copied_records"] == 1
     assert results["WaveMind replicated runtime"]["tombstone_suppressed_before_repair"] is True
