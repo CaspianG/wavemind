@@ -40,7 +40,11 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
 The Memory OS CronJob calls `/memory-os/plan` first. With
 `memoryOs.strictPlan=true`, the job fails before mutation when the API reports
 `architecture_required`. If the plan is acceptable, it calls `/memory-os/run`
-on every StatefulSet replica by default.
+on every StatefulSet replica by default. The CronJob also reads the returned
+task plan before mutation: if the planned `memory-os` task requires a
+distributed lock, `lock_required` is passed to `/memory-os/run` even when the
+static chart value is false. If the plan promotes `cache_mode` to Redis but
+`runtime.redisUrl` is not configured, the job exits before mutation.
 
 For shared-state production deployments, enable the Redis-backed single-flight
 lock and run one Memory OS cycle per namespace:

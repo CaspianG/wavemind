@@ -240,7 +240,10 @@ policy matters more than raw vector-database scale:
 - A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
   storage, scheduled `cluster-repair` CronJob, and opt-in Memory OS CronJobs
-  that call `/memory-os/plan` before `/memory-os/run`.
+  that call `/memory-os/plan` before `/memory-os/run`. The Memory OS CronJob
+  now applies plan output before mutation: planned distributed-lock
+  requirements are passed into `/memory-os/run`, and a Redis-required plan
+  exits early when `runtime.redisUrl` is not configured.
 - GitHub Actions builds and publishes the official
   `ghcr.io/caspiang/wavemind` container image for `main` and version tags, and
   `full-check` validates Helm lint/template rendering.

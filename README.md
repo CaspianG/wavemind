@@ -814,7 +814,9 @@ The chart deploys a StatefulSet, normal and headless Services, optional auth
 Secret wiring, a scheduled `cluster-repair` CronJob, and optional Memory OS
 CronJobs that call `/memory-os/plan` before `/memory-os/run`. It uses
 `ghcr.io/caspiang/wavemind` by default; set `image.repository` when deploying
-from a private registry.
+from a private registry. The Memory OS CronJob applies the returned plan before
+mutation: planned distributed-lock requirements are ORed into `/memory-os/run`,
+and a Redis-required plan fails early if `runtime.redisUrl` is missing.
 
 ```sh
 helm upgrade --install wavemind ./deploy/helm/wavemind \

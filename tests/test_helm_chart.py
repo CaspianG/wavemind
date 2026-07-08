@@ -95,9 +95,16 @@ def test_helm_chart_memory_os_cronjob_wires_api_scheduler_and_worker():
     assert "lock_required" in cronjob
     assert "lock_ttl_seconds" in cronjob
     assert "lock_prefix" in cronjob
+    assert "plan_tasks" in cronjob
+    assert "requires_distributed_lock" in cronjob
+    assert "plan_requires_lock" in cronjob
+    assert "memory-os-plan requires Redis" in cronjob
+    assert "policy_auto_adjustments" in cronjob
     assert "--set memoryOs.enabled=true" in readme
     assert "--set memoryOs.lockRequired=true" in readme
     assert "--set memoryOs.runOnAllReplicas=false" in readme
+    assert "task plan before mutation" in readme
+    assert "`runtime.redisUrl` is not configured" in readme
 
 
 def test_helm_chart_hpa_is_optional_and_targets_statefulset():

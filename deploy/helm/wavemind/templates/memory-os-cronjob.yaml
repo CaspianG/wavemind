@@ -74,7 +74,6 @@ spec:
                   }
                   run_payload = dict(plan_payload)
                   run_payload.pop("cache_mode", None)
-                  run_payload["lock_required"] = {{ if .Values.memoryOs.lockRequired }}True{{ else }}False{{ end }}
                   run_payload["lock_ttl_seconds"] = int({{ .Values.memoryOs.lockTtlSeconds }})
                   run_payload["lock_prefix"] = {{ .Values.memoryOs.lockPrefix | quote }}
 
@@ -91,6 +90,30 @@ spec:
 
                   plan = post(nodes[0], "/memory-os/plan", plan_payload)
                   print(json.dumps({"node": nodes[0], "plan": plan}, ensure_ascii=False))
+                  plan_tasks = {
+                      task.get("id"): task
+                      for task in plan.get("tasks", [])
+                      if isinstance(task, dict) and task.get("id")
+                  }
+                  memory_os_task = plan_tasks.get("memory-os") or {}
+                  plan_requires_lock = bool(memory_os_task.get("requires_distributed_lock"))
+                  run_payload["lock_required"] = (
+                      {{ if .Values.memoryOs.lockRequired }}True{{ else }}False{{ end }}
+                      or plan_requires_lock
+                  )
+                  if plan.get("effective_cache_mode") == "redis" and not {{ if .Values.runtime.redisUrl }}True{{ else }}False{{ end }}:
+                      print(
+                          json.dumps(
+                              {
+                                  "error": "memory-os-plan requires Redis but runtime.redisUrl is not configured",
+                                  "policy_auto_adjustments": plan.get("policy_auto_adjustments", []),
+                                  "policy_escalation_ids": plan.get("policy_escalation_ids", []),
+                              },
+                              ensure_ascii=False,
+                          ),
+                          file=sys.stderr,
+                      )
+                      raise SystemExit(5)
                   if {{ if .Values.memoryOs.strictPlan }}True{{ else }}False{{ end }} and plan.get("status") not in {"ok", "watch"}:
                       raise SystemExit(3)
 
