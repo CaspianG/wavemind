@@ -43,6 +43,16 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    agent_coherence = _load_json(
+        root / "benchmarks" / "agent_coherence_results.json",
+        load_errors,
+        required=False,
+    )
+    scale_readiness = _load_json(
+        root / "benchmarks" / "scale_readiness_results.json",
+        load_errors,
+        required=False,
+    )
 
     benchmarks = matrix.get("benchmarks") if isinstance(matrix.get("benchmarks"), list) else []
     status_counts = Counter(
@@ -112,6 +122,8 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "readiness_score": readiness.get("readiness_score"),
             "summary": readiness.get("summary", {}),
         },
+        "agent_quality": _agent_quality_status(agent_coherence),
+        "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
             "overall_status": evidence_status,
@@ -169,6 +181,8 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "benchmarks/release_claims_results.json",
             "benchmarks/scale_gap_results.json",
             "benchmarks/production_scale_run_plan.json",
+            "benchmarks/agent_coherence_results.json",
+            "benchmarks/scale_readiness_results.json",
         ],
         "load_errors": load_errors,
     }
@@ -206,6 +220,85 @@ def _publishing_status(
     if evidence_status == "pass":
         return "publishable"
     return "publishable_with_unknown_evidence"
+
+
+def _agent_quality_status(payload: dict[str, Any]) -> dict[str, Any]:
+    results = _engine_results(payload)
+    wavemind = results.get("WaveMind", {})
+    baselines = [
+        result
+        for engine, result in results.items()
+        if engine != "WaveMind" and isinstance(result, dict)
+    ]
+    best_baseline = max(
+        (float(result.get("task_success_rate", 0.0) or 0.0) for result in baselines),
+        default=0.0,
+    )
+    wavemind_success = float(wavemind.get("task_success_rate", 0.0) or 0.0)
+    wavemind_stale = float(wavemind.get("stale_error_rate", 1.0) or 0.0)
+    wavemind_context_saved = float(wavemind.get("context_budget_saved", 0.0) or 0.0)
+    status = "missing"
+    if wavemind:
+        status = "pass" if wavemind_success > best_baseline and wavemind_stale <= 0.05 else "watch"
+    return {
+        "schema": payload.get("schema"),
+        "status": status,
+        "scenario": payload.get("scenario", {}),
+        "wavemind_task_success_rate": wavemind_success,
+        "best_baseline_task_success_rate": best_baseline,
+        "task_success_lift": wavemind_success - best_baseline,
+        "wavemind_stale_error_rate": wavemind_stale,
+        "wavemind_context_budget_saved": wavemind_context_saved,
+        "wavemind_coherent_turns": int(wavemind.get("coherent_turns", 0) or 0),
+        "wavemind_avg_latency_ms": float(wavemind.get("avg_latency_ms", 0.0) or 0.0),
+        "baseline_engines": sorted(
+            engine for engine in results if engine != "WaveMind"
+        ),
+        "source": "benchmarks/agent_coherence_results.json",
+    }
+
+
+def _memory_os_policy_status(payload: dict[str, Any]) -> dict[str, Any]:
+    results = _engine_results(payload)
+    row = results.get("WaveMind Memory OS", {})
+    decision_ids = list(row.get("policy_decision_ids", []) or [])
+    strategies = dict(row.get("policy_decision_strategies", {}) or {})
+    status = str(row.get("policy_status") or "missing")
+    required = {
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy",
+    }
+    contract_status = "missing"
+    if row:
+        contract_status = "pass" if required.issubset(set(decision_ids)) else "action_required"
+    return {
+        "schema": payload.get("schema") or "wavemind.scale_readiness_benchmark.v1",
+        "status": contract_status,
+        "policy_status": status,
+        "decision_count": int(row.get("policy_decision_count", 0) or 0),
+        "decision_ids": decision_ids,
+        "decision_statuses": list(row.get("policy_decision_statuses", []) or []),
+        "decision_strategies": strategies,
+        "scale_strategy": strategies.get("scale-policy"),
+        "coordination_strategy": strategies.get("coordination-policy"),
+        "required_decisions_present": required.issubset(set(decision_ids)),
+        "source": "benchmarks/scale_readiness_results.json",
+    }
+
+
+def _engine_results(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    results = payload.get("results", [])
+    if not isinstance(results, list):
+        return {}
+    return {
+        str(row.get("engine")): row
+        for row in results
+        if isinstance(row, dict) and row.get("engine") is not None
+    }
 
 
 def _status_timestamp(*payloads: dict[str, Any]) -> str | None:

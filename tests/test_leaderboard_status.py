@@ -34,6 +34,31 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["artifact_audit"]["status"] == "pass"
     assert payload["production_readiness"]["overall_status"] == "pass"
     assert payload["production_readiness"]["readiness_score"] == 1.0
+    assert payload["agent_quality"]["schema"] == "wavemind.agent_coherence_benchmark.v1"
+    assert payload["agent_quality"]["status"] == "pass"
+    assert payload["agent_quality"]["wavemind_task_success_rate"] > (
+        payload["agent_quality"]["best_baseline_task_success_rate"]
+    )
+    assert payload["agent_quality"]["task_success_lift"] > 0.0
+    assert payload["agent_quality"]["wavemind_context_budget_saved"] > 0.9
+    assert payload["agent_quality"]["wavemind_stale_error_rate"] <= 0.05
+    assert "Chroma static" in payload["agent_quality"]["baseline_engines"]
+    assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
+    assert payload["memory_os_policy"]["status"] == "pass"
+    assert payload["memory_os_policy"]["policy_status"] == "architecture_required"
+    assert payload["memory_os_policy"]["decision_count"] >= 6
+    assert payload["memory_os_policy"]["required_decisions_present"] is True
+    assert {
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy",
+    }.issubset(set(payload["memory_os_policy"]["decision_ids"]))
+    assert payload["memory_os_policy"]["scale_strategy"] == (
+        "external-index-sharding-and-production-controls"
+    )
     assert payload["strict_production_evidence"]["overall_status"] == "action_required"
     assert payload["strict_production_evidence"]["summary"]["total_requirements"] == 8
     assert payload["strict_production_evidence"]["action_required"]
@@ -77,6 +102,8 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
+    assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
+    assert "benchmarks/scale_readiness_results.json" in payload["source_files"]
     assert payload["load_errors"] == []
 
 
@@ -92,6 +119,8 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     }
     assert payload["artifact_audit"]["status"] == "pass"
     assert payload["production_readiness"]["overall_status"] == "pass"
+    assert payload["agent_quality"]["status"] == "pass"
+    assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",
         "claims_unlocked",

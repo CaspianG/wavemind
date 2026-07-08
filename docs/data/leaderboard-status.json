@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T02:28:30Z",
+  "generated_at": "2026-07-08T03:09:37Z",
   "source_ref": "dd75c758e64e",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -37,8 +37,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T02:28:30Z",
-    "age_days": 0.02769546903935185,
+    "checked_at": "2026-07-08T03:09:37Z",
+    "age_days": 0.05624515380787037,
     "max_age_days": 8.0,
     "errors": []
   },
@@ -54,6 +54,71 @@
       "fail_count": 0,
       "total_criteria": 39
     }
+  },
+  "agent_quality": {
+    "schema": "wavemind.agent_coherence_benchmark.v1",
+    "status": "pass",
+    "scenario": {
+      "name": "agent_coherence",
+      "memories": 500,
+      "tasks": 12,
+      "top_k": 5,
+      "categories": [
+        "correction",
+        "namespace",
+        "personalization",
+        "profile",
+        "project",
+        "ttl"
+      ],
+      "description": "Agent task simulation over long user history. It measures whether retrieved memory lets an agent choose the correct personalized action while suppressing stale facts and saving context tokens."
+    },
+    "wavemind_task_success_rate": 0.9166666666666666,
+    "best_baseline_task_success_rate": 0.4166666666666667,
+    "task_success_lift": 0.49999999999999994,
+    "wavemind_stale_error_rate": 0.0,
+    "wavemind_context_budget_saved": 0.9308855291576674,
+    "wavemind_coherent_turns": 9,
+    "wavemind_avg_latency_ms": 2.983625017805025,
+    "baseline_engines": [
+      "Chroma static",
+      "Static vector"
+    ],
+    "source": "benchmarks/agent_coherence_results.json"
+  },
+  "memory_os_policy": {
+    "schema": "wavemind.scale_readiness_benchmark.v1",
+    "status": "pass",
+    "policy_status": "architecture_required",
+    "decision_count": 6,
+    "decision_ids": [
+      "prefetch-policy",
+      "priority-policy",
+      "forgetting-policy",
+      "consolidation-policy",
+      "scale-policy",
+      "coordination-policy"
+    ],
+    "decision_statuses": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "architecture_required",
+      "action_required"
+    ],
+    "decision_strategies": {
+      "prefetch-policy": "hot-query-and-transition-prefetch",
+      "priority-policy": "usage-pattern-priority-boost",
+      "forgetting-policy": "demote-cold-low-access-memories",
+      "consolidation-policy": "promote-active-clusters-to-concepts",
+      "scale-policy": "external-index-sharding-and-production-controls",
+      "coordination-policy": "require-distributed-lock-in-production"
+    },
+    "scale_strategy": "external-index-sharding-and-production-controls",
+    "coordination_strategy": "require-distributed-lock-in-production",
+    "required_decisions_present": true,
+    "source": "benchmarks/scale_readiness_results.json"
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
@@ -551,7 +616,9 @@
     "benchmarks/production_evidence_bundle_results.json",
     "benchmarks/release_claims_results.json",
     "benchmarks/scale_gap_results.json",
-    "benchmarks/production_scale_run_plan.json"
+    "benchmarks/production_scale_run_plan.json",
+    "benchmarks/agent_coherence_results.json",
+    "benchmarks/scale_readiness_results.json"
   ],
   "load_errors": []
 }

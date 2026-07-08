@@ -63,7 +63,9 @@ synchronization check for the generated benchmark artifacts.
 `docs/data/leaderboard-status.json` is the compact machine-readable public
 status contract for the GitHub Pages dashboard: publishability, artifact
 freshness, production readiness, strict production claim boundaries, and
-production evidence bundle status.
+production evidence bundle status. It also exposes agent-quality lift and the
+active Memory OS policy manifest so external dashboards can track behavioral
+quality and self-management decisions without parsing Markdown.
 The weekly leaderboard workflow refreshes these artifacts, uploads them for
 maintainer review, and deploys `docs/benchmark-dashboard.html` plus the
 machine-readable JSON evidence as a GitHub Pages living leaderboard instead of
