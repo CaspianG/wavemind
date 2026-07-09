@@ -2211,7 +2211,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "agent-memory",
             "status": "implemented",
             "source": "benchmarks/memory_competitor_benchmark.py",
-            "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+            "dataset": "Generated dynamic-memory adapter profile covering 50 users, 450 facts, 300 checks, correction, TTL, namespace isolation, preferences, and token validity.",
             "competitors": ["Mem0", "Zep", "LangGraph persistent memory", "GraphRAG static graph"],
             "metrics": ["precision@1", "precision@3", "stale_suppression", "avg_latency_ms"],
             "current": {
@@ -2224,8 +2224,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "LangGraph persistent memory": memory_competitor_results.get("LangGraph persistent memory"),
                 "GraphRAG static graph": memory_competitor_results.get("GraphRAG static graph"),
             },
-            "target": "Keep Mem0, LangGraph, and GraphRAG-style local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
-            "next_step": "Run the live Zep adapter against a configured service and expand the GraphRAG baseline from this small static graph to a larger update/conflict workload.",
+            "target": "Keep Mem0, LangGraph, and GraphRAG-style generated dynamic adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
+            "next_step": "Run the live Zep adapter against a configured service and raise the generated profile to 1000+ facts once optional competitor dependencies are stable in CI.",
         },
         {
             "id": "longmemeval_answer_generation",

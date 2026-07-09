@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-09T15:45:56Z` from `017116aa97d2`.
+Last refresh: `2026-07-09T16:11:21Z` from `f8e3b8eb7142`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -27,14 +27,14 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | Production streaming load runner | production-scale | Recall@k | 10k smoke / WaveMind numpy-streaming: 1 / 0.098 ms | Qdrant sharded smoke / Qdrant sharded service streaming: 1 / 9.103 ms | Quality tie; WaveMind faster; production SLO pass: 10k smoke / WaveMind numpy-streaming; cost: 10k smoke / WaveMind numpy-streaming $0.69/1M queries |
 | Scale readiness profile | production-scale | precision@1 | WaveMind structured payloads: 1 / 1.031 ms | - | WaveMind-only check |
 | Production readiness gate | production-scale | readiness score | WaveMind production readiness: 1 / - | - | WaveMind-only check |
-| Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 3.088 ms | GraphRAG static graph: 1 / 0.013 ms | Baseline leads on quality |
+| Memory competitor adapter profile | agent-memory | precision@1 | WaveMind: 0.8 / 14.5 ms | GraphRAG static graph: 0.852 / 0.079 ms | Baseline leads on quality |
 | [LongMemEval answer generation](https://github.com/xiaowu0162/LongMemEval) | long-term-agent-memory | token F1 | WaveMind + qwen2.5:1.5b: 0.333 / - | Chroma static + qwen2.5:1.5b: 0.17 / - | WaveMind leads on quality |
 
 ## Evidence Source Status
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-09T15:45:56Z` | source `017116aa97d2`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-09T16:11:21Z` | source `f8e3b8eb7142`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |

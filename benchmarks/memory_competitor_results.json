@@ -1,10 +1,12 @@
 {
   "scenario": {
-    "name": "memory_competitor_adapter_profile",
-    "description": "Small dynamic-memory adapter profile for comparing WaveMind against Mem0, Zep, LangGraph persistent memory, and a local GraphRAG-style static graph baseline when optional stacks are installed and explicitly configured. Missing external competitors are reported as skipped instead of being approximated.",
-    "facts": 9,
-    "checks": 6,
+    "name": "memory_competitor_generated_dynamic_profile",
+    "description": "Deterministic dynamic-memory adapter profile with many synthetic users, conflicting updates, TTL expiry, namespace collisions, preferences, and token-validity checks. It compares WaveMind against Mem0, Zep, LangGraph persistent memory, and a local GraphRAG-style static graph baseline when those optional stacks are installed and explicitly configured.",
+    "facts": 450,
+    "checks": 300,
     "top_k": 3,
+    "generated_users": 50,
+    "namespaces": 10,
     "behaviors": [
       "correction",
       "ttl",
@@ -16,20 +18,20 @@
     {
       "engine": "WaveMind",
       "precision_at_1": 0.8,
-      "precision_at_3": 1.0,
+      "precision_at_3": 0.944,
       "stale_suppression": 1.0,
-      "avg_latency_ms": 3.087650014397999,
-      "p95_latency_ms": 3.733100020326674,
-      "checks": 6
+      "avg_latency_ms": 14.547465666649563,
+      "p95_latency_ms": 18.51370000076713,
+      "checks": 300
     },
     {
       "engine": "Mem0",
-      "precision_at_1": 0.8,
-      "precision_at_3": 1.0,
+      "precision_at_1": 0.684,
+      "precision_at_3": 0.992,
       "stale_suppression": 0.6,
-      "avg_latency_ms": 9.986433326654756,
-      "p95_latency_ms": 11.011900031007826,
-      "checks": 6,
+      "avg_latency_ms": 39.321834333392566,
+      "p95_latency_ms": 50.225099999806844,
+      "checks": 300,
       "configured": true,
       "backend": "local qdrant path + fastembed, infer=False"
     },
@@ -40,23 +42,23 @@
     },
     {
       "engine": "LangGraph persistent memory",
-      "precision_at_1": 0.8,
-      "precision_at_3": 1.0,
+      "precision_at_1": 0.804,
+      "precision_at_3": 0.952,
       "stale_suppression": 1.0,
-      "avg_latency_ms": 0.750033330405131,
-      "p95_latency_ms": 1.3356999843381345,
-      "checks": 6,
+      "avg_latency_ms": 1.132853000023412,
+      "p95_latency_ms": 1.8204999996669358,
+      "checks": 300,
       "configured": true,
       "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
     },
     {
       "engine": "GraphRAG static graph",
-      "precision_at_1": 1.0,
-      "precision_at_3": 1.0,
+      "precision_at_1": 0.852,
+      "precision_at_3": 0.96,
       "stale_suppression": 1.0,
-      "avg_latency_ms": 0.01306665944866836,
-      "p95_latency_ms": 0.01899997005239129,
-      "checks": 6,
+      "avg_latency_ms": 0.07939333336859515,
+      "p95_latency_ms": 0.1269999993382953,
+      "checks": 300,
       "configured": true,
       "backend": "local lexical entity graph over active facts"
     }

@@ -23,6 +23,30 @@ def test_memory_competitor_profile_runs_wavemind_and_reports_missing_adapters():
     assert results["Mem0"].get("skipped") in {True, None}
 
 
+def test_generated_memory_competitor_profile_scales_dynamic_checks():
+    from benchmarks.memory_competitor_benchmark import generate_dynamic_profile, run_benchmark
+
+    facts, checks = generate_dynamic_profile(users=5, namespaces=3)
+    payload = run_benchmark(
+        ["wavemind", "graphrag"],
+        generated_users=5,
+        namespaces=3,
+    )
+
+    assert len(facts) == 45
+    assert len(checks) == 30
+    assert payload["scenario"]["name"] == "memory_competitor_generated_dynamic_profile"
+    assert payload["scenario"]["facts"] == 45
+    assert payload["scenario"]["checks"] == 30
+    assert payload["scenario"]["generated_users"] == 5
+    assert payload["scenario"]["namespaces"] == 3
+    results = {result["engine"]: result for result in payload["results"]}
+    assert results["WaveMind"]["precision_at_1"] >= 0.8
+    assert results["WaveMind"]["precision_at_3"] >= 0.85
+    assert results["WaveMind"]["stale_suppression"] == 1.0
+    assert results["GraphRAG static graph"]["precision_at_3"] >= 0.9
+
+
 def test_zep_live_adapter_with_fake_client():
     from benchmarks.memory_competitor_benchmark import CHECKS, run_zep
 

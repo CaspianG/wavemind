@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T15:45:56Z",
-  "source_ref": "017116aa97d2",
+  "generated_at": "2026-07-09T16:11:21Z",
+  "source_ref": "f8e3b8eb7142",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2302,7 +2302,7 @@
       "category": "agent-memory",
       "status": "implemented",
       "source": "benchmarks/memory_competitor_benchmark.py",
-      "dataset": "Small dynamic-memory adapter profile covering correction, TTL, namespace isolation, and preferences.",
+      "dataset": "Generated dynamic-memory adapter profile covering 50 users, 450 facts, 300 checks, correction, TTL, namespace isolation, preferences, and token validity.",
       "competitors": [
         "Mem0",
         "Zep",
@@ -2318,19 +2318,19 @@
       "current": {
         "WaveMind": {
           "precision_at_1": 0.8,
-          "precision_at_3": 1.0,
+          "precision_at_3": 0.944,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 3.087650014397999,
-          "p95_latency_ms": 3.733100020326674
+          "avg_latency_ms": 14.547465666649563,
+          "p95_latency_ms": 18.51370000076713
         },
         "Mem0": {
           "engine": "Mem0",
-          "precision_at_1": 0.8,
-          "precision_at_3": 1.0,
+          "precision_at_1": 0.684,
+          "precision_at_3": 0.992,
           "stale_suppression": 0.6,
-          "avg_latency_ms": 9.986433326654756,
-          "p95_latency_ms": 11.011900031007826,
-          "checks": 6,
+          "avg_latency_ms": 39.321834333392566,
+          "p95_latency_ms": 50.225099999806844,
+          "checks": 300,
           "configured": true,
           "backend": "local qdrant path + fastembed, infer=False"
         },
@@ -2341,29 +2341,29 @@
         },
         "LangGraph persistent memory": {
           "engine": "LangGraph persistent memory",
-          "precision_at_1": 0.8,
-          "precision_at_3": 1.0,
+          "precision_at_1": 0.804,
+          "precision_at_3": 0.952,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 0.750033330405131,
-          "p95_latency_ms": 1.3356999843381345,
-          "checks": 6,
+          "avg_latency_ms": 1.132853000023412,
+          "p95_latency_ms": 1.8204999996669358,
+          "checks": 300,
           "configured": true,
           "backend": "langgraph.store.sqlite.SqliteStore + local hash embeddings"
         },
         "GraphRAG static graph": {
           "engine": "GraphRAG static graph",
-          "precision_at_1": 1.0,
-          "precision_at_3": 1.0,
+          "precision_at_1": 0.852,
+          "precision_at_3": 0.96,
           "stale_suppression": 1.0,
-          "avg_latency_ms": 0.01306665944866836,
-          "p95_latency_ms": 0.01899997005239129,
-          "checks": 6,
+          "avg_latency_ms": 0.07939333336859515,
+          "p95_latency_ms": 0.1269999993382953,
+          "checks": 300,
           "configured": true,
           "backend": "local lexical entity graph over active facts"
         }
       },
-      "target": "Keep Mem0, LangGraph, and GraphRAG-style local adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
-      "next_step": "Run the live Zep adapter against a configured service and expand the GraphRAG baseline from this small static graph to a larger update/conflict workload."
+      "target": "Keep Mem0, LangGraph, and GraphRAG-style generated dynamic adapter results checked in, then check in a live Zep Cloud or OSS-compatible service run once ZEP_API_URL or ZEP_API_KEY is configured.",
+      "next_step": "Run the live Zep adapter against a configured service and raise the generated profile to 1000+ facts once optional competitor dependencies are stable in CI."
     },
     {
       "id": "longmemeval_answer_generation",
