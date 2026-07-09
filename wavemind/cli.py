@@ -11,6 +11,7 @@ from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
 from .cluster_drill import run_cluster_drill
+from .active_active_drill import parse_active_active_regions, run_active_active_drill
 from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .encoders import create_text_encoder
@@ -996,6 +997,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cluster_drill.add_argument("--timeout", type=float, default=1.0)
     cluster_drill.add_argument("--json", action="store_true")
+
+    active_active_drill = sub.add_parser(
+        "active-active-drill",
+        help="Seed, exercise, or recover deterministic service-backed active-active regions",
+    )
+    active_active_drill.add_argument(
+        "--mode", choices=("seed", "outage", "recover"), required=True
+    )
+    active_active_drill.add_argument(
+        "--region", action="append", required=True, help="region_id=http://service"
+    )
+    active_active_drill.add_argument("--failed-region")
+    active_active_drill.add_argument("--namespace-prefix", default="active-active-drill")
+    active_active_drill.add_argument("--namespace-count", type=int, default=16)
+    active_active_drill.add_argument("--min-convergence-rate", type=float, default=1.0)
+    active_active_drill.add_argument(
+        "--api-key",
+        default=os.environ.get("WAVEMIND_API_KEY"),
+        help="Bearer token for WaveMind API regions. Defaults to WAVEMIND_API_KEY.",
+    )
+    active_active_drill.add_argument("--timeout", type=float, default=5.0)
+    active_active_drill.add_argument("--json", action="store_true")
 
     operator_sample = sub.add_parser(
         "operator-sample",
@@ -3457,6 +3480,38 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"hit_rate: {payload.get('hit_rate', 0.0):.6f}")
             if payload.get("failed_nodes_seen"):
                 print(f"failed_nodes_seen: {', '.join(payload['failed_nodes_seen'])}")
+            if payload.get("error"):
+                print(f"error: {payload['error']}")
+        return 0 if payload["status"] == "pass" else 4
+
+    if args.command == "active-active-drill":
+        try:
+            regions = parse_active_active_regions(args.region)
+        except ValueError as exc:
+            print(f"active-active-drill: {exc}", file=sys.stderr)
+            return 2
+        payload = run_active_active_drill(
+            regions,
+            client=HTTPNamespaceShardClient(api_key=args.api_key, timeout=args.timeout),
+            mode=args.mode,
+            namespace_prefix=args.namespace_prefix,
+            namespace_count=args.namespace_count,
+            failed_region=args.failed_region,
+            min_convergence_rate=args.min_convergence_rate,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"status: {payload['status']}")
+            print(f"mode: {payload['mode']}")
+            print(f"unavailable_regions: {', '.join(payload['unavailable_regions'])}")
+            verification = payload.get("verification") or {}
+            if verification:
+                print(f"convergence_rate: {verification.get('convergence_rate', 0.0):.6f}")
+                print(
+                    "delete_suppression_rate: "
+                    f"{verification.get('delete_suppression_rate', 0.0):.6f}"
+                )
             if payload.get("error"):
                 print(f"error: {payload['error']}")
         return 0 if payload["status"] == "pass" else 4
