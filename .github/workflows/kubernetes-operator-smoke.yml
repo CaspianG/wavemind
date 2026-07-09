@@ -10,8 +10,12 @@ on:
       - "deploy/kind/**"
       - "deploy/operator/**"
       - "benchmarks/kubernetes_operator_smoke.py"
+      - "benchmarks/kubernetes_cluster_network_smoke.py"
+      - "wavemind/cluster_drill.py"
       - "tests/test_k8s_operator.py"
       - "tests/test_kubernetes_operator_smoke.py"
+      - "tests/test_cluster_drill.py"
+      - "tests/test_kubernetes_cluster_network_smoke.py"
       - ".github/workflows/kubernetes-operator-smoke.yml"
   workflow_dispatch:
 
@@ -110,6 +114,17 @@ jobs:
             --timeout-seconds 240 \
             --output benchmarks/kubernetes_operator_smoke_ci_results.json
 
+      - name: Run Kubernetes service-network and physical worker failure drill
+        run: |
+          python benchmarks/kubernetes_cluster_network_smoke.py \
+            --namespace "$NAMESPACE" \
+            --cluster-name wavemind-ci \
+            --namespace-count 32 \
+            --memories-per-namespace 8 \
+            --request-timeout 0.75 \
+            --timeout-seconds 240 \
+            --output benchmarks/kubernetes_cluster_network_smoke_ci_results.json
+
       - name: Capture diagnostics
         if: always()
         run: |
@@ -120,12 +135,15 @@ jobs:
             -l app.kubernetes.io/name=wavemind-operator || true
           kubectl logs deployment/wavemind-operator -n "$NAMESPACE" \
             --all-pods=true --prefix=true --tail=300 || true
+          docker ps -a --format 'table {{.Names}}\t{{.Status}}' || true
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: kubernetes-operator-smoke
-          path: benchmarks/kubernetes_operator_smoke_ci_results.json
+          path: |
+            benchmarks/kubernetes_operator_smoke_ci_results.json
+            benchmarks/kubernetes_cluster_network_smoke_ci_results.json
           if-no-files-found: warn
 
       - name: Delete kind cluster

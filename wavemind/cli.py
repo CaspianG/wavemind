@@ -10,6 +10,7 @@ from pathlib import Path
 from . import __version__
 from .benchmark import BenchmarkCase, run_benchmark, synthetic_cases
 from .cluster import ClusterNode, build_cluster_autoscale_plan, build_cluster_plan
+from .cluster_drill import run_cluster_drill
 from .consensus import run_control_plane_consensus_profile
 from .core import WaveMind
 from .encoders import create_text_encoder
@@ -972,6 +973,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero when any node is degraded or unavailable.",
     )
     cluster_health.add_argument("--json", action="store_true")
+
+    cluster_drill = sub.add_parser(
+        "cluster-drill",
+        help="Seed or verify a deterministic workload through service-backed cluster nodes",
+    )
+    cluster_drill.add_argument("--mode", choices=("seed", "verify"), required=True)
+    cluster_drill.add_argument("--node", action="append", required=True, help="node_id=host:port")
+    cluster_drill.add_argument("--zone", action="append", default=[], help="node_id=zone")
+    cluster_drill.add_argument("--replication-factor", type=int, default=3)
+    cluster_drill.add_argument("--write-quorum", type=int, default=2)
+    cluster_drill.add_argument("--read-quorum", type=int, default=1)
+    cluster_drill.add_argument("--read-fanout", type=int, default=3)
+    cluster_drill.add_argument("--namespace-prefix", default="cluster-drill")
+    cluster_drill.add_argument("--namespace-count", type=int, default=32)
+    cluster_drill.add_argument("--memories-per-namespace", type=int, default=8)
+    cluster_drill.add_argument("--min-hit-rate", type=float, default=1.0)
+    cluster_drill.add_argument(
+        "--api-key",
+        default=os.environ.get("WAVEMIND_API_KEY"),
+        help="Bearer token for WaveMind API nodes. Defaults to WAVEMIND_API_KEY.",
+    )
+    cluster_drill.add_argument("--timeout", type=float, default=1.0)
+    cluster_drill.add_argument("--json", action="store_true")
 
     operator_sample = sub.add_parser(
         "operator-sample",
@@ -3379,6 +3403,63 @@ def main(argv: list[str] | None = None) -> int:
                 suffix = f" ({node['last_error']})" if node["last_error"] else ""
                 print(f"- {node_id}: {node['status']}{suffix}")
         return 4 if args.fail_on_degraded and not payload["ok"] else 0
+
+    if args.command == "cluster-drill":
+        zones: dict[str, str] = {}
+        for value in args.zone:
+            node_id, separator, zone = value.partition("=")
+            if not separator or not node_id.strip() or not zone.strip():
+                print("cluster-drill --zone requires node_id=zone", file=sys.stderr)
+                return 2
+            zones[node_id.strip()] = zone.strip()
+        parsed_nodes = [_parse_cluster_node(value) for value in args.node]
+        unknown_zones = sorted(set(zones) - {node.id for node in parsed_nodes})
+        if unknown_zones:
+            print(
+                f"cluster-drill zones reference unknown nodes: {', '.join(unknown_zones)}",
+                file=sys.stderr,
+            )
+            return 2
+        nodes = [
+            ClusterNode(
+                id=node.id,
+                address=node.address,
+                zone=zones.get(node.id),
+                weight=node.weight,
+            )
+            for node in parsed_nodes
+        ]
+        memory = DistributedShardedWaveMind(
+            nodes=nodes,
+            replication_factor=args.replication_factor,
+            write_quorum=args.write_quorum,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            client=HTTPNamespaceShardClient(api_key=args.api_key, timeout=args.timeout),
+        )
+        payload = run_cluster_drill(
+            memory,
+            mode=args.mode,
+            namespace_prefix=args.namespace_prefix,
+            namespace_count=args.namespace_count,
+            memories_per_namespace=args.memories_per_namespace,
+            min_hit_rate=args.min_hit_rate,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"status: {payload['status']}")
+            print(f"mode: {payload['mode']}")
+            print(f"expected_memories: {payload['expected_memories']}")
+            if args.mode == "seed":
+                print(f"written_memories: {payload.get('written_memories', 0)}")
+            else:
+                print(f"hit_rate: {payload.get('hit_rate', 0.0):.6f}")
+            if payload.get("failed_nodes_seen"):
+                print(f"failed_nodes_seen: {', '.join(payload['failed_nodes_seen'])}")
+            if payload.get("error"):
+                print(f"error: {payload['error']}")
+        return 0 if payload["status"] == "pass" else 4
 
     if args.command == "operator-sample":
         _emit_json(_operator_spec_from_args(args).custom_resource(), out=args.out)
