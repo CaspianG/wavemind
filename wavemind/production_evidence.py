@@ -566,39 +566,118 @@ def _external_active_active_requirement(root: Path) -> EvidenceRequirement:
     )
 
 
+def _float_payload_value(payload: dict[str, Any], key: str, default: float) -> float:
+    try:
+        return float(payload.get(key, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _int_payload_value(payload: dict[str, Any], key: str, default: int) -> int:
+    try:
+        return int(payload.get(key, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _validate_serverless_telemetry_payload(
+    payload: dict[str, Any] | None,
+    *,
+    target_rps: float | None = None,
+    target_p99_ms: float | None = None,
+    max_scale: int | None = None,
+    cold_start_budget_ms: float | None = None,
+) -> dict[str, Any]:
+    issues: list[str] = []
+    if not payload:
+        return {
+            "status": "action_required",
+            "evidence": "missing remote serverless telemetry",
+            "issues": ["missing artifact"],
+        }
+
+    requested_rps = (
+        float(target_rps)
+        if target_rps is not None
+        else _float_payload_value(payload, "target_rps", 0.0)
+    )
+    requested_p99 = (
+        float(target_p99_ms)
+        if target_p99_ms is not None
+        else _float_payload_value(payload, "target_p99_ms", 500.0)
+    )
+    requested_max_scale = int(max_scale) if max_scale is not None else None
+    if requested_max_scale is None and "configured_max_scale" in payload:
+        requested_max_scale = _int_payload_value(payload, "configured_max_scale", 0)
+    requested_cold_start = (
+        float(cold_start_budget_ms) if cold_start_budget_ms is not None else None
+    )
+    if requested_cold_start is None and "cold_start_budget_ms" in payload:
+        requested_cold_start = _float_payload_value(payload, "cold_start_budget_ms", 0.0)
+    observed_rps = _float_payload_value(payload, "requests_per_second", 0.0)
+    observed_p99 = _float_payload_value(payload, "p99_request_ms", float("inf"))
+    error_rate = _float_payload_value(payload, "error_rate", 1.0)
+    max_error_rate = _float_payload_value(payload, "max_error_rate", 0.01)
+    configured_max_scale = (
+        _int_payload_value(payload, "configured_max_scale", 0)
+        if "configured_max_scale" in payload
+        else None
+    )
+    if "cold_start_total_ms" in payload:
+        cold_start_total = _float_payload_value(payload, "cold_start_total_ms", float("inf"))
+    elif "cold_start_ms" in payload:
+        cold_start_total = _float_payload_value(payload, "cold_start_ms", float("inf"))
+    else:
+        cold_start_total = None
+    node_mode = str(payload.get("node_mode") or "")
+    source = str(payload.get("source") or "").lower()
+
+    if node_mode != "external":
+        issues.append("node_mode must be external")
+    if source in {"", "fixture", "sample", "loopback-api-capacity-estimate"}:
+        issues.append("source must identify a real remote/serverless run")
+    if not payload.get("observed_slo_pass"):
+        issues.append("observed_slo_pass must be true")
+    if requested_rps > 0 and observed_rps < requested_rps:
+        issues.append(f"requests_per_second must be >= {requested_rps:g}")
+    if observed_p99 > requested_p99:
+        issues.append(f"p99_request_ms must be <= {requested_p99:g}")
+    if error_rate > max_error_rate:
+        issues.append(f"error_rate must be <= {max_error_rate:g}")
+    if requested_max_scale is not None and requested_max_scale > 0:
+        if configured_max_scale is None:
+            issues.append("configured_max_scale is required for requested rollout")
+        elif configured_max_scale < requested_max_scale:
+            issues.append(f"configured_max_scale must be >= {requested_max_scale}")
+    if requested_cold_start is not None and requested_cold_start > 0:
+        if cold_start_total is None:
+            issues.append("cold_start_total_ms or cold_start_ms is required for requested rollout")
+        elif cold_start_total > requested_cold_start:
+            issues.append(f"cold_start_total_ms must be <= {requested_cold_start:g}")
+
+    return {
+        "status": "fail" if issues else "pass",
+        "evidence": (
+            f"node_mode {payload.get('node_mode')}, source {payload.get('source')}, "
+            f"rps {payload.get('requests_per_second')}, p99 {payload.get('p99_request_ms')} ms, "
+            f"cold_start_total {payload.get('cold_start_total_ms', payload.get('cold_start_ms'))} ms, "
+            f"configured_max_scale {payload.get('configured_max_scale')}, "
+            f"errors {payload.get('error_rate')}, slo {payload.get('observed_slo_pass')}"
+        ),
+        "issues": list(dict.fromkeys(issues)),
+    }
+
+
 def _serverless_requirement(root: Path) -> EvidenceRequirement:
     artifact = "deploy/serverless/observed-telemetry.remote.json"
     payload = _load_optional_json(root / artifact)
-    issues: list[str] = []
-    if not payload:
-        issues.append("missing artifact")
-    else:
-        if payload.get("node_mode") != "external":
-            issues.append("node_mode must be external")
-        if not payload.get("observed_slo_pass"):
-            issues.append("observed_slo_pass must be true")
-        if float(payload.get("p99_request_ms", float("inf"))) > float(
-            payload.get("target_p99_ms", 500.0)
-        ):
-            issues.append("p99_request_ms above target")
-        if float(payload.get("error_rate", 1.0)) > float(
-            payload.get("max_error_rate", 0.01)
-        ):
-            issues.append("error_rate above target")
-        source = str(payload.get("source") or "").lower()
-        if source in {"", "fixture", "sample", "loopback-api-capacity-estimate"}:
-            issues.append("source must identify a real remote/serverless run")
+    validation = _validate_serverless_telemetry_payload(payload or None)
+    issues = list(validation.get("issues") or [])
     return EvidenceRequirement(
         id="serverless_remote_telemetry",
         title="Managed/serverless remote telemetry",
         status=_status_from_issues(missing=not payload, issues=issues),
-        evidence=(
-            f"node_mode {payload.get('node_mode')}, source {payload.get('source')}, "
-            f"rps {payload.get('requests_per_second')}, p99 {payload.get('p99_request_ms')} ms, "
-            f"errors {payload.get('error_rate')}, slo {payload.get('observed_slo_pass')}"
-            if payload
-            else "no checked-in remote serverless telemetry"
-        ),
+        evidence=str(validation.get("evidence") or "no checked-in remote serverless telemetry"),
         artifact=artifact,
         command=(
             "gh workflow run serverless-observed-telemetry.yml "
@@ -2351,6 +2430,18 @@ def evaluate_serverless_admission(
         if isinstance(row, dict)
     }
     requirement = strict_requirements.get("serverless_remote_telemetry", {})
+    evidence_artifact = (
+        requirement.get("artifact")
+        or "deploy/serverless/observed-telemetry.remote.json"
+    )
+    evidence_payload = _load_optional_json(root / str(evidence_artifact))
+    requested_validation = _validate_serverless_telemetry_payload(
+        evidence_payload or None,
+        target_rps=float(target_rps),
+        target_p99_ms=float(target_p99_ms),
+        max_scale=int(max_scale),
+        cold_start_budget_ms=float(cold_start_budget_ms),
+    )
     preflight = evaluate_production_evidence_preflight(root, env=env)
     preflight_checks = {
         str(row.get("id")): row
@@ -2360,8 +2451,9 @@ def evaluate_serverless_admission(
     preflight_check = preflight_checks.get("serverless_remote_telemetry", {})
 
     strict_status = str(requirement.get("status") or "missing")
+    requested_evidence_status = str(requested_validation.get("status") or "missing")
     preflight_status = str(preflight_check.get("status") or "missing")
-    admitted = strict_status == "pass"
+    admitted = strict_status == "pass" and requested_evidence_status == "pass"
     if admitted:
         status = "admitted"
     elif allow_plan_only:
@@ -2375,6 +2467,11 @@ def evaluate_serverless_admission(
         issues.append(
             "serverless_remote_telemetry is not admitted: "
             f"strict_status={strict_status}"
+        )
+    if requested_evidence_status != "pass":
+        issues.append(
+            "serverless_remote_telemetry artifact does not satisfy requested rollout: "
+            f"requested_evidence_status={requested_evidence_status}"
         )
     if preflight_status != "ready":
         warnings.append(
@@ -2408,6 +2505,7 @@ def evaluate_serverless_admission(
         next_actions.append(command)
 
     requirement_issues = list(requirement.get("issues") or [])
+    requested_validation_issues = list(requested_validation.get("issues") or [])
     preflight_issues = list(preflight_check.get("issues") or [])
     missing_env = list(preflight_check.get("missing_env") or [])
     required_env = list(preflight_check.get("required_env") or [])
@@ -2428,25 +2526,37 @@ def evaluate_serverless_admission(
             "status": status,
             "admitted": admitted,
             "strict_status": strict_status,
+            "requested_evidence_status": requested_evidence_status,
             "preflight_status": preflight_status,
-            "required_artifact": requirement.get("artifact")
-            or "deploy/serverless/observed-telemetry.remote.json",
+            "required_artifact": evidence_artifact,
             "missing_env": missing_env,
-            "blocking_issue_count": len(dict.fromkeys(issues + requirement_issues)),
+            "blocking_issue_count": len(
+                dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+            ),
             "warning_count": len(dict.fromkeys(warnings + preflight_issues)),
         },
         "required_evidence": {
             "id": "serverless_remote_telemetry",
             "title": requirement.get("title") or "Managed/serverless remote telemetry",
             "status": strict_status,
-            "artifact": requirement.get("artifact")
-            or "deploy/serverless/observed-telemetry.remote.json",
+            "artifact": evidence_artifact,
             "evidence": requirement.get("evidence")
             or "missing remote serverless telemetry artifact",
             "issues": requirement_issues,
             "command": command,
             "claim_unlocked": requirement.get("claim_unlocked")
             or "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+        },
+        "requested_evidence": {
+            "status": requested_evidence_status,
+            "artifact": evidence_artifact,
+            "evidence": requested_validation.get("evidence")
+            or "missing remote serverless telemetry artifact",
+            "issues": requested_validation_issues,
+            "target_rps": float(target_rps),
+            "target_p99_ms": float(target_p99_ms),
+            "max_scale": int(max_scale),
+            "cold_start_budget_ms": float(cold_start_budget_ms),
         },
         "preflight": {
             "status": preflight_status,
@@ -2459,7 +2569,9 @@ def evaluate_serverless_admission(
             "output_artifact": preflight_check.get("output_artifact")
             or "deploy/serverless/observed-telemetry.remote.json",
         },
-        "issues": list(dict.fromkeys(issues + requirement_issues)),
+        "issues": list(
+            dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+        ),
         "warnings": list(dict.fromkeys(warnings + preflight_issues)),
         "next_actions": list(dict.fromkeys(next_actions)),
         "source_artifacts": {
@@ -2473,6 +2585,7 @@ def evaluate_serverless_admission(
 def render_serverless_admission_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     required = payload["required_evidence"]
+    requested = payload.get("requested_evidence") or {}
     preflight = payload["preflight"]
     lines = [
         "# WaveMind Serverless Admission",
@@ -2493,6 +2606,7 @@ def render_serverless_admission_markdown(payload: dict[str, Any]) -> str:
         f"| max scale | `{payload['max_scale']}` |",
         f"| cold-start budget ms | `{payload['cold_start_budget_ms']}` |",
         f"| strict evidence | `{summary['strict_status']}` |",
+        f"| requested evidence | `{summary.get('requested_evidence_status', 'missing')}` |",
         f"| preflight | `{summary['preflight_status']}` |",
         f"| required artifact | `{summary['required_artifact']}` |",
         "",
@@ -2505,6 +2619,25 @@ def render_serverless_admission_markdown(payload: dict[str, Any]) -> str:
             status=required["status"],
             artifact=required["artifact"],
             evidence=str(required.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Requested Evidence",
+        "",
+        "| status | target RPS | target p99 ms | max scale | cold-start budget ms | evidence |",
+        "|---|---:|---:|---:|---:|---|",
+        (
+            "| `{status}` | `{target_rps}` | `{target_p99_ms}` | `{max_scale}` | "
+            "`{cold_start_budget_ms}` | {evidence} |"
+        ).format(
+            status=requested.get("status", "missing"),
+            target_rps=requested.get("target_rps", payload["target_rps"]),
+            target_p99_ms=requested.get("target_p99_ms", payload["target_p99_ms"]),
+            max_scale=requested.get("max_scale", payload["max_scale"]),
+            cold_start_budget_ms=requested.get(
+                "cold_start_budget_ms",
+                payload["cold_start_budget_ms"],
+            ),
+            evidence=str(requested.get("evidence") or "").replace("|", "\\|"),
         ),
         "",
         "## Preflight",

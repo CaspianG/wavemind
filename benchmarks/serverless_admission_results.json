@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.serverless_admission.v1",
-  "generated_at": "2026-07-09T02:17:51Z",
+  "generated_at": "2026-07-09T09:41:17Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
@@ -14,12 +14,13 @@
     "status": "plan_only",
     "admitted": false,
     "strict_status": "action_required",
+    "requested_evidence_status": "action_required",
     "preflight_status": "action_required",
     "required_artifact": "deploy/serverless/observed-telemetry.remote.json",
     "missing_env": [
       "WAVEMIND_SERVERLESS_NODES"
     ],
-    "blocking_issue_count": 2,
+    "blocking_issue_count": 3,
     "warning_count": 3
   },
   "required_evidence": {
@@ -27,12 +28,24 @@
     "title": "Managed/serverless remote telemetry",
     "status": "action_required",
     "artifact": "deploy/serverless/observed-telemetry.remote.json",
-    "evidence": "no checked-in remote serverless telemetry",
+    "evidence": "missing remote serverless telemetry",
     "issues": [
       "missing artifact"
     ],
     "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
     "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
+  },
+  "requested_evidence": {
+    "status": "action_required",
+    "artifact": "deploy/serverless/observed-telemetry.remote.json",
+    "evidence": "missing remote serverless telemetry",
+    "issues": [
+      "missing artifact"
+    ],
+    "target_rps": 3200.0,
+    "target_p99_ms": 500.0,
+    "max_scale": 256,
+    "cold_start_budget_ms": 1500.0
   },
   "preflight": {
     "status": "action_required",
@@ -55,6 +68,7 @@
   },
   "issues": [
     "serverless_remote_telemetry is not admitted: strict_status=action_required",
+    "serverless_remote_telemetry artifact does not satisfy requested rollout: requested_evidence_status=action_required",
     "missing artifact"
   ],
   "warnings": [
