@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T22:45:26Z",
-  "source_ref": "ae16e683b008",
+  "generated_at": "2026-07-09T23:34:14Z",
+  "source_ref": "9956e3112dc5",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2167,9 +2167,9 @@
           "status": "pass",
           "environment": "kind-multinode-ci",
           "evidence_source": "github-actions-kind",
-          "source_ref": "ae16e683b0085b57368800c153b84d7e18297040",
-          "workflow_run_id": "29054900969",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29054900969",
+          "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
+          "workflow_run_id": "29057247023",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023",
           "node_count": 4,
           "operator_pod_count": 2,
           "operator_node_count": 2,
@@ -2192,6 +2192,59 @@
       },
       "target": "Pass real Kubernetes Lease-holder deletion, follower takeover, post-failover reconcile, StatefulSet scaling, data-pod replacement, and API recovery on every relevant main push.",
       "next_step": "Run the same failure drill against a non-ephemeral remote Kubernetes staging cluster and feed the resulting endpoints into cluster admission."
+    },
+    {
+      "id": "kubernetes_cluster_network_failure_smoke",
+      "name": "Kubernetes service-network physical worker failure smoke",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/kubernetes_cluster_network_smoke_results.json",
+      "dataset": "A deterministic 256-memory workload distributed across 32 namespaces and four real WaveMind pod-DNS API endpoints in three kind worker zones. The runner physically pauses one worker container, requires the network probe to detect the unavailable replica, verifies 100% quorum recall during the outage, unpauses the worker, and requires full service recovery.",
+      "competitors": [
+        "WaveMind Kubernetes service cluster"
+      ],
+      "metrics": [
+        "service_node_count",
+        "zone_count",
+        "seed_memories",
+        "outage_hit_rate",
+        "failed_nodes_during_outage",
+        "recovery_hit_rate",
+        "failed_nodes_after_recovery"
+      ],
+      "current": {
+        "WaveMind Kubernetes physical worker failure": {
+          "status": "pass",
+          "environment": "kind-multinode-network-ci",
+          "evidence_source": "github-actions-kind-physical-node-pause",
+          "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
+          "workflow_run_id": "29057247023",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023",
+          "service_node_count": 4,
+          "zone_count": 3,
+          "failure_method": "docker-pause-kind-worker",
+          "target_worker": "wavemind-ci-worker2",
+          "target_zone": "zone-b",
+          "target_data_pods": [
+            "wavemind-ci-0"
+          ],
+          "outage_duration_ms": 9254.708,
+          "seed_memories": 256,
+          "outage_hit_rate": 1.0,
+          "failed_nodes_during_outage": [
+            "wavemind-ci-0"
+          ],
+          "recovery_hit_rate": 1.0,
+          "failed_nodes_after_recovery": [],
+          "node_ready_after_recovery": true,
+          "pod_uids_preserved": true,
+          "passed_checks": 13,
+          "check_count": 13,
+          "claim_boundary": "Ephemeral non-loopback Kubernetes service-network and physical kind-worker failure evidence; not remote multi-region production admission."
+        }
+      },
+      "target": "Keep 100% deterministic quorum recall through a physical worker outage across non-loopback pod DNS, then recover every service node without replacing persistent pods.",
+      "next_step": "Repeat the same protocol on a non-ephemeral remote Kubernetes staging cluster, then run node, zone, and region drills through strict cluster admission."
     },
     {
       "id": "external_http_active_active_loopback",

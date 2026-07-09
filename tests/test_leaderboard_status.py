@@ -74,6 +74,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/memory_os_policy_evolution_results.json",
         "benchmarks/cluster_autoscale_results.json",
         "benchmarks/kubernetes_operator_smoke_results.json",
+        "benchmarks/kubernetes_cluster_network_smoke_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -472,6 +473,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/memory_os_policy_bundle_results.json" in payload["source_files"]
     assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
     assert "benchmarks/kubernetes_operator_smoke_results.json" in payload["source_files"]
+    assert "benchmarks/kubernetes_cluster_network_smoke_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]

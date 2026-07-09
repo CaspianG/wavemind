@@ -96,6 +96,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "kubernetes_operator_smoke": _load_optional_json(
             benchmark_dir / "kubernetes_operator_smoke_results.json"
         ),
+        "kubernetes_cluster_network_smoke": _load_optional_json(
+            benchmark_dir / "kubernetes_cluster_network_smoke_results.json"
+        ),
         "external_http_active_active": _load_optional_json(
             benchmark_dir / "external_http_active_active_results.json"
         ),
@@ -514,6 +517,77 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and int(kubernetes_operator_summary.get("check_count", 0)) >= 14
         and int(kubernetes_operator_summary.get("passed_checks", 0))
         == int(kubernetes_operator_summary.get("check_count", -1))
+    )
+    kubernetes_cluster_network_smoke = artifacts["kubernetes_cluster_network_smoke"]
+    kubernetes_cluster_network_summary = (
+        kubernetes_cluster_network_smoke.get("summary")
+        if isinstance(kubernetes_cluster_network_smoke.get("summary"), dict)
+        else {}
+    )
+    kubernetes_cluster_network_observed = (
+        kubernetes_cluster_network_smoke.get("observed")
+        if isinstance(kubernetes_cluster_network_smoke.get("observed"), dict)
+        else {}
+    )
+    kubernetes_cluster_network_outage = (
+        kubernetes_cluster_network_observed.get("outage")
+        if isinstance(kubernetes_cluster_network_observed.get("outage"), dict)
+        else {}
+    )
+    kubernetes_cluster_network_recovered = (
+        kubernetes_cluster_network_observed.get("recovered")
+        if isinstance(kubernetes_cluster_network_observed.get("recovered"), dict)
+        else {}
+    )
+    kubernetes_cluster_network_addresses = [
+        str(value)
+        for value in kubernetes_cluster_network_observed.get("service_addresses") or []
+    ]
+    kubernetes_cluster_target_pods = set(
+        str(value)
+        for value in kubernetes_cluster_network_observed.get("target_data_pods") or []
+    )
+    kubernetes_cluster_failed_nodes = set(
+        str(value)
+        for value in kubernetes_cluster_network_outage.get("failed_nodes_seen") or []
+    )
+    kubernetes_cluster_network_smoke_pass = (
+        kubernetes_cluster_network_smoke.get("status") == "pass"
+        and kubernetes_cluster_network_smoke.get("environment")
+        == "kind-multinode-network-ci"
+        and kubernetes_cluster_network_smoke.get("evidence_source")
+        == "github-actions-kind-physical-node-pause"
+        and bool(kubernetes_cluster_network_smoke.get("source_ref"))
+        and bool(kubernetes_cluster_network_smoke.get("workflow_run_id"))
+        and str(kubernetes_cluster_network_smoke.get("workflow_run_url") or "").startswith(
+            "https://github.com/CaspianG/wavemind/actions/runs/"
+        )
+        and len(kubernetes_cluster_network_addresses) >= 4
+        and all(".svc.cluster.local" in value for value in kubernetes_cluster_network_addresses)
+        and all(
+            "127.0.0.1" not in value and "localhost" not in value
+            for value in kubernetes_cluster_network_addresses
+        )
+        and int(kubernetes_cluster_network_observed.get("zone_count", 0)) >= 3
+        and kubernetes_cluster_network_observed.get("failure_method")
+        == "docker-pause-kind-worker"
+        and kubernetes_cluster_network_observed.get("runner_worker")
+        != kubernetes_cluster_network_observed.get("target_worker")
+        and kubernetes_cluster_network_observed.get("runner_zone")
+        != kubernetes_cluster_network_observed.get("target_zone")
+        and bool(kubernetes_cluster_target_pods)
+        and bool(kubernetes_cluster_failed_nodes & kubernetes_cluster_target_pods)
+        and kubernetes_cluster_network_outage.get("status") == "pass"
+        and float(kubernetes_cluster_network_outage.get("hit_rate", 0.0)) >= 1.0
+        and kubernetes_cluster_network_recovered.get("status") == "pass"
+        and float(kubernetes_cluster_network_recovered.get("hit_rate", 0.0)) >= 1.0
+        and not kubernetes_cluster_network_recovered.get("failed_nodes_seen")
+        and kubernetes_cluster_network_observed.get("worker_unpaused")
+        and kubernetes_cluster_network_observed.get("node_ready_after_recovery")
+        and kubernetes_cluster_network_observed.get("pod_uids_preserved")
+        and int(kubernetes_cluster_network_summary.get("check_count", 0)) >= 13
+        and int(kubernetes_cluster_network_summary.get("passed_checks", 0))
+        == int(kubernetes_cluster_network_summary.get("check_count", -1))
     )
     serverless = scale.get("WaveMind serverless plan", {})
     serverless_ops = scale.get("WaveMind serverless operational profile", {})
@@ -1039,6 +1113,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("operator_cross_node_anti_affinity")
                 and operator.get("operator_pdb_rbac")
                 and kubernetes_operator_smoke_pass
+                and kubernetes_cluster_network_smoke_pass
                 and operator.get("has_pod_disruption_budget")
                 and int(operator.get("pod_disruption_budget_min_available", 0))
                 == int(operator.get("statefulset_replicas", 0)) - 1
@@ -1113,7 +1188,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "election, resourceVersion CAS, and cross-node anti-affinity, "
                 "a traceable multi-node Kubernetes CI failure drill with leader "
                 "takeover, post-failover reconcile, PDB/topology protection, pod "
-                "replacement, CR-driven rolling upgrade, and API recovery, "
+                "replacement, CR-driven rolling upgrade, non-loopback pod-DNS "
+                "quorum traffic through a physical worker outage, and API recovery, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
                 "repair/Memory OS/production admission plus control-plane consensus safety."
             ),
@@ -1133,6 +1209,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"rolling pods replaced {kubernetes_operator_summary.get('rolling_upgrade_replaced_pods')}, "
                 f"upgraded API {kubernetes_operator_summary.get('api_healthy_after_upgrade')}, "
                 f"workflow {kubernetes_operator_smoke.get('workflow_run_url')}, "
+                f"network drill {kubernetes_cluster_network_smoke.get('status')} via "
+                f"{kubernetes_cluster_network_observed.get('failure_method')}, "
+                f"service nodes {len(kubernetes_cluster_network_addresses)}, "
+                f"zones {kubernetes_cluster_network_observed.get('zone_count')}, "
+                f"outage recall {kubernetes_cluster_network_outage.get('hit_rate')}, "
+                f"failed nodes {sorted(kubernetes_cluster_failed_nodes)}, "
+                f"recovery recall {kubernetes_cluster_network_recovered.get('hit_rate')}, "
+                f"network workflow {kubernetes_cluster_network_smoke.get('workflow_run_url')}, "
                 f"rebalance config {operator.get('has_rebalance_configmap')}, "
                 f"rebalance {operator.get('rebalance_status')} "
                 f"{operator.get('rebalance_move_count')} moves/"

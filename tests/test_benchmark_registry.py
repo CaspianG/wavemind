@@ -209,8 +209,25 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert kubernetes_current["rolling_upgrade_replaced_pods"] == 4
     assert kubernetes_current["api_healthy_after_upgrade"] is True
     assert kubernetes_current["passed_checks"] == kubernetes_current["check_count"] == 14
-    assert kubernetes_current["workflow_run_url"].endswith("/29054900969")
+    assert kubernetes_current["workflow_run_url"].endswith("/29057247023")
     assert "does not unlock remote production" in kubernetes_current["claim_boundary"]
+    network_smoke = entries["kubernetes_cluster_network_failure_smoke"]
+    assert network_smoke["status"] == "implemented"
+    network_current = network_smoke["current"][
+        "WaveMind Kubernetes physical worker failure"
+    ]
+    assert network_current["status"] == "pass"
+    assert network_current["service_node_count"] == 4
+    assert network_current["zone_count"] == 3
+    assert network_current["failure_method"] == "docker-pause-kind-worker"
+    assert network_current["seed_memories"] == 256
+    assert network_current["outage_hit_rate"] == 1.0
+    assert network_current["failed_nodes_during_outage"] == ["wavemind-ci-0"]
+    assert network_current["recovery_hit_rate"] == 1.0
+    assert network_current["failed_nodes_after_recovery"] == []
+    assert network_current["passed_checks"] == network_current["check_count"] == 13
+    assert network_current["workflow_run_url"].endswith("/29057247023")
+    assert "not remote multi-region" in network_current["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]

@@ -219,6 +219,47 @@ def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[s
     }
 
 
+def _kubernetes_cluster_network_smoke_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    seed = observed.get("seed") if isinstance(observed.get("seed"), dict) else {}
+    outage = observed.get("outage") if isinstance(observed.get("outage"), dict) else {}
+    recovered = (
+        observed.get("recovered")
+        if isinstance(observed.get("recovered"), dict)
+        else {}
+    )
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "service_node_count": len(observed.get("service_addresses") or []),
+        "zone_count": observed.get("zone_count"),
+        "failure_method": observed.get("failure_method"),
+        "target_worker": observed.get("target_worker"),
+        "target_zone": observed.get("target_zone"),
+        "target_data_pods": observed.get("target_data_pods"),
+        "outage_duration_ms": observed.get("outage_duration_ms"),
+        "seed_memories": seed.get("written_memories"),
+        "outage_hit_rate": outage.get("hit_rate"),
+        "failed_nodes_during_outage": outage.get("failed_nodes_seen"),
+        "recovery_hit_rate": recovered.get("hit_rate"),
+        "failed_nodes_after_recovery": recovered.get("failed_nodes_seen"),
+        "node_ready_after_recovery": observed.get("node_ready_after_recovery"),
+        "pod_uids_preserved": observed.get("pod_uids_preserved"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -405,6 +446,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
     kubernetes_operator_smoke_payload = _load_json(
         root / "benchmarks" / "kubernetes_operator_smoke_results.json"
+    )
+    kubernetes_cluster_network_smoke_payload = _load_json(
+        root / "benchmarks" / "kubernetes_cluster_network_smoke_results.json"
     )
     external_http_active_active_loopback_payload = _load_json(
         root / "benchmarks" / "external_http_active_active_loopback_results.json"
@@ -2128,6 +2172,37 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Pass real Kubernetes Lease-holder deletion, follower takeover, post-failover reconcile, StatefulSet scaling, data-pod replacement, and API recovery on every relevant main push.",
             "next_step": "Run the same failure drill against a non-ephemeral remote Kubernetes staging cluster and feed the resulting endpoints into cluster admission.",
+        },
+        {
+            "id": "kubernetes_cluster_network_failure_smoke",
+            "name": "Kubernetes service-network physical worker failure smoke",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/kubernetes_cluster_network_smoke_results.json",
+            "dataset": "A deterministic 256-memory workload distributed across 32 namespaces and four real WaveMind pod-DNS API endpoints in three kind worker zones. The runner physically pauses one worker container, requires the network probe to detect the unavailable replica, verifies 100% quorum recall during the outage, unpauses the worker, and requires full service recovery.",
+            "competitors": ["WaveMind Kubernetes service cluster"],
+            "metrics": [
+                "service_node_count",
+                "zone_count",
+                "seed_memories",
+                "outage_hit_rate",
+                "failed_nodes_during_outage",
+                "recovery_hit_rate",
+                "failed_nodes_after_recovery",
+            ],
+            "current": {
+                "WaveMind Kubernetes physical worker failure": (
+                    _kubernetes_cluster_network_smoke_summary(
+                        kubernetes_cluster_network_smoke_payload
+                    )
+                    or {
+                        "status": "missing",
+                        "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    }
+                )
+            },
+            "target": "Keep 100% deterministic quorum recall through a physical worker outage across non-loopback pod DNS, then recover every service node without replacing persistent pods.",
+            "next_step": "Repeat the same protocol on a non-ephemeral remote Kubernetes staging cluster, then run node, zone, and region drills through strict cluster admission.",
         },
         {
             "id": "external_http_active_active_loopback",

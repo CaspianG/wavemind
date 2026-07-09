@@ -661,8 +661,12 @@ Priorities:
   release checklist;
 - support and security policy docs;
 - harden the Kubernetes operator-style control plane from renderer/loop into a
-  documented production controller, then add managed/serverless deployment
-  options after real cluster feedback;
+  documented production controller. The current CI now proves Lease-holder
+  failover, CR-driven rolling upgrade, PDB/topology protection, four service
+  pods across three zones, and `1.00` quorum recall through a physically paused
+  kind worker. The next gate is the same node/zone protocol on a non-ephemeral
+  remote staging cluster, followed by region failure and managed/serverless
+  admission;
 - short technical posts explaining stale memory, corrections, namespaces,
   dynamic priority, and benchmark methodology.
 

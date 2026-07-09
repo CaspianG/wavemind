@@ -1,0 +1,554 @@
+{
+  "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
+  "generated_at": "2026-07-09T23:28:55.566930+00:00",
+  "environment": "kind-multinode-network-ci",
+  "evidence_source": "github-actions-kind-physical-node-pause",
+  "claim_boundary": "Ephemeral non-loopback Kubernetes service-network and physical kind-worker failure evidence; not remote multi-region production admission.",
+  "status": "pass",
+  "summary": {
+    "check_count": 13,
+    "passed_checks": 13,
+    "failed_checks": 0
+  },
+  "checks": [
+    {
+      "id": "four_service_nodes",
+      "passed": true,
+      "observed": 4,
+      "required": 4
+    },
+    {
+      "id": "non_loopback_pod_dns",
+      "passed": true,
+      "observed": [
+        "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      ],
+      "required": "Kubernetes pod DNS only"
+    },
+    {
+      "id": "three_failure_domains",
+      "passed": true,
+      "observed": 3,
+      "required": 3
+    },
+    {
+      "id": "seed_quorum_writes",
+      "passed": true,
+      "observed": {
+        "status": "pass",
+        "written": 256,
+        "expected": 256
+      },
+      "required": "all deterministic memories written through quorum"
+    },
+    {
+      "id": "physical_worker_pause",
+      "passed": true,
+      "observed": {
+        "method": "docker-pause-kind-worker",
+        "worker": "wavemind-ci-worker2",
+        "pods": [
+          "wavemind-ci-0"
+        ]
+      },
+      "required": "physical kind worker container paused"
+    },
+    {
+      "id": "runner_survived_other_node",
+      "passed": true,
+      "observed": {
+        "runner": "wavemind-ci-worker",
+        "target": "wavemind-ci-worker2"
+      },
+      "required": "workload runner on a surviving worker"
+    },
+    {
+      "id": "zone_failure_isolated",
+      "passed": true,
+      "observed": {
+        "runner": "zone-a",
+        "target": "zone-b"
+      },
+      "required": "runner and failed worker in distinct zones"
+    },
+    {
+      "id": "network_failure_observed",
+      "passed": true,
+      "observed": [
+        "wavemind-ci-0"
+      ],
+      "required": "at least one pod on paused worker reported unreachable"
+    },
+    {
+      "id": "quorum_reads_during_outage",
+      "passed": true,
+      "observed": {
+        "status": "pass",
+        "hit_rate": 1.0
+      },
+      "required": "100% deterministic recall while worker is paused"
+    },
+    {
+      "id": "worker_unpaused",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "node_ready_after_recovery",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "pods_preserved_across_pause",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "full_recovery",
+      "passed": true,
+      "observed": {
+        "status": "pass",
+        "hit_rate": 1.0,
+        "failed_nodes": []
+      },
+      "required": "100% recall with no unreachable nodes after recovery"
+    }
+  ],
+  "observed": {
+    "service_addresses": [
+      "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+    ],
+    "zone_count": 3,
+    "pod_placement": [
+      {
+        "id": "wavemind-ci-0",
+        "worker": "wavemind-ci-worker2",
+        "zone": "zone-b",
+        "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "uid": "ca66a33a-d3a0-45c4-83aa-788ac93d1c62"
+      },
+      {
+        "id": "wavemind-ci-1",
+        "worker": "wavemind-ci-worker",
+        "zone": "zone-a",
+        "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "uid": "604bdc27-d67c-4db5-a704-941ebbfe5749"
+      },
+      {
+        "id": "wavemind-ci-2",
+        "worker": "wavemind-ci-worker3",
+        "zone": "zone-c",
+        "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "uid": "203334b7-42c9-4f3e-9783-843fff68dc13"
+      },
+      {
+        "id": "wavemind-ci-3",
+        "worker": "wavemind-ci-worker",
+        "zone": "zone-a",
+        "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "uid": "2649662d-7376-44f4-97ec-996c519109e5"
+      }
+    ],
+    "runner_pod": "wavemind-ci-1",
+    "runner_worker": "wavemind-ci-worker",
+    "runner_zone": "zone-a",
+    "target_worker": "wavemind-ci-worker2",
+    "target_zone": "zone-b",
+    "target_data_pods": [
+      "wavemind-ci-0"
+    ],
+    "failure_method": "docker-pause-kind-worker",
+    "failure_settle_seconds": 2.0,
+    "outage_duration_ms": 9254.708,
+    "worker_unpaused": true,
+    "node_ready_after_recovery": true,
+    "pod_uids_preserved": true,
+    "seed": {
+      "schema": "wavemind.cluster_drill.v1",
+      "generated_at": "2026-07-09T23:28:35.620315+00:00",
+      "mode": "seed",
+      "namespace_prefix": "kind-network-drill",
+      "namespace_count": 32,
+      "memories_per_namespace": 8,
+      "expected_memories": 256,
+      "min_hit_rate": 1.0,
+      "workload_digest": "447348980618d1d0355512ec29065d2e1dfbae7eb96a8357275cba172c3e65ec",
+      "cluster": {
+        "nodes": [
+          {
+            "id": "wavemind-ci-0",
+            "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-b",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-1",
+            "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-2",
+            "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-c",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-3",
+            "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          }
+        ],
+        "replication_factor": 3,
+        "write_quorum": 2,
+        "read_quorum": 1,
+        "read_fanout": 3
+      },
+      "status": "pass",
+      "written_memories": 256,
+      "write_http_requests": 4,
+      "individual_write_http_requests": 768,
+      "request_reduction_ratio": 0.9947916666666666,
+      "node_writes": {
+        "wavemind-ci-0": 256,
+        "wavemind-ci-1": 120,
+        "wavemind-ci-2": 256,
+        "wavemind-ci-3": 136
+      },
+      "failed_nodes_seen": [],
+      "node_health": {
+        "wavemind-ci-0": {
+          "id": "wavemind-ci-0",
+          "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-b",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-1": {
+          "id": "wavemind-ci-1",
+          "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-2": {
+          "id": "wavemind-ci-2",
+          "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-c",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-3": {
+          "id": "wavemind-ci-3",
+          "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        }
+      },
+      "elapsed_ms": 8856.125
+    },
+    "outage": {
+      "schema": "wavemind.cluster_drill.v1",
+      "generated_at": "2026-07-09T23:28:47.232172+00:00",
+      "mode": "verify",
+      "namespace_prefix": "kind-network-drill",
+      "namespace_count": 32,
+      "memories_per_namespace": 8,
+      "expected_memories": 256,
+      "min_hit_rate": 1.0,
+      "workload_digest": "447348980618d1d0355512ec29065d2e1dfbae7eb96a8357275cba172c3e65ec",
+      "cluster": {
+        "nodes": [
+          {
+            "id": "wavemind-ci-0",
+            "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-b",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-1",
+            "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-2",
+            "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-c",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-3",
+            "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          }
+        ],
+        "replication_factor": 3,
+        "write_quorum": 2,
+        "read_quorum": 1,
+        "read_fanout": 3
+      },
+      "status": "pass",
+      "verified_memories": 256,
+      "hits": 256,
+      "hit_rate": 1.0,
+      "query_http_requests": 3,
+      "individual_query_http_requests": 512,
+      "request_reduction_ratio": 0.994140625,
+      "failed_nodes_seen": [
+        "wavemind-ci-0"
+      ],
+      "probe_health": {
+        "wavemind-ci-0": {
+          "id": "wavemind-ci-0",
+          "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-b",
+          "available": true,
+          "status": "degraded",
+          "successes": 0,
+          "failures": 1,
+          "last_error": "timed out"
+        },
+        "wavemind-ci-1": {
+          "id": "wavemind-ci-1",
+          "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-2": {
+          "id": "wavemind-ci-2",
+          "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-c",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-3": {
+          "id": "wavemind-ci-3",
+          "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        }
+      },
+      "failed_query_count": 0,
+      "node_health": {
+        "wavemind-ci-0": {
+          "id": "wavemind-ci-0",
+          "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-b",
+          "available": false,
+          "status": "unavailable",
+          "successes": 0,
+          "failures": 1,
+          "last_error": "timed out"
+        },
+        "wavemind-ci-1": {
+          "id": "wavemind-ci-1",
+          "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 17,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-2": {
+          "id": "wavemind-ci-2",
+          "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-c",
+          "available": true,
+          "status": "healthy",
+          "successes": 34,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-3": {
+          "id": "wavemind-ci-3",
+          "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 19,
+          "failures": 0,
+          "last_error": null
+        }
+      },
+      "elapsed_ms": 6443.563
+    },
+    "recovered": {
+      "schema": "wavemind.cluster_drill.v1",
+      "generated_at": "2026-07-09T23:28:54.532544+00:00",
+      "mode": "verify",
+      "namespace_prefix": "kind-network-drill",
+      "namespace_count": 32,
+      "memories_per_namespace": 8,
+      "expected_memories": 256,
+      "min_hit_rate": 1.0,
+      "workload_digest": "447348980618d1d0355512ec29065d2e1dfbae7eb96a8357275cba172c3e65ec",
+      "cluster": {
+        "nodes": [
+          {
+            "id": "wavemind-ci-0",
+            "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-b",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-1",
+            "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-2",
+            "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-c",
+            "weight": 1.0
+          },
+          {
+            "id": "wavemind-ci-3",
+            "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "zone": "zone-a",
+            "weight": 1.0
+          }
+        ],
+        "replication_factor": 3,
+        "write_quorum": 2,
+        "read_quorum": 1,
+        "read_fanout": 3
+      },
+      "status": "pass",
+      "verified_memories": 256,
+      "hits": 256,
+      "hit_rate": 1.0,
+      "query_http_requests": 4,
+      "individual_query_http_requests": 768,
+      "request_reduction_ratio": 0.9947916666666666,
+      "failed_nodes_seen": [],
+      "probe_health": {
+        "wavemind-ci-0": {
+          "id": "wavemind-ci-0",
+          "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-b",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-1": {
+          "id": "wavemind-ci-1",
+          "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-2": {
+          "id": "wavemind-ci-2",
+          "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-c",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-3": {
+          "id": "wavemind-ci-3",
+          "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 1,
+          "failures": 0,
+          "last_error": null
+        }
+      },
+      "failed_query_count": 0,
+      "node_health": {
+        "wavemind-ci-0": {
+          "id": "wavemind-ci-0",
+          "address": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-b",
+          "available": true,
+          "status": "healthy",
+          "successes": 34,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-1": {
+          "id": "wavemind-ci-1",
+          "address": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 17,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-2": {
+          "id": "wavemind-ci-2",
+          "address": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-c",
+          "available": true,
+          "status": "healthy",
+          "successes": 34,
+          "failures": 0,
+          "last_error": null
+        },
+        "wavemind-ci-3": {
+          "id": "wavemind-ci-3",
+          "address": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+          "zone": "zone-a",
+          "available": true,
+          "status": "healthy",
+          "successes": 19,
+          "failures": 0,
+          "last_error": null
+        }
+      },
+      "elapsed_ms": 945.213
+    },
+    "elapsed_ms": 20750.618
+  },
+  "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
+  "workflow_run_id": "29057247023",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023"
+}

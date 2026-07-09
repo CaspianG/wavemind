@@ -129,6 +129,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    kubernetes_cluster_network_failure = _load_json(
+        root / "benchmarks" / "kubernetes_cluster_network_smoke_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -183,6 +188,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
         "benchmarks/cluster_autoscale_results.json": cluster_autoscale,
         "benchmarks/kubernetes_operator_smoke_results.json": kubernetes_operator_failover,
+        "benchmarks/kubernetes_cluster_network_smoke_results.json": (
+            kubernetes_cluster_network_failure
+        ),
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -268,6 +276,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "cluster_autoscale": _cluster_autoscale_status(cluster_autoscale),
         "kubernetes_operator_failover": _kubernetes_operator_failover_status(
             kubernetes_operator_failover
+        ),
+        "kubernetes_cluster_network_failure": _kubernetes_cluster_network_failure_status(
+            kubernetes_cluster_network_failure
         ),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "memory_os_policy_evolution": _memory_os_policy_evolution_status(
@@ -857,6 +868,42 @@ def _kubernetes_operator_failover_status(payload: dict[str, Any]) -> dict[str, A
         "api_healthy_after_upgrade": summary.get("api_healthy_after_upgrade"),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/kubernetes_operator_smoke_results.json",
+    }
+
+
+def _kubernetes_cluster_network_failure_status(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    outage = observed.get("outage") if isinstance(observed.get("outage"), dict) else {}
+    recovered = (
+        observed.get("recovered")
+        if isinstance(observed.get("recovered"), dict)
+        else {}
+    )
+    return {
+        "schema": payload.get("schema"),
+        "status": payload.get("status", "missing"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "service_node_count": len(observed.get("service_addresses") or []),
+        "zone_count": observed.get("zone_count"),
+        "failure_method": observed.get("failure_method"),
+        "target_worker": observed.get("target_worker"),
+        "target_zone": observed.get("target_zone"),
+        "outage_duration_ms": observed.get("outage_duration_ms"),
+        "outage_hit_rate": outage.get("hit_rate"),
+        "failed_nodes_during_outage": outage.get("failed_nodes_seen"),
+        "recovery_hit_rate": recovered.get("hit_rate"),
+        "failed_nodes_after_recovery": recovered.get("failed_nodes_seen"),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/kubernetes_cluster_network_smoke_results.json",
     }
 
 
