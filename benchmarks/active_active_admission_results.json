@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.active_active_admission.v1",
-  "generated_at": "2026-07-09T01:49:58Z",
+  "generated_at": "2026-07-09T08:37:57Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
@@ -13,13 +13,14 @@
     "status": "plan_only",
     "admitted": false,
     "strict_status": "action_required",
+    "requested_evidence_status": "action_required",
     "preflight_status": "action_required",
     "required_artifact": "benchmarks/external_http_active_active_results.json",
     "missing_env": [
       "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
       "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
     ],
-    "blocking_issue_count": 2,
+    "blocking_issue_count": 3,
     "warning_count": 3
   },
   "required_evidence": {
@@ -33,6 +34,17 @@
     ],
     "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
     "claim_unlocked": "Remote multi-region active-active memory convergence."
+  },
+  "requested_evidence": {
+    "status": "action_required",
+    "artifact": "benchmarks/external_http_active_active_results.json",
+    "evidence": "no checked-in external HTTP active-active region result",
+    "issues": [
+      "missing artifact"
+    ],
+    "min_regions": 3,
+    "namespace_count": 16,
+    "p99_slo_ms": 1500.0
   },
   "preflight": {
     "status": "action_required",
@@ -57,6 +69,7 @@
   },
   "issues": [
     "external_http_active_active is not admitted: strict_status=action_required",
+    "external_http_active_active artifact does not satisfy requested rollout: requested_evidence_status=action_required",
     "missing artifact"
   ],
   "warnings": [

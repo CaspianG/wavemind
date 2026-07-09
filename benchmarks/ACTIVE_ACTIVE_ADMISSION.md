@@ -15,6 +15,7 @@ not unlock this gate.
 | namespace count | `16` |
 | p99 SLO ms | `1500.0` |
 | strict evidence | `action_required` |
+| requested evidence | `action_required` |
 | preflight | `action_required` |
 | required artifact | `benchmarks/external_http_active_active_results.json` |
 
@@ -23,6 +24,12 @@ not unlock this gate.
 | requirement | status | artifact | evidence |
 |---|---|---|---|
 | External HTTP active-active regions | `action_required` | `benchmarks/external_http_active_active_results.json` | no checked-in external HTTP active-active region result |
+
+## Requested Evidence
+
+| status | min regions | namespace count | p99 SLO ms | evidence |
+|---|---:|---:|---:|---|
+| `action_required` | `3` | `16` | `1500.0` | no checked-in external HTTP active-active region result |
 
 ## Preflight
 
@@ -33,6 +40,7 @@ not unlock this gate.
 ## Issues
 
 - external_http_active_active is not admitted: strict_status=action_required
+- external_http_active_active artifact does not satisfy requested rollout: requested_evidence_status=action_required
 - missing artifact
 
 ## Next Actions

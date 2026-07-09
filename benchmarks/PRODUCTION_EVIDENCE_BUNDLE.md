@@ -12,7 +12,7 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 | production readiness | `pass` |
 | readiness score | `1.0` |
 | artifact audit | `pass` |
-| implemented benchmarks | `28` |
+| implemented benchmarks | `29` |
 | production scale run contract | `available` |
 | production scale profiles | `5` |
 | production scale target memories | `180000000` |

@@ -2131,6 +2131,17 @@ def evaluate_active_active_admission(
         if isinstance(row, dict)
     }
     requirement = strict_requirements.get("external_http_active_active", {})
+    evidence_artifact = (
+        requirement.get("artifact")
+        or "benchmarks/external_http_active_active_results.json"
+    )
+    evidence_payload = _load_optional_json(root / str(evidence_artifact))
+    requested_validation = _validate_external_active_active_payload(
+        evidence_payload or None,
+        min_regions=int(min_regions),
+        min_namespaces=int(namespace_count),
+        p99_slo_ms=float(p99_slo_ms),
+    )
     preflight = evaluate_production_evidence_preflight(root, env=env)
     preflight_checks = {
         str(row.get("id")): row
@@ -2140,8 +2151,9 @@ def evaluate_active_active_admission(
     preflight_check = preflight_checks.get("external_http_active_active", {})
 
     strict_status = str(requirement.get("status") or "missing")
+    requested_evidence_status = str(requested_validation.get("status") or "missing")
     preflight_status = str(preflight_check.get("status") or "missing")
-    admitted = strict_status == "pass"
+    admitted = strict_status == "pass" and requested_evidence_status == "pass"
     if admitted:
         status = "admitted"
     elif allow_plan_only:
@@ -2155,6 +2167,11 @@ def evaluate_active_active_admission(
         issues.append(
             "external_http_active_active is not admitted: "
             f"strict_status={strict_status}"
+        )
+    if requested_evidence_status != "pass":
+        issues.append(
+            "external_http_active_active artifact does not satisfy requested rollout: "
+            f"requested_evidence_status={requested_evidence_status}"
         )
     if preflight_status != "ready":
         warnings.append(
@@ -2186,6 +2203,7 @@ def evaluate_active_active_admission(
         next_actions.append(command)
 
     requirement_issues = list(requirement.get("issues") or [])
+    requested_validation_issues = list(requested_validation.get("issues") or [])
     preflight_issues = list(preflight_check.get("issues") or [])
     missing_env = list(preflight_check.get("missing_env") or [])
     required_env = list(preflight_check.get("required_env") or [])
@@ -2205,25 +2223,36 @@ def evaluate_active_active_admission(
             "status": status,
             "admitted": admitted,
             "strict_status": strict_status,
+            "requested_evidence_status": requested_evidence_status,
             "preflight_status": preflight_status,
-            "required_artifact": requirement.get("artifact")
-            or "benchmarks/external_http_active_active_results.json",
+            "required_artifact": evidence_artifact,
             "missing_env": missing_env,
-            "blocking_issue_count": len(dict.fromkeys(issues + requirement_issues)),
+            "blocking_issue_count": len(
+                dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+            ),
             "warning_count": len(dict.fromkeys(warnings + preflight_issues)),
         },
         "required_evidence": {
             "id": "external_http_active_active",
             "title": requirement.get("title") or "External HTTP active-active regions",
             "status": strict_status,
-            "artifact": requirement.get("artifact")
-            or "benchmarks/external_http_active_active_results.json",
+            "artifact": evidence_artifact,
             "evidence": requirement.get("evidence")
             or "missing external active-active artifact",
             "issues": requirement_issues,
             "command": command,
             "claim_unlocked": requirement.get("claim_unlocked")
             or "Remote multi-region active-active memory convergence.",
+        },
+        "requested_evidence": {
+            "status": requested_evidence_status,
+            "artifact": evidence_artifact,
+            "evidence": requested_validation.get("evidence")
+            or "missing external active-active artifact",
+            "issues": requested_validation_issues,
+            "min_regions": int(min_regions),
+            "namespace_count": int(namespace_count),
+            "p99_slo_ms": float(p99_slo_ms),
         },
         "preflight": {
             "status": preflight_status,
@@ -2236,7 +2265,9 @@ def evaluate_active_active_admission(
             "output_artifact": preflight_check.get("output_artifact")
             or "benchmarks/external_http_active_active_results.json",
         },
-        "issues": list(dict.fromkeys(issues + requirement_issues)),
+        "issues": list(
+            dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+        ),
         "warnings": list(dict.fromkeys(warnings + preflight_issues)),
         "next_actions": list(dict.fromkeys(next_actions)),
         "source_artifacts": {
@@ -2250,6 +2281,7 @@ def evaluate_active_active_admission(
 def render_active_active_admission_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     required = payload["required_evidence"]
+    requested = payload.get("requested_evidence") or {}
     preflight = payload["preflight"]
     lines = [
         "# WaveMind Active-Active Admission",
@@ -2269,6 +2301,7 @@ def render_active_active_admission_markdown(payload: dict[str, Any]) -> str:
         f"| namespace count | `{payload['namespace_count']}` |",
         f"| p99 SLO ms | `{payload['p99_slo_ms']}` |",
         f"| strict evidence | `{summary['strict_status']}` |",
+        f"| requested evidence | `{summary.get('requested_evidence_status', 'missing')}` |",
         f"| preflight | `{summary['preflight_status']}` |",
         f"| required artifact | `{summary['required_artifact']}` |",
         "",
@@ -2281,6 +2314,18 @@ def render_active_active_admission_markdown(payload: dict[str, Any]) -> str:
             status=required["status"],
             artifact=required["artifact"],
             evidence=str(required.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Requested Evidence",
+        "",
+        "| status | min regions | namespace count | p99 SLO ms | evidence |",
+        "|---|---:|---:|---:|---|",
+        "| `{status}` | `{min_regions}` | `{namespace_count}` | `{p99_slo_ms}` | {evidence} |".format(
+            status=requested.get("status", "missing"),
+            min_regions=requested.get("min_regions", payload["min_regions"]),
+            namespace_count=requested.get("namespace_count", payload["namespace_count"]),
+            p99_slo_ms=requested.get("p99_slo_ms", payload["p99_slo_ms"]),
+            evidence=str(requested.get("evidence") or "").replace("|", "\\|"),
         ),
         "",
         "## Preflight",
