@@ -155,6 +155,9 @@ jobs:
           python benchmarks/agent_impact_leaderboard.py \
             --output benchmarks/agent_impact_results.json \
             --markdown-output benchmarks/AGENT_IMPACT.md
+          python benchmarks/structured_memory_report.py \
+            --output benchmarks/structured_memory_results.json \
+            --markdown-output benchmarks/STRUCTURED_MEMORY.md
           python benchmarks/cost_efficiency_leaderboard.py \
             --output benchmarks/cost_efficiency_results.json \
             --markdown-output benchmarks/COST_EFFICIENCY.md
@@ -193,6 +196,9 @@ jobs:
           python benchmarks/agent_impact_leaderboard.py \
             --output benchmarks/agent_impact_results.json \
             --markdown-output benchmarks/AGENT_IMPACT.md
+          python benchmarks/structured_memory_report.py \
+            --output benchmarks/structured_memory_results.json \
+            --markdown-output benchmarks/STRUCTURED_MEMORY.md
           python benchmarks/cost_efficiency_leaderboard.py \
             --output benchmarks/cost_efficiency_results.json \
             --markdown-output benchmarks/COST_EFFICIENCY.md

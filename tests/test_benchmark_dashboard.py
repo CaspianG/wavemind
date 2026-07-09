@@ -36,6 +36,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Behavioral evidence: task success" in html
     assert "WaveMind wins" in html
     assert "benchmarks/AGENT_IMPACT.md" in html
+    assert "Structured Memory" in html
+    assert "Typed memory evidence: image, audio, video, 3D, table, event, graph" in html
+    assert "Cross-modal precision@1" in html
+    assert "benchmarks/STRUCTURED_MEMORY.md" in html
     assert "Benchmark Leaderboard" in html
     assert "Evidence Source Status" in html
     assert "External HTTP active-active" in html

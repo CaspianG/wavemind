@@ -79,6 +79,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    structured_memory = _load_json(
+        root / "benchmarks" / "structured_memory_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -123,6 +128,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
         "benchmarks/agent_impact_results.json": agent_impact,
+        "benchmarks/structured_memory_results.json": structured_memory,
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -193,6 +199,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         },
         "agent_quality": _agent_quality_status(agent_coherence),
         "agent_impact": _agent_impact_status(agent_impact),
+        "structured_memory": _structured_memory_status(structured_memory),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
@@ -507,6 +514,49 @@ def _agent_impact_status(payload: dict[str, Any]) -> dict[str, Any]:
         "source_files": summary.get("source_files", []),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/agent_impact_results.json",
+    }
+
+
+def _structured_memory_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
+    passed_checks = sum(
+        1 for check in checks if isinstance(check, dict) and bool(check.get("pass"))
+    )
+    total_checks = len(checks)
+    return {
+        "schema": payload.get("schema"),
+        "status": summary.get("status", "missing"),
+        "modality_count": summary.get("modality_count", 0),
+        "modalities": summary.get("modalities", []),
+        "check_count": total_checks,
+        "passed_check_count": passed_checks,
+        "precision_at_1": summary.get("precision_at_1"),
+        "cross_modal_precision_at_1": summary.get("cross_modal_precision_at_1"),
+        "cross_modal_vectors_persisted_rate": summary.get("cross_modal_vectors_persisted_rate"),
+        "cross_modal_provenance_rate": summary.get("cross_modal_provenance_rate"),
+        "precomputed_vector_precision_at_1": summary.get("precomputed_vector_precision_at_1"),
+        "precomputed_vector_persisted_rate": summary.get("precomputed_vector_persisted_rate"),
+        "encoder_contract_ok": summary.get("encoder_contract_ok"),
+        "encoder_contract_margin": summary.get("encoder_contract_margin"),
+        "encoder_contract_min_required_margin": summary.get(
+            "encoder_contract_min_required_margin"
+        ),
+        "temporal_event_precision_at_1": summary.get("temporal_event_precision_at_1"),
+        "temporal_event_persistence_rate": summary.get("temporal_event_persistence_rate"),
+        "temporal_event_provenance_rate": summary.get("temporal_event_provenance_rate"),
+        "knowledge_graph_precision_at_1": summary.get("knowledge_graph_precision_at_1"),
+        "knowledge_graph_path_precision_at_1": summary.get(
+            "knowledge_graph_path_precision_at_1"
+        ),
+        "knowledge_graph_persistence_rate": summary.get("knowledge_graph_persistence_rate"),
+        "knowledge_graph_provenance_rate": summary.get("knowledge_graph_provenance_rate"),
+        "cross_modal_avg_latency_ms": summary.get("cross_modal_avg_latency_ms"),
+        "temporal_event_avg_latency_ms": summary.get("temporal_event_avg_latency_ms"),
+        "knowledge_graph_avg_latency_ms": summary.get("knowledge_graph_avg_latency_ms"),
+        "asset_manifest_verified": summary.get("asset_manifest_verified"),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/structured_memory_results.json",
     }
 
 

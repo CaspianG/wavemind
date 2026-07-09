@@ -406,6 +406,11 @@ policy matters more than raw vector-database scale:
   behavior, API cache mutation safety, batch recall feedback, structured-payload retrieval,
   cross-modal target-modality/provenance checks, external precomputed-vector
   compatibility checks, and object-store-backed asset manifest verification.
+- `benchmarks/structured_memory_report.py` now extracts the structured/multimodal
+  evidence into a dedicated public report (`benchmarks/STRUCTURED_MEMORY.md` and
+  `benchmarks/structured_memory_results.json`) with dashboard/status coverage for
+  typed payloads, cross-modal routing, external-vector contracts, temporal-event
+  recall, knowledge-graph traversal, persistence, provenance, and latency.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,

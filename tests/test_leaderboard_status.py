@@ -68,6 +68,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/production_scale_run_plan.json",
         "benchmarks/agent_coherence_results.json",
         "benchmarks/agent_impact_results.json",
+        "benchmarks/structured_memory_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -110,6 +111,25 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     )
     assert "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json" in (
         payload["agent_impact"]["source_files"]
+    )
+    assert payload["structured_memory"]["schema"] == "wavemind.structured_memory_report.v1"
+    assert payload["structured_memory"]["status"] == "pass"
+    assert payload["structured_memory"]["modality_count"] == 7
+    assert payload["structured_memory"]["passed_check_count"] == (
+        payload["structured_memory"]["check_count"]
+    )
+    assert payload["structured_memory"]["precision_at_1"] == 1.0
+    assert payload["structured_memory"]["cross_modal_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["cross_modal_vectors_persisted_rate"] == 1.0
+    assert payload["structured_memory"]["cross_modal_provenance_rate"] == 1.0
+    assert payload["structured_memory"]["precomputed_vector_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["encoder_contract_ok"] is True
+    assert payload["structured_memory"]["temporal_event_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["knowledge_graph_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["knowledge_graph_path_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["asset_manifest_verified"] is True
+    assert "production multimodal model quality" in (
+        payload["structured_memory"]["claim_boundary"]
     )
     assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
     assert payload["memory_os_policy"]["status"] == "pass"
@@ -254,6 +274,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
     assert "benchmarks/agent_impact_results.json" in payload["source_files"]
+    assert "benchmarks/structured_memory_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -279,6 +300,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["production_readiness"]["overall_status"] == "pass"
     assert payload["agent_quality"]["status"] == "pass"
     assert payload["agent_impact"]["status"] == "pass"
+    assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",

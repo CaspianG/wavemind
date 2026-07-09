@@ -209,6 +209,42 @@ def _agent_impact_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _structured_memory_panel(status: dict[str, Any]) -> str:
+    structured = status.get("structured_memory", {}) if isinstance(status, dict) else {}
+    if not isinstance(structured, dict) or not structured:
+        return ""
+    rows = [
+        ("Status", structured.get("status", "missing")),
+        ("Modalities", structured.get("modality_count", 0)),
+        ("Gate checks", f"{structured.get('passed_check_count', 0)}/{structured.get('check_count', 0)}"),
+        ("Structured precision@1", _fmt_metric(structured.get("precision_at_1"))),
+        ("Cross-modal precision@1", _fmt_metric(structured.get("cross_modal_precision_at_1"))),
+        ("Temporal precision@1", _fmt_metric(structured.get("temporal_event_precision_at_1"))),
+        ("Graph precision@1", _fmt_metric(structured.get("knowledge_graph_precision_at_1"))),
+        ("Cross-modal avg latency", f"{_fmt_metric(structured.get('cross_modal_avg_latency_ms'))} ms"),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    modalities = ", ".join(str(item) for item in structured.get("modalities", []))
+    return (
+        '<section class="panel">'
+        "<h2>Structured Memory</h2>"
+        "<p>Typed memory evidence: image, audio, video, 3D, table, event, graph, "
+        "external vectors, temporal recall, knowledge-graph traversal, provenance, and persistence.</p>"
+        f"<p><strong>Modalities:</strong> {html.escape(modalities)}</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/STRUCTURED_MEMORY.md">Read the structured memory report</a></p>'
+        "</section>"
+    )
+
+
 def _fmt_metric(value: Any) -> str:
     try:
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
@@ -314,6 +350,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_publication_contract_panel(status)}
 
   {_agent_impact_panel(status)}
+
+  {_structured_memory_panel(status)}
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">

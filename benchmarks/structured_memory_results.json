@@ -1,0 +1,270 @@
+{
+  "schema": "wavemind.structured_memory_report.v1",
+  "generated_at": "2026-07-08T20:13:52Z",
+  "source_ref": "d50bc070fb62",
+  "source_file": "benchmarks/scale_readiness_results.json",
+  "claim_boundary": "Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.",
+  "summary": {
+    "status": "pass",
+    "modality_count": 7,
+    "modalities": [
+      "image",
+      "audio",
+      "table",
+      "event",
+      "video",
+      "3d",
+      "graph"
+    ],
+    "query_count": 7,
+    "precision_at_1": 1.0,
+    "cross_modal_precision_at_1": 1.0,
+    "cross_modal_vectors_persisted_rate": 1.0,
+    "cross_modal_provenance_rate": 1.0,
+    "precomputed_vector_precision_at_1": 1.0,
+    "precomputed_vector_persisted_rate": 1.0,
+    "encoder_contract_ok": true,
+    "encoder_contract_target_precision_at_1": 1.0,
+    "encoder_contract_global_precision_at_1": 1.0,
+    "encoder_contract_margin": 0.8113240593572859,
+    "encoder_contract_min_required_margin": 0.2,
+    "temporal_event_precision_at_1": 1.0,
+    "temporal_event_persistence_rate": 1.0,
+    "temporal_event_provenance_rate": 1.0,
+    "knowledge_graph_precision_at_1": 1.0,
+    "knowledge_graph_path_precision_at_1": 1.0,
+    "knowledge_graph_persistence_rate": 1.0,
+    "knowledge_graph_provenance_rate": 1.0,
+    "avg_latency_ms": 0.5953571360026088,
+    "cross_modal_avg_latency_ms": 1.761885709129274,
+    "temporal_event_avg_latency_ms": 0.6662749801762402,
+    "knowledge_graph_avg_latency_ms": 0.7082250085659325,
+    "asset_manifest_verified": true
+  },
+  "checks": [
+    {
+      "name": "modalities",
+      "value": 7,
+      "target": 7,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "structured_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "cross_modal_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "cross_modal_vectors_persisted",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "cross_modal_provenance",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "precomputed_vector_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "precomputed_vector_persisted",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "encoder_contract_ok",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "encoder_contract_target_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "encoder_contract_global_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "encoder_contract_margin",
+      "value": 0.8113240593572859,
+      "target": 0.2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "temporal_event_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "temporal_event_persistence",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "temporal_event_provenance",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "knowledge_graph_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "knowledge_graph_path_precision_at_1",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "knowledge_graph_persistence",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "knowledge_graph_provenance",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "asset_manifest_verified",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    }
+  ],
+  "raw_metrics": {
+    "engine": "WaveMind structured payloads",
+    "modalities": [
+      "image",
+      "audio",
+      "table",
+      "event",
+      "video",
+      "3d",
+      "graph"
+    ],
+    "queries": 7,
+    "precision_at_1": 1.0,
+    "cross_modal_queries": 7,
+    "cross_modal_precision_at_1": 1.0,
+    "cross_modal_target_modalities": [
+      "image",
+      "audio",
+      "table",
+      "event",
+      "video",
+      "3d",
+      "graph"
+    ],
+    "cross_modal_embedding_dim": 64,
+    "cross_modal_vectors_persisted_rate": 1.0,
+    "cross_modal_provenance_rate": 1.0,
+    "asset_manifest_verified": true,
+    "asset_manifest_sha256_present": true,
+    "asset_manifest_media_type": "video/mp4",
+    "asset_manifest_provenance_rate": 1,
+    "precomputed_vector_queries": 4,
+    "precomputed_vector_precision_at_1": 1.0,
+    "precomputed_vector_embedding_dim": 4,
+    "precomputed_vector_persisted_rate": 1.0,
+    "precomputed_vector_target_modalities": [
+      "image",
+      "audio",
+      "video",
+      "3d"
+    ],
+    "encoder_contract_ok": true,
+    "encoder_contract_encoder": "scale-readiness-precomputed-contract",
+    "encoder_contract_modalities": [
+      "image",
+      "audio",
+      "table",
+      "event",
+      "video",
+      "3d",
+      "graph"
+    ],
+    "encoder_contract_payloads": 7,
+    "encoder_contract_target_precision_at_1": 1.0,
+    "encoder_contract_global_precision_at_1": 1.0,
+    "encoder_contract_target_modality_routing_rate": 1.0,
+    "encoder_contract_persisted_vector_rate": 1.0,
+    "encoder_contract_normalized_vector_rate": 1.0,
+    "encoder_contract_finite_vector_rate": 1.0,
+    "encoder_contract_provenance_rate": 1.0,
+    "encoder_contract_min_global_margin": 0.8113240593572859,
+    "encoder_contract_min_required_margin": 0.2,
+    "encoder_contract_failures": [],
+    "temporal_event_queries": 4,
+    "temporal_event_precision_at_1": 1.0,
+    "temporal_event_around_precision_at_1": 1,
+    "temporal_event_window_precision_at_1": 1,
+    "temporal_event_recency_precision_at_1": 1,
+    "temporal_event_interval_precision_at_1": 1,
+    "temporal_event_persistence_rate": 1.0,
+    "temporal_event_provenance_rate": 1.0,
+    "knowledge_graph_queries": 4,
+    "knowledge_graph_precision_at_1": 1.0,
+    "knowledge_graph_path_precision_at_1": 1.0,
+    "knowledge_graph_direct_precision_at_1": 1,
+    "knowledge_graph_two_hop_precision_at_1": 1,
+    "knowledge_graph_three_hop_precision_at_1": 1,
+    "knowledge_graph_predicate_precision_at_1": 1,
+    "knowledge_graph_persistence_rate": 1.0,
+    "knowledge_graph_provenance_rate": 1.0,
+    "avg_latency_ms": 0.5953571360026088,
+    "p99_latency_ms": 0.6689999718219042,
+    "cross_modal_avg_latency_ms": 1.761885709129274,
+    "cross_modal_p99_latency_ms": 1.9249999895691872,
+    "precomputed_vector_avg_latency_ms": 0.6207500118762255,
+    "precomputed_vector_p99_latency_ms": 0.7162999827414751,
+    "temporal_event_avg_latency_ms": 0.6662749801762402,
+    "temporal_event_p99_latency_ms": 0.803799950517714,
+    "knowledge_graph_avg_latency_ms": 0.7082250085659325,
+    "knowledge_graph_p99_latency_ms": 0.825700000859797
+  }
+}
