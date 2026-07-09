@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-09T10:21:56Z",
+  "generated_at": "2026-07-09T15:46:56Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-09T10:21:24Z",
+      "evidence": "audit status pass, generated_at 2026-07-09T15:45:56Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -144,8 +144,8 @@
       "id": "operator_autoscaling_repair",
       "title": "Kubernetes operator bundle includes HPA and repair job",
       "status": "pass",
-      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS plus control-plane consensus safety.",
-      "evidence": "CRD True, HPA True, repair True, memory OS True, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, control-plane True",
+      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
+      "evidence": "CRD True, HPA True, repair True, memory OS True, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
       "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
     },
     {
@@ -161,7 +161,7 @@
       "title": "Hot cache and query-audit prewarm work",
       "status": "pass",
       "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-      "evidence": "hit rate 0.92, prewarm hit True, p99 0.006300047971308231 ms",
+      "evidence": "hit rate 0.92, prewarm hit True, p99 0.00270000055024866 ms",
       "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
     },
     {
@@ -169,7 +169,7 @@
       "title": "Query-vector cache avoids repeated encoder work",
       "status": "pass",
       "requirement": "Repeated hot queries must reuse encoded query vectors locally across Redis-backed workers, and through the FastAPI service before hitting the vector index.",
-      "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 7.589500048197806 ms, service metrics True",
+      "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 5.597800000032294 ms, service metrics True",
       "next_step": "Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test."
     },
     {
@@ -177,7 +177,7 @@
       "title": "Batch query API amortizes service recall overhead",
       "status": "pass",
       "requirement": "FastAPI must support production batch recall so agents can issue many memory lookups with one HTTP request while preserving vector-cache reuse.",
-      "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 15.371615089985946, metrics True",
+      "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 16.071971351219553, metrics True",
       "next_step": "Keep the real Redis multi-process batch recall profile green, then repeat it with larger batches on remote Kubernetes/serverless nodes."
     },
     {
@@ -209,7 +209,7 @@
       "title": "Batch recall feedback updates priority, audit, and cache",
       "status": "pass",
       "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
-      "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 1.1352000292390585 ms",
+      "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 1.4489000004687114 ms",
       "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
     },
     {
@@ -265,7 +265,7 @@
       "title": "Sustained HTTP cluster load survives failover and repair",
       "status": "pass",
       "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 527.24 ms",
+      "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 455.83 ms",
       "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
     },
     {
@@ -273,7 +273,7 @@
       "title": "Runtime replica quorum survives node loss",
       "status": "pass",
       "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-      "evidence": "recall after loss True, repair copied 1, p99 1.8522999016568065 ms, concurrent hit rate 1.0",
+      "evidence": "recall after loss True, repair copied 1, p99 1.1234000012336764 ms, concurrent hit rate 1.0",
       "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
     },
     {
@@ -297,7 +297,7 @@
       "title": "Structured and multimodal payload retrieval works",
       "status": "pass",
       "requirement": "Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable, retrievable through the same memory API, queryable through a shared cross-modal embedding space, returned with provenance, and compatible with externally computed multimodal vectors. Temporal events must support actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance. Large media assets must be backed by verified content-addressed object-store manifests. Knowledge graphs must support entity/predicate filters, multi-hop path traversal, persistence, and provenance. External multimodal encoders must pass a precomputed-vector contract that checks global retrieval, target-modality routing, persisted finite normalized vectors, provenance, and vector separation margin. Active cross-modal encoders must also pass health monitoring for finite normalized payload/query vectors, target routing, p95 encode latency, dimension compatibility, and separation margin.",
-      "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, encoder contract True, encoder global@1 1.0, encoder target@1 1.0, encoder margin 0.8113185907521259, encoder health True, encoder health global@1 1.0, encoder health query p95 1.4515499933622777 ms, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
+      "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, encoder contract True, encoder global@1 1.0, encoder target@1 1.0, encoder margin 0.8113289682999039, encoder health True, encoder health global@1 1.0, encoder health query p95 1.300220000121044 ms, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
       "next_step": "Run the same encoder contract and encoder-health check with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora."
     },
     {

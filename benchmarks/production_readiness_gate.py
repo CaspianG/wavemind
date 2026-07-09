@@ -1010,6 +1010,15 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("status_memory_os_ready")
                 and operator.get("status_memory_os_redis_required")
                 and operator.get("status_memory_os_redis_configured")
+                and operator.get("production_admission_env_enabled")
+                and int(operator.get("production_admission_env_target_memories", 0))
+                == int(operator.get("capacity_target_memories", -1))
+                and operator.get("production_admission_env_root")
+                and operator.get("status_production_admission_enabled")
+                and operator.get("status_production_admission_required")
+                and operator.get("status_production_admission_ready")
+                and int(operator.get("status_production_admission_target_memories", 0))
+                == int(operator.get("capacity_target_memories", -1))
                 and operator.get("memory_os_calls_plan")
                 and operator.get("memory_os_calls_run")
                 and operator.get("memory_os_applies_plan_lock")
@@ -1027,6 +1036,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                     "CapacityPlanned",
                     "ControlPlaneReady",
                     "MemoryOSReady",
+                    "ProductionAdmissionReady",
                     "RebalancePlanned",
                     "RepairScheduled",
                     "ResourcesReady",
@@ -1038,8 +1048,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "scheduled repair, capacity-aware replica reconciliation, a bounded "
                 "rebalance ConfigMap with full rolling namespace-move plan metadata, "
                 "Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, "
+                "production admission wiring for 10M+ targets, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
-                "repair/Memory OS plus control-plane consensus safety."
+                "repair/Memory OS/production admission plus control-plane consensus safety."
             ),
             evidence=(
                 f"CRD {operator.get('bundle_has_crd')}, "
@@ -1054,6 +1065,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"target max {operator.get('capacity_target_max_node_memories')}, "
                 f"status {operator.get('status_phase')}, "
                 f"memory OS ready {operator.get('status_memory_os_ready')}, "
+                f"production admission ready {operator.get('status_production_admission_ready')}, "
                 f"control-plane {operator.get('control_plane_ready')}"
             ),
             next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics.",
