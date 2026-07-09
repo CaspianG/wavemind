@@ -115,6 +115,14 @@ def run_cluster_drill(
                 }
             )
         else:
+            probe_health = memory.probe_nodes()
+            probe_failed_nodes = sorted(
+                node_id
+                for node_id, payload in probe_health.items()
+                if payload.get("last_error") or payload.get("status") != "healthy"
+            )
+            for node_id in probe_failed_nodes:
+                memory.set_node_available(node_id, False)
             batch = memory.query_batch(
                 [
                     {
@@ -134,7 +142,8 @@ def run_cluster_drill(
             )
             hit_rate = hits / len(items)
             failed_nodes = sorted(
-                {
+                set(probe_failed_nodes)
+                | {
                     node_id
                     for failures in batch.failed_nodes
                     for node_id in failures
@@ -150,6 +159,7 @@ def run_cluster_drill(
                     "individual_query_http_requests": batch.individual_query_http_requests,
                     "request_reduction_ratio": batch.request_reduction_ratio,
                     "failed_nodes_seen": failed_nodes,
+                    "probe_health": probe_health,
                     "failed_query_count": sum(bool(value) for value in batch.failed_nodes),
                     "node_health": memory.node_health(),
                 }

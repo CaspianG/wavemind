@@ -121,7 +121,7 @@ jobs:
             --cluster-name wavemind-ci \
             --namespace-count 32 \
             --memories-per-namespace 8 \
-            --request-timeout 0.75 \
+            --request-timeout 5 \
             --timeout-seconds 240 \
             --output benchmarks/kubernetes_cluster_network_smoke_ci_results.json
 

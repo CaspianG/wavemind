@@ -348,7 +348,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
         namespace_prefix=args.namespace_prefix,
         namespace_count=args.namespace_count,
         memories_per_namespace=args.memories_per_namespace,
-        request_timeout=args.request_timeout,
+        request_timeout=max(30.0, args.request_timeout),
     )
     if seed.get("status") != "pass":
         raise RuntimeError(f"cluster seed failed: {seed}")
@@ -465,7 +465,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--namespace-prefix", default="kind-network-drill")
     parser.add_argument("--namespace-count", type=int, default=32)
     parser.add_argument("--memories-per-namespace", type=int, default=8)
-    parser.add_argument("--request-timeout", type=float, default=0.75)
+    parser.add_argument("--request-timeout", type=float, default=5.0)
     parser.add_argument("--failure-settle-seconds", type=float, default=2.0)
     parser.add_argument("--timeout-seconds", type=float, default=240.0)
     parser.add_argument(

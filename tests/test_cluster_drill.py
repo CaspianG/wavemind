@@ -75,6 +75,10 @@ class _ClusterDrillClient:
             items.append({"index": index, "results": results})
         return {"count": len(items), "items": items}
 
+    def stats(self, address: str) -> dict[str, Any]:
+        self._check(address)
+        return {"active_memories": len(self.records[address])}
+
 
 def _memory(client: _ClusterDrillClient) -> DistributedShardedWaveMind:
     return DistributedShardedWaveMind(
@@ -122,7 +126,8 @@ def test_cluster_drill_survives_real_client_network_failure():
     assert verify["status"] == "pass"
     assert verify["hit_rate"] == 1.0
     assert failed_node in verify["failed_nodes_seen"]
-    assert verify["node_health"][failed_node]["status"] == "degraded"
+    assert verify["probe_health"][failed_node]["status"] == "degraded"
+    assert verify["node_health"][failed_node]["status"] == "unavailable"
 
 
 def test_cluster_drill_items_are_deterministic_and_namespace_scoped():
