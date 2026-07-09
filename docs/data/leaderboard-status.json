@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-08T18:07:27Z",
+  "generated_at": "2026-07-09T01:18:22Z",
   "source_ref": "432a6c48167a",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -39,10 +39,10 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T18:07:27Z",
+    "checked_at": "2026-07-09T01:18:22Z",
     "max_age_days": 8.0,
-    "source_count": 13,
-    "fresh_count": 13,
+    "source_count": 14,
+    "fresh_count": 14,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -56,14 +56,14 @@
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T23:05:35Z",
-        "age_days": 0.0,
+        "age_days": 0.09221064814814815,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-08T18:07:27Z",
+        "timestamp": "2026-07-09T01:18:22Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -72,7 +72,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T20:14:02Z",
-        "age_days": 0.0,
+        "age_days": 0.21134259259259258,
         "status": "pass"
       },
       {
@@ -80,7 +80,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:44Z",
-        "age_days": 0.11369212962962963,
+        "age_days": 0.4129398148148148,
         "status": "pass"
       },
       {
@@ -88,7 +88,7 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:44Z",
-        "age_days": 0.11369212962962963,
+        "age_days": 0.4129398148148148,
         "status": "pass"
       },
       {
@@ -96,7 +96,7 @@
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:45Z",
-        "age_days": 0.11368055555555556,
+        "age_days": 0.41292824074074075,
         "status": "pass"
       },
       {
@@ -104,7 +104,7 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:46Z",
-        "age_days": 0.11366898148148148,
+        "age_days": 0.41291666666666665,
         "status": "pass"
       },
       {
@@ -112,7 +112,7 @@
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:47Z",
-        "age_days": 0.1136574074074074,
+        "age_days": 0.4129050925925926,
         "status": "pass"
       },
       {
@@ -120,7 +120,15 @@
         "schema": "wavemind.memory_os_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T00:40:28Z",
-        "age_days": 0.0,
+        "age_days": 0.026319444444444444,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/memory_os_canary_results.json",
+        "schema": "wavemind.memory_os_canary.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-09T01:06:28Z",
+        "age_days": 0.008263888888888888,
         "status": "pass"
       },
       {
@@ -128,7 +136,7 @@
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:45Z",
-        "age_days": 0.11368055555555556,
+        "age_days": 0.41292824074074075,
         "status": "pass"
       },
       {
@@ -136,7 +144,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T14:43:22Z",
-        "age_days": 0.14172453703703702,
+        "age_days": 0.4409722222222222,
         "status": "pass"
       },
       {
@@ -144,7 +152,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T17:24:13Z",
-        "age_days": 0.03002314814814815,
+        "age_days": 0.32927083333333335,
         "status": "pass"
       },
       {
@@ -152,7 +160,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T20:13:52Z",
-        "age_days": 0.0,
+        "age_days": 0.21145833333333333,
         "status": "pass"
       }
     ]
@@ -188,8 +196,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-08T18:07:27Z",
-    "age_days": 3.153292824074074e-05,
+    "checked_at": "2026-07-09T01:18:22Z",
+    "age_days": 0.09222136818287037,
     "max_age_days": 8.0,
     "errors": []
   },
@@ -1356,6 +1364,85 @@
       }
     ]
   },
+  "memory_os_canary": {
+    "schema": "wavemind.memory_os_canary.v1",
+    "status": "pass",
+    "ok": true,
+    "claim_boundary": "staging_canary; not remote Kubernetes, Redis, or 10M production evidence",
+    "summary": {
+      "status": "pass",
+      "ok": true,
+      "passed_checks": 6,
+      "check_count": 6,
+      "failed_check_ids": [],
+      "hot_query_count": 5,
+      "worker_actions": [
+        "purge_expired",
+        "consolidate_field",
+        "consolidate_concepts",
+        "predict_priority",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture"
+      ],
+      "prewarm_warmed": 5,
+      "predictive_warmed": 15,
+      "priority_predictions": 6,
+      "expired_purged": 1,
+      "admission_status": "admitted",
+      "admitted": true
+    },
+    "checks": [
+      {
+        "id": "query-audit-signal",
+        "title": "Representative query audit created hot queries",
+        "status": "pass",
+        "passed": true,
+        "evidence": "hot_query_count=5, replayed_queries=18",
+        "action": "Replay representative staging traffic with query audit enabled before Memory OS rollout."
+      },
+      {
+        "id": "worker-prewarm",
+        "title": "Memory OS prewarmed hot recall paths",
+        "status": "pass",
+        "passed": true,
+        "evidence": "prewarm_warmed=5, cache_hit=True",
+        "action": "Fix cache wiring or audit filters before scheduling cache-prewarm workers."
+      },
+      {
+        "id": "predictive-prefetch",
+        "title": "Memory OS generated predictive follow-up queries",
+        "status": "pass",
+        "passed": true,
+        "evidence": "predictive_warmed=15",
+        "action": "Keep transition audit enabled so predictive prefetch can learn follow-up paths."
+      },
+      {
+        "id": "priority-learning",
+        "title": "Memory OS applied bounded priority learning",
+        "status": "pass",
+        "passed": true,
+        "evidence": "priority_predictions=6",
+        "action": "Investigate recall quality if hot queries do not produce priority updates."
+      },
+      {
+        "id": "ttl-cleanup",
+        "title": "Memory OS purged expired stale memories",
+        "status": "pass",
+        "passed": true,
+        "evidence": "expired_purged=1",
+        "action": "Keep maintenance enabled before stale TTL records can compete with live memories."
+      },
+      {
+        "id": "admission",
+        "title": "Memory OS scheduler passes staging admission",
+        "status": "pass",
+        "passed": true,
+        "evidence": "status=admitted, blockers=[]",
+        "action": "Resolve admission blockers before enabling production automation."
+      }
+    ]
+  },
   "source_files": [
     "benchmarks/benchmark_matrix_results.json",
     "benchmarks/benchmark_artifact_audit.json",
@@ -1366,6 +1453,7 @@
     "benchmarks/release_claims_results.json",
     "benchmarks/scale_gap_results.json",
     "benchmarks/memory_os_admission_results.json",
+    "benchmarks/memory_os_canary_results.json",
     "benchmarks/production_evidence_dispatch_results.json",
     "benchmarks/production_scale_run_plan.json",
     "benchmarks/agent_coherence_results.json",

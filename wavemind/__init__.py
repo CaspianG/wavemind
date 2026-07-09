@@ -46,6 +46,11 @@ from .field_crdt import (
     stable_record_key,
 )
 from .indexes import FaissVectorIndex, PgVectorIndex, QdrantVectorIndex, QuantizedVectorIndex
+from .memory_os_canary import (
+    CANARY_SCHEMA,
+    render_memory_os_canary_markdown,
+    run_memory_os_canary,
+)
 from .jobs import (
     ActiveActivePairSyncReport,
     ActiveActiveSyncJobReport,
@@ -211,6 +216,7 @@ __version__ = "2.4.30"
 
 __all__ = [
     "FieldProjector",
+    "CANARY_SCHEMA",
     "FieldStateCRDT",
     "FieldStateDelta",
     "FieldStateMergeReport",
@@ -380,7 +386,9 @@ __all__ = [
     "restore_recovery_journal",
     "render_scale_gap_markdown",
     "render_production_admission_markdown",
+    "render_memory_os_canary_markdown",
     "run_control_plane_consensus_profile",
+    "run_memory_os_canary",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",

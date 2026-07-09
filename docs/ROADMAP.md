@@ -132,6 +132,14 @@ policy matters more than raw vector-database scale:
   singleton/idempotent, the policy manifest is incomplete, or million-plus
   targets still require architecture evidence. `--allow-plan-only` keeps the
   runbook visible without admitting production automation.
+- `wavemind memory-os-canary` is now the staging proof path for that gate. It
+  seeds representative memories and query-audit traffic, runs one Memory OS
+  cycle, verifies hot-query prewarm, predictive prefetch, bounded priority
+  learning, TTL cleanup, and then checks that scheduler admission passes when
+  Redis/cache and distributed-lock URLs are declared. It writes
+  `benchmarks/memory_os_canary_results.json` and
+  `benchmarks/MEMORY_OS_CANARY.md`. This canary intentionally does not unlock
+  remote Kubernetes, real Redis, 10M, or 100M production claims.
 - `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
   `wavemind feedback-batch` now expose explicit useful/not-useful recall
   signals. They update priority/hotness, persist state, emit audit events,

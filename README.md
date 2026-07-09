@@ -979,6 +979,7 @@ Maintenance workers:
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
 wavemind memory-os-plan --namespace user:42 --deployment production --target-memories 2000000 --namespace-count 4096 --cache-mode auto --json
+wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts --json
 wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts --json
 wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --lock-required --min-frequency 2 --max-hot-queries 32 --json
 wavemind cluster-health --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --fail-on-degraded --json
@@ -1045,6 +1046,13 @@ strict architecture boundaries before Memory OS workers become production
 automation. It writes `benchmarks/memory_os_admission_results.json` and
 `benchmarks/MEMORY_OS_ADMISSION.md`; `--fail-on-blocked` makes CI/deploys stop
 until the worker set is really admitted.
+`wavemind memory-os-canary` is the staging proof for that gate: it seeds
+representative memories and query-audit traffic, runs one Memory OS cycle,
+checks prewarm, predictive prefetch, priority learning, TTL cleanup, and then
+verifies that scheduler admission passes when Redis/cache and lock wiring are
+declared. It writes `benchmarks/memory_os_canary_results.json` and
+`benchmarks/MEMORY_OS_CANARY.md`. This is a staging canary, not remote
+Kubernetes, real Redis, or 10M/100M production evidence.
 
 Hot-cache options:
 
@@ -1954,6 +1962,7 @@ public claim boundaries stable:
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
 | Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M sharded Qdrant status is `plan_only`, not admitted: the run contract exists, but `production_streaming_load_qdrant_sharded_100m_results.json` is still missing. |
+| Memory OS canary | Staging proof that representative query-audit traffic can drive Memory OS prewarm, predictive prefetch, priority learning, TTL cleanup, and admission. | `benchmarks/memory_os_canary_results.json`, `benchmarks/MEMORY_OS_CANARY.md`, `wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts` | This is not remote Kubernetes, real Redis, or 10M/100M production evidence; it only proves the worker/admission contract under seeded staging traffic. |
 | Memory OS admission | Deployment-facing gate for adaptive workers. It checks scheduler safety, hot-query audit signal, Redis cache wiring, distributed lock wiring, singleton/idempotent mutations, policy coverage, and strict architecture boundaries before Memory OS workers become production automation. | `benchmarks/memory_os_admission_results.json`, `benchmarks/MEMORY_OS_ADMISSION.md`, `wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts` | Current 10M Memory OS status is `plan_only`, not admitted: the worker plan exists, but staging query-audit traffic, Redis/lock runtime env, and strict million-plus architecture evidence are still required. |
 | Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, monthly budget, cost per 1M memories, compute cost per 1M queries, plan-only Pareto frontier, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |

@@ -1,0 +1,2313 @@
+{
+  "schema": "wavemind.memory_os_canary.v1",
+  "generated_at": "2026-07-09T01:06:28Z",
+  "status": "pass",
+  "ok": true,
+  "claim_boundary": "staging_canary; not remote Kubernetes, Redis, or 10M production evidence",
+  "namespace": "canary:memory-os",
+  "deployment": "staging",
+  "target_memories": 100000,
+  "namespace_count": 64,
+  "node_count": 3,
+  "seeded_memory_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "replayed_query_count": 18,
+  "unique_replayed_queries": [
+    "budget recall",
+    "concise answers",
+    "memory os prewarm",
+    "risk limits",
+    "user preferences"
+  ],
+  "checks": [
+    {
+      "id": "query-audit-signal",
+      "title": "Representative query audit created hot queries",
+      "status": "pass",
+      "passed": true,
+      "evidence": "hot_query_count=5, replayed_queries=18",
+      "action": "Replay representative staging traffic with query audit enabled before Memory OS rollout."
+    },
+    {
+      "id": "worker-prewarm",
+      "title": "Memory OS prewarmed hot recall paths",
+      "status": "pass",
+      "passed": true,
+      "evidence": "prewarm_warmed=5, cache_hit=True",
+      "action": "Fix cache wiring or audit filters before scheduling cache-prewarm workers."
+    },
+    {
+      "id": "predictive-prefetch",
+      "title": "Memory OS generated predictive follow-up queries",
+      "status": "pass",
+      "passed": true,
+      "evidence": "predictive_warmed=15",
+      "action": "Keep transition audit enabled so predictive prefetch can learn follow-up paths."
+    },
+    {
+      "id": "priority-learning",
+      "title": "Memory OS applied bounded priority learning",
+      "status": "pass",
+      "passed": true,
+      "evidence": "priority_predictions=6",
+      "action": "Investigate recall quality if hot queries do not produce priority updates."
+    },
+    {
+      "id": "ttl-cleanup",
+      "title": "Memory OS purged expired stale memories",
+      "status": "pass",
+      "passed": true,
+      "evidence": "expired_purged=1",
+      "action": "Keep maintenance enabled before stale TTL records can compete with live memories."
+    },
+    {
+      "id": "admission",
+      "title": "Memory OS scheduler passes staging admission",
+      "status": "pass",
+      "passed": true,
+      "evidence": "status=admitted, blockers=[]",
+      "action": "Resolve admission blockers before enabling production automation."
+    }
+  ],
+  "failed_check_ids": [],
+  "summary": {
+    "status": "pass",
+    "ok": true,
+    "passed_checks": 6,
+    "check_count": 6,
+    "failed_check_ids": [],
+    "hot_query_count": 5,
+    "worker_actions": [
+      "purge_expired",
+      "consolidate_field",
+      "consolidate_concepts",
+      "predict_priority",
+      "prewarm_cache",
+      "predictive_prefetch",
+      "advise_architecture"
+    ],
+    "prewarm_warmed": 5,
+    "predictive_warmed": 15,
+    "priority_predictions": 6,
+    "expired_purged": 1,
+    "admission_status": "admitted",
+    "admitted": true
+  },
+  "worker_report": {
+    "namespace": "canary:memory-os",
+    "scanned_events": 18,
+    "hot_queries": [
+      {
+        "namespace": "canary:memory-os",
+        "query": "budget recall",
+        "frequency": 6,
+        "last_seen": 1783559187.8600569
+      },
+      {
+        "namespace": "canary:memory-os",
+        "query": "memory os prewarm",
+        "frequency": 4,
+        "last_seen": 1783559187.8676994
+      },
+      {
+        "namespace": "canary:memory-os",
+        "query": "risk limits",
+        "frequency": 4,
+        "last_seen": 1783559187.8522651
+      },
+      {
+        "namespace": "canary:memory-os",
+        "query": "user preferences",
+        "frequency": 2,
+        "last_seen": 1783559187.8718305
+      },
+      {
+        "namespace": "canary:memory-os",
+        "query": "concise answers",
+        "frequency": 2,
+        "last_seen": 1783559187.8560057
+      }
+    ],
+    "expired_purged": 1,
+    "consolidated_steps": 3,
+    "concepts_created": 2,
+    "concept_ids": [
+      7,
+      8
+    ],
+    "priority_predictions": 6,
+    "priority_boost_total": 1.7999955603082205,
+    "priority_boosted_ids": [
+      4,
+      7,
+      8,
+      2,
+      5,
+      3
+    ],
+    "forgetting_demotions": 0,
+    "forgetting_decay_total": 0.0,
+    "forgetting_demoted_ids": [],
+    "index_rebuilt": false,
+    "cache_enabled": true,
+    "cache_invalidated": 0,
+    "prewarm": {
+      "scanned_events": 23,
+      "candidates": 5,
+      "warmed": 5,
+      "skipped": 0,
+      "errors": {},
+      "ok": true
+    },
+    "predictive_prefetch": {
+      "scanned_hot_queries": 5,
+      "generated_queries": 15,
+      "warmed": 15,
+      "skipped": 0,
+      "errors": {},
+      "queries": [
+        "budget recall memory",
+        "budget recall ops",
+        "budget recall prewarm",
+        "memory os prewarm budget",
+        "memory os prewarm ops",
+        "memory os prewarm recall",
+        "risk limits limit",
+        "risk limits per",
+        "risk limits percent",
+        "preferences can",
+        "preferences consolidate",
+        "preferences limit",
+        "concise answers operational",
+        "concise answers preference",
+        "concise answers prefers"
+      ],
+      "transition_queries": [],
+      "transition_edges": [],
+      "ok": true
+    },
+    "stats_before": {
+      "active_memories": 5,
+      "expired_memories": 1,
+      "total_memories": 6,
+      "audit_events": 24,
+      "field_energy": 13.614676,
+      "clusters": 1,
+      "field_shape": "128x128x6",
+      "index": "numpy-exact",
+      "index_healthy": true,
+      "index_expected_records": 6,
+      "index_vector_records": 6,
+      "index_missing_records": 0,
+      "index_extra_records": 0,
+      "index_health": {
+        "backend": "numpy-exact",
+        "healthy": true,
+        "exact": true,
+        "vector_dim": 384,
+        "expected_count": 6,
+        "vector_count": 6,
+        "missing_count": 0,
+        "extra_count": 0,
+        "missing_ids_sample": [],
+        "extra_ids_sample": [],
+        "dirty": false,
+        "persisted": false,
+        "loaded_from_persisted": false,
+        "path": null
+      },
+      "vector_dim": 384,
+      "graph_enabled": false,
+      "graph_nodes": 6,
+      "graph_edges": 0,
+      "graph_positive_edges": 0,
+      "graph_negative_edges": 0,
+      "graph_energy": 0.0
+    },
+    "stats_after": {
+      "active_memories": 7,
+      "expired_memories": 0,
+      "total_memories": 7,
+      "audit_events": 68,
+      "field_energy": 99.456375,
+      "clusters": 1,
+      "field_shape": "128x128x6",
+      "index": "numpy-exact",
+      "index_healthy": true,
+      "index_expected_records": 7,
+      "index_vector_records": 7,
+      "index_missing_records": 0,
+      "index_extra_records": 0,
+      "index_health": {
+        "backend": "numpy-exact",
+        "healthy": true,
+        "exact": true,
+        "vector_dim": 384,
+        "expected_count": 7,
+        "vector_count": 7,
+        "missing_count": 0,
+        "extra_count": 0,
+        "missing_ids_sample": [],
+        "extra_ids_sample": [],
+        "dirty": false,
+        "persisted": false,
+        "loaded_from_persisted": false,
+        "path": null
+      },
+      "vector_dim": 384,
+      "graph_enabled": false,
+      "graph_nodes": 7,
+      "graph_edges": 0,
+      "graph_positive_edges": 0,
+      "graph_negative_edges": 0,
+      "graph_energy": 0.0
+    },
+    "architecture_advice": {
+      "status": "action_required",
+      "production_ready": false,
+      "deployment": "staging",
+      "namespace": "canary:memory-os",
+      "current_memories": 7,
+      "target_memories": 100000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "target_p99_ms": 100.0,
+      "observed_p99_ms": null,
+      "namespace_count": 64,
+      "node_count": 3,
+      "replication_factor": 3,
+      "read_quorum": 1,
+      "read_fanout": 3,
+      "scale_plan": {
+        "current_memories": 7,
+        "target_memories": 100000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "namespace": "canary:memory-os",
+        "latency_target_ms": 100.0,
+        "tier": "production-service",
+        "status": "action_required",
+        "recommended_index": "qdrant service or pgvector HNSW",
+        "warnings": [
+          "This should be treated as a service-backed deployment, not a local NumPy deployment."
+        ],
+        "actions": [
+          "Keep SQLite or Postgres as the source of truth and use an external candidate index.",
+          "Shard by namespace, tenant, user, project, or agent before the database becomes hot.",
+          "Measure recall@k, p95, and rebuild time on production-like hardware.",
+          "Keep WaveMind as a top-k reranker; do not full-scan the field over every memory."
+        ]
+      },
+      "recommendations": [
+        {
+          "id": "scale-plan",
+          "severity": "action_required",
+          "title": "Scale plan requires attention",
+          "rationale": "The current scale tier is production-service for target 100,000 memories.",
+          "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+          "commands": [
+            "wavemind scale-plan --target-memories 100000 --fail-on action_required --json"
+          ],
+          "docs": [
+            "README.md#scale-readiness",
+            "docs/ROADMAP.md"
+          ]
+        },
+        {
+          "id": "bounded-read-fanout",
+          "severity": "action_required",
+          "title": "Bound read fanout for the hot path",
+          "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+          "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+          "commands": [
+            "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md"
+          ]
+        },
+        {
+          "id": "service-index",
+          "severity": "action_required",
+          "title": "Use a service-backed vector index",
+          "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+          "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+          "commands": [
+            "wavemind index-health --json",
+            "python benchmarks/production_readiness_gate.py --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "production-controls",
+          "severity": "action_required",
+          "title": "Enable production controls",
+          "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+          "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "load-test",
+          "severity": "action_required",
+          "title": "Run a sustained production load profile",
+          "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+          "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+          "commands": [
+            "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+          ],
+          "docs": [
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        }
+      ],
+      "next_commands": [
+        "wavemind scale-plan --target-memories 100000 --fail-on action_required --json",
+        "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "wavemind index-health --json",
+        "python benchmarks/production_readiness_gate.py --json",
+        "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+        "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+      ]
+    },
+    "lock": {
+      "required": false,
+      "acquired": false,
+      "key": null,
+      "owner": null,
+      "ttl_seconds": null,
+      "reason": null,
+      "ok": true
+    },
+    "actions": [
+      "purge_expired",
+      "consolidate_field",
+      "consolidate_concepts",
+      "predict_priority",
+      "prewarm_cache",
+      "predictive_prefetch",
+      "advise_architecture"
+    ],
+    "recommendations": [
+      "Memory OS run is healthy; keep the worker scheduled.",
+      "Architecture advisor: [action_required] Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+      "Architecture advisor: [action_required] Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+      "Architecture advisor: [action_required] Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+      "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+      "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO."
+    ],
+    "suggestions": [
+      {
+        "id": "review-consolidated-concepts",
+        "severity": "watch",
+        "title": "Review newly consolidated concept memories",
+        "rationale": "Memory OS formed higher-level concept memories from active field clusters.",
+        "action": "Surface these concept memories in Studio/API review before promoting them to high-priority production context.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "concepts_created": 2
+        }
+      },
+      {
+        "id": "predictive-prefetch-active",
+        "severity": "ok",
+        "title": "Keep predictive prefetch enabled",
+        "rationale": "Observed recall paths produced likely follow-up queries.",
+        "action": "Track predictive prefetch hit rate and keep transition edges in the benchmark artifact.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "generated_queries": 15,
+          "warmed_queries": 15,
+          "transition_queries": []
+        }
+      },
+      {
+        "id": "priority-learning-active",
+        "severity": "ok",
+        "title": "Keep usage-pattern priority learning enabled",
+        "rationale": "Hot audited queries produced deterministic priority boosts for recalled memories.",
+        "action": "Keep feedback and priority deltas in the Memory OS evidence artifact.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "priority_predictions": 6
+        }
+      },
+      {
+        "id": "architecture:scale-plan",
+        "severity": "action_required",
+        "title": "Scale plan requires attention",
+        "rationale": "The current scale tier is production-service for target 100,000 memories.",
+        "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "source": "architecture_advisor",
+          "recommendation_id": "scale-plan"
+        }
+      },
+      {
+        "id": "architecture:bounded-read-fanout",
+        "severity": "action_required",
+        "title": "Bound read fanout for the hot path",
+        "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+        "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "source": "architecture_advisor",
+          "recommendation_id": "bounded-read-fanout"
+        }
+      },
+      {
+        "id": "architecture:service-index",
+        "severity": "action_required",
+        "title": "Use a service-backed vector index",
+        "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+        "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "source": "architecture_advisor",
+          "recommendation_id": "service-index"
+        }
+      },
+      {
+        "id": "architecture:production-controls",
+        "severity": "action_required",
+        "title": "Enable production controls",
+        "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+        "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "source": "architecture_advisor",
+          "recommendation_id": "production-controls"
+        }
+      },
+      {
+        "id": "architecture:load-test",
+        "severity": "action_required",
+        "title": "Run a sustained production load profile",
+        "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+        "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+        "evidence": {
+          "namespace": "canary:memory-os",
+          "source": "architecture_advisor",
+          "recommendation_id": "load-test"
+        }
+      }
+    ],
+    "policy_manifest": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "ok",
+          "strategy": "hot-query-and-transition-prefetch",
+          "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+          "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
+            "predictive_generated": 15,
+            "predictive_warmed": 15,
+            "transition_edges": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "ok",
+          "strategy": "usage-pattern-priority-boost",
+          "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+          "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "priority_predictions": 6
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "ok",
+          "strategy": "promote-active-clusters-to-concepts",
+          "rationale": "The field graph produced higher-level concept memories from active clusters.",
+          "action": "Review new concept memories in Studio/API before assigning very high priority.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "concepts_created": 2
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "action_required",
+          "strategy": "fix-production-gaps-before-growth",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7,
+            "target_memories": 100000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "service-index",
+              "production-controls",
+              "load-test"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "deployment": "staging",
+            "lock_required": false,
+            "lock_acquired": false,
+            "lock_key": null,
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "policy_history": {
+      "previous_runs": 0,
+      "window": 5,
+      "trend": "first_run",
+      "repeated_action_required_ids": [],
+      "repeated_architecture_required_ids": [],
+      "repeated_required_ids": [],
+      "stable_ok_ids": [],
+      "status_counts": {
+        "action_required": 1,
+        "ok": 4,
+        "watch": 1
+      }
+    },
+    "ok": true
+  },
+  "schedule_plan": {
+    "status": "action_required",
+    "namespace": "canary:memory-os",
+    "deployment": "staging",
+    "cache_mode": "auto",
+    "effective_cache_mode": "redis",
+    "target_memories": 100000,
+    "namespace_count": 64,
+    "active_memories": 7,
+    "hot_query_count": 5,
+    "observed_p99_ms": null,
+    "target_p99_ms": 100.0,
+    "target_qps": 100.0,
+    "worker_count": 1,
+    "required_infrastructure": [
+      "Redis-compatible shared hot-query cache",
+      "distributed worker lock or single-flight scheduler",
+      "durable queue or Kubernetes CronJobs",
+      "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+    ],
+    "recommendations": [
+      "Escalate repeated Memory OS policy gaps: scale-policy",
+      "Architecture advisor: Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+      "Architecture advisor: Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+      "Architecture advisor: Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+      "Architecture advisor: Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+      "Architecture advisor: Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO."
+    ],
+    "architecture_advice": {
+      "status": "action_required",
+      "production_ready": false,
+      "deployment": "staging",
+      "namespace": "canary:memory-os",
+      "current_memories": 7,
+      "target_memories": 100000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "target_p99_ms": 100.0,
+      "observed_p99_ms": null,
+      "namespace_count": 64,
+      "node_count": 3,
+      "replication_factor": 3,
+      "read_quorum": 1,
+      "read_fanout": 3,
+      "scale_plan": {
+        "current_memories": 7,
+        "target_memories": 100000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "namespace": "canary:memory-os",
+        "latency_target_ms": 100.0,
+        "tier": "production-service",
+        "status": "action_required",
+        "recommended_index": "qdrant service or pgvector HNSW",
+        "warnings": [
+          "This should be treated as a service-backed deployment, not a local NumPy deployment."
+        ],
+        "actions": [
+          "Keep SQLite or Postgres as the source of truth and use an external candidate index.",
+          "Shard by namespace, tenant, user, project, or agent before the database becomes hot.",
+          "Measure recall@k, p95, and rebuild time on production-like hardware.",
+          "Keep WaveMind as a top-k reranker; do not full-scan the field over every memory."
+        ]
+      },
+      "recommendations": [
+        {
+          "id": "scale-plan",
+          "severity": "action_required",
+          "title": "Scale plan requires attention",
+          "rationale": "The current scale tier is production-service for target 100,000 memories.",
+          "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+          "commands": [
+            "wavemind scale-plan --target-memories 100000 --fail-on action_required --json"
+          ],
+          "docs": [
+            "README.md#scale-readiness",
+            "docs/ROADMAP.md"
+          ]
+        },
+        {
+          "id": "bounded-read-fanout",
+          "severity": "action_required",
+          "title": "Bound read fanout for the hot path",
+          "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+          "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+          "commands": [
+            "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md"
+          ]
+        },
+        {
+          "id": "service-index",
+          "severity": "action_required",
+          "title": "Use a service-backed vector index",
+          "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+          "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+          "commands": [
+            "wavemind index-health --json",
+            "python benchmarks/production_readiness_gate.py --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "production-controls",
+          "severity": "action_required",
+          "title": "Enable production controls",
+          "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+          "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "load-test",
+          "severity": "action_required",
+          "title": "Run a sustained production load profile",
+          "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+          "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+          "commands": [
+            "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+          ],
+          "docs": [
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        }
+      ],
+      "next_commands": [
+        "wavemind scale-plan --target-memories 100000 --fail-on action_required --json",
+        "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "wavemind index-health --json",
+        "python benchmarks/production_readiness_gate.py --json",
+        "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+        "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+      ]
+    },
+    "policy_manifest": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "ok",
+          "strategy": "hot-query-and-transition-prefetch",
+          "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+          "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
+            "predictive_generated": 1,
+            "predictive_warmed": 1,
+            "transition_edges": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "ok",
+          "strategy": "usage-pattern-priority-boost",
+          "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+          "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "priority_predictions": 5
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "ok",
+          "strategy": "promote-active-clusters-to-concepts",
+          "rationale": "The field graph produced higher-level concept memories from active clusters.",
+          "action": "Review new concept memories in Studio/API before assigning very high priority.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "concepts_created": 1
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "action_required",
+          "strategy": "fix-production-gaps-before-growth",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7,
+            "target_memories": 100000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "service-index",
+              "production-controls",
+              "load-test"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "deployment": "staging",
+            "lock_required": true,
+            "lock_acquired": true,
+            "lock_key": "scheduler-preflight",
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "policy_history": {
+      "previous_runs": 1,
+      "window": 5,
+      "trend": "repeated_action_required",
+      "repeated_action_required_ids": [
+        "scale-policy"
+      ],
+      "repeated_architecture_required_ids": [],
+      "repeated_required_ids": [
+        "scale-policy"
+      ],
+      "stable_ok_ids": [
+        "consolidation-policy",
+        "coordination-policy",
+        "prefetch-policy",
+        "priority-policy"
+      ],
+      "status_counts": {
+        "action_required": 2,
+        "ok": 8,
+        "watch": 2
+      }
+    },
+    "policy_escalation_ids": [
+      "scale-policy"
+    ],
+    "policy_auto_adjustments": [],
+    "execution_plan": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "deployment": "staging",
+      "worker_count": 1,
+      "max_parallel_workers": 1,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "safe_to_run": true,
+      "enabled_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "worker_pool_task_ids": [],
+      "state_mutating_task_ids": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "blocked_task_ids": [],
+      "warnings": [
+        "distributed-lock-required"
+      ],
+      "steps": [
+        {
+          "order": 10,
+          "task_id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 120,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false,
+          "required_environment": [],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind advise --target-memories 100000 --namespace-count 64 --deployment staging --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+        },
+        {
+          "order": 20,
+          "task_id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:maintenance",
+          "can_run_on_all_workers": false,
+          "command": "wavemind maintenance --namespace canary:memory-os",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+        },
+        {
+          "order": 30,
+          "task_id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:adaptive-forgetting",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Demotes old unused memories before they compete with current context."
+        },
+        {
+          "order": 40,
+          "task_id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:consolidation",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Creates durable higher-level concept memories from active clusters."
+        },
+        {
+          "order": 50,
+          "task_id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 15,
+          "timeout_seconds": 60,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:memory-os",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+        },
+        {
+          "order": 60,
+          "task_id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 15,
+          "timeout_seconds": 30,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL"
+          ],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 16 --min-frequency 2 --top-k 2",
+          "reason": "Keeps repeated recall paths hot across API workers."
+        },
+        {
+          "order": 70,
+          "task_id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 60,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:predictive-prefetch",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Warms likely follow-up queries from hot recall paths."
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "memory-os",
+        "title": "Adaptive Memory OS cycle",
+        "enabled": true,
+        "cadence_seconds": 15,
+        "worker_count": 1,
+        "timeout_seconds": 60,
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
+        "priority": "critical",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "cache-prewarm",
+        "title": "Hot query cache prewarm",
+        "enabled": true,
+        "cadence_seconds": 15,
+        "worker_count": 1,
+        "timeout_seconds": 30,
+        "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 16 --min-frequency 2 --top-k 2",
+        "reason": "Keeps repeated recall paths hot across API workers.",
+        "priority": "high",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": false
+      },
+      {
+        "id": "predictive-prefetch",
+        "title": "Predictive neighbor prefetch",
+        "enabled": true,
+        "cadence_seconds": 60,
+        "worker_count": 1,
+        "timeout_seconds": 120,
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Warms likely follow-up queries from hot recall paths.",
+        "priority": "high",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "adaptive-forgetting",
+        "title": "Adaptive forgetting",
+        "enabled": true,
+        "cadence_seconds": 600,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Demotes old unused memories before they compete with current context.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "consolidation",
+        "title": "Field and concept consolidation",
+        "enabled": true,
+        "cadence_seconds": 600,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Creates durable higher-level concept memories from active clusters.",
+        "priority": "high",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "maintenance",
+        "title": "Expired memory and index maintenance",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind maintenance --namespace canary:memory-os",
+        "reason": "Purges TTL-expired memories and repairs unhealthy local indexes.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "architecture-advice",
+        "title": "Architecture advisor preflight",
+        "enabled": true,
+        "cadence_seconds": 120,
+        "worker_count": 1,
+        "timeout_seconds": 120,
+        "command": "wavemind advise --target-memories 100000 --namespace-count 64 --deployment staging --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+        "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
+        "priority": "critical",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": false
+      }
+    ],
+    "enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "ok": false
+  },
+  "admission": {
+    "schema": "wavemind.memory_os_admission.v1",
+    "generated_at": "2026-07-09T01:06:28Z",
+    "status": "admitted",
+    "admitted": true,
+    "deployment": "staging",
+    "target_memories": 100000,
+    "namespace_count": 64,
+    "worker_count": 1,
+    "effective_cache_mode": "redis",
+    "hot_query_count": 5,
+    "allow_plan_only": false,
+    "claim_boundary": "memory_os_runtime_gate",
+    "summary": {
+      "status": "admitted",
+      "admitted": true,
+      "requirement_count": 11,
+      "passed_count": 11,
+      "blocker_count": 0,
+      "warning_count": 0,
+      "blocker_ids": [],
+      "warning_ids": [],
+      "enabled_task_ids": [
+        "adaptive-forgetting",
+        "architecture-advice",
+        "cache-prewarm",
+        "consolidation",
+        "maintenance",
+        "memory-os",
+        "predictive-prefetch"
+      ],
+      "missing_runtime_env": []
+    },
+    "requirements": [
+      {
+        "id": "execution-safe",
+        "title": "Execution plan has no blocked worker tasks",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "safe_to_run=True, blocked=[]",
+        "action": "Resolve execution_plan.blocked_task_ids before scheduling Memory OS.",
+        "details": {}
+      },
+      {
+        "id": "task-coverage",
+        "title": "All Memory OS worker lanes are planned",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "adaptive-forgetting, architecture-advice, cache-prewarm, consolidation, maintenance, memory-os, predictive-prefetch",
+        "action": "Planner must include memory-os, cache-prewarm, predictive-prefetch, forgetting, consolidation, maintenance, and architecture-advice.",
+        "details": {}
+      },
+      {
+        "id": "hot-query-signal",
+        "title": "Query audit traffic enables prewarm and predictive workers",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "hot_query_count=5, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
+        "action": "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
+        "details": {}
+      },
+      {
+        "id": "consolidation-enabled",
+        "title": "Consolidation worker is active when clusters exist",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
+        "action": "Seed enough representative memories/query traffic for stable concept clusters before production rollout.",
+        "details": {}
+      },
+      {
+        "id": "shared-cache-configured",
+        "title": "Shared Redis cache is configured when the plan requires it",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "requires_shared_cache=True, effective_cache_mode=redis, redis_configured=True",
+        "action": "Set WAVEMIND_REDIS_URL or pass --redis-url before enabling multi-worker Memory OS.",
+        "details": {}
+      },
+      {
+        "id": "distributed-lock-configured",
+        "title": "Distributed single-flight lock is configured for state mutation",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "requires_distributed_lock=True, lock_configured=True",
+        "action": "Set WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or pass --lock-redis-url before running production Memory OS workers.",
+        "details": {}
+      },
+      {
+        "id": "state-mutation-singleton",
+        "title": "State-mutating tasks are singleton/idempotent",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "state_mutating=['adaptive-forgetting', 'consolidation', 'maintenance', 'memory-os'], singleton=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
+        "action": "Keep mutation tasks as cluster singletons with idempotency keys.",
+        "details": {}
+      },
+      {
+        "id": "policy-coverage",
+        "title": "Policy manifest covers prefetch, priority, forgetting, consolidation, scale, and coordination",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "consolidation-policy, coordination-policy, forgetting-policy, prefetch-policy, priority-policy, scale-policy",
+        "action": "Memory OS admission requires a full policy manifest before rollout.",
+        "details": {}
+      },
+      {
+        "id": "infrastructure-contract",
+        "title": "Production infrastructure contract is explicit",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "OpenTelemetry metrics for worker duration, errors, and warmed queries, Redis-compatible shared hot-query cache, distributed worker lock or single-flight scheduler, durable queue or Kubernetes CronJobs",
+        "action": "Production plans must list Redis, lock/scheduler, queue/CronJob, and OpenTelemetry requirements.",
+        "details": {}
+      },
+      {
+        "id": "scale-boundary",
+        "title": "Large target stays behind strict architecture evidence",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "architecture_status=action_required, strict_target=False",
+        "action": "Do not admit Memory OS production rollout for million-plus targets until architecture-required evidence is resolved.",
+        "details": {}
+      },
+      {
+        "id": "runtime-env",
+        "title": "Required runtime environment is present",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "missing=[]",
+        "action": "Provide every required environment variable before scheduling the worker set.",
+        "details": {}
+      }
+    ],
+    "execution_plan": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "deployment": "staging",
+      "worker_count": 1,
+      "max_parallel_workers": 1,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "safe_to_run": true,
+      "enabled_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "worker_pool_task_ids": [],
+      "state_mutating_task_ids": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "blocked_task_ids": [],
+      "warnings": [
+        "distributed-lock-required"
+      ],
+      "steps": [
+        {
+          "order": 10,
+          "task_id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 120,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false,
+          "required_environment": [],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind advise --target-memories 100000 --namespace-count 64 --deployment staging --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+        },
+        {
+          "order": 20,
+          "task_id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:maintenance",
+          "can_run_on_all_workers": false,
+          "command": "wavemind maintenance --namespace canary:memory-os",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+        },
+        {
+          "order": 30,
+          "task_id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:adaptive-forgetting",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Demotes old unused memories before they compete with current context."
+        },
+        {
+          "order": 40,
+          "task_id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:consolidation",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Creates durable higher-level concept memories from active clusters."
+        },
+        {
+          "order": 50,
+          "task_id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 15,
+          "timeout_seconds": 60,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:memory-os",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+        },
+        {
+          "order": 60,
+          "task_id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 15,
+          "timeout_seconds": 30,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL"
+          ],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 16 --min-frequency 2 --top-k 2",
+          "reason": "Keeps repeated recall paths hot across API workers."
+        },
+        {
+          "order": 70,
+          "task_id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 60,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:predictive-prefetch",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Warms likely follow-up queries from hot recall paths."
+        }
+      ]
+    },
+    "policy_manifest": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "ok",
+          "strategy": "hot-query-and-transition-prefetch",
+          "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+          "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
+            "predictive_generated": 1,
+            "predictive_warmed": 1,
+            "transition_edges": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "ok",
+          "strategy": "usage-pattern-priority-boost",
+          "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+          "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "priority_predictions": 5
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "ok",
+          "strategy": "promote-active-clusters-to-concepts",
+          "rationale": "The field graph produced higher-level concept memories from active clusters.",
+          "action": "Review new concept memories in Studio/API before assigning very high priority.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "concepts_created": 1
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "action_required",
+          "strategy": "fix-production-gaps-before-growth",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7,
+            "target_memories": 100000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "service-index",
+              "production-controls",
+              "load-test"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "deployment": "staging",
+            "lock_required": true,
+            "lock_acquired": true,
+            "lock_key": "scheduler-preflight",
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "architecture_advice": {
+      "status": "action_required",
+      "production_ready": false,
+      "deployment": "staging",
+      "namespace": "canary:memory-os",
+      "current_memories": 7,
+      "target_memories": 100000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "target_p99_ms": 100.0,
+      "observed_p99_ms": null,
+      "namespace_count": 64,
+      "node_count": 3,
+      "replication_factor": 3,
+      "read_quorum": 1,
+      "read_fanout": 3,
+      "scale_plan": {
+        "current_memories": 7,
+        "target_memories": 100000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "namespace": "canary:memory-os",
+        "latency_target_ms": 100.0,
+        "tier": "production-service",
+        "status": "action_required",
+        "recommended_index": "qdrant service or pgvector HNSW",
+        "warnings": [
+          "This should be treated as a service-backed deployment, not a local NumPy deployment."
+        ],
+        "actions": [
+          "Keep SQLite or Postgres as the source of truth and use an external candidate index.",
+          "Shard by namespace, tenant, user, project, or agent before the database becomes hot.",
+          "Measure recall@k, p95, and rebuild time on production-like hardware.",
+          "Keep WaveMind as a top-k reranker; do not full-scan the field over every memory."
+        ]
+      },
+      "recommendations": [
+        {
+          "id": "scale-plan",
+          "severity": "action_required",
+          "title": "Scale plan requires attention",
+          "rationale": "The current scale tier is production-service for target 100,000 memories.",
+          "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+          "commands": [
+            "wavemind scale-plan --target-memories 100000 --fail-on action_required --json"
+          ],
+          "docs": [
+            "README.md#scale-readiness",
+            "docs/ROADMAP.md"
+          ]
+        },
+        {
+          "id": "bounded-read-fanout",
+          "severity": "action_required",
+          "title": "Bound read fanout for the hot path",
+          "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+          "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+          "commands": [
+            "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md"
+          ]
+        },
+        {
+          "id": "service-index",
+          "severity": "action_required",
+          "title": "Use a service-backed vector index",
+          "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+          "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+          "commands": [
+            "wavemind index-health --json",
+            "python benchmarks/production_readiness_gate.py --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "production-controls",
+          "severity": "action_required",
+          "title": "Enable production controls",
+          "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+          "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "load-test",
+          "severity": "action_required",
+          "title": "Run a sustained production load profile",
+          "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+          "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+          "commands": [
+            "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+          ],
+          "docs": [
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        }
+      ],
+      "next_commands": [
+        "wavemind scale-plan --target-memories 100000 --fail-on action_required --json",
+        "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "wavemind index-health --json",
+        "python benchmarks/production_readiness_gate.py --json",
+        "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+        "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+      ]
+    },
+    "plan": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "deployment": "staging",
+      "cache_mode": "auto",
+      "effective_cache_mode": "redis",
+      "target_memories": 100000,
+      "namespace_count": 64,
+      "active_memories": 7,
+      "hot_query_count": 5,
+      "observed_p99_ms": null,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "worker_count": 1,
+      "required_infrastructure": [
+        "Redis-compatible shared hot-query cache",
+        "distributed worker lock or single-flight scheduler",
+        "durable queue or Kubernetes CronJobs",
+        "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+      ],
+      "recommendations": [
+        "Escalate repeated Memory OS policy gaps: scale-policy",
+        "Architecture advisor: Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+        "Architecture advisor: Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+        "Architecture advisor: Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+        "Architecture advisor: Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+        "Architecture advisor: Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO."
+      ],
+      "architecture_advice": {
+        "status": "action_required",
+        "production_ready": false,
+        "deployment": "staging",
+        "namespace": "canary:memory-os",
+        "current_memories": 7,
+        "target_memories": 100000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "target_p99_ms": 100.0,
+        "observed_p99_ms": null,
+        "namespace_count": 64,
+        "node_count": 3,
+        "replication_factor": 3,
+        "read_quorum": 1,
+        "read_fanout": 3,
+        "scale_plan": {
+          "current_memories": 7,
+          "target_memories": 100000,
+          "index": "numpy-exact",
+          "vector_dim": 384,
+          "namespace": "canary:memory-os",
+          "latency_target_ms": 100.0,
+          "tier": "production-service",
+          "status": "action_required",
+          "recommended_index": "qdrant service or pgvector HNSW",
+          "warnings": [
+            "This should be treated as a service-backed deployment, not a local NumPy deployment."
+          ],
+          "actions": [
+            "Keep SQLite or Postgres as the source of truth and use an external candidate index.",
+            "Shard by namespace, tenant, user, project, or agent before the database becomes hot.",
+            "Measure recall@k, p95, and rebuild time on production-like hardware.",
+            "Keep WaveMind as a top-k reranker; do not full-scan the field over every memory."
+          ]
+        },
+        "recommendations": [
+          {
+            "id": "scale-plan",
+            "severity": "action_required",
+            "title": "Scale plan requires attention",
+            "rationale": "The current scale tier is production-service for target 100,000 memories.",
+            "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+            "commands": [
+              "wavemind scale-plan --target-memories 100000 --fail-on action_required --json"
+            ],
+            "docs": [
+              "README.md#scale-readiness",
+              "docs/ROADMAP.md"
+            ]
+          },
+          {
+            "id": "bounded-read-fanout",
+            "severity": "action_required",
+            "title": "Bound read fanout for the hot path",
+            "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+            "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+            "commands": [
+              "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+              "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+            ],
+            "docs": [
+              "docs/BENCHMARK_BRIEF.md"
+            ]
+          },
+          {
+            "id": "service-index",
+            "severity": "action_required",
+            "title": "Use a service-backed vector index",
+            "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+            "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+            "commands": [
+              "wavemind index-health --json",
+              "python benchmarks/production_readiness_gate.py --json"
+            ],
+            "docs": [
+              "benchmarks/PRODUCTION_READINESS.md",
+              "docs/OBSERVABILITY.md"
+            ]
+          },
+          {
+            "id": "production-controls",
+            "severity": "action_required",
+            "title": "Enable production controls",
+            "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+            "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+            "commands": [
+              "python benchmarks/production_readiness_gate.py --json",
+              "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+            ],
+            "docs": [
+              "benchmarks/PRODUCTION_READINESS.md",
+              "docs/OBSERVABILITY.md"
+            ]
+          },
+          {
+            "id": "load-test",
+            "severity": "action_required",
+            "title": "Run a sustained production load profile",
+            "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+            "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+            "commands": [
+              "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+            ],
+            "docs": [
+              ".github/workflows/external-http-cluster-load.yml"
+            ]
+          }
+        ],
+        "next_commands": [
+          "wavemind scale-plan --target-memories 100000 --fail-on action_required --json",
+          "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+          "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+          "wavemind index-health --json",
+          "python benchmarks/production_readiness_gate.py --json",
+          "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+          "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+        ]
+      },
+      "policy_manifest": {
+        "status": "action_required",
+        "namespace": "canary:memory-os",
+        "decision_count": 6,
+        "decision_ids": [
+          "prefetch-policy",
+          "priority-policy",
+          "forgetting-policy",
+          "consolidation-policy",
+          "scale-policy",
+          "coordination-policy"
+        ],
+        "decisions": [
+          {
+            "id": "prefetch-policy",
+            "status": "ok",
+            "strategy": "hot-query-and-transition-prefetch",
+            "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+            "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "hot_queries": 5,
+              "prewarm_warmed": 5,
+              "predictive_generated": 1,
+              "predictive_warmed": 1,
+              "transition_edges": 0
+            }
+          },
+          {
+            "id": "priority-policy",
+            "status": "ok",
+            "strategy": "usage-pattern-priority-boost",
+            "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+            "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "priority_predictions": 5
+            }
+          },
+          {
+            "id": "forgetting-policy",
+            "status": "watch",
+            "strategy": "observe-before-demoting",
+            "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+            "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "active_memories": 7
+            }
+          },
+          {
+            "id": "consolidation-policy",
+            "status": "ok",
+            "strategy": "promote-active-clusters-to-concepts",
+            "rationale": "The field graph produced higher-level concept memories from active clusters.",
+            "action": "Review new concept memories in Studio/API before assigning very high priority.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "concepts_created": 1
+            }
+          },
+          {
+            "id": "scale-policy",
+            "status": "action_required",
+            "strategy": "fix-production-gaps-before-growth",
+            "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+            "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "active_memories": 7,
+              "target_memories": 100000,
+              "recommendation_ids": [
+                "scale-plan",
+                "bounded-read-fanout",
+                "service-index",
+                "production-controls",
+                "load-test"
+              ]
+            }
+          },
+          {
+            "id": "coordination-policy",
+            "status": "ok",
+            "strategy": "single-writer-memory-os-cycle",
+            "rationale": "The current run has a safe coordination state for this deployment mode.",
+            "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "deployment": "staging",
+              "lock_required": true,
+              "lock_acquired": true,
+              "lock_key": "scheduler-preflight",
+              "cache_enabled": true
+            }
+          }
+        ],
+        "ok": false
+      },
+      "policy_history": {
+        "previous_runs": 1,
+        "window": 5,
+        "trend": "repeated_action_required",
+        "repeated_action_required_ids": [
+          "scale-policy"
+        ],
+        "repeated_architecture_required_ids": [],
+        "repeated_required_ids": [
+          "scale-policy"
+        ],
+        "stable_ok_ids": [
+          "consolidation-policy",
+          "coordination-policy",
+          "prefetch-policy",
+          "priority-policy"
+        ],
+        "status_counts": {
+          "action_required": 2,
+          "ok": 8,
+          "watch": 2
+        }
+      },
+      "policy_escalation_ids": [
+        "scale-policy"
+      ],
+      "policy_auto_adjustments": [],
+      "execution_plan": {
+        "status": "action_required",
+        "namespace": "canary:memory-os",
+        "deployment": "staging",
+        "worker_count": 1,
+        "max_parallel_workers": 1,
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true,
+        "safe_to_run": true,
+        "enabled_task_ids": [
+          "architecture-advice",
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os",
+          "cache-prewarm",
+          "predictive-prefetch"
+        ],
+        "singleton_task_ids": [
+          "architecture-advice",
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os",
+          "cache-prewarm",
+          "predictive-prefetch"
+        ],
+        "worker_pool_task_ids": [],
+        "state_mutating_task_ids": [
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os"
+        ],
+        "blocked_task_ids": [],
+        "warnings": [
+          "distributed-lock-required"
+        ],
+        "steps": [
+          {
+            "order": 10,
+            "task_id": "architecture-advice",
+            "title": "Architecture advisor preflight",
+            "enabled": true,
+            "priority": "critical",
+            "cadence_seconds": 120,
+            "timeout_seconds": 120,
+            "worker_count": 1,
+            "run_scope": "scheduler-singleton",
+            "state_mutation": false,
+            "requires_shared_cache": false,
+            "requires_distributed_lock": false,
+            "required_environment": [],
+            "idempotency_key": null,
+            "can_run_on_all_workers": false,
+            "command": "wavemind advise --target-memories 100000 --namespace-count 64 --deployment staging --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+            "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+          },
+          {
+            "order": 20,
+            "task_id": "maintenance",
+            "title": "Expired memory and index maintenance",
+            "enabled": true,
+            "priority": "normal",
+            "cadence_seconds": 300,
+            "timeout_seconds": 300,
+            "worker_count": 1,
+            "run_scope": "cluster-singleton",
+            "state_mutation": true,
+            "requires_shared_cache": false,
+            "requires_distributed_lock": true,
+            "required_environment": [
+              "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            ],
+            "idempotency_key": "wavemind:memory-os:canary:memory-os:maintenance",
+            "can_run_on_all_workers": false,
+            "command": "wavemind maintenance --namespace canary:memory-os",
+            "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+          },
+          {
+            "order": 30,
+            "task_id": "adaptive-forgetting",
+            "title": "Adaptive forgetting",
+            "enabled": true,
+            "priority": "normal",
+            "cadence_seconds": 600,
+            "timeout_seconds": 300,
+            "worker_count": 1,
+            "run_scope": "cluster-singleton",
+            "state_mutation": true,
+            "requires_shared_cache": false,
+            "requires_distributed_lock": true,
+            "required_environment": [
+              "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            ],
+            "idempotency_key": "wavemind:memory-os:canary:memory-os:adaptive-forgetting",
+            "can_run_on_all_workers": false,
+            "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+            "reason": "Demotes old unused memories before they compete with current context."
+          },
+          {
+            "order": 40,
+            "task_id": "consolidation",
+            "title": "Field and concept consolidation",
+            "enabled": true,
+            "priority": "high",
+            "cadence_seconds": 600,
+            "timeout_seconds": 300,
+            "worker_count": 1,
+            "run_scope": "cluster-singleton",
+            "state_mutation": true,
+            "requires_shared_cache": false,
+            "requires_distributed_lock": true,
+            "required_environment": [
+              "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            ],
+            "idempotency_key": "wavemind:memory-os:canary:memory-os:consolidation",
+            "can_run_on_all_workers": false,
+            "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+            "reason": "Creates durable higher-level concept memories from active clusters."
+          },
+          {
+            "order": 50,
+            "task_id": "memory-os",
+            "title": "Adaptive Memory OS cycle",
+            "enabled": true,
+            "priority": "critical",
+            "cadence_seconds": 15,
+            "timeout_seconds": 60,
+            "worker_count": 1,
+            "run_scope": "cluster-singleton",
+            "state_mutation": true,
+            "requires_shared_cache": true,
+            "requires_distributed_lock": true,
+            "required_environment": [
+              "WAVEMIND_REDIS_URL",
+              "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            ],
+            "idempotency_key": "wavemind:memory-os:canary:memory-os:memory-os",
+            "can_run_on_all_workers": false,
+            "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+            "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+          },
+          {
+            "order": 60,
+            "task_id": "cache-prewarm",
+            "title": "Hot query cache prewarm",
+            "enabled": true,
+            "priority": "high",
+            "cadence_seconds": 15,
+            "timeout_seconds": 30,
+            "worker_count": 1,
+            "run_scope": "scheduler-singleton",
+            "state_mutation": false,
+            "requires_shared_cache": true,
+            "requires_distributed_lock": false,
+            "required_environment": [
+              "WAVEMIND_REDIS_URL"
+            ],
+            "idempotency_key": null,
+            "can_run_on_all_workers": false,
+            "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 16 --min-frequency 2 --top-k 2",
+            "reason": "Keeps repeated recall paths hot across API workers."
+          },
+          {
+            "order": 70,
+            "task_id": "predictive-prefetch",
+            "title": "Predictive neighbor prefetch",
+            "enabled": true,
+            "priority": "high",
+            "cadence_seconds": 60,
+            "timeout_seconds": 120,
+            "worker_count": 1,
+            "run_scope": "cluster-singleton",
+            "state_mutation": false,
+            "requires_shared_cache": true,
+            "requires_distributed_lock": true,
+            "required_environment": [
+              "WAVEMIND_REDIS_URL",
+              "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+            ],
+            "idempotency_key": "wavemind:memory-os:canary:memory-os:predictive-prefetch",
+            "can_run_on_all_workers": false,
+            "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+            "reason": "Warms likely follow-up queries from hot recall paths."
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "cadence_seconds": 15,
+          "worker_count": 1,
+          "timeout_seconds": 60,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
+          "priority": "critical",
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true
+        },
+        {
+          "id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": true,
+          "cadence_seconds": 15,
+          "worker_count": 1,
+          "timeout_seconds": 30,
+          "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 16 --min-frequency 2 --top-k 2",
+          "reason": "Keeps repeated recall paths hot across API workers.",
+          "priority": "high",
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false
+        },
+        {
+          "id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": true,
+          "cadence_seconds": 60,
+          "worker_count": 1,
+          "timeout_seconds": 120,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 16 --min-frequency 2 --top-k 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Warms likely follow-up queries from hot recall paths.",
+          "priority": "high",
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true
+        },
+        {
+          "id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "cadence_seconds": 600,
+          "worker_count": 1,
+          "timeout_seconds": 300,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Demotes old unused memories before they compete with current context.",
+          "priority": "normal",
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true
+        },
+        {
+          "id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": true,
+          "cadence_seconds": 600,
+          "worker_count": 1,
+          "timeout_seconds": 300,
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 100000 --namespace-count 64 --deployment staging --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Creates durable higher-level concept memories from active clusters.",
+          "priority": "high",
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true
+        },
+        {
+          "id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "cadence_seconds": 300,
+          "worker_count": 1,
+          "timeout_seconds": 300,
+          "command": "wavemind maintenance --namespace canary:memory-os",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes.",
+          "priority": "normal",
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true
+        },
+        {
+          "id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "cadence_seconds": 120,
+          "worker_count": 1,
+          "timeout_seconds": 120,
+          "command": "wavemind advise --target-memories 100000 --namespace-count 64 --deployment staging --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
+          "priority": "critical",
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false
+        }
+      ],
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ],
+      "ok": false
+    },
+    "next_actions": [
+      "Schedule Memory OS workers with the emitted singleton, lock, and Redis requirements."
+    ]
+  },
+  "next_actions": [
+    "Use this canary as a staging gate before enabling Memory OS CronJobs.",
+    "Run memory-os-admission separately for million-plus production targets; this canary does not unlock 10M/100M scale claims."
+  ]
+}

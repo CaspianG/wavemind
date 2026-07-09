@@ -177,6 +177,17 @@ jobs:
             --output benchmarks/production_admission_results.json \
             --markdown-output benchmarks/PRODUCTION_ADMISSION.md \
             --json
+          python -m wavemind \
+            --db .tmp-memory-os-canary.sqlite3 \
+            memory-os-canary \
+            --target-memories 100000 \
+            --namespace-count 64 \
+            --deployment staging \
+            --write-artifacts \
+            --output benchmarks/memory_os_canary_results.json \
+            --markdown-output benchmarks/MEMORY_OS_CANARY.md \
+            --fail-on-action-required \
+            --json
           python -m wavemind memory-os-admission \
             --target-memories 10000000 \
             --namespace-count 4096 \
@@ -257,6 +268,7 @@ jobs:
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
           cp benchmarks/SCALE_GAP.md site/benchmarks/SCALE_GAP.md
           cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md
+          cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
           cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
@@ -268,6 +280,7 @@ jobs:
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
           cp benchmarks/scale_gap_results.json site/data/scale_gap_results.json
           cp benchmarks/production_admission_results.json site/data/production_admission_results.json
+          cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
@@ -316,6 +329,8 @@ jobs:
             benchmarks/SCALE_GAP.md
             benchmarks/production_admission_results.json
             benchmarks/PRODUCTION_ADMISSION.md
+            benchmarks/memory_os_canary_results.json
+            benchmarks/MEMORY_OS_CANARY.md
             benchmarks/memory_os_admission_results.json
             benchmarks/MEMORY_OS_ADMISSION.md
             docs/benchmark-dashboard.html

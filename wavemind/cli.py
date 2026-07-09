@@ -43,6 +43,10 @@ from .memory_os_admission import (
     evaluate_memory_os_admission,
     render_memory_os_admission_markdown,
 )
+from .memory_os_canary import (
+    render_memory_os_canary_markdown,
+    run_memory_os_canary,
+)
 from .k8s_operator import (
     KubernetesApplyClient,
     WaveMindClusterSpec,
@@ -960,6 +964,52 @@ def build_parser() -> argparse.ArgumentParser:
     )
     memory_os_admission.add_argument("--json", action="store_true")
 
+    memory_os_canary = sub.add_parser(
+        "memory-os-canary",
+        help="Run a staging canary that seeds query audit traffic and verifies Memory OS admission",
+    )
+    memory_os_canary.add_argument("--namespace", default="canary:memory-os")
+    memory_os_canary.add_argument("--deployment", default="staging")
+    memory_os_canary.add_argument("--target-memories", type=int, default=100_000)
+    memory_os_canary.add_argument("--namespace-count", type=int, default=64)
+    memory_os_canary.add_argument("--node-count", type=int, default=3)
+    memory_os_canary.add_argument("--target-qps", type=float, default=100.0)
+    memory_os_canary.add_argument("--target-p99-ms", type=float, default=100.0)
+    memory_os_canary.add_argument("--observed-p99-ms", type=float)
+    memory_os_canary.add_argument("--memory-pressure-threshold", type=int, default=1_000_000)
+    memory_os_canary.add_argument("--audit-limit", type=int, default=512)
+    memory_os_canary.add_argument("--max-hot-queries", type=int, default=16)
+    memory_os_canary.add_argument("--min-frequency", type=int, default=2)
+    memory_os_canary.add_argument("--top-k", type=int, default=2)
+    memory_os_canary.add_argument("--query-repetitions", type=int, default=2)
+    memory_os_canary.add_argument(
+        "--redis-url",
+        default=os.environ.get(
+            "WAVEMIND_REDIS_URL",
+            "redis://redis.example.internal:6379/0",
+        ),
+    )
+    memory_os_canary.add_argument(
+        "--lock-redis-url",
+        default=os.environ.get(
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+            "redis://redis.example.internal:6379/1",
+        ),
+    )
+    memory_os_canary.add_argument("--write-artifacts", action="store_true")
+    memory_os_canary.add_argument("--fail-on-action-required", action="store_true")
+    memory_os_canary.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/memory_os_canary_results.json"),
+    )
+    memory_os_canary.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MEMORY_OS_CANARY.md"),
+    )
+    memory_os_canary.add_argument("--json", action="store_true")
+
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
     imp.add_argument("--namespace", default="default")
@@ -1474,6 +1524,34 @@ def print_memory_os_admission(payload: dict[str, object]) -> None:
         print(f"warnings: {', '.join(summary['warning_ids'])}")
     if summary.get("missing_runtime_env"):
         print(f"missing_runtime_env: {', '.join(summary['missing_runtime_env'])}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
+def print_memory_os_canary(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"namespace: {payload['namespace']}")
+    print(f"target_memories: {payload['target_memories']}")
+    print(f"replayed_queries: {payload['replayed_query_count']}")
+    print(f"hot_query_count: {summary['hot_query_count']}")
+    print(f"prewarm_warmed: {summary['prewarm_warmed']}")
+    print(f"predictive_warmed: {summary['predictive_warmed']}")
+    print(f"priority_predictions: {summary['priority_predictions']}")
+    print(f"expired_purged: {summary['expired_purged']}")
+    print(f"admission: {summary['admission_status']}")
+    print(f"admitted: {str(summary['admitted']).lower()}")
+    print(
+        "checks: "
+        f"{summary['passed_checks']}/{summary['check_count']} passed"
+    )
+    if summary.get("failed_check_ids"):
+        print(f"failed_checks: {', '.join(summary['failed_check_ids'])}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
     next_actions = payload.get("next_actions") or []
     if next_actions:
         print("next_actions:")
@@ -2731,6 +2809,48 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_blocked and not payload["admitted"]:
             return 2
         return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "memory-os-canary":
+        payload = run_memory_os_canary(
+            mind,
+            namespace=args.namespace,
+            deployment=args.deployment,
+            target_memories=args.target_memories,
+            namespace_count=args.namespace_count,
+            node_count=args.node_count,
+            target_qps=args.target_qps,
+            target_p99_ms=args.target_p99_ms,
+            observed_p99_ms=args.observed_p99_ms,
+            memory_pressure_threshold=args.memory_pressure_threshold,
+            audit_limit=args.audit_limit,
+            max_hot_queries=args.max_hot_queries,
+            min_frequency=args.min_frequency,
+            top_k=args.top_k,
+            query_repetitions=args.query_repetitions,
+            redis_url=args.redis_url,
+            lock_redis_url=args.lock_redis_url,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_memory_os_canary_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_memory_os_canary(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["status"] != "pass":
+            return 2
+        return 0 if payload["status"] in {"pass", "action_required"} else 1
 
     if args.command == "memory-os":
         cache = None
