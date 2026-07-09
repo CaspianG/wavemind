@@ -228,6 +228,12 @@ jobs:
             --output benchmarks/serverless_admission_results.json \
             --markdown-output benchmarks/SERVERLESS_ADMISSION.md \
             --json
+          python -m wavemind multimodal-admission \
+            --allow-plan-only \
+            --write-artifacts \
+            --output benchmarks/multimodal_admission_results.json \
+            --markdown-output benchmarks/MULTIMODAL_ADMISSION.md \
+            --json
           python -m wavemind \
             --db .tmp-memory-os-canary.sqlite3 \
             memory-os-canary \
@@ -343,6 +349,7 @@ jobs:
           cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md
           cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md
           cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md
+          cp benchmarks/MULTIMODAL_ADMISSION.md site/benchmarks/MULTIMODAL_ADMISSION.md
           cp benchmarks/AGENT_IMPACT.md site/benchmarks/AGENT_IMPACT.md
           cp benchmarks/STRUCTURED_MEMORY.md site/benchmarks/STRUCTURED_MEMORY.md
           cp benchmarks/MEMORY_OS_INTELLIGENCE.md site/benchmarks/MEMORY_OS_INTELLIGENCE.md
@@ -363,6 +370,7 @@ jobs:
           cp benchmarks/production_admission_results.json site/data/production_admission_results.json
           cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json
           cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json
+          cp benchmarks/multimodal_admission_results.json site/data/multimodal_admission_results.json
           cp benchmarks/agent_impact_results.json site/data/agent_impact_results.json
           cp benchmarks/structured_memory_results.json site/data/structured_memory_results.json
           cp benchmarks/memory_os_intelligence_results.json site/data/memory_os_intelligence_results.json
@@ -431,6 +439,8 @@ jobs:
             benchmarks/ACTIVE_ACTIVE_ADMISSION.md
             benchmarks/serverless_admission_results.json
             benchmarks/SERVERLESS_ADMISSION.md
+            benchmarks/multimodal_admission_results.json
+            benchmarks/MULTIMODAL_ADMISSION.md
             benchmarks/cost_efficiency_results.json
             benchmarks/COST_EFFICIENCY.md
             benchmarks/memory_os_canary_results.json

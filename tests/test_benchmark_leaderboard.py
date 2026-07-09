@@ -152,6 +152,10 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "benchmarks/memory_os_admission_results.json" in workflow
     assert "site/benchmarks/MEMORY_OS_ADMISSION.md" in workflow
     assert "site/data/memory_os_admission_results.json" in workflow
+    assert "benchmarks/MULTIMODAL_ADMISSION.md" in workflow
+    assert "benchmarks/multimodal_admission_results.json" in workflow
+    assert "site/benchmarks/MULTIMODAL_ADMISSION.md" in workflow
+    assert "site/data/multimodal_admission_results.json" in workflow
     assert "tests/test_production_evidence_preflight.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "validate_benchmark_artifacts.py" in workflow

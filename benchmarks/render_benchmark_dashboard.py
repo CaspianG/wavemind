@@ -247,6 +247,53 @@ def _structured_memory_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _multimodal_admission_panel(status: dict[str, Any]) -> str:
+    admission = status.get("multimodal_admission", {}) if isinstance(status, dict) else {}
+    if not isinstance(admission, dict) or not admission:
+        return ""
+    summary = admission.get("summary") if isinstance(admission.get("summary"), dict) else {}
+    required = (
+        admission.get("required_evidence")
+        if isinstance(admission.get("required_evidence"), dict)
+        else {}
+    )
+    requested = (
+        admission.get("requested_evidence")
+        if isinstance(admission.get("requested_evidence"), dict)
+        else {}
+    )
+    rows = [
+        ("Status", admission.get("status", "missing")),
+        ("Admitted", str(admission.get("admitted", False)).lower()),
+        ("Structured contract", summary.get("structured_status", "missing")),
+        ("Requested evidence", summary.get("requested_evidence_status", "missing")),
+        ("Required artifact", required.get("artifact", "")),
+        ("External modalities", summary.get("external_modality_count", 0)),
+        ("External payloads", summary.get("external_payload_count", 0)),
+        ("External queries", summary.get("external_query_count", 0)),
+        ("Object store", requested.get("object_store", "")),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Multimodal Admission</h2>"
+        "<p>Production multimodal claims stay locked until real external image, "
+        "audio, video, and 3D encoder evidence proves object-store persistence, "
+        "cross-modal routing, provenance, latency, and error-rate thresholds.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/MULTIMODAL_ADMISSION.md">Read the multimodal admission report</a></p>'
+        "</section>"
+    )
+
+
 def _memory_os_intelligence_panel(status: dict[str, Any]) -> str:
     memory_os = status.get("memory_os_intelligence", {}) if isinstance(status, dict) else {}
     if not isinstance(memory_os, dict) or not memory_os:
@@ -476,6 +523,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_agent_impact_panel(status)}
 
   {_structured_memory_panel(status)}
+
+  {_multimodal_admission_panel(status)}
 
   {_memory_os_intelligence_panel(status)}
 

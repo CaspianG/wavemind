@@ -51,6 +51,11 @@ from .memory_os_canary import (
     render_memory_os_canary_markdown,
     run_memory_os_canary,
 )
+from .multimodal_admission import (
+    evaluate_multimodal_admission,
+    render_multimodal_admission_markdown,
+    validate_external_multimodal_evidence,
+)
 from .jobs import (
     ActiveActivePairSyncReport,
     ActiveActiveSyncJobReport,
@@ -364,6 +369,7 @@ __all__ = [
     "build_scale_plan",
     "build_scale_gap_manifest",
     "evaluate_active_active_admission",
+    "evaluate_multimodal_admission",
     "evaluate_serverless_admission",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
@@ -400,6 +406,7 @@ __all__ = [
     "render_active_active_admission_markdown",
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
+    "render_multimodal_admission_markdown",
     "run_control_plane_consensus_profile",
     "run_memory_os_canary",
     "production_scale_profile_names",
@@ -411,5 +418,6 @@ __all__ = [
     "table_payload",
     "timestamp_epoch",
     "validate_precomputed_cross_modal_contract",
+    "validate_external_multimodal_evidence",
     "validate_postgres_pitr_commands",
 ]

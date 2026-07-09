@@ -62,6 +62,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind serverless-admission" in workflow
     assert "--output benchmarks/serverless_admission_results.json" in workflow
     assert "--markdown-output benchmarks/SERVERLESS_ADMISSION.md" in workflow
+    assert "python -m wavemind multimodal-admission" in workflow
+    assert "--output benchmarks/multimodal_admission_results.json" in workflow
+    assert "--markdown-output benchmarks/MULTIMODAL_ADMISSION.md" in workflow
     assert "python -m wavemind \\\n            --db .tmp-memory-os-canary.sqlite3" in workflow
     assert "memory-os-canary" in workflow
     assert "--output benchmarks/memory_os_canary_results.json" in workflow
@@ -82,6 +85,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
         "serverless-admission"
     )
     assert workflow.index("serverless-admission") < workflow.index("memory-os-canary")
+    assert workflow.index("serverless-admission") < workflow.index("multimodal-admission")
+    assert workflow.index("multimodal-admission") < workflow.index("memory-os-canary")
     assert workflow.index("memory-os-canary") < workflow.index("memory-os-admission")
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
@@ -135,6 +140,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json" in workflow
     assert "cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md" in workflow
     assert "cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json" in workflow
+    assert "cp benchmarks/MULTIMODAL_ADMISSION.md site/benchmarks/MULTIMODAL_ADMISSION.md" in workflow
+    assert "cp benchmarks/multimodal_admission_results.json site/data/multimodal_admission_results.json" in workflow
     assert "cp benchmarks/AGENT_IMPACT.md site/benchmarks/AGENT_IMPACT.md" in workflow
     assert "cp benchmarks/agent_impact_results.json site/data/agent_impact_results.json" in workflow
     assert "cp benchmarks/STRUCTURED_MEMORY.md site/benchmarks/STRUCTURED_MEMORY.md" in workflow

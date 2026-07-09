@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-09T10:30:33Z",
+  "generated_at": "2026-07-09T11:30:45Z",
   "source_ref": "040e94ca6594",
   "workflow_run_id": null,
   "refresh_profile": "local",
@@ -39,10 +39,10 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T10:30:33Z",
-    "max_age_days": 3650.0,
-    "source_count": 23,
-    "fresh_count": 23,
+    "checked_at": "2026-07-09T11:30:45Z",
+    "max_age_days": 8.0,
+    "source_count": 24,
+    "fresh_count": 24,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -56,14 +56,14 @@
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:22:38Z",
-        "age_days": 0.005497685185185185,
+        "age_days": 0.04730324074074074,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-09T10:30:33Z",
+        "timestamp": "2026-07-09T11:30:45Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -72,7 +72,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:21:56Z",
-        "age_days": 0.005983796296296296,
+        "age_days": 0.047789351851851854,
         "status": "pass"
       },
       {
@@ -80,7 +80,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:28Z",
-        "age_days": 0.0070023148148148145,
+        "age_days": 0.04880787037037037,
         "status": "pass"
       },
       {
@@ -88,7 +88,7 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:41Z",
-        "age_days": 0.006851851851851852,
+        "age_days": 0.048657407407407406,
         "status": "pass"
       },
       {
@@ -96,7 +96,7 @@
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:23:34Z",
-        "age_days": 0.004849537037037037,
+        "age_days": 0.046655092592592595,
         "status": "pass"
       },
       {
@@ -104,7 +104,7 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:23:34Z",
-        "age_days": 0.004849537037037037,
+        "age_days": 0.046655092592592595,
         "status": "pass"
       },
       {
@@ -112,7 +112,7 @@
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:41Z",
-        "age_days": 0.006851851851851852,
+        "age_days": 0.048657407407407406,
         "status": "pass"
       },
       {
@@ -120,7 +120,7 @@
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:21:55Z",
-        "age_days": 0.0059953703703703705,
+        "age_days": 0.04780092592592593,
         "status": "pass"
       },
       {
@@ -128,7 +128,7 @@
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:16Z",
-        "age_days": 0.007141203703703703,
+        "age_days": 0.04894675925925926,
         "status": "pass"
       },
       {
@@ -136,7 +136,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.006678240740740741,
+        "age_days": 0.048483796296296296,
         "status": "pass"
       },
       {
@@ -144,7 +144,15 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.006678240740740741,
+        "age_days": 0.048483796296296296,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/multimodal_admission_results.json",
+        "schema": "wavemind.multimodal_admission.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-09T11:30:44Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
@@ -152,7 +160,7 @@
         "schema": "wavemind.memory_os_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T00:40:28Z",
-        "age_days": 0.40978009259259257,
+        "age_days": 0.45158564814814817,
         "status": "pass"
       },
       {
@@ -160,7 +168,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T01:06:28Z",
-        "age_days": 0.391724537037037,
+        "age_days": 0.4335300925925926,
         "status": "pass"
       },
       {
@@ -168,7 +176,7 @@
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:45Z",
-        "age_days": 0.7963888888888889,
+        "age_days": 0.8381944444444445,
         "status": "pass"
       },
       {
@@ -176,7 +184,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T14:43:22Z",
-        "age_days": 0.8244328703703704,
+        "age_days": 0.8662384259259259,
         "status": "pass"
       },
       {
@@ -184,7 +192,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T17:24:13Z",
-        "age_days": 0.7127314814814815,
+        "age_days": 0.754537037037037,
         "status": "pass"
       },
       {
@@ -192,7 +200,7 @@
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T08:38:16Z",
-        "age_days": 0.07797453703703704,
+        "age_days": 0.11978009259259259,
         "status": "pass"
       },
       {
@@ -200,7 +208,7 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T06:50:09Z",
-        "age_days": 0.15305555555555556,
+        "age_days": 0.19486111111111112,
         "status": "pass"
       },
       {
@@ -208,7 +216,7 @@
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T20:13:52Z",
-        "age_days": 0.5949189814814815,
+        "age_days": 0.636724537037037,
         "status": "pass"
       },
       {
@@ -216,7 +224,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T20:13:52Z",
-        "age_days": 0.5949189814814815,
+        "age_days": 0.636724537037037,
         "status": "pass"
       },
       {
@@ -224,7 +232,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T06:50:09Z",
-        "age_days": 0.15305555555555556,
+        "age_days": 0.19486111111111112,
         "status": "pass"
       },
       {
@@ -232,7 +240,7 @@
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T08:38:16Z",
-        "age_days": 0.07797453703703704,
+        "age_days": 0.11978009259259259,
         "status": "pass"
       }
     ]
@@ -268,9 +276,9 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T10:30:33Z",
-    "age_days": 0.005504556354166666,
-    "max_age_days": 3650.0,
+    "checked_at": "2026-07-09T11:30:45Z",
+    "age_days": 0.047310453090277774,
+    "max_age_days": 8.0,
     "errors": []
   },
   "production_readiness": {
@@ -397,6 +405,105 @@
     "asset_manifest_verified": true,
     "claim_boundary": "Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.",
     "source": "benchmarks/structured_memory_results.json"
+  },
+  "multimodal_admission": {
+    "schema": "wavemind.multimodal_admission.v1",
+    "status": "plan_only",
+    "admitted": false,
+    "claim_boundary": "external_multimodal_encoder_evidence_required",
+    "summary": {
+      "status": "plan_only",
+      "admitted": false,
+      "structured_status": "pass",
+      "structured_pass": true,
+      "requested_evidence_status": "action_required",
+      "required_artifact": "benchmarks/multimodal_external_encoder_results.json",
+      "structured_modality_count": 7,
+      "external_modality_count": 0,
+      "external_payload_count": 0,
+      "external_query_count": 0,
+      "blocking_issue_count": 2,
+      "warning_count": 0
+    },
+    "structured_contract": {
+      "status": "pass",
+      "passed": true,
+      "schema": "wavemind.structured_memory_report.v1",
+      "artifact": "benchmarks/structured_memory_results.json",
+      "claim_boundary": "Structured-memory rows come from the checked-in scale-readiness artifact. They prove typed payload routing, provenance, persistence, temporal recall, and graph traversal on the deterministic fixture; they do not claim full production multimodal model quality.",
+      "summary": {
+        "status": "pass",
+        "modality_count": 7,
+        "modalities": [
+          "image",
+          "audio",
+          "table",
+          "event",
+          "video",
+          "3d",
+          "graph"
+        ],
+        "query_count": 7,
+        "precision_at_1": 1.0,
+        "cross_modal_precision_at_1": 1.0,
+        "cross_modal_vectors_persisted_rate": 1.0,
+        "cross_modal_provenance_rate": 1.0,
+        "precomputed_vector_precision_at_1": 1.0,
+        "precomputed_vector_persisted_rate": 1.0,
+        "encoder_contract_ok": true,
+        "encoder_contract_target_precision_at_1": 1.0,
+        "encoder_contract_global_precision_at_1": 1.0,
+        "encoder_contract_margin": 0.8113185907521259,
+        "encoder_contract_min_required_margin": 0.2,
+        "encoder_health_ok": true,
+        "encoder_health_global_precision_at_1": 1.0,
+        "encoder_health_target_modality_routing_rate": 1.0,
+        "encoder_health_dimension_match_rate": 1.0,
+        "encoder_health_payload_encode_p95_ms": 4.092629975639284,
+        "encoder_health_query_encode_p95_ms": 1.4515499933622777,
+        "encoder_health_margin": 0.24988913536071777,
+        "encoder_health_min_required_margin": 0.01,
+        "temporal_event_precision_at_1": 1.0,
+        "temporal_event_persistence_rate": 1.0,
+        "temporal_event_provenance_rate": 1.0,
+        "knowledge_graph_precision_at_1": 1.0,
+        "knowledge_graph_path_precision_at_1": 1.0,
+        "knowledge_graph_persistence_rate": 1.0,
+        "knowledge_graph_provenance_rate": 1.0,
+        "avg_latency_ms": 1.0470999737403222,
+        "cross_modal_avg_latency_ms": 2.941685728728771,
+        "temporal_event_avg_latency_ms": 1.102049951441586,
+        "knowledge_graph_avg_latency_ms": 1.4402500237338245,
+        "asset_manifest_verified": true
+      }
+    },
+    "required_evidence": {
+      "id": "external_multimodal_encoder",
+      "title": "External multimodal encoder and object-store benchmark",
+      "status": "action_required",
+      "artifact": "benchmarks/multimodal_external_encoder_results.json",
+      "evidence": "missing external multimodal encoder evidence",
+      "issues": [
+        "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
+      ],
+      "claim_unlocked": "Production multimodal encoder quality, cross-modal recall, object-store persistence, and latency SLO."
+    },
+    "requested_evidence": {
+      "status": "action_required",
+      "evidence": "missing external multimodal encoder evidence",
+      "issues": [
+        "missing required artifact: benchmarks/multimodal_external_encoder_results.json"
+      ],
+      "checks": [],
+      "min_modalities": 7,
+      "min_payloads": 1000,
+      "min_queries": 200,
+      "min_precision_at_1": 0.9,
+      "min_cross_modal_precision_at_1": 0.9,
+      "max_query_p99_ms": 250.0,
+      "max_encode_p95_ms": 100.0,
+      "require_object_store": true
+    }
   },
   "memory_os_intelligence": {
     "schema": "wavemind.memory_os_intelligence_report.v1",
@@ -2323,6 +2430,7 @@
     "benchmarks/cluster_admission_results.json",
     "benchmarks/active_active_admission_results.json",
     "benchmarks/serverless_admission_results.json",
+    "benchmarks/multimodal_admission_results.json",
     "benchmarks/memory_os_admission_results.json",
     "benchmarks/memory_os_canary_results.json",
     "benchmarks/production_evidence_dispatch_results.json",

@@ -276,6 +276,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "serverless_admission_results.json" in readme
     assert "SERVERLESS_ADMISSION.md" in readme
     assert "wavemind serverless-admission" in readme
+    assert "multimodal_admission_results.json" in readme
+    assert "MULTIMODAL_ADMISSION.md" in readme
+    assert "wavemind multimodal-admission" in readme
     assert "memory_os_admission_results.json" in readme
     assert "MEMORY_OS_ADMISSION.md" in readme
     assert "wavemind memory-os-admission" in readme
@@ -351,6 +354,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "active-active-admission --allow-plan-only" in benchmark_brief
     assert "SERVERLESS_ADMISSION.md" in benchmark_brief
     assert "serverless-admission --allow-plan-only" in benchmark_brief
+    assert "MULTIMODAL_ADMISSION.md" in benchmark_brief
+    assert "multimodal-admission --allow-plan-only" in benchmark_brief
     assert "MEMORY_OS_ADMISSION.md" in benchmark_brief
     assert "memory-os-admission --target-memories" in benchmark_brief
     assert "MEMORY_OS_CANARY.md" in benchmark_brief
@@ -358,6 +363,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production-admission" in roadmap
     assert "active-active-admission" in roadmap
     assert "serverless-admission" in roadmap
+    assert "multimodal-admission" in roadmap
     assert "memory-os-admission" in roadmap
     assert "memory-os-canary" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
@@ -386,6 +392,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind serverless-admission" in leaderboard_workflow
     assert "benchmarks/serverless_admission_results.json" in leaderboard_workflow
     assert "benchmarks/SERVERLESS_ADMISSION.md" in leaderboard_workflow
+    assert "wavemind multimodal-admission" in leaderboard_workflow
+    assert "benchmarks/multimodal_admission_results.json" in leaderboard_workflow
+    assert "benchmarks/MULTIMODAL_ADMISSION.md" in leaderboard_workflow
     assert "wavemind memory-os-admission" in leaderboard_workflow
     assert "benchmarks/memory_os_admission_results.json" in leaderboard_workflow
     assert "benchmarks/MEMORY_OS_ADMISSION.md" in leaderboard_workflow
@@ -415,6 +424,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/ACTIVE_ACTIVE_ADMISSION.md").exists()
     assert Path("benchmarks/serverless_admission_results.json").exists()
     assert Path("benchmarks/SERVERLESS_ADMISSION.md").exists()
+    assert Path("benchmarks/multimodal_admission_results.json").exists()
+    assert Path("benchmarks/MULTIMODAL_ADMISSION.md").exists()
     assert Path("benchmarks/memory_os_admission_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_ADMISSION.md").exists()
     assert Path("benchmarks/memory_os_canary_results.json").exists()

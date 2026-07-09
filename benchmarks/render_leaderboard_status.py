@@ -64,6 +64,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    multimodal_admission = _load_json(
+        root / "benchmarks" / "multimodal_admission_results.json",
+        load_errors,
+        required=False,
+    )
     memory_os_admission = _load_json(
         root / "benchmarks" / "memory_os_admission_results.json",
         load_errors,
@@ -144,6 +149,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/cluster_admission_results.json": cluster_admission,
         "benchmarks/active_active_admission_results.json": active_active_admission,
         "benchmarks/serverless_admission_results.json": serverless_admission,
+        "benchmarks/multimodal_admission_results.json": multimodal_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
@@ -224,6 +230,16 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "agent_quality": _agent_quality_status(agent_coherence),
         "agent_impact": _agent_impact_status(agent_impact),
         "structured_memory": _structured_memory_status(structured_memory),
+        "multimodal_admission": {
+            "schema": multimodal_admission.get("schema"),
+            "status": multimodal_admission.get("status", "missing"),
+            "admitted": multimodal_admission.get("admitted", False),
+            "claim_boundary": multimodal_admission.get("claim_boundary", ""),
+            "summary": multimodal_admission.get("summary", {}),
+            "structured_contract": multimodal_admission.get("structured_contract", {}),
+            "required_evidence": multimodal_admission.get("required_evidence", {}),
+            "requested_evidence": multimodal_admission.get("requested_evidence", {}),
+        },
         "memory_os_intelligence": _memory_os_intelligence_status(memory_os_intelligence),
         "cluster_autoscale": _cluster_autoscale_status(cluster_autoscale),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),

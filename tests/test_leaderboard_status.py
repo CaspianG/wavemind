@@ -69,6 +69,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/agent_coherence_results.json",
         "benchmarks/agent_impact_results.json",
         "benchmarks/structured_memory_results.json",
+        "benchmarks/multimodal_admission_results.json",
         "benchmarks/memory_os_intelligence_results.json",
         "benchmarks/cluster_autoscale_results.json",
         "benchmarks/scale_readiness_results.json",
@@ -332,6 +333,25 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "hot-query-signal" in {
         row["id"] for row in payload["memory_os_admission"]["requirements"]
     }
+    assert payload["multimodal_admission"]["schema"] == (
+        "wavemind.multimodal_admission.v1"
+    )
+    assert payload["multimodal_admission"]["status"] in {
+        "admitted",
+        "plan_only",
+        "blocked",
+    }
+    assert payload["multimodal_admission"]["admitted"] is False
+    assert payload["multimodal_admission"]["claim_boundary"] == (
+        "external_multimodal_encoder_evidence_required"
+    )
+    assert payload["multimodal_admission"]["summary"]["structured_status"] == "pass"
+    assert payload["multimodal_admission"]["required_evidence"]["id"] == (
+        "external_multimodal_encoder"
+    )
+    assert payload["multimodal_admission"]["requested_evidence"]["status"] == (
+        "action_required"
+    )
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["production_scale_run_plan"]["total_profiles"] == 5
     assert payload["production_scale_run_plan"]["target_memories_total"] == 180_000_000
@@ -377,6 +397,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
     assert "benchmarks/agent_impact_results.json" in payload["source_files"]
     assert "benchmarks/structured_memory_results.json" in payload["source_files"]
+    assert "benchmarks/multimodal_admission_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_intelligence_results.json" in payload["source_files"]
     assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
@@ -433,6 +454,9 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     )
     assert payload["cost_efficiency"]["schema"] == "wavemind.cost_efficiency_leaderboard.v1"
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
+    assert payload["multimodal_admission"]["schema"] == (
+        "wavemind.multimodal_admission.v1"
+    )
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["memory_os_intelligence"]["schema"] == (
         "wavemind.memory_os_intelligence_report.v1"

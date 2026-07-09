@@ -253,6 +253,12 @@ policy matters more than raw vector-database scale:
   required artifact, and next GitHub Actions command, while
   `--fail-on-blocked` keeps hosted/serverless rollout locked until
   `deploy/serverless/observed-telemetry.remote.json` passes.
+- `wavemind multimodal-admission --allow-plan-only` now publishes the
+  deployment-facing multimodal admission contract. It uses the structured-memory
+  report as the local API contract, then keeps production image/audio/video/3D
+  claims locked until `benchmarks/multimodal_external_encoder_results.json`
+  proves real external encoder quality, object-store persistence, provenance,
+  p99 query latency, encode p95, and error-rate thresholds.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
   envelope: 32768 namespace buckets, weighted rendezvous zone-aware placement,
   128 nodes, 8 zones, replication factor 3, node/zone-loss availability `1.000`,
@@ -738,7 +744,8 @@ Enterprise requirements:
 - Hosted managed service.
 - Production-grade multimodal memory beyond deterministic descriptors:
   benchmarked CLIP image/text runs, audio/video/3D encoders, larger public
-  retrieval tests, and encoder health monitoring.
+  retrieval tests, encoder health monitoring, and admitted external
+  encoder/object-store evidence through `wavemind multimodal-admission`.
 - Production-grade graph/field memory with measurable excitation,
   inhibition, decay, and consolidation behavior.
 

@@ -43,6 +43,10 @@ from .memory_os_admission import (
     evaluate_memory_os_admission,
     render_memory_os_admission_markdown,
 )
+from .multimodal_admission import (
+    evaluate_multimodal_admission,
+    render_multimodal_admission_markdown,
+)
 from .memory_os_canary import (
     render_memory_os_canary_markdown,
     run_memory_os_canary,
@@ -711,6 +715,52 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/SERVERLESS_ADMISSION.md"),
     )
     serverless_admission.add_argument("--json", action="store_true")
+
+    multimodal_admission = sub.add_parser(
+        "multimodal-admission",
+        help="Gate production multimodal memory claims against external encoder evidence",
+    )
+    multimodal_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    multimodal_admission.add_argument("--deployment", default="production")
+    multimodal_admission.add_argument("--min-modalities", type=int, default=7)
+    multimodal_admission.add_argument("--min-payloads", type=int, default=1000)
+    multimodal_admission.add_argument("--min-queries", type=int, default=200)
+    multimodal_admission.add_argument("--min-precision-at-1", type=float, default=0.90)
+    multimodal_admission.add_argument(
+        "--min-cross-modal-precision-at-1",
+        type=float,
+        default=0.90,
+    )
+    multimodal_admission.add_argument("--max-query-p99-ms", type=float, default=250.0)
+    multimodal_admission.add_argument("--max-encode-p95-ms", type=float, default=100.0)
+    multimodal_admission.add_argument(
+        "--no-require-object-store",
+        action="store_true",
+        help="Do not require remote object-store evidence. Intended for development only.",
+    )
+    multimodal_admission.add_argument("--allow-plan-only", action="store_true")
+    multimodal_admission.add_argument("--write-artifacts", action="store_true")
+    multimodal_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless production multimodal rollout is admitted.",
+    )
+    multimodal_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/multimodal_admission_results.json"),
+    )
+    multimodal_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MULTIMODAL_ADMISSION.md"),
+    )
+    multimodal_admission.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1725,6 +1775,42 @@ def print_serverless_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_multimodal_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    print(f"structured_status: {summary['structured_status']}")
+    print(f"requested_evidence_status: {summary['requested_evidence_status']}")
+    print(f"required_artifact: {summary['required_artifact']}")
+    print(f"min_modalities: {payload['min_modalities']}")
+    print(f"min_payloads: {payload['min_payloads']}")
+    print(f"min_queries: {payload['min_queries']}")
+    print(f"min_precision_at_1: {payload['min_precision_at_1']}")
+    print(
+        "min_cross_modal_precision_at_1: "
+        f"{payload['min_cross_modal_precision_at_1']}"
+    )
+    print(f"max_query_p99_ms: {payload['max_query_p99_ms']}")
+    print(f"max_encode_p95_ms: {payload['max_encode_p95_ms']}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+    warnings = payload.get("warnings") or []
+    if warnings:
+        print("warnings:")
+        for warning in warnings:
+            print(f"- {warning}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_memory_os_admission(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"status: {payload['status']}")
@@ -2590,6 +2676,42 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_serverless_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "multimodal-admission":
+        payload = evaluate_multimodal_admission(
+            args.root,
+            deployment=args.deployment,
+            min_modalities=args.min_modalities,
+            min_payloads=args.min_payloads,
+            min_queries=args.min_queries,
+            min_precision_at_1=args.min_precision_at_1,
+            min_cross_modal_precision_at_1=args.min_cross_modal_precision_at_1,
+            max_query_p99_ms=args.max_query_p99_ms,
+            max_encode_p95_ms=args.max_encode_p95_ms,
+            require_object_store=not args.no_require_object_store,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_multimodal_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_multimodal_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")
