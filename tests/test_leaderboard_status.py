@@ -68,6 +68,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/production_scale_run_plan.json",
         "benchmarks/agent_coherence_results.json",
         "benchmarks/scale_readiness_results.json",
+        "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
     assert payload["benchmark_matrix"]["schema"] == "wavemind.benchmark_matrix.v1"
     assert payload["benchmark_matrix"]["implemented_count"] >= 20
@@ -204,6 +205,20 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         == "faiss-ivfpq-50m"
     )
     assert "qdrant-sharded-100m" in payload["production_scale_run_plan"]["profiles"]
+    assert payload["cost_efficiency"]["schema"] == "wavemind.cost_efficiency_leaderboard.v1"
+    assert payload["cost_efficiency"]["measured_row_count"] >= 10
+    assert payload["cost_efficiency"]["planned_row_count"] == 5
+    assert payload["cost_efficiency"]["measured_slo_pass_count"] >= 1
+    assert payload["cost_efficiency"]["measured_valid_cost_count"] >= 1
+    assert payload["cost_efficiency"]["planned_valid_cost_count"] == 5
+    assert "1m" in payload["cost_efficiency"]["best_measured_by_target_class"]
+    assert payload["cost_efficiency"]["best_planned_by_target_class"]["50m"] == (
+        "faiss-ivfpq-50m"
+    )
+    assert "qdrant-sharded-100m" in payload["cost_efficiency"]["planned_frontier_profiles"]
+    assert "Planned rows are capacity and cost contracts only" in (
+        payload["cost_efficiency"]["claim_boundary"]
+    )
     assert {
         "external_http_active_active",
         "qdrant_sharded_10m_service",
@@ -219,6 +234,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/active_active_admission_results.json" in payload["source_files"]
     assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
+    assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -263,5 +279,6 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["serverless_admission"]["schema"] == (
         "wavemind.serverless_admission.v1"
     )
+    assert payload["cost_efficiency"]["schema"] == "wavemind.cost_efficiency_leaderboard.v1"
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"

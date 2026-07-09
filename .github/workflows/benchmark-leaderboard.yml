@@ -131,6 +131,9 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/cost_efficiency_leaderboard.py \
+            --output benchmarks/cost_efficiency_results.json \
+            --markdown-output benchmarks/COST_EFFICIENCY.md
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
@@ -152,6 +155,9 @@ jobs:
             --write-artifact \
             --output benchmarks/production_scale_run_plan.json \
             --json
+          python benchmarks/cost_efficiency_leaderboard.py \
+            --output benchmarks/cost_efficiency_results.json \
+            --markdown-output benchmarks/COST_EFFICIENCY.md
           python -m wavemind production-evidence-dispatch \
             --write-artifacts \
             --output benchmarks/production_evidence_dispatch_results.json \
@@ -219,6 +225,9 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/cost_efficiency_leaderboard.py \
+            --output benchmarks/cost_efficiency_results.json \
+            --markdown-output benchmarks/COST_EFFICIENCY.md
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
@@ -238,6 +247,7 @@ jobs:
             tests/test_benchmark_charts.py \
             tests/test_benchmark_dashboard.py \
             tests/test_leaderboard_status.py \
+            tests/test_cost_efficiency_leaderboard.py \
             tests/test_benchmark_artifact_audit.py \
             tests/test_agent_coherence_benchmark.py \
             tests/test_dynamic_memory_benchmark.py \
@@ -282,6 +292,7 @@ jobs:
           cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md
           cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md
           cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md
+          cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md
           cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
@@ -296,6 +307,7 @@ jobs:
           cp benchmarks/production_admission_results.json site/data/production_admission_results.json
           cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json
           cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json
+          cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json
           cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
@@ -349,6 +361,8 @@ jobs:
             benchmarks/ACTIVE_ACTIVE_ADMISSION.md
             benchmarks/serverless_admission_results.json
             benchmarks/SERVERLESS_ADMISSION.md
+            benchmarks/cost_efficiency_results.json
+            benchmarks/COST_EFFICIENCY.md
             benchmarks/memory_os_canary_results.json
             benchmarks/MEMORY_OS_CANARY.md
             benchmarks/memory_os_admission_results.json

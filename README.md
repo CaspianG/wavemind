@@ -1855,13 +1855,15 @@ WaveMind tracks benchmarks in two layers:
 Machine-readable benchmark matrix: `benchmarks/benchmark_matrix_results.json`.
 Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/BENCHMARK_REPORT.md).
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
+Cost-efficiency leaderboard: [`benchmarks/COST_EFFICIENCY.md`](benchmarks/COST_EFFICIENCY.md).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/data/leaderboard-status.json).
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
-`agent_quality`, `memory_os_policy`, and `production_evidence_dispatch`
+`agent_quality`, `memory_os_policy`, `production_evidence_dispatch`, and
+`cost_efficiency`
 sections, so dashboards can verify the weekly GitHub Pages publication path,
 detect stale or missing public evidence, track task success, stale-error
 suppression, context savings, active Memory OS policy decisions, and the exact
@@ -1927,6 +1929,7 @@ production.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
+cost-efficiency leaderboard,
 production-readiness report, the strict production-evidence report, the
 production-evidence dispatch plan, the combined production-evidence bundle, and
 the production-admission report,
@@ -1978,6 +1981,7 @@ public claim boundaries stable:
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
+| Cost-efficiency leaderboard | Cost, latency, recall, SLO, and memory-count evidence are ranked across measured production-load artifacts and plan-only 10M/50M/100M contracts. | `benchmarks/cost_efficiency_results.json`, `benchmarks/COST_EFFICIENCY.md`, `benchmarks/cost_efficiency_leaderboard.py` | Planned rows are capacity/cost contracts only; they do not unlock 50M/100M production latency or recall claims until matching result artifacts pass strict evidence. |
 | Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M sharded Qdrant status is `plan_only`, not admitted: the run contract exists, but `production_streaming_load_qdrant_sharded_100m_results.json` is still missing. |
 | Active-active admission | Deployment-facing gate for remote multi-region active-active rollout. It admits only when the strict external HTTP active-active artifact passes; local/loopback runs remain development evidence. | `benchmarks/active_active_admission_results.json`, `benchmarks/ACTIVE_ACTIVE_ADMISSION.md`, `wavemind active-active-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `benchmarks/external_http_active_active_results.json` is still missing and remote region env is not configured. |
 | Serverless admission | Deployment-facing gate for managed/serverless rollout. It admits only when remote deployed API nodes produce strict telemetry; loopback telemetry remains development evidence. | `benchmarks/serverless_admission_results.json`, `benchmarks/SERVERLESS_ADMISSION.md`, `wavemind serverless-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `deploy/serverless/observed-telemetry.remote.json` is still missing and `WAVEMIND_SERVERLESS_NODES` is not configured. |

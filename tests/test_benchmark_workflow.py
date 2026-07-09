@@ -19,6 +19,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/cost_efficiency_leaderboard.py" in workflow
+    assert "benchmarks/cost_efficiency_results.json" in workflow
+    assert "benchmarks/COST_EFFICIENCY.md" in workflow
     assert "benchmarks/production_evidence_gate.py" in workflow
     assert "--output benchmarks/production_evidence_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE.md" in workflow
@@ -69,6 +72,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output docs/data/leaderboard-status.json" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
     assert "tests/test_leaderboard_status.py" in workflow
+    assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_production_evidence_dispatch.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
@@ -103,6 +107,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json" in workflow
     assert "cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md" in workflow
     assert "cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json" in workflow
+    assert "cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md" in workflow
+    assert "cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md" in workflow
     assert "cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md" in workflow

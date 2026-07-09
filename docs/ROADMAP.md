@@ -100,6 +100,13 @@ policy matters more than raw vector-database scale:
   state, exact commands, missing environment, and nearest checked baselines, so
   the next scale work is a ranked execution queue rather than a loose roadmap
   note.
+- `benchmarks/cost_efficiency_leaderboard.py` now joins checked-in measured
+  production-load artifacts with plan-only 10M/50M/100M run contracts into
+  `benchmarks/cost_efficiency_results.json` and `benchmarks/COST_EFFICIENCY.md`.
+  It ranks recall, p99, SLO, compute cost per 1M queries, monthly cost, and
+  target memory count by target class, and exposes the same summary in
+  `docs/data/leaderboard-status.json`. Planned rows remain cost/capacity
+  contracts only until strict large-N result artifacts pass.
 - `wavemind production-admission --target-memories ... --engine ...` is the
   deploy-facing large-N gate. It maps a requested 10M/50M/100M deployment to the
   required strict evidence profile, writes

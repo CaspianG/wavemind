@@ -79,6 +79,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    cost_efficiency = _load_json(
+        root / "benchmarks" / "cost_efficiency_results.json",
+        load_errors,
+        required=False,
+    )
 
     benchmarks = matrix.get("benchmarks") if isinstance(matrix.get("benchmarks"), list) else []
     status_counts = Counter(
@@ -113,6 +118,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
         "benchmarks/scale_readiness_results.json": scale_readiness,
+        "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
     publishing_status = _publishing_status(
         audit_status=audit_status,
@@ -223,6 +229,37 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "best_by_target_class", {}
             ),
             "profiles": (scale_run_plan.get("summary") or {}).get("profiles", []),
+        },
+        "cost_efficiency": {
+            "schema": cost_efficiency.get("schema"),
+            "measured_row_count": (cost_efficiency.get("summary") or {}).get(
+                "measured_row_count", 0
+            ),
+            "planned_row_count": (cost_efficiency.get("summary") or {}).get(
+                "planned_row_count", 0
+            ),
+            "measured_slo_pass_count": (cost_efficiency.get("summary") or {}).get(
+                "measured_slo_pass_count", 0
+            ),
+            "measured_valid_cost_count": (cost_efficiency.get("summary") or {}).get(
+                "measured_valid_cost_count", 0
+            ),
+            "planned_valid_cost_count": (cost_efficiency.get("summary") or {}).get(
+                "planned_valid_cost_count", 0
+            ),
+            "measured_frontier_profiles": (cost_efficiency.get("summary") or {}).get(
+                "measured_frontier_profiles", []
+            ),
+            "planned_frontier_profiles": (cost_efficiency.get("summary") or {}).get(
+                "planned_frontier_profiles", []
+            ),
+            "best_measured_by_target_class": (cost_efficiency.get("summary") or {}).get(
+                "best_measured_by_target_class", {}
+            ),
+            "best_planned_by_target_class": (cost_efficiency.get("summary") or {}).get(
+                "best_planned_by_target_class", {}
+            ),
+            "claim_boundary": cost_efficiency.get("claim_boundary", ""),
         },
         "production_evidence_preflight": {
             "schema": preflight.get("schema"),
