@@ -9,6 +9,8 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/AGENT_IMPACT.md",
         "benchmarks/structured_memory_results.json",
         "benchmarks/STRUCTURED_MEMORY.md",
+        "benchmarks/memory_os_intelligence_results.json",
+        "benchmarks/MEMORY_OS_INTELLIGENCE.md",
         "benchmarks/dynamic_memory_results.json",
         "benchmarks/locomo_sentence_evidence_results.json",
         "benchmarks/longmemeval_evidence_results.json",
@@ -33,6 +35,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "python benchmarks/agent_coherence_benchmark.py",
         "python benchmarks/agent_impact_leaderboard.py",
         "python benchmarks/structured_memory_report.py",
+        "python benchmarks/memory_os_intelligence_report.py",
         "python benchmarks/dynamic_memory_benchmark.py",
         "python benchmarks/locomo_memory_benchmark.py",
         "python benchmarks/longmemeval_memory_benchmark.py",
@@ -57,6 +60,9 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "6/6` primary wins" in brief
     assert "Structured memory report" in brief
     assert "7` modalities" in brief
+    assert "Memory OS intelligence report" in brief
+    assert "31/31` gate checks" in brief
+    assert "Production Memory OS automation is still plan-only" in brief
     assert "official LoCoMo, LongMemEval, MTEB, MIRACL, RAGBench, or VectorDBBench" in brief
     assert "Hacker News" in brief
     assert "Reddit" in brief

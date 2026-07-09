@@ -40,6 +40,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Typed memory evidence: image, audio, video, 3D, table, event, graph" in html
     assert "Cross-modal precision@1" in html
     assert "benchmarks/STRUCTURED_MEMORY.md" in html
+    assert "Memory OS Intelligence" in html
+    assert "Worker evidence: hot-query prewarm" in html
+    assert "Predictive warmed" in html
+    assert "benchmarks/MEMORY_OS_INTELLIGENCE.md" in html
     assert "Benchmark Leaderboard" in html
     assert "Evidence Source Status" in html
     assert "External HTTP active-active" in html

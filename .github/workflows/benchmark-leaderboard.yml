@@ -137,6 +137,9 @@ jobs:
           python benchmarks/structured_memory_report.py \
             --output benchmarks/structured_memory_results.json \
             --markdown-output benchmarks/STRUCTURED_MEMORY.md
+          python benchmarks/memory_os_intelligence_report.py \
+            --output benchmarks/memory_os_intelligence_results.json \
+            --markdown-output benchmarks/MEMORY_OS_INTELLIGENCE.md
           python benchmarks/cost_efficiency_leaderboard.py \
             --output benchmarks/cost_efficiency_results.json \
             --markdown-output benchmarks/COST_EFFICIENCY.md
@@ -170,6 +173,9 @@ jobs:
           python benchmarks/structured_memory_report.py \
             --output benchmarks/structured_memory_results.json \
             --markdown-output benchmarks/STRUCTURED_MEMORY.md
+          python benchmarks/memory_os_intelligence_report.py \
+            --output benchmarks/memory_os_intelligence_results.json \
+            --markdown-output benchmarks/MEMORY_OS_INTELLIGENCE.md
           python -m wavemind production-evidence-dispatch \
             --write-artifacts \
             --output benchmarks/production_evidence_dispatch_results.json \
@@ -243,6 +249,9 @@ jobs:
           python benchmarks/structured_memory_report.py \
             --output benchmarks/structured_memory_results.json \
             --markdown-output benchmarks/STRUCTURED_MEMORY.md
+          python benchmarks/memory_os_intelligence_report.py \
+            --output benchmarks/memory_os_intelligence_results.json \
+            --markdown-output benchmarks/MEMORY_OS_INTELLIGENCE.md
           python benchmarks/cost_efficiency_leaderboard.py \
             --output benchmarks/cost_efficiency_results.json \
             --markdown-output benchmarks/COST_EFFICIENCY.md
@@ -267,6 +276,7 @@ jobs:
             tests/test_leaderboard_status.py \
             tests/test_agent_impact_leaderboard.py \
             tests/test_structured_memory_report.py \
+            tests/test_memory_os_intelligence_report.py \
             tests/test_cost_efficiency_leaderboard.py \
             tests/test_benchmark_artifact_audit.py \
             tests/test_agent_coherence_benchmark.py \
@@ -314,6 +324,7 @@ jobs:
           cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md
           cp benchmarks/AGENT_IMPACT.md site/benchmarks/AGENT_IMPACT.md
           cp benchmarks/STRUCTURED_MEMORY.md site/benchmarks/STRUCTURED_MEMORY.md
+          cp benchmarks/MEMORY_OS_INTELLIGENCE.md site/benchmarks/MEMORY_OS_INTELLIGENCE.md
           cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md
           cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
@@ -331,6 +342,7 @@ jobs:
           cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json
           cp benchmarks/agent_impact_results.json site/data/agent_impact_results.json
           cp benchmarks/structured_memory_results.json site/data/structured_memory_results.json
+          cp benchmarks/memory_os_intelligence_results.json site/data/memory_os_intelligence_results.json
           cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json
           cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
@@ -358,6 +370,8 @@ jobs:
             benchmarks/AGENT_IMPACT.md
             benchmarks/structured_memory_results.json
             benchmarks/STRUCTURED_MEMORY.md
+            benchmarks/memory_os_intelligence_results.json
+            benchmarks/MEMORY_OS_INTELLIGENCE.md
             benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
             benchmarks/dynamic_memory_results.json

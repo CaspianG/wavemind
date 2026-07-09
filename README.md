@@ -1857,6 +1857,7 @@ Full generated benchmark report: [`benchmarks/BENCHMARK_REPORT.md`](benchmarks/B
 Compact benchmark leaderboard: [`benchmarks/BENCHMARK_LEADERBOARD.md`](benchmarks/BENCHMARK_LEADERBOARD.md).
 Agent-impact leaderboard: [`benchmarks/AGENT_IMPACT.md`](benchmarks/AGENT_IMPACT.md).
 Structured memory report: [`benchmarks/STRUCTURED_MEMORY.md`](benchmarks/STRUCTURED_MEMORY.md).
+Memory OS intelligence report: [`benchmarks/MEMORY_OS_INTELLIGENCE.md`](benchmarks/MEMORY_OS_INTELLIGENCE.md).
 Cost-efficiency leaderboard: [`benchmarks/COST_EFFICIENCY.md`](benchmarks/COST_EFFICIENCY.md).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/data/leaderboard-status.json).
@@ -1864,12 +1865,13 @@ The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 [`caspiang.github.io/wavemind`](https://caspiang.github.io/wavemind/) without
 writing scheduled bot commits to `main`.
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
-`agent_quality`, `agent_impact`, `structured_memory`, `memory_os_policy`,
-`production_evidence_dispatch`, and `cost_efficiency`
+`agent_quality`, `agent_impact`, `structured_memory`, `memory_os_intelligence`,
+`memory_os_policy`, `production_evidence_dispatch`, and `cost_efficiency`
 sections, so dashboards can verify the weekly GitHub Pages publication path,
 detect stale or missing public evidence, track task success, stale-error
-suppression, context savings, active Memory OS policy decisions, and the exact
-strict-evidence workflow dispatch contract without scraping Markdown.
+suppression, context savings, active Memory OS worker behavior, policy
+decisions, and the exact strict-evidence workflow dispatch contract without
+scraping Markdown.
 Production readiness gate: [`benchmarks/PRODUCTION_READINESS.md`](benchmarks/PRODUCTION_READINESS.md)
 from `benchmarks/production_readiness_results.json`.
 Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)
@@ -1984,6 +1986,7 @@ public claim boundaries stable:
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Agent impact leaderboard | Behavioral benchmark evidence is aggregated across agent coherence, dynamic-memory policy, long-memory retrieval, and LongMemEval answer quality. | `benchmarks/agent_impact_results.json`, `benchmarks/AGENT_IMPACT.md`, `benchmarks/agent_impact_leaderboard.py` | It proves lift on the listed checked-in scenarios only; it does not claim general agent success outside those tasks. |
+| Memory OS intelligence | Adaptive-worker evidence is aggregated across scale readiness, agent coherence, staging canary, and admission artifacts. It tracks hot-query prewarm, transition-learned predictive prefetch, priority learning, adaptive forgetting, concept consolidation, Redis coordination, canary status, and production-admission boundaries. | `benchmarks/memory_os_intelligence_results.json`, `benchmarks/MEMORY_OS_INTELLIGENCE.md`, `benchmarks/memory_os_intelligence_report.py` | It proves Memory OS behavior on checked-in fixtures; unattended production automation remains locked until real shared Redis, distributed lock, runtime env, and large-scale evidence pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
 | Cost-efficiency leaderboard | Cost, latency, recall, SLO, and memory-count evidence are ranked across measured production-load artifacts and plan-only 10M/50M/100M contracts. | `benchmarks/cost_efficiency_results.json`, `benchmarks/COST_EFFICIENCY.md`, `benchmarks/cost_efficiency_leaderboard.py` | Planned rows are capacity/cost contracts only; they do not unlock 50M/100M production latency or recall claims until matching result artifacts pass strict evidence. |
 | Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M sharded Qdrant status is `plan_only`, not admitted: the run contract exists, but `production_streaming_load_qdrant_sharded_100m_results.json` is still missing. |

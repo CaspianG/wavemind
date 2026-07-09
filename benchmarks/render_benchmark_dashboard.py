@@ -245,6 +245,44 @@ def _structured_memory_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _memory_os_intelligence_panel(status: dict[str, Any]) -> str:
+    memory_os = status.get("memory_os_intelligence", {}) if isinstance(status, dict) else {}
+    if not isinstance(memory_os, dict) or not memory_os:
+        return ""
+    rows = [
+        ("Status", memory_os.get("status", "missing")),
+        ("Gate checks", f"{memory_os.get('passed_check_count', 0)}/{memory_os.get('check_count', 0)}"),
+        ("Hot queries", memory_os.get("hot_queries", 0)),
+        ("Prewarm warmed", memory_os.get("prewarm_warmed", 0)),
+        ("Predictive warmed", memory_os.get("predictive_prefetch_warmed", 0)),
+        ("Transition hit", memory_os.get("transition_prefetch_hit")),
+        ("Priority predictions", memory_os.get("priority_predictions", 0)),
+        ("Forgetting demotions", memory_os.get("forgetting_demotions", 0)),
+        ("Concepts created", memory_os.get("concepts_created", 0)),
+        ("Canary status", memory_os.get("canary_status", "missing")),
+        ("Admission status", memory_os.get("admission_status", "missing")),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Memory OS Intelligence</h2>"
+        "<p>Worker evidence: hot-query prewarm, transition-learned predictive prefetch, "
+        "priority learning, adaptive forgetting, concept consolidation, Redis coordination, "
+        "and rollout admission boundaries.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/MEMORY_OS_INTELLIGENCE.md">Read the Memory OS intelligence report</a></p>'
+        "</section>"
+    )
+
+
 def _fmt_metric(value: Any) -> str:
     try:
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
@@ -352,6 +390,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_agent_impact_panel(status)}
 
   {_structured_memory_panel(status)}
+
+  {_memory_os_intelligence_panel(status)}
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">

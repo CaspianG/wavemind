@@ -1,0 +1,1027 @@
+{
+  "schema": "wavemind.memory_os_intelligence_report.v1",
+  "generated_at": "2026-07-08T20:13:52Z",
+  "source_ref": "b9ec289a426b",
+  "source_files": [
+    "benchmarks/scale_readiness_results.json",
+    "benchmarks/agent_coherence_results.json",
+    "benchmarks/memory_os_canary_results.json",
+    "benchmarks/memory_os_admission_results.json"
+  ],
+  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, and admission artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+  "summary": {
+    "status": "pass",
+    "check_count": 31,
+    "passed_check_count": 31,
+    "worker_ok": true,
+    "hot_queries": 2,
+    "prewarm_warmed": 2,
+    "predictive_prefetch_warmed": 6,
+    "transition_prefetch_hit": true,
+    "concepts_created": 1,
+    "concept_recall": true,
+    "user_feedback_events": 8,
+    "positive_feedback_priority_delta": 0.3999999999999999,
+    "negative_feedback_priority_delta": -0.30000000000000004,
+    "priority_predictions": 2,
+    "priority_boost_total": 0.19999996982184182,
+    "forgetting_demotions": 4,
+    "forgetting_decay_total": 0.4,
+    "policy_status": "architecture_required",
+    "policy_decision_count": 6,
+    "policy_decision_ids": [
+      "prefetch-policy",
+      "priority-policy",
+      "forgetting-policy",
+      "consolidation-policy",
+      "scale-policy",
+      "coordination-policy"
+    ],
+    "execution_safe_to_run": true,
+    "execution_requires_shared_cache": true,
+    "execution_requires_distributed_lock": true,
+    "execution_step_count": 7,
+    "execution_worker_pool_tasks": [
+      "cache-prewarm"
+    ],
+    "execution_singleton_tasks": [
+      "architecture-advice",
+      "maintenance",
+      "adaptive-forgetting",
+      "consolidation",
+      "memory-os",
+      "predictive-prefetch"
+    ],
+    "execution_required_environment": [
+      "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+      "WAVEMIND_REDIS_URL"
+    ],
+    "redis_memory_os_cross_worker_hit": true,
+    "redis_memory_os_busy_lock_skipped": true,
+    "redis_memory_os_lock_required": true,
+    "redis_memory_os_lock_acquired": true,
+    "redis_memory_os_lock_released": true,
+    "agent_task_success_rate": 0.9166666666666666,
+    "agent_stale_error_rate": 0,
+    "agent_context_budget_saved": 0.9308855291576674,
+    "agent_memory_os_cache_hit_rate": 0.24,
+    "agent_memory_os_priority_predictions": 5,
+    "canary_status": "pass",
+    "canary_admitted": true,
+    "canary_prewarm_warmed": 5,
+    "canary_predictive_warmed": 15,
+    "admission_status": "plan_only",
+    "admission_passed_count": 5,
+    "admission_blocker_count": 5,
+    "admission_blocker_ids": [
+      "hot-query-signal",
+      "shared-cache-configured",
+      "distributed-lock-configured",
+      "scale-boundary",
+      "runtime-env"
+    ]
+  },
+  "checks": [
+    {
+      "name": "worker_ok",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "hot_queries",
+      "value": 2,
+      "target": 2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "prewarm_warmed",
+      "value": 2,
+      "target": 2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "predictive_prefetch_warmed",
+      "value": 6,
+      "target": 6,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "transition_prefetch_hit",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "concepts_created",
+      "value": 1,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "concept_recall",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "feedback_events",
+      "value": 8,
+      "target": 8,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "positive_priority_delta",
+      "value": 0.3999999999999999,
+      "target": 0.0,
+      "op": ">",
+      "pass": true
+    },
+    {
+      "name": "negative_priority_delta",
+      "value": -0.30000000000000004,
+      "target": 0.0,
+      "op": "<",
+      "pass": true
+    },
+    {
+      "name": "priority_predictions",
+      "value": 2,
+      "target": 2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "forgetting_demotions",
+      "value": 4,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "policy_decisions_present",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "execution_safe_to_run",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "execution_requires_shared_cache",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "execution_requires_distributed_lock",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "redis_cross_worker_hit",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "redis_busy_lock_skipped",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "redis_lock_required",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "redis_lock_acquired",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "redis_lock_released",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "agent_task_success",
+      "value": 0.9166666666666666,
+      "target": 0.9,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "agent_stale_error",
+      "value": 0,
+      "target": 0.05,
+      "op": "<=",
+      "pass": true
+    },
+    {
+      "name": "agent_context_saved",
+      "value": 0.9308855291576674,
+      "target": 0.9,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "agent_memory_os_cache_hit_rate",
+      "value": 0.24,
+      "target": 0.2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "agent_priority_predictions",
+      "value": 5,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "canary_pass",
+      "value": "pass",
+      "target": "pass",
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "canary_admitted",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "canary_predictive_warmed",
+      "value": 15,
+      "target": 10,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "admission_is_strictly_limited",
+      "value": "plan_only",
+      "target": "plan_only",
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "admission_has_blockers",
+      "value": 5,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    }
+  ],
+  "raw_metrics": {
+    "scale_memory_os": {
+      "engine": "WaveMind Memory OS",
+      "ok": true,
+      "hot_queries": 2,
+      "prewarm_warmed": 2,
+      "prewarm_hit": true,
+      "predictive_prefetch_generated": 6,
+      "predictive_prefetch_warmed": 6,
+      "predictive_prefetch_queries": [
+        "risk limits",
+        "budget recall preference",
+        "budget recall prefetched",
+        "systems programming compiler",
+        "systems programming concept",
+        "systems programming consolidated"
+      ],
+      "transition_prefetch_queries": [
+        "risk limits"
+      ],
+      "transition_prefetch_edges": [
+        {
+          "namespace": "tenant:os",
+          "from_query": "budget recall",
+          "to_query": "risk limits",
+          "count": 1,
+          "probability": 1.0,
+          "last_seen": 1783541588.0737612
+        }
+      ],
+      "transition_prefetch_hit": true,
+      "expired_purged": 1,
+      "concepts_created": 1,
+      "concept_recall": true,
+      "user_feedback_events": 8,
+      "positive_feedback_priority_delta": 0.3999999999999999,
+      "negative_feedback_priority_delta": -0.30000000000000004,
+      "priority_predictions": 2,
+      "priority_boost_total": 0.19999996982184182,
+      "forgetting_demotions": 4,
+      "forgetting_decay_total": 0.4,
+      "architecture_advice_status": "architecture_required",
+      "architecture_advice_recommendation_ids": [
+        "scale-plan",
+        "service-index",
+        "namespace-sharding",
+        "production-controls",
+        "replication-capacity",
+        "load-test",
+        "multimodal-payloads"
+      ],
+      "architecture_next_commands": 10,
+      "suggestion_count": 12,
+      "suggestion_ids": [
+        "service-index-and-sharding",
+        "review-consolidated-concepts",
+        "predictive-prefetch-active",
+        "priority-learning-active",
+        "adaptive-forgetting-active",
+        "architecture:scale-plan",
+        "architecture:service-index",
+        "architecture:namespace-sharding",
+        "architecture:production-controls",
+        "architecture:replication-capacity",
+        "architecture:load-test",
+        "architecture:multimodal-payloads"
+      ],
+      "suggestion_severities": [
+        "architecture_required",
+        "watch",
+        "ok",
+        "ok",
+        "ok",
+        "architecture_required",
+        "action_required",
+        "architecture_required",
+        "action_required",
+        "architecture_required",
+        "action_required",
+        "watch"
+      ],
+      "suggestions_with_evidence": 12,
+      "policy_status": "architecture_required",
+      "policy_decision_count": 6,
+      "policy_decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "policy_decision_statuses": [
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "architecture_required",
+        "action_required"
+      ],
+      "policy_decision_strategies": {
+        "prefetch-policy": "hot-query-and-transition-prefetch",
+        "priority-policy": "usage-pattern-priority-boost",
+        "forgetting-policy": "demote-cold-low-access-memories",
+        "consolidation-policy": "promote-active-clusters-to-concepts",
+        "scale-policy": "external-index-sharding-and-production-controls",
+        "coordination-policy": "require-distributed-lock-in-production"
+      },
+      "policy_history_trend": "first_run",
+      "policy_history_previous_runs": 0,
+      "policy_repeated_required_ids": [],
+      "policy_history_escalations": 0,
+      "scheduler_status": "architecture_required",
+      "scheduler_effective_cache_mode": "redis",
+      "execution_safe_to_run": true,
+      "execution_requires_shared_cache": true,
+      "execution_requires_distributed_lock": true,
+      "execution_max_parallel_workers": 4,
+      "execution_step_count": 7,
+      "execution_worker_pool_tasks": [
+        "cache-prewarm"
+      ],
+      "execution_singleton_tasks": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "predictive-prefetch"
+      ],
+      "execution_state_mutating_tasks": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "execution_blocked_tasks": [],
+      "execution_warnings": [
+        "distributed-lock-required"
+      ],
+      "execution_required_environment": [
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+        "WAVEMIND_REDIS_URL"
+      ],
+      "execution_run_scopes": {
+        "architecture-advice": "scheduler-singleton",
+        "maintenance": "cluster-singleton",
+        "adaptive-forgetting": "cluster-singleton",
+        "consolidation": "cluster-singleton",
+        "memory-os": "cluster-singleton",
+        "cache-prewarm": "worker-pool",
+        "predictive-prefetch": "cluster-singleton"
+      },
+      "index_rebuilt": false,
+      "actions": [
+        "purge_expired",
+        "consolidate_field",
+        "consolidate_concepts",
+        "predict_priority",
+        "adaptive_forgetting",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture"
+      ],
+      "recommendations": [
+        "Move this namespace to a persisted ANN backend and sharded deployment before further growth.",
+        "Architecture advisor: [architecture_required] Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+        "Architecture advisor: [action_required] Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+        "Architecture advisor: [architecture_required] Shard memory by namespace - Plan namespace placement across nodes, use quorum replication, and schedule anti-entropy repair.",
+        "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+        "Architecture advisor: [architecture_required] Add enough nodes for replication - Provision enough API nodes before enabling quorum writes.",
+        "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+        "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
+      ],
+      "run_ms": 27.53089996986091
+    },
+    "redis_memory_os": {
+      "engine": "WaveMind Redis hot cache",
+      "client": "redis-compatible",
+      "shared_cache_visible_across_clients": true,
+      "cache_prewarm_warmed": 1,
+      "cache_prewarm_cross_worker_hit": true,
+      "memory_os_ok": true,
+      "memory_os_lock_required": true,
+      "memory_os_lock_acquired": true,
+      "memory_os_lock_released": true,
+      "memory_os_busy_lock_skipped": true,
+      "memory_os_hot_queries": 2,
+      "memory_os_prewarm_warmed": 2,
+      "memory_os_predictive_generated": 6,
+      "memory_os_predictive_warmed": 6,
+      "memory_os_transition_prefetch_queries": [
+        "risk limits"
+      ],
+      "memory_os_transition_prefetch_edges": [
+        {
+          "namespace": "tenant:redis-os",
+          "from_query": "budget recall",
+          "to_query": "risk limits",
+          "count": 1,
+          "probability": 1.0,
+          "last_seen": 1783541587.7913415
+        }
+      ],
+      "memory_os_transition_prefetch_hit": true,
+      "memory_os_concepts_created": 1,
+      "memory_os_user_feedback_events": 8,
+      "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
+      "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
+      "memory_os_priority_predictions": 2,
+      "memory_os_priority_boost_total": 0.19999997101696979,
+      "memory_os_forgetting_demotions": 4,
+      "memory_os_forgetting_decay_total": 0.4,
+      "memory_os_architecture_advice_status": "architecture_required",
+      "memory_os_architecture_recommendations": [
+        "scale-plan",
+        "service-index",
+        "namespace-sharding",
+        "production-controls",
+        "replication-capacity",
+        "load-test",
+        "multimodal-payloads"
+      ],
+      "memory_os_cross_worker_hit": true,
+      "memory_os_run_ms": 24.558300036005676,
+      "namespace_invalidation_removed": true,
+      "redis_keys": 8,
+      "writer_hits": 0,
+      "writer_misses": 1,
+      "reader_hits": 1,
+      "os_hits": 0,
+      "os_reader_hits": 2,
+      "avg_lookup_ms": 0.05665002390742302,
+      "p99_lookup_ms": 0.07569999434053898
+    },
+    "agent_memory_os": {
+      "worker_ok": true,
+      "scanned_events": 5,
+      "hot_queries": 1,
+      "prewarm_warmed": 1,
+      "predictive_prefetch_generated": 4,
+      "predictive_prefetch_warmed": 4,
+      "priority_predictions": 5,
+      "priority_boosted": 5,
+      "forgetting_demotions": 0,
+      "concepts_created": 0,
+      "cache_hits": 6,
+      "cache_misses": 19,
+      "cache_size": 17,
+      "cache_hit_rate": 0.24,
+      "policy_status": "architecture_required",
+      "suggestions": 5,
+      "actions": [
+        "purge_expired",
+        "predict_priority",
+        "invalidate_cache",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture"
+      ],
+      "recommendations": [
+        "Move this namespace to a persisted ANN backend and sharded deployment before further growth.",
+        "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+        "Architecture advisor: [architecture_required] Add enough nodes for replication - Provision enough API nodes before enabling quorum writes."
+      ],
+      "report": {
+        "namespace": "agent-a",
+        "scanned_events": 5,
+        "hot_queries": [
+          {
+            "namespace": "agent-a",
+            "query": "budget recall",
+            "frequency": 2,
+            "last_seen": 1783531451.6108146
+          }
+        ],
+        "expired_purged": 5,
+        "consolidated_steps": 0,
+        "concepts_created": 0,
+        "concept_ids": [],
+        "priority_predictions": 5,
+        "priority_boost_total": 0.4999984925947998,
+        "priority_boosted_ids": [
+          10,
+          94,
+          125,
+          194,
+          214
+        ],
+        "forgetting_demotions": 0,
+        "forgetting_decay_total": 0.0,
+        "forgetting_demoted_ids": [],
+        "index_rebuilt": false,
+        "cache_enabled": true,
+        "cache_invalidated": 2,
+        "prewarm": {
+          "scanned_events": 6,
+          "candidates": 1,
+          "warmed": 1,
+          "skipped": 0,
+          "errors": {},
+          "ok": true
+        },
+        "predictive_prefetch": {
+          "scanned_hot_queries": 1,
+          "generated_queries": 4,
+          "warmed": 4,
+          "skipped": 0,
+          "errors": {},
+          "queries": [
+            "risk limits",
+            "budget recall about",
+            "budget recall adds",
+            "budget recall agent"
+          ],
+          "transition_queries": [
+            "risk limits"
+          ],
+          "transition_edges": [
+            {
+              "namespace": "agent-a",
+              "from_query": "budget recall",
+              "to_query": "risk limits",
+              "count": 1,
+              "probability": 1.0,
+              "last_seen": 1783531451.6081438
+            }
+          ],
+          "ok": true
+        },
+        "stats_before": {
+          "active_memories": 397,
+          "expired_memories": 5,
+          "total_memories": 402,
+          "audit_events": 407,
+          "field_energy": 271676.6875,
+          "clusters": 1,
+          "field_shape": "64x64x3",
+          "index": "numpy-exact",
+          "index_healthy": true,
+          "index_expected_records": 500,
+          "index_vector_records": 500,
+          "index_missing_records": 0,
+          "index_extra_records": 0,
+          "index_health": {
+            "backend": "numpy-exact",
+            "healthy": true,
+            "exact": true,
+            "vector_dim": 384,
+            "expected_count": 500,
+            "vector_count": 500,
+            "missing_count": 0,
+            "extra_count": 0,
+            "missing_ids_sample": [],
+            "extra_ids_sample": [],
+            "dirty": false,
+            "persisted": false,
+            "loaded_from_persisted": false,
+            "path": null
+          },
+          "vector_dim": 384,
+          "graph_enabled": false,
+          "graph_nodes": 500,
+          "graph_edges": 0,
+          "graph_positive_edges": 0,
+          "graph_negative_edges": 0,
+          "graph_energy": 0.0
+        },
+        "stats_after": {
+          "active_memories": 397,
+          "expired_memories": 0,
+          "total_memories": 397,
+          "audit_events": 419,
+          "field_energy": 414343.625,
+          "clusters": 1,
+          "field_shape": "64x64x3",
+          "index": "numpy-exact",
+          "index_healthy": true,
+          "index_expected_records": 495,
+          "index_vector_records": 495,
+          "index_missing_records": 0,
+          "index_extra_records": 0,
+          "index_health": {
+            "backend": "numpy-exact",
+            "healthy": true,
+            "exact": true,
+            "vector_dim": 384,
+            "expected_count": 495,
+            "vector_count": 495,
+            "missing_count": 0,
+            "extra_count": 0,
+            "missing_ids_sample": [],
+            "extra_ids_sample": [],
+            "dirty": false,
+            "persisted": false,
+            "loaded_from_persisted": false,
+            "path": null
+          },
+          "vector_dim": 384,
+          "graph_enabled": false,
+          "graph_nodes": 495,
+          "graph_edges": 0,
+          "graph_positive_edges": 0,
+          "graph_negative_edges": 0,
+          "graph_energy": 0.0
+        },
+        "architecture_advice": {
+          "status": "architecture_required",
+          "production_ready": false,
+          "deployment": "production",
+          "namespace": "agent-a",
+          "current_memories": 397,
+          "target_memories": 500,
+          "index": "numpy-exact",
+          "vector_dim": 384,
+          "target_p99_ms": 100.0,
+          "observed_p99_ms": null,
+          "namespace_count": 2,
+          "node_count": null,
+          "replication_factor": 3,
+          "read_quorum": 1,
+          "read_fanout": 3,
+          "scale_plan": {
+            "current_memories": 397,
+            "target_memories": 500,
+            "index": "numpy-exact",
+            "vector_dim": 384,
+            "namespace": "agent-a",
+            "latency_target_ms": 100.0,
+            "tier": "small",
+            "status": "ok",
+            "recommended_index": "numpy",
+            "warnings": [],
+            "actions": [
+              "Use SQLite plus the default NumPy exact index for simplest local operation.",
+              "Keep namespaces explicit and run `wavemind index-health --json` after imports."
+            ]
+          },
+          "recommendations": [
+            {
+              "id": "production-controls",
+              "severity": "action_required",
+              "title": "Enable production controls",
+              "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+              "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+              "commands": [
+                "python benchmarks/production_readiness_gate.py --json",
+                "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+              ],
+              "docs": [
+                "benchmarks/PRODUCTION_READINESS.md",
+                "docs/OBSERVABILITY.md"
+              ]
+            },
+            {
+              "id": "replication-capacity",
+              "severity": "architecture_required",
+              "title": "Add enough nodes for replication",
+              "rationale": "Replication factor 3 requires at least 3 available nodes.",
+              "action": "Provision enough API nodes before enabling quorum writes.",
+              "commands": [
+                "wavemind cluster-plan --namespace-count 2 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+              ],
+              "docs": []
+            }
+          ],
+          "next_commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+            "wavemind cluster-plan --namespace-count 2 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+          ]
+        },
+        "lock": {
+          "required": false,
+          "acquired": false,
+          "key": null,
+          "owner": null,
+          "ttl_seconds": null,
+          "reason": null,
+          "ok": true
+        },
+        "actions": [
+          "purge_expired",
+          "predict_priority",
+          "invalidate_cache",
+          "prewarm_cache",
+          "predictive_prefetch",
+          "advise_architecture"
+        ],
+        "recommendations": [
+          "Move this namespace to a persisted ANN backend and sharded deployment before further growth.",
+          "Architecture advisor: [action_required] Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "Architecture advisor: [architecture_required] Add enough nodes for replication - Provision enough API nodes before enabling quorum writes."
+        ],
+        "suggestions": [
+          {
+            "id": "service-index-and-sharding",
+            "severity": "architecture_required",
+            "title": "Move pressure-heavy memory to service index and sharding",
+            "rationale": "This namespace or cluster crossed the configured memory-pressure threshold.",
+            "action": "Use Qdrant, pgvector, or persisted FAISS for candidate generation and shard by namespace before further growth.",
+            "evidence": {
+              "namespace": "agent-a",
+              "active_memories": 397,
+              "threshold": 64
+            }
+          },
+          {
+            "id": "predictive-prefetch-active",
+            "severity": "ok",
+            "title": "Keep predictive prefetch enabled",
+            "rationale": "Observed recall paths produced likely follow-up queries.",
+            "action": "Track predictive prefetch hit rate and keep transition edges in the benchmark artifact.",
+            "evidence": {
+              "namespace": "agent-a",
+              "generated_queries": 4,
+              "warmed_queries": 4,
+              "transition_queries": [
+                "risk limits"
+              ]
+            }
+          },
+          {
+            "id": "priority-learning-active",
+            "severity": "ok",
+            "title": "Keep usage-pattern priority learning enabled",
+            "rationale": "Hot audited queries produced deterministic priority boosts for recalled memories.",
+            "action": "Keep feedback and priority deltas in the Memory OS evidence artifact.",
+            "evidence": {
+              "namespace": "agent-a",
+              "priority_predictions": 5
+            }
+          },
+          {
+            "id": "architecture:production-controls",
+            "severity": "action_required",
+            "title": "Enable production controls",
+            "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+            "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+            "evidence": {
+              "namespace": "agent-a",
+              "source": "architecture_advisor",
+              "recommendation_id": "production-controls"
+            }
+          },
+          {
+            "id": "architecture:replication-capacity",
+            "severity": "architecture_required",
+            "title": "Add enough nodes for replication",
+            "rationale": "Replication factor 3 requires at least 3 available nodes.",
+            "action": "Provision enough API nodes before enabling quorum writes.",
+            "evidence": {
+              "namespace": "agent-a",
+              "source": "architecture_advisor",
+              "recommendation_id": "replication-capacity"
+            }
+          }
+        ],
+        "policy_manifest": {
+          "status": "architecture_required",
+          "namespace": "agent-a",
+          "decision_count": 6,
+          "decision_ids": [
+            "prefetch-policy",
+            "priority-policy",
+            "forgetting-policy",
+            "consolidation-policy",
+            "scale-policy",
+            "coordination-policy"
+          ],
+          "decisions": [
+            {
+              "id": "prefetch-policy",
+              "status": "ok",
+              "strategy": "hot-query-and-transition-prefetch",
+              "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+              "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+              "evidence": {
+                "namespace": "agent-a",
+                "hot_queries": 1,
+                "prewarm_warmed": 1,
+                "predictive_generated": 4,
+                "predictive_warmed": 4,
+                "transition_edges": 1
+              }
+            },
+            {
+              "id": "priority-policy",
+              "status": "ok",
+              "strategy": "usage-pattern-priority-boost",
+              "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+              "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+              "evidence": {
+                "namespace": "agent-a",
+                "priority_predictions": 5
+              }
+            },
+            {
+              "id": "forgetting-policy",
+              "status": "action_required",
+              "strategy": "tighten-retention-under-pressure",
+              "rationale": "Memory pressure crossed the configured threshold, but this run did not demote stale records.",
+              "action": "Review TTLs, access-count thresholds, and protected ids before adding more data.",
+              "evidence": {
+                "namespace": "agent-a",
+                "active_memories": 397,
+                "threshold": 64
+              }
+            },
+            {
+              "id": "consolidation-policy",
+              "status": "watch",
+              "strategy": "wait-for-stable-clusters",
+              "rationale": "No concept memories were created in this run.",
+              "action": "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+              "evidence": {
+                "namespace": "agent-a",
+                "concepts_created": 0
+              }
+            },
+            {
+              "id": "scale-policy",
+              "status": "architecture_required",
+              "strategy": "external-index-sharding-and-production-controls",
+              "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+              "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+              "evidence": {
+                "namespace": "agent-a",
+                "active_memories": 397,
+                "target_memories": 500,
+                "recommendation_ids": [
+                  "production-controls",
+                  "replication-capacity"
+                ]
+              }
+            },
+            {
+              "id": "coordination-policy",
+              "status": "action_required",
+              "strategy": "require-distributed-lock-in-production",
+              "rationale": "Production Memory OS workers need a distributed lock to avoid overlapping consolidation and forgetting.",
+              "action": "Run Memory OS with RedisMemoryOSLock and --lock-required in production.",
+              "evidence": {
+                "namespace": "agent-a",
+                "deployment": "production",
+                "lock_required": false,
+                "lock_acquired": false,
+                "lock_key": null,
+                "cache_enabled": true
+              }
+            }
+          ],
+          "ok": false
+        },
+        "policy_history": {
+          "previous_runs": 0,
+          "window": 5,
+          "trend": "first_run",
+          "repeated_action_required_ids": [],
+          "repeated_architecture_required_ids": [],
+          "repeated_required_ids": [],
+          "stable_ok_ids": [],
+          "status_counts": {
+            "action_required": 2,
+            "architecture_required": 1,
+            "ok": 2,
+            "watch": 1
+          }
+        },
+        "ok": true
+      }
+    },
+    "canary_summary": {
+      "status": "pass",
+      "ok": true,
+      "passed_checks": 6,
+      "check_count": 6,
+      "failed_check_ids": [],
+      "hot_query_count": 5,
+      "worker_actions": [
+        "purge_expired",
+        "consolidate_field",
+        "consolidate_concepts",
+        "predict_priority",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture"
+      ],
+      "prewarm_warmed": 5,
+      "predictive_warmed": 15,
+      "priority_predictions": 6,
+      "expired_purged": 1,
+      "admission_status": "admitted",
+      "admitted": true
+    },
+    "admission_summary": {
+      "status": "plan_only",
+      "admitted": false,
+      "requirement_count": 11,
+      "passed_count": 5,
+      "blocker_count": 5,
+      "warning_count": 1,
+      "blocker_ids": [
+        "hot-query-signal",
+        "shared-cache-configured",
+        "distributed-lock-configured",
+        "scale-boundary",
+        "runtime-env"
+      ],
+      "warning_ids": [
+        "consolidation-enabled"
+      ],
+      "enabled_task_ids": [
+        "adaptive-forgetting",
+        "architecture-advice",
+        "maintenance",
+        "memory-os"
+      ],
+      "missing_runtime_env": [
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+        "WAVEMIND_REDIS_URL"
+      ]
+    }
+  }
+}

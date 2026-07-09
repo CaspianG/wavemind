@@ -116,6 +116,12 @@ policy matters more than raw vector-database scale:
   public evidence layer for "agents use fewer tokens and make fewer memory
   mistakes"; it remains bounded to the listed scenarios until larger public
   answer-quality runs are checked in.
+- `benchmarks/memory_os_intelligence_report.py` now turns checked-in Memory OS
+  worker evidence into `benchmarks/memory_os_intelligence_results.json` and
+  `benchmarks/MEMORY_OS_INTELLIGENCE.md`. It exposes hot-query prewarm,
+  transition-learned predictive prefetch, priority learning, adaptive
+  forgetting, consolidation, Redis coordination, canary status, and the
+  production-admission boundary as a standalone public report.
 - `wavemind production-admission --target-memories ... --engine ...` is the
   deploy-facing large-N gate. It maps a requested 10M/50M/100M deployment to the
   required strict evidence profile, writes
@@ -411,6 +417,11 @@ policy matters more than raw vector-database scale:
   `benchmarks/structured_memory_results.json`) with dashboard/status coverage for
   typed payloads, cross-modal routing, external-vector contracts, temporal-event
   recall, knowledge-graph traversal, persistence, provenance, and latency.
+- `benchmarks/memory_os_intelligence_report.py` now extracts Memory OS
+  intelligence into a dedicated public report with dashboard/status coverage for
+  adaptive prewarm, predictive prefetch, priority learning, forgetting,
+  consolidation, Redis coordination, agent context savings, canary admission,
+  and strict production-admission limits.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,

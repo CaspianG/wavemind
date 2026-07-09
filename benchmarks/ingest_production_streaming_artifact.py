@@ -197,6 +197,14 @@ def refresh_commands() -> list[list[str]]:
         ],
         [
             python,
+            "benchmarks/memory_os_intelligence_report.py",
+            "--output",
+            "benchmarks/memory_os_intelligence_results.json",
+            "--markdown-output",
+            "benchmarks/MEMORY_OS_INTELLIGENCE.md",
+        ],
+        [
+            python,
             "benchmarks/cost_efficiency_leaderboard.py",
             "--output",
             "benchmarks/cost_efficiency_results.json",

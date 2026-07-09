@@ -120,6 +120,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "structured_memory_report.py" in workflow
     assert "benchmarks/structured_memory_results.json" in workflow
     assert "benchmarks/STRUCTURED_MEMORY.md" in workflow
+    assert "memory_os_intelligence_report.py" in workflow
+    assert "benchmarks/memory_os_intelligence_results.json" in workflow
+    assert "benchmarks/MEMORY_OS_INTELLIGENCE.md" in workflow
     assert "cost_efficiency_leaderboard.py" in workflow
     assert "benchmarks/cost_efficiency_results.json" in workflow
     assert "benchmarks/COST_EFFICIENCY.md" in workflow
@@ -130,6 +133,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "tests/test_leaderboard_status.py" in workflow
     assert "tests/test_agent_impact_leaderboard.py" in workflow
     assert "tests/test_structured_memory_report.py" in workflow
+    assert "tests/test_memory_os_intelligence_report.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "production_evidence_gate.py" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow

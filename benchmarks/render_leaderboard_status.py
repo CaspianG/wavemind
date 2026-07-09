@@ -84,6 +84,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    memory_os_intelligence = _load_json(
+        root / "benchmarks" / "memory_os_intelligence_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -129,6 +134,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/agent_coherence_results.json": agent_coherence,
         "benchmarks/agent_impact_results.json": agent_impact,
         "benchmarks/structured_memory_results.json": structured_memory,
+        "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -200,6 +206,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "agent_quality": _agent_quality_status(agent_coherence),
         "agent_impact": _agent_impact_status(agent_impact),
         "structured_memory": _structured_memory_status(structured_memory),
+        "memory_os_intelligence": _memory_os_intelligence_status(memory_os_intelligence),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
@@ -557,6 +564,57 @@ def _structured_memory_status(payload: dict[str, Any]) -> dict[str, Any]:
         "asset_manifest_verified": summary.get("asset_manifest_verified"),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/structured_memory_results.json",
+    }
+
+
+def _memory_os_intelligence_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
+    passed_checks = sum(
+        1 for check in checks if isinstance(check, dict) and bool(check.get("pass"))
+    )
+    total_checks = len(checks)
+    return {
+        "schema": payload.get("schema"),
+        "status": summary.get("status", "missing"),
+        "check_count": total_checks,
+        "passed_check_count": passed_checks,
+        "worker_ok": summary.get("worker_ok"),
+        "hot_queries": summary.get("hot_queries"),
+        "prewarm_warmed": summary.get("prewarm_warmed"),
+        "predictive_prefetch_warmed": summary.get("predictive_prefetch_warmed"),
+        "transition_prefetch_hit": summary.get("transition_prefetch_hit"),
+        "concepts_created": summary.get("concepts_created"),
+        "concept_recall": summary.get("concept_recall"),
+        "user_feedback_events": summary.get("user_feedback_events"),
+        "positive_feedback_priority_delta": summary.get("positive_feedback_priority_delta"),
+        "negative_feedback_priority_delta": summary.get("negative_feedback_priority_delta"),
+        "priority_predictions": summary.get("priority_predictions"),
+        "priority_boost_total": summary.get("priority_boost_total"),
+        "forgetting_demotions": summary.get("forgetting_demotions"),
+        "forgetting_decay_total": summary.get("forgetting_decay_total"),
+        "policy_status": summary.get("policy_status"),
+        "policy_decision_count": summary.get("policy_decision_count"),
+        "policy_decision_ids": summary.get("policy_decision_ids", []),
+        "execution_safe_to_run": summary.get("execution_safe_to_run"),
+        "execution_requires_shared_cache": summary.get("execution_requires_shared_cache"),
+        "execution_requires_distributed_lock": summary.get(
+            "execution_requires_distributed_lock"
+        ),
+        "redis_memory_os_cross_worker_hit": summary.get("redis_memory_os_cross_worker_hit"),
+        "redis_memory_os_busy_lock_skipped": summary.get("redis_memory_os_busy_lock_skipped"),
+        "agent_task_success_rate": summary.get("agent_task_success_rate"),
+        "agent_stale_error_rate": summary.get("agent_stale_error_rate"),
+        "agent_context_budget_saved": summary.get("agent_context_budget_saved"),
+        "agent_memory_os_cache_hit_rate": summary.get("agent_memory_os_cache_hit_rate"),
+        "canary_status": summary.get("canary_status"),
+        "canary_admitted": summary.get("canary_admitted"),
+        "admission_status": summary.get("admission_status"),
+        "admission_blocker_count": summary.get("admission_blocker_count"),
+        "admission_blocker_ids": summary.get("admission_blocker_ids", []),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source_files": payload.get("source_files", []),
+        "source": "benchmarks/memory_os_intelligence_results.json",
     }
 
 

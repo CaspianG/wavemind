@@ -69,6 +69,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/agent_coherence_results.json",
         "benchmarks/agent_impact_results.json",
         "benchmarks/structured_memory_results.json",
+        "benchmarks/memory_os_intelligence_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -130,6 +131,28 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["structured_memory"]["asset_manifest_verified"] is True
     assert "production multimodal model quality" in (
         payload["structured_memory"]["claim_boundary"]
+    )
+    assert payload["memory_os_intelligence"]["schema"] == (
+        "wavemind.memory_os_intelligence_report.v1"
+    )
+    assert payload["memory_os_intelligence"]["status"] == "pass"
+    assert payload["memory_os_intelligence"]["passed_check_count"] == (
+        payload["memory_os_intelligence"]["check_count"]
+    )
+    assert payload["memory_os_intelligence"]["worker_ok"] is True
+    assert payload["memory_os_intelligence"]["prewarm_warmed"] >= 2
+    assert payload["memory_os_intelligence"]["predictive_prefetch_warmed"] >= 6
+    assert payload["memory_os_intelligence"]["transition_prefetch_hit"] is True
+    assert payload["memory_os_intelligence"]["priority_predictions"] >= 2
+    assert payload["memory_os_intelligence"]["forgetting_demotions"] >= 1
+    assert payload["memory_os_intelligence"]["concepts_created"] >= 1
+    assert payload["memory_os_intelligence"]["redis_memory_os_cross_worker_hit"] is True
+    assert payload["memory_os_intelligence"]["agent_task_success_rate"] >= 0.9
+    assert payload["memory_os_intelligence"]["agent_context_budget_saved"] >= 0.9
+    assert payload["memory_os_intelligence"]["canary_status"] == "pass"
+    assert payload["memory_os_intelligence"]["admission_status"] == "plan_only"
+    assert "unattended production Memory OS automation" in (
+        payload["memory_os_intelligence"]["claim_boundary"]
     )
     assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
     assert payload["memory_os_policy"]["status"] == "pass"
@@ -275,6 +298,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
     assert "benchmarks/agent_impact_results.json" in payload["source_files"]
     assert "benchmarks/structured_memory_results.json" in payload["source_files"]
+    assert "benchmarks/memory_os_intelligence_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -301,6 +325,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["agent_quality"]["status"] == "pass"
     assert payload["agent_impact"]["status"] == "pass"
     assert payload["structured_memory"]["status"] == "pass"
+    assert payload["memory_os_intelligence"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",
@@ -324,3 +349,6 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["cost_efficiency"]["schema"] == "wavemind.cost_efficiency_leaderboard.v1"
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
+    assert payload["memory_os_intelligence"]["schema"] == (
+        "wavemind.memory_os_intelligence_report.v1"
+    )
