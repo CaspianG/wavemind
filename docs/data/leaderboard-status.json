@@ -41,8 +41,8 @@
     "status": "pass",
     "checked_at": "2026-07-08T18:07:27Z",
     "max_age_days": 8.0,
-    "source_count": 12,
-    "fresh_count": 12,
+    "source_count": 13,
+    "fresh_count": 13,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -113,6 +113,14 @@
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:47Z",
         "age_days": 0.1136574074074074,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/memory_os_admission_results.json",
+        "schema": "wavemind.memory_os_admission.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-09T00:40:28Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
@@ -1203,6 +1211,151 @@
       }
     ]
   },
+  "memory_os_admission": {
+    "schema": "wavemind.memory_os_admission.v1",
+    "status": "plan_only",
+    "admitted": false,
+    "summary": {
+      "status": "plan_only",
+      "admitted": false,
+      "requirement_count": 11,
+      "passed_count": 5,
+      "blocker_count": 5,
+      "warning_count": 1,
+      "blocker_ids": [
+        "hot-query-signal",
+        "shared-cache-configured",
+        "distributed-lock-configured",
+        "scale-boundary",
+        "runtime-env"
+      ],
+      "warning_ids": [
+        "consolidation-enabled"
+      ],
+      "enabled_task_ids": [
+        "adaptive-forgetting",
+        "architecture-advice",
+        "maintenance",
+        "memory-os"
+      ],
+      "missing_runtime_env": [
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+        "WAVEMIND_REDIS_URL"
+      ]
+    },
+    "requirements": [
+      {
+        "id": "execution-safe",
+        "title": "Execution plan has no blocked worker tasks",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "safe_to_run=True, blocked=[]",
+        "action": "Resolve execution_plan.blocked_task_ids before scheduling Memory OS.",
+        "details": {}
+      },
+      {
+        "id": "task-coverage",
+        "title": "All Memory OS worker lanes are planned",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "adaptive-forgetting, architecture-advice, cache-prewarm, consolidation, maintenance, memory-os, predictive-prefetch",
+        "action": "Planner must include memory-os, cache-prewarm, predictive-prefetch, forgetting, consolidation, maintenance, and architecture-advice.",
+        "details": {}
+      },
+      {
+        "id": "hot-query-signal",
+        "title": "Query audit traffic enables prewarm and predictive workers",
+        "status": "action_required",
+        "passed": false,
+        "severity": "blocker",
+        "evidence": "hot_query_count=0, enabled=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+        "action": "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
+        "details": {}
+      },
+      {
+        "id": "consolidation-enabled",
+        "title": "Consolidation worker is active when clusters exist",
+        "status": "action_required",
+        "passed": false,
+        "severity": "warning",
+        "evidence": "enabled=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+        "action": "Seed enough representative memories/query traffic for stable concept clusters before production rollout.",
+        "details": {}
+      },
+      {
+        "id": "shared-cache-configured",
+        "title": "Shared Redis cache is configured when the plan requires it",
+        "status": "action_required",
+        "passed": false,
+        "severity": "blocker",
+        "evidence": "requires_shared_cache=True, effective_cache_mode=redis, redis_configured=False",
+        "action": "Set WAVEMIND_REDIS_URL or pass --redis-url before enabling multi-worker Memory OS.",
+        "details": {}
+      },
+      {
+        "id": "distributed-lock-configured",
+        "title": "Distributed single-flight lock is configured for state mutation",
+        "status": "action_required",
+        "passed": false,
+        "severity": "blocker",
+        "evidence": "requires_distributed_lock=True, lock_configured=False",
+        "action": "Set WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or pass --lock-redis-url before running production Memory OS workers.",
+        "details": {}
+      },
+      {
+        "id": "state-mutation-singleton",
+        "title": "State-mutating tasks are singleton/idempotent",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "state_mutating=['adaptive-forgetting', 'maintenance', 'memory-os'], singleton=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+        "action": "Keep mutation tasks as cluster singletons with idempotency keys.",
+        "details": {}
+      },
+      {
+        "id": "policy-coverage",
+        "title": "Policy manifest covers prefetch, priority, forgetting, consolidation, scale, and coordination",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "consolidation-policy, coordination-policy, forgetting-policy, prefetch-policy, priority-policy, scale-policy",
+        "action": "Memory OS admission requires a full policy manifest before rollout.",
+        "details": {}
+      },
+      {
+        "id": "infrastructure-contract",
+        "title": "Production infrastructure contract is explicit",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "OpenTelemetry metrics for worker duration, errors, and warmed queries, Redis-compatible shared hot-query cache, distributed worker lock or single-flight scheduler, durable queue or Kubernetes CronJobs",
+        "action": "Production plans must list Redis, lock/scheduler, queue/CronJob, and OpenTelemetry requirements.",
+        "details": {}
+      },
+      {
+        "id": "scale-boundary",
+        "title": "Large target stays behind strict architecture evidence",
+        "status": "action_required",
+        "passed": false,
+        "severity": "blocker",
+        "evidence": "architecture_status=architecture_required, strict_target=True",
+        "action": "Do not admit Memory OS production rollout for million-plus targets until architecture-required evidence is resolved.",
+        "details": {}
+      },
+      {
+        "id": "runtime-env",
+        "title": "Required runtime environment is present",
+        "status": "action_required",
+        "passed": false,
+        "severity": "blocker",
+        "evidence": "missing=['WAVEMIND_MEMORY_OS_LOCK_REDIS_URL', 'WAVEMIND_REDIS_URL']",
+        "action": "Provide every required environment variable before scheduling the worker set.",
+        "details": {}
+      }
+    ]
+  },
   "source_files": [
     "benchmarks/benchmark_matrix_results.json",
     "benchmarks/benchmark_artifact_audit.json",
@@ -1212,6 +1365,7 @@
     "benchmarks/production_evidence_bundle_results.json",
     "benchmarks/release_claims_results.json",
     "benchmarks/scale_gap_results.json",
+    "benchmarks/memory_os_admission_results.json",
     "benchmarks/production_evidence_dispatch_results.json",
     "benchmarks/production_scale_run_plan.json",
     "benchmarks/agent_coherence_results.json",

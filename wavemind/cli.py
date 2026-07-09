@@ -39,6 +39,10 @@ from .jobs import (
     ReplicatedSnapshotWorker,
     RedisHotMemoryCache,
 )
+from .memory_os_admission import (
+    evaluate_memory_os_admission,
+    render_memory_os_admission_markdown,
+)
 from .k8s_operator import (
     KubernetesApplyClient,
     WaveMindClusterSpec,
@@ -908,6 +912,54 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os_plan.add_argument("--strict", action="store_true")
     memory_os_plan.add_argument("--json", action="store_true")
 
+    memory_os_admission = sub.add_parser(
+        "memory-os-admission",
+        help="Gate Memory OS worker rollout against production runtime requirements",
+    )
+    memory_os_admission.add_argument("--namespace")
+    memory_os_admission.add_argument("--audit-limit", type=int, default=512)
+    memory_os_admission.add_argument("--max-hot-queries", type=int, default=32)
+    memory_os_admission.add_argument("--min-frequency", type=int, default=2)
+    memory_os_admission.add_argument("--top-k", type=int, default=3)
+    memory_os_admission.add_argument("--min-score", type=float)
+    memory_os_admission.add_argument("--target-memories", type=int, required=True)
+    memory_os_admission.add_argument("--namespace-count", type=int)
+    memory_os_admission.add_argument("--node-count", type=int)
+    memory_os_admission.add_argument("--replication-factor", type=int, default=3)
+    memory_os_admission.add_argument("--read-quorum", type=int, default=1)
+    memory_os_admission.add_argument("--read-fanout", type=int)
+    memory_os_admission.add_argument("--target-qps", type=float, default=100.0)
+    memory_os_admission.add_argument("--target-p99-ms", type=float, default=100.0)
+    memory_os_admission.add_argument("--observed-p99-ms", type=float)
+    memory_os_admission.add_argument(
+        "--deployment",
+        choices=["local", "staging", "production", "prod"],
+        default="production",
+    )
+    memory_os_admission.add_argument(
+        "--cache-mode",
+        choices=["auto", "disabled", "local", "redis"],
+        default="auto",
+    )
+    memory_os_admission.add_argument("--multimodal", action="store_true")
+    memory_os_admission.add_argument("--memory-pressure-threshold", type=int, default=50_000)
+    memory_os_admission.add_argument("--redis-url")
+    memory_os_admission.add_argument("--lock-redis-url")
+    memory_os_admission.add_argument("--allow-plan-only", action="store_true")
+    memory_os_admission.add_argument("--write-artifacts", action="store_true")
+    memory_os_admission.add_argument("--fail-on-blocked", action="store_true")
+    memory_os_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/memory_os_admission_results.json"),
+    )
+    memory_os_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MEMORY_OS_ADMISSION.md"),
+    )
+    memory_os_admission.add_argument("--json", action="store_true")
+
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
     imp.add_argument("--namespace", default="default")
@@ -1395,6 +1447,33 @@ def print_production_admission(payload: dict[str, object]) -> None:
         print("issues:")
         for issue in issues:
             print(f"- {issue}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
+def print_memory_os_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"target_memories: {payload['target_memories']}")
+    print(f"worker_count: {payload['worker_count']}")
+    print(f"effective_cache_mode: {payload['effective_cache_mode']}")
+    print(f"hot_query_count: {payload['hot_query_count']}")
+    print(
+        "requirements: "
+        f"{summary['passed_count']}/{summary['requirement_count']} passed, "
+        f"{summary['blocker_count']} blockers"
+    )
+    if summary.get("blocker_ids"):
+        print(f"blockers: {', '.join(summary['blocker_ids'])}")
+    if summary.get("warning_ids"):
+        print(f"warnings: {', '.join(summary['warning_ids'])}")
+    if summary.get("missing_runtime_env"):
+        print(f"missing_runtime_env: {', '.join(summary['missing_runtime_env'])}")
     next_actions = payload.get("next_actions") or []
     if next_actions:
         print("next_actions:")
@@ -2601,6 +2680,57 @@ def main(argv: list[str] | None = None) -> int:
         if args.strict and plan.status not in {"ok", "watch"}:
             return 3
         return 0 if plan.ok else 4
+
+    if args.command == "memory-os-admission":
+        plan = MemoryOSScheduler(mind).plan(
+            namespace=args.namespace,
+            audit_limit=args.audit_limit,
+            max_hot_queries=args.max_hot_queries,
+            min_frequency=args.min_frequency,
+            top_k=args.top_k,
+            min_score=args.min_score,
+            target_memories=args.target_memories,
+            namespace_count=args.namespace_count,
+            node_count=args.node_count,
+            replication_factor=args.replication_factor,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            target_qps=args.target_qps,
+            target_p99_ms=args.target_p99_ms,
+            observed_p99_ms=args.observed_p99_ms,
+            deployment=args.deployment,
+            cache_mode=args.cache_mode,
+            multimodal=args.multimodal,
+            memory_pressure_threshold=args.memory_pressure_threshold,
+        )
+        payload = evaluate_memory_os_admission(
+            plan,
+            deployment=args.deployment,
+            redis_url=args.redis_url,
+            lock_redis_url=args.lock_redis_url,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_memory_os_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_memory_os_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
 
     if args.command == "memory-os":
         cache = None

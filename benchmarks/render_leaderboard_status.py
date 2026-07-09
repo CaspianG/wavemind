@@ -44,6 +44,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    memory_os_admission = _load_json(
+        root / "benchmarks" / "memory_os_admission_results.json",
+        load_errors,
+        required=False,
+    )
     dispatch = _load_json(
         root / "benchmarks" / "production_evidence_dispatch_results.json",
         load_errors,
@@ -85,6 +90,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
+        "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
@@ -224,6 +230,13 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "overall_status": scale_gap.get("overall_status", "missing"),
             "summary": scale_gap.get("summary", {}),
             "profile_gaps": scale_gap.get("profile_gaps", []),
+        },
+        "memory_os_admission": {
+            "schema": memory_os_admission.get("schema"),
+            "status": memory_os_admission.get("status", "missing"),
+            "admitted": memory_os_admission.get("admitted", False),
+            "summary": memory_os_admission.get("summary", {}),
+            "requirements": memory_os_admission.get("requirements", []),
         },
         "source_files": list(source_payloads),
         "load_errors": load_errors,

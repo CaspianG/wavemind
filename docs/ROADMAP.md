@@ -123,6 +123,15 @@ policy matters more than raw vector-database scale:
   ids, Redis and lock environment requirements, blocked tasks, warnings, and a
   `safe_to_run` flag. This makes production worker rollout auditable before any
   background job mutates memory state.
+- `wavemind memory-os-admission --target-memories ...` is now the strict
+  deployment-facing gate for that worker set. It turns the scheduler plan into
+  `benchmarks/memory_os_admission_results.json` and
+  `benchmarks/MEMORY_OS_ADMISSION.md`, and refuses production admission when
+  query-audit traffic has not enabled prewarm/predictive workers, Redis/shared
+  cache or distributed-lock wiring is missing, mutation tasks are not
+  singleton/idempotent, the policy manifest is incomplete, or million-plus
+  targets still require architecture evidence. `--allow-plan-only` keeps the
+  runbook visible without admitting production automation.
 - `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
   `wavemind feedback-batch` now expose explicit useful/not-useful recall
   signals. They update priority/hotness, persist state, emit audit events,

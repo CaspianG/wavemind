@@ -1,0 +1,1287 @@
+{
+  "schema": "wavemind.memory_os_admission.v1",
+  "generated_at": "2026-07-09T00:40:28Z",
+  "status": "plan_only",
+  "admitted": false,
+  "deployment": "production",
+  "target_memories": 10000000,
+  "namespace_count": 4096,
+  "worker_count": 12,
+  "effective_cache_mode": "redis",
+  "hot_query_count": 0,
+  "allow_plan_only": true,
+  "claim_boundary": "strict_memory_os_evidence_required",
+  "summary": {
+    "status": "plan_only",
+    "admitted": false,
+    "requirement_count": 11,
+    "passed_count": 5,
+    "blocker_count": 5,
+    "warning_count": 1,
+    "blocker_ids": [
+      "hot-query-signal",
+      "shared-cache-configured",
+      "distributed-lock-configured",
+      "scale-boundary",
+      "runtime-env"
+    ],
+    "warning_ids": [
+      "consolidation-enabled"
+    ],
+    "enabled_task_ids": [
+      "adaptive-forgetting",
+      "architecture-advice",
+      "maintenance",
+      "memory-os"
+    ],
+    "missing_runtime_env": [
+      "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+      "WAVEMIND_REDIS_URL"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "execution-safe",
+      "title": "Execution plan has no blocked worker tasks",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "safe_to_run=True, blocked=[]",
+      "action": "Resolve execution_plan.blocked_task_ids before scheduling Memory OS.",
+      "details": {}
+    },
+    {
+      "id": "task-coverage",
+      "title": "All Memory OS worker lanes are planned",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "adaptive-forgetting, architecture-advice, cache-prewarm, consolidation, maintenance, memory-os, predictive-prefetch",
+      "action": "Planner must include memory-os, cache-prewarm, predictive-prefetch, forgetting, consolidation, maintenance, and architecture-advice.",
+      "details": {}
+    },
+    {
+      "id": "hot-query-signal",
+      "title": "Query audit traffic enables prewarm and predictive workers",
+      "status": "action_required",
+      "passed": false,
+      "severity": "blocker",
+      "evidence": "hot_query_count=0, enabled=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+      "action": "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
+      "details": {}
+    },
+    {
+      "id": "consolidation-enabled",
+      "title": "Consolidation worker is active when clusters exist",
+      "status": "action_required",
+      "passed": false,
+      "severity": "warning",
+      "evidence": "enabled=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+      "action": "Seed enough representative memories/query traffic for stable concept clusters before production rollout.",
+      "details": {}
+    },
+    {
+      "id": "shared-cache-configured",
+      "title": "Shared Redis cache is configured when the plan requires it",
+      "status": "action_required",
+      "passed": false,
+      "severity": "blocker",
+      "evidence": "requires_shared_cache=True, effective_cache_mode=redis, redis_configured=False",
+      "action": "Set WAVEMIND_REDIS_URL or pass --redis-url before enabling multi-worker Memory OS.",
+      "details": {}
+    },
+    {
+      "id": "distributed-lock-configured",
+      "title": "Distributed single-flight lock is configured for state mutation",
+      "status": "action_required",
+      "passed": false,
+      "severity": "blocker",
+      "evidence": "requires_distributed_lock=True, lock_configured=False",
+      "action": "Set WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or pass --lock-redis-url before running production Memory OS workers.",
+      "details": {}
+    },
+    {
+      "id": "state-mutation-singleton",
+      "title": "State-mutating tasks are singleton/idempotent",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "state_mutating=['adaptive-forgetting', 'maintenance', 'memory-os'], singleton=['adaptive-forgetting', 'architecture-advice', 'maintenance', 'memory-os']",
+      "action": "Keep mutation tasks as cluster singletons with idempotency keys.",
+      "details": {}
+    },
+    {
+      "id": "policy-coverage",
+      "title": "Policy manifest covers prefetch, priority, forgetting, consolidation, scale, and coordination",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "consolidation-policy, coordination-policy, forgetting-policy, prefetch-policy, priority-policy, scale-policy",
+      "action": "Memory OS admission requires a full policy manifest before rollout.",
+      "details": {}
+    },
+    {
+      "id": "infrastructure-contract",
+      "title": "Production infrastructure contract is explicit",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "OpenTelemetry metrics for worker duration, errors, and warmed queries, Redis-compatible shared hot-query cache, distributed worker lock or single-flight scheduler, durable queue or Kubernetes CronJobs",
+      "action": "Production plans must list Redis, lock/scheduler, queue/CronJob, and OpenTelemetry requirements.",
+      "details": {}
+    },
+    {
+      "id": "scale-boundary",
+      "title": "Large target stays behind strict architecture evidence",
+      "status": "action_required",
+      "passed": false,
+      "severity": "blocker",
+      "evidence": "architecture_status=architecture_required, strict_target=True",
+      "action": "Do not admit Memory OS production rollout for million-plus targets until architecture-required evidence is resolved.",
+      "details": {}
+    },
+    {
+      "id": "runtime-env",
+      "title": "Required runtime environment is present",
+      "status": "action_required",
+      "passed": false,
+      "severity": "blocker",
+      "evidence": "missing=['WAVEMIND_MEMORY_OS_LOCK_REDIS_URL', 'WAVEMIND_REDIS_URL']",
+      "action": "Provide every required environment variable before scheduling the worker set.",
+      "details": {}
+    }
+  ],
+  "execution_plan": {
+    "status": "architecture_required",
+    "namespace": null,
+    "deployment": "production",
+    "worker_count": 12,
+    "max_parallel_workers": 12,
+    "requires_shared_cache": true,
+    "requires_distributed_lock": true,
+    "safe_to_run": true,
+    "enabled_task_ids": [
+      "architecture-advice",
+      "maintenance",
+      "adaptive-forgetting",
+      "memory-os"
+    ],
+    "singleton_task_ids": [
+      "architecture-advice",
+      "maintenance",
+      "adaptive-forgetting",
+      "memory-os"
+    ],
+    "worker_pool_task_ids": [],
+    "state_mutating_task_ids": [
+      "maintenance",
+      "adaptive-forgetting",
+      "memory-os"
+    ],
+    "blocked_task_ids": [],
+    "warnings": [
+      "distributed-lock-required"
+    ],
+    "steps": [
+      {
+        "order": 10,
+        "task_id": "architecture-advice",
+        "title": "Architecture advisor preflight",
+        "enabled": true,
+        "priority": "critical",
+        "cadence_seconds": 300,
+        "timeout_seconds": 120,
+        "worker_count": 1,
+        "run_scope": "scheduler-singleton",
+        "state_mutation": false,
+        "requires_shared_cache": false,
+        "requires_distributed_lock": false,
+        "required_environment": [],
+        "idempotency_key": null,
+        "can_run_on_all_workers": false,
+        "command": "wavemind advise --target-memories 10000000 --namespace-count 4096 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 1200 --target-p99-ms 80 --json",
+        "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+      },
+      {
+        "order": 20,
+        "task_id": "maintenance",
+        "title": "Expired memory and index maintenance",
+        "enabled": true,
+        "priority": "normal",
+        "cadence_seconds": 300,
+        "timeout_seconds": 300,
+        "worker_count": 1,
+        "run_scope": "cluster-singleton",
+        "state_mutation": true,
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true,
+        "required_environment": [
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "idempotency_key": "wavemind:memory-os:global:maintenance",
+        "can_run_on_all_workers": false,
+        "command": "wavemind maintenance",
+        "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+      },
+      {
+        "order": 30,
+        "task_id": "adaptive-forgetting",
+        "title": "Adaptive forgetting",
+        "enabled": true,
+        "priority": "high",
+        "cadence_seconds": 900,
+        "timeout_seconds": 300,
+        "worker_count": 1,
+        "run_scope": "cluster-singleton",
+        "state_mutation": true,
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true,
+        "required_environment": [
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "idempotency_key": "wavemind:memory-os:global:adaptive-forgetting",
+        "can_run_on_all_workers": false,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Demotes old unused memories before they compete with current context."
+      },
+      {
+        "order": 40,
+        "task_id": "consolidation",
+        "title": "Field and concept consolidation",
+        "enabled": false,
+        "priority": "normal",
+        "cadence_seconds": 3600,
+        "timeout_seconds": 300,
+        "worker_count": 1,
+        "run_scope": "cluster-singleton",
+        "state_mutation": true,
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true,
+        "required_environment": [
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "idempotency_key": "wavemind:memory-os:global:consolidation",
+        "can_run_on_all_workers": false,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Creates durable higher-level concept memories from active clusters."
+      },
+      {
+        "order": 50,
+        "task_id": "memory-os",
+        "title": "Adaptive Memory OS cycle",
+        "enabled": true,
+        "priority": "critical",
+        "cadence_seconds": 300,
+        "timeout_seconds": 600,
+        "worker_count": 12,
+        "run_scope": "cluster-singleton",
+        "state_mutation": true,
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true,
+        "required_environment": [
+          "WAVEMIND_REDIS_URL",
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "idempotency_key": "wavemind:memory-os:global:memory-os",
+        "can_run_on_all_workers": false,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+      },
+      {
+        "order": 60,
+        "task_id": "cache-prewarm",
+        "title": "Hot query cache prewarm",
+        "enabled": false,
+        "priority": "normal",
+        "cadence_seconds": 300,
+        "timeout_seconds": 600,
+        "worker_count": 4,
+        "run_scope": "worker-pool",
+        "state_mutation": false,
+        "requires_shared_cache": true,
+        "requires_distributed_lock": false,
+        "required_environment": [
+          "WAVEMIND_REDIS_URL"
+        ],
+        "idempotency_key": null,
+        "can_run_on_all_workers": false,
+        "command": "wavemind cache-prewarm --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+        "reason": "Keeps repeated recall paths hot across API workers."
+      },
+      {
+        "order": 70,
+        "task_id": "predictive-prefetch",
+        "title": "Predictive neighbor prefetch",
+        "enabled": false,
+        "priority": "high",
+        "cadence_seconds": 600,
+        "timeout_seconds": 120,
+        "worker_count": 4,
+        "run_scope": "cluster-singleton",
+        "state_mutation": false,
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true,
+        "required_environment": [
+          "WAVEMIND_REDIS_URL",
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "idempotency_key": "wavemind:memory-os:global:predictive-prefetch",
+        "can_run_on_all_workers": false,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Warms likely follow-up queries from hot recall paths."
+      }
+    ]
+  },
+  "policy_manifest": {
+    "status": "architecture_required",
+    "namespace": null,
+    "decision_count": 6,
+    "decision_ids": [
+      "prefetch-policy",
+      "priority-policy",
+      "forgetting-policy",
+      "consolidation-policy",
+      "scale-policy",
+      "coordination-policy"
+    ],
+    "decisions": [
+      {
+        "id": "prefetch-policy",
+        "status": "watch",
+        "strategy": "collect-query-audit-first",
+        "rationale": "Memory OS needs audited query traffic before it can learn hot recalls.",
+        "action": "Run representative traffic with query audit enabled, then rerun Memory OS.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "scanned_events": 0
+        }
+      },
+      {
+        "id": "priority-policy",
+        "status": "watch",
+        "strategy": "wait-for-hot-recall-signal",
+        "rationale": "No priority predictions fired in this run.",
+        "action": "Keep audit collection enabled and lower min_frequency only after checking false-positive recall.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "hot_queries": 0
+        }
+      },
+      {
+        "id": "forgetting-policy",
+        "status": "watch",
+        "strategy": "observe-before-demoting",
+        "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+        "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "active_memories": 0
+        }
+      },
+      {
+        "id": "consolidation-policy",
+        "status": "watch",
+        "strategy": "wait-for-stable-clusters",
+        "rationale": "No concept memories were created in this run.",
+        "action": "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "concepts_created": 0
+        }
+      },
+      {
+        "id": "scale-policy",
+        "status": "architecture_required",
+        "strategy": "external-index-sharding-and-production-controls",
+        "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+        "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "active_memories": 0,
+          "target_memories": 10000000,
+          "recommendation_ids": [
+            "scale-plan",
+            "bounded-read-fanout",
+            "service-index",
+            "namespace-sharding",
+            "capacity-envelope",
+            "active-active-region-evidence",
+            "production-controls",
+            "replication-capacity",
+            "load-test",
+            "query-audit",
+            "multimodal-payloads"
+          ]
+        }
+      },
+      {
+        "id": "coordination-policy",
+        "status": "ok",
+        "strategy": "single-writer-memory-os-cycle",
+        "rationale": "The current run has a safe coordination state for this deployment mode.",
+        "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+        "evidence": {
+          "namespace": "all namespaces",
+          "deployment": "production",
+          "lock_required": true,
+          "lock_acquired": true,
+          "lock_key": "scheduler-preflight",
+          "cache_enabled": true
+        }
+      }
+    ],
+    "ok": false
+  },
+  "architecture_advice": {
+    "status": "architecture_required",
+    "production_ready": false,
+    "deployment": "production",
+    "namespace": null,
+    "current_memories": 0,
+    "target_memories": 10000000,
+    "index": "numpy-exact",
+    "vector_dim": 384,
+    "target_p99_ms": 80.0,
+    "observed_p99_ms": null,
+    "namespace_count": 4096,
+    "node_count": null,
+    "replication_factor": 3,
+    "read_quorum": 1,
+    "read_fanout": 3,
+    "scale_plan": {
+      "current_memories": 0,
+      "target_memories": 10000000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "namespace": null,
+      "latency_target_ms": 80.0,
+      "tier": "million-plus",
+      "status": "architecture_required",
+      "recommended_index": "external vector database plus namespace sharding",
+      "warnings": [
+        "WaveMind should be the memory-policy layer here, not the primary large-document vector database."
+      ],
+      "actions": [
+        "Use Qdrant, pgvector, Pinecone, Weaviate, Milvus, or a similar service for candidate search.",
+        "Partition memory by tenant/namespace and define retention policy before import.",
+        "Run load tests for recall, p95, p99, rebuild time, backup, and restore drills."
+      ]
+    },
+    "recommendations": [
+      {
+        "id": "scale-plan",
+        "severity": "architecture_required",
+        "title": "Scale plan requires attention",
+        "rationale": "The current scale tier is million-plus for target 10,000,000 memories.",
+        "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+        "commands": [
+          "wavemind scale-plan --target-memories 10000000 --fail-on action_required --json"
+        ],
+        "docs": [
+          "README.md#scale-readiness",
+          "docs/ROADMAP.md"
+        ]
+      },
+      {
+        "id": "bounded-read-fanout",
+        "severity": "action_required",
+        "title": "Bound read fanout for the hot path",
+        "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+        "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+        "commands": [
+          "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+          "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+        ],
+        "docs": [
+          "docs/BENCHMARK_BRIEF.md"
+        ]
+      },
+      {
+        "id": "service-index",
+        "severity": "action_required",
+        "title": "Use a service-backed vector index",
+        "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+        "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+        "commands": [
+          "wavemind index-health --json",
+          "python benchmarks/production_readiness_gate.py --json"
+        ],
+        "docs": [
+          "benchmarks/PRODUCTION_READINESS.md",
+          "docs/OBSERVABILITY.md"
+        ]
+      },
+      {
+        "id": "namespace-sharding",
+        "severity": "architecture_required",
+        "title": "Shard memory by namespace",
+        "rationale": "Million-plus memories or thousands of namespaces need bounded per-node storage and repair domains.",
+        "action": "Plan namespace placement across nodes, use quorum replication, and schedule anti-entropy repair.",
+        "commands": [
+          "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --kubernetes --repair-cronjob --json",
+          "wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor 3 --read-quorum 1 --read-fanout 1 --json"
+        ],
+        "docs": [
+          "deploy/operator",
+          "deploy/helm/wavemind"
+        ]
+      },
+      {
+        "id": "capacity-envelope",
+        "severity": "architecture_required",
+        "title": "Run the 10M+ capacity envelope before claiming production scale",
+        "rationale": "Very large deployments need validated placement, p99, recall, rebuild, backup, and restore behavior.",
+        "action": "Run sustained external HTTP cluster load and keep the resulting artifact with the benchmark report.",
+        "commands": [
+          "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --fail-on-slo"
+        ],
+        "docs": [
+          "docs/BENCHMARK_BRIEF.md",
+          ".github/workflows/external-http-cluster-load.yml"
+        ]
+      },
+      {
+        "id": "active-active-region-evidence",
+        "severity": "architecture_required",
+        "title": "Verify external active-active regions",
+        "rationale": "Large production deployments need real regional API evidence for convergence, delete propagation, cursor idempotency, and p99 latency.",
+        "action": "Run the external HTTP active-active workflow against at least three real API regions before claiming multi-region readiness.",
+        "commands": [
+          "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500"
+        ],
+        "docs": [
+          "docs/BENCHMARK_BRIEF.md",
+          ".github/workflows/external-http-active-active.yml"
+        ]
+      },
+      {
+        "id": "production-controls",
+        "severity": "action_required",
+        "title": "Enable production controls",
+        "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+        "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+        "commands": [
+          "python benchmarks/production_readiness_gate.py --json",
+          "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+        ],
+        "docs": [
+          "benchmarks/PRODUCTION_READINESS.md",
+          "docs/OBSERVABILITY.md"
+        ]
+      },
+      {
+        "id": "replication-capacity",
+        "severity": "architecture_required",
+        "title": "Add enough nodes for replication",
+        "rationale": "Replication factor 3 requires at least 3 available nodes.",
+        "action": "Provision enough API nodes before enabling quorum writes.",
+        "commands": [
+          "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+        ],
+        "docs": []
+      },
+      {
+        "id": "load-test",
+        "severity": "action_required",
+        "title": "Run a sustained production load profile",
+        "rationale": "Target QPS 1200.0 needs p99, failover, delete suppression, and repair evidence.",
+        "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+        "commands": [
+          "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+        ],
+        "docs": [
+          ".github/workflows/external-http-cluster-load.yml"
+        ]
+      },
+      {
+        "id": "query-audit",
+        "severity": "watch",
+        "title": "Collect query audit traffic for Memory OS",
+        "rationale": "Memory OS cache prewarm and priority prediction need observed query patterns.",
+        "action": "Enable audited query traffic in staging before tuning prewarm and adaptive forgetting.",
+        "commands": [
+          "wavemind --audit-queries cache-prewarm --json"
+        ],
+        "docs": []
+      },
+      {
+        "id": "multimodal-payloads",
+        "severity": "watch",
+        "title": "Validate multimodal and structured payload retrieval",
+        "rationale": "Images, audio, tables, and events need typed payload metadata and workload-specific encoders.",
+        "action": "Use typed payload helpers and run structured retrieval checks before exposing multimodal claims.",
+        "commands": [
+          "python -m pytest tests/test_multimodal.py -q",
+          "python benchmarks/scale_readiness_benchmark.py --output benchmarks/scale_readiness_results.json"
+        ],
+        "docs": [
+          "docs/USE_CASES.md"
+        ]
+      }
+    ],
+    "next_commands": [
+      "wavemind scale-plan --target-memories 10000000 --fail-on action_required --json",
+      "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+      "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+      "wavemind index-health --json",
+      "python benchmarks/production_readiness_gate.py --json",
+      "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --kubernetes --repair-cronjob --json",
+      "wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor 3 --read-quorum 1 --read-fanout 1 --json",
+      "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --fail-on-slo",
+      "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500",
+      "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+      "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --json",
+      "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true",
+      "wavemind --audit-queries cache-prewarm --json",
+      "python -m pytest tests/test_multimodal.py -q",
+      "python benchmarks/scale_readiness_benchmark.py --output benchmarks/scale_readiness_results.json"
+    ]
+  },
+  "plan": {
+    "status": "architecture_required",
+    "namespace": null,
+    "deployment": "production",
+    "cache_mode": "auto",
+    "effective_cache_mode": "redis",
+    "target_memories": 10000000,
+    "namespace_count": 4096,
+    "active_memories": 0,
+    "hot_query_count": 0,
+    "observed_p99_ms": null,
+    "target_p99_ms": 80.0,
+    "target_qps": 1200.0,
+    "worker_count": 12,
+    "required_infrastructure": [
+      "Redis-compatible shared hot-query cache",
+      "distributed worker lock or single-flight scheduler",
+      "durable queue or Kubernetes CronJobs",
+      "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+    ],
+    "recommendations": [
+      "Enable query audit traffic before relying on prewarm or predictive prefetch.",
+      "Back Memory OS with service-mode ANN indexes and external production evidence runs.",
+      "Architecture advisor: Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+      "Architecture advisor: Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+      "Architecture advisor: Use a service-backed vector index - Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+      "Architecture advisor: Shard memory by namespace - Plan namespace placement across nodes, use quorum replication, and schedule anti-entropy repair.",
+      "Architecture advisor: Run the 10M+ capacity envelope before claiming production scale - Run sustained external HTTP cluster load and keep the resulting artifact with the benchmark report.",
+      "Architecture advisor: Verify external active-active regions - Run the external HTTP active-active workflow against at least three real API regions before claiming multi-region readiness.",
+      "Architecture advisor: Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+      "Architecture advisor: Add enough nodes for replication - Provision enough API nodes before enabling quorum writes.",
+      "Architecture advisor: Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+      "Architecture advisor: Collect query audit traffic for Memory OS - Enable audited query traffic in staging before tuning prewarm and adaptive forgetting.",
+      "Architecture advisor: Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
+    ],
+    "architecture_advice": {
+      "status": "architecture_required",
+      "production_ready": false,
+      "deployment": "production",
+      "namespace": null,
+      "current_memories": 0,
+      "target_memories": 10000000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "target_p99_ms": 80.0,
+      "observed_p99_ms": null,
+      "namespace_count": 4096,
+      "node_count": null,
+      "replication_factor": 3,
+      "read_quorum": 1,
+      "read_fanout": 3,
+      "scale_plan": {
+        "current_memories": 0,
+        "target_memories": 10000000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "namespace": null,
+        "latency_target_ms": 80.0,
+        "tier": "million-plus",
+        "status": "architecture_required",
+        "recommended_index": "external vector database plus namespace sharding",
+        "warnings": [
+          "WaveMind should be the memory-policy layer here, not the primary large-document vector database."
+        ],
+        "actions": [
+          "Use Qdrant, pgvector, Pinecone, Weaviate, Milvus, or a similar service for candidate search.",
+          "Partition memory by tenant/namespace and define retention policy before import.",
+          "Run load tests for recall, p95, p99, rebuild time, backup, and restore drills."
+        ]
+      },
+      "recommendations": [
+        {
+          "id": "scale-plan",
+          "severity": "architecture_required",
+          "title": "Scale plan requires attention",
+          "rationale": "The current scale tier is million-plus for target 10,000,000 memories.",
+          "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+          "commands": [
+            "wavemind scale-plan --target-memories 10000000 --fail-on action_required --json"
+          ],
+          "docs": [
+            "README.md#scale-readiness",
+            "docs/ROADMAP.md"
+          ]
+        },
+        {
+          "id": "bounded-read-fanout",
+          "severity": "action_required",
+          "title": "Bound read fanout for the hot path",
+          "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+          "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+          "commands": [
+            "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md"
+          ]
+        },
+        {
+          "id": "service-index",
+          "severity": "action_required",
+          "title": "Use a service-backed vector index",
+          "rationale": "Large production memory sets need independent index lifecycle, health checks, and rebuild controls.",
+          "action": "Keep SQLite/Postgres as source of truth and run Qdrant or pgvector as candidate generation.",
+          "commands": [
+            "wavemind index-health --json",
+            "python benchmarks/production_readiness_gate.py --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "namespace-sharding",
+          "severity": "architecture_required",
+          "title": "Shard memory by namespace",
+          "rationale": "Million-plus memories or thousands of namespaces need bounded per-node storage and repair domains.",
+          "action": "Plan namespace placement across nodes, use quorum replication, and schedule anti-entropy repair.",
+          "commands": [
+            "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --kubernetes --repair-cronjob --json",
+            "wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor 3 --read-quorum 1 --read-fanout 1 --json"
+          ],
+          "docs": [
+            "deploy/operator",
+            "deploy/helm/wavemind"
+          ]
+        },
+        {
+          "id": "capacity-envelope",
+          "severity": "architecture_required",
+          "title": "Run the 10M+ capacity envelope before claiming production scale",
+          "rationale": "Very large deployments need validated placement, p99, recall, rebuild, backup, and restore behavior.",
+          "action": "Run sustained external HTTP cluster load and keep the resulting artifact with the benchmark report.",
+          "commands": [
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md",
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        },
+        {
+          "id": "active-active-region-evidence",
+          "severity": "architecture_required",
+          "title": "Verify external active-active regions",
+          "rationale": "Large production deployments need real regional API evidence for convergence, delete propagation, cursor idempotency, and p99 latency.",
+          "action": "Run the external HTTP active-active workflow against at least three real API regions before claiming multi-region readiness.",
+          "commands": [
+            "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md",
+            ".github/workflows/external-http-active-active.yml"
+          ]
+        },
+        {
+          "id": "production-controls",
+          "severity": "action_required",
+          "title": "Enable production controls",
+          "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+          "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "replication-capacity",
+          "severity": "architecture_required",
+          "title": "Add enough nodes for replication",
+          "rationale": "Replication factor 3 requires at least 3 available nodes.",
+          "action": "Provision enough API nodes before enabling quorum writes.",
+          "commands": [
+            "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --json"
+          ],
+          "docs": []
+        },
+        {
+          "id": "load-test",
+          "severity": "action_required",
+          "title": "Run a sustained production load profile",
+          "rationale": "Target QPS 1200.0 needs p99, failover, delete suppression, and repair evidence.",
+          "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+          "commands": [
+            "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+          ],
+          "docs": [
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        },
+        {
+          "id": "query-audit",
+          "severity": "watch",
+          "title": "Collect query audit traffic for Memory OS",
+          "rationale": "Memory OS cache prewarm and priority prediction need observed query patterns.",
+          "action": "Enable audited query traffic in staging before tuning prewarm and adaptive forgetting.",
+          "commands": [
+            "wavemind --audit-queries cache-prewarm --json"
+          ],
+          "docs": []
+        },
+        {
+          "id": "multimodal-payloads",
+          "severity": "watch",
+          "title": "Validate multimodal and structured payload retrieval",
+          "rationale": "Images, audio, tables, and events need typed payload metadata and workload-specific encoders.",
+          "action": "Use typed payload helpers and run structured retrieval checks before exposing multimodal claims.",
+          "commands": [
+            "python -m pytest tests/test_multimodal.py -q",
+            "python benchmarks/scale_readiness_benchmark.py --output benchmarks/scale_readiness_results.json"
+          ],
+          "docs": [
+            "docs/USE_CASES.md"
+          ]
+        }
+      ],
+      "next_commands": [
+        "wavemind scale-plan --target-memories 10000000 --fail-on action_required --json",
+        "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "wavemind index-health --json",
+        "python benchmarks/production_readiness_gate.py --json",
+        "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --kubernetes --repair-cronjob --json",
+        "wavemind cluster-repair --namespace-count 4096 --node node-a=http://127.0.0.1:8001 --node node-b=http://127.0.0.1:8002 --node node-c=http://127.0.0.1:8003 --replication-factor 3 --read-quorum 1 --read-fanout 1 --json",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --fail-on-slo",
+        "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500",
+        "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+        "wavemind cluster-plan --namespace-count 4096 --node node-a --node node-b --node node-c --replication-factor 3 --json",
+        "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true",
+        "wavemind --audit-queries cache-prewarm --json",
+        "python -m pytest tests/test_multimodal.py -q",
+        "python benchmarks/scale_readiness_benchmark.py --output benchmarks/scale_readiness_results.json"
+      ]
+    },
+    "policy_manifest": {
+      "status": "architecture_required",
+      "namespace": null,
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "watch",
+          "strategy": "collect-query-audit-first",
+          "rationale": "Memory OS needs audited query traffic before it can learn hot recalls.",
+          "action": "Run representative traffic with query audit enabled, then rerun Memory OS.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "scanned_events": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "watch",
+          "strategy": "wait-for-hot-recall-signal",
+          "rationale": "No priority predictions fired in this run.",
+          "action": "Keep audit collection enabled and lower min_frequency only after checking false-positive recall.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "hot_queries": 0
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "active_memories": 0
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "watch",
+          "strategy": "wait-for-stable-clusters",
+          "rationale": "No concept memories were created in this run.",
+          "action": "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "concepts_created": 0
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "architecture_required",
+          "strategy": "external-index-sharding-and-production-controls",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "active_memories": 0,
+            "target_memories": 10000000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "service-index",
+              "namespace-sharding",
+              "capacity-envelope",
+              "active-active-region-evidence",
+              "production-controls",
+              "replication-capacity",
+              "load-test",
+              "query-audit",
+              "multimodal-payloads"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "all namespaces",
+            "deployment": "production",
+            "lock_required": true,
+            "lock_acquired": true,
+            "lock_key": "scheduler-preflight",
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "policy_history": {
+      "previous_runs": 0,
+      "window": 5,
+      "trend": "first_run",
+      "repeated_action_required_ids": [],
+      "repeated_architecture_required_ids": [],
+      "repeated_required_ids": [],
+      "stable_ok_ids": [],
+      "status_counts": {
+        "architecture_required": 1,
+        "ok": 1,
+        "watch": 4
+      }
+    },
+    "policy_escalation_ids": [],
+    "policy_auto_adjustments": [],
+    "execution_plan": {
+      "status": "architecture_required",
+      "namespace": null,
+      "deployment": "production",
+      "worker_count": 12,
+      "max_parallel_workers": 12,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "safe_to_run": true,
+      "enabled_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "memory-os"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "memory-os"
+      ],
+      "worker_pool_task_ids": [],
+      "state_mutating_task_ids": [
+        "maintenance",
+        "adaptive-forgetting",
+        "memory-os"
+      ],
+      "blocked_task_ids": [],
+      "warnings": [
+        "distributed-lock-required"
+      ],
+      "steps": [
+        {
+          "order": 10,
+          "task_id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 300,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false,
+          "required_environment": [],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind advise --target-memories 10000000 --namespace-count 4096 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 1200 --target-p99-ms 80 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+        },
+        {
+          "order": 20,
+          "task_id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:global:maintenance",
+          "can_run_on_all_workers": false,
+          "command": "wavemind maintenance",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+        },
+        {
+          "order": 30,
+          "task_id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 900,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:global:adaptive-forgetting",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+          "reason": "Demotes old unused memories before they compete with current context."
+        },
+        {
+          "order": 40,
+          "task_id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": false,
+          "priority": "normal",
+          "cadence_seconds": 3600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:global:consolidation",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+          "reason": "Creates durable higher-level concept memories from active clusters."
+        },
+        {
+          "order": 50,
+          "task_id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 300,
+          "timeout_seconds": 600,
+          "worker_count": 12,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:global:memory-os",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+        },
+        {
+          "order": 60,
+          "task_id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": false,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 600,
+          "worker_count": 4,
+          "run_scope": "worker-pool",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL"
+          ],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind cache-prewarm --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+          "reason": "Keeps repeated recall paths hot across API workers."
+        },
+        {
+          "order": 70,
+          "task_id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": false,
+          "priority": "high",
+          "cadence_seconds": 600,
+          "timeout_seconds": 120,
+          "worker_count": 4,
+          "run_scope": "cluster-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:global:predictive-prefetch",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+          "reason": "Warms likely follow-up queries from hot recall paths."
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "memory-os",
+        "title": "Adaptive Memory OS cycle",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 12,
+        "timeout_seconds": 600,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
+        "priority": "critical",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "cache-prewarm",
+        "title": "Hot query cache prewarm",
+        "enabled": false,
+        "cadence_seconds": 300,
+        "worker_count": 4,
+        "timeout_seconds": 600,
+        "command": "wavemind cache-prewarm --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+        "reason": "Keeps repeated recall paths hot across API workers.",
+        "priority": "normal",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": false
+      },
+      {
+        "id": "predictive-prefetch",
+        "title": "Predictive neighbor prefetch",
+        "enabled": false,
+        "cadence_seconds": 600,
+        "worker_count": 4,
+        "timeout_seconds": 120,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Warms likely follow-up queries from hot recall paths.",
+        "priority": "high",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "adaptive-forgetting",
+        "title": "Adaptive forgetting",
+        "enabled": true,
+        "cadence_seconds": 900,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Demotes old unused memories before they compete with current context.",
+        "priority": "high",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "consolidation",
+        "title": "Field and concept consolidation",
+        "enabled": false,
+        "cadence_seconds": 3600,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 10000000 --namespace-count 4096 --deployment production --target-qps 1200 --target-p99-ms 80 --multimodal",
+        "reason": "Creates durable higher-level concept memories from active clusters.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "maintenance",
+        "title": "Expired memory and index maintenance",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind maintenance",
+        "reason": "Purges TTL-expired memories and repairs unhealthy local indexes.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "architecture-advice",
+        "title": "Architecture advisor preflight",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 1,
+        "timeout_seconds": 120,
+        "command": "wavemind advise --target-memories 10000000 --namespace-count 4096 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 1200 --target-p99-ms 80 --json",
+        "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
+        "priority": "critical",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": false
+      }
+    ],
+    "enabled_task_ids": [
+      "memory-os",
+      "adaptive-forgetting",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "ok": true
+  },
+  "next_actions": [
+    "Keep this as a runbook until the action_required requirements pass.",
+    "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
+    "Seed enough representative memories/query traffic for stable concept clusters before production rollout.",
+    "Set WAVEMIND_REDIS_URL or pass --redis-url before enabling multi-worker Memory OS.",
+    "Set WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or pass --lock-redis-url before running production Memory OS workers.",
+    "Do not admit Memory OS production rollout for million-plus targets until architecture-required evidence is resolved.",
+    "Provide every required environment variable before scheduling the worker set."
+  ]
+}
