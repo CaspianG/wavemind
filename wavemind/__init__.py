@@ -177,9 +177,11 @@ from .production_evidence import (
     build_scale_gap_manifest,
     evaluate_active_active_admission,
     evaluate_production_admission,
+    evaluate_serverless_admission,
     render_active_active_admission_markdown,
     render_production_admission_markdown,
     render_scale_gap_markdown,
+    render_serverless_admission_markdown,
 )
 from .serverless import (
     SecretEnvRef,
@@ -358,6 +360,7 @@ __all__ = [
     "build_scale_plan",
     "build_scale_gap_manifest",
     "evaluate_active_active_admission",
+    "evaluate_serverless_admission",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
     "build_cluster_rebalance_plan",
@@ -389,6 +392,7 @@ __all__ = [
     "restore_recovery_journal",
     "render_active_active_admission_markdown",
     "render_scale_gap_markdown",
+    "render_serverless_admission_markdown",
     "render_active_active_admission_markdown",
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",

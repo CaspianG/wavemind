@@ -66,6 +66,7 @@ from .production_evidence import (
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
+    evaluate_serverless_admission,
     render_active_active_admission_markdown,
     render_bundle_markdown,
     render_dispatch_markdown,
@@ -74,6 +75,7 @@ from .production_evidence import (
     render_preflight_markdown,
     render_release_claims_markdown,
     render_scale_gap_markdown,
+    render_serverless_admission_markdown,
 )
 from .production_evidence_ingest import (
     ProductionEvidenceIngestError,
@@ -631,6 +633,44 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/ACTIVE_ACTIVE_ADMISSION.md"),
     )
     active_active_admission.add_argument("--json", action="store_true")
+
+    serverless_admission = sub.add_parser(
+        "serverless-admission",
+        help="Gate a managed/serverless rollout against strict remote telemetry",
+    )
+    serverless_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    serverless_admission.add_argument("--deployment", default="production")
+    serverless_admission.add_argument("--target-rps", type=float, default=3200.0)
+    serverless_admission.add_argument("--target-p99-ms", type=float, default=500.0)
+    serverless_admission.add_argument("--max-scale", type=int, default=256)
+    serverless_admission.add_argument(
+        "--cold-start-budget-ms",
+        type=float,
+        default=1500.0,
+    )
+    serverless_admission.add_argument("--allow-plan-only", action="store_true")
+    serverless_admission.add_argument("--write-artifacts", action="store_true")
+    serverless_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless the serverless rollout is admitted.",
+    )
+    serverless_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/serverless_admission_results.json"),
+    )
+    serverless_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/SERVERLESS_ADMISSION.md"),
+    )
+    serverless_admission.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1572,6 +1612,40 @@ def print_active_active_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_serverless_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"target_rps: {payload['target_rps']}")
+    print(f"target_p99_ms: {payload['target_p99_ms']}")
+    print(f"max_scale: {payload['max_scale']}")
+    print(f"cold_start_budget_ms: {payload['cold_start_budget_ms']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    print(f"strict_status: {summary['strict_status']}")
+    print(f"preflight_status: {summary['preflight_status']}")
+    print(f"required_artifact: {summary['required_artifact']}")
+    preflight = payload.get("preflight") or {}
+    missing_env = preflight.get("missing_env") or []
+    if missing_env:
+        print(f"missing_env: {', '.join(missing_env)}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+    warnings = payload.get("warnings") or []
+    if warnings:
+        print("warnings:")
+        for warning in warnings:
+            print(f"- {warning}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_memory_os_admission(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"status: {payload['status']}")
@@ -2369,6 +2443,38 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_active_active_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "serverless-admission":
+        payload = evaluate_serverless_admission(
+            args.root,
+            deployment=args.deployment,
+            target_rps=args.target_rps,
+            target_p99_ms=args.target_p99_ms,
+            max_scale=args.max_scale,
+            cold_start_budget_ms=args.cold_start_budget_ms,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_serverless_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_serverless_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")

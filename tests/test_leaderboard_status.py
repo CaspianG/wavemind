@@ -169,6 +169,24 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["active_active_admission"]["required_evidence"]["id"] == (
         "external_http_active_active"
     )
+    assert payload["serverless_admission"]["schema"] == (
+        "wavemind.serverless_admission.v1"
+    )
+    assert payload["serverless_admission"]["status"] in {
+        "admitted",
+        "plan_only",
+        "blocked",
+    }
+    assert payload["serverless_admission"]["admitted"] is False
+    assert payload["serverless_admission"]["claim_boundary"] == (
+        "remote_serverless_telemetry_required"
+    )
+    assert payload["serverless_admission"]["summary"]["strict_status"] == (
+        "action_required"
+    )
+    assert payload["serverless_admission"]["required_evidence"]["id"] == (
+        "serverless_remote_telemetry"
+    )
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
     assert payload["memory_os_admission"]["status"] in {"admitted", "plan_only", "blocked"}
     assert payload["memory_os_admission"]["summary"]["requirement_count"] >= 10
@@ -200,6 +218,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/active_active_admission_results.json" in payload["source_files"]
+    assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -240,6 +259,9 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["scale_gap"]["schema"] == "wavemind.scale_gap.v1"
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
+    )
+    assert payload["serverless_admission"]["schema"] == (
+        "wavemind.serverless_admission.v1"
     )
     assert payload["memory_os_admission"]["schema"] == "wavemind.memory_os_admission.v1"
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"

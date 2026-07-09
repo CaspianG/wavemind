@@ -211,6 +211,12 @@ policy matters more than raw vector-database scale:
   optionally commit refreshed leaderboard/readiness artifacts. The
   scale-readiness profile prefers this remote artifact over loopback telemetry
   when it exists.
+- `wavemind serverless-admission --allow-plan-only` now publishes the
+  deployment-facing managed/serverless admission contract. It joins strict
+  serverless telemetry evidence, remote-node preflight state, missing env,
+  required artifact, and next GitHub Actions command, while
+  `--fail-on-blocked` keeps hosted/serverless rollout locked until
+  `deploy/serverless/observed-telemetry.remote.json` passes.
 - The scale-readiness profile now includes a deterministic 100M-memory capacity
   envelope: 32768 namespace buckets, weighted rendezvous zone-aware placement,
   128 nodes, 8 zones, replication factor 3, node/zone-loss availability `1.000`,

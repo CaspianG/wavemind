@@ -2310,6 +2310,210 @@ def render_active_active_admission_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def evaluate_serverless_admission(
+    root: Path = PROJECT_ROOT,
+    *,
+    deployment: str = "production",
+    target_rps: float = 3200.0,
+    target_p99_ms: float = 500.0,
+    max_scale: int = 256,
+    cold_start_budget_ms: float = 1500.0,
+    allow_plan_only: bool = False,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Gate managed/serverless production rollout against remote telemetry."""
+
+    root = Path(root)
+    strict = evaluate_production_evidence(root)
+    strict_requirements = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    requirement = strict_requirements.get("serverless_remote_telemetry", {})
+    preflight = evaluate_production_evidence_preflight(root, env=env)
+    preflight_checks = {
+        str(row.get("id")): row
+        for row in preflight.get("checks", [])
+        if isinstance(row, dict)
+    }
+    preflight_check = preflight_checks.get("serverless_remote_telemetry", {})
+
+    strict_status = str(requirement.get("status") or "missing")
+    preflight_status = str(preflight_check.get("status") or "missing")
+    admitted = strict_status == "pass"
+    if admitted:
+        status = "admitted"
+    elif allow_plan_only:
+        status = "plan_only"
+    else:
+        status = "blocked"
+
+    issues: list[str] = []
+    warnings: list[str] = []
+    if strict_status != "pass":
+        issues.append(
+            "serverless_remote_telemetry is not admitted: "
+            f"strict_status={strict_status}"
+        )
+    if preflight_status != "ready":
+        warnings.append(
+            "serverless remote telemetry preflight is not ready; provide deployed "
+            "HTTP API node URLs before dispatching the workflow."
+        )
+    if float(target_rps) <= 0:
+        issues.append("target_rps must be positive.")
+    if float(target_p99_ms) <= 0:
+        issues.append("target_p99_ms must be positive.")
+    if int(max_scale) < 1:
+        issues.append("max_scale must be positive.")
+    if float(cold_start_budget_ms) <= 0:
+        issues.append("cold_start_budget_ms must be positive.")
+
+    command = str(requirement.get("command") or preflight_check.get("command") or "")
+    next_actions: list[str] = []
+    if admitted:
+        next_actions.append(
+            "Proceed with serverless rollout while keeping p99, cold-start, error-rate, and scale-out monitors enabled."
+        )
+    elif status == "plan_only":
+        next_actions.append(
+            "Do not admit managed/serverless production traffic yet; run the remote telemetry workflow against deployed nodes first."
+        )
+    else:
+        next_actions.append(
+            "Keep the managed/serverless production claim locked until remote telemetry passes strict evidence."
+        )
+    if command:
+        next_actions.append(command)
+
+    requirement_issues = list(requirement.get("issues") or [])
+    preflight_issues = list(preflight_check.get("issues") or [])
+    missing_env = list(preflight_check.get("missing_env") or [])
+    required_env = list(preflight_check.get("required_env") or [])
+
+    return {
+        "schema": "wavemind.serverless_admission.v1",
+        "generated_at": _utc_now(),
+        "status": status,
+        "admitted": admitted,
+        "deployment": str(deployment),
+        "target_rps": float(target_rps),
+        "target_p99_ms": float(target_p99_ms),
+        "max_scale": int(max_scale),
+        "cold_start_budget_ms": float(cold_start_budget_ms),
+        "allow_plan_only": bool(allow_plan_only),
+        "claim_boundary": "remote_serverless_telemetry_required",
+        "summary": {
+            "status": status,
+            "admitted": admitted,
+            "strict_status": strict_status,
+            "preflight_status": preflight_status,
+            "required_artifact": requirement.get("artifact")
+            or "deploy/serverless/observed-telemetry.remote.json",
+            "missing_env": missing_env,
+            "blocking_issue_count": len(dict.fromkeys(issues + requirement_issues)),
+            "warning_count": len(dict.fromkeys(warnings + preflight_issues)),
+        },
+        "required_evidence": {
+            "id": "serverless_remote_telemetry",
+            "title": requirement.get("title") or "Managed/serverless remote telemetry",
+            "status": strict_status,
+            "artifact": requirement.get("artifact")
+            or "deploy/serverless/observed-telemetry.remote.json",
+            "evidence": requirement.get("evidence")
+            or "missing remote serverless telemetry artifact",
+            "issues": requirement_issues,
+            "command": command,
+            "claim_unlocked": requirement.get("claim_unlocked")
+            or "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
+        },
+        "preflight": {
+            "status": preflight_status,
+            "ready": bool(preflight_check.get("ready")),
+            "evidence": preflight_check.get("evidence") or "",
+            "required_env": required_env,
+            "missing_env": missing_env,
+            "issues": preflight_issues,
+            "warnings": list(preflight_check.get("warnings") or []),
+            "output_artifact": preflight_check.get("output_artifact")
+            or "deploy/serverless/observed-telemetry.remote.json",
+        },
+        "issues": list(dict.fromkeys(issues + requirement_issues)),
+        "warnings": list(dict.fromkeys(warnings + preflight_issues)),
+        "next_actions": list(dict.fromkeys(next_actions)),
+        "source_artifacts": {
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+            "required_result": "deploy/serverless/observed-telemetry.remote.json",
+        },
+    }
+
+
+def render_serverless_admission_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    required = payload["required_evidence"]
+    preflight = payload["preflight"]
+    lines = [
+        "# WaveMind Serverless Admission",
+        "",
+        "This is the deployment-facing gate for managed/serverless production",
+        "rollouts. It admits production traffic only when deployed HTTP API",
+        "nodes have produced remote telemetry for p99 latency, cold-start",
+        "budget, error rate, and scale-out capacity. Loopback telemetry stays",
+        "useful for development, but does not unlock this gate.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| status | `{payload['status']}` |",
+        f"| admitted | `{payload['admitted']}` |",
+        f"| deployment | `{payload['deployment']}` |",
+        f"| target RPS | `{payload['target_rps']}` |",
+        f"| target p99 ms | `{payload['target_p99_ms']}` |",
+        f"| max scale | `{payload['max_scale']}` |",
+        f"| cold-start budget ms | `{payload['cold_start_budget_ms']}` |",
+        f"| strict evidence | `{summary['strict_status']}` |",
+        f"| preflight | `{summary['preflight_status']}` |",
+        f"| required artifact | `{summary['required_artifact']}` |",
+        "",
+        "## Required Evidence",
+        "",
+        "| requirement | status | artifact | evidence |",
+        "|---|---|---|---|",
+        "| {title} | `{status}` | `{artifact}` | {evidence} |".format(
+            title=required["title"],
+            status=required["status"],
+            artifact=required["artifact"],
+            evidence=str(required.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Preflight",
+        "",
+        "| status | required env | missing env | evidence |",
+        "|---|---|---|---|",
+        "| `{status}` | `{required_env}` | `{missing_env}` | {evidence} |".format(
+            status=preflight["status"],
+            required_env=", ".join(preflight.get("required_env") or []),
+            missing_env=", ".join(preflight.get("missing_env") or []),
+            evidence=str(preflight.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Issues",
+        "",
+    ]
+    issues = payload.get("issues") or []
+    lines.extend(f"- {issue}" for issue in issues) if issues else lines.append("- none")
+    lines.extend(["", "## Next Actions", ""])
+    for action in payload.get("next_actions", []):
+        lines.append(
+            f"- `{action}`"
+            if action.startswith(("python ", "gh ", "wavemind "))
+            else f"- {action}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_production_admission_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [

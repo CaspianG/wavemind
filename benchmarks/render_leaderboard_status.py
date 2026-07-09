@@ -49,6 +49,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    serverless_admission = _load_json(
+        root / "benchmarks" / "serverless_admission_results.json",
+        load_errors,
+        required=False,
+    )
     memory_os_admission = _load_json(
         root / "benchmarks" / "memory_os_admission_results.json",
         load_errors,
@@ -101,6 +106,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
         "benchmarks/active_active_admission_results.json": active_active_admission,
+        "benchmarks/serverless_admission_results.json": serverless_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
@@ -251,6 +257,15 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "summary": active_active_admission.get("summary", {}),
             "required_evidence": active_active_admission.get("required_evidence", {}),
             "preflight": active_active_admission.get("preflight", {}),
+        },
+        "serverless_admission": {
+            "schema": serverless_admission.get("schema"),
+            "status": serverless_admission.get("status", "missing"),
+            "admitted": serverless_admission.get("admitted", False),
+            "claim_boundary": serverless_admission.get("claim_boundary", ""),
+            "summary": serverless_admission.get("summary", {}),
+            "required_evidence": serverless_admission.get("required_evidence", {}),
+            "preflight": serverless_admission.get("preflight", {}),
         },
         "memory_os_admission": {
             "schema": memory_os_admission.get("schema"),
