@@ -484,6 +484,7 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     role = next(item for item in bundle["items"] if item["kind"] == "ClusterRole")
     container = deployment["spec"]["template"]["spec"]["containers"][0]
     args = container["args"]
+    assert container["command"] == ["wavemind"]
     assert deployment["spec"]["replicas"] == 2
     assert deployment["spec"]["strategy"]["rollingUpdate"] == {
         "maxUnavailable": 1,

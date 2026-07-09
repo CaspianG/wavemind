@@ -1315,6 +1315,7 @@ def operator_bundle(
                             "name": "operator",
                             "image": operator_image,
                             "imagePullPolicy": "IfNotPresent",
+                            "command": ["wavemind"],
                             "env": [
                                 {
                                     "name": "POD_NAME",

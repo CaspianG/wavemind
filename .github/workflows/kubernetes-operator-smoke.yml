@@ -114,6 +114,8 @@ jobs:
           kubectl get nodes,pods,statefulsets,deployments,leases,wavemindclusters \
             -A -o wide || true
           kubectl describe deployment/wavemind-operator -n "$NAMESPACE" || true
+          kubectl describe pods -n "$NAMESPACE" \
+            -l app.kubernetes.io/name=wavemind-operator || true
           kubectl logs deployment/wavemind-operator -n "$NAMESPACE" \
             --all-pods=true --prefix=true --tail=300 || true
 
