@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -142,7 +143,7 @@ def evaluate_kubernetes_operator_smoke(metrics: dict[str, Any]) -> dict[str, Any
         },
     ]
     passed = sum(1 for check in checks if check["passed"])
-    return {
+    payload = {
         "schema": "wavemind.kubernetes_operator_smoke.v1",
         "generated_at": _utc_now(),
         "environment": "kind-multinode-ci",
@@ -161,6 +162,19 @@ def evaluate_kubernetes_operator_smoke(metrics: dict[str, Any]) -> dict[str, Any
         },
         "checks": checks,
     }
+    source_ref = str(os.getenv("GITHUB_SHA") or "").strip()
+    workflow_run_id = str(os.getenv("GITHUB_RUN_ID") or "").strip()
+    repository = str(os.getenv("GITHUB_REPOSITORY") or "").strip()
+    server_url = str(os.getenv("GITHUB_SERVER_URL") or "https://github.com").rstrip("/")
+    if source_ref:
+        payload["source_ref"] = source_ref
+    if workflow_run_id:
+        payload["workflow_run_id"] = workflow_run_id
+    if workflow_run_id and repository:
+        payload["workflow_run_url"] = (
+            f"{server_url}/{repository}/actions/runs/{workflow_run_id}"
+        )
+    return payload
 
 
 def run_smoke(args: argparse.Namespace) -> dict[str, Any]:

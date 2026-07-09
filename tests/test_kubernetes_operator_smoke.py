@@ -9,7 +9,11 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 
-def test_kubernetes_operator_smoke_requires_every_failure_drill_check():
+def test_kubernetes_operator_smoke_requires_every_failure_drill_check(monkeypatch):
+    monkeypatch.setenv("GITHUB_SHA", "abc123")
+    monkeypatch.setenv("GITHUB_RUN_ID", "456")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "CaspianG/wavemind")
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.com")
     payload = MODULE.evaluate_kubernetes_operator_smoke(
         {
             "node_count": 4,
@@ -31,6 +35,9 @@ def test_kubernetes_operator_smoke_requires_every_failure_drill_check():
     assert payload["summary"]["passed_checks"] == payload["summary"]["check_count"] == 9
     assert payload["environment"] == "kind-multinode-ci"
     assert "does not unlock remote production" in payload["claim_boundary"]
+    assert payload["source_ref"] == "abc123"
+    assert payload["workflow_run_id"] == "456"
+    assert payload["workflow_run_url"] == "https://github.com/CaspianG/wavemind/actions/runs/456"
 
 
 def test_kubernetes_operator_smoke_fails_without_lease_takeover():
