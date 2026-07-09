@@ -187,6 +187,18 @@ def test_operator_reconcile_renders_cluster_resources():
     assert payload["kind"] == "List"
     assert resources["StatefulSet"]["spec"]["replicas"] == 3
     assert resources["StatefulSet"]["spec"]["serviceName"] == "wm-prod-headless"
+    assert resources["StatefulSet"]["spec"]["updateStrategy"] == {"type": "RollingUpdate"}
+    assert resources["StatefulSet"]["spec"]["minReadySeconds"] == 5
+    pod_spec = resources["StatefulSet"]["spec"]["template"]["spec"]
+    assert pod_spec["terminationGracePeriodSeconds"] == 30
+    assert {
+        constraint["topologyKey"] for constraint in pod_spec["topologySpreadConstraints"]
+    } == {"kubernetes.io/hostname", "topology.kubernetes.io/zone"}
+    assert pod_spec["affinity"]["podAntiAffinity"][
+        "preferredDuringSchedulingIgnoredDuringExecution"
+    ]
+    assert resources["PodDisruptionBudget"]["apiVersion"] == "policy/v1"
+    assert resources["PodDisruptionBudget"]["spec"]["minAvailable"] == 2
     container = resources["StatefulSet"]["spec"]["template"]["spec"]["containers"][0]
     assert container["image"] == "ghcr.io/caspiang/wavemind:2.4.3"
     assert container["command"] == ["wavemind"]
@@ -524,6 +536,12 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
         and {"get", "create", "update"}.issubset(set(rule["verbs"]))
         for rule in role["rules"]
     )
+    assert any(
+        rule["apiGroups"] == ["policy"]
+        and rule["resources"] == ["poddisruptionbudgets"]
+        and {"get", "create", "update"}.issubset(set(rule["verbs"]))
+        for rule in role["rules"]
+    )
 
 
 def test_operator_bundle_requires_redundant_operator_replicas():
@@ -556,6 +574,10 @@ def test_kubernetes_resource_path_maps_supported_resources():
         "kind": "Lease",
         "metadata": {"name": "wavemind-operator", "namespace": "ns"},
     }
+    pdb = {
+        "kind": "PodDisruptionBudget",
+        "metadata": {"name": "wm", "namespace": "ns"},
+    }
 
     assert kubernetes_resource_path(service).api_path == "/api/v1/namespaces/ns/services/wm"
     assert kubernetes_resource_path(configmap).api_path == "/api/v1/namespaces/ns/configmaps/wm-rebalance-plan"
@@ -563,6 +585,7 @@ def test_kubernetes_resource_path_maps_supported_resources():
     assert kubernetes_resource_path(cronjob).api_path == "/apis/batch/v1/namespaces/ns/cronjobs/wm-repair"
     assert kubernetes_resource_path(hpa).api_path == "/apis/autoscaling/v2/namespaces/ns/horizontalpodautoscalers/wm"
     assert kubernetes_resource_path(lease).api_path == "/apis/coordination.k8s.io/v1/namespaces/ns/leases/wavemind-operator"
+    assert kubernetes_resource_path(pdb).api_path == "/apis/policy/v1/namespaces/ns/poddisruptionbudgets/wm"
     with pytest.raises(ValueError, match="Unsupported"):
         kubernetes_resource_path({"kind": "Secret", "metadata": {"name": "wm"}})
 
@@ -584,7 +607,7 @@ def test_operator_loop_applies_reconciled_resources_once():
     )
 
     assert report["clusters"] == 1
-    assert report["applied_count"] == 4
+    assert report["applied_count"] == 5
     assert report["leaderElection"]["acquired"] is True
     assert report["leaderElection"]["backend"] == "kubernetes-lease-etcd"
     assert report["statuses"][0]["ready"] is True
@@ -601,6 +624,7 @@ def test_operator_loop_applies_reconciled_resources_once():
         "Service",
         "Service",
         "StatefulSet",
+        "PodDisruptionBudget",
         "CronJob",
     ]
 
@@ -740,6 +764,7 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     assert {item["kind"] for item in reconciled["items"]} == {
         "Service",
         "StatefulSet",
+        "PodDisruptionBudget",
         "HorizontalPodAutoscaler",
         "CronJob",
     }

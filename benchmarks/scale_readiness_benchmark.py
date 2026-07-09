@@ -791,6 +791,10 @@ def run_operator_profile(
     memory_os_script = str(memory_os_container["args"][0])
     hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
     statefulset = next(resource for resource in resources if resource["kind"] == "StatefulSet")
+    pod_disruption_budget = next(
+        resource for resource in resources if resource["kind"] == "PodDisruptionBudget"
+    )
+    statefulset_pod_spec = statefulset["spec"]["template"]["spec"]
     statefulset_container = statefulset["spec"]["template"]["spec"]["containers"][0]
     statefulset_env = {
         item["name"]: item.get("value")
@@ -819,10 +823,30 @@ def run_operator_profile(
         "operator_cross_node_anti_affinity": bool(
             operator_deployment["spec"]["template"]["spec"].get("affinity")
         ),
+        "operator_pdb_rbac": any(
+            rule.get("apiGroups") == ["policy"]
+            and rule.get("resources") == ["poddisruptionbudgets"]
+            and {"get", "create", "update"}.issubset(set(rule.get("verbs") or []))
+            for rule in operator_role["rules"]
+        ),
         "sample_kind": spec.custom_resource()["kind"],
         "reconciled_resources": len(resources),
         "has_service": "Service" in kinds,
         "has_statefulset": "StatefulSet" in kinds,
+        "has_pod_disruption_budget": "PodDisruptionBudget" in kinds,
+        "pod_disruption_budget_min_available": pod_disruption_budget["spec"][
+            "minAvailable"
+        ],
+        "statefulset_rolling_update": statefulset["spec"].get("updateStrategy")
+        == {"type": "RollingUpdate"},
+        "statefulset_min_ready_seconds": statefulset["spec"].get("minReadySeconds"),
+        "statefulset_topology_spread_keys": sorted(
+            constraint["topologyKey"]
+            for constraint in statefulset_pod_spec.get("topologySpreadConstraints", [])
+        ),
+        "statefulset_cross_node_anti_affinity": bool(
+            statefulset_pod_spec.get("affinity")
+        ),
         "has_hpa": "HorizontalPodAutoscaler" in kinds,
         "has_rebalance_configmap": "ConfigMap" in kinds,
         "has_repair_cronjob": "CronJob" in kinds,

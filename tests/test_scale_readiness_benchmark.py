@@ -55,8 +55,20 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Kubernetes operator"]["operator_lease_backend"] == "coordination.k8s.io/v1"
     assert results["WaveMind Kubernetes operator"]["operator_lease_rbac"] is True
     assert results["WaveMind Kubernetes operator"]["operator_cross_node_anti_affinity"] is True
+    assert results["WaveMind Kubernetes operator"]["operator_pdb_rbac"] is True
     assert results["WaveMind Kubernetes operator"]["has_service"] is True
     assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
+    assert results["WaveMind Kubernetes operator"]["has_pod_disruption_budget"] is True
+    assert results["WaveMind Kubernetes operator"]["pod_disruption_budget_min_available"] == (
+        results["WaveMind Kubernetes operator"]["statefulset_replicas"] - 1
+    )
+    assert results["WaveMind Kubernetes operator"]["statefulset_rolling_update"] is True
+    assert results["WaveMind Kubernetes operator"]["statefulset_min_ready_seconds"] == 5
+    assert results["WaveMind Kubernetes operator"]["statefulset_topology_spread_keys"] == [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone",
+    ]
+    assert results["WaveMind Kubernetes operator"]["statefulset_cross_node_anti_affinity"] is True
     assert results["WaveMind Kubernetes operator"]["has_hpa"] is True
     assert results["WaveMind Kubernetes operator"]["has_rebalance_configmap"] is True
     assert results["WaveMind Kubernetes operator"]["has_memory_os_cronjob"] is True

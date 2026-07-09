@@ -63,7 +63,8 @@ jobs:
       - name: Build and load WaveMind image
         run: |
           docker build --tag wavemind:ci .
-          kind load docker-image wavemind:ci --name "$CLUSTER_NAME"
+          docker tag wavemind:ci wavemind:ci-upgrade
+          kind load docker-image wavemind:ci wavemind:ci-upgrade --name "$CLUSTER_NAME"
 
       - name: Install redundant WaveMind operator
         run: |
@@ -105,6 +106,7 @@ jobs:
           python benchmarks/kubernetes_operator_smoke.py \
             --namespace "$NAMESPACE" \
             --cluster-name wavemind-ci \
+            --upgrade-image wavemind:ci-upgrade \
             --timeout-seconds 240 \
             --output benchmarks/kubernetes_operator_smoke_ci_results.json
 

@@ -19,6 +19,9 @@ def test_kubernetes_operator_smoke_requires_every_failure_drill_check(monkeypatc
             "node_count": 4,
             "operator_pod_count": 2,
             "operator_node_count": 2,
+            "topology_spread_constraint_count": 2,
+            "pdb_min_available": 3,
+            "pdb_disruptions_allowed": 1,
             "initial_holder": "operator-a",
             "next_holder": "operator-b",
             "lease_transitions_before": 0,
@@ -28,11 +31,14 @@ def test_kubernetes_operator_smoke_requires_every_failure_drill_check(monkeypatc
             "cluster_status_holder": "operator-b",
             "data_pod_uid_changed": True,
             "api_healthy_after_recovery": True,
+            "rolling_upgrade_revision_changed": True,
+            "rolling_upgrade_replaced_pods": 4,
+            "api_healthy_after_upgrade": True,
         }
     )
 
     assert payload["status"] == "pass"
-    assert payload["summary"]["passed_checks"] == payload["summary"]["check_count"] == 9
+    assert payload["summary"]["passed_checks"] == payload["summary"]["check_count"] == 14
     assert payload["environment"] == "kind-multinode-ci"
     assert "does not unlock remote production" in payload["claim_boundary"]
     assert payload["source_ref"] == "abc123"
@@ -46,6 +52,9 @@ def test_kubernetes_operator_smoke_fails_without_lease_takeover():
             "node_count": 4,
             "operator_pod_count": 2,
             "operator_node_count": 2,
+            "topology_spread_constraint_count": 2,
+            "pdb_min_available": 3,
+            "pdb_disruptions_allowed": 1,
             "initial_holder": "operator-a",
             "next_holder": "operator-a",
             "lease_transitions_before": 0,
@@ -55,6 +64,9 @@ def test_kubernetes_operator_smoke_fails_without_lease_takeover():
             "cluster_status_holder": "operator-a",
             "data_pod_uid_changed": True,
             "api_healthy_after_recovery": True,
+            "rolling_upgrade_revision_changed": True,
+            "rolling_upgrade_replaced_pods": 4,
+            "api_healthy_after_upgrade": True,
         }
     )
 
@@ -79,5 +91,7 @@ def test_kubernetes_operator_smoke_workflow_runs_real_kind_failure_drill():
     assert "--operator-replicas 2" in workflow
     assert "--operator-interval-seconds 5" in workflow
     assert "--lease-duration-seconds 15" in workflow
+    assert "docker tag wavemind:ci wavemind:ci-upgrade" in workflow
+    assert "--upgrade-image wavemind:ci-upgrade" in workflow
     assert "kubernetes_operator_smoke.py" in workflow
     assert "kubernetes_operator_smoke_ci_results.json" in workflow

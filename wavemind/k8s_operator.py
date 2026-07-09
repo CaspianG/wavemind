@@ -444,6 +444,7 @@ class WaveMindClusterSpec:
             self._service(headless=False),
             self._service(headless=True),
             self._statefulset(),
+            self._pod_disruption_budget(),
         ]
         if self.autoscaling_enabled:
             resources.append(self._horizontal_pod_autoscaler())
@@ -689,8 +690,40 @@ class WaveMindClusterSpec:
                 "selector": {"matchLabels": labels},
                 "template": {
                     "metadata": {"labels": labels},
-                    "spec": {"containers": [container]},
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "preferredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "weight": 100,
+                                        "podAffinityTerm": {
+                                            "topologyKey": "kubernetes.io/hostname",
+                                            "labelSelector": {"matchLabels": labels},
+                                        },
+                                    }
+                                ]
+                            }
+                        },
+                        "topologySpreadConstraints": [
+                            {
+                                "maxSkew": 1,
+                                "topologyKey": "kubernetes.io/hostname",
+                                "whenUnsatisfiable": "ScheduleAnyway",
+                                "labelSelector": {"matchLabels": labels},
+                            },
+                            {
+                                "maxSkew": 1,
+                                "topologyKey": "topology.kubernetes.io/zone",
+                                "whenUnsatisfiable": "ScheduleAnyway",
+                                "labelSelector": {"matchLabels": labels},
+                            },
+                        ],
+                        "terminationGracePeriodSeconds": 30,
+                        "containers": [container],
+                    },
                 },
+                "updateStrategy": {"type": "RollingUpdate"},
+                "minReadySeconds": 5,
                 "volumeClaimTemplates": [
                     {
                         "metadata": {"name": "state"},
@@ -700,6 +733,22 @@ class WaveMindClusterSpec:
                         },
                     }
                 ],
+            },
+        }
+
+    def _pod_disruption_budget(self) -> dict[str, Any]:
+        labels = self._labels()
+        return {
+            "apiVersion": "policy/v1",
+            "kind": "PodDisruptionBudget",
+            "metadata": {
+                "name": self.name,
+                "namespace": self.namespace,
+                "labels": labels,
+            },
+            "spec": {
+                "minAvailable": max(1, self.replicas - 1),
+                "selector": {"matchLabels": labels},
             },
         }
 
@@ -1252,6 +1301,11 @@ def operator_bundle(
             {
                 "apiGroups": ["autoscaling"],
                 "resources": ["horizontalpodautoscalers"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
+            {
+                "apiGroups": ["policy"],
+                "resources": ["poddisruptionbudgets"],
                 "verbs": ["get", "list", "watch", "create", "patch", "update"],
             },
             {
@@ -2119,6 +2173,8 @@ def kubernetes_resource_path(resource: dict[str, Any]) -> KubernetesResourcePath
         collection = f"/apis/batch/v1/namespaces/{namespace}/cronjobs"
     elif kind == "HorizontalPodAutoscaler":
         collection = f"/apis/autoscaling/v2/namespaces/{namespace}/horizontalpodautoscalers"
+    elif kind == "PodDisruptionBudget":
+        collection = f"/apis/policy/v1/namespaces/{namespace}/poddisruptionbudgets"
     elif kind == "Lease":
         collection = f"/apis/coordination.k8s.io/v1/namespaces/{namespace}/leases"
     else:

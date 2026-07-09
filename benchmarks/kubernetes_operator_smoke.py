@@ -101,6 +101,23 @@ def evaluate_kubernetes_operator_smoke(metrics: dict[str, Any]) -> dict[str, Any
             "target": 2,
         },
         {
+            "id": "data_plane_topology_spread",
+            "passed": int(metrics.get("topology_spread_constraint_count", 0)) >= 2,
+            "value": metrics.get("topology_spread_constraint_count", 0),
+            "target": 2,
+        },
+        {
+            "id": "pod_disruption_budget",
+            "passed": int(metrics.get("pdb_min_available", 0))
+            >= max(1, int(metrics.get("desired_replicas_after_scale", 0)) - 1)
+            and int(metrics.get("pdb_disruptions_allowed", 0)) >= 1,
+            "value": {
+                "minAvailable": metrics.get("pdb_min_available", 0),
+                "disruptionsAllowed": metrics.get("pdb_disruptions_allowed", 0),
+            },
+            "target": "minAvailable >= replicas - 1 and disruptionsAllowed >= 1",
+        },
+        {
             "id": "leader_failover",
             "passed": bool(metrics.get("initial_holder"))
             and bool(metrics.get("next_holder"))
@@ -139,6 +156,25 @@ def evaluate_kubernetes_operator_smoke(metrics: dict[str, Any]) -> dict[str, Any
             "id": "api_healthy_after_recovery",
             "passed": bool(metrics.get("api_healthy_after_recovery")),
             "value": metrics.get("api_healthy_after_recovery"),
+            "target": True,
+        },
+        {
+            "id": "rolling_upgrade_revision_changed",
+            "passed": bool(metrics.get("rolling_upgrade_revision_changed")),
+            "value": metrics.get("rolling_upgrade_revision_changed"),
+            "target": True,
+        },
+        {
+            "id": "rolling_upgrade_replaced_all_pods",
+            "passed": int(metrics.get("rolling_upgrade_replaced_pods", 0))
+            >= int(metrics.get("desired_replicas_after_scale", -1)),
+            "value": metrics.get("rolling_upgrade_replaced_pods", 0),
+            "target": metrics.get("desired_replicas_after_scale", 0),
+        },
+        {
+            "id": "api_healthy_after_rolling_upgrade",
+            "passed": bool(metrics.get("api_healthy_after_upgrade")),
+            "value": metrics.get("api_healthy_after_upgrade"),
             "target": True,
         },
     ]
@@ -379,6 +415,180 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
         ),
     )
 
+    def _ready_pdb() -> dict[str, Any] | None:
+        payload = _json(
+            args.kubectl,
+            "get",
+            "poddisruptionbudget",
+            args.cluster_name,
+            "-n",
+            namespace,
+        )
+        min_available = int((payload.get("spec") or {}).get("minAvailable") or 0)
+        disruptions_allowed = int((payload.get("status") or {}).get("disruptionsAllowed") or 0)
+        return (
+            payload
+            if min_available >= max(1, desired_replicas - 1) and disruptions_allowed >= 1
+            else None
+        )
+
+    pdb = _wait_for(
+        "PodDisruptionBudget to protect the scaled data plane",
+        _ready_pdb,
+        timeout_seconds=args.timeout_seconds,
+    )
+    pdb_min_available = int((pdb.get("spec") or {}).get("minAvailable") or 0)
+    pdb_disruptions_allowed = int((pdb.get("status") or {}).get("disruptionsAllowed") or 0)
+    topology_spread_count = len(
+        ((scaled.get("spec") or {}).get("template") or {}).get("spec", {}).get(
+            "topologySpreadConstraints"
+        )
+        or []
+    )
+
+    selector_labels = dict((scaled.get("spec") or {}).get("selector", {}).get("matchLabels") or {})
+    selector = ",".join(f"{key}={value}" for key, value in sorted(selector_labels.items()))
+    before_upgrade_pods = _json(
+        args.kubectl,
+        "get",
+        "pods",
+        "-n",
+        namespace,
+        "-l",
+        selector,
+    )
+    before_upgrade_uids = {
+        str((pod.get("metadata") or {}).get("uid") or "")
+        for pod in before_upgrade_pods.get("items") or []
+        if (pod.get("metadata") or {}).get("uid")
+    }
+    revision_before_upgrade = str(
+        (scaled.get("status") or {}).get("updateRevision")
+        or (scaled.get("status") or {}).get("currentRevision")
+        or ""
+    )
+    _run(
+        args.kubectl,
+        "patch",
+        "wavemindcluster",
+        args.cluster_name,
+        "-n",
+        namespace,
+        "--type=merge",
+        "-p",
+        json.dumps({"spec": {"image": args.upgrade_image}}),
+    )
+
+    def _upgrade_started() -> dict[str, Any] | None:
+        current = _json(
+            args.kubectl,
+            "get",
+            "statefulset",
+            args.cluster_name,
+            "-n",
+            namespace,
+        )
+        containers = (
+            ((current.get("spec") or {}).get("template") or {}).get("spec", {}).get(
+                "containers"
+            )
+            or []
+        )
+        return current if containers and containers[0].get("image") == args.upgrade_image else None
+
+    _wait_for(
+        "operator to start the CR-driven rolling upgrade",
+        _upgrade_started,
+        timeout_seconds=args.timeout_seconds,
+    )
+    _run(
+        args.kubectl,
+        "rollout",
+        "status",
+        f"statefulset/{args.cluster_name}",
+        "-n",
+        namespace,
+        f"--timeout={int(args.timeout_seconds)}s",
+        timeout=args.timeout_seconds + 10,
+    )
+
+    def _upgraded_data_plane() -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+        current = _json(
+            args.kubectl,
+            "get",
+            "statefulset",
+            args.cluster_name,
+            "-n",
+            namespace,
+        )
+        pods_payload = _json(
+            args.kubectl,
+            "get",
+            "pods",
+            "-n",
+            namespace,
+            "-l",
+            selector,
+        )
+        pods = list(pods_payload.get("items") or [])
+        images = {
+            str(container.get("image") or "")
+            for pod in pods
+            for container in ((pod.get("spec") or {}).get("containers") or [])
+        }
+        status = dict(current.get("status") or {})
+        revision_changed = bool(status.get("updateRevision")) and (
+            str(status.get("updateRevision")) != revision_before_upgrade
+        )
+        ready = (
+            len(pods) == desired_replicas
+            and all(_ready(pod) for pod in pods)
+            and images == {args.upgrade_image}
+            and int(status.get("readyReplicas") or 0) == desired_replicas
+            and status.get("currentRevision") == status.get("updateRevision")
+            and revision_changed
+        )
+        return (current, pods) if ready else None
+
+    upgraded_statefulset, upgraded_pods = _wait_for(
+        "all data pods to complete the rolling upgrade",
+        _upgraded_data_plane,
+        timeout_seconds=args.timeout_seconds,
+    )
+    after_upgrade_uids = {
+        str((pod.get("metadata") or {}).get("uid") or "")
+        for pod in upgraded_pods
+        if (pod.get("metadata") or {}).get("uid")
+    }
+    replaced_pods = len(after_upgrade_uids - before_upgrade_uids)
+    upgraded_status = dict(upgraded_statefulset.get("status") or {})
+    rolling_revision_changed = bool(upgraded_status.get("updateRevision")) and (
+        str(upgraded_status.get("updateRevision")) != revision_before_upgrade
+    )
+    upgraded_health = []
+    for pod in sorted(
+        str((item.get("metadata") or {}).get("name") or "") for item in upgraded_pods
+    ):
+        upgraded_health.append(
+            bool(
+                _run(
+                    args.kubectl,
+                    "exec",
+                    pod,
+                    "-n",
+                    namespace,
+                    "--",
+                    "python",
+                    "-c",
+                    (
+                        "import json,urllib.request; "
+                        "print(json.loads(urllib.request.urlopen('http://127.0.0.1:8000/stats', "
+                        "timeout=5).read()))"
+                    ),
+                )
+            )
+        )
+
     return evaluate_kubernetes_operator_smoke(
         {
             "node_count": len(nodes.get("items") or []),
@@ -395,6 +605,13 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
             "cluster_status_holder": cluster_status_holder,
             "data_pod_uid_changed": bool(original_uid and recovered_uid != original_uid),
             "api_healthy_after_recovery": bool(health_raw),
+            "topology_spread_constraint_count": topology_spread_count,
+            "pdb_min_available": pdb_min_available,
+            "pdb_disruptions_allowed": pdb_disruptions_allowed,
+            "rolling_upgrade_image": args.upgrade_image,
+            "rolling_upgrade_revision_changed": rolling_revision_changed,
+            "rolling_upgrade_replaced_pods": replaced_pods,
+            "api_healthy_after_upgrade": bool(upgraded_health) and all(upgraded_health),
             "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
         }
     )
@@ -407,6 +624,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--operator-deployment", default="wavemind-operator")
     parser.add_argument("--lease-name", default="wavemind-operator")
     parser.add_argument("--cluster-name", default="wavemind-ci")
+    parser.add_argument("--upgrade-image", default="wavemind:ci-upgrade")
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument(
         "--output",
