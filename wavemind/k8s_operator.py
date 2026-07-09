@@ -1071,11 +1071,13 @@ def custom_resource_definition() -> dict[str, Any]:
                                                 },
                                                 "targetQps": {
                                                     "type": "number",
-                                                    "exclusiveMinimum": 0,
+                                                    "minimum": 0,
+                                                    "exclusiveMinimum": True,
                                                 },
                                                 "targetP99Ms": {
                                                     "type": "number",
-                                                    "exclusiveMinimum": 0,
+                                                    "minimum": 0,
+                                                    "exclusiveMinimum": True,
                                                 },
                                                 "observedP99Ms": {
                                                     "type": "number",
@@ -1092,7 +1094,8 @@ def custom_resource_definition() -> dict[str, Any]:
                                                 "runOnAllReplicas": {"type": "boolean"},
                                                 "timeoutSeconds": {
                                                     "type": "number",
-                                                    "exclusiveMinimum": 0,
+                                                    "minimum": 0,
+                                                    "exclusiveMinimum": True,
                                                 },
                                             },
                                         },
@@ -1118,7 +1121,8 @@ def custom_resource_definition() -> dict[str, Any]:
                                                         "enabled": {"type": "boolean"},
                                                         "leaseTtlSeconds": {
                                                             "type": "number",
-                                                            "exclusiveMinimum": 0,
+                                                            "minimum": 0,
+                                                            "exclusiveMinimum": True,
                                                         },
                                                         "configRevision": {
                                                             "type": "integer",
@@ -1148,7 +1152,8 @@ def custom_resource_definition() -> dict[str, Any]:
                                                 "maxMemoriesPerNode": {"type": "integer", "minimum": 1},
                                                 "headroom": {
                                                     "type": "number",
-                                                    "exclusiveMinimum": 0,
+                                                    "minimum": 0,
+                                                    "exclusiveMinimum": True,
                                                     "maximum": 1,
                                                 },
                                                 "rebalance": {

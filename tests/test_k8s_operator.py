@@ -146,6 +146,15 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert memory_os_props["cacheMode"]["enum"] == ["auto", "disabled", "local", "redis"]
     assert "lockRequired" in memory_os_props
     assert "runOnAllReplicas" in memory_os_props
+    positive_number_schemas = [
+        memory_os_props["targetQps"],
+        memory_os_props["targetP99Ms"],
+        memory_os_props["timeoutSeconds"],
+        consensus_props["leaseTtlSeconds"],
+        spec_props["autoscaling"]["properties"]["headroom"],
+    ]
+    assert all(schema["minimum"] == 0 for schema in positive_number_schemas)
+    assert all(schema["exclusiveMinimum"] is True for schema in positive_number_schemas)
     production_admission_props = spec_props["productionAdmission"]["properties"]
     assert "enabled" in production_admission_props
     assert "targetMemories" in production_admission_props
