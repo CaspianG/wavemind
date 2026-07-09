@@ -199,6 +199,12 @@ policy matters more than raw vector-database scale:
   region profile from GitHub Actions using either newline/comma-separated
   regions or `regions_manifest_json`, upload the result, and optionally commit
   refreshed leaderboard/readiness artifacts once real regions are available.
+- `wavemind active-active-admission --allow-plan-only` now publishes the
+  deployment-facing active-active admission contract. It joins strict external
+  evidence, active-active preflight state, missing env, required artifact, and
+  next GitHub Actions command, while `--fail-on-blocked` keeps real production
+  rollout locked until `benchmarks/external_http_active_active_results.json`
+  passes.
 - `.github/workflows/serverless-observed-telemetry.yml` can run the serverless
   observed-telemetry contract from GitHub Actions against deployed HTTP/HTTPS
   API node URLs, upload `deploy/serverless/observed-telemetry.remote.json`, and

@@ -1,0 +1,76 @@
+{
+  "schema": "wavemind.active_active_admission.v1",
+  "generated_at": "2026-07-09T01:49:58Z",
+  "status": "plan_only",
+  "admitted": false,
+  "deployment": "production",
+  "min_regions": 3,
+  "namespace_count": 16,
+  "p99_slo_ms": 1500.0,
+  "allow_plan_only": true,
+  "claim_boundary": "external_active_active_evidence_required",
+  "summary": {
+    "status": "plan_only",
+    "admitted": false,
+    "strict_status": "action_required",
+    "preflight_status": "action_required",
+    "required_artifact": "benchmarks/external_http_active_active_results.json",
+    "missing_env": [
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+    ],
+    "blocking_issue_count": 2,
+    "warning_count": 3
+  },
+  "required_evidence": {
+    "id": "external_http_active_active",
+    "title": "External HTTP active-active regions",
+    "status": "action_required",
+    "artifact": "benchmarks/external_http_active_active_results.json",
+    "evidence": "no checked-in external HTTP active-active region result",
+    "issues": [
+      "missing artifact"
+    ],
+    "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
+    "claim_unlocked": "Remote multi-region active-active memory convergence."
+  },
+  "preflight": {
+    "status": "action_required",
+    "ready": false,
+    "evidence": "0 URLs configured",
+    "required_env": [
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+    ],
+    "missing_env": [
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
+      "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+    ],
+    "issues": [
+      "active-active region requires at least 3 URLs",
+      "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+    ],
+    "warnings": [
+      "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+    ],
+    "output_artifact": "benchmarks/external_http_active_active_results.json"
+  },
+  "issues": [
+    "external_http_active_active is not admitted: strict_status=action_required",
+    "missing artifact"
+  ],
+  "warnings": [
+    "active-active remote preflight is not ready; provide real region URLs or a regions manifest before dispatching the workflow.",
+    "active-active region requires at least 3 URLs",
+    "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+  ],
+  "next_actions": [
+    "Do not admit multi-region production traffic yet; run the external active-active workflow against real regions first.",
+    "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true"
+  ],
+  "source_artifacts": {
+    "strict_evidence": "benchmarks/production_evidence_results.json",
+    "preflight": "benchmarks/production_evidence_preflight_results.json",
+    "required_result": "benchmarks/external_http_active_active_results.json"
+  }
+}

@@ -61,10 +61,12 @@ from .production_evidence import (
     build_production_evidence_dispatch_plan,
     build_scale_gap_manifest,
     build_release_claims_manifest,
+    evaluate_active_active_admission,
     evaluate_production_admission,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
+    render_active_active_admission_markdown,
     render_bundle_markdown,
     render_dispatch_markdown,
     render_markdown,
@@ -596,6 +598,39 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_ADMISSION.md"),
     )
     production_admission.add_argument("--json", action="store_true")
+
+    active_active_admission = sub.add_parser(
+        "active-active-admission",
+        help="Gate a remote multi-region active-active rollout against strict evidence",
+    )
+    active_active_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    active_active_admission.add_argument("--deployment", default="production")
+    active_active_admission.add_argument("--min-regions", type=int, default=3)
+    active_active_admission.add_argument("--namespace-count", type=int, default=16)
+    active_active_admission.add_argument("--p99-slo-ms", type=float, default=1500.0)
+    active_active_admission.add_argument("--allow-plan-only", action="store_true")
+    active_active_admission.add_argument("--write-artifacts", action="store_true")
+    active_active_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless the active-active rollout is admitted.",
+    )
+    active_active_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/active_active_admission_results.json"),
+    )
+    active_active_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/ACTIVE_ACTIVE_ADMISSION.md"),
+    )
+    active_active_admission.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1504,6 +1539,39 @@ def print_production_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_active_active_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"min_regions: {payload['min_regions']}")
+    print(f"namespace_count: {payload['namespace_count']}")
+    print(f"p99_slo_ms: {payload['p99_slo_ms']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    print(f"strict_status: {summary['strict_status']}")
+    print(f"preflight_status: {summary['preflight_status']}")
+    print(f"required_artifact: {summary['required_artifact']}")
+    preflight = payload.get("preflight") or {}
+    missing_env = preflight.get("missing_env") or []
+    if missing_env:
+        print(f"missing_env: {', '.join(missing_env)}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+    warnings = payload.get("warnings") or []
+    if warnings:
+        print("warnings:")
+        for warning in warnings:
+            print(f"- {warning}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_memory_os_admission(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"status: {payload['status']}")
@@ -2270,6 +2338,37 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_production_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "active-active-admission":
+        payload = evaluate_active_active_admission(
+            args.root,
+            deployment=args.deployment,
+            min_regions=args.min_regions,
+            namespace_count=args.namespace_count,
+            p99_slo_ms=args.p99_slo_ms,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_active_active_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_active_active_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")

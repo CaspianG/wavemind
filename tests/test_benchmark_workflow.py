@@ -35,6 +35,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output benchmarks/production_admission_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_ADMISSION.md" in workflow
     assert workflow.index("scale-gap") < workflow.index("production-admission")
+    assert "python -m wavemind active-active-admission" in workflow
+    assert "--output benchmarks/active_active_admission_results.json" in workflow
+    assert "--markdown-output benchmarks/ACTIVE_ACTIVE_ADMISSION.md" in workflow
     assert "python -m wavemind \\\n            --db .tmp-memory-os-canary.sqlite3" in workflow
     assert "memory-os-canary" in workflow
     assert "--output benchmarks/memory_os_canary_results.json" in workflow
@@ -44,6 +47,10 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output benchmarks/memory_os_admission_results.json" in workflow
     assert "--markdown-output benchmarks/MEMORY_OS_ADMISSION.md" in workflow
     assert workflow.index("production-admission") < workflow.index("memory-os-canary")
+    assert workflow.index("production-admission") < workflow.index(
+        "active-active-admission"
+    )
+    assert workflow.index("active-active-admission") < workflow.index("memory-os-canary")
     assert workflow.index("memory-os-canary") < workflow.index("memory-os-admission")
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
@@ -85,6 +92,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
     assert "cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md" in workflow
     assert "cp benchmarks/production_admission_results.json site/data/production_admission_results.json" in workflow
+    assert "cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md" in workflow
+    assert "cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md" in workflow
     assert "cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md" in workflow

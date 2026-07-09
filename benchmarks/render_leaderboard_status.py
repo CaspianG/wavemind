@@ -44,6 +44,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    active_active_admission = _load_json(
+        root / "benchmarks" / "active_active_admission_results.json",
+        load_errors,
+        required=False,
+    )
     memory_os_admission = _load_json(
         root / "benchmarks" / "memory_os_admission_results.json",
         load_errors,
@@ -95,6 +100,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
+        "benchmarks/active_active_admission_results.json": active_active_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
@@ -236,6 +242,15 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "overall_status": scale_gap.get("overall_status", "missing"),
             "summary": scale_gap.get("summary", {}),
             "profile_gaps": scale_gap.get("profile_gaps", []),
+        },
+        "active_active_admission": {
+            "schema": active_active_admission.get("schema"),
+            "status": active_active_admission.get("status", "missing"),
+            "admitted": active_active_admission.get("admitted", False),
+            "claim_boundary": active_active_admission.get("claim_boundary", ""),
+            "summary": active_active_admission.get("summary", {}),
+            "required_evidence": active_active_admission.get("required_evidence", {}),
+            "preflight": active_active_admission.get("preflight", {}),
         },
         "memory_os_admission": {
             "schema": memory_os_admission.get("schema"),

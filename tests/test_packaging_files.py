@@ -267,6 +267,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_admission_results.json" in readme
     assert "PRODUCTION_ADMISSION.md" in readme
     assert "wavemind production-admission" in readme
+    assert "active_active_admission_results.json" in readme
+    assert "ACTIVE_ACTIVE_ADMISSION.md" in readme
+    assert "wavemind active-active-admission" in readme
     assert "memory_os_admission_results.json" in readme
     assert "MEMORY_OS_ADMISSION.md" in readme
     assert "wavemind memory-os-admission" in readme
@@ -336,11 +339,14 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "scale-gap --write-artifacts" in benchmark_brief
     assert "PRODUCTION_ADMISSION.md" in benchmark_brief
     assert "production-admission --target-memories" in benchmark_brief
+    assert "ACTIVE_ACTIVE_ADMISSION.md" in benchmark_brief
+    assert "active-active-admission --allow-plan-only" in benchmark_brief
     assert "MEMORY_OS_ADMISSION.md" in benchmark_brief
     assert "memory-os-admission --target-memories" in benchmark_brief
     assert "MEMORY_OS_CANARY.md" in benchmark_brief
     assert "memory-os-canary --target-memories" in benchmark_brief
     assert "production-admission" in roadmap
+    assert "active-active-admission" in roadmap
     assert "memory-os-admission" in roadmap
     assert "memory-os-canary" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
@@ -360,6 +366,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind production-admission" in leaderboard_workflow
     assert "benchmarks/production_admission_results.json" in leaderboard_workflow
     assert "benchmarks/PRODUCTION_ADMISSION.md" in leaderboard_workflow
+    assert "wavemind active-active-admission" in leaderboard_workflow
+    assert "benchmarks/active_active_admission_results.json" in leaderboard_workflow
+    assert "benchmarks/ACTIVE_ACTIVE_ADMISSION.md" in leaderboard_workflow
     assert "wavemind memory-os-admission" in leaderboard_workflow
     assert "benchmarks/memory_os_admission_results.json" in leaderboard_workflow
     assert "benchmarks/MEMORY_OS_ADMISSION.md" in leaderboard_workflow
@@ -383,6 +392,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/SCALE_GAP.md").exists()
     assert Path("benchmarks/production_admission_results.json").exists()
     assert Path("benchmarks/PRODUCTION_ADMISSION.md").exists()
+    assert Path("benchmarks/active_active_admission_results.json").exists()
+    assert Path("benchmarks/ACTIVE_ACTIVE_ADMISSION.md").exists()
     assert Path("benchmarks/memory_os_admission_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_ADMISSION.md").exists()
     assert Path("benchmarks/memory_os_canary_results.json").exists()

@@ -175,7 +175,9 @@ from .scale import (
 )
 from .production_evidence import (
     build_scale_gap_manifest,
+    evaluate_active_active_admission,
     evaluate_production_admission,
+    render_active_active_admission_markdown,
     render_production_admission_markdown,
     render_scale_gap_markdown,
 )
@@ -355,6 +357,7 @@ __all__ = [
     "build_production_scale_run_plan",
     "build_scale_plan",
     "build_scale_gap_manifest",
+    "evaluate_active_active_admission",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
     "build_cluster_rebalance_plan",
@@ -384,7 +387,9 @@ __all__ = [
     "query_with_vector_cache",
     "remember_payload",
     "restore_recovery_journal",
+    "render_active_active_admission_markdown",
     "render_scale_gap_markdown",
+    "render_active_active_admission_markdown",
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
     "run_control_plane_consensus_profile",

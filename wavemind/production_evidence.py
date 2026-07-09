@@ -2105,6 +2105,211 @@ def evaluate_production_admission(
     }
 
 
+def evaluate_active_active_admission(
+    root: Path = PROJECT_ROOT,
+    *,
+    deployment: str = "production",
+    min_regions: int = 3,
+    namespace_count: int = 16,
+    p99_slo_ms: float = 1500.0,
+    allow_plan_only: bool = False,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Gate multi-region active-active production rollout.
+
+    This is the deployment-facing counterpart to the strict production evidence
+    requirement named ``external_http_active_active``. It never treats local
+    loopback profiles as production evidence. A production rollout is admitted
+    only after a real external HTTP active-active artifact passes.
+    """
+
+    root = Path(root)
+    strict = evaluate_production_evidence(root)
+    strict_requirements = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    requirement = strict_requirements.get("external_http_active_active", {})
+    preflight = evaluate_production_evidence_preflight(root, env=env)
+    preflight_checks = {
+        str(row.get("id")): row
+        for row in preflight.get("checks", [])
+        if isinstance(row, dict)
+    }
+    preflight_check = preflight_checks.get("external_http_active_active", {})
+
+    strict_status = str(requirement.get("status") or "missing")
+    preflight_status = str(preflight_check.get("status") or "missing")
+    admitted = strict_status == "pass"
+    if admitted:
+        status = "admitted"
+    elif allow_plan_only:
+        status = "plan_only"
+    else:
+        status = "blocked"
+
+    issues: list[str] = []
+    warnings: list[str] = []
+    if strict_status != "pass":
+        issues.append(
+            "external_http_active_active is not admitted: "
+            f"strict_status={strict_status}"
+        )
+    if preflight_status != "ready":
+        warnings.append(
+            "active-active remote preflight is not ready; provide real region URLs "
+            "or a regions manifest before dispatching the workflow."
+        )
+    if int(min_regions) < 3:
+        issues.append("min_regions must be at least 3 for production active-active.")
+    if int(namespace_count) < 1:
+        issues.append("namespace_count must be positive.")
+    if float(p99_slo_ms) <= 0:
+        issues.append("p99_slo_ms must be positive.")
+
+    command = str(requirement.get("command") or preflight_check.get("command") or "")
+    next_actions: list[str] = []
+    if admitted:
+        next_actions.append(
+            "Proceed with multi-region rollout while keeping convergence, tombstone, and p99 SLO monitors enabled."
+        )
+    elif status == "plan_only":
+        next_actions.append(
+            "Do not admit multi-region production traffic yet; run the external active-active workflow against real regions first."
+        )
+    else:
+        next_actions.append(
+            "Keep the active-active production claim locked until the strict external artifact passes."
+        )
+    if command:
+        next_actions.append(command)
+
+    requirement_issues = list(requirement.get("issues") or [])
+    preflight_issues = list(preflight_check.get("issues") or [])
+    missing_env = list(preflight_check.get("missing_env") or [])
+    required_env = list(preflight_check.get("required_env") or [])
+
+    return {
+        "schema": "wavemind.active_active_admission.v1",
+        "generated_at": _utc_now(),
+        "status": status,
+        "admitted": admitted,
+        "deployment": str(deployment),
+        "min_regions": int(min_regions),
+        "namespace_count": int(namespace_count),
+        "p99_slo_ms": float(p99_slo_ms),
+        "allow_plan_only": bool(allow_plan_only),
+        "claim_boundary": "external_active_active_evidence_required",
+        "summary": {
+            "status": status,
+            "admitted": admitted,
+            "strict_status": strict_status,
+            "preflight_status": preflight_status,
+            "required_artifact": requirement.get("artifact")
+            or "benchmarks/external_http_active_active_results.json",
+            "missing_env": missing_env,
+            "blocking_issue_count": len(dict.fromkeys(issues + requirement_issues)),
+            "warning_count": len(dict.fromkeys(warnings + preflight_issues)),
+        },
+        "required_evidence": {
+            "id": "external_http_active_active",
+            "title": requirement.get("title") or "External HTTP active-active regions",
+            "status": strict_status,
+            "artifact": requirement.get("artifact")
+            or "benchmarks/external_http_active_active_results.json",
+            "evidence": requirement.get("evidence")
+            or "missing external active-active artifact",
+            "issues": requirement_issues,
+            "command": command,
+            "claim_unlocked": requirement.get("claim_unlocked")
+            or "Remote multi-region active-active memory convergence.",
+        },
+        "preflight": {
+            "status": preflight_status,
+            "ready": bool(preflight_check.get("ready")),
+            "evidence": preflight_check.get("evidence") or "",
+            "required_env": required_env,
+            "missing_env": missing_env,
+            "issues": preflight_issues,
+            "warnings": list(preflight_check.get("warnings") or []),
+            "output_artifact": preflight_check.get("output_artifact")
+            or "benchmarks/external_http_active_active_results.json",
+        },
+        "issues": list(dict.fromkeys(issues + requirement_issues)),
+        "warnings": list(dict.fromkeys(warnings + preflight_issues)),
+        "next_actions": list(dict.fromkeys(next_actions)),
+        "source_artifacts": {
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+            "required_result": "benchmarks/external_http_active_active_results.json",
+        },
+    }
+
+
+def render_active_active_admission_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    required = payload["required_evidence"]
+    preflight = payload["preflight"]
+    lines = [
+        "# WaveMind Active-Active Admission",
+        "",
+        "This is the deployment-facing gate for remote multi-region active-active",
+        "rollouts. It admits production traffic only when real external HTTP",
+        "regions have passed convergence, tombstone, final-noop, and p99 SLO",
+        "evidence. Local loopback profiles stay useful for development, but do",
+        "not unlock this gate.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| status | `{payload['status']}` |",
+        f"| admitted | `{payload['admitted']}` |",
+        f"| deployment | `{payload['deployment']}` |",
+        f"| min regions | `{payload['min_regions']}` |",
+        f"| namespace count | `{payload['namespace_count']}` |",
+        f"| p99 SLO ms | `{payload['p99_slo_ms']}` |",
+        f"| strict evidence | `{summary['strict_status']}` |",
+        f"| preflight | `{summary['preflight_status']}` |",
+        f"| required artifact | `{summary['required_artifact']}` |",
+        "",
+        "## Required Evidence",
+        "",
+        "| requirement | status | artifact | evidence |",
+        "|---|---|---|---|",
+        "| {title} | `{status}` | `{artifact}` | {evidence} |".format(
+            title=required["title"],
+            status=required["status"],
+            artifact=required["artifact"],
+            evidence=str(required.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Preflight",
+        "",
+        "| status | required env | missing env | evidence |",
+        "|---|---|---|---|",
+        "| `{status}` | `{required_env}` | `{missing_env}` | {evidence} |".format(
+            status=preflight["status"],
+            required_env=", ".join(preflight.get("required_env") or []),
+            missing_env=", ".join(preflight.get("missing_env") or []),
+            evidence=str(preflight.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Issues",
+        "",
+    ]
+    issues = payload.get("issues") or []
+    lines.extend(f"- {issue}" for issue in issues) if issues else lines.append("- none")
+    lines.extend(["", "## Next Actions", ""])
+    for action in payload.get("next_actions", []):
+        lines.append(
+            f"- `{action}`"
+            if action.startswith(("python ", "gh ", "wavemind "))
+            else f"- {action}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_production_admission_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [

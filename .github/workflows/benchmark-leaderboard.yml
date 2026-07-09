@@ -177,6 +177,12 @@ jobs:
             --output benchmarks/production_admission_results.json \
             --markdown-output benchmarks/PRODUCTION_ADMISSION.md \
             --json
+          python -m wavemind active-active-admission \
+            --allow-plan-only \
+            --write-artifacts \
+            --output benchmarks/active_active_admission_results.json \
+            --markdown-output benchmarks/ACTIVE_ACTIVE_ADMISSION.md \
+            --json
           python -m wavemind \
             --db .tmp-memory-os-canary.sqlite3 \
             memory-os-canary \
@@ -268,6 +274,7 @@ jobs:
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
           cp benchmarks/SCALE_GAP.md site/benchmarks/SCALE_GAP.md
           cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md
+          cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md
           cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
@@ -280,6 +287,7 @@ jobs:
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
           cp benchmarks/scale_gap_results.json site/data/scale_gap_results.json
           cp benchmarks/production_admission_results.json site/data/production_admission_results.json
+          cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json
           cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
@@ -329,6 +337,8 @@ jobs:
             benchmarks/SCALE_GAP.md
             benchmarks/production_admission_results.json
             benchmarks/PRODUCTION_ADMISSION.md
+            benchmarks/active_active_admission_results.json
+            benchmarks/ACTIVE_ACTIVE_ADMISSION.md
             benchmarks/memory_os_canary_results.json
             benchmarks/MEMORY_OS_CANARY.md
             benchmarks/memory_os_admission_results.json
