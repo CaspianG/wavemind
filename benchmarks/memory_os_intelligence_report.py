@@ -14,6 +14,7 @@ SCALE_SOURCE = "benchmarks/scale_readiness_results.json"
 AGENT_SOURCE = "benchmarks/agent_coherence_results.json"
 CANARY_SOURCE = "benchmarks/memory_os_canary_results.json"
 ADMISSION_SOURCE = "benchmarks/memory_os_admission_results.json"
+POLICY_BUNDLE_SOURCE = "benchmarks/memory_os_policy_bundle_results.json"
 
 REQUIRED_POLICY_IDS = {
     "prefetch-policy",
@@ -31,6 +32,7 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
     agent = _load_json(root / AGENT_SOURCE)
     canary = _load_json(root / CANARY_SOURCE)
     admission = _load_json(root / ADMISSION_SOURCE)
+    policy_bundle = _load_json(root / POLICY_BUNDLE_SOURCE)
 
     memory_os = _engine_row(scale, "WaveMind Memory OS")
     redis_os = _engine_row(scale, "WaveMind Redis hot cache")
@@ -41,7 +43,15 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         else {}
     )
 
-    checks = _checks(memory_os, redis_os, agent_os, agent_os_metrics, canary, admission)
+    checks = _checks(
+        memory_os,
+        redis_os,
+        agent_os,
+        agent_os_metrics,
+        canary,
+        admission,
+        policy_bundle,
+    )
     passed = sum(1 for check in checks if check["pass"])
     summary = {
         "status": "pass" if passed == len(checks) else "watch",
@@ -89,18 +99,30 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         "admission_passed_count": (admission.get("summary") or {}).get("passed_count"),
         "admission_blocker_count": (admission.get("summary") or {}).get("blocker_count"),
         "admission_blocker_ids": (admission.get("summary") or {}).get("blocker_ids", []),
+        "policy_bundle_status": policy_bundle.get("status"),
+        "policy_bundle_staging_promotable": (policy_bundle.get("summary") or {}).get("staging_promotable"),
+        "policy_bundle_production_promotable": (policy_bundle.get("summary") or {}).get("production_promotable"),
+        "policy_bundle_production_locked": (policy_bundle.get("summary") or {}).get("production_locked"),
+        "policy_bundle_worker_count": (policy_bundle.get("summary") or {}).get("worker_count"),
+        "policy_bundle_enabled_task_ids": (policy_bundle.get("summary") or {}).get("enabled_task_ids", []),
     }
 
     return {
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "generated_at": _generated_at(root),
         "source_ref": _source_ref(root),
-        "source_files": [SCALE_SOURCE, AGENT_SOURCE, CANARY_SOURCE, ADMISSION_SOURCE],
+        "source_files": [
+            SCALE_SOURCE,
+            AGENT_SOURCE,
+            CANARY_SOURCE,
+            ADMISSION_SOURCE,
+            POLICY_BUNDLE_SOURCE,
+        ],
         "claim_boundary": (
             "Memory OS intelligence rows come from checked-in deterministic scale, "
-            "agent-coherence, staging canary, and admission artifacts. They prove "
+            "agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove "
             "worker behavior, policy generation, cache prewarm, predictive prefetch, "
-            "priority learning, adaptive forgetting, consolidation, and rollout "
+            "priority learning, adaptive forgetting, consolidation, staging promotion, and rollout "
             "safety on these fixtures. They do not unlock unattended production "
             "Memory OS automation until the admission gate is admitted with real "
             "shared Redis, distributed lock, runtime env, and large-scale evidence."
@@ -113,6 +135,7 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
             "agent_memory_os": agent_os_metrics,
             "canary_summary": canary.get("summary", {}),
             "admission_summary": admission.get("summary", {}),
+            "policy_bundle_summary": policy_bundle.get("summary", {}),
         },
     }
 
@@ -142,6 +165,7 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
             f"- Policy decisions: `{summary.get('policy_decision_count', 0)}`.",
             f"- Execution safe to run: `{summary.get('execution_safe_to_run')}`.",
             f"- Admission status: `{summary.get('admission_status', 'missing')}`.",
+            f"- Policy bundle status: `{summary.get('policy_bundle_status', 'missing')}`.",
             "",
             "## Gate Checks",
             "",
@@ -186,6 +210,12 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
                 f"required env `{', '.join(summary.get('execution_required_environment', []))}`. |"
             ),
             (
+                "| Policy bundle | "
+                f"status `{summary.get('policy_bundle_status')}`, "
+                f"staging `{summary.get('policy_bundle_staging_promotable')}`, "
+                f"production locked `{summary.get('policy_bundle_production_locked')}`. |"
+            ),
+            (
                 "| Agent effect | "
                 f"task success `{_fmt(summary.get('agent_task_success_rate'))}`, "
                 f"stale error `{_fmt(summary.get('agent_stale_error_rate'))}`, "
@@ -207,10 +237,16 @@ def _checks(
     agent_os_metrics: dict[str, Any],
     canary: dict[str, Any],
     admission: dict[str, Any],
+    policy_bundle: dict[str, Any],
 ) -> list[dict[str, Any]]:
     policy_ids = set(memory_os.get("policy_decision_ids", []) or [])
     admission_summary = admission.get("summary") if isinstance(admission.get("summary"), dict) else {}
     canary_summary = canary.get("summary") if isinstance(canary.get("summary"), dict) else {}
+    bundle_summary = (
+        policy_bundle.get("summary")
+        if isinstance(policy_bundle.get("summary"), dict)
+        else {}
+    )
     return [
         _check("worker_ok", memory_os.get("ok"), True, "is"),
         _check("hot_queries", memory_os.get("hot_queries"), 2, ">="),
@@ -243,6 +279,10 @@ def _checks(
         _check("canary_predictive_warmed", canary_summary.get("predictive_warmed"), 10, ">="),
         _check("admission_is_strictly_limited", admission.get("status"), "plan_only", "=="),
         _check("admission_has_blockers", admission_summary.get("blocker_count"), 1, ">="),
+        _check("policy_bundle_staging_ready", policy_bundle.get("status"), "staging_ready", "=="),
+        _check("policy_bundle_staging_promotable", bundle_summary.get("staging_promotable"), True, "is"),
+        _check("policy_bundle_production_locked", bundle_summary.get("production_locked"), True, "is"),
+        _check("policy_bundle_production_not_promoted", bundle_summary.get("production_promotable"), False, "is"),
     ]
 
 

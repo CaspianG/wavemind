@@ -53,10 +53,16 @@ def test_memory_os_intelligence_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["canary_admitted"] is True
     assert payload["summary"]["admission_status"] == "plan_only"
     assert payload["summary"]["admission_blocker_count"] >= 1
+    assert payload["summary"]["policy_bundle_status"] == "staging_ready"
+    assert payload["summary"]["policy_bundle_staging_promotable"] is True
+    assert payload["summary"]["policy_bundle_production_promotable"] is False
+    assert payload["summary"]["policy_bundle_production_locked"] is True
     assert "distributed lock" in payload["claim_boundary"]
+    assert "policy-bundle" in payload["claim_boundary"]
     assert all(check["pass"] for check in payload["checks"])
     assert "# WaveMind Memory OS Intelligence Report" in markdown
     assert "Predictive prefetch" in markdown
+    assert "Policy bundle" in markdown
     assert "production admission remains plan-only" in markdown
 
 
@@ -73,5 +79,7 @@ def test_checked_in_memory_os_intelligence_report_is_machine_readable():
     assert payload["summary"]["status"] == "pass"
     assert payload["summary"]["passed_check_count"] == payload["summary"]["check_count"]
     assert payload["summary"]["admission_status"] == "plan_only"
+    assert payload["summary"]["policy_bundle_status"] == "staging_ready"
+    assert payload["summary"]["policy_bundle_production_locked"] is True
     assert "shared Redis" in payload["claim_boundary"]
     assert "Memory OS canary passes" in markdown

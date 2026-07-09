@@ -270,6 +270,12 @@ jobs:
             --output benchmarks/memory_os_admission_results.json \
             --markdown-output benchmarks/MEMORY_OS_ADMISSION.md \
             --json
+          python -m wavemind memory-os-policy-bundle \
+            --write-artifacts \
+            --output benchmarks/memory_os_policy_bundle_results.json \
+            --markdown-output benchmarks/MEMORY_OS_POLICY_BUNDLE.md \
+            --fail-on-action-required \
+            --json
           python benchmarks/benchmark_registry.py \
             --output benchmarks/benchmark_matrix_results.json
           python benchmarks/render_benchmark_report.py
@@ -313,6 +319,7 @@ jobs:
             tests/test_agent_impact_leaderboard.py \
             tests/test_structured_memory_report.py \
             tests/test_memory_os_intelligence_report.py \
+            tests/test_memory_os_policy_bundle.py \
             tests/test_cluster_autoscale_report.py \
             tests/test_cost_efficiency_leaderboard.py \
             tests/test_benchmark_artifact_audit.py \
@@ -371,6 +378,7 @@ jobs:
           cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md
           cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
+          cp benchmarks/MEMORY_OS_POLICY_BUNDLE.md site/benchmarks/MEMORY_OS_POLICY_BUNDLE.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
           cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
@@ -393,6 +401,7 @@ jobs:
           cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json
           cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
+          cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
       - uses: actions/configure-pages@v5

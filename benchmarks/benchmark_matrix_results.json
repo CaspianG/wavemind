@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T16:11:21Z",
-  "source_ref": "f8e3b8eb7142",
+  "generated_at": "2026-07-09T19:30:16Z",
+  "source_ref": "881594688fa0",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2295,6 +2295,62 @@
       },
       "target": "Keep multi-cycle policy history passing with full decision coverage, repeated required-policy escalation, stable OK policy detection, scheduler escalation, hot-query prewarm, predictive prefetch, and priority learning.",
       "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior."
+    },
+    {
+      "id": "memory_os_policy_bundle",
+      "name": "Memory OS runtime policy bundle",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "wavemind/memory_os_policy_bundle.py",
+      "dataset": "Checked-in Memory OS canary, policy-evolution, and admission artifacts converted into a deterministic operator-applied runtime policy manifest with staging promotion and production lock checks.",
+      "competitors": [
+        "Manual runbook",
+        "un-gated background workers"
+      ],
+      "metrics": [
+        "staging_promotable",
+        "production_promotable",
+        "production_locked",
+        "runtime_env_declared",
+        "worker_count",
+        "effective_cache_mode",
+        "enabled_task_ids",
+        "policy_escalation_ids"
+      ],
+      "current": {
+        "WaveMind Memory OS policy bundle": {
+          "status": "staging_ready",
+          "staging_promotable": true,
+          "production_promotable": false,
+          "production_locked": true,
+          "production_blocker_ids": [
+            "hot-query-signal",
+            "shared-cache-configured",
+            "distributed-lock-configured",
+            "scale-boundary",
+            "runtime-env"
+          ],
+          "runtime_env_declared": true,
+          "worker_count": 1,
+          "effective_cache_mode": "redis",
+          "enabled_task_ids": [
+            "memory-os",
+            "cache-prewarm",
+            "predictive-prefetch",
+            "adaptive-forgetting",
+            "consolidation",
+            "maintenance",
+            "architecture-advice"
+          ],
+          "policy_escalation_ids": [
+            "scale-policy"
+          ],
+          "passed_checks": 5,
+          "check_count": 6
+        }
+      },
+      "target": "Keep the bundle staging-promotable when canary/evolution pass, keep production locked while memory-os-admission is plan-only, and expose Kubernetes/env policy patches without enabling unattended production automation.",
+      "next_step": "Apply the bundle to a Redis-backed staging namespace, replay real tenant traffic, then rerun canary, policy bundle, and memory-os-admission from that environment."
     },
     {
       "id": "memory_competitor_adapter_profile",

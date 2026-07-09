@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-09T16:14:07Z",
-  "source_ref": "f8e3b8eb7142",
+  "generated_at": "2026-07-09T19:30:18Z",
+  "source_ref": "881594688fa0",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "f8e3b8eb7142",
+    "source_ref": "881594688fa0",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,10 +39,10 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T16:14:07Z",
+    "checked_at": "2026-07-09T19:30:18Z",
     "max_age_days": 3650.0,
-    "source_count": 26,
-    "fresh_count": 26,
+    "source_count": 27,
+    "fresh_count": 27,
     "stale_count": 0,
     "missing_count": 0,
     "no_timestamp_count": 0,
@@ -55,15 +55,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-09T16:11:21Z",
-        "age_days": 0.0019212962962962964,
+        "timestamp": "2026-07-09T19:30:16Z",
+        "age_days": 2.3148148148148147e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-09T16:14:07Z",
+        "timestamp": "2026-07-09T19:30:18Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -72,7 +72,7 @@
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T16:13:27Z",
-        "age_days": 0.000462962962962963,
+        "age_days": 0.1367013888888889,
         "status": "pass"
       },
       {
@@ -80,7 +80,7 @@
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:28Z",
-        "age_days": 0.24559027777777778,
+        "age_days": 0.3818287037037037,
         "status": "pass"
       },
       {
@@ -88,7 +88,7 @@
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:41Z",
-        "age_days": 0.2454398148148148,
+        "age_days": 0.38167824074074075,
         "status": "pass"
       },
       {
@@ -96,7 +96,7 @@
         "schema": "wavemind.production_evidence_env_contract.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T14:18:25Z",
-        "age_days": 0.08034722222222222,
+        "age_days": 0.21658564814814815,
         "status": "pass"
       },
       {
@@ -104,7 +104,7 @@
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:23:34Z",
-        "age_days": 0.2434375,
+        "age_days": 0.3796759259259259,
         "status": "pass"
       },
       {
@@ -112,7 +112,7 @@
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:23:34Z",
-        "age_days": 0.2434375,
+        "age_days": 0.3796759259259259,
         "status": "pass"
       },
       {
@@ -120,7 +120,7 @@
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:41Z",
-        "age_days": 0.2454398148148148,
+        "age_days": 0.38167824074074075,
         "status": "pass"
       },
       {
@@ -128,7 +128,7 @@
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:21:55Z",
-        "age_days": 0.24458333333333335,
+        "age_days": 0.38082175925925926,
         "status": "pass"
       },
       {
@@ -136,7 +136,7 @@
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:16Z",
-        "age_days": 0.24572916666666667,
+        "age_days": 0.3819675925925926,
         "status": "pass"
       },
       {
@@ -144,7 +144,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.2452662037037037,
+        "age_days": 0.3815046296296296,
         "status": "pass"
       },
       {
@@ -152,7 +152,7 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.2452662037037037,
+        "age_days": 0.3815046296296296,
         "status": "pass"
       },
       {
@@ -160,7 +160,7 @@
         "schema": "wavemind.multimodal_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T12:56:09Z",
-        "age_days": 0.13747685185185185,
+        "age_days": 0.27371527777777777,
         "status": "pass"
       },
       {
@@ -168,7 +168,7 @@
         "schema": "wavemind.memory_os_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T00:40:28Z",
-        "age_days": 0.6483680555555555,
+        "age_days": 0.7846064814814815,
         "status": "pass"
       },
       {
@@ -176,7 +176,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T01:06:28Z",
-        "age_days": 0.6303125,
+        "age_days": 0.7665509259259259,
         "status": "pass"
       },
       {
@@ -184,7 +184,15 @@
         "schema": "wavemind.memory_os_policy_evolution.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T13:44:41Z",
-        "age_days": 0.10377314814814814,
+        "age_days": 0.24001157407407409,
+        "status": "pass"
+      },
+      {
+        "path": "benchmarks/memory_os_policy_bundle_results.json",
+        "schema": "wavemind.memory_os_policy_bundle.v1",
+        "timestamp_key": "generated_at",
+        "timestamp": "2026-07-09T19:29:13Z",
+        "age_days": 0.0007523148148148148,
         "status": "pass"
       },
       {
@@ -192,7 +200,7 @@
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T15:23:45Z",
-        "age_days": 1.0349768518518518,
+        "age_days": 1.1712152777777778,
         "status": "pass"
       },
       {
@@ -200,7 +208,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T14:43:22Z",
-        "age_days": 1.0630208333333333,
+        "age_days": 1.1992592592592592,
         "status": "pass"
       },
       {
@@ -208,7 +216,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T17:24:13Z",
-        "age_days": 0.9513194444444445,
+        "age_days": 1.0875578703703703,
         "status": "pass"
       },
       {
@@ -216,7 +224,7 @@
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T13:44:41Z",
-        "age_days": 0.10377314814814814,
+        "age_days": 0.24001157407407409,
         "status": "pass"
       },
       {
@@ -224,15 +232,15 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T06:50:09Z",
-        "age_days": 0.39164351851851853,
+        "age_days": 0.5278819444444445,
         "status": "pass"
       },
       {
         "path": "benchmarks/memory_os_intelligence_results.json",
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-08T20:13:52Z",
-        "age_days": 0.8335069444444444,
+        "timestamp": "2026-07-09T15:36:19Z",
+        "age_days": 0.16248842592592594,
         "status": "pass"
       },
       {
@@ -240,7 +248,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T20:13:52Z",
-        "age_days": 0.8335069444444444,
+        "age_days": 0.9697453703703703,
         "status": "pass"
       },
       {
@@ -248,7 +256,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T15:36:19Z",
-        "age_days": 0.02625,
+        "age_days": 0.16248842592592594,
         "status": "pass"
       },
       {
@@ -256,20 +264,20 @@
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T13:44:41Z",
-        "age_days": 0.10377314814814814,
+        "age_days": 0.24001157407407409,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-09T16:11:21Z",
-    "implemented_count": 31,
+    "generated_at": "2026-07-09T19:30:16Z",
+    "implemented_count": 32,
     "runner_ready_count": 3,
     "planned_count": 6,
-    "total_count": 40,
+    "total_count": 41,
     "status_counts": {
-      "implemented": 31,
+      "implemented": 32,
       "planned": 6,
       "runner-ready": 3
     },
@@ -282,7 +290,7 @@
       "memory-embedding": 1,
       "multilingual-retrieval": 2,
       "production-ops": 2,
-      "production-scale": 14,
+      "production-scale": 15,
       "rag-quality": 1,
       "retrieval": 3,
       "vector-db": 1,
@@ -292,8 +300,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T16:14:07Z",
-    "age_days": 0.0019283090509259258,
+    "checked_at": "2026-07-09T19:30:18Z",
+    "age_days": 2.1965358796296297e-05,
     "max_age_days": 3650.0,
     "errors": []
   },
@@ -524,8 +532,8 @@
   "memory_os_intelligence": {
     "schema": "wavemind.memory_os_intelligence_report.v1",
     "status": "pass",
-    "check_count": 31,
-    "passed_check_count": 31,
+    "check_count": 35,
+    "passed_check_count": 35,
     "worker_ok": true,
     "hot_queries": 2,
     "prewarm_warmed": 2,
@@ -537,7 +545,7 @@
     "positive_feedback_priority_delta": 0.3999999999999999,
     "negative_feedback_priority_delta": -0.30000000000000004,
     "priority_predictions": 2,
-    "priority_boost_total": 0.19999996982184182,
+    "priority_boost_total": 0.19999995964987127,
     "forgetting_demotions": 4,
     "forgetting_decay_total": 0.4,
     "policy_status": "architecture_required",
@@ -570,12 +578,13 @@
       "scale-boundary",
       "runtime-env"
     ],
-    "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, and admission artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+    "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
     "source_files": [
       "benchmarks/scale_readiness_results.json",
       "benchmarks/agent_coherence_results.json",
       "benchmarks/memory_os_canary_results.json",
-      "benchmarks/memory_os_admission_results.json"
+      "benchmarks/memory_os_admission_results.json",
+      "benchmarks/memory_os_policy_bundle_results.json"
     ],
     "source": "benchmarks/memory_os_intelligence_results.json"
   },
@@ -2502,6 +2511,455 @@
       }
     ]
   },
+  "memory_os_policy_bundle": {
+    "schema": "wavemind.memory_os_policy_bundle.v1",
+    "status": "staging_ready",
+    "ok": true,
+    "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. It can promote the checked canary/evolution behavior to staging. It does not enable unattended production automation unless memory-os-admission is admitted with real Redis, distributed lock, runtime env, and strict large-scale evidence.",
+    "summary": {
+      "status": "staging_ready",
+      "staging_promotable": true,
+      "production_promotable": false,
+      "production_locked": true,
+      "production_blocker_ids": [
+        "hot-query-signal",
+        "shared-cache-configured",
+        "distributed-lock-configured",
+        "scale-boundary",
+        "runtime-env"
+      ],
+      "runtime_env_declared": true,
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ],
+      "worker_count": 1,
+      "effective_cache_mode": "redis",
+      "policy_escalation_ids": [
+        "scale-policy"
+      ],
+      "check_count": 6,
+      "passed_checks": 5,
+      "failed_check_ids": [
+        "production-admission"
+      ]
+    },
+    "checks": [
+      {
+        "id": "canary-pass",
+        "title": "Memory OS staging canary passed",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "status=pass, ok=True",
+        "action": "Run wavemind memory-os-canary with representative staging traffic."
+      },
+      {
+        "id": "policy-evolution-pass",
+        "title": "Memory OS policy evolution passed",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "status=pass, ok=True",
+        "action": "Run wavemind memory-os-evolution and fix repeated-policy checks."
+      },
+      {
+        "id": "runtime-env-contract",
+        "title": "Runtime env contract declares Redis and lock wiring",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "WAVEMIND_REDIS_URL, WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+        "action": "Declare WAVEMIND_REDIS_URL and WAVEMIND_MEMORY_OS_LOCK_REDIS_URL in the runtime bundle."
+      },
+      {
+        "id": "staging-promotion",
+        "title": "Bundle can be promoted to staging",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "canary=True, evolution=True, env=True",
+        "action": "Do not deploy the Memory OS policy bundle until canary, evolution, and runtime env contract pass."
+      },
+      {
+        "id": "production-admission",
+        "title": "Production promotion remains behind strict admission",
+        "status": "action_required",
+        "passed": false,
+        "severity": "production_blocker",
+        "evidence": "admission_status=plan_only, admitted=False, blockers=['hot-query-signal', 'shared-cache-configured', 'distributed-lock-configured', 'scale-boundary', 'runtime-env']",
+        "action": "Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence."
+      },
+      {
+        "id": "production-lock",
+        "title": "Bundle does not enable unattended production automation",
+        "status": "pass",
+        "passed": true,
+        "severity": "ok",
+        "evidence": "production_auto_enable=False, production_locked=True",
+        "action": "Keep production_auto_enable=false unless memory-os-admission returns admitted."
+      }
+    ],
+    "runtime_policy": {
+      "target_deployment": "staging",
+      "production_auto_enable": false,
+      "namespace": "canary:memory-os",
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ],
+      "worker_count": 1,
+      "effective_cache_mode": "redis",
+      "required_runtime_env": [
+        "WAVEMIND_REDIS_URL",
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+      ],
+      "required_infrastructure": [
+        "Redis-compatible shared hot-query cache",
+        "distributed worker lock or single-flight scheduler",
+        "durable queue or Kubernetes CronJobs",
+        "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+      ],
+      "schedules": {
+        "memory_os": "*/5 * * * *",
+        "cache_prewarm": "*/2 * * * *",
+        "predictive_prefetch": "*/5 * * * *",
+        "adaptive_forgetting": "17 * * * *",
+        "consolidation": "37 * * * *",
+        "maintenance": "47 * * * *",
+        "architecture_advice": "11 */6 * * *"
+      },
+      "feature_flags": {
+        "audit_queries_required": true,
+        "shared_cache_required": true,
+        "distributed_lock_required": true,
+        "predictive_prefetch": true,
+        "priority_learning": true,
+        "adaptive_forgetting": true,
+        "consolidation": true,
+        "architecture_advice": true,
+        "policy_history_escalation": true
+      },
+      "policy_manifest": {
+        "status": "action_required",
+        "namespace": "canary:memory-os",
+        "decision_count": 6,
+        "decision_ids": [
+          "prefetch-policy",
+          "priority-policy",
+          "forgetting-policy",
+          "consolidation-policy",
+          "scale-policy",
+          "coordination-policy"
+        ],
+        "decisions": [
+          {
+            "id": "prefetch-policy",
+            "status": "ok",
+            "strategy": "hot-query-and-transition-prefetch",
+            "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+            "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "hot_queries": 5,
+              "prewarm_warmed": 5,
+              "predictive_generated": 1,
+              "predictive_warmed": 1,
+              "transition_edges": 0
+            }
+          },
+          {
+            "id": "priority-policy",
+            "status": "ok",
+            "strategy": "usage-pattern-priority-boost",
+            "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+            "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "priority_predictions": 5
+            }
+          },
+          {
+            "id": "forgetting-policy",
+            "status": "watch",
+            "strategy": "observe-before-demoting",
+            "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+            "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "active_memories": 7
+            }
+          },
+          {
+            "id": "consolidation-policy",
+            "status": "ok",
+            "strategy": "promote-active-clusters-to-concepts",
+            "rationale": "The field graph produced higher-level concept memories from active clusters.",
+            "action": "Review new concept memories in Studio/API before assigning very high priority.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "concepts_created": 1
+            }
+          },
+          {
+            "id": "scale-policy",
+            "status": "action_required",
+            "strategy": "fix-production-gaps-before-growth",
+            "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+            "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "active_memories": 7,
+              "target_memories": 100000,
+              "recommendation_ids": [
+                "scale-plan",
+                "bounded-read-fanout",
+                "service-index",
+                "production-controls",
+                "load-test"
+              ]
+            }
+          },
+          {
+            "id": "coordination-policy",
+            "status": "ok",
+            "strategy": "single-writer-memory-os-cycle",
+            "rationale": "The current run has a safe coordination state for this deployment mode.",
+            "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+            "evidence": {
+              "namespace": "canary:memory-os",
+              "deployment": "staging",
+              "lock_required": true,
+              "lock_acquired": true,
+              "lock_key": "scheduler-preflight",
+              "cache_enabled": true
+            }
+          }
+        ],
+        "ok": false
+      },
+      "policy_history": {
+        "previous_runs": 3,
+        "window": 5,
+        "trend": "repeated_architecture_required",
+        "repeated_action_required_ids": [],
+        "repeated_architecture_required_ids": [
+          "scale-policy"
+        ],
+        "repeated_required_ids": [
+          "scale-policy"
+        ],
+        "stable_ok_ids": [
+          "consolidation-policy",
+          "forgetting-policy",
+          "prefetch-policy",
+          "priority-policy"
+        ],
+        "status_counts": {
+          "action_required": 3,
+          "architecture_required": 4,
+          "ok": 15,
+          "watch": 2
+        }
+      },
+      "policy_escalation_ids": [
+        "scale-policy"
+      ],
+      "policy_auto_adjustments": [],
+      "observability": {
+        "required_metrics": [
+          "wavemind_memory_os_cycle_duration_ms",
+          "wavemind_memory_os_worker_errors_total",
+          "wavemind_memory_os_hot_queries",
+          "wavemind_memory_os_prewarm_warmed",
+          "wavemind_memory_os_predictive_warmed",
+          "wavemind_memory_os_priority_predictions",
+          "wavemind_memory_os_forgetting_demotions",
+          "wavemind_memory_os_concepts_created"
+        ],
+        "trace_attributes": [
+          "wavemind.namespace",
+          "wavemind.memory_os.task_id",
+          "wavemind.memory_os.policy_bundle_id",
+          "wavemind.memory_os.idempotency_key"
+        ]
+      },
+      "safety": {
+        "state_mutating_tasks": [
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os"
+        ],
+        "singleton_task_ids": [
+          "architecture-advice",
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os",
+          "cache-prewarm",
+          "predictive-prefetch"
+        ],
+        "idempotency_required": true,
+        "production_admission_required": true,
+        "large_scale_evidence_required": true
+      }
+    },
+    "kubernetes_patch": {
+      "apiVersion": "wavemind.dev/v1",
+      "kind": "MemoryOSPolicyBundle",
+      "metadata": {
+        "name": "wavemind-memory-os-staging"
+      },
+      "spec": {
+        "targetDeployment": "staging",
+        "productionAutoEnable": false,
+        "env": [
+          {
+            "name": "WAVEMIND_MEMORY_OS_ENABLED",
+            "value": "1"
+          },
+          {
+            "name": "WAVEMIND_MEMORY_OS_POLICY_BUNDLE",
+            "value": "memory_os_policy_bundle_results.json"
+          },
+          {
+            "name": "WAVEMIND_MEMORY_OS_CANARY_REQUIRED",
+            "value": "1"
+          },
+          {
+            "name": "WAVEMIND_MEMORY_OS_PRODUCTION_ADMISSION_REQUIRED",
+            "value": "1"
+          },
+          {
+            "name": "WAVEMIND_MEMORY_OS_DEPLOYMENT",
+            "value": "staging"
+          },
+          {
+            "name": "WAVEMIND_REDIS_URL",
+            "valueFrom": {
+              "secretKeyRef": {
+                "name": "wavemind-memory-os-runtime",
+                "key": "redis-url"
+              }
+            }
+          },
+          {
+            "name": "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+            "valueFrom": {
+              "secretKeyRef": {
+                "name": "wavemind-memory-os-runtime",
+                "key": "lock-redis-url"
+              }
+            }
+          }
+        ],
+        "cronJobs": [
+          {
+            "name": "wavemind-memory-os",
+            "task_id": "memory-os",
+            "schedule": "*/5 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-cache-prewarm",
+            "task_id": "cache-prewarm",
+            "schedule": "*/2 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-predictive-prefetch",
+            "task_id": "predictive-prefetch",
+            "schedule": "*/5 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-adaptive-forgetting",
+            "task_id": "adaptive-forgetting",
+            "schedule": "17 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-consolidation",
+            "task_id": "consolidation",
+            "schedule": "37 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-maintenance",
+            "task_id": "maintenance",
+            "schedule": "47 * * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          },
+          {
+            "name": "wavemind-architecture-advice",
+            "task_id": "architecture-advice",
+            "schedule": "11 */6 * * *",
+            "concurrencyPolicy": "Forbid",
+            "restartPolicy": "OnFailure"
+          }
+        ],
+        "requiredRuntimeEnv": [
+          "WAVEMIND_REDIS_URL",
+          "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+        ],
+        "observability": {
+          "required_metrics": [
+            "wavemind_memory_os_cycle_duration_ms",
+            "wavemind_memory_os_worker_errors_total",
+            "wavemind_memory_os_hot_queries",
+            "wavemind_memory_os_prewarm_warmed",
+            "wavemind_memory_os_predictive_warmed",
+            "wavemind_memory_os_priority_predictions",
+            "wavemind_memory_os_forgetting_demotions",
+            "wavemind_memory_os_concepts_created"
+          ],
+          "trace_attributes": [
+            "wavemind.namespace",
+            "wavemind.memory_os.task_id",
+            "wavemind.memory_os.policy_bundle_id",
+            "wavemind.memory_os.idempotency_key"
+          ]
+        },
+        "safety": {
+          "state_mutating_tasks": [
+            "maintenance",
+            "adaptive-forgetting",
+            "consolidation",
+            "memory-os"
+          ],
+          "singleton_task_ids": [
+            "architecture-advice",
+            "maintenance",
+            "adaptive-forgetting",
+            "consolidation",
+            "memory-os",
+            "cache-prewarm",
+            "predictive-prefetch"
+          ],
+          "idempotency_required": true,
+          "production_admission_required": true,
+          "large_scale_evidence_required": true
+        }
+      }
+    }
+  },
   "source_files": [
     "benchmarks/benchmark_matrix_results.json",
     "benchmarks/benchmark_artifact_audit.json",
@@ -2520,6 +2978,7 @@
     "benchmarks/memory_os_admission_results.json",
     "benchmarks/memory_os_canary_results.json",
     "benchmarks/memory_os_policy_evolution_results.json",
+    "benchmarks/memory_os_policy_bundle_results.json",
     "benchmarks/production_evidence_dispatch_results.json",
     "benchmarks/production_scale_run_plan.json",
     "benchmarks/agent_coherence_results.json",

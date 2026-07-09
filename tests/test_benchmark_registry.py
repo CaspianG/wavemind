@@ -23,6 +23,13 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert "Chroma static" in entries["agent_coherence_quality"]["competitors"]
     assert entries["dynamic_memory_policy"]["status"] == "implemented"
     assert entries["field_memory_dynamics"]["status"] == "implemented"
+    assert entries["memory_os_policy_bundle"]["status"] == "implemented"
+    assert (
+        entries["memory_os_policy_bundle"]["current"][
+            "WaveMind Memory OS policy bundle"
+        ]["status"]
+        == "staging_ready"
+    )
     assert entries["long_memory_evidence_synthetic"]["status"] == "implemented"
     assert "Static vector" in entries["long_memory_evidence_synthetic"]["competitors"]
     assert entries["beir_style_open_retrieval"]["status"] == "implemented"

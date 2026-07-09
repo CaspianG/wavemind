@@ -89,6 +89,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    memory_os_policy_bundle = _load_json(
+        root / "benchmarks" / "memory_os_policy_bundle_results.json",
+        load_errors,
+        required=False,
+    )
     dispatch = _load_json(
         root / "benchmarks" / "production_evidence_dispatch_results.json",
         load_errors,
@@ -164,6 +169,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
         "benchmarks/memory_os_policy_evolution_results.json": memory_os_evolution,
+        "benchmarks/memory_os_policy_bundle_results.json": memory_os_policy_bundle,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
@@ -424,6 +430,16 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "claim_boundary": memory_os_canary.get("claim_boundary", ""),
             "summary": memory_os_canary.get("summary", {}),
             "checks": memory_os_canary.get("checks", []),
+        },
+        "memory_os_policy_bundle": {
+            "schema": memory_os_policy_bundle.get("schema"),
+            "status": memory_os_policy_bundle.get("status", "missing"),
+            "ok": memory_os_policy_bundle.get("ok", False),
+            "claim_boundary": memory_os_policy_bundle.get("claim_boundary", ""),
+            "summary": memory_os_policy_bundle.get("summary", {}),
+            "checks": memory_os_policy_bundle.get("checks", []),
+            "runtime_policy": memory_os_policy_bundle.get("runtime_policy", {}),
+            "kubernetes_patch": memory_os_policy_bundle.get("kubernetes_patch", {}),
         },
         "source_files": list(source_payloads),
         "load_errors": load_errors,

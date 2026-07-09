@@ -1,13 +1,13 @@
 # WaveMind Memory OS Intelligence Report
 
-Generated: `2026-07-08T20:13:52Z`.
+Generated: `2026-07-09T15:36:19Z`.
 
-Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, and admission artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
+Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
 
 ## Summary
 
 - Status: `pass`.
-- Checks: `31/31`.
+- Checks: `35/35`.
 - Hot queries: `2`.
 - Cache prewarm warmed: `2`.
 - Predictive prefetch warmed: `6`.
@@ -18,6 +18,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 - Policy decisions: `6`.
 - Execution safe to run: `True`.
 - Admission status: `plan_only`.
+- Policy bundle status: `staging_ready`.
 
 ## Gate Checks
 
@@ -54,6 +55,10 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | canary_predictive_warmed | `pass` | `15` | `>= 10` |
 | admission_is_strictly_limited | `pass` | `plan_only` | `== plan_only` |
 | admission_has_blockers | `pass` | `5` | `>= 1` |
+| policy_bundle_staging_ready | `pass` | `staging_ready` | `== staging_ready` |
+| policy_bundle_staging_promotable | `pass` | `1` | `is True` |
+| policy_bundle_production_locked | `pass` | `1` | `is True` |
+| policy_bundle_production_not_promoted | `pass` | `0` | `is False` |
 
 ## Intelligence Coverage
 
@@ -65,6 +70,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | Adaptive forgetting | `4` demotions, decay total `0.4`. |
 | Consolidation | `1` concepts created, recall `True`. |
 | Rollout safety | shared cache `True`, distributed lock `True`, required env `WAVEMIND_MEMORY_OS_LOCK_REDIS_URL, WAVEMIND_REDIS_URL`. |
+| Policy bundle | status `staging_ready`, staging `True`, production locked `True`. |
 | Agent effect | task success `0.917`, stale error `0`, context saved `0.931`. |
 
 ## Production Boundary

@@ -60,6 +60,10 @@ from .memory_os_evolution import (
     run_memory_os_policy_evolution,
     write_memory_os_policy_evolution_artifacts,
 )
+from .memory_os_policy_bundle import (
+    render_memory_os_policy_bundle_markdown,
+    run_memory_os_policy_bundle,
+)
 from .k8s_operator import (
     KubernetesApplyClient,
     WaveMindClusterSpec,
@@ -1320,6 +1324,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     memory_os_evolution.add_argument("--json", action="store_true")
 
+    memory_os_policy_bundle = sub.add_parser(
+        "memory-os-policy-bundle",
+        help="Build an operator-applied Memory OS runtime policy bundle from canary, evolution, and admission artifacts",
+    )
+    memory_os_policy_bundle.add_argument("--root", type=Path, default=Path("."))
+    memory_os_policy_bundle.add_argument(
+        "--canary-path",
+        type=Path,
+        default=Path("benchmarks/memory_os_canary_results.json"),
+    )
+    memory_os_policy_bundle.add_argument(
+        "--evolution-path",
+        type=Path,
+        default=Path("benchmarks/memory_os_policy_evolution_results.json"),
+    )
+    memory_os_policy_bundle.add_argument(
+        "--admission-path",
+        type=Path,
+        default=Path("benchmarks/memory_os_admission_results.json"),
+    )
+    memory_os_policy_bundle.add_argument("--write-artifacts", action="store_true")
+    memory_os_policy_bundle.add_argument("--fail-on-action-required", action="store_true")
+    memory_os_policy_bundle.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/memory_os_policy_bundle_results.json"),
+    )
+    memory_os_policy_bundle.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MEMORY_OS_POLICY_BUNDLE.md"),
+    )
+    memory_os_policy_bundle.add_argument("--json", action="store_true")
+
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
     imp.add_argument("--namespace", default="default")
@@ -2171,6 +2209,30 @@ def print_memory_os_policy_evolution(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_memory_os_policy_bundle(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"bundle_id: {payload['bundle_id']}")
+    print(f"staging_promotable: {str(summary['staging_promotable']).lower()}")
+    print(f"production_promotable: {str(summary['production_promotable']).lower()}")
+    print(f"production_locked: {str(summary['production_locked']).lower()}")
+    print(f"worker_count: {summary['worker_count']}")
+    print(f"effective_cache_mode: {summary['effective_cache_mode']}")
+    print("enabled_tasks: " + ", ".join(summary.get("enabled_task_ids") or []))
+    if summary.get("production_blocker_ids"):
+        print("production_blockers: " + ", ".join(summary["production_blocker_ids"]))
+    print(
+        "checks: "
+        f"{summary['passed_checks']}/{summary['check_count']} passed"
+    )
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -2317,6 +2379,35 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_action_required and payload["status"] != "pass":
             return 2
         return 0 if payload["status"] in {"pass", "action_required"} else 1
+
+    if args.command == "memory-os-policy-bundle":
+        payload = run_memory_os_policy_bundle(
+            root=args.root,
+            canary_path=args.canary_path,
+            evolution_path=args.evolution_path,
+            admission_path=args.admission_path,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_memory_os_policy_bundle_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_memory_os_policy_bundle(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["status"] == "action_required":
+            return 2
+        return 0 if payload["status"] in {"staging_ready", "production_ready", "action_required"} else 1
 
     if args.command == "serve":
         import uvicorn

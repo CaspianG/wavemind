@@ -1,18 +1,19 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
-  "generated_at": "2026-07-08T20:13:52Z",
-  "source_ref": "b9ec289a426b",
+  "generated_at": "2026-07-09T15:36:19Z",
+  "source_ref": "881594688fa0",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/agent_coherence_results.json",
     "benchmarks/memory_os_canary_results.json",
-    "benchmarks/memory_os_admission_results.json"
+    "benchmarks/memory_os_admission_results.json",
+    "benchmarks/memory_os_policy_bundle_results.json"
   ],
-  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, and admission artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
   "summary": {
     "status": "pass",
-    "check_count": 31,
-    "passed_check_count": 31,
+    "check_count": 35,
+    "passed_check_count": 35,
     "worker_ok": true,
     "hot_queries": 2,
     "prewarm_warmed": 2,
@@ -24,7 +25,7 @@
     "positive_feedback_priority_delta": 0.3999999999999999,
     "negative_feedback_priority_delta": -0.30000000000000004,
     "priority_predictions": 2,
-    "priority_boost_total": 0.19999996982184182,
+    "priority_boost_total": 0.19999995964987127,
     "forgetting_demotions": 4,
     "forgetting_decay_total": 0.4,
     "policy_status": "architecture_required",
@@ -79,6 +80,20 @@
       "distributed-lock-configured",
       "scale-boundary",
       "runtime-env"
+    ],
+    "policy_bundle_status": "staging_ready",
+    "policy_bundle_staging_promotable": true,
+    "policy_bundle_production_promotable": false,
+    "policy_bundle_production_locked": true,
+    "policy_bundle_worker_count": 1,
+    "policy_bundle_enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
     ]
   },
   "checks": [
@@ -298,6 +313,34 @@
       "target": 1,
       "op": ">=",
       "pass": true
+    },
+    {
+      "name": "policy_bundle_staging_ready",
+      "value": "staging_ready",
+      "target": "staging_ready",
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_staging_promotable",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_production_locked",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_production_not_promoted",
+      "value": false,
+      "target": false,
+      "op": "is",
+      "pass": true
     }
   ],
   "raw_metrics": {
@@ -327,7 +370,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783541588.0737612
+          "last_seen": 1783611322.918986
         }
       ],
       "transition_prefetch_hit": true,
@@ -338,7 +381,7 @@
       "positive_feedback_priority_delta": 0.3999999999999999,
       "negative_feedback_priority_delta": -0.30000000000000004,
       "priority_predictions": 2,
-      "priority_boost_total": 0.19999996982184182,
+      "priority_boost_total": 0.19999995964987127,
       "forgetting_demotions": 4,
       "forgetting_decay_total": 0.4,
       "architecture_advice_status": "architecture_required",
@@ -474,7 +517,7 @@
         "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
         "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
       ],
-      "run_ms": 27.53089996986091
+      "run_ms": 31.294899999920744
     },
     "redis_memory_os": {
       "engine": "WaveMind Redis hot cache",
@@ -501,7 +544,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783541587.7913415
+          "last_seen": 1783611322.6063967
         }
       ],
       "memory_os_transition_prefetch_hit": true,
@@ -510,7 +553,7 @@
       "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
       "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
       "memory_os_priority_predictions": 2,
-      "memory_os_priority_boost_total": 0.19999997101696979,
+      "memory_os_priority_boost_total": 0.19999997430874575,
       "memory_os_forgetting_demotions": 4,
       "memory_os_forgetting_decay_total": 0.4,
       "memory_os_architecture_advice_status": "architecture_required",
@@ -524,7 +567,7 @@
         "multimodal-payloads"
       ],
       "memory_os_cross_worker_hit": true,
-      "memory_os_run_ms": 24.558300036005676,
+      "memory_os_run_ms": 24.054999999862048,
       "namespace_invalidation_removed": true,
       "redis_keys": 8,
       "writer_hits": 0,
@@ -532,8 +575,8 @@
       "reader_hits": 1,
       "os_hits": 0,
       "os_reader_hits": 2,
-      "avg_lookup_ms": 0.05665002390742302,
-      "p99_lookup_ms": 0.07569999434053898
+      "avg_lookup_ms": 0.045650000174646266,
+      "p99_lookup_ms": 0.057499999456922524
     },
     "agent_memory_os": {
       "worker_ok": true,
@@ -1021,6 +1064,39 @@
       "missing_runtime_env": [
         "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
         "WAVEMIND_REDIS_URL"
+      ]
+    },
+    "policy_bundle_summary": {
+      "status": "staging_ready",
+      "staging_promotable": true,
+      "production_promotable": false,
+      "production_locked": true,
+      "production_blocker_ids": [
+        "hot-query-signal",
+        "shared-cache-configured",
+        "distributed-lock-configured",
+        "scale-boundary",
+        "runtime-env"
+      ],
+      "runtime_env_declared": true,
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ],
+      "worker_count": 1,
+      "effective_cache_mode": "redis",
+      "policy_escalation_ids": [
+        "scale-policy"
+      ],
+      "check_count": 6,
+      "passed_checks": 5,
+      "failed_check_ids": [
+        "production-admission"
       ]
     }
   }

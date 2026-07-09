@@ -297,6 +297,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "memory_os_policy_evolution_results.json" in readme
     assert "MEMORY_OS_POLICY_EVOLUTION.md" in readme
     assert "wavemind memory-os-evolution" in readme
+    assert "memory_os_policy_bundle_results.json" in readme
+    assert "MEMORY_OS_POLICY_BUNDLE.md" in readme
+    assert "wavemind memory-os-policy-bundle" in readme
     assert "faiss-persisted" in readme
     assert "SHA-256 checksum of normalized source" in readme
     assert "rebuilds it from the durable store" in readme
@@ -430,6 +433,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "memory-os-evolution" in leaderboard_workflow
     assert "benchmarks/memory_os_policy_evolution_results.json" in leaderboard_workflow
     assert "benchmarks/MEMORY_OS_POLICY_EVOLUTION.md" in leaderboard_workflow
+    assert "memory-os-policy-bundle" in leaderboard_workflow
+    assert "benchmarks/memory_os_policy_bundle_results.json" in leaderboard_workflow
+    assert "benchmarks/MEMORY_OS_POLICY_BUNDLE.md" in leaderboard_workflow
     assert "memory-os-plan" in roadmap
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert Path("benchmarks/render_leaderboard_status.py").exists()
@@ -464,6 +470,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/MEMORY_OS_CANARY.md").exists()
     assert Path("benchmarks/memory_os_policy_evolution_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_POLICY_EVOLUTION.md").exists()
+    assert Path("benchmarks/memory_os_policy_bundle_results.json").exists()
+    assert Path("benchmarks/MEMORY_OS_POLICY_BUNDLE.md").exists()
     assert Path("wavemind/production_evidence.py").exists()
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases

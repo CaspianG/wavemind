@@ -233,6 +233,16 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "unattended production automation" in (
         payload["memory_os_policy_evolution"]["claim_boundary"]
     )
+    assert payload["memory_os_policy_bundle"]["schema"] == (
+        "wavemind.memory_os_policy_bundle.v1"
+    )
+    assert payload["memory_os_policy_bundle"]["status"] == "staging_ready"
+    assert payload["memory_os_policy_bundle"]["ok"] is True
+    assert payload["memory_os_policy_bundle"]["summary"]["staging_promotable"] is True
+    assert payload["memory_os_policy_bundle"]["summary"]["production_promotable"] is False
+    assert payload["memory_os_policy_bundle"]["summary"]["production_locked"] is True
+    assert payload["memory_os_policy_bundle"]["runtime_policy"]["production_auto_enable"] is False
+    assert payload["memory_os_policy_bundle"]["kubernetes_patch"]["spec"]["productionAutoEnable"] is False
     assert payload["strict_production_evidence"]["overall_status"] == "action_required"
     assert payload["strict_production_evidence"]["summary"]["total_requirements"] == 8
     assert payload["strict_production_evidence"]["action_required"]
@@ -434,6 +444,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/multimodal_admission_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_intelligence_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_policy_evolution_results.json" in payload["source_files"]
+    assert "benchmarks/memory_os_policy_bundle_results.json" in payload["source_files"]
     assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
@@ -463,6 +474,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_intelligence"]["status"] == "pass"
     assert payload["memory_os_policy_evolution"]["status"] == "pass"
+    assert payload["memory_os_policy_bundle"]["status"] == "staging_ready"
     assert payload["cluster_autoscale"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
@@ -503,6 +515,9 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     )
     assert payload["memory_os_policy_evolution"]["schema"] == (
         "wavemind.memory_os_policy_evolution.v1"
+    )
+    assert payload["memory_os_policy_bundle"]["schema"] == (
+        "wavemind.memory_os_policy_bundle.v1"
     )
     assert payload["cluster_autoscale"]["schema"] == (
         "wavemind.cluster_autoscale_report.v1"

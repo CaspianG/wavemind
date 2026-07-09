@@ -161,6 +161,26 @@ def _memory_os_evolution_summary(payload: dict[str, Any] | None) -> dict[str, An
     }
 
 
+def _memory_os_policy_bundle_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "staging_promotable": summary.get("staging_promotable"),
+        "production_promotable": summary.get("production_promotable"),
+        "production_locked": summary.get("production_locked"),
+        "production_blocker_ids": summary.get("production_blocker_ids"),
+        "runtime_env_declared": summary.get("runtime_env_declared"),
+        "worker_count": summary.get("worker_count"),
+        "effective_cache_mode": summary.get("effective_cache_mode"),
+        "enabled_task_ids": summary.get("enabled_task_ids"),
+        "policy_escalation_ids": summary.get("policy_escalation_ids"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -351,6 +371,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
+    memory_os_policy_bundle_payload = _load_json(root / "benchmarks" / "memory_os_policy_bundle_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     production_evidence_env_payload = _load_json(
         root / "benchmarks" / "production_evidence_env_contract.json"
@@ -2204,6 +2225,36 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep multi-cycle policy history passing with full decision coverage, repeated required-policy escalation, stable OK policy detection, scheduler escalation, hot-query prewarm, predictive prefetch, and priority learning.",
             "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior.",
+        },
+        {
+            "id": "memory_os_policy_bundle",
+            "name": "Memory OS runtime policy bundle",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "wavemind/memory_os_policy_bundle.py",
+            "dataset": "Checked-in Memory OS canary, policy-evolution, and admission artifacts converted into a deterministic operator-applied runtime policy manifest with staging promotion and production lock checks.",
+            "competitors": ["Manual runbook", "un-gated background workers"],
+            "metrics": [
+                "staging_promotable",
+                "production_promotable",
+                "production_locked",
+                "runtime_env_declared",
+                "worker_count",
+                "effective_cache_mode",
+                "enabled_task_ids",
+                "policy_escalation_ids",
+            ],
+            "current": {
+                "WaveMind Memory OS policy bundle": (
+                    _memory_os_policy_bundle_summary(memory_os_policy_bundle_payload)
+                    or {
+                        "status": "action_required",
+                        "requires": "wavemind memory-os-policy-bundle --write-artifacts --output benchmarks/memory_os_policy_bundle_results.json",
+                    }
+                ),
+            },
+            "target": "Keep the bundle staging-promotable when canary/evolution pass, keep production locked while memory-os-admission is plan-only, and expose Kubernetes/env policy patches without enabling unattended production automation.",
+            "next_step": "Apply the bundle to a Redis-backed staging namespace, replay real tenant traffic, then rerun canary, policy bundle, and memory-os-admission from that environment.",
         },
         {
             "id": "memory_competitor_adapter_profile",

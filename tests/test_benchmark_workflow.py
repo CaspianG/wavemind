@@ -77,6 +77,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind memory-os-admission" in workflow
     assert "--output benchmarks/memory_os_admission_results.json" in workflow
     assert "--markdown-output benchmarks/MEMORY_OS_ADMISSION.md" in workflow
+    assert "python -m wavemind memory-os-policy-bundle" in workflow
+    assert "--output benchmarks/memory_os_policy_bundle_results.json" in workflow
+    assert "--markdown-output benchmarks/MEMORY_OS_POLICY_BUNDLE.md" in workflow
     assert workflow.index("production-admission") < workflow.index("memory-os-canary")
     assert workflow.index("production-admission") < workflow.index("cluster-admission")
     assert workflow.index("cluster-admission") < workflow.index("active-active-admission")
@@ -92,6 +95,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert workflow.index("serverless-admission") < workflow.index("multimodal-admission")
     assert workflow.index("multimodal-admission") < workflow.index("memory-os-canary")
     assert workflow.index("memory-os-canary") < workflow.index("memory-os-admission")
+    assert workflow.index("memory-os-admission") < workflow.index("memory-os-policy-bundle")
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(
@@ -105,6 +109,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "tests/test_agent_impact_leaderboard.py" in workflow
     assert "tests/test_structured_memory_report.py" in workflow
     assert "tests/test_memory_os_intelligence_report.py" in workflow
+    assert "tests/test_memory_os_policy_bundle.py" in workflow
     assert "tests/test_cluster_autoscale_report.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
@@ -164,6 +169,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md" in workflow
     assert "cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json" in workflow
+    assert "cp benchmarks/MEMORY_OS_POLICY_BUNDLE.md site/benchmarks/MEMORY_OS_POLICY_BUNDLE.md" in workflow
+    assert "cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():

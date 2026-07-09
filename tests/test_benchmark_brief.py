@@ -64,7 +64,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "Structured memory report" in brief
     assert "7` modalities" in brief
     assert "Memory OS intelligence report" in brief
-    assert "31/31` gate checks" in brief
+    assert "35/35` gate checks" in brief
     assert "Production Memory OS automation is still plan-only" in brief
     assert "Cluster autoscale report" in brief
     assert "53/53` gate checks" in brief

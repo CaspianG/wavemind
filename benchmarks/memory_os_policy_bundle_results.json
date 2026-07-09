@@ -1,0 +1,464 @@
+{
+  "schema": "wavemind.memory_os_policy_bundle.v1",
+  "generated_at": "2026-07-09T19:29:13Z",
+  "bundle_id": "memory-os-policy-20260709T192913Z",
+  "status": "staging_ready",
+  "ok": true,
+  "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. It can promote the checked canary/evolution behavior to staging. It does not enable unattended production automation unless memory-os-admission is admitted with real Redis, distributed lock, runtime env, and strict large-scale evidence.",
+  "source_artifacts": {
+    "canary_schema": "wavemind.memory_os_canary.v1",
+    "canary_status": "pass",
+    "evolution_schema": "wavemind.memory_os_policy_evolution.v1",
+    "evolution_status": "pass",
+    "admission_schema": "wavemind.memory_os_admission.v1",
+    "admission_status": "plan_only"
+  },
+  "summary": {
+    "status": "staging_ready",
+    "staging_promotable": true,
+    "production_promotable": false,
+    "production_locked": true,
+    "production_blocker_ids": [
+      "hot-query-signal",
+      "shared-cache-configured",
+      "distributed-lock-configured",
+      "scale-boundary",
+      "runtime-env"
+    ],
+    "runtime_env_declared": true,
+    "enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "worker_count": 1,
+    "effective_cache_mode": "redis",
+    "policy_escalation_ids": [
+      "scale-policy"
+    ],
+    "check_count": 6,
+    "passed_checks": 5,
+    "failed_check_ids": [
+      "production-admission"
+    ]
+  },
+  "checks": [
+    {
+      "id": "canary-pass",
+      "title": "Memory OS staging canary passed",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "status=pass, ok=True",
+      "action": "Run wavemind memory-os-canary with representative staging traffic."
+    },
+    {
+      "id": "policy-evolution-pass",
+      "title": "Memory OS policy evolution passed",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "status=pass, ok=True",
+      "action": "Run wavemind memory-os-evolution and fix repeated-policy checks."
+    },
+    {
+      "id": "runtime-env-contract",
+      "title": "Runtime env contract declares Redis and lock wiring",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "WAVEMIND_REDIS_URL, WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+      "action": "Declare WAVEMIND_REDIS_URL and WAVEMIND_MEMORY_OS_LOCK_REDIS_URL in the runtime bundle."
+    },
+    {
+      "id": "staging-promotion",
+      "title": "Bundle can be promoted to staging",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "canary=True, evolution=True, env=True",
+      "action": "Do not deploy the Memory OS policy bundle until canary, evolution, and runtime env contract pass."
+    },
+    {
+      "id": "production-admission",
+      "title": "Production promotion remains behind strict admission",
+      "status": "action_required",
+      "passed": false,
+      "severity": "production_blocker",
+      "evidence": "admission_status=plan_only, admitted=False, blockers=['hot-query-signal', 'shared-cache-configured', 'distributed-lock-configured', 'scale-boundary', 'runtime-env']",
+      "action": "Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence."
+    },
+    {
+      "id": "production-lock",
+      "title": "Bundle does not enable unattended production automation",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "production_auto_enable=False, production_locked=True",
+      "action": "Keep production_auto_enable=false unless memory-os-admission returns admitted."
+    }
+  ],
+  "runtime_policy": {
+    "target_deployment": "staging",
+    "production_auto_enable": false,
+    "namespace": "canary:memory-os",
+    "enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "worker_count": 1,
+    "effective_cache_mode": "redis",
+    "required_runtime_env": [
+      "WAVEMIND_REDIS_URL",
+      "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+    ],
+    "required_infrastructure": [
+      "Redis-compatible shared hot-query cache",
+      "distributed worker lock or single-flight scheduler",
+      "durable queue or Kubernetes CronJobs",
+      "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+    ],
+    "schedules": {
+      "memory_os": "*/5 * * * *",
+      "cache_prewarm": "*/2 * * * *",
+      "predictive_prefetch": "*/5 * * * *",
+      "adaptive_forgetting": "17 * * * *",
+      "consolidation": "37 * * * *",
+      "maintenance": "47 * * * *",
+      "architecture_advice": "11 */6 * * *"
+    },
+    "feature_flags": {
+      "audit_queries_required": true,
+      "shared_cache_required": true,
+      "distributed_lock_required": true,
+      "predictive_prefetch": true,
+      "priority_learning": true,
+      "adaptive_forgetting": true,
+      "consolidation": true,
+      "architecture_advice": true,
+      "policy_history_escalation": true
+    },
+    "policy_manifest": {
+      "status": "action_required",
+      "namespace": "canary:memory-os",
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "ok",
+          "strategy": "hot-query-and-transition-prefetch",
+          "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+          "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "hot_queries": 5,
+            "prewarm_warmed": 5,
+            "predictive_generated": 1,
+            "predictive_warmed": 1,
+            "transition_edges": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "ok",
+          "strategy": "usage-pattern-priority-boost",
+          "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+          "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "priority_predictions": 5
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "ok",
+          "strategy": "promote-active-clusters-to-concepts",
+          "rationale": "The field graph produced higher-level concept memories from active clusters.",
+          "action": "Review new concept memories in Studio/API before assigning very high priority.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "concepts_created": 1
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "action_required",
+          "strategy": "fix-production-gaps-before-growth",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "active_memories": 7,
+            "target_memories": 100000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "service-index",
+              "production-controls",
+              "load-test"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "canary:memory-os",
+            "deployment": "staging",
+            "lock_required": true,
+            "lock_acquired": true,
+            "lock_key": "scheduler-preflight",
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "policy_history": {
+      "previous_runs": 3,
+      "window": 5,
+      "trend": "repeated_architecture_required",
+      "repeated_action_required_ids": [],
+      "repeated_architecture_required_ids": [
+        "scale-policy"
+      ],
+      "repeated_required_ids": [
+        "scale-policy"
+      ],
+      "stable_ok_ids": [
+        "consolidation-policy",
+        "forgetting-policy",
+        "prefetch-policy",
+        "priority-policy"
+      ],
+      "status_counts": {
+        "action_required": 3,
+        "architecture_required": 4,
+        "ok": 15,
+        "watch": 2
+      }
+    },
+    "policy_escalation_ids": [
+      "scale-policy"
+    ],
+    "policy_auto_adjustments": [],
+    "observability": {
+      "required_metrics": [
+        "wavemind_memory_os_cycle_duration_ms",
+        "wavemind_memory_os_worker_errors_total",
+        "wavemind_memory_os_hot_queries",
+        "wavemind_memory_os_prewarm_warmed",
+        "wavemind_memory_os_predictive_warmed",
+        "wavemind_memory_os_priority_predictions",
+        "wavemind_memory_os_forgetting_demotions",
+        "wavemind_memory_os_concepts_created"
+      ],
+      "trace_attributes": [
+        "wavemind.namespace",
+        "wavemind.memory_os.task_id",
+        "wavemind.memory_os.policy_bundle_id",
+        "wavemind.memory_os.idempotency_key"
+      ]
+    },
+    "safety": {
+      "state_mutating_tasks": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "idempotency_required": true,
+      "production_admission_required": true,
+      "large_scale_evidence_required": true
+    }
+  },
+  "kubernetes_patch": {
+    "apiVersion": "wavemind.dev/v1",
+    "kind": "MemoryOSPolicyBundle",
+    "metadata": {
+      "name": "wavemind-memory-os-staging"
+    },
+    "spec": {
+      "targetDeployment": "staging",
+      "productionAutoEnable": false,
+      "env": [
+        {
+          "name": "WAVEMIND_MEMORY_OS_ENABLED",
+          "value": "1"
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_POLICY_BUNDLE",
+          "value": "memory_os_policy_bundle_results.json"
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_CANARY_REQUIRED",
+          "value": "1"
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_PRODUCTION_ADMISSION_REQUIRED",
+          "value": "1"
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_DEPLOYMENT",
+          "value": "staging"
+        },
+        {
+          "name": "WAVEMIND_REDIS_URL",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "wavemind-memory-os-runtime",
+              "key": "redis-url"
+            }
+          }
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "wavemind-memory-os-runtime",
+              "key": "lock-redis-url"
+            }
+          }
+        }
+      ],
+      "cronJobs": [
+        {
+          "name": "wavemind-memory-os",
+          "task_id": "memory-os",
+          "schedule": "*/5 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-cache-prewarm",
+          "task_id": "cache-prewarm",
+          "schedule": "*/2 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-predictive-prefetch",
+          "task_id": "predictive-prefetch",
+          "schedule": "*/5 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-adaptive-forgetting",
+          "task_id": "adaptive-forgetting",
+          "schedule": "17 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-consolidation",
+          "task_id": "consolidation",
+          "schedule": "37 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-maintenance",
+          "task_id": "maintenance",
+          "schedule": "47 * * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        },
+        {
+          "name": "wavemind-architecture-advice",
+          "task_id": "architecture-advice",
+          "schedule": "11 */6 * * *",
+          "concurrencyPolicy": "Forbid",
+          "restartPolicy": "OnFailure"
+        }
+      ],
+      "requiredRuntimeEnv": [
+        "WAVEMIND_REDIS_URL",
+        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+      ],
+      "observability": {
+        "required_metrics": [
+          "wavemind_memory_os_cycle_duration_ms",
+          "wavemind_memory_os_worker_errors_total",
+          "wavemind_memory_os_hot_queries",
+          "wavemind_memory_os_prewarm_warmed",
+          "wavemind_memory_os_predictive_warmed",
+          "wavemind_memory_os_priority_predictions",
+          "wavemind_memory_os_forgetting_demotions",
+          "wavemind_memory_os_concepts_created"
+        ],
+        "trace_attributes": [
+          "wavemind.namespace",
+          "wavemind.memory_os.task_id",
+          "wavemind.memory_os.policy_bundle_id",
+          "wavemind.memory_os.idempotency_key"
+        ]
+      },
+      "safety": {
+        "state_mutating_tasks": [
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os"
+        ],
+        "singleton_task_ids": [
+          "architecture-advice",
+          "maintenance",
+          "adaptive-forgetting",
+          "consolidation",
+          "memory-os",
+          "cache-prewarm",
+          "predictive-prefetch"
+        ],
+        "idempotency_required": true,
+        "production_admission_required": true,
+        "large_scale_evidence_required": true
+      }
+    }
+  },
+  "next_actions": [
+    "Apply the bundle only to staging CronJobs/workers.",
+    "Replay representative tenant traffic and rerun memory-os-canary.",
+    "Keep production blocked until memory-os-admission returns admitted with external evidence."
+  ]
+}

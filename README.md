@@ -1020,6 +1020,7 @@ wavemind multimodal-admission --deployment production --allow-plan-only --write-
 wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts --json
 wavemind memory-os-evolution --cycles 3 --write-artifacts --json
 wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts --json
+wavemind memory-os-policy-bundle --write-artifacts --json
 wavemind memory-os --namespace user:42 --redis-url redis://localhost:6379/0 --lock-required --min-frequency 2 --max-hot-queries 32 --json
 wavemind cluster-health --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --replication-factor 3 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --fail-on-degraded --json
 wavemind cluster-repair --node node-a=https://wm-a.internal --node node-b=https://wm-b.internal --node node-c=https://wm-c.internal --namespace user:42 --replication-factor 3 --write-quorum 2 --read-quorum 1 --read-fanout 1 --api-key "$WAVEMIND_API_KEY" --json
@@ -1137,6 +1138,14 @@ tasks remain active. It writes
 policy evidence; it does not unlock unattended production automation without
 remote Redis, distributed lock, runtime environment, and strict large-scale
 evidence.
+`wavemind memory-os-policy-bundle` connects those artifacts to runtime. It
+reads the checked canary, policy-evolution, and admission reports, then emits
+`benchmarks/memory_os_policy_bundle_results.json` and
+`benchmarks/MEMORY_OS_POLICY_BUNDLE.md`: a deterministic operator policy
+manifest with enabled Memory OS tasks, required Redis/lock environment,
+observability metrics, Kubernetes/CronJob patch data, and explicit promotion
+gates. Current checked-in evidence is staging-promotable but keeps production
+locked while `memory-os-admission` is `plan_only`.
 
 Hot-cache options:
 
@@ -1946,6 +1955,7 @@ Agent-impact leaderboard: [`benchmarks/AGENT_IMPACT.md`](benchmarks/AGENT_IMPACT
 Structured memory report: [`benchmarks/STRUCTURED_MEMORY.md`](benchmarks/STRUCTURED_MEMORY.md).
 Memory OS intelligence report: [`benchmarks/MEMORY_OS_INTELLIGENCE.md`](benchmarks/MEMORY_OS_INTELLIGENCE.md).
 Memory OS policy evolution report: [`benchmarks/MEMORY_OS_POLICY_EVOLUTION.md`](benchmarks/MEMORY_OS_POLICY_EVOLUTION.md).
+Memory OS policy bundle: [`benchmarks/MEMORY_OS_POLICY_BUNDLE.md`](benchmarks/MEMORY_OS_POLICY_BUNDLE.md).
 Cluster autoscale report: [`benchmarks/CLUSTER_AUTOSCALE.md`](benchmarks/CLUSTER_AUTOSCALE.md).
 Cost-efficiency leaderboard: [`benchmarks/COST_EFFICIENCY.md`](benchmarks/COST_EFFICIENCY.md).
 Strict evidence readiness runbook: [`benchmarks/STRICT_EVIDENCE_READINESS.md`](benchmarks/STRICT_EVIDENCE_READINESS.md).
@@ -1958,6 +1968,7 @@ writing scheduled bot commits to `main`.
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
 `agent_quality`, `agent_impact`, `structured_memory`, `memory_os_intelligence`,
 `cluster_autoscale`, `memory_os_policy`, `memory_os_policy_evolution`,
+`memory_os_policy_bundle`,
 `production_evidence_env`, `production_evidence_dispatch`,
 `strict_evidence_readiness`, and `cost_efficiency`
 sections, so dashboards can verify the weekly GitHub Pages publication path,
@@ -2118,6 +2129,7 @@ public claim boundaries stable:
 | Multimodal admission | Deployment-facing gate for production multimodal memory claims. It admits only when the structured-memory contract passes and a real external encoder/object-store artifact satisfies modality count, payload/query volume, precision, cross-modal routing, vector persistence, provenance, p99 query latency, encode p95, and error-rate thresholds. | `benchmarks/multimodal_admission_results.json`, `benchmarks/MULTIMODAL_ADMISSION.md`, `wavemind multimodal-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: deterministic structured-memory evidence passes, but `benchmarks/multimodal_external_encoder_results.json` is still missing. |
 | Memory OS canary | Staging proof that representative query-audit traffic can drive Memory OS prewarm, predictive prefetch, priority learning, TTL cleanup, and admission. | `benchmarks/memory_os_canary_results.json`, `benchmarks/MEMORY_OS_CANARY.md`, `wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts` | This is not remote Kubernetes, real Redis, or 10M/100M production evidence; it only proves the worker/admission contract under seeded staging traffic. |
 | Memory OS policy evolution | Multi-cycle Memory OS proof that repeated policy gaps are remembered and influence later scheduler plans. It verifies full policy coverage, repeated required-policy escalation, stable OK policy detection, hot-query prewarm, predictive prefetch, priority learning, and required worker task coverage. | `benchmarks/memory_os_policy_evolution_results.json`, `benchmarks/MEMORY_OS_POLICY_EVOLUTION.md`, `wavemind memory-os-evolution --cycles 3 --write-artifacts` | Current status is `pass` on deterministic local/staging evidence. It does not unlock unattended production automation without remote Redis, distributed lock, runtime env, and strict large-scale evidence. |
+| Memory OS policy bundle | Operator-facing runtime policy manifest generated from canary, policy-evolution, and admission artifacts. It emits enabled task ids, required Redis/lock env, observability metrics, Kubernetes/CronJob patch data, and promotion gates. | `benchmarks/memory_os_policy_bundle_results.json`, `benchmarks/MEMORY_OS_POLICY_BUNDLE.md`, `wavemind memory-os-policy-bundle --write-artifacts` | Current status is `staging_ready`: it can promote checked Memory OS behavior to staging, but production remains locked while `memory-os-admission` is `plan_only`. |
 | Memory OS admission | Deployment-facing gate for adaptive workers. It checks scheduler safety, hot-query audit signal, Redis cache wiring, distributed lock wiring, singleton/idempotent mutations, policy coverage, and strict architecture boundaries before Memory OS workers become production automation. | `benchmarks/memory_os_admission_results.json`, `benchmarks/MEMORY_OS_ADMISSION.md`, `wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts` | Current 10M Memory OS status is `plan_only`, not admitted: the worker plan exists, but staging query-audit traffic, Redis/lock runtime env, and strict million-plus architecture evidence are still required. |
 | Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, monthly budget, cost per 1M memories, compute cost per 1M queries, plan-only Pareto frontier, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
