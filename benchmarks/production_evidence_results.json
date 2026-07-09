@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-09T03:59:24Z",
+  "generated_at": "2026-07-09T09:13:17Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -99,10 +99,10 @@
       "id": "hundred_million_remote_load",
       "title": "100M remote load result",
       "status": "action_required",
-      "evidence": "no checked-in 100M remote service-backed latency result",
+      "evidence": "no checked-in 100,000,000-vector result for Qdrant sharded service streaming",
       "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
-      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+      "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
       "issues": [
         "missing artifact"
       ]

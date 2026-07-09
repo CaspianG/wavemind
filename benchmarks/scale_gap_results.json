@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-08T15:23:47Z",
+  "generated_at": "2026-07-09T09:13:17Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
@@ -24,12 +24,12 @@
       "preflight_status": "action_required",
       "engine": "qdrant-service",
       "target_memories": 10000000,
-      "target_recall_at_k": null,
-      "target_p99_ms": null,
-      "target_qps": null,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
       "output_artifact_exists": false,
-      "checkpoint_path": null,
+      "checkpoint_path": "state/production-runs/qdrant-service-10000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_QDRANT_URL"
       ],
@@ -37,7 +37,7 @@
         "missing_env:WAVEMIND_QDRANT_URL",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
       "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -63,12 +63,12 @@
       "preflight_status": "action_required",
       "engine": "qdrant-sharded-service",
       "target_memories": 10000000,
-      "target_recall_at_k": null,
-      "target_p99_ms": null,
-      "target_qps": null,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 250.0,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
       "output_artifact_exists": false,
-      "checkpoint_path": null,
+      "checkpoint_path": "state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_QDRANT_URLS"
       ],
@@ -76,7 +76,7 @@
         "missing_env:WAVEMIND_QDRANT_URLS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
@@ -102,12 +102,12 @@
       "preflight_status": "action_required",
       "engine": "pgvector-service",
       "target_memories": 10000000,
-      "target_recall_at_k": null,
-      "target_p99_ms": null,
-      "target_qps": null,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "output_artifact_exists": false,
-      "checkpoint_path": null,
+      "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_PGVECTOR_DSN"
       ],
@@ -115,7 +115,7 @@
         "missing_env:WAVEMIND_PGVECTOR_DSN",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_pgvector_tuning_results.json",
@@ -141,12 +141,12 @@
       "preflight_status": "action_required",
       "engine": "faiss-ivfpq-persisted",
       "target_memories": 50000000,
-      "target_recall_at_k": null,
-      "target_p99_ms": null,
-      "target_qps": null,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "output_artifact_exists": false,
-      "checkpoint_path": null,
+      "checkpoint_path": "state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_FAISS_IVFPQ_PATH"
       ],
@@ -154,7 +154,7 @@
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "claim_unlocked": "50M compressed local/persistent FAISS profile.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_ivfpq_10m_results.json",
@@ -180,12 +180,12 @@
       "preflight_status": "action_required",
       "engine": "qdrant-sharded-service",
       "target_memories": 100000000,
-      "target_recall_at_k": null,
-      "target_p99_ms": null,
-      "target_qps": null,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 500.0,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "output_artifact_exists": false,
-      "checkpoint_path": null,
+      "checkpoint_path": "state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_QDRANT_URLS"
       ],
@@ -193,8 +193,8 @@
         "missing_env:WAVEMIND_QDRANT_URLS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
-      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
       "nearest_baseline": {
         "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
         "engine": "Qdrant service streaming",

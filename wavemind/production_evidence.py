@@ -624,15 +624,21 @@ def _large_service_requirement(
     target_p99_ms: float = 100.0,
 ) -> EvidenceRequirement:
     payload = _load_optional_json(root / artifact)
-    rows = [
-        row
-        for row in _size_results(payload)
-        if row.get("engine") == engine and not row.get("skipped")
-    ]
+    all_rows = [row for row in _size_results(payload) if not row.get("skipped")]
+    rows = [row for row in all_rows if row.get("engine") == engine]
     row = max(rows, key=lambda item: int(item.get("vectors", 0) or 0), default={})
     issues: list[str] = []
+    missing = not payload
     if not row:
-        issues.append("missing artifact")
+        if missing:
+            issues.append("missing artifact")
+        elif all_rows:
+            engines = ", ".join(
+                sorted({str(item.get("engine") or "unknown") for item in all_rows})
+            )
+            issues.append(f"artifact must include engine {engine}; found {engines}")
+        else:
+            issues.append("artifact contains no result rows")
     else:
         if int(row.get("vectors", 0) or 0) < min_vectors:
             issues.append(f"vectors must be >= {min_vectors}")
@@ -645,7 +651,7 @@ def _large_service_requirement(
     return EvidenceRequirement(
         id=requirement_id,
         title=title,
-        status=_status_from_issues(missing=not row, issues=issues),
+        status=_status_from_issues(missing=missing, issues=issues),
         evidence=(
             f"{row.get('engine')}: vectors {row.get('vectors')}, "
             f"recall {row.get('recall_at_k', row.get('target_recall_at_k'))}, "
@@ -661,46 +667,15 @@ def _large_service_requirement(
 
 
 def _hundred_million_requirement(root: Path) -> EvidenceRequirement:
-    artifact = "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
-    plan_artifact = "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json"
-    payload = _load_optional_json(root / artifact)
-    rows = [
-        row
-        for row in _size_results(payload)
-        if not row.get("skipped") and int(row.get("vectors", 0) or 0) >= 100_000_000
-    ]
-    row = rows[0] if rows else {}
-    issues: list[str] = []
-    if not row:
-        issues.append("missing artifact")
-    else:
-        if float(row.get("recall_at_k", row.get("target_recall_at_k", 0.0))) < 0.95:
-            issues.append("recall_at_k must be >= 0.95")
-        if float(row.get("p99_latency_ms", float("inf"))) > 100.0:
-            issues.append("p99_latency_ms must be <= 100")
-        if row.get("cost_status") != "valid_slo":
-            issues.append("cost_status must be valid_slo")
-    return EvidenceRequirement(
-        id="hundred_million_remote_load",
+    return _large_service_requirement(
+        root,
+        requirement_id="hundred_million_remote_load",
         title="100M remote load result",
-        status=_status_from_issues(missing=not row, issues=issues),
-        evidence=(
-            f"{row.get('engine')}: vectors {row.get('vectors')}, "
-            f"recall {row.get('recall_at_k', row.get('target_recall_at_k'))}, "
-            f"p99 {row.get('p99_latency_ms')} ms, cost {row.get('cost_status')}"
-            if row
-            else "no checked-in 100M remote service-backed latency result"
-        ),
-        artifact=artifact,
-        command=_plan_command(root, plan_artifact)
-        or (
-            "python benchmarks/production_streaming_load_benchmark.py "
-            "--sizes 100000000 --engines qdrant-sharded-service "
-            "--queries 100 --batch-size 2000 "
-            "--output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
-        ),
-        claim_unlocked="100M+ memories with measured recall, p99, and cost SLO.",
-        issues=tuple(dict.fromkeys(issues)),
+        artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
+        engine="Qdrant sharded service streaming",
+        min_vectors=100_000_000,
+        claim_unlocked="100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
     )
 
 

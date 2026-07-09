@@ -10,6 +10,36 @@ from wavemind.production_evidence import (
 )
 
 
+def _write_100m_streaming_artifact(root: Path, *, engine: str) -> Path:
+    artifact = root / "benchmarks" / "production_streaming_load_qdrant_sharded_100m_results.json"
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(
+        json.dumps(
+            {
+                "schema": "wavemind.production_streaming_load.v1",
+                "results": [
+                    {
+                        "vectors": 100_000_000,
+                        "results": [
+                            {
+                                "engine": engine,
+                                "vectors": 100_000_000,
+                                "recall_at_k": 0.97,
+                                "target_recall_at_k": 0.95,
+                                "p99_latency_ms": 88.0,
+                                "cost_status": "valid_slo",
+                            }
+                        ],
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return artifact
+
+
 def test_production_evidence_gate_tracks_strict_external_claims():
     root = Path(__file__).resolve().parents[1]
     payload = evaluate_production_evidence(root)
@@ -41,6 +71,40 @@ def test_production_evidence_gate_tracks_strict_external_claims():
         "hundred_million_remote_load"
     ]["command"]
     assert "--checkpoint-path" in by_id["hundred_million_remote_load"]["command"]
+
+
+def test_hundred_million_requirement_requires_sharded_qdrant_engine(tmp_path):
+    _write_100m_streaming_artifact(
+        tmp_path,
+        engine="WaveMind faiss-ivfpq-persisted streaming",
+    )
+
+    payload = evaluate_production_evidence(tmp_path)
+    row = {item["id"]: item for item in payload["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert row["status"] == "fail"
+    assert any(
+        "artifact must include engine Qdrant sharded service streaming" in issue
+        for issue in row["issues"]
+    )
+
+
+def test_hundred_million_requirement_accepts_matching_sharded_qdrant_artifact(tmp_path):
+    _write_100m_streaming_artifact(
+        tmp_path,
+        engine="Qdrant sharded service streaming",
+    )
+
+    payload = evaluate_production_evidence(tmp_path)
+    row = {item["id"]: item for item in payload["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert row["status"] == "pass"
+    assert row["issues"] == []
+    assert "Qdrant sharded service streaming" in row["evidence"]
 
 
 def test_production_evidence_gate_cli_writes_json_and_markdown(tmp_path):
@@ -119,6 +183,26 @@ def test_production_admission_blocks_100m_without_strict_artifact():
     )
     assert "100m" in row["command"].lower()
     assert payload["issues"]
+
+
+def test_production_admission_blocks_wrong_engine_100m_artifact(tmp_path):
+    _write_100m_streaming_artifact(
+        tmp_path,
+        engine="WaveMind faiss-ivfpq-persisted streaming",
+    )
+
+    payload = evaluate_production_admission(
+        tmp_path,
+        target_memories=100_000_000,
+        engine="qdrant-sharded-service",
+    )
+
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False
+    row = payload["required_evidence"][0]
+    assert row["profile"] == "qdrant-sharded-100m"
+    assert row["strict_status"] == "fail"
+    assert any("artifact must include engine" in issue for issue in row["issues"])
 
 
 def test_production_admission_plan_only_never_admits_production():
