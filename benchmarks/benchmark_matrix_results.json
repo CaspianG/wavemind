@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T03:59:20Z",
-  "source_ref": "d50bc070fb62",
+  "generated_at": "2026-07-09T06:00:26Z",
+  "source_ref": "6529912515c3",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1923,6 +1923,38 @@
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
       "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile."
+    },
+    {
+      "id": "strict_evidence_readiness_runbook",
+      "name": "Strict evidence readiness runbook",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/strict_evidence_readiness_results.json",
+      "dataset": "Machine-readable join of strict production evidence, preflight, dispatch commands, scale plans, scale gaps, release claims, and leaderboard freshness. It proves the remaining 10M/50M/100M evidence gaps have exact safe launch, promotion, and validation steps without unlocking production claims.",
+      "competitors": [],
+      "metrics": [
+        "status",
+        "readiness_status",
+        "claim_status",
+        "total_requirements",
+        "action_required_count",
+        "ready_for_safe_dispatch_count",
+        "target_memories_total"
+      ],
+      "current": {
+        "WaveMind strict evidence readiness": {
+          "status": "pass",
+          "readiness_status": "action_required",
+          "claim_status": "claims_limited",
+          "total_requirements": 8,
+          "action_required_count": 8,
+          "ready_for_safe_dispatch_count": 0,
+          "can_auto_run_now_count": 0,
+          "target_memories_total": 180000000
+        }
+      },
+      "target": "Keep every strict evidence requirement mapped to a workflow, safe dispatch command, download command, ingest command, strict validation command, and locked claim boundary until real remote/large-N artifacts pass.",
+      "next_step": "Provision the missing remote/service environments, run safe dispatch commands with commit_results=false, ingest downloaded artifacts, then rerun strict evidence validation before changing release claims."
     },
     {
       "id": "local_http_cluster_smoke",

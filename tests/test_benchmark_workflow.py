@@ -43,6 +43,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "--output benchmarks/production_evidence_dispatch_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
+    assert "benchmarks/strict_evidence_readiness_report.py" in workflow
+    assert "--output benchmarks/strict_evidence_readiness_results.json" in workflow
+    assert "--markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md" in workflow
     assert workflow.index("production-evidence-dispatch") < workflow.index(
         "production-evidence-bundle"
     )
@@ -91,6 +94,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_production_evidence_dispatch.py" in workflow
+    assert "tests/test_strict_evidence_readiness_report.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
     assert "qdrant-1:" in workflow
@@ -117,6 +121,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
     assert "benchmarks/production_evidence_dispatch_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
+    assert "benchmarks/strict_evidence_readiness_results.json" in workflow
+    assert "benchmarks/STRICT_EVIDENCE_READINESS.md" in workflow
     assert "cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md" in workflow
     assert "cp benchmarks/production_admission_results.json site/data/production_admission_results.json" in workflow
     assert "cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md" in workflow

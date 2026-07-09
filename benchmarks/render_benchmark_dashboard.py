@@ -323,6 +323,50 @@ def _cluster_autoscale_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _strict_evidence_readiness_panel(status: dict[str, Any]) -> str:
+    readiness = status.get("strict_evidence_readiness", {}) if isinstance(status, dict) else {}
+    if not isinstance(readiness, dict) or not readiness:
+        return ""
+    summary = readiness.get("summary", {}) if isinstance(readiness.get("summary"), dict) else {}
+    rows = [
+        ("Report status", readiness.get("status", "missing")),
+        ("Readiness", readiness.get("readiness_status", "missing")),
+        ("Claim status", readiness.get("claim_status", "missing")),
+        ("Requirements", summary.get("total_requirements", 0)),
+        ("Action required", summary.get("action_required_count", 0)),
+        ("Safe dispatch ready", summary.get("ready_for_safe_dispatch_count", 0)),
+        ("Can auto-run now", summary.get("can_auto_run_now_count", 0)),
+        ("Planned target memories", summary.get("target_memories_total", 0)),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    blocker_counts = summary.get("blocker_counts", {})
+    if isinstance(blocker_counts, dict) and blocker_counts:
+        blockers = ", ".join(
+            f"{key}: {value}" for key, value in sorted(blocker_counts.items())
+        )
+    else:
+        blockers = "missing"
+    return (
+        '<section class="panel">'
+        "<h2>Strict Evidence Readiness</h2>"
+        "<p>Operator runbook for the remaining remote, 10M, 50M, and 100M evidence gaps: "
+        "safe dispatch commands, missing environment, promotion steps, strict validation, "
+        "and locked claims.</p>"
+        f"<p><strong>Blockers:</strong> {html.escape(blockers)}</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/STRICT_EVIDENCE_READINESS.md">Read the strict evidence readiness runbook</a></p>'
+        "</section>"
+    )
+
+
 def _fmt_metric(value: Any) -> str:
     try:
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
@@ -435,6 +479,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
 
   {_cluster_autoscale_panel(status)}
 
+  {_strict_evidence_readiness_panel(status)}
+
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">
     {benchmark_table}
@@ -458,6 +504,7 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     Machine status: <a href="data/leaderboard-status.json">data/leaderboard-status.json</a>.
     Markdown view: <a href="../benchmarks/BENCHMARK_LEADERBOARD.md">benchmarks/BENCHMARK_LEADERBOARD.md</a>.
     Strict production evidence: <a href="../benchmarks/PRODUCTION_EVIDENCE.md">benchmarks/PRODUCTION_EVIDENCE.md</a>.
+    Strict evidence readiness: <a href="../benchmarks/STRICT_EVIDENCE_READINESS.md">benchmarks/STRICT_EVIDENCE_READINESS.md</a>.
   </footer>
 </main>
 </body>

@@ -258,6 +258,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_evidence_dispatch_results.json" in readme
     assert "PRODUCTION_EVIDENCE_DISPATCH.md" in readme
     assert "wavemind production-evidence-dispatch" in readme
+    assert "strict_evidence_readiness_results.json" in readme
+    assert "STRICT_EVIDENCE_READINESS.md" in readme
+    assert "strict_evidence_readiness_report.py" in readme
     assert "release_claims_results.json" in readme
     assert "RELEASE_CLAIMS.md" in readme
     assert "wavemind release-claims --write-artifacts --fail-on-blocked" in readme
@@ -336,6 +339,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production-evidence-preflight" in benchmark_brief
     assert "PRODUCTION_EVIDENCE_DISPATCH.md" in benchmark_brief
     assert "production-evidence-dispatch" in benchmark_brief
+    assert "STRICT_EVIDENCE_READINESS.md" in benchmark_brief
+    assert "strict_evidence_readiness_report.py" in benchmark_brief
     assert "RELEASE_CLAIMS.md" in benchmark_brief
     assert "release-claims --write-artifacts --fail-on-blocked" in benchmark_brief
     assert "SCALE_GAP.md" in benchmark_brief
@@ -357,6 +362,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "memory-os-canary" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
     assert "production-evidence-preflight" in roadmap
+    assert "strict_evidence_readiness_report.py" in roadmap
     leaderboard_workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(
         encoding="utf-8"
     )
@@ -364,6 +370,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind production-evidence-dispatch" in leaderboard_workflow
     assert "benchmarks/production_evidence_dispatch_results.json" in leaderboard_workflow
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in leaderboard_workflow
+    assert "benchmarks/strict_evidence_readiness_results.json" in leaderboard_workflow
+    assert "benchmarks/STRICT_EVIDENCE_READINESS.md" in leaderboard_workflow
     assert "benchmarks/release_claims_results.json" in leaderboard_workflow
     assert "benchmarks/RELEASE_CLAIMS.md" in leaderboard_workflow
     assert "wavemind scale-gap" in leaderboard_workflow
@@ -395,6 +403,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md").exists()
     assert Path("benchmarks/production_evidence_dispatch_results.json").exists()
     assert Path("benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md").exists()
+    assert Path("benchmarks/strict_evidence_readiness_results.json").exists()
+    assert Path("benchmarks/STRICT_EVIDENCE_READINESS.md").exists()
     assert Path("benchmarks/release_claims_results.json").exists()
     assert Path("benchmarks/RELEASE_CLAIMS.md").exists()
     assert Path("benchmarks/scale_gap_results.json").exists()

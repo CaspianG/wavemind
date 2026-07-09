@@ -44,6 +44,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    strict_evidence_readiness = _load_json(
+        root / "benchmarks" / "strict_evidence_readiness_results.json",
+        load_errors,
+        required=False,
+    )
     active_active_admission = _load_json(
         root / "benchmarks" / "active_active_admission_results.json",
         load_errors,
@@ -130,6 +135,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
+        "benchmarks/strict_evidence_readiness_results.json": strict_evidence_readiness,
         "benchmarks/active_active_admission_results.json": active_active_admission,
         "benchmarks/serverless_admission_results.json": serverless_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
@@ -313,6 +319,18 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "overall_status": scale_gap.get("overall_status", "missing"),
             "summary": scale_gap.get("summary", {}),
             "profile_gaps": scale_gap.get("profile_gaps", []),
+        },
+        "strict_evidence_readiness": {
+            "schema": strict_evidence_readiness.get("schema"),
+            "status": strict_evidence_readiness.get("status", "missing"),
+            "readiness_status": strict_evidence_readiness.get(
+                "readiness_status", "missing"
+            ),
+            "claim_status": strict_evidence_readiness.get("claim_status", "missing"),
+            "summary": strict_evidence_readiness.get("summary", {}),
+            "checks": strict_evidence_readiness.get("checks", []),
+            "requirements": strict_evidence_readiness.get("requirements", []),
+            "claim_boundary": strict_evidence_readiness.get("claim_boundary", ""),
         },
         "active_active_admission": {
             "schema": active_active_admission.get("schema"),

@@ -204,6 +204,9 @@ jobs:
             --write-artifacts \
             --output benchmarks/scale_gap_results.json \
             --markdown-output benchmarks/SCALE_GAP.md
+          python benchmarks/strict_evidence_readiness_report.py \
+            --output benchmarks/strict_evidence_readiness_results.json \
+            --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md
           python benchmarks/agent_impact_leaderboard.py \
             --output benchmarks/agent_impact_results.json \
             --markdown-output benchmarks/AGENT_IMPACT.md
@@ -251,6 +254,7 @@ jobs:
             benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
             benchmarks/RELEASE_CLAIMS.md
             benchmarks/SCALE_GAP.md
+            benchmarks/STRICT_EVIDENCE_READINESS.md
             benchmarks/PRODUCTION_READINESS.md
             benchmarks/benchmark_artifact_audit.json
             benchmarks/benchmark_matrix_results.json
@@ -260,6 +264,7 @@ jobs:
             benchmarks/production_evidence_bundle_results.json
             benchmarks/release_claims_results.json
             benchmarks/scale_gap_results.json
+            benchmarks/strict_evidence_readiness_results.json
             benchmarks/production_readiness_results.json
             docs/benchmark-dashboard.html
             docs/data/leaderboard-status.json

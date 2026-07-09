@@ -243,6 +243,29 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         row["profile"] == "qdrant-sharded-100m"
         for row in payload["scale_gap"]["profile_gaps"]
     )
+    assert payload["strict_evidence_readiness"]["schema"] == (
+        "wavemind.strict_evidence_readiness.v1"
+    )
+    assert payload["strict_evidence_readiness"]["status"] == "pass"
+    assert payload["strict_evidence_readiness"]["readiness_status"] == (
+        "action_required"
+    )
+    assert payload["strict_evidence_readiness"]["claim_status"] == "claims_limited"
+    assert payload["strict_evidence_readiness"]["summary"]["total_requirements"] == 8
+    assert payload["strict_evidence_readiness"]["summary"]["target_memories_total"] == (
+        180_000_000
+    )
+    assert payload["strict_evidence_readiness"]["summary"]["can_auto_run_now_count"] == 0
+    assert payload["strict_evidence_readiness"]["summary"]["check_counts"] == {"pass": 8}
+    assert any(
+        row["id"] == "hundred_million_remote_load"
+        and row["target_memories"] == 100_000_000
+        and row["locked_claim"] == "10M-100M service-backed production scale"
+        for row in payload["strict_evidence_readiness"]["requirements"]
+    )
+    assert "Readiness report only" in payload["strict_evidence_readiness"][
+        "claim_boundary"
+    ]
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
     )
@@ -323,6 +346,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/production_evidence_dispatch_results.json" in payload["source_files"]
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
+    assert "benchmarks/strict_evidence_readiness_results.json" in payload["source_files"]
     assert "benchmarks/active_active_admission_results.json" in payload["source_files"]
     assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
@@ -372,6 +396,10 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "full_production_claims_ready",
     }
     assert payload["scale_gap"]["schema"] == "wavemind.scale_gap.v1"
+    assert payload["strict_evidence_readiness"]["schema"] == (
+        "wavemind.strict_evidence_readiness.v1"
+    )
+    assert payload["strict_evidence_readiness"]["status"] == "pass"
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
     )

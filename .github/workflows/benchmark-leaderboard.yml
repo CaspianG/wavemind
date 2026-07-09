@@ -199,6 +199,9 @@ jobs:
             --write-artifacts \
             --output benchmarks/scale_gap_results.json \
             --markdown-output benchmarks/SCALE_GAP.md
+          python benchmarks/strict_evidence_readiness_report.py \
+            --output benchmarks/strict_evidence_readiness_results.json \
+            --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md
           python -m wavemind production-admission \
             --target-memories 100000000 \
             --engine qdrant-sharded-service \
@@ -303,7 +306,8 @@ jobs:
             tests/test_production_evidence_gate.py \
             tests/test_production_evidence_preflight.py \
             tests/test_production_evidence_dispatch.py \
-            tests/test_production_evidence_bundle.py
+            tests/test_production_evidence_bundle.py \
+            tests/test_strict_evidence_readiness_report.py
 
       - name: Report benchmark artifact drift
         run: |
@@ -329,6 +333,7 @@ jobs:
           cp benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md site/benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
           cp benchmarks/SCALE_GAP.md site/benchmarks/SCALE_GAP.md
+          cp benchmarks/STRICT_EVIDENCE_READINESS.md site/benchmarks/STRICT_EVIDENCE_READINESS.md
           cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md
           cp benchmarks/ACTIVE_ACTIVE_ADMISSION.md site/benchmarks/ACTIVE_ACTIVE_ADMISSION.md
           cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md
@@ -348,6 +353,7 @@ jobs:
           cp benchmarks/production_evidence_bundle_results.json site/data/production_evidence_bundle_results.json
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
           cp benchmarks/scale_gap_results.json site/data/scale_gap_results.json
+          cp benchmarks/strict_evidence_readiness_results.json site/data/strict_evidence_readiness_results.json
           cp benchmarks/production_admission_results.json site/data/production_admission_results.json
           cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json
           cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json
@@ -411,6 +417,8 @@ jobs:
             benchmarks/RELEASE_CLAIMS.md
             benchmarks/scale_gap_results.json
             benchmarks/SCALE_GAP.md
+            benchmarks/strict_evidence_readiness_results.json
+            benchmarks/STRICT_EVIDENCE_READINESS.md
             benchmarks/production_admission_results.json
             benchmarks/PRODUCTION_ADMISSION.md
             benchmarks/active_active_admission_results.json

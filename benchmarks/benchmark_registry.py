@@ -297,6 +297,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
+    strict_evidence_readiness_payload = _load_json(
+        root / "benchmarks" / "strict_evidence_readiness_results.json"
+    )
     postgres_pitr_payload = _load_json(root / "benchmarks" / "postgres_pitr_plan.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
@@ -348,6 +351,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
         if production_readiness_payload
+        else {}
+    )
+    strict_evidence_readiness_summary = (
+        strict_evidence_readiness_payload.get("summary", {})
+        if strict_evidence_readiness_payload
         else {}
     )
     postgres_pitr_profile = (
@@ -1738,6 +1746,50 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
             "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.",
+        },
+        {
+            "id": "strict_evidence_readiness_runbook",
+            "name": "Strict evidence readiness runbook",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/strict_evidence_readiness_results.json",
+            "dataset": "Machine-readable join of strict production evidence, preflight, dispatch commands, scale plans, scale gaps, release claims, and leaderboard freshness. It proves the remaining 10M/50M/100M evidence gaps have exact safe launch, promotion, and validation steps without unlocking production claims.",
+            "competitors": [],
+            "metrics": [
+                "status",
+                "readiness_status",
+                "claim_status",
+                "total_requirements",
+                "action_required_count",
+                "ready_for_safe_dispatch_count",
+                "target_memories_total",
+            ],
+            "current": {
+                "WaveMind strict evidence readiness": _metric_summary(
+                    {
+                        "status": (strict_evidence_readiness_payload or {}).get("status"),
+                        "readiness_status": (strict_evidence_readiness_payload or {}).get(
+                            "readiness_status"
+                        ),
+                        "claim_status": (strict_evidence_readiness_payload or {}).get(
+                            "claim_status"
+                        ),
+                        **strict_evidence_readiness_summary,
+                    },
+                    (
+                        "status",
+                        "readiness_status",
+                        "claim_status",
+                        "total_requirements",
+                        "action_required_count",
+                        "ready_for_safe_dispatch_count",
+                        "can_auto_run_now_count",
+                        "target_memories_total",
+                    ),
+                ),
+            },
+            "target": "Keep every strict evidence requirement mapped to a workflow, safe dispatch command, download command, ingest command, strict validation command, and locked claim boundary until real remote/large-N artifacts pass.",
+            "next_step": "Provision the missing remote/service environments, run safe dispatch commands with commit_results=false, ingest downloaded artifacts, then rerun strict evidence validation before changing release claims.",
         },
         {
             "id": "local_http_cluster_smoke",

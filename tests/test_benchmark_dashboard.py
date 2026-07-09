@@ -48,6 +48,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Cluster evidence: shard placement" in html
     assert "100M capacity nodes" in html
     assert "benchmarks/CLUSTER_AUTOSCALE.md" in html
+    assert "Strict Evidence Readiness" in html
+    assert "Operator runbook for the remaining remote, 10M, 50M, and 100M evidence gaps" in html
+    assert "Safe dispatch ready" in html
+    assert "benchmarks/STRICT_EVIDENCE_READINESS.md" in html
     assert "Benchmark Leaderboard" in html
     assert "Evidence Source Status" in html
     assert "External HTTP active-active" in html
