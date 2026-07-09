@@ -77,6 +77,19 @@ def build_cluster_autoscale_report(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "operator_cross_node_anti_affinity": rows["operator"].get(
             "operator_cross_node_anti_affinity"
         ),
+        "operator_pdb_rbac": rows["operator"].get("operator_pdb_rbac"),
+        "operator_has_pod_disruption_budget": rows["operator"].get(
+            "has_pod_disruption_budget"
+        ),
+        "operator_pdb_min_available": rows["operator"].get(
+            "pod_disruption_budget_min_available"
+        ),
+        "operator_statefulset_rolling_update": rows["operator"].get(
+            "statefulset_rolling_update"
+        ),
+        "operator_statefulset_topology_spread_keys": rows["operator"].get(
+            "statefulset_topology_spread_keys", []
+        ),
         "operator_required_replicas": rows["operator"].get("capacity_required_replicas"),
         "operator_rebalance_batches": rows["operator"].get("rebalance_batches"),
         "operator_rebalance_move_count": rows["operator"].get("rebalance_move_count"),
@@ -174,6 +187,8 @@ def render_cluster_autoscale_markdown(payload: dict[str, Any]) -> str:
             f"- Operator replicas: `{summary.get('operator_replicas', 0)}`.",
             f"- Operator controller replicas: `{summary.get('operator_controller_replicas', 0)}`.",
             f"- Operator leader election: `{summary.get('operator_leader_election')}` via `{summary.get('operator_lease_backend', 'missing')}`.",
+            f"- Data-plane PDB min available: `{summary.get('operator_pdb_min_available')}`.",
+            f"- Data-plane topology spread: `{', '.join(summary.get('operator_statefulset_topology_spread_keys', []))}`.",
             f"- Rebalance moves: `{summary.get('operator_rebalance_move_count', 0)}`.",
             f"- 100M capacity nodes: `{summary.get('capacity_node_count', 0)}`.",
             f"- 100M capacity zones: `{summary.get('capacity_zones', 0)}`.",
@@ -215,6 +230,8 @@ def render_cluster_autoscale_markdown(payload: dict[str, Any]) -> str:
                 f"replicas `{summary.get('operator_replicas', 0)}`, "
                 f"controller replicas `{summary.get('operator_controller_replicas', 0)}`, "
                 f"leader election `{summary.get('operator_leader_election')}`, "
+                f"PDB min available `{summary.get('operator_pdb_min_available')}`, "
+                f"rolling update `{summary.get('operator_statefulset_rolling_update')}`, "
                 f"conditions `{', '.join(summary.get('operator_conditions_true', []))}`. |"
             ),
             (
@@ -272,6 +289,21 @@ def _checks(rows: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         _check("operator_leader_election", rows["operator"].get("operator_leader_election"), True, "is"),
         _check("operator_lease_rbac", rows["operator"].get("operator_lease_rbac"), True, "is"),
         _check("operator_cross_node_anti_affinity", rows["operator"].get("operator_cross_node_anti_affinity"), True, "is"),
+        _check("operator_pdb_rbac", rows["operator"].get("operator_pdb_rbac"), True, "is"),
+        _check("operator_has_pod_disruption_budget", rows["operator"].get("has_pod_disruption_budget"), True, "is"),
+        _check(
+            "operator_pdb_min_available",
+            rows["operator"].get("pod_disruption_budget_min_available"),
+            int(rows["operator"].get("statefulset_replicas", 0)) - 1,
+            "==",
+        ),
+        _check("operator_statefulset_rolling_update", rows["operator"].get("statefulset_rolling_update"), True, "is"),
+        _check(
+            "operator_statefulset_topology_spread",
+            sorted(rows["operator"].get("statefulset_topology_spread_keys", [])),
+            ["kubernetes.io/hostname", "topology.kubernetes.io/zone"],
+            "==",
+        ),
         _check("operator_replicas_match_capacity", rows["operator"].get("statefulset_replicas"), rows["operator"].get("capacity_required_replicas"), "=="),
         _check("operator_capacity_within_headroom", rows["operator"].get("status_capacity_within_headroom"), True, "is"),
         _check("operator_rebalance_ready", rows["operator"].get("status_rebalance_ready"), True, "is"),

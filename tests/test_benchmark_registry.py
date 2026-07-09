@@ -202,8 +202,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert kubernetes_current["operator_status_tracks_leader"] is True
     assert kubernetes_current["data_pod_uid_changed"] is True
     assert kubernetes_current["api_healthy_after_recovery"] is True
-    assert kubernetes_current["passed_checks"] == kubernetes_current["check_count"] == 9
-    assert kubernetes_current["workflow_run_url"].startswith("https://github.com/")
+    assert kubernetes_current["topology_spread_constraint_count"] == 2
+    assert kubernetes_current["pdb_min_available"] == 3
+    assert kubernetes_current["pdb_disruptions_allowed"] >= 1
+    assert kubernetes_current["rolling_upgrade_revision_changed"] is True
+    assert kubernetes_current["rolling_upgrade_replaced_pods"] == 4
+    assert kubernetes_current["api_healthy_after_upgrade"] is True
+    assert kubernetes_current["passed_checks"] == kubernetes_current["check_count"] == 14
+    assert kubernetes_current["workflow_run_url"].endswith("/29054900969")
     assert "does not unlock remote production" in kubernetes_current["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"

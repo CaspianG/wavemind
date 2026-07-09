@@ -1,14 +1,14 @@
 {
   "schema": "wavemind.cluster_autoscale_report.v1",
-  "generated_at": "2026-07-09T20:51:19Z",
-  "source_ref": "9c9cfee3ed02",
+  "generated_at": "2026-07-09T22:45:10Z",
+  "source_ref": "ae16e683b008",
   "source_file": "benchmarks/scale_readiness_results.json",
   "claim_boundary": "Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.",
   "summary": {
     "status": "pass",
-    "check_count": 57,
-    "passed_check_count": 57,
-    "source_generated_at": "2026-07-09T20:51:19Z",
+    "check_count": 62,
+    "passed_check_count": 62,
+    "source_generated_at": "2026-07-09T22:45:10Z",
     "simulated_memories": 1000000,
     "namespace_count": 4096,
     "planner_node_count": 4,
@@ -30,6 +30,14 @@
     "operator_lease_backend": "coordination.k8s.io/v1",
     "operator_lease_rbac": true,
     "operator_cross_node_anti_affinity": true,
+    "operator_pdb_rbac": true,
+    "operator_has_pod_disruption_budget": true,
+    "operator_pdb_min_available": 33,
+    "operator_statefulset_rolling_update": true,
+    "operator_statefulset_topology_spread_keys": [
+      "kubernetes.io/hostname",
+      "topology.kubernetes.io/zone"
+    ],
     "operator_required_replicas": 34,
     "operator_rebalance_batches": 81,
     "operator_rebalance_move_count": 4048,
@@ -273,6 +281,47 @@
       "pass": true
     },
     {
+      "name": "operator_pdb_rbac",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "operator_has_pod_disruption_budget",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "operator_pdb_min_available",
+      "value": 33,
+      "target": 33,
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "operator_statefulset_rolling_update",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "operator_statefulset_topology_spread",
+      "value": [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone"
+      ],
+      "target": [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone"
+      ],
+      "op": "==",
+      "pass": true
+    },
+    {
       "name": "operator_replicas_match_capacity",
       "value": 34,
       "target": 34,
@@ -476,7 +525,7 @@
       "namespaces": 4096,
       "nodes": 4,
       "replication_factor": 2,
-      "placement_ms": 100.39179999876069,
+      "placement_ms": 85.88370000506984,
       "max_replica_load": 2413,
       "min_replica_load": 1728,
       "replica_load_stdev": 316.54462560593254,
@@ -518,7 +567,7 @@
       "rebalance_all_batches_checkpointed": true,
       "rebalance_all_batches_repaired": true,
       "rebalance_all_batches_validated": true,
-      "plan_ms": 6489.874399994733
+      "plan_ms": 7266.970399999991
     },
     "control_plane": {
       "engine": "WaveMind control-plane consensus",
@@ -551,10 +600,20 @@
       "operator_lease_backend": "coordination.k8s.io/v1",
       "operator_lease_rbac": true,
       "operator_cross_node_anti_affinity": true,
+      "operator_pdb_rbac": true,
       "sample_kind": "WaveMindCluster",
-      "reconciled_resources": 7,
+      "reconciled_resources": 8,
       "has_service": true,
       "has_statefulset": true,
+      "has_pod_disruption_budget": true,
+      "pod_disruption_budget_min_available": 33,
+      "statefulset_rolling_update": true,
+      "statefulset_min_ready_seconds": 5,
+      "statefulset_topology_spread_keys": [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone"
+      ],
+      "statefulset_cross_node_anti_affinity": true,
       "has_hpa": true,
       "has_rebalance_configmap": true,
       "has_repair_cronjob": true,
@@ -650,6 +709,7 @@
         "/api/v1/namespaces/wavemind-system/services/wavemind",
         "/api/v1/namespaces/wavemind-system/services/wavemind-headless",
         "/apis/apps/v1/namespaces/wavemind-system/statefulsets/wavemind",
+        "/apis/policy/v1/namespaces/wavemind-system/poddisruptionbudgets/wavemind",
         "/apis/autoscaling/v2/namespaces/wavemind-system/horizontalpodautoscalers/wavemind",
         "/api/v1/namespaces/wavemind-system/configmaps/wavemind-rebalance-plan",
         "/apis/batch/v1/namespaces/wavemind-system/cronjobs/wavemind-cluster-repair",
@@ -678,10 +738,10 @@
       "concurrent_writes": 12,
       "concurrent_write_ok": true,
       "concurrent_query_hit_rate": 1.0,
-      "concurrent_ms": 765.3366000013193,
-      "write_ms": 36.35480000230018,
-      "query_after_primary_loss_ms": 12.250200001290068,
-      "repair_ms": 50.180400001409
+      "concurrent_ms": 1311.0460000025341,
+      "write_ms": 50.33930000354303,
+      "query_after_primary_loss_ms": 16.156400000909343,
+      "repair_ms": 53.776200002175756
     },
     "active_active": {
       "engine": "WaveMind sustained active-active sync",
@@ -703,8 +763,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 270.0942999945255,
-      "avg_sync_ms": 159.27555999951437
+      "p99_sync_ms": 402.99360000062734,
+      "avg_sync_ms": 216.46699999982957
     },
     "http_active_active": {
       "engine": "WaveMind HTTP active-active service-region sync",
@@ -731,8 +791,8 @@
       "success_rate": 1.0,
       "failed_pairs": 0,
       "has_more_pairs": 0,
-      "p99_sync_ms": 365.2241999952821,
-      "avg_sync_ms": 258.9845249985956
+      "p99_sync_ms": 465.8969999945839,
+      "avg_sync_ms": 342.6729000002524
     },
     "field_crdt": {
       "engine": "WaveMind field-state CRDT",
@@ -756,7 +816,7 @@
       "watermark_lag_detected": true,
       "budget_activation": 5.0,
       "suppressed_report_activation": 0.75,
-      "merge_ms": 0.167199999850709
+      "merge_ms": 0.1827000014600344
     },
     "capacity_100m": {
       "engine": "WaveMind 100M capacity envelope",
@@ -793,7 +853,7 @@
       "scale_out_target_replica_load_skew": 1.0823567708333335,
       "scale_out_target_zone_spread_rate": 1.0,
       "recommended_autoscaling_max_replicas": 192,
-      "placement_ms": 43309.343799999624,
+      "placement_ms": 53699.917200006894,
       "valid_capacity_plan": true,
       "scope": "Deterministic 100M-memory capacity envelope. This proves shard placement, replication overhead, storage envelope, and failure-domain availability; it is not a 100M vector-query latency benchmark."
     }

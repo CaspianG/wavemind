@@ -491,6 +491,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and int(kubernetes_operator_summary.get("node_count", 0)) >= 4
         and int(kubernetes_operator_summary.get("operator_pod_count", 0)) >= 2
         and int(kubernetes_operator_summary.get("operator_node_count", 0)) >= 2
+        and int(kubernetes_operator_summary.get("topology_spread_constraint_count", 0))
+        >= 2
+        and int(kubernetes_operator_summary.get("pdb_min_available", 0))
+        >= max(
+            1,
+            int(kubernetes_operator_summary.get("desired_replicas_after_scale", 0)) - 1,
+        )
+        and int(kubernetes_operator_summary.get("pdb_disruptions_allowed", 0)) >= 1
         and int(kubernetes_operator_summary.get("lease_transitions_after", 0))
         > int(kubernetes_operator_summary.get("lease_transitions_before", 0))
         and kubernetes_operator_summary.get("cluster_status_holder")
@@ -499,6 +507,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         == int(kubernetes_operator_summary.get("desired_replicas_after_scale", -1))
         and kubernetes_operator_summary.get("data_pod_uid_changed")
         and kubernetes_operator_summary.get("api_healthy_after_recovery")
+        and kubernetes_operator_summary.get("rolling_upgrade_revision_changed")
+        and int(kubernetes_operator_summary.get("rolling_upgrade_replaced_pods", 0))
+        >= int(kubernetes_operator_summary.get("desired_replicas_after_scale", -1))
+        and kubernetes_operator_summary.get("api_healthy_after_upgrade")
+        and int(kubernetes_operator_summary.get("check_count", 0)) >= 14
         and int(kubernetes_operator_summary.get("passed_checks", 0))
         == int(kubernetes_operator_summary.get("check_count", -1))
     )
@@ -1024,7 +1037,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("operator_leader_election")
                 and operator.get("operator_lease_rbac")
                 and operator.get("operator_cross_node_anti_affinity")
+                and operator.get("operator_pdb_rbac")
                 and kubernetes_operator_smoke_pass
+                and operator.get("has_pod_disruption_budget")
+                and int(operator.get("pod_disruption_budget_min_available", 0))
+                == int(operator.get("statefulset_replicas", 0)) - 1
+                and operator.get("statefulset_rolling_update")
+                and int(operator.get("statefulset_min_ready_seconds", 0)) >= 5
+                and set(operator.get("statefulset_topology_spread_keys", []))
+                == {"kubernetes.io/hostname", "topology.kubernetes.io/zone"}
+                and operator.get("statefulset_cross_node_anti_affinity")
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
@@ -1090,7 +1112,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "redundant operator replicas with Kubernetes Lease/etcd leader "
                 "election, resourceVersion CAS, and cross-node anti-affinity, "
                 "a traceable multi-node Kubernetes CI failure drill with leader "
-                "takeover, post-failover reconcile, pod replacement, and API recovery, "
+                "takeover, post-failover reconcile, PDB/topology protection, pod "
+                "replacement, CR-driven rolling upgrade, and API recovery, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
                 "repair/Memory OS/production admission plus control-plane consensus safety."
             ),
@@ -1105,6 +1128,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"failure drill {kubernetes_operator_smoke.get('status')}, "
                 f"Lease transitions {kubernetes_operator_summary.get('lease_transitions_after')}, "
                 f"recovered API {kubernetes_operator_summary.get('api_healthy_after_recovery')}, "
+                f"PDB min available {kubernetes_operator_summary.get('pdb_min_available')}, "
+                f"topology constraints {kubernetes_operator_summary.get('topology_spread_constraint_count')}, "
+                f"rolling pods replaced {kubernetes_operator_summary.get('rolling_upgrade_replaced_pods')}, "
+                f"upgraded API {kubernetes_operator_summary.get('api_healthy_after_upgrade')}, "
                 f"workflow {kubernetes_operator_smoke.get('workflow_run_url')}, "
                 f"rebalance config {operator.get('has_rebalance_configmap')}, "
                 f"rebalance {operator.get('rebalance_status')} "

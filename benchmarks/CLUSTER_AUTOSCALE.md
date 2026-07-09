@@ -1,13 +1,13 @@
 # WaveMind Cluster Autoscale Report
 
-Generated: `2026-07-09T20:51:19Z`.
+Generated: `2026-07-09T22:45:10Z`.
 
 Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.
 
 ## Summary
 
 - Status: `pass`.
-- Checks: `57/57`.
+- Checks: `62/62`.
 - Simulated memories: `1000000`.
 - Namespaces: `4096`.
 - Autoscaler target: `10000000` memories.
@@ -15,6 +15,8 @@ Cluster autoscale evidence is extracted from the checked-in scale-readiness arti
 - Operator replicas: `34`.
 - Operator controller replicas: `2`.
 - Operator leader election: `True` via `coordination.k8s.io/v1`.
+- Data-plane PDB min available: `33`.
+- Data-plane topology spread: `kubernetes.io/hostname, topology.kubernetes.io/zone`.
 - Rebalance moves: `4048`.
 - 100M capacity nodes: `128`.
 - 100M capacity zones: `8`.
@@ -53,6 +55,11 @@ Cluster autoscale evidence is extracted from the checked-in scale-readiness arti
 | operator_leader_election | `pass` | `1` | `is True` |
 | operator_lease_rbac | `pass` | `1` | `is True` |
 | operator_cross_node_anti_affinity | `pass` | `1` | `is True` |
+| operator_pdb_rbac | `pass` | `1` | `is True` |
+| operator_has_pod_disruption_budget | `pass` | `1` | `is True` |
+| operator_pdb_min_available | `pass` | `33` | `== 33` |
+| operator_statefulset_rolling_update | `pass` | `1` | `is True` |
+| operator_statefulset_topology_spread | `pass` | `kubernetes.io/hostname, topology.kubernetes.io/zone` | `== ['kubernetes.io/hostname', 'topology.kubernetes.io/zone']` |
 | operator_replicas_match_capacity | `pass` | `34` | `== 34` |
 | operator_capacity_within_headroom | `pass` | `1` | `is True` |
 | operator_rebalance_ready | `pass` | `1` | `is True` |
@@ -89,7 +96,7 @@ Cluster autoscale evidence is extracted from the checked-in scale-readiness arti
 | Placement | `4` nodes, replication `2`, node-loss availability `1`, zone-loss availability `1`. |
 | Autoscale | status `scale_required`, required nodes `50`, additional nodes `46`, headroom ok `True`. |
 | Rebalance | `4094` planner moves, `82` planner batches, `4048` operator moves. |
-| Operator | phase `Ready`, replicas `34`, controller replicas `2`, leader election `True`, conditions `AutoscalingReady, CapacityPlanned, ControlPlaneReady, MemoryOSReady, ProductionAdmissionReady, RebalancePlanned, RepairScheduled, ResourcesReady`. |
+| Operator | phase `Ready`, replicas `34`, controller replicas `2`, leader election `True`, PDB min available `33`, rolling update `True`, conditions `AutoscalingReady, CapacityPlanned, ControlPlaneReady, MemoryOSReady, ProductionAdmissionReady, RebalancePlanned, RepairScheduled, ResourcesReady`. |
 | Runtime safety | control plane ok `True`, HTTP primary-loss recall `True`, active-active convergence `1`. |
 | 100M envelope | valid `True`, nodes `128`, zones `8`, replication `3`, zone spread `1`. |
 

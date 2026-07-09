@@ -50,6 +50,16 @@ def test_cluster_autoscale_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["operator_lease_backend"] == "coordination.k8s.io/v1"
     assert payload["summary"]["operator_lease_rbac"] is True
     assert payload["summary"]["operator_cross_node_anti_affinity"] is True
+    assert payload["summary"]["operator_pdb_rbac"] is True
+    assert payload["summary"]["operator_has_pod_disruption_budget"] is True
+    assert payload["summary"]["operator_pdb_min_available"] == (
+        payload["summary"]["operator_replicas"] - 1
+    )
+    assert payload["summary"]["operator_statefulset_rolling_update"] is True
+    assert payload["summary"]["operator_statefulset_topology_spread_keys"] == [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone",
+    ]
     assert payload["summary"]["operator_memory_os_ready"] is True
     assert payload["summary"]["operator_memory_os_blocks_missing_redis"] is True
     assert payload["summary"]["control_plane_ok"] is True

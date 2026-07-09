@@ -201,8 +201,18 @@ def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[s
         "operator_status_tracks_leader": (
             summary.get("cluster_status_holder") == summary.get("next_holder")
         ),
+        "topology_spread_constraint_count": summary.get(
+            "topology_spread_constraint_count"
+        ),
+        "pdb_min_available": summary.get("pdb_min_available"),
+        "pdb_disruptions_allowed": summary.get("pdb_disruptions_allowed"),
         "data_pod_uid_changed": summary.get("data_pod_uid_changed"),
         "api_healthy_after_recovery": summary.get("api_healthy_after_recovery"),
+        "rolling_upgrade_revision_changed": summary.get(
+            "rolling_upgrade_revision_changed"
+        ),
+        "rolling_upgrade_replaced_pods": summary.get("rolling_upgrade_replaced_pods"),
+        "api_healthy_after_upgrade": summary.get("api_healthy_after_upgrade"),
         "passed_checks": summary.get("passed_checks"),
         "check_count": summary.get("check_count"),
         "claim_boundary": payload.get("claim_boundary"),

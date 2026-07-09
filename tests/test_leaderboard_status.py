@@ -181,12 +181,24 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["cluster_autoscale"]["operator_controller_replicas"] >= 2
     assert payload["cluster_autoscale"]["operator_leader_election"] is True
     assert payload["cluster_autoscale"]["operator_lease_backend"] == "coordination.k8s.io/v1"
+    assert payload["cluster_autoscale"]["operator_pdb_rbac"] is True
+    assert payload["cluster_autoscale"]["operator_has_pod_disruption_budget"] is True
+    assert payload["cluster_autoscale"]["operator_statefulset_rolling_update"] is True
+    assert payload["cluster_autoscale"]["operator_statefulset_topology_spread_keys"] == [
+        "kubernetes.io/hostname",
+        "topology.kubernetes.io/zone",
+    ]
     assert payload["kubernetes_operator_failover"]["status"] == "pass"
     assert payload["kubernetes_operator_failover"]["node_count"] == 4
     assert payload["kubernetes_operator_failover"]["operator_node_count"] >= 2
     assert payload["kubernetes_operator_failover"]["lease_transitions_after"] >= 1
-    assert payload["kubernetes_operator_failover"]["passed_checks"] == 9
+    assert payload["kubernetes_operator_failover"]["passed_checks"] == 14
     assert payload["kubernetes_operator_failover"]["api_healthy_after_recovery"] is True
+    assert payload["kubernetes_operator_failover"]["topology_spread_constraint_count"] == 2
+    assert payload["kubernetes_operator_failover"]["pdb_min_available"] == 3
+    assert payload["kubernetes_operator_failover"]["rolling_upgrade_revision_changed"] is True
+    assert payload["kubernetes_operator_failover"]["rolling_upgrade_replaced_pods"] == 4
+    assert payload["kubernetes_operator_failover"]["api_healthy_after_upgrade"] is True
     assert "does not unlock remote production" in (
         payload["kubernetes_operator_failover"]["claim_boundary"]
     )

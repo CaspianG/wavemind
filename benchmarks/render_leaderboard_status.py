@@ -784,6 +784,17 @@ def _cluster_autoscale_status(payload: dict[str, Any]) -> dict[str, Any]:
         "operator_controller_replicas": summary.get("operator_controller_replicas"),
         "operator_leader_election": summary.get("operator_leader_election"),
         "operator_lease_backend": summary.get("operator_lease_backend"),
+        "operator_pdb_rbac": summary.get("operator_pdb_rbac"),
+        "operator_has_pod_disruption_budget": summary.get(
+            "operator_has_pod_disruption_budget"
+        ),
+        "operator_pdb_min_available": summary.get("operator_pdb_min_available"),
+        "operator_statefulset_rolling_update": summary.get(
+            "operator_statefulset_rolling_update"
+        ),
+        "operator_statefulset_topology_spread_keys": summary.get(
+            "operator_statefulset_topology_spread_keys", []
+        ),
         "operator_rebalance_move_count": summary.get("operator_rebalance_move_count"),
         "operator_memory_os_ready": summary.get("operator_memory_os_ready"),
         "control_plane_ok": summary.get("control_plane_ok"),
@@ -834,6 +845,16 @@ def _kubernetes_operator_failover_status(payload: dict[str, Any]) -> dict[str, A
         "next_holder": summary.get("next_holder"),
         "data_pod_uid_changed": summary.get("data_pod_uid_changed"),
         "api_healthy_after_recovery": summary.get("api_healthy_after_recovery"),
+        "topology_spread_constraint_count": summary.get(
+            "topology_spread_constraint_count"
+        ),
+        "pdb_min_available": summary.get("pdb_min_available"),
+        "pdb_disruptions_allowed": summary.get("pdb_disruptions_allowed"),
+        "rolling_upgrade_revision_changed": summary.get(
+            "rolling_upgrade_revision_changed"
+        ),
+        "rolling_upgrade_replaced_pods": summary.get("rolling_upgrade_replaced_pods"),
+        "api_healthy_after_upgrade": summary.get("api_healthy_after_upgrade"),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/kubernetes_operator_smoke_results.json",
     }

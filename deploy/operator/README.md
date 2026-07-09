@@ -169,6 +169,7 @@ takeover, scales the StatefulSet through the new leader, replaces a data pod,
 and verifies API recovery. This is stronger than an in-process simulation, but
 it remains ephemeral CI evidence and does not unlock remote production
 admission.
-The latest checked-in artifact passed `9/9` checks in
-[run 29053524619](https://github.com/CaspianG/wavemind/actions/runs/29053524619)
-and records its source commit and workflow URL for auditability.
+The latest checked-in artifact passed `14/14` checks in
+[run 29054900969](https://github.com/CaspianG/wavemind/actions/runs/29054900969),
+including PDB/topology protection and a CR-driven rolling upgrade of every data
+pod, and records its source commit and workflow URL for auditability.

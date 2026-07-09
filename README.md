@@ -911,8 +911,10 @@ The `kubernetes-operator-smoke` workflow exercises that path in a real
 four-node kind cluster by deleting the leader and a data pod, then verifying
 Lease takeover, post-failover reconcile, StatefulSet scaling, and API recovery.
 It is CI evidence, not a substitute for the required remote-cluster artifact.
-The checked-in result passed all `9/9` checks and links back to the exact
-[GitHub Actions run](https://github.com/CaspianG/wavemind/actions/runs/29053524619).
+The checked-in result passed all `14/14` checks, including PDB/topology
+protection and a CR-driven rolling upgrade that replaced all four data pods,
+and links back to the exact
+[GitHub Actions run](https://github.com/CaspianG/wavemind/actions/runs/29054900969).
 
 The operator exposes the same production admission contract through
 `spec.productionAdmission`. Explicitly enable it with:
