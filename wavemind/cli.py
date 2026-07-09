@@ -987,8 +987,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     operator_bundle_cmd.add_argument("--namespace", default="default")
     operator_bundle_cmd.add_argument("--operator-image", default="ghcr.io/caspiang/wavemind:latest")
+    operator_bundle_cmd.add_argument("--operator-replicas", type=int, default=2)
+    operator_bundle_cmd.add_argument("--operator-interval-seconds", type=float, default=30.0)
+    operator_bundle_cmd.add_argument("--lease-duration-seconds", type=int, default=60)
     operator_bundle_cmd.add_argument("--sample-name", default="wavemind")
     operator_bundle_cmd.add_argument("--sample-image", default="ghcr.io/caspiang/wavemind:latest")
+    operator_bundle_cmd.add_argument("--sample-index", default="faiss-persisted")
     operator_bundle_cmd.add_argument("--sample-replicas", type=int, default=3)
     operator_bundle_cmd.add_argument("--sample-replication-factor", type=int, default=2)
     operator_bundle_cmd.add_argument("--sample-namespace-count", type=int, default=128)
@@ -1024,6 +1028,13 @@ def build_parser() -> argparse.ArgumentParser:
     operator_loop_cmd.add_argument("--namespace", default=os.environ.get("POD_NAMESPACE", "default"))
     operator_loop_cmd.add_argument("--interval-seconds", type=float, default=30.0)
     operator_loop_cmd.add_argument("--timeout", type=float, default=10.0)
+    operator_loop_cmd.add_argument(
+        "--holder-identity",
+        default=os.environ.get("POD_NAME", "wavemind-operator"),
+    )
+    operator_loop_cmd.add_argument("--lease-name", default="wavemind-operator")
+    operator_loop_cmd.add_argument("--lease-duration-seconds", type=int, default=60)
+    operator_loop_cmd.add_argument("--no-leader-election", action="store_true")
     operator_loop_cmd.add_argument("--once", action="store_true")
     operator_loop_cmd.add_argument("--json", action="store_true")
 
@@ -3378,6 +3389,7 @@ def main(argv: list[str] | None = None) -> int:
             name=args.sample_name,
             namespace=args.namespace,
             image=args.sample_image,
+            index=args.sample_index,
             replicas=args.sample_replicas,
             replication_factor=args.sample_replication_factor,
             namespace_count=args.sample_namespace_count,
@@ -3387,6 +3399,9 @@ def main(argv: list[str] | None = None) -> int:
                 operator_image=args.operator_image,
                 namespace=args.namespace,
                 sample=sample,
+                operator_replicas=args.operator_replicas,
+                operator_interval_seconds=args.operator_interval_seconds,
+                lease_duration_seconds=args.lease_duration_seconds,
             ),
             out=args.out,
         )
@@ -3413,6 +3428,10 @@ def main(argv: list[str] | None = None) -> int:
             client=client,
             interval_seconds=args.interval_seconds,
             once=args.once,
+            leader_election=not args.no_leader_election,
+            holder_identity=args.holder_identity,
+            lease_name=args.lease_name,
+            lease_duration_seconds=args.lease_duration_seconds,
         )
         _print_json(report)
         return 0

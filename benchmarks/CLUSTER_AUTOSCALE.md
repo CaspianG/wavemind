@@ -1,18 +1,20 @@
 # WaveMind Cluster Autoscale Report
 
-Generated: `2026-07-08T20:13:52Z`.
+Generated: `2026-07-09T20:51:19Z`.
 
 Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.
 
 ## Summary
 
 - Status: `pass`.
-- Checks: `53/53`.
+- Checks: `57/57`.
 - Simulated memories: `1000000`.
 - Namespaces: `4096`.
 - Autoscaler target: `10000000` memories.
 - Autoscaler required nodes: `50`.
 - Operator replicas: `34`.
+- Operator controller replicas: `2`.
+- Operator leader election: `True` via `coordination.k8s.io/v1`.
 - Rebalance moves: `4048`.
 - 100M capacity nodes: `128`.
 - 100M capacity zones: `8`.
@@ -47,6 +49,10 @@ Cluster autoscale evidence is extracted from the checked-in scale-readiness arti
 | operator_has_hpa | `pass` | `1` | `is True` |
 | operator_has_repair_cronjob | `pass` | `1` | `is True` |
 | operator_has_memory_os_cronjob | `pass` | `1` | `is True` |
+| operator_controller_redundancy | `pass` | `2` | `>= 2` |
+| operator_leader_election | `pass` | `1` | `is True` |
+| operator_lease_rbac | `pass` | `1` | `is True` |
+| operator_cross_node_anti_affinity | `pass` | `1` | `is True` |
 | operator_replicas_match_capacity | `pass` | `34` | `== 34` |
 | operator_capacity_within_headroom | `pass` | `1` | `is True` |
 | operator_rebalance_ready | `pass` | `1` | `is True` |
@@ -83,7 +89,7 @@ Cluster autoscale evidence is extracted from the checked-in scale-readiness arti
 | Placement | `4` nodes, replication `2`, node-loss availability `1`, zone-loss availability `1`. |
 | Autoscale | status `scale_required`, required nodes `50`, additional nodes `46`, headroom ok `True`. |
 | Rebalance | `4094` planner moves, `82` planner batches, `4048` operator moves. |
-| Operator | phase `Ready`, replicas `34`, conditions `AutoscalingReady, CapacityPlanned, ControlPlaneReady, MemoryOSReady, RebalancePlanned, RepairScheduled, ResourcesReady`. |
+| Operator | phase `Ready`, replicas `34`, controller replicas `2`, leader election `True`, conditions `AutoscalingReady, CapacityPlanned, ControlPlaneReady, MemoryOSReady, ProductionAdmissionReady, RebalancePlanned, RepairScheduled, ResourcesReady`. |
 | Runtime safety | control plane ok `True`, HTTP primary-loss recall `True`, active-active convergence `1`. |
 | 100M envelope | valid `True`, nodes `128`, zones `8`, replication `3`, zone spread `1`. |
 

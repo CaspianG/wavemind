@@ -190,6 +190,14 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert external_http["slo_pass"] is True
     assert external_http["namespaces"] == 32
     assert external_http["read_fanout"] == 1
+    kubernetes_smoke = entries["kubernetes_operator_failover_smoke"]
+    assert kubernetes_smoke["status"] == "runner-ready"
+    assert kubernetes_smoke["current"]["WaveMind Kubernetes operator failover"][
+        "runner_ready"
+    ] is True
+    assert "not remote production admission" in kubernetes_smoke["current"][
+        "WaveMind Kubernetes operator failover"
+    ]["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]

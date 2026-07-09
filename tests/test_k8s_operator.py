@@ -1,12 +1,16 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import subprocess
 import sys
+from urllib.error import HTTPError
 
 import pytest
 
 from wavemind import (
+    KubernetesApplyClient,
+    KubernetesLeaderElectionReport,
     WaveMindClusterSpec,
     custom_resource_definition,
     kubernetes_resource_path,
@@ -33,10 +37,41 @@ def run_cli(*args):
 
 
 class RecordingKubernetesClient:
-    def __init__(self, clusters):
+    def __init__(self, clusters, *, leader=True):
         self.clusters = clusters
         self.applied = []
         self.status_patches = []
+        self.leader = leader
+        self.lease_calls = []
+
+    def acquire_or_renew_operator_lease(
+        self,
+        *,
+        namespace,
+        lease_name,
+        holder_identity,
+        lease_duration_seconds,
+    ):
+        self.lease_calls.append(
+            {
+                "namespace": namespace,
+                "lease_name": lease_name,
+                "holder_identity": holder_identity,
+                "lease_duration_seconds": lease_duration_seconds,
+            }
+        )
+        return KubernetesLeaderElectionReport(
+            namespace=namespace,
+            lease_name=lease_name,
+            holder_identity=holder_identity,
+            current_holder=holder_identity if self.leader else "operator-other",
+            acquired=self.leader,
+            renewed=False,
+            lease_duration_seconds=lease_duration_seconds,
+            lease_transitions=0,
+            resource_version="7",
+            reason="acquired" if self.leader else "lease_held",
+        )
 
     def list_wavemind_clusters(self, namespace):
         assert namespace == "wavemind-system"
@@ -56,6 +91,35 @@ class RecordingKubernetesClient:
             }
         )
         return {"status": status}
+
+
+class LeaseApiClient(KubernetesApplyClient):
+    def __init__(self):
+        super().__init__(host="https://kubernetes.example", token="test")
+        self.lease = None
+        self.requests = []
+
+    def _request(self, method, path, *, payload=None, content_type="application/json"):
+        self.requests.append((method, path, payload, content_type))
+        if method == "GET":
+            if self.lease is None:
+                raise HTTPError(path, 404, "not found", None, None)
+            return json.loads(json.dumps(self.lease))
+        if method == "POST":
+            if self.lease is not None:
+                raise HTTPError(path, 409, "conflict", None, None)
+            self.lease = json.loads(json.dumps(payload))
+            self.lease["metadata"]["resourceVersion"] = "1"
+            return json.loads(json.dumps(self.lease))
+        if method == "PUT":
+            expected = str((payload.get("metadata") or {}).get("resourceVersion") or "")
+            current = str((self.lease.get("metadata") or {}).get("resourceVersion") or "")
+            if expected != current:
+                raise HTTPError(path, 409, "conflict", None, None)
+            self.lease = json.loads(json.dumps(payload))
+            self.lease["metadata"]["resourceVersion"] = str(int(current) + 1)
+            return json.loads(json.dumps(self.lease))
+        raise AssertionError(f"unexpected request: {method} {path}")
 
 
 def test_custom_resource_definition_declares_namespaced_wavemindcluster():
@@ -409,8 +473,27 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
     assert "WaveMindCluster" in kinds
     deployment = next(item for item in bundle["items"] if item["kind"] == "Deployment")
     role = next(item for item in bundle["items"] if item["kind"] == "ClusterRole")
-    args = deployment["spec"]["template"]["spec"]["containers"][0]["args"]
-    assert args == ["operator-loop", "--namespace", "wavemind-system"]
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    args = container["args"]
+    assert deployment["spec"]["replicas"] == 2
+    assert deployment["spec"]["strategy"]["rollingUpdate"] == {
+        "maxUnavailable": 1,
+        "maxSurge": 1,
+    }
+    assert args == [
+        "operator-loop",
+        "--namespace",
+        "$(POD_NAMESPACE)",
+        "--holder-identity",
+        "$(POD_NAME)",
+        "--interval-seconds",
+        "30.0",
+        "--lease-name",
+        "wavemind-operator",
+        "--lease-duration-seconds",
+        "60",
+    ]
+    assert {item["name"] for item in container["env"]} == {"POD_NAME", "POD_NAMESPACE"}
     assert any(rule["apiGroups"] == [""] and rule["resources"] == ["services"] for rule in role["rules"])
     assert any(rule["apiGroups"] == [""] and rule["resources"] == ["configmaps"] for rule in role["rules"])
     assert any(rule["apiGroups"] == ["apps"] and rule["resources"] == ["statefulsets"] for rule in role["rules"])
@@ -425,6 +508,17 @@ def test_operator_bundle_contains_crd_rbac_deployment_and_sample():
         and rule["resources"] == ["wavemindclusters/status"]
         for rule in role["rules"]
     )
+    assert any(
+        rule["apiGroups"] == ["coordination.k8s.io"]
+        and rule["resources"] == ["leases"]
+        and {"get", "create", "update"}.issubset(set(rule["verbs"]))
+        for rule in role["rules"]
+    )
+
+
+def test_operator_bundle_requires_redundant_operator_replicas():
+    with pytest.raises(ValueError, match="at least 2"):
+        operator_bundle(operator_replicas=1)
 
 
 def test_kubernetes_resource_path_maps_supported_resources():
@@ -448,12 +542,17 @@ def test_kubernetes_resource_path_maps_supported_resources():
         "kind": "ConfigMap",
         "metadata": {"name": "wm-rebalance-plan", "namespace": "ns"},
     }
+    lease = {
+        "kind": "Lease",
+        "metadata": {"name": "wavemind-operator", "namespace": "ns"},
+    }
 
     assert kubernetes_resource_path(service).api_path == "/api/v1/namespaces/ns/services/wm"
     assert kubernetes_resource_path(configmap).api_path == "/api/v1/namespaces/ns/configmaps/wm-rebalance-plan"
     assert kubernetes_resource_path(statefulset).api_path == "/apis/apps/v1/namespaces/ns/statefulsets/wm"
     assert kubernetes_resource_path(cronjob).api_path == "/apis/batch/v1/namespaces/ns/cronjobs/wm-repair"
     assert kubernetes_resource_path(hpa).api_path == "/apis/autoscaling/v2/namespaces/ns/horizontalpodautoscalers/wm"
+    assert kubernetes_resource_path(lease).api_path == "/apis/coordination.k8s.io/v1/namespaces/ns/leases/wavemind-operator"
     with pytest.raises(ValueError, match="Unsupported"):
         kubernetes_resource_path({"kind": "Secret", "metadata": {"name": "wm"}})
 
@@ -476,6 +575,8 @@ def test_operator_loop_applies_reconciled_resources_once():
 
     assert report["clusters"] == 1
     assert report["applied_count"] == 4
+    assert report["leaderElection"]["acquired"] is True
+    assert report["leaderElection"]["backend"] == "kubernetes-lease-etcd"
     assert report["statuses"][0]["ready"] is True
     assert report["statuses"][0]["phase"] == "Ready"
     assert report["statuses"][0]["memoryOsReady"] is True
@@ -485,12 +586,80 @@ def test_operator_loop_applies_reconciled_resources_once():
     assert len(client.status_patches) == 1
     assert client.status_patches[0]["name"] == "wm-loop"
     assert client.status_patches[0]["status"]["ready"] is True
+    assert client.status_patches[0]["status"]["operatorLeader"]["holderIdentity"] == "wavemind-operator"
     assert [resource["kind"] for resource in client.applied] == [
         "Service",
         "Service",
         "StatefulSet",
         "CronJob",
     ]
+
+
+def test_operator_loop_follower_stays_read_only():
+    spec = WaveMindClusterSpec(name="wm-follower", namespace="wavemind-system")
+    client = RecordingKubernetesClient([spec.custom_resource()], leader=False)
+
+    report = operator_loop(
+        namespace="wavemind-system",
+        client=client,
+        holder_identity="operator-follower",
+        once=True,
+    )
+
+    assert report["leaderElection"]["acquired"] is False
+    assert report["leaderElection"]["currentHolder"] == "operator-other"
+    assert report["clusters"] == 0
+    assert report["applied_count"] == 0
+    assert client.applied == []
+    assert client.status_patches == []
+
+
+def test_kubernetes_lease_create_renew_and_expired_takeover_are_cas_guarded():
+    client = LeaseApiClient()
+    started = datetime(2026, 7, 9, 12, 0, tzinfo=timezone.utc)
+
+    first = client.acquire_or_renew_operator_lease(
+        namespace="wavemind-system",
+        lease_name="wavemind-operator",
+        holder_identity="operator-a",
+        lease_duration_seconds=60,
+        now=started,
+    )
+    blocked = client.acquire_or_renew_operator_lease(
+        namespace="wavemind-system",
+        lease_name="wavemind-operator",
+        holder_identity="operator-b",
+        lease_duration_seconds=60,
+        now=started + timedelta(seconds=10),
+    )
+    renewed = client.acquire_or_renew_operator_lease(
+        namespace="wavemind-system",
+        lease_name="wavemind-operator",
+        holder_identity="operator-a",
+        lease_duration_seconds=60,
+        now=started + timedelta(seconds=20),
+    )
+    takeover = client.acquire_or_renew_operator_lease(
+        namespace="wavemind-system",
+        lease_name="wavemind-operator",
+        holder_identity="operator-b",
+        lease_duration_seconds=60,
+        now=started + timedelta(seconds=81),
+    )
+
+    assert first.acquired is True
+    assert first.resource_version == "1"
+    assert blocked.acquired is False
+    assert blocked.reason == "lease_held"
+    assert renewed.acquired is True
+    assert renewed.renewed is True
+    assert renewed.resource_version == "2"
+    assert takeover.acquired is True
+    assert takeover.current_holder == "operator-b"
+    assert takeover.lease_transitions == 1
+    assert takeover.resource_version == "3"
+    assert [method for method, *_ in client.requests].count("POST") == 1
+    assert [method for method, *_ in client.requests].count("PUT") == 2
 
 
 def test_operator_loop_reports_memory_os_redis_blocker_once():

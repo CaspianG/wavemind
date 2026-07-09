@@ -177,6 +177,9 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["cluster_autoscale"]["operator_status_ready"] is True
     assert payload["cluster_autoscale"]["operator_memory_os_ready"] is True
     assert payload["cluster_autoscale"]["control_plane_ok"] is True
+    assert payload["cluster_autoscale"]["operator_controller_replicas"] >= 2
+    assert payload["cluster_autoscale"]["operator_leader_election"] is True
+    assert payload["cluster_autoscale"]["operator_lease_backend"] == "coordination.k8s.io/v1"
     assert (
         payload["cluster_autoscale"]["distributed_http_recalled_after_primary_loss"]
         is True

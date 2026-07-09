@@ -902,6 +902,16 @@ reported ready. `wavemind operator-loop` can run in-cluster to keep resources
 applied and patch the `WaveMindCluster.status` subresource when the Kubernetes
 client supports it.
 
+The generated operator Deployment runs two replicas with rolling updates and
+cross-node anti-affinity. Runtime reconciliation is protected by a durable
+Kubernetes Lease stored through the API server/etcd: only the pod holding the
+Lease applies resources or patches status, renewals use `resourceVersion` CAS,
+and an expired holder can be replaced with an audited transition counter.
+The `kubernetes-operator-smoke` workflow exercises that path in a real
+four-node kind cluster by deleting the leader and a data pod, then verifying
+Lease takeover, post-failover reconcile, StatefulSet scaling, and API recovery.
+It is CI evidence, not a substitute for the required remote-cluster artifact.
+
 The operator exposes the same production admission contract through
 `spec.productionAdmission`. Explicitly enable it with:
 
@@ -2875,6 +2885,10 @@ If you already use Chroma for local memory, see the practical migration guide:
 - In the 200-fact agent benchmark, Chroma is faster on average while WaveMind is slightly higher at `precision@3`.
 - The dynamic benchmark currently compares WaveMind against a static Chroma baseline. Chroma and Qdrant can implement similar behavior with extra application-layer metadata policy, deletes, filters, and reinforcement logic.
 - `MemoryFieldGraph` is a discrete graph over stored memories, not a continuous mathematical field. Its current build path should be optimized with incremental edge updates before large production use.
+- Kubernetes operator reconciliation now has durable Lease/etcd-backed leader
+  election with CAS and failover between operator replicas. The separate
+  `ControlPlaneConsensus` profile remains a deterministic config-safety guard,
+  not an implementation of a replicated Raft log for the WaveMind data plane.
 - pgvector is a candidate-index backend. PostgreSQL source-of-truth storage is
   also available separately. A Postgres-native PITR runbook/preflight now exists
   through `wavemind postgres-pitr-plan` and

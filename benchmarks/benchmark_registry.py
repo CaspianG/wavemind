@@ -2061,6 +2061,33 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "next_step": "Replace the current loopback service-node artifact with a remote node manifest run from a multi-node deployment.",
         },
         {
+            "id": "kubernetes_operator_failover_smoke",
+            "name": "Kubernetes operator leader failover smoke",
+            "category": "production-scale",
+            "status": "runner-ready",
+            "source": "benchmarks/kubernetes_operator_smoke.py",
+            "dataset": "A four-node kind cluster with two WaveMind operator replicas. The runner deletes the current Lease holder, requires Kubernetes Lease takeover, verifies resourceVersion transition accounting, scales the WaveMind StatefulSet through the new leader, deletes a data pod, and checks API recovery.",
+            "competitors": ["WaveMind Kubernetes operator"],
+            "metrics": [
+                "operator_node_count",
+                "leader_failover",
+                "lease_transitions_after",
+                "ready_replicas_after_scale",
+                "data_pod_uid_changed",
+                "api_healthy_after_recovery",
+            ],
+            "current": {
+                "WaveMind Kubernetes operator failover": {
+                    "runner_ready": True,
+                    "checked_in_result": False,
+                    "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    "claim_boundary": "Ephemeral multi-node Kubernetes CI evidence; not remote production admission.",
+                }
+            },
+            "target": "Pass real Kubernetes Lease-holder deletion, follower takeover, post-failover reconcile, StatefulSet scaling, data-pod replacement, and API recovery on every relevant main push.",
+            "next_step": "Run the same failure drill against a non-ephemeral remote Kubernetes staging cluster and feed the resulting endpoints into cluster admission.",
+        },
+        {
             "id": "external_http_active_active_loopback",
             "name": "External HTTP active-active loopback",
             "category": "production-scale",

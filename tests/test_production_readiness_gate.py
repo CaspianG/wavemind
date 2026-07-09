@@ -48,6 +48,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["control_plane_consensus"]["status"] == "pass"
     assert "majority leadership lease" in criteria["control_plane_consensus"]["requirement"]
     assert "minority blocked True" in criteria["control_plane_consensus"]["evidence"]
+    assert criteria["operator_autoscaling_repair"]["status"] == "pass"
+    assert "leader election True" in criteria["operator_autoscaling_repair"]["evidence"]
+    assert "coordination.k8s.io/v1" in criteria["operator_autoscaling_repair"]["evidence"]
     assert criteria["hundred_million_capacity_envelope"]["status"] == "pass"
     assert "100M-memory" in criteria["hundred_million_capacity_envelope"]["title"]
     assert "100000000 memories" in criteria["hundred_million_capacity_envelope"]["evidence"]

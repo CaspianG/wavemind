@@ -112,6 +112,7 @@ from .jobs import (
 )
 from .k8s_operator import (
     KubernetesApplyClient,
+    KubernetesLeaderElectionReport,
     WaveMindClusterSpec,
     custom_resource_definition,
     kubernetes_resource_path,
@@ -285,6 +286,7 @@ __all__ = [
     "HTTPActiveActiveSyncWorker",
     "HTTPNamespaceShardClient",
     "KubernetesApplyClient",
+    "KubernetesLeaderElectionReport",
     "LeaderLease",
     "MemoryMaintenanceWorker",
     "MemoryArchitectureAdvice",

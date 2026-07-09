@@ -987,6 +987,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("has_rebalance_configmap")
                 and operator.get("has_repair_cronjob")
                 and operator.get("has_memory_os_cronjob")
+                and int(operator.get("operator_replicas", 0)) >= 2
+                and operator.get("operator_rolling_update")
+                and operator.get("operator_leader_election")
+                and operator.get("operator_lease_rbac")
+                and operator.get("operator_cross_node_anti_affinity")
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
@@ -1049,6 +1054,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "rebalance ConfigMap with full rolling namespace-move plan metadata, "
                 "Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, "
                 "production admission wiring for 10M+ targets, "
+                "redundant operator replicas with Kubernetes Lease/etcd leader "
+                "election, resourceVersion CAS, and cross-node anti-affinity, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
                 "repair/Memory OS/production admission plus control-plane consensus safety."
             ),
@@ -1056,6 +1063,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"CRD {operator.get('bundle_has_crd')}, "
                 f"HPA {operator.get('has_hpa')}, repair {operator.get('has_repair_cronjob')}, "
                 f"memory OS {operator.get('has_memory_os_cronjob')}, "
+                f"operator replicas {operator.get('operator_replicas')}, "
+                f"leader election {operator.get('operator_leader_election')} "
+                f"via {operator.get('operator_lease_backend')}, "
                 f"rebalance config {operator.get('has_rebalance_configmap')}, "
                 f"rebalance {operator.get('rebalance_status')} "
                 f"{operator.get('rebalance_move_count')} moves/"

@@ -4,6 +4,7 @@ import json
 import ssl
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.error import HTTPError
@@ -1190,7 +1191,18 @@ def operator_bundle(
     operator_image: str = "ghcr.io/caspiang/wavemind:latest",
     namespace: str = "default",
     sample: WaveMindClusterSpec | None = None,
+    operator_replicas: int = 2,
+    operator_interval_seconds: float = 30.0,
+    lease_duration_seconds: int = 60,
 ) -> dict[str, Any]:
+    if operator_replicas < 2:
+        raise ValueError("operator_replicas must be at least 2 for failover")
+    if lease_duration_seconds <= 0:
+        raise ValueError("lease_duration_seconds must be positive")
+    if operator_interval_seconds <= 0:
+        raise ValueError("operator_interval_seconds must be positive")
+    if lease_duration_seconds <= operator_interval_seconds:
+        raise ValueError("lease_duration_seconds must be greater than operator_interval_seconds")
     sample_spec = sample or WaveMindClusterSpec(namespace=namespace)
     service_account = {
         "apiVersion": "v1",
@@ -1237,6 +1249,11 @@ def operator_bundle(
                 "resources": ["horizontalpodautoscalers"],
                 "verbs": ["get", "list", "watch", "create", "patch", "update"],
             },
+            {
+                "apiGroups": ["coordination.k8s.io"],
+                "resources": ["leases"],
+                "verbs": ["get", "list", "watch", "create", "patch", "update"],
+            },
         ],
     }
     binding = {
@@ -1261,18 +1278,61 @@ def operator_bundle(
         "kind": "Deployment",
         "metadata": {"name": "wavemind-operator", "namespace": namespace},
         "spec": {
-            "replicas": 1,
+            "replicas": operator_replicas,
+            "strategy": {
+                "type": "RollingUpdate",
+                "rollingUpdate": {"maxUnavailable": 1, "maxSurge": 1},
+            },
             "selector": {"matchLabels": {"app.kubernetes.io/name": "wavemind-operator"}},
             "template": {
                 "metadata": {"labels": {"app.kubernetes.io/name": "wavemind-operator"}},
                 "spec": {
                     "serviceAccountName": "wavemind-operator",
+                    "affinity": {
+                        "podAntiAffinity": {
+                            "preferredDuringSchedulingIgnoredDuringExecution": [
+                                {
+                                    "weight": 100,
+                                    "podAffinityTerm": {
+                                        "topologyKey": "kubernetes.io/hostname",
+                                        "labelSelector": {
+                                            "matchLabels": {
+                                                "app.kubernetes.io/name": "wavemind-operator"
+                                            }
+                                        },
+                                    },
+                                }
+                            ]
+                        }
+                    },
                     "containers": [
                         {
                             "name": "operator",
                             "image": operator_image,
                             "imagePullPolicy": "IfNotPresent",
-                            "args": ["operator-loop", "--namespace", namespace],
+                            "env": [
+                                {
+                                    "name": "POD_NAME",
+                                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}},
+                                },
+                                {
+                                    "name": "POD_NAMESPACE",
+                                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.namespace"}},
+                                },
+                            ],
+                            "args": [
+                                "operator-loop",
+                                "--namespace",
+                                "$(POD_NAMESPACE)",
+                                "--holder-identity",
+                                "$(POD_NAME)",
+                                "--interval-seconds",
+                                str(float(operator_interval_seconds)),
+                                "--lease-name",
+                                "wavemind-operator",
+                                "--lease-duration-seconds",
+                                str(int(lease_duration_seconds)),
+                            ],
                         }
                     ],
                 },
@@ -1648,6 +1708,35 @@ class KubernetesResourcePath:
     collection_path: str
 
 
+@dataclass(frozen=True)
+class KubernetesLeaderElectionReport:
+    namespace: str
+    lease_name: str
+    holder_identity: str
+    current_holder: str | None
+    acquired: bool
+    renewed: bool
+    lease_duration_seconds: int
+    lease_transitions: int
+    resource_version: str | None = None
+    reason: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "namespace": self.namespace,
+            "leaseName": self.lease_name,
+            "holderIdentity": self.holder_identity,
+            "currentHolder": self.current_holder,
+            "acquired": self.acquired,
+            "renewed": self.renewed,
+            "leaseDurationSeconds": self.lease_duration_seconds,
+            "leaseTransitions": self.lease_transitions,
+            "resourceVersion": self.resource_version,
+            "reason": self.reason,
+            "backend": "kubernetes-lease-etcd",
+        }
+
+
 class KubernetesApplyClient:
     """Minimal stdlib Kubernetes client for the WaveMind operator loop."""
 
@@ -1730,6 +1819,150 @@ class KubernetesApplyClient:
             content_type="application/apply-patch+yaml",
         )
 
+    def acquire_or_renew_operator_lease(
+        self,
+        *,
+        namespace: str,
+        lease_name: str,
+        holder_identity: str,
+        lease_duration_seconds: int = 60,
+        now: datetime | None = None,
+    ) -> KubernetesLeaderElectionReport:
+        """Acquire or renew a Kubernetes Lease with resourceVersion CAS.
+
+        Kubernetes persists Lease objects through its API server/etcd. Updating
+        the current resourceVersion makes simultaneous operator replicas race
+        safely: only one update succeeds, and followers stay read-only.
+        """
+
+        namespace = str(namespace).strip()
+        lease_name = str(lease_name).strip()
+        holder_identity = str(holder_identity).strip()
+        if not namespace or not lease_name or not holder_identity:
+            raise ValueError("namespace, lease_name, and holder_identity are required")
+        if lease_duration_seconds <= 0:
+            raise ValueError("lease_duration_seconds must be positive")
+
+        timestamp = _as_utc_datetime(now)
+        collection = f"/apis/coordination.k8s.io/v1/namespaces/{namespace}/leases"
+        path = f"{collection}/{lease_name}"
+        current = self._get_optional(path)
+        if current is None:
+            payload = _operator_lease_payload(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                lease_duration_seconds=lease_duration_seconds,
+                now=timestamp,
+                lease_transitions=0,
+            )
+            try:
+                created = self._request("POST", collection, payload=payload)
+            except HTTPError as exc:
+                if exc.code != 409:
+                    raise
+                winner = self._get_optional(path) or {}
+                return _lease_conflict_report(
+                    namespace=namespace,
+                    lease_name=lease_name,
+                    holder_identity=holder_identity,
+                    lease_duration_seconds=lease_duration_seconds,
+                    current=winner,
+                    reason="create_conflict",
+                )
+            return _lease_success_report(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                lease_duration_seconds=lease_duration_seconds,
+                current=created or payload,
+                renewed=False,
+            )
+
+        metadata = dict(current.get("metadata") or {})
+        spec = dict(current.get("spec") or {})
+        resource_version = _optional_string(metadata.get("resourceVersion"))
+        current_holder = _optional_string(spec.get("holderIdentity"))
+        current_duration = _optional_int(spec.get("leaseDurationSeconds")) or lease_duration_seconds
+        renewed_at = _parse_kubernetes_time(spec.get("renewTime") or spec.get("acquireTime"))
+        expired = renewed_at is None or timestamp >= renewed_at + timedelta(seconds=current_duration)
+        same_holder = current_holder == holder_identity
+        transitions = max(0, _optional_int(spec.get("leaseTransitions")) or 0)
+        if current_holder and not same_holder and not expired:
+            return KubernetesLeaderElectionReport(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                current_holder=current_holder,
+                acquired=False,
+                renewed=False,
+                lease_duration_seconds=current_duration,
+                lease_transitions=transitions,
+                resource_version=resource_version,
+                reason="lease_held",
+            )
+
+        if resource_version is None:
+            return KubernetesLeaderElectionReport(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                current_holder=current_holder,
+                acquired=False,
+                renewed=False,
+                lease_duration_seconds=current_duration,
+                lease_transitions=transitions,
+                resource_version=None,
+                reason="missing_resource_version",
+            )
+
+        if current_holder and not same_holder:
+            transitions += 1
+        payload = _operator_lease_payload(
+            namespace=namespace,
+            lease_name=lease_name,
+            holder_identity=holder_identity,
+            lease_duration_seconds=lease_duration_seconds,
+            now=timestamp,
+            lease_transitions=transitions,
+            resource_version=resource_version,
+            acquire_time=(
+                _optional_string(spec.get("acquireTime"))
+                if same_holder
+                else None
+            ),
+        )
+        try:
+            updated = self._request("PUT", path, payload=payload)
+        except HTTPError as exc:
+            if exc.code != 409:
+                raise
+            winner = self._get_optional(path) or current
+            return _lease_conflict_report(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                lease_duration_seconds=lease_duration_seconds,
+                current=winner,
+                reason="update_conflict",
+            )
+        return _lease_success_report(
+            namespace=namespace,
+            lease_name=lease_name,
+            holder_identity=holder_identity,
+            lease_duration_seconds=lease_duration_seconds,
+            current=updated or payload,
+            renewed=same_holder,
+        )
+
+    def _get_optional(self, path: str) -> dict[str, Any] | None:
+        try:
+            return self._request("GET", path)
+        except HTTPError as exc:
+            if exc.code == 404:
+                return None
+            raise
+
     def _request(
         self,
         method: str,
@@ -1763,9 +1996,55 @@ def operator_loop(
     client: KubernetesApplyClient,
     interval_seconds: float = 30.0,
     once: bool = False,
+    leader_election: bool = True,
+    holder_identity: str = "wavemind-operator",
+    lease_name: str = "wavemind-operator",
+    lease_duration_seconds: int = 60,
 ) -> dict[str, Any]:
+    if interval_seconds <= 0:
+        raise ValueError("interval_seconds must be positive")
+    if leader_election and lease_duration_seconds <= interval_seconds:
+        raise ValueError("lease_duration_seconds must be greater than interval_seconds")
     last_report: dict[str, Any] = {}
     while True:
+        if leader_election:
+            acquire = getattr(client, "acquire_or_renew_operator_lease", None)
+            if not callable(acquire):
+                raise RuntimeError("Kubernetes client does not support operator leader election")
+            election = acquire(
+                namespace=namespace,
+                lease_name=lease_name,
+                holder_identity=holder_identity,
+                lease_duration_seconds=lease_duration_seconds,
+            )
+            election_payload = election.as_dict()
+            if not election.acquired:
+                last_report = {
+                    "namespace": namespace,
+                    "clusters": 0,
+                    "applied": [],
+                    "applied_count": 0,
+                    "statuses": [],
+                    "leaderElection": election_payload,
+                }
+                if once:
+                    return last_report
+                time.sleep(interval_seconds)
+                continue
+        else:
+            election_payload = {
+                "namespace": namespace,
+                "leaseName": lease_name,
+                "holderIdentity": holder_identity,
+                "currentHolder": holder_identity,
+                "acquired": True,
+                "renewed": False,
+                "leaseDurationSeconds": lease_duration_seconds,
+                "leaseTransitions": 0,
+                "resourceVersion": None,
+                "reason": "leader_election_disabled",
+                "backend": "disabled",
+            }
         clusters = client.list_wavemind_clusters(namespace)
         applied: list[dict[str, Any]] = []
         statuses: list[dict[str, Any]] = []
@@ -1780,6 +2059,7 @@ def operator_loop(
                     }
                 )
             status = operator_status(cluster)
+            status["operatorLeader"] = election_payload
             statuses.append(
                 {
                     "name": str((cluster.get("metadata") or {}).get("name") or "wavemind"),
@@ -1809,6 +2089,7 @@ def operator_loop(
             "applied": applied,
             "applied_count": len(applied),
             "statuses": statuses,
+            "leaderElection": election_payload,
         }
         if once:
             return last_report
@@ -1832,11 +2113,114 @@ def kubernetes_resource_path(resource: dict[str, Any]) -> KubernetesResourcePath
         collection = f"/apis/batch/v1/namespaces/{namespace}/cronjobs"
     elif kind == "HorizontalPodAutoscaler":
         collection = f"/apis/autoscaling/v2/namespaces/{namespace}/horizontalpodautoscalers"
+    elif kind == "Lease":
+        collection = f"/apis/coordination.k8s.io/v1/namespaces/{namespace}/leases"
     else:
         raise ValueError(f"Unsupported reconciled resource kind: {kind}")
     return KubernetesResourcePath(
         api_path=f"{collection}/{name}",
         collection_path=collection,
+    )
+
+
+def _as_utc_datetime(value: datetime | None) -> datetime:
+    if value is None:
+        return datetime.now(timezone.utc)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _format_kubernetes_time(value: datetime) -> str:
+    return _as_utc_datetime(value).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _parse_kubernetes_time(value: object) -> datetime | None:
+    text = _optional_string(value)
+    if text is None:
+        return None
+    try:
+        return _as_utc_datetime(datetime.fromisoformat(text.replace("Z", "+00:00")))
+    except ValueError:
+        return None
+
+
+def _operator_lease_payload(
+    *,
+    namespace: str,
+    lease_name: str,
+    holder_identity: str,
+    lease_duration_seconds: int,
+    now: datetime,
+    lease_transitions: int,
+    resource_version: str | None = None,
+    acquire_time: str | None = None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"name": lease_name, "namespace": namespace}
+    if resource_version:
+        metadata["resourceVersion"] = resource_version
+    timestamp = _format_kubernetes_time(now)
+    return {
+        "apiVersion": "coordination.k8s.io/v1",
+        "kind": "Lease",
+        "metadata": metadata,
+        "spec": {
+            "holderIdentity": holder_identity,
+            "leaseDurationSeconds": int(lease_duration_seconds),
+            "acquireTime": acquire_time or timestamp,
+            "renewTime": timestamp,
+            "leaseTransitions": int(lease_transitions),
+        },
+    }
+
+
+def _lease_success_report(
+    *,
+    namespace: str,
+    lease_name: str,
+    holder_identity: str,
+    lease_duration_seconds: int,
+    current: dict[str, Any],
+    renewed: bool,
+) -> KubernetesLeaderElectionReport:
+    metadata = dict(current.get("metadata") or {})
+    spec = dict(current.get("spec") or {})
+    return KubernetesLeaderElectionReport(
+        namespace=namespace,
+        lease_name=lease_name,
+        holder_identity=holder_identity,
+        current_holder=_optional_string(spec.get("holderIdentity")) or holder_identity,
+        acquired=True,
+        renewed=renewed,
+        lease_duration_seconds=_optional_int(spec.get("leaseDurationSeconds")) or lease_duration_seconds,
+        lease_transitions=max(0, _optional_int(spec.get("leaseTransitions")) or 0),
+        resource_version=_optional_string(metadata.get("resourceVersion")),
+        reason="renewed" if renewed else "acquired",
+    )
+
+
+def _lease_conflict_report(
+    *,
+    namespace: str,
+    lease_name: str,
+    holder_identity: str,
+    lease_duration_seconds: int,
+    current: dict[str, Any],
+    reason: str,
+) -> KubernetesLeaderElectionReport:
+    metadata = dict(current.get("metadata") or {})
+    spec = dict(current.get("spec") or {})
+    return KubernetesLeaderElectionReport(
+        namespace=namespace,
+        lease_name=lease_name,
+        holder_identity=holder_identity,
+        current_holder=_optional_string(spec.get("holderIdentity")),
+        acquired=False,
+        renewed=False,
+        lease_duration_seconds=_optional_int(spec.get("leaseDurationSeconds")) or lease_duration_seconds,
+        lease_transitions=max(0, _optional_int(spec.get("leaseTransitions")) or 0),
+        resource_version=_optional_string(metadata.get("resourceVersion")),
+        reason=reason,
     )
 
 

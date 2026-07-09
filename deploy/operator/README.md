@@ -20,6 +20,15 @@ configured, it also renders a bounded `ConfigMap` named
 `<cluster>-rebalance-plan` with rolling namespace rebalance metadata and preview
 batches.
 
+The operator Deployment runs two replicas by default. Kubernetes
+`coordination.k8s.io/v1` Lease leader election keeps followers read-only and
+allows a new pod to take over after the current lease expires. Lease updates use
+`metadata.resourceVersion` compare-and-swap through the Kubernetes API, so two
+operator replicas cannot reconcile the cluster concurrently. The Lease is
+durable in the Kubernetes control plane rather than pod memory, and the bundle
+includes Lease RBAC, pod identity through the downward API, rolling-update
+settings, and cross-node anti-affinity.
+
 Production control-plane safety is part of the custom resource. By default,
 `spec.controlPlane.consensus.enabled` is true. Operator status only reports the
 cluster as ready when the consensus preflight proves that config changes require
@@ -42,6 +51,9 @@ stale-revision rejection, and minority-partition rejection:
 
 The generated status includes a `ControlPlaneReady` condition and a
 `status.controlPlane.profile` object with the deterministic safety evidence.
+This config-change profile is separate from runtime operator leader election:
+the profile checks majority/revision invariants, while the Kubernetes Lease
+ensures only one live operator replica can apply those decisions.
 
 Production Memory OS scheduling is also part of the custom resource:
 
@@ -131,7 +143,11 @@ Kubernetes object size limits.
 The in-cluster operator container runs:
 
 ```sh
-wavemind operator-loop --namespace wavemind-system
+wavemind operator-loop \
+  --namespace wavemind-system \
+  --holder-identity "$POD_NAME" \
+  --lease-name wavemind-operator \
+  --lease-duration-seconds 60
 ```
 
 The loop lists `WaveMindCluster` resources and applies the reconciled Services,
@@ -140,3 +156,16 @@ with Kubernetes server-side apply. Operator status includes `RebalancePlanned`
 and `MemoryOSReady`, and only reports ready when the plan is full, every
 rebalance batch requires checkpoint/repair/validation, and production Memory OS
 scheduling has the required Redis/shared-lock configuration.
+
+Every patched `WaveMindCluster.status` also records `operatorLeader`, including
+the holder identity, Lease resource version, transition count, and
+`kubernetes-lease-etcd` backend. A follower reports the current holder and does
+not apply resources or patch status.
+
+The repository includes a real multi-node Kubernetes CI drill in
+`.github/workflows/kubernetes-operator-smoke.yml`. It installs the operator into
+a four-node kind cluster, deletes the current Lease holder, waits for follower
+takeover, scales the StatefulSet through the new leader, replaces a data pod,
+and verifies API recovery. This is stronger than an in-process simulation, but
+it remains ephemeral CI evidence and does not unlock remote production
+admission.

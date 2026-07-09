@@ -751,6 +751,13 @@ def run_operator_profile(
         memory_os_run_on_all_replicas=False,
     )
     bundle = operator_bundle(namespace="wavemind-system", sample=spec)
+    operator_deployment = next(
+        item for item in bundle["items"] if item["kind"] == "Deployment"
+    )
+    operator_role = next(
+        item for item in bundle["items"] if item["kind"] == "ClusterRole"
+    )
+    operator_container = operator_deployment["spec"]["template"]["spec"]["containers"][0]
     custom_resource = spec.custom_resource()
     reconciled = operator_reconcile(custom_resource)
     status = operator_status(
@@ -799,6 +806,19 @@ def run_operator_profile(
         "bundle_resources": len(bundle["items"]),
         "bundle_has_crd": any(item["kind"] == "CustomResourceDefinition" for item in bundle["items"]),
         "bundle_has_operator_deployment": any(item["kind"] == "Deployment" for item in bundle["items"]),
+        "operator_replicas": operator_deployment["spec"]["replicas"],
+        "operator_rolling_update": operator_deployment["spec"]["strategy"]["type"] == "RollingUpdate",
+        "operator_leader_election": "--holder-identity" in operator_container["args"],
+        "operator_lease_backend": "coordination.k8s.io/v1",
+        "operator_lease_rbac": any(
+            rule.get("apiGroups") == ["coordination.k8s.io"]
+            and rule.get("resources") == ["leases"]
+            and {"get", "create", "update"}.issubset(set(rule.get("verbs") or []))
+            for rule in operator_role["rules"]
+        ),
+        "operator_cross_node_anti_affinity": bool(
+            operator_deployment["spec"]["template"]["spec"].get("affinity")
+        ),
         "sample_kind": spec.custom_resource()["kind"],
         "reconciled_resources": len(resources),
         "has_service": "Service" in kinds,

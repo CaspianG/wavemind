@@ -373,6 +373,13 @@ policy matters more than raw vector-database scale:
   requires status phase `Ready`, `RebalancePlanned`, `MemoryOSReady`,
   `ControlPlaneReady`, and all operator readiness conditions before the
   operator criterion passes.
+- The operator Deployment now runs redundant replicas with Kubernetes
+  Lease/etcd-backed leader election. Lease create/renew/takeover operations use
+  `resourceVersion` compare-and-swap; followers remain read-only, expired
+  leaders can be replaced, RBAC includes `coordination.k8s.io/leases`, and
+  operator status records the current holder and transition count. The existing
+  deterministic majority/revision profile remains a config-safety gate rather
+  than a claim of a custom Raft implementation.
 - The `WaveMindCluster` CRD now includes `spec.controlPlane.consensus`. Operator
   status embeds the same majority leader lease/config revision safety profile
   used by the standalone `wavemind control-plane-consensus` gate, so production

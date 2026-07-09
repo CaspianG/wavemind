@@ -70,6 +70,13 @@ def build_cluster_autoscale_report(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "operator_status_phase": rows["operator"].get("status_phase"),
         "operator_status_ready": rows["operator"].get("status_ready"),
         "operator_replicas": rows["operator"].get("statefulset_replicas"),
+        "operator_controller_replicas": rows["operator"].get("operator_replicas"),
+        "operator_leader_election": rows["operator"].get("operator_leader_election"),
+        "operator_lease_backend": rows["operator"].get("operator_lease_backend"),
+        "operator_lease_rbac": rows["operator"].get("operator_lease_rbac"),
+        "operator_cross_node_anti_affinity": rows["operator"].get(
+            "operator_cross_node_anti_affinity"
+        ),
         "operator_required_replicas": rows["operator"].get("capacity_required_replicas"),
         "operator_rebalance_batches": rows["operator"].get("rebalance_batches"),
         "operator_rebalance_move_count": rows["operator"].get("rebalance_move_count"),
@@ -165,6 +172,8 @@ def render_cluster_autoscale_markdown(payload: dict[str, Any]) -> str:
             f"- Autoscaler target: `{summary.get('autoscaler_target_memories', 0)}` memories.",
             f"- Autoscaler required nodes: `{summary.get('autoscaler_required_nodes', 0)}`.",
             f"- Operator replicas: `{summary.get('operator_replicas', 0)}`.",
+            f"- Operator controller replicas: `{summary.get('operator_controller_replicas', 0)}`.",
+            f"- Operator leader election: `{summary.get('operator_leader_election')}` via `{summary.get('operator_lease_backend', 'missing')}`.",
             f"- Rebalance moves: `{summary.get('operator_rebalance_move_count', 0)}`.",
             f"- 100M capacity nodes: `{summary.get('capacity_node_count', 0)}`.",
             f"- 100M capacity zones: `{summary.get('capacity_zones', 0)}`.",
@@ -204,6 +213,8 @@ def render_cluster_autoscale_markdown(payload: dict[str, Any]) -> str:
                 "| Operator | "
                 f"phase `{summary.get('operator_status_phase', 'missing')}`, "
                 f"replicas `{summary.get('operator_replicas', 0)}`, "
+                f"controller replicas `{summary.get('operator_controller_replicas', 0)}`, "
+                f"leader election `{summary.get('operator_leader_election')}`, "
                 f"conditions `{', '.join(summary.get('operator_conditions_true', []))}`. |"
             ),
             (
@@ -257,6 +268,10 @@ def _checks(rows: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         _check("operator_has_hpa", rows["operator"].get("has_hpa"), True, "is"),
         _check("operator_has_repair_cronjob", rows["operator"].get("has_repair_cronjob"), True, "is"),
         _check("operator_has_memory_os_cronjob", rows["operator"].get("has_memory_os_cronjob"), True, "is"),
+        _check("operator_controller_redundancy", rows["operator"].get("operator_replicas"), 2, ">="),
+        _check("operator_leader_election", rows["operator"].get("operator_leader_election"), True, "is"),
+        _check("operator_lease_rbac", rows["operator"].get("operator_lease_rbac"), True, "is"),
+        _check("operator_cross_node_anti_affinity", rows["operator"].get("operator_cross_node_anti_affinity"), True, "is"),
         _check("operator_replicas_match_capacity", rows["operator"].get("statefulset_replicas"), rows["operator"].get("capacity_required_replicas"), "=="),
         _check("operator_capacity_within_headroom", rows["operator"].get("status_capacity_within_headroom"), True, "is"),
         _check("operator_rebalance_ready", rows["operator"].get("status_rebalance_ready"), True, "is"),

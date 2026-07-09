@@ -1,0 +1,130 @@
+name: kubernetes-operator-smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wavemind/k8s_operator.py"
+      - "wavemind/cli.py"
+      - "Dockerfile"
+      - "deploy/kind/**"
+      - "deploy/operator/**"
+      - "benchmarks/kubernetes_operator_smoke.py"
+      - "tests/test_k8s_operator.py"
+      - "tests/test_kubernetes_operator_smoke.py"
+      - ".github/workflows/kubernetes-operator-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  operator-failover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KIND_VERSION: v0.31.0
+      KIND_NODE_IMAGE: kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f
+      CLUSTER_NAME: wavemind-ci
+      NAMESPACE: wavemind-system
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.35.0
+
+      - name: Install WaveMind and kind
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          curl --fail --location --silent --show-error \
+            -o kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64"
+          curl --fail --location --silent --show-error \
+            -o kind.sha256 "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64.sha256"
+          echo "$(cat kind.sha256)  kind" | sha256sum --check --status
+          sudo install -m 0755 kind /usr/local/bin/kind
+          kind version
+          kubectl version --client
+
+      - name: Create four-node Kubernetes cluster
+        run: |
+          kind create cluster \
+            --name "$CLUSTER_NAME" \
+            --config deploy/kind/operator-smoke.yaml \
+            --image "$KIND_NODE_IMAGE" \
+            --wait 180s
+          kubectl get nodes -o wide
+
+      - name: Build and load WaveMind image
+        run: |
+          docker build --tag wavemind:ci .
+          kind load docker-image wavemind:ci --name "$CLUSTER_NAME"
+
+      - name: Install redundant WaveMind operator
+        run: |
+          python -m wavemind.cli operator-bundle \
+            --namespace "$NAMESPACE" \
+            --operator-image wavemind:ci \
+            --operator-replicas 2 \
+            --operator-interval-seconds 5 \
+            --lease-duration-seconds 15 \
+            --sample-name wavemind-ci \
+            --sample-image wavemind:ci \
+            --sample-index numpy \
+            --sample-replicas 3 \
+            --sample-replication-factor 2 \
+            --sample-namespace-count 32 \
+            --out /tmp/wavemind-operator-bundle.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          bundle = json.loads(Path("/tmp/wavemind-operator-bundle.json").read_text())
+          cluster = next(item for item in bundle["items"] if item["kind"] == "WaveMindCluster")
+          bootstrap = {
+              "apiVersion": "v1",
+              "kind": "List",
+              "items": [item for item in bundle["items"] if item["kind"] != "WaveMindCluster"],
+          }
+          Path("/tmp/wavemind-operator-bootstrap.json").write_text(json.dumps(bootstrap))
+          Path("/tmp/wavemind-cluster.json").write_text(json.dumps(cluster))
+          PY
+          kubectl create namespace "$NAMESPACE"
+          kubectl apply -f /tmp/wavemind-operator-bootstrap.json
+          kubectl wait --for=condition=Established \
+            crd/wavemindclusters.memory.wavemind.ai --timeout=120s
+          kubectl apply -f /tmp/wavemind-cluster.json
+
+      - name: Run Kubernetes leader and pod failure drill
+        run: |
+          python benchmarks/kubernetes_operator_smoke.py \
+            --namespace "$NAMESPACE" \
+            --cluster-name wavemind-ci \
+            --timeout-seconds 240 \
+            --output benchmarks/kubernetes_operator_smoke_ci_results.json
+
+      - name: Capture diagnostics
+        if: always()
+        run: |
+          kubectl get nodes,pods,statefulsets,deployments,leases,wavemindclusters \
+            -A -o wide || true
+          kubectl describe deployment/wavemind-operator -n "$NAMESPACE" || true
+          kubectl logs deployment/wavemind-operator -n "$NAMESPACE" \
+            --all-pods=true --prefix=true --tail=300 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kubernetes-operator-smoke
+          path: benchmarks/kubernetes_operator_smoke_ci_results.json
+          if-no-files-found: warn
+
+      - name: Delete kind cluster
+        if: always()
+        run: kind delete cluster --name "$CLUSTER_NAME"

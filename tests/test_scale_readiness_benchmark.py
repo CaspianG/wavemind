@@ -49,6 +49,12 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind control-plane consensus"]["final_revision"] == 2
     assert results["WaveMind Kubernetes operator"]["bundle_has_crd"] is True
     assert results["WaveMind Kubernetes operator"]["bundle_has_operator_deployment"] is True
+    assert results["WaveMind Kubernetes operator"]["operator_replicas"] >= 2
+    assert results["WaveMind Kubernetes operator"]["operator_rolling_update"] is True
+    assert results["WaveMind Kubernetes operator"]["operator_leader_election"] is True
+    assert results["WaveMind Kubernetes operator"]["operator_lease_backend"] == "coordination.k8s.io/v1"
+    assert results["WaveMind Kubernetes operator"]["operator_lease_rbac"] is True
+    assert results["WaveMind Kubernetes operator"]["operator_cross_node_anti_affinity"] is True
     assert results["WaveMind Kubernetes operator"]["has_service"] is True
     assert results["WaveMind Kubernetes operator"]["has_statefulset"] is True
     assert results["WaveMind Kubernetes operator"]["has_hpa"] is True

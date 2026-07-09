@@ -45,6 +45,11 @@ def test_cluster_autoscale_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["operator_replicas"] == (
         payload["summary"]["operator_required_replicas"]
     )
+    assert payload["summary"]["operator_controller_replicas"] >= 2
+    assert payload["summary"]["operator_leader_election"] is True
+    assert payload["summary"]["operator_lease_backend"] == "coordination.k8s.io/v1"
+    assert payload["summary"]["operator_lease_rbac"] is True
+    assert payload["summary"]["operator_cross_node_anti_affinity"] is True
     assert payload["summary"]["operator_memory_os_ready"] is True
     assert payload["summary"]["operator_memory_os_blocks_missing_redis"] is True
     assert payload["summary"]["control_plane_ok"] is True
