@@ -49,6 +49,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    cluster_admission = _load_json(
+        root / "benchmarks" / "cluster_admission_results.json",
+        load_errors,
+        required=False,
+    )
     active_active_admission = _load_json(
         root / "benchmarks" / "active_active_admission_results.json",
         load_errors,
@@ -136,6 +141,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
         "benchmarks/strict_evidence_readiness_results.json": strict_evidence_readiness,
+        "benchmarks/cluster_admission_results.json": cluster_admission,
         "benchmarks/active_active_admission_results.json": active_active_admission,
         "benchmarks/serverless_admission_results.json": serverless_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
@@ -331,6 +337,16 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "checks": strict_evidence_readiness.get("checks", []),
             "requirements": strict_evidence_readiness.get("requirements", []),
             "claim_boundary": strict_evidence_readiness.get("claim_boundary", ""),
+        },
+        "cluster_admission": {
+            "schema": cluster_admission.get("schema"),
+            "status": cluster_admission.get("status", "missing"),
+            "admitted": cluster_admission.get("admitted", False),
+            "claim_boundary": cluster_admission.get("claim_boundary", ""),
+            "summary": cluster_admission.get("summary", {}),
+            "required_evidence": cluster_admission.get("required_evidence", {}),
+            "requested_evidence": cluster_admission.get("requested_evidence", {}),
+            "preflight": cluster_admission.get("preflight", {}),
         },
         "active_active_admission": {
             "schema": active_active_admission.get("schema"),

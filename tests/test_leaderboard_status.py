@@ -271,6 +271,25 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "Readiness report only" in payload["strict_evidence_readiness"][
         "claim_boundary"
     ]
+    assert payload["cluster_admission"]["schema"] == (
+        "wavemind.cluster_admission.v1"
+    )
+    assert payload["cluster_admission"]["status"] in {
+        "admitted",
+        "plan_only",
+        "blocked",
+    }
+    assert payload["cluster_admission"]["admitted"] is False
+    assert payload["cluster_admission"]["claim_boundary"] == (
+        "external_http_cluster_evidence_required"
+    )
+    assert payload["cluster_admission"]["summary"]["strict_status"] == (
+        "action_required"
+    )
+    assert payload["cluster_admission"]["required_evidence"]["id"] == (
+        "external_http_cluster"
+    )
+    assert payload["cluster_admission"]["requested_evidence"]["status"] == "fail"
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
     )
@@ -352,6 +371,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
     assert "benchmarks/scale_gap_results.json" in payload["source_files"]
     assert "benchmarks/strict_evidence_readiness_results.json" in payload["source_files"]
+    assert "benchmarks/cluster_admission_results.json" in payload["source_files"]
     assert "benchmarks/active_active_admission_results.json" in payload["source_files"]
     assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
