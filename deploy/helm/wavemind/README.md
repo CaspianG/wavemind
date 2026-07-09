@@ -8,6 +8,9 @@ can scale the API StatefulSet when metrics-server is available.
 
 The chart uses the official GitHub Container Registry image by default. Override
 `image.repository` and `image.tag` when using a private registry.
+The API container starts through `wavemind serve`, so the same production
+admission guard used by CI and release gates can block unproven large-scale
+deployments before the pod binds its HTTP port.
 
 ```sh
 helm install wavemind ./deploy/helm/wavemind
@@ -75,3 +78,18 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
 
 CPU and memory utilization-based HPA needs container resource requests. Without
 requests, Kubernetes can render the HPA but cannot calculate utilization.
+
+For 10M, 50M, or 100M memory targets, enable the startup admission guard and
+mount the strict evidence bundle at `productionAdmission.evidenceRoot`:
+
+```sh
+helm upgrade --install wavemind ./deploy/helm/wavemind \
+  --set productionAdmission.enabled=true \
+  --set productionAdmission.targetMemories=100000000 \
+  --set productionAdmission.engine=qdrant-sharded-service \
+  --set productionAdmission.evidenceRoot=/evidence
+```
+
+If the matching strict evidence artifact is missing or failing, the API exits
+before opening port 8000. This prevents a Kubernetes rollout from advertising
+100M-scale readiness before the checked production evidence exists.

@@ -25,4 +25,4 @@ RUN if [ "$INSTALL_PRODUCTION" = "true" ]; then pip install --no-cache-dir -e ".
 VOLUME ["/data", "/backups"]
 EXPOSE 8000
 
-CMD ["uvicorn", "wavemind.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]

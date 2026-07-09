@@ -34,6 +34,8 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "maxReplicas: 12" in values
     assert "memoryOs:" in values
     assert "strictPlan: true" in values
+    assert "productionAdmission:" in values
+    assert "evidenceRoot: /evidence" in values
 
 
 def test_helm_chart_templates_define_cluster_network_and_state():
@@ -48,9 +50,15 @@ def test_helm_chart_templates_define_cluster_network_and_state():
     assert "serviceName: {{ include \"wavemind.headlessServiceName\" . }}" in statefulset
     assert "volumeClaimTemplates:" in statefulset
     assert "WAVEMIND_DB" in statefulset
+    assert "command:" in statefulset
+    assert "- wavemind" in statefulset
+    assert "- serve" in statefulset
     assert "WAVEMIND_RECOVERY_JOURNAL" in statefulset
     assert "WAVEMIND_API_KEYS" in statefulset
     assert "WAVEMIND_ADMIN_KEYS" in statefulset
+    assert "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION" in statefulset
+    assert "WAVEMIND_PRODUCTION_TARGET_MEMORIES" in statefulset
+    assert "WAVEMIND_PRODUCTION_ADMISSION_ROOT" in statefulset
     assert "tcpSocket:" in statefulset
     assert "kind: Service" in service
     assert "clusterIP: None" in headless
@@ -117,6 +125,22 @@ def test_helm_chart_hpa_is_optional_and_targets_statefulset():
     assert "targetCPUUtilizationPercentage" in hpa
     assert "targetMemoryUtilizationPercentage" in hpa
     assert "--set autoscaling.enabled=true" in readme
+
+
+def test_helm_chart_documents_production_admission_startup_guard():
+    readme = read_chart_file("README.md")
+    values = read_chart_file("values.yaml")
+    statefulset = read_chart_file("templates/statefulset.yaml")
+
+    assert "productionAdmission:" in values
+    assert "targetMemories: 0" in values
+    assert "The API container starts through `wavemind serve`" in readme
+    assert "--set productionAdmission.enabled=true" in readme
+    assert "--set productionAdmission.targetMemories=100000000" in readme
+    assert "before opening port 8000" in readme
+    assert "{{- if .Values.productionAdmission.enabled }}" in statefulset
+    assert ".Values.productionAdmission.targetMemories" in statefulset
+    assert ".Values.productionAdmission.evidenceRoot" in statefulset
 
 
 def test_helm_chart_auth_secret_is_optional_but_supported():

@@ -408,6 +408,8 @@ jobs:
             --set autoscaling.enabled=true \
             --set autoscaling.maxReplicas=12 \
             --set memoryOs.enabled=true \
+            --set productionAdmission.enabled=true \
+            --set productionAdmission.targetMemories=100000000 \
             > /tmp/wavemind-chart.yaml
           grep -q "kind: StatefulSet" /tmp/wavemind-chart.yaml
           grep -q "kind: CronJob" /tmp/wavemind-chart.yaml
@@ -415,4 +417,5 @@ jobs:
           grep -q "cluster-repair" /tmp/wavemind-chart.yaml
           grep -q "memory-os" /tmp/wavemind-chart.yaml
           grep -q "/memory-os/plan" /tmp/wavemind-chart.yaml
+          grep -q "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION" /tmp/wavemind-chart.yaml
           grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml

@@ -52,6 +52,13 @@
       "runOnAllReplicas": false,
       "timeoutSeconds": 30.0
     },
+    "productionAdmission": {
+      "enabled": true,
+      "targetMemories": 10000000,
+      "engine": "qdrant-sharded-service",
+      "deployment": "production",
+      "evidenceRoot": "/evidence"
+    },
     "controlPlane": {
       "consensus": {
         "enabled": true,

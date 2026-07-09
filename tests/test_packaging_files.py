@@ -125,6 +125,8 @@ def test_dockerfile_copies_readme_before_editable_install():
     assert dockerfile.index(readme_copy) < dockerfile.index(editable_install)
     assert "ARG INSTALL_PRODUCTION=false" in dockerfile
     assert "build-essential" in dockerfile
+    assert 'CMD ["wavemind", "serve", "--host", "0.0.0.0", "--port", "8000"]' in dockerfile
+    assert 'CMD ["uvicorn", "wavemind.api:create_app"' not in dockerfile
 
 
 def test_github_actions_runs_pytest_on_main_for_python_310_and_311():

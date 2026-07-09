@@ -68,6 +68,7 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     spec_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"]
     assert "autoscaling" in spec_props
     assert "controlPlane" in spec_props
+    assert "productionAdmission" in spec_props
     status_props = crd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["status"]
     assert crd["spec"]["versions"][0]["subresources"] == {"status": {}}
     assert status_props["x-kubernetes-preserve-unknown-fields"] is True
@@ -81,6 +82,11 @@ def test_custom_resource_definition_declares_namespaced_wavemindcluster():
     assert memory_os_props["cacheMode"]["enum"] == ["auto", "disabled", "local", "redis"]
     assert "lockRequired" in memory_os_props
     assert "runOnAllReplicas" in memory_os_props
+    production_admission_props = spec_props["productionAdmission"]["properties"]
+    assert "enabled" in production_admission_props
+    assert "targetMemories" in production_admission_props
+    assert "engine" in production_admission_props
+    assert "evidenceRoot" in production_admission_props
     assert "maxReplicas" in spec_props["autoscaling"]["properties"]
     assert "targetMemories" in spec_props["autoscaling"]["properties"]
     assert "maxMemoriesPerNode" in spec_props["autoscaling"]["properties"]
@@ -110,6 +116,8 @@ def test_operator_reconcile_renders_cluster_resources():
     assert resources["StatefulSet"]["spec"]["serviceName"] == "wm-prod-headless"
     container = resources["StatefulSet"]["spec"]["template"]["spec"]["containers"][0]
     assert container["image"] == "ghcr.io/caspiang/wavemind:2.4.3"
+    assert container["command"] == ["wavemind"]
+    assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
     assert {"name": "WAVEMIND_REPLICATION_FACTOR", "value": "2"} in container["env"]
     assert resources["CronJob"]["metadata"]["name"] == "wm-prod-cluster-repair"
     repair_args = resources["CronJob"]["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["args"]
@@ -146,6 +154,41 @@ def test_operator_reconcile_renders_horizontal_pod_autoscaler_when_enabled():
     assert metric_names == ["cpu", "memory"]
 
 
+def test_operator_reconcile_renders_explicit_production_admission_guard():
+    spec = WaveMindClusterSpec(
+        name="wm-guarded",
+        namespace="wavemind-system",
+        replicas=3,
+        replication_factor=2,
+        namespace_count=8,
+        production_admission_enabled=True,
+        production_admission_target_memories=100_000_000,
+        production_admission_engine="qdrant-sharded-service",
+        production_admission_root="/evidence",
+    )
+
+    resource = spec.custom_resource()
+    assert resource["spec"]["productionAdmission"]["enabled"] is True
+    assert resource["spec"]["productionAdmission"]["targetMemories"] == 100_000_000
+
+    payload = operator_reconcile(resource)
+    statefulset = {
+        resource["kind"]: resource for resource in payload["items"]
+    }["StatefulSet"]
+    container = statefulset["spec"]["template"]["spec"]["containers"][0]
+    env = {item["name"]: item.get("value") for item in container["env"]}
+
+    assert container["command"] == ["wavemind"]
+    assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    assert env["WAVEMIND_REQUIRE_PRODUCTION_ADMISSION"] == "1"
+    assert env["WAVEMIND_PRODUCTION_TARGET_MEMORIES"] == "100000000"
+    assert env["WAVEMIND_PRODUCTION_ENGINE"] == "qdrant-sharded-service"
+    assert env["WAVEMIND_PRODUCTION_ADMISSION_ROOT"] == "/evidence"
+    assert payload["operatorStatus"]["productionAdmission"]["enabled"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["configured"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["ready"] is True
+
+
 def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     spec = WaveMindClusterSpec(
         name="wm-capacity",
@@ -166,6 +209,8 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     statefulset = resources["StatefulSet"]
     hpa = resources["HorizontalPodAutoscaler"]
     configmap = resources["ConfigMap"]
+    container = statefulset["spec"]["template"]["spec"]["containers"][0]
+    env = {item["name"]: item.get("value") for item in container["env"]}
     annotations = statefulset["metadata"]["annotations"]
     rebalance_summary = json.loads(configmap["data"]["rebalance-summary.json"])
     rebalance_preview = json.loads(configmap["data"]["rebalance-batches-preview.json"])
@@ -176,6 +221,9 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
     assert annotations["memory.wavemind.ai/capacity-target-memories"] == "10000000"
     assert int(annotations["memory.wavemind.ai/capacity-required-replicas"]) == statefulset["spec"]["replicas"]
     assert int(annotations["memory.wavemind.ai/capacity-target-max-node-memories"]) <= 700_000
+    assert env["WAVEMIND_REQUIRE_PRODUCTION_ADMISSION"] == "1"
+    assert env["WAVEMIND_PRODUCTION_TARGET_MEMORIES"] == "10000000"
+    assert env["WAVEMIND_PRODUCTION_ADMISSION_ROOT"] == "/evidence"
     assert configmap["metadata"]["name"] == "wm-capacity-rebalance-plan"
     assert configmap["metadata"]["annotations"]["memory.wavemind.ai/rebalance-status"] == "ready"
     assert configmap["metadata"]["annotations"]["memory.wavemind.ai/rebalance-full-plan"] == "true"
@@ -201,10 +249,15 @@ def test_operator_reconcile_uses_capacity_target_for_statefulset_and_hpa():
         "RebalancePlanned",
         "RepairScheduled",
         "MemoryOSReady",
+        "ProductionAdmissionReady",
         "ControlPlaneReady",
     }
     assert payload["operatorStatus"]["memoryOs"]["enabled"] is False
     assert payload["operatorStatus"]["memoryOs"]["ready"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["enabled"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["required"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["ready"] is True
+    assert payload["operatorStatus"]["productionAdmission"]["targetMemories"] == 10_000_000
     assert payload["operatorStatus"]["controlPlane"]["ready"] is True
     assert payload["operatorStatus"]["controlPlane"]["profile"]["minority_commit_blocked"] is True
 
@@ -536,6 +589,31 @@ def test_operator_cli_sample_bundle_and_reconcile(tmp_path):
     assert memory_os_sample["spec"]["memoryOs"]["enabled"] is True
     assert memory_os_sample["spec"]["memoryOs"]["targetMemories"] == 2_000_000
     assert memory_os_sample["spec"]["memoryOs"]["runOnAllReplicas"] is False
+
+    guarded_sample = json.loads(
+        run_cli(
+            "operator-sample",
+            "--name",
+            "wm-cli-guarded",
+            "--namespace",
+            "wavemind-system",
+            "--production-admission",
+            "--production-admission-target-memories",
+            "100000000",
+            "--production-admission-engine",
+            "qdrant-sharded-service",
+            "--production-admission-root",
+            "/evidence",
+            "--json",
+        ).stdout
+    )
+    assert guarded_sample["spec"]["productionAdmission"] == {
+        "enabled": True,
+        "deployment": "production",
+        "evidenceRoot": "/evidence",
+        "targetMemories": 100_000_000,
+        "engine": "qdrant-sharded-service",
+    }
 
 
 def test_operator_cli_status_renders_observed_conditions(tmp_path):

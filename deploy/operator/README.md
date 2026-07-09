@@ -70,6 +70,31 @@ Operator status includes a `MemoryOSReady` condition plus
 `status.memoryOs.redisRequired` and `status.memoryOs.redisConfigured`, so unsafe
 multi-replica Memory OS scheduling is visible before it mutates cluster state.
 
+Production admission is the API startup guard for large clusters. When
+`spec.autoscaling.targetMemories` reaches 10M or more, the reconciler injects
+`WAVEMIND_REQUIRE_PRODUCTION_ADMISSION=1` into the StatefulSet automatically.
+You can also configure it explicitly:
+
+```json
+{
+  "spec": {
+    "productionAdmission": {
+      "enabled": true,
+      "targetMemories": 100000000,
+      "engine": "qdrant-sharded-service",
+      "deployment": "production",
+      "evidenceRoot": "/evidence"
+    }
+  }
+}
+```
+
+The API pod starts through `wavemind serve`; if the matching strict evidence
+artifact is missing or failing under `evidenceRoot`, the process exits before
+binding port 8000. Operator status includes `ProductionAdmissionReady` and
+`status.productionAdmission`, so rollout controllers can see whether the guard
+is configured.
+
 Capacity autoscaling is part of the custom resource. When
 `spec.autoscaling.targetMemories` is set, the reconciler uses WaveMind's
 cluster autoscale planner to raise the StatefulSet replica count and HPA

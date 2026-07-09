@@ -42,6 +42,13 @@ runtime:
   cacheTtlSeconds: "60"
   redisUrl: ""
 
+productionAdmission:
+  enabled: false
+  targetMemories: 0
+  engine: ""
+  deployment: production
+  evidenceRoot: /evidence
+
 otel:
   enabled: false
   exporter: otlp

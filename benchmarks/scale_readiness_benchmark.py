@@ -784,6 +784,11 @@ def run_operator_profile(
     memory_os_script = str(memory_os_container["args"][0])
     hpa = next(resource for resource in resources if resource["kind"] == "HorizontalPodAutoscaler")
     statefulset = next(resource for resource in resources if resource["kind"] == "StatefulSet")
+    statefulset_container = statefulset["spec"]["template"]["spec"]["containers"][0]
+    statefulset_env = {
+        item["name"]: item.get("value")
+        for item in statefulset_container.get("env", [])
+    }
     rebalance_configmap = next(resource for resource in resources if resource["kind"] == "ConfigMap")
     capacity_annotations = dict(statefulset["metadata"].get("annotations") or {})
     rebalance_annotations = dict(rebalance_configmap["metadata"].get("annotations") or {})
@@ -851,6 +856,21 @@ def run_operator_profile(
         "status_memory_os_redis_required": status["memoryOs"]["redisRequired"],
         "status_memory_os_redis_configured": status["memoryOs"]["redisConfigured"],
         "status_memory_os_cronjob": status["memoryOs"]["cronJobName"],
+        "production_admission_env_enabled": (
+            statefulset_env.get("WAVEMIND_REQUIRE_PRODUCTION_ADMISSION") == "1"
+        ),
+        "production_admission_env_target_memories": int(
+            statefulset_env.get("WAVEMIND_PRODUCTION_TARGET_MEMORIES", "0")
+        ),
+        "production_admission_env_root": statefulset_env.get(
+            "WAVEMIND_PRODUCTION_ADMISSION_ROOT"
+        ),
+        "status_production_admission_enabled": status["productionAdmission"]["enabled"],
+        "status_production_admission_required": status["productionAdmission"]["required"],
+        "status_production_admission_ready": status["productionAdmission"]["ready"],
+        "status_production_admission_target_memories": status["productionAdmission"][
+            "targetMemories"
+        ],
         "control_plane_ready": status["controlPlane"]["ready"],
         "control_plane_voters": status["controlPlane"]["profile"]["voters_initial"],
         "control_plane_final_revision": status["controlPlane"]["profile"]["final_revision"],
@@ -4465,6 +4485,8 @@ def main() -> int:
             print(f"| operator | control_plane_ready | {result['control_plane_ready']} |")
             print(f"| operator | control_plane_voters | {result['control_plane_voters']} |")
             print(f"| operator | control_plane_minority_blocked | {result['control_plane_minority_blocked']} |")
+            print(f"| operator | production_admission_ready | {result['status_production_admission_ready']} |")
+            print(f"| operator | production_admission_target_memories | {result['status_production_admission_target_memories']} |")
             print(f"| operator | autoscaling_max_replicas | {result['autoscaling_max_replicas']} |")
             print(f"| operator | repair_namespaces | {result['repair_namespaces']} |")
         elif result["engine"] == "WaveMind serverless plan":

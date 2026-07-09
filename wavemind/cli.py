@@ -126,18 +126,26 @@ def build_parser() -> argparse.ArgumentParser:
             'And:  wavemind query "What does Andrey do?" --namespace demo'
         ),
     )
-    parser.add_argument("--db", default=None, help="SQLite database path")
+    parser.add_argument(
+        "--db",
+        default=os.environ.get("WAVEMIND_DB"),
+        help="SQLite database path",
+    )
     parser.add_argument(
         "--recovery-journal",
         default=os.environ.get("WAVEMIND_RECOVERY_JOURNAL"),
         help="Append remember/forget/purge mutations to a SQLite recovery journal JSONL file.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("--store", default=None, choices=["sqlite", "postgres"])
-    parser.add_argument("--postgres-dsn", default=None)
+    parser.add_argument(
+        "--store",
+        default=os.environ.get("WAVEMIND_STORE"),
+        choices=["sqlite", "postgres"],
+    )
+    parser.add_argument("--postgres-dsn", default=os.environ.get("WAVEMIND_POSTGRES_DSN"))
     parser.add_argument(
         "--index",
-        default="numpy",
+        default=os.environ.get("WAVEMIND_INDEX", "numpy"),
         choices=[
             "numpy",
             "quantized",
@@ -148,13 +156,24 @@ def build_parser() -> argparse.ArgumentParser:
             "qdrant",
         ],
     )
-    parser.add_argument("--encoder", default="hash", choices=["hash", "sentence"])
+    parser.add_argument(
+        "--encoder",
+        default=os.environ.get("WAVEMIND_ENCODER", "hash"),
+        choices=["hash", "sentence"],
+    )
     parser.add_argument(
         "--model",
-        default="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        default=os.environ.get(
+            "WAVEMIND_MODEL",
+            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        ),
         help="sentence-transformers model name when --encoder sentence is used",
     )
-    parser.add_argument("--score-threshold", type=float, default=0.0)
+    parser.add_argument(
+        "--score-threshold",
+        type=float,
+        default=float(os.environ.get("WAVEMIND_SCORE_THRESHOLD", "0.0")),
+    )
     parser.add_argument("--width", type=int, default=128)
     parser.add_argument("--height", type=int, default=128)
     parser.add_argument("--layers", type=int, default=6)
@@ -3837,6 +3856,11 @@ def _add_operator_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--memory-os-lock-prefix", default="wavemind:memory-os:lock")
     parser.add_argument("--memory-os-run-on-one-replica", action="store_true")
     parser.add_argument("--memory-os-timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--production-admission", action="store_true")
+    parser.add_argument("--production-admission-target-memories", type=int)
+    parser.add_argument("--production-admission-engine")
+    parser.add_argument("--production-admission-deployment", default="production")
+    parser.add_argument("--production-admission-root", default="/evidence")
     parser.add_argument("--no-control-plane-consensus", action="store_true")
     parser.add_argument("--control-plane-lease-ttl-seconds", type=float, default=30.0)
     parser.add_argument("--control-plane-config-revision", type=int, default=0)
@@ -3889,6 +3913,11 @@ def _operator_spec_from_args(args: argparse.Namespace) -> WaveMindClusterSpec:
         memory_os_lock_prefix=args.memory_os_lock_prefix,
         memory_os_run_on_all_replicas=not args.memory_os_run_on_one_replica,
         memory_os_timeout_seconds=args.memory_os_timeout_seconds,
+        production_admission_enabled=args.production_admission,
+        production_admission_target_memories=args.production_admission_target_memories,
+        production_admission_engine=args.production_admission_engine,
+        production_admission_deployment=args.production_admission_deployment,
+        production_admission_root=args.production_admission_root,
         control_plane_consensus_enabled=not args.no_control_plane_consensus,
         control_plane_lease_ttl_seconds=args.control_plane_lease_ttl_seconds,
         control_plane_config_revision=args.control_plane_config_revision,

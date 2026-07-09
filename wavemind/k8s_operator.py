@@ -19,6 +19,7 @@ API_VERSION = "v1alpha1"
 RESOURCE_KIND = "WaveMindCluster"
 RESOURCE_PLURAL = "wavemindclusters"
 SERVICE_ACCOUNT_ROOT = Path("/var/run/secrets/kubernetes.io/serviceaccount")
+PRODUCTION_ADMISSION_MIN_STRICT_MEMORIES = 10_000_000
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,11 @@ class WaveMindClusterSpec:
     memory_os_lock_prefix: str = "wavemind:memory-os:lock"
     memory_os_run_on_all_replicas: bool = True
     memory_os_timeout_seconds: float = 30.0
+    production_admission_enabled: bool = False
+    production_admission_target_memories: int | None = None
+    production_admission_engine: str | None = None
+    production_admission_deployment: str = "production"
+    production_admission_root: str = "/evidence"
     control_plane_consensus_enabled: bool = True
     control_plane_lease_ttl_seconds: float = 30.0
     control_plane_config_revision: int = 0
@@ -171,6 +177,19 @@ class WaveMindClusterSpec:
                 "autoscaling_max_replicas",
                 max(self.autoscaling_max_replicas, required_replicas),
             )
+        if (
+            self.production_admission_target_memories is not None
+            and self.production_admission_target_memories < 0
+        ):
+            raise ValueError("production_admission_target_memories cannot be negative")
+        if not self.production_admission_deployment.strip():
+            raise ValueError("production_admission_deployment must not be empty")
+        if not self.production_admission_root.strip():
+            raise ValueError("production_admission_root must not be empty")
+        if self.production_admission_enabled and self.production_admission_target() <= 0:
+            raise ValueError(
+                "production_admission_target_memories is required when production admission is enabled"
+            )
         if self.replication_factor > self.replicas:
             raise ValueError("replication_factor cannot exceed replicas")
 
@@ -183,6 +202,7 @@ class WaveMindClusterSpec:
         auth = dict(spec.get("auth") or {})
         repair = dict(spec.get("repair") or {})
         memory_os = dict(spec.get("memoryOs") or {})
+        production_admission = dict(spec.get("productionAdmission") or {})
         control_plane = dict(spec.get("controlPlane") or {})
         consensus = dict(control_plane.get("consensus") or {})
         autoscaling = dict(spec.get("autoscaling") or {})
@@ -232,6 +252,15 @@ class WaveMindClusterSpec:
             memory_os_lock_prefix=str(memory_os.get("lockPrefix", "wavemind:memory-os:lock")),
             memory_os_run_on_all_replicas=bool(memory_os.get("runOnAllReplicas", True)),
             memory_os_timeout_seconds=float(memory_os.get("timeoutSeconds", 30.0)),
+            production_admission_enabled=bool(production_admission.get("enabled", False)),
+            production_admission_target_memories=_optional_int(
+                production_admission.get("targetMemories")
+            ),
+            production_admission_engine=_optional_string(production_admission.get("engine")),
+            production_admission_deployment=str(
+                production_admission.get("deployment", "production")
+            ),
+            production_admission_root=str(production_admission.get("evidenceRoot", "/evidence")),
             control_plane_consensus_enabled=bool(consensus.get("enabled", True)),
             control_plane_lease_ttl_seconds=float(consensus.get("leaseTtlSeconds", 30.0)),
             control_plane_config_revision=int(consensus.get("configRevision", 0)),
@@ -379,6 +408,17 @@ class WaveMindClusterSpec:
             if self.memory_os_observed_p99_ms is not None:
                 memory_os["observedP99Ms"] = self.memory_os_observed_p99_ms
             spec["memoryOs"] = memory_os
+        if self.production_admission_enabled or self.production_admission_target_memories is not None:
+            production_admission: dict[str, Any] = {
+                "enabled": self.production_admission_enabled,
+                "deployment": self.production_admission_deployment,
+                "evidenceRoot": self.production_admission_root,
+            }
+            if self.production_admission_target_memories is not None:
+                production_admission["targetMemories"] = self.production_admission_target_memories
+            if self.production_admission_engine:
+                production_admission["engine"] = self.production_admission_engine
+            spec["productionAdmission"] = production_admission
         if self.redis_url:
             spec["cache"]["redisUrl"] = self.redis_url
         if self.auth_secret:
@@ -487,6 +527,28 @@ class WaveMindClusterSpec:
             self.replicas > 1 or target >= 1_000_000
         )
 
+    def production_admission_target(self) -> int:
+        return int(
+            self.production_admission_target_memories
+            if self.production_admission_target_memories is not None
+            else self.autoscaling_target_memories
+            if self.autoscaling_target_memories is not None
+            else self.memory_os_target_memories
+            if self.memory_os_target_memories is not None
+            else 0
+        )
+
+    def production_admission_required(self) -> bool:
+        return self.production_admission_target() >= PRODUCTION_ADMISSION_MIN_STRICT_MEMORIES
+
+    def production_admission_guard_enabled(self) -> bool:
+        return self.production_admission_enabled or self.production_admission_required()
+
+    def production_admission_ready(self) -> bool:
+        if not self.production_admission_guard_enabled():
+            return True
+        return self.production_admission_target() > 0 and bool(self.production_admission_root.strip())
+
     def as_resource_list(self, resources: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
         return {
             "apiVersion": "v1",
@@ -548,6 +610,31 @@ class WaveMindClusterSpec:
         ]
         if self.redis_url:
             env.append({"name": "WAVEMIND_REDIS_URL", "value": self.redis_url})
+        if self.production_admission_guard_enabled():
+            env.extend(
+                [
+                    {"name": "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION", "value": "1"},
+                    {
+                        "name": "WAVEMIND_PRODUCTION_TARGET_MEMORIES",
+                        "value": str(self.production_admission_target()),
+                    },
+                    {
+                        "name": "WAVEMIND_PRODUCTION_DEPLOYMENT",
+                        "value": self.production_admission_deployment,
+                    },
+                    {
+                        "name": "WAVEMIND_PRODUCTION_ADMISSION_ROOT",
+                        "value": self.production_admission_root,
+                    },
+                ]
+            )
+            if self.production_admission_engine:
+                env.append(
+                    {
+                        "name": "WAVEMIND_PRODUCTION_ENGINE",
+                        "value": self.production_admission_engine,
+                    }
+                )
         if self.auth_secret:
             secret_ref = {
                 "secretKeyRef": {
@@ -566,6 +653,8 @@ class WaveMindClusterSpec:
             "name": "wavemind",
             "image": self.image,
             "imagePullPolicy": self.image_pull_policy,
+            "command": ["wavemind"],
+            "args": ["serve", "--host", "0.0.0.0", "--port", str(self.service_port)],
             "ports": [{"name": "http", "containerPort": self.service_port, "protocol": "TCP"}],
             "env": env,
             "livenessProbe": {
@@ -1006,6 +1095,19 @@ def custom_resource_definition() -> dict[str, Any]:
                                                 },
                                             },
                                         },
+                                        "productionAdmission": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {"type": "boolean"},
+                                                "targetMemories": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                },
+                                                "engine": {"type": "string"},
+                                                "deployment": {"type": "string"},
+                                                "evidenceRoot": {"type": "string"},
+                                            },
+                                        },
                                         "controlPlane": {
                                             "type": "object",
                                             "properties": {
@@ -1305,6 +1407,9 @@ def operator_status(
             and (not memory_os_requires_redis or bool(spec.redis_url))
         )
     )
+    production_admission_enabled = spec.production_admission_guard_enabled()
+    production_admission_required = spec.production_admission_required()
+    production_admission_ready = spec.production_admission_ready()
     control_plane = spec.control_plane_consensus_report()
     control_plane_ready = bool(control_plane.get("ready"))
     ready = (
@@ -1314,6 +1419,7 @@ def operator_status(
         and autoscaling_ready
         and repair_ready
         and memory_os_ready
+        and production_admission_ready
         and control_plane_ready
     )
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -1395,6 +1501,24 @@ def operator_status(
             timestamp,
         ),
         _operator_condition(
+            "ProductionAdmissionReady",
+            production_admission_ready,
+            (
+                "ProductionAdmissionGuardEnabled"
+                if production_admission_enabled
+                else "ProductionAdmissionNotRequired"
+            )
+            if production_admission_ready
+            else "ProductionAdmissionGuardRequired",
+            (
+                f"enabled={production_admission_enabled}; "
+                f"required={production_admission_required}; "
+                f"target_memories={spec.production_admission_target()}; "
+                f"evidence_root={spec.production_admission_root}"
+            ),
+            timestamp,
+        ),
+        _operator_condition(
             "ControlPlaneReady",
             control_plane_ready,
             "ConsensusLeaseSafe" if control_plane_ready else "ConsensusBlocked",
@@ -1422,6 +1546,11 @@ def operator_status(
         actions.append("Enable scheduled cluster repair for replicated namespace deployments.")
     if spec.memory_os_enabled and not memory_os_ready:
         actions.append("Configure cache.redisUrl before enabling production Memory OS scheduling.")
+    if not production_admission_ready:
+        actions.append(
+            "Enable productionAdmission before declaring 10M+ clusters ready; "
+            "the API startup guard must block unproven large-scale claims."
+        )
     if not control_plane_ready:
         actions.append("Enable and pass control-plane consensus safety before applying production config changes.")
     if not actions:
@@ -1495,6 +1624,16 @@ def operator_status(
             "lockRequired": spec.memory_os_lock_required,
             "strictPlan": spec.memory_os_strict_plan,
             "runOnAllReplicas": spec.memory_os_run_on_all_replicas,
+        },
+        "productionAdmission": {
+            "enabled": production_admission_enabled,
+            "configured": spec.production_admission_enabled,
+            "required": production_admission_required,
+            "ready": production_admission_ready,
+            "targetMemories": spec.production_admission_target(),
+            "engine": spec.production_admission_engine,
+            "deployment": spec.production_admission_deployment,
+            "evidenceRoot": spec.production_admission_root,
         },
         "controlPlane": control_plane,
         "conditions": conditions,
@@ -1651,6 +1790,8 @@ def operator_loop(
                     "memoryOsReady": dict(status.get("memoryOs") or {}).get("ready"),
                     "memoryOsRedisRequired": dict(status.get("memoryOs") or {}).get("redisRequired"),
                     "memoryOsRedisConfigured": dict(status.get("memoryOs") or {}).get("redisConfigured"),
+                    "productionAdmissionReady": dict(status.get("productionAdmission") or {}).get("ready"),
+                    "productionAdmissionEnabled": dict(status.get("productionAdmission") or {}).get("enabled"),
                     "controlPlaneReady": dict(status.get("controlPlane") or {}).get("ready"),
                 }
             )

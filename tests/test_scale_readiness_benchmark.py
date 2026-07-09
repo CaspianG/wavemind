@@ -82,6 +82,13 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
     assert results["WaveMind Kubernetes operator"]["status_memory_os_redis_required"] is True
     assert results["WaveMind Kubernetes operator"]["status_memory_os_redis_configured"] is True
     assert results["WaveMind Kubernetes operator"]["status_memory_os_cronjob"] == "wavemind-memory-os"
+    assert results["WaveMind Kubernetes operator"]["production_admission_env_enabled"] is True
+    assert results["WaveMind Kubernetes operator"]["production_admission_env_target_memories"] == 10_000_000
+    assert results["WaveMind Kubernetes operator"]["production_admission_env_root"] == "/evidence"
+    assert results["WaveMind Kubernetes operator"]["status_production_admission_enabled"] is True
+    assert results["WaveMind Kubernetes operator"]["status_production_admission_required"] is True
+    assert results["WaveMind Kubernetes operator"]["status_production_admission_ready"] is True
+    assert results["WaveMind Kubernetes operator"]["status_production_admission_target_memories"] == 10_000_000
     assert results["WaveMind Kubernetes operator"]["status_degraded_nodes"] == 0
     assert results["WaveMind Kubernetes operator"]["control_plane_ready"] is True
     assert results["WaveMind Kubernetes operator"]["control_plane_voters"] >= 3
@@ -92,6 +99,7 @@ def test_scale_readiness_benchmark_covers_cluster_cache_and_payloads(monkeypatch
         "CapacityPlanned",
         "ControlPlaneReady",
         "MemoryOSReady",
+        "ProductionAdmissionReady",
         "RebalancePlanned",
         "RepairScheduled",
         "ResourcesReady",
