@@ -74,6 +74,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    agent_impact = _load_json(
+        root / "benchmarks" / "agent_impact_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -117,6 +122,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
+        "benchmarks/agent_impact_results.json": agent_impact,
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -186,6 +192,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "summary": readiness.get("summary", {}),
         },
         "agent_quality": _agent_quality_status(agent_coherence),
+        "agent_impact": _agent_impact_status(agent_impact),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
@@ -475,6 +482,31 @@ def _agent_quality_status(payload: dict[str, Any]) -> dict[str, Any]:
             engine for engine in results if engine.startswith("WaveMind")
         ),
         "source": "benchmarks/agent_coherence_results.json",
+    }
+
+
+def _agent_impact_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    status = "missing"
+    if summary:
+        wins = int(summary.get("wavemind_primary_wins", 0) or 0)
+        benchmark_count = int(summary.get("benchmark_count", 0) or 0)
+        average_lift = float(summary.get("average_primary_lift", 0.0) or 0.0)
+        status = "pass" if benchmark_count > 0 and wins == benchmark_count and average_lift > 0 else "watch"
+    return {
+        "schema": payload.get("schema"),
+        "status": status,
+        "benchmark_count": summary.get("benchmark_count", 0),
+        "wavemind_row_count": summary.get("wavemind_row_count", 0),
+        "baseline_row_count": summary.get("baseline_row_count", 0),
+        "wavemind_primary_wins": summary.get("wavemind_primary_wins", 0),
+        "average_primary_lift": summary.get("average_primary_lift"),
+        "average_context_saved": summary.get("average_context_saved"),
+        "average_stale_safety_score": summary.get("average_stale_safety_score"),
+        "best_impact_profile": summary.get("best_impact_profile"),
+        "source_files": summary.get("source_files", []),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/agent_impact_results.json",
     }
 
 

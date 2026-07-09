@@ -140,6 +140,8 @@ def test_refresh_commands_include_public_leaderboard_and_evidence_gates():
 
     assert any("benchmarks/benchmark_registry.py" in command for command in commands)
     assert any("benchmarks/render_benchmark_leaderboard.py" in command for command in commands)
+    assert any("benchmarks/agent_impact_leaderboard.py" in command for command in commands)
+    assert any("benchmarks/cost_efficiency_leaderboard.py" in command for command in commands)
     assert any("benchmarks/render_benchmark_dashboard.py" in command for command in commands)
     assert any("benchmarks/production_readiness_gate.py" in command for command in commands)
     assert any("benchmarks/production_evidence_gate.py" in command for command in commands)

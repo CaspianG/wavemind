@@ -1,6 +1,6 @@
 # WaveMind Cost Efficiency Leaderboard
 
-Generated: `2026-07-09T02:58:33Z`.
+Generated: `2026-07-09T03:37:06Z`.
 
 Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.
 

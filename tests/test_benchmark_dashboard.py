@@ -32,6 +32,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "weekly schedule: true" in html
     assert "github pages deploy: true" in html
     assert "no scheduled bot commit to main: true" in html
+    assert "Agent Impact" in html
+    assert "Behavioral evidence: task success" in html
+    assert "WaveMind wins" in html
+    assert "benchmarks/AGENT_IMPACT.md" in html
     assert "Benchmark Leaderboard" in html
     assert "Evidence Source Status" in html
     assert "External HTTP active-active" in html

@@ -114,6 +114,9 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "render_benchmark_report.py" in workflow
     assert "render_benchmark_leaderboard.py" in workflow
     assert "render_benchmark_dashboard.py" in workflow
+    assert "agent_impact_leaderboard.py" in workflow
+    assert "benchmarks/agent_impact_results.json" in workflow
+    assert "benchmarks/AGENT_IMPACT.md" in workflow
     assert "cost_efficiency_leaderboard.py" in workflow
     assert "benchmarks/cost_efficiency_results.json" in workflow
     assert "benchmarks/COST_EFFICIENCY.md" in workflow
@@ -122,6 +125,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "docs/data/leaderboard-status.json" in workflow
     assert "tests/test_benchmark_dashboard.py" in workflow
     assert "tests/test_leaderboard_status.py" in workflow
+    assert "tests/test_agent_impact_leaderboard.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "production_evidence_gate.py" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow

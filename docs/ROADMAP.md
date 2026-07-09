@@ -107,6 +107,15 @@ policy matters more than raw vector-database scale:
   target memory count by target class, and exposes the same summary in
   `docs/data/leaderboard-status.json`. Planned rows remain cost/capacity
   contracts only until strict large-N result artifacts pass.
+- `benchmarks/agent_impact_leaderboard.py` now turns checked-in behavioral
+  artifacts into `benchmarks/agent_impact_results.json` and
+  `benchmarks/AGENT_IMPACT.md`. It ranks WaveMind variants across task success,
+  stale-fact safety, context savings, long-memory evidence retrieval, and
+  LongMemEval answer-quality smoke results, then exposes the same summary in
+  `docs/data/leaderboard-status.json` and the static dashboard. This is the
+  public evidence layer for "agents use fewer tokens and make fewer memory
+  mistakes"; it remains bounded to the listed scenarios until larger public
+  answer-quality runs are checked in.
 - `wavemind production-admission --target-memories ... --engine ...` is the
   deploy-facing large-N gate. It maps a requested 10M/50M/100M deployment to the
   required strict evidence profile, writes

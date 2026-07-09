@@ -24,6 +24,7 @@ purpose-built vector databases.
 | benchmark | result | artifact | reproduce |
 |---|---|---|---|
 | Agent coherence and token savings | On a 500-memory long user-history task simulation, WaveMind reaches `task success 0.92`, stale error rate `0.00`, context saved `0.93`, `9` coherent turns, and `2.65 ms` average query latency; WaveMind + Memory OS keeps the same task success while proving `1` hot query, `1` prewarmed query, `4` predictive-prefetch warmed queries, `5` priority predictions, and cache hit rate `0.24`; Static vector reaches `0.33` task success and stale error rate `0.73`; Chroma static reaches `0.33` task success and stale error rate `0.45`. | `benchmarks/agent_coherence_results.json` | `python benchmarks/agent_coherence_benchmark.py --memories 500 --engines wavemind wavemind-memory-os static chroma --output benchmarks/agent_coherence_results.json` |
+| Agent impact leaderboard | Aggregates checked-in behavioral evidence across `6` benchmark groups: agent coherence, dynamic-memory policy, long-term memory evidence, LoCoMo sentence evidence, LongMemEval evidence, and LongMemEval answer quality. WaveMind currently has `6/6` primary wins over the best non-WaveMind baseline inside each artifact, average primary lift `0.370`, average context saved `0.719`, and average stale-safety score `1.000`. | `benchmarks/agent_impact_results.json`, `benchmarks/AGENT_IMPACT.md` | `python benchmarks/agent_impact_leaderboard.py --output benchmarks/agent_impact_results.json --markdown-output benchmarks/AGENT_IMPACT.md` |
 | Dynamic memory policy | WaveMind reaches `precision@1 1.00` and `stale suppression 1.00`; Chroma static reaches `precision@1 0.57` and `stale suppression 0.00`. | `benchmarks/dynamic_memory_results.json` | `python benchmarks/dynamic_memory_benchmark.py --engines wavemind chroma --memories 200 --output benchmarks/dynamic_memory_results.json` |
 | LoCoMo evidence retrieval | WaveMind sentence reaches `evidence_recall@5 0.547`; Chroma sentence reaches `0.407`; Qdrant sentence reaches `0.409`. | `benchmarks/locomo_sentence_evidence_results.json` | `python benchmarks/locomo_memory_benchmark.py --engines wavemind-sentence chroma-sentence qdrant-sentence --output benchmarks/locomo_sentence_evidence_results.json` |
 | LongMemEval evidence retrieval | WaveMind reaches `evidence_recall@5 0.782`; Chroma static reaches `0.518`; Qdrant static reaches `0.520`. | `benchmarks/longmemeval_evidence_results.json` | `python benchmarks/longmemeval_memory_benchmark.py --engines wavemind chroma qdrant --output benchmarks/longmemeval_evidence_results.json` |
@@ -60,6 +61,7 @@ purpose-built vector databases.
 
 The generated matrix view is in `benchmarks/BENCHMARK_REPORT.md`; the compact
 leaderboard view is in `benchmarks/BENCHMARK_LEADERBOARD.md`.
+The agent-impact view is in `benchmarks/AGENT_IMPACT.md`.
 The production readiness gate is in `benchmarks/PRODUCTION_READINESS.md`.
 The strict production evidence gate is in `benchmarks/PRODUCTION_EVIDENCE.md`.
 The strict evidence dispatch plan is in

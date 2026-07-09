@@ -67,6 +67,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert {
         "benchmarks/production_scale_run_plan.json",
         "benchmarks/agent_coherence_results.json",
+        "benchmarks/agent_impact_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -93,6 +94,23 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["agent_quality"]["memory_os_predictive_prefetch_warmed"] >= 1
     assert payload["agent_quality"]["memory_os_priority_predictions"] >= 1
     assert payload["agent_quality"]["memory_os_cache_hit_rate"] > 0
+    assert payload["agent_impact"]["schema"] == "wavemind.agent_impact_leaderboard.v1"
+    assert payload["agent_impact"]["status"] == "pass"
+    assert payload["agent_impact"]["benchmark_count"] >= 6
+    assert payload["agent_impact"]["wavemind_row_count"] >= 6
+    assert payload["agent_impact"]["baseline_row_count"] >= 6
+    assert payload["agent_impact"]["wavemind_primary_wins"] == (
+        payload["agent_impact"]["benchmark_count"]
+    )
+    assert payload["agent_impact"]["average_primary_lift"] > 0
+    assert payload["agent_impact"]["average_context_saved"] > 0.5
+    assert payload["agent_impact"]["average_stale_safety_score"] >= 0.95
+    assert "agent success outside the listed scenarios" in (
+        payload["agent_impact"]["claim_boundary"]
+    )
+    assert "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json" in (
+        payload["agent_impact"]["source_files"]
+    )
     assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["memory_os_policy"]["policy_status"] == "architecture_required"
@@ -235,6 +253,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/active_active_admission_results.json" in payload["source_files"]
     assert "benchmarks/serverless_admission_results.json" in payload["source_files"]
     assert "benchmarks/cost_efficiency_results.json" in payload["source_files"]
+    assert "benchmarks/agent_impact_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -259,6 +278,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["artifact_audit"]["status"] == "pass"
     assert payload["production_readiness"]["overall_status"] == "pass"
     assert payload["agent_quality"]["status"] == "pass"
+    assert payload["agent_impact"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",

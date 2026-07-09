@@ -176,6 +176,46 @@ def _publication_contract_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _agent_impact_panel(status: dict[str, Any]) -> str:
+    impact = status.get("agent_impact", {}) if isinstance(status, dict) else {}
+    if not isinstance(impact, dict) or not impact:
+        return ""
+    rows = [
+        ("Status", impact.get("status", "missing")),
+        ("Benchmarks", impact.get("benchmark_count", 0)),
+        ("WaveMind wins", impact.get("wavemind_primary_wins", 0)),
+        ("Average lift", _fmt_metric(impact.get("average_primary_lift"))),
+        ("Context saved", _fmt_metric(impact.get("average_context_saved"))),
+        ("Stale safety", _fmt_metric(impact.get("average_stale_safety_score"))),
+        ("Best profile", impact.get("best_impact_profile", "missing")),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Agent Impact</h2>"
+        "<p>Behavioral evidence: task success, stale-fact suppression, context savings, "
+        "long-memory retrieval, and checked-in answer-quality smoke results.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/AGENT_IMPACT.md">Read the agent impact report</a></p>'
+        "</section>"
+    )
+
+
+def _fmt_metric(value: Any) -> str:
+    try:
+        return f"{float(value):.3f}".rstrip("0").rstrip(".")
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def render_dashboard(root: Path = PROJECT_ROOT) -> str:
     payload = load_matrix(root)
     status = _load_leaderboard_status(root)
@@ -272,6 +312,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   </section>
 
   {_publication_contract_panel(status)}
+
+  {_agent_impact_panel(status)}
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">

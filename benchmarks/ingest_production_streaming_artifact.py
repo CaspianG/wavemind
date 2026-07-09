@@ -181,17 +181,19 @@ def refresh_commands() -> list[list[str]]:
         ],
         [
             python,
-            "benchmarks/render_benchmark_dashboard.py",
+            "benchmarks/agent_impact_leaderboard.py",
             "--output",
-            "docs/benchmark-dashboard.html",
+            "benchmarks/agent_impact_results.json",
+            "--markdown-output",
+            "benchmarks/AGENT_IMPACT.md",
         ],
         [
             python,
-            "benchmarks/validate_benchmark_artifacts.py",
-            "--max-age-days",
-            "8",
+            "benchmarks/cost_efficiency_leaderboard.py",
             "--output",
-            "benchmarks/benchmark_artifact_audit.json",
+            "benchmarks/cost_efficiency_results.json",
+            "--markdown-output",
+            "benchmarks/COST_EFFICIENCY.md",
         ],
         [
             python,
@@ -214,6 +216,26 @@ def refresh_commands() -> list[list[str]]:
             "benchmarks/render_leaderboard_status.py",
             "--output",
             "docs/data/leaderboard-status.json",
+        ],
+        [
+            python,
+            "benchmarks/validate_benchmark_artifacts.py",
+            "--max-age-days",
+            "8",
+            "--output",
+            "benchmarks/benchmark_artifact_audit.json",
+        ],
+        [
+            python,
+            "benchmarks/render_leaderboard_status.py",
+            "--output",
+            "docs/data/leaderboard-status.json",
+        ],
+        [
+            python,
+            "benchmarks/render_benchmark_dashboard.py",
+            "--output",
+            "docs/benchmark-dashboard.html",
         ],
     ]
 

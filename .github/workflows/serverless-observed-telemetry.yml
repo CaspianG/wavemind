@@ -152,6 +152,12 @@ jobs:
           python benchmarks/render_benchmark_leaderboard.py
           python benchmarks/render_benchmark_charts.py \
             --output docs/assets/benchmark-summary.svg
+          python benchmarks/agent_impact_leaderboard.py \
+            --output benchmarks/agent_impact_results.json \
+            --markdown-output benchmarks/AGENT_IMPACT.md
+          python benchmarks/cost_efficiency_leaderboard.py \
+            --output benchmarks/cost_efficiency_results.json \
+            --markdown-output benchmarks/COST_EFFICIENCY.md
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
           python benchmarks/validate_benchmark_artifacts.py \
@@ -184,6 +190,12 @@ jobs:
             --write-artifacts \
             --output benchmarks/scale_gap_results.json \
             --markdown-output benchmarks/SCALE_GAP.md
+          python benchmarks/agent_impact_leaderboard.py \
+            --output benchmarks/agent_impact_results.json \
+            --markdown-output benchmarks/AGENT_IMPACT.md
+          python benchmarks/cost_efficiency_leaderboard.py \
+            --output benchmarks/cost_efficiency_results.json \
+            --markdown-output benchmarks/COST_EFFICIENCY.md
           python benchmarks/render_leaderboard_status.py \
             --output docs/data/leaderboard-status.json
           python benchmarks/render_benchmark_dashboard.py \

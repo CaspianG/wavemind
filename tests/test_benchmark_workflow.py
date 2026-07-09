@@ -19,6 +19,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/render_benchmark_dashboard.py" in workflow
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "benchmarks/render_benchmark_charts.py" in workflow
+    assert "benchmarks/agent_impact_leaderboard.py" in workflow
+    assert "benchmarks/agent_impact_results.json" in workflow
+    assert "benchmarks/AGENT_IMPACT.md" in workflow
     assert "benchmarks/cost_efficiency_leaderboard.py" in workflow
     assert "benchmarks/cost_efficiency_results.json" in workflow
     assert "benchmarks/COST_EFFICIENCY.md" in workflow
@@ -72,6 +75,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output docs/data/leaderboard-status.json" in workflow
     assert "tests/test_benchmark_charts.py" in workflow
     assert "tests/test_leaderboard_status.py" in workflow
+    assert "tests/test_agent_impact_leaderboard.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_production_evidence_dispatch.py" in workflow
@@ -107,6 +111,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/active_active_admission_results.json site/data/active_active_admission_results.json" in workflow
     assert "cp benchmarks/SERVERLESS_ADMISSION.md site/benchmarks/SERVERLESS_ADMISSION.md" in workflow
     assert "cp benchmarks/serverless_admission_results.json site/data/serverless_admission_results.json" in workflow
+    assert "cp benchmarks/AGENT_IMPACT.md site/benchmarks/AGENT_IMPACT.md" in workflow
+    assert "cp benchmarks/agent_impact_results.json site/data/agent_impact_results.json" in workflow
     assert "cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md" in workflow
     assert "cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md" in workflow
