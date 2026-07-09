@@ -55,6 +55,11 @@ from .memory_os_canary import (
     render_memory_os_canary_markdown,
     run_memory_os_canary,
 )
+from .memory_os_evolution import (
+    render_memory_os_policy_evolution_markdown,
+    run_memory_os_policy_evolution,
+    write_memory_os_policy_evolution_artifacts,
+)
 from .k8s_operator import (
     KubernetesApplyClient,
     WaveMindClusterSpec,
@@ -1218,6 +1223,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     memory_os_canary.add_argument("--json", action="store_true")
 
+    memory_os_evolution = sub.add_parser(
+        "memory-os-evolution",
+        help="Run a multi-cycle Memory OS policy-history and scheduler-evolution benchmark",
+    )
+    memory_os_evolution.add_argument("--namespace", default="evolution:memory-os")
+    memory_os_evolution.add_argument("--deployment", default="production")
+    memory_os_evolution.add_argument("--cycles", type=int, default=3)
+    memory_os_evolution.add_argument("--query-repetitions", type=int, default=1)
+    memory_os_evolution.add_argument("--target-memories", type=int, default=2_000_000)
+    memory_os_evolution.add_argument("--namespace-count", type=int, default=4096)
+    memory_os_evolution.add_argument("--node-count", type=int, default=4)
+    memory_os_evolution.add_argument("--target-qps", type=float, default=1000.0)
+    memory_os_evolution.add_argument("--target-p99-ms", type=float, default=80.0)
+    memory_os_evolution.add_argument("--observed-p99-ms", type=float, default=220.0)
+    memory_os_evolution.add_argument("--memory-pressure-threshold", type=int, default=3)
+    memory_os_evolution.add_argument("--top-k", type=int, default=2)
+    memory_os_evolution.add_argument("--no-multimodal", action="store_true")
+    memory_os_evolution.add_argument("--write-artifacts", action="store_true")
+    memory_os_evolution.add_argument("--fail-on-action-required", action="store_true")
+    memory_os_evolution.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/memory_os_policy_evolution_results.json"),
+    )
+    memory_os_evolution.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MEMORY_OS_POLICY_EVOLUTION.md"),
+    )
+    memory_os_evolution.add_argument("--json", action="store_true")
+
     imp = sub.add_parser("import", help="Import txt/pdf/json")
     imp.add_argument("path")
     imp.add_argument("--namespace", default="default")
@@ -1933,6 +1969,38 @@ def print_memory_os_canary(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_memory_os_policy_evolution(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"namespace: {payload['namespace']}")
+    print(f"target_memories: {payload['target_memories']}")
+    print(f"cycles: {payload['cycles']}")
+    print(f"replayed_queries: {payload['replayed_query_count']}")
+    print(
+        "checks: "
+        f"{summary['passed_checks']}/{summary['check_count']} passed"
+    )
+    print(f"decision_coverage_rate: {summary['decision_coverage_rate']}")
+    print(f"repeated_required_cycles: {summary['repeated_required_cycle_count']}")
+    print(f"history_suggestions: {summary['history_suggestion_count']}")
+    print(f"escalation_actions: {summary['escalation_action_count']}")
+    print(
+        "scheduler_escalations: "
+        + ", ".join(summary.get("scheduler_policy_escalation_ids") or [])
+    )
+    print(f"scheduler_history_trend: {summary.get('scheduler_history_trend')}")
+    print(f"prewarm_warmed: {summary['prewarm_warmed']}")
+    print(f"predictive_prefetch_warmed: {summary['predictive_prefetch_warmed']}")
+    print(f"priority_predictions: {summary['priority_predictions']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -2046,6 +2114,39 @@ def main(argv: list[str] | None = None) -> int:
         import pytest
 
         return int(pytest.main(["-q"]))
+
+    if args.command == "memory-os-evolution":
+        payload = run_memory_os_policy_evolution(
+            namespace=args.namespace,
+            cycles=args.cycles,
+            query_repetitions=args.query_repetitions,
+            target_memories=args.target_memories,
+            namespace_count=args.namespace_count,
+            node_count=args.node_count,
+            target_qps=args.target_qps,
+            target_p99_ms=args.target_p99_ms,
+            observed_p99_ms=args.observed_p99_ms,
+            memory_pressure_threshold=args.memory_pressure_threshold,
+            deployment=args.deployment,
+            top_k=args.top_k,
+            multimodal=not args.no_multimodal,
+        )
+        if args.write_artifacts:
+            write_memory_os_policy_evolution_artifacts(
+                payload,
+                output=args.output,
+                markdown_output=args.markdown_output,
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_memory_os_policy_evolution(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_action_required and payload["status"] != "pass":
+            return 2
+        return 0 if payload["status"] in {"pass", "action_required"} else 1
 
     if args.command == "serve":
         import uvicorn

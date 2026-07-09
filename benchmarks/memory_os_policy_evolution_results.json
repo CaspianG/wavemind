@@ -1,0 +1,530 @@
+{
+  "schema": "wavemind.memory_os_policy_evolution.v1",
+  "generated_at": "2026-07-09T13:44:41Z",
+  "status": "pass",
+  "ok": true,
+  "namespace": "evolution:memory-os",
+  "deployment": "production",
+  "target_memories": 2000000,
+  "namespace_count": 4096,
+  "node_count": 4,
+  "target_qps": 1000.0,
+  "target_p99_ms": 80.0,
+  "observed_p99_ms": 220.0,
+  "cycles": 3,
+  "query_repetitions": 1,
+  "replayed_query_count": 24,
+  "unique_replayed_queries": [
+    "budget recall",
+    "concise answers",
+    "memory os policy",
+    "risk limits"
+  ],
+  "elapsed_ms": 1815.4044000002614,
+  "claim_boundary": "Policy evolution is deterministic local/staging evidence. It proves policy-history escalation, self-adjusting scheduler behavior, and multi-cycle Memory OS learning on this workload; it does not unlock unattended production automation without remote Redis, distributed lock, runtime env, and strict large-scale evidence.",
+  "summary": {
+    "status": "pass",
+    "passed_checks": 12,
+    "check_count": 12,
+    "decision_coverage_rate": 1.0,
+    "repeated_required_cycle_count": 2,
+    "repeated_required_cycles": [
+      2,
+      3
+    ],
+    "history_suggestion_count": 4,
+    "escalation_action_count": 2,
+    "scheduler_policy_escalation_ids": [
+      "scale-policy"
+    ],
+    "scheduler_policy_auto_adjustments": [],
+    "scheduler_history_trend": "repeated_architecture_required",
+    "scheduler_history_previous_runs": 3,
+    "stable_ok_ids": [
+      "forgetting-policy",
+      "prefetch-policy",
+      "priority-policy"
+    ],
+    "prewarm_warmed": 16,
+    "predictive_prefetch_warmed": 30,
+    "priority_predictions": 14,
+    "forgetting_demotions": 5,
+    "concepts_created": 1
+  },
+  "checks": [
+    {
+      "name": "cycles",
+      "value": 3,
+      "target": 3,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "decision_coverage_rate",
+      "value": 1.0,
+      "target": 1.0,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "repeated_required_cycles",
+      "value": 2,
+      "target": 2,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "history_suggestions",
+      "value": 4,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "escalation_actions",
+      "value": 2,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "scheduler_escalations",
+      "value": 1,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "scheduler_history_previous_runs",
+      "value": 3,
+      "target": 3,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "stable_ok_ids",
+      "value": 3,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "prewarm_warmed",
+      "value": 16,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "predictive_prefetch_warmed",
+      "value": 30,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "priority_predictions",
+      "value": 14,
+      "target": 1,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "required_tasks_enabled",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    }
+  ],
+  "cycle_reports": [
+    {
+      "cycle": 1,
+      "ok": true,
+      "actions": [
+        "consolidate_field",
+        "consolidate_concepts",
+        "predict_priority",
+        "adaptive_forgetting",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture"
+      ],
+      "policy_status": "architecture_required",
+      "decision_statuses": {
+        "prefetch-policy": "ok",
+        "priority-policy": "ok",
+        "forgetting-policy": "ok",
+        "consolidation-policy": "ok",
+        "scale-policy": "architecture_required",
+        "coordination-policy": "action_required"
+      },
+      "policy_history": {
+        "previous_runs": 0,
+        "window": 5,
+        "trend": "first_run",
+        "repeated_action_required_ids": [],
+        "repeated_architecture_required_ids": [],
+        "repeated_required_ids": [],
+        "stable_ok_ids": [],
+        "status_counts": {
+          "action_required": 1,
+          "architecture_required": 1,
+          "ok": 4
+        }
+      },
+      "policy_history_suggestion_count": 0,
+      "prewarm_warmed": 2,
+      "predictive_prefetch_warmed": 8,
+      "priority_predictions": 4,
+      "forgetting_demotions": 3,
+      "concepts_created": 1
+    },
+    {
+      "cycle": 2,
+      "ok": true,
+      "actions": [
+        "consolidate_field",
+        "predict_priority",
+        "adaptive_forgetting",
+        "invalidate_cache",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture",
+        "escalate_policy_history"
+      ],
+      "policy_status": "architecture_required",
+      "decision_statuses": {
+        "prefetch-policy": "ok",
+        "priority-policy": "ok",
+        "forgetting-policy": "ok",
+        "consolidation-policy": "watch",
+        "scale-policy": "architecture_required",
+        "coordination-policy": "action_required"
+      },
+      "policy_history": {
+        "previous_runs": 1,
+        "window": 5,
+        "trend": "repeated_architecture_required",
+        "repeated_action_required_ids": [
+          "coordination-policy"
+        ],
+        "repeated_architecture_required_ids": [
+          "scale-policy"
+        ],
+        "repeated_required_ids": [
+          "coordination-policy",
+          "scale-policy"
+        ],
+        "stable_ok_ids": [
+          "forgetting-policy",
+          "prefetch-policy",
+          "priority-policy"
+        ],
+        "status_counts": {
+          "action_required": 2,
+          "architecture_required": 2,
+          "ok": 7,
+          "watch": 1
+        }
+      },
+      "policy_history_suggestion_count": 2,
+      "prewarm_warmed": 4,
+      "predictive_prefetch_warmed": 12,
+      "priority_predictions": 5,
+      "forgetting_demotions": 1,
+      "concepts_created": 0
+    },
+    {
+      "cycle": 3,
+      "ok": true,
+      "actions": [
+        "consolidate_field",
+        "predict_priority",
+        "adaptive_forgetting",
+        "invalidate_cache",
+        "prewarm_cache",
+        "predictive_prefetch",
+        "advise_architecture",
+        "escalate_policy_history"
+      ],
+      "policy_status": "architecture_required",
+      "decision_statuses": {
+        "prefetch-policy": "ok",
+        "priority-policy": "ok",
+        "forgetting-policy": "ok",
+        "consolidation-policy": "watch",
+        "scale-policy": "architecture_required",
+        "coordination-policy": "action_required"
+      },
+      "policy_history": {
+        "previous_runs": 2,
+        "window": 5,
+        "trend": "repeated_architecture_required",
+        "repeated_action_required_ids": [
+          "coordination-policy"
+        ],
+        "repeated_architecture_required_ids": [
+          "scale-policy"
+        ],
+        "repeated_required_ids": [
+          "coordination-policy",
+          "scale-policy"
+        ],
+        "stable_ok_ids": [
+          "forgetting-policy",
+          "prefetch-policy",
+          "priority-policy"
+        ],
+        "status_counts": {
+          "action_required": 3,
+          "architecture_required": 3,
+          "ok": 10,
+          "watch": 2
+        }
+      },
+      "policy_history_suggestion_count": 2,
+      "prewarm_warmed": 10,
+      "predictive_prefetch_warmed": 10,
+      "priority_predictions": 5,
+      "forgetting_demotions": 1,
+      "concepts_created": 0
+    }
+  ],
+  "schedule_plan": {
+    "status": "architecture_required",
+    "effective_cache_mode": "redis",
+    "worker_count": 10,
+    "enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "policy_history": {
+      "previous_runs": 3,
+      "window": 5,
+      "trend": "repeated_architecture_required",
+      "repeated_action_required_ids": [],
+      "repeated_architecture_required_ids": [
+        "scale-policy"
+      ],
+      "repeated_required_ids": [
+        "scale-policy"
+      ],
+      "stable_ok_ids": [
+        "consolidation-policy",
+        "forgetting-policy",
+        "prefetch-policy",
+        "priority-policy"
+      ],
+      "status_counts": {
+        "action_required": 3,
+        "architecture_required": 4,
+        "ok": 15,
+        "watch": 2
+      }
+    },
+    "policy_escalation_ids": [
+      "scale-policy"
+    ],
+    "policy_auto_adjustments": [],
+    "execution_plan": {
+      "status": "architecture_required",
+      "namespace": "evolution:memory-os",
+      "deployment": "production",
+      "worker_count": 10,
+      "max_parallel_workers": 10,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "safe_to_run": true,
+      "enabled_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "predictive-prefetch"
+      ],
+      "worker_pool_task_ids": [
+        "cache-prewarm"
+      ],
+      "state_mutating_task_ids": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "blocked_task_ids": [],
+      "warnings": [
+        "distributed-lock-required"
+      ],
+      "steps": [
+        {
+          "order": 10,
+          "task_id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 120,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false,
+          "required_environment": [],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind advise --target-memories 2000000 --namespace-count 4096 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 1000 --target-p99-ms 80 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+        },
+        {
+          "order": 20,
+          "task_id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evolution:memory-os:maintenance",
+          "can_run_on_all_workers": false,
+          "command": "wavemind maintenance --namespace evolution:memory-os",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+        },
+        {
+          "order": 30,
+          "task_id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 600,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evolution:memory-os:adaptive-forgetting",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evolution:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 2000000 --namespace-count 4096 --deployment production --target-qps 1000 --target-p99-ms 80 --node-count 4 --multimodal",
+          "reason": "Demotes old unused memories before they compete with current context."
+        },
+        {
+          "order": 40,
+          "task_id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evolution:memory-os:consolidation",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evolution:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 2000000 --namespace-count 4096 --deployment production --target-qps 1000 --target-p99-ms 80 --node-count 4 --multimodal",
+          "reason": "Creates durable higher-level concept memories from active clusters."
+        },
+        {
+          "order": 50,
+          "task_id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 15,
+          "timeout_seconds": 60,
+          "worker_count": 10,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evolution:memory-os:memory-os",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evolution:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 2000000 --namespace-count 4096 --deployment production --target-qps 1000 --target-p99-ms 80 --node-count 4 --multimodal",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+        },
+        {
+          "order": 60,
+          "task_id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 15,
+          "timeout_seconds": 30,
+          "worker_count": 4,
+          "run_scope": "worker-pool",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL"
+          ],
+          "idempotency_key": null,
+          "can_run_on_all_workers": true,
+          "command": "wavemind cache-prewarm --namespace evolution:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+          "reason": "Keeps repeated recall paths hot across API workers."
+        },
+        {
+          "order": 70,
+          "task_id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 60,
+          "timeout_seconds": 120,
+          "worker_count": 4,
+          "run_scope": "cluster-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evolution:memory-os:predictive-prefetch",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evolution:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 2000000 --namespace-count 4096 --deployment production --target-qps 1000 --target-p99-ms 80 --node-count 4 --multimodal",
+          "reason": "Warms likely follow-up queries from hot recall paths."
+        }
+      ]
+    }
+  },
+  "next_actions": [
+    "Use this artifact as the regression gate for multi-cycle Memory OS policy learning.",
+    "Keep production automation locked behind memory-os-admission until Redis, distributed lock, runtime env, and large-scale evidence pass.",
+    "Resolve repeated scheduler policy escalations before widening Memory OS worker scope: scale-policy"
+  ]
+}

@@ -71,6 +71,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/structured_memory_results.json",
         "benchmarks/multimodal_admission_results.json",
         "benchmarks/memory_os_intelligence_results.json",
+        "benchmarks/memory_os_policy_evolution_results.json",
         "benchmarks/cluster_autoscale_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
@@ -210,6 +211,28 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["memory_os_policy"]["history_previous_runs"] == 0
     assert payload["memory_os_policy"]["repeated_required_ids"] == []
     assert payload["memory_os_policy"]["history_escalations"] == 0
+    assert payload["memory_os_policy_evolution"]["schema"] == (
+        "wavemind.memory_os_policy_evolution.v1"
+    )
+    assert payload["memory_os_policy_evolution"]["status"] == "pass"
+    assert payload["memory_os_policy_evolution"]["ok"] is True
+    assert payload["memory_os_policy_evolution"]["cycles"] >= 3
+    assert payload["memory_os_policy_evolution"]["passed_check_count"] == (
+        payload["memory_os_policy_evolution"]["check_count"]
+    )
+    assert payload["memory_os_policy_evolution"]["decision_coverage_rate"] == 1.0
+    assert payload["memory_os_policy_evolution"]["repeated_required_cycle_count"] >= 2
+    assert payload["memory_os_policy_evolution"]["history_suggestion_count"] >= 1
+    assert payload["memory_os_policy_evolution"]["escalation_action_count"] >= 1
+    assert "scale-policy" in (
+        payload["memory_os_policy_evolution"]["scheduler_policy_escalation_ids"]
+    )
+    assert payload["memory_os_policy_evolution"]["prewarm_warmed"] >= 1
+    assert payload["memory_os_policy_evolution"]["predictive_prefetch_warmed"] >= 1
+    assert payload["memory_os_policy_evolution"]["priority_predictions"] >= 1
+    assert "unattended production automation" in (
+        payload["memory_os_policy_evolution"]["claim_boundary"]
+    )
     assert payload["strict_production_evidence"]["overall_status"] == "action_required"
     assert payload["strict_production_evidence"]["summary"]["total_requirements"] == 8
     assert payload["strict_production_evidence"]["action_required"]
@@ -399,6 +422,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/structured_memory_results.json" in payload["source_files"]
     assert "benchmarks/multimodal_admission_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_intelligence_results.json" in payload["source_files"]
+    assert "benchmarks/memory_os_policy_evolution_results.json" in payload["source_files"]
     assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
@@ -427,6 +451,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["agent_impact"]["status"] == "pass"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_intelligence"]["status"] == "pass"
+    assert payload["memory_os_policy_evolution"]["status"] == "pass"
     assert payload["cluster_autoscale"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
@@ -460,6 +485,9 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["memory_os_intelligence"]["schema"] == (
         "wavemind.memory_os_intelligence_report.v1"
+    )
+    assert payload["memory_os_policy_evolution"]["schema"] == (
+        "wavemind.memory_os_policy_evolution.v1"
     )
     assert payload["cluster_autoscale"]["schema"] == (
         "wavemind.cluster_autoscale_report.v1"

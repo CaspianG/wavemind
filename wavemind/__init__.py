@@ -51,6 +51,12 @@ from .memory_os_canary import (
     render_memory_os_canary_markdown,
     run_memory_os_canary,
 )
+from .memory_os_evolution import (
+    MEMORY_OS_EVOLUTION_SCHEMA,
+    render_memory_os_policy_evolution_markdown,
+    run_memory_os_policy_evolution,
+    write_memory_os_policy_evolution_artifacts,
+)
 from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
@@ -291,6 +297,7 @@ __all__ = [
     "MemoryOSWorker",
     "MemoryRecord",
     "MemoryPayload",
+    "MEMORY_OS_EVOLUTION_SCHEMA",
     "CrossModalEncoder",
     "CrossModalContractFixture",
     "CrossModalEncoderContractReport",
@@ -412,11 +419,13 @@ __all__ = [
     "render_active_active_admission_markdown",
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
+    "render_memory_os_policy_evolution_markdown",
     "render_multimodal_admission_markdown",
     "render_external_multimodal_evidence_markdown",
     "run_control_plane_consensus_profile",
     "run_external_multimodal_evidence",
     "run_memory_os_canary",
+    "run_memory_os_policy_evolution",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
     "serverless_sample_bundle",
@@ -428,4 +437,5 @@ __all__ = [
     "validate_precomputed_cross_modal_contract",
     "validate_external_multimodal_evidence",
     "validate_postgres_pitr_commands",
+    "write_memory_os_policy_evolution_artifacts",
 ]

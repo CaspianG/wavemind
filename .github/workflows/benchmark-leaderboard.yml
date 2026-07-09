@@ -245,6 +245,13 @@ jobs:
             --markdown-output benchmarks/MEMORY_OS_CANARY.md \
             --fail-on-action-required \
             --json
+          python -m wavemind memory-os-evolution \
+            --cycles 3 \
+            --write-artifacts \
+            --output benchmarks/memory_os_policy_evolution_results.json \
+            --markdown-output benchmarks/MEMORY_OS_POLICY_EVOLUTION.md \
+            --fail-on-action-required \
+            --json
           python -m wavemind memory-os-admission \
             --target-memories 10000000 \
             --namespace-count 4096 \

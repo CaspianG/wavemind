@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T12:56:08Z",
-  "source_ref": "1c94e073e315",
+  "generated_at": "2026-07-09T13:44:41Z",
+  "source_ref": "411562d66d33",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2211,6 +2211,56 @@
       },
       "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
       "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact."
+    },
+    {
+      "id": "memory_os_policy_evolution",
+      "name": "Memory OS policy evolution",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "wavemind/memory_os_evolution.py",
+      "dataset": "Deterministic multi-cycle Memory OS workload with repeated query-audit traffic, production-scale target settings, policy-history audit events, and scheduler replanning.",
+      "competitors": [
+        "Static vector memory",
+        "one-shot memory maintenance"
+      ],
+      "metrics": [
+        "decision_coverage_rate",
+        "repeated_required_cycle_count",
+        "history_suggestion_count",
+        "escalation_action_count",
+        "scheduler_policy_escalation_ids",
+        "prewarm_warmed",
+        "predictive_prefetch_warmed",
+        "priority_predictions"
+      ],
+      "current": {
+        "WaveMind Memory OS policy evolution": {
+          "status": "pass",
+          "cycles": 3,
+          "target_memories": 2000000,
+          "namespace_count": 4096,
+          "replayed_query_count": 24,
+          "decision_coverage_rate": 1.0,
+          "repeated_required_cycle_count": 2,
+          "history_suggestion_count": 4,
+          "escalation_action_count": 2,
+          "scheduler_history_trend": "repeated_architecture_required",
+          "scheduler_history_previous_runs": 3,
+          "scheduler_policy_escalation_ids": [
+            "scale-policy"
+          ],
+          "stable_ok_ids": [
+            "forgetting-policy",
+            "prefetch-policy",
+            "priority-policy"
+          ],
+          "prewarm_warmed": 16,
+          "predictive_prefetch_warmed": 30,
+          "priority_predictions": 14
+        }
+      },
+      "target": "Keep multi-cycle policy history passing with full decision coverage, repeated required-policy escalation, stable OK policy detection, scheduler escalation, hot-query prewarm, predictive prefetch, and priority learning.",
+      "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior."
     },
     {
       "id": "memory_competitor_adapter_profile",

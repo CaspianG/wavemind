@@ -79,6 +79,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    memory_os_evolution = _load_json(
+        root / "benchmarks" / "memory_os_policy_evolution_results.json",
+        load_errors,
+        required=False,
+    )
     dispatch = _load_json(
         root / "benchmarks" / "production_evidence_dispatch_results.json",
         load_errors,
@@ -152,6 +157,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/multimodal_admission_results.json": multimodal_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
+        "benchmarks/memory_os_policy_evolution_results.json": memory_os_evolution,
         "benchmarks/production_evidence_dispatch_results.json": dispatch,
         "benchmarks/production_scale_run_plan.json": scale_run_plan,
         "benchmarks/agent_coherence_results.json": agent_coherence,
@@ -243,6 +249,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "memory_os_intelligence": _memory_os_intelligence_status(memory_os_intelligence),
         "cluster_autoscale": _cluster_autoscale_status(cluster_autoscale),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
+        "memory_os_policy_evolution": _memory_os_policy_evolution_status(
+            memory_os_evolution
+        ),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
             "overall_status": evidence_status,
@@ -790,6 +799,47 @@ def _memory_os_policy_status(payload: dict[str, Any]) -> dict[str, Any]:
         "history_escalations": int(row.get("policy_history_escalations", 0) or 0),
         "required_decisions_present": required.issubset(set(decision_ids)),
         "source": "benchmarks/scale_readiness_results.json",
+    }
+
+
+def _memory_os_policy_evolution_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
+    passed_checks = sum(
+        1 for check in checks if isinstance(check, dict) and bool(check.get("pass"))
+    )
+    total_checks = len(checks)
+    return {
+        "schema": payload.get("schema") or "wavemind.memory_os_policy_evolution.v1",
+        "status": payload.get("status") or summary.get("status", "missing"),
+        "ok": bool(payload.get("ok", False)),
+        "deployment": payload.get("deployment"),
+        "cycles": payload.get("cycles") or summary.get("cycles", 0),
+        "target_memories": payload.get("target_memories"),
+        "namespace_count": payload.get("namespace_count"),
+        "node_count": payload.get("node_count"),
+        "replayed_query_count": payload.get("replayed_query_count"),
+        "check_count": total_checks,
+        "passed_check_count": passed_checks,
+        "decision_coverage_rate": summary.get("decision_coverage_rate"),
+        "repeated_required_cycle_count": summary.get("repeated_required_cycle_count"),
+        "history_suggestion_count": summary.get("history_suggestion_count"),
+        "escalation_action_count": summary.get("escalation_action_count"),
+        "scheduler_policy_escalation_ids": summary.get(
+            "scheduler_policy_escalation_ids", []
+        ),
+        "scheduler_history_trend": summary.get("scheduler_history_trend"),
+        "scheduler_history_previous_runs": summary.get(
+            "scheduler_history_previous_runs"
+        ),
+        "stable_ok_ids": summary.get("stable_ok_ids", []),
+        "prewarm_warmed": summary.get("prewarm_warmed"),
+        "predictive_prefetch_warmed": summary.get("predictive_prefetch_warmed"),
+        "priority_predictions": summary.get("priority_predictions"),
+        "forgetting_demotions": summary.get("forgetting_demotions"),
+        "concepts_created": summary.get("concepts_created"),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/memory_os_policy_evolution_results.json",
     }
 
 

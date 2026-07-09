@@ -176,6 +176,15 @@ policy matters more than raw vector-database scale:
   `benchmarks/memory_os_canary_results.json` and
   `benchmarks/MEMORY_OS_CANARY.md`. This canary intentionally does not unlock
   remote Kubernetes, real Redis, 10M, or 100M production claims.
+- `wavemind memory-os-evolution` is now the multi-cycle policy-learning proof
+  for the same worker set. It writes
+  `benchmarks/memory_os_policy_evolution_results.json` and
+  `benchmarks/MEMORY_OS_POLICY_EVOLUTION.md`, then verifies that repeated
+  required policy gaps become history-backed suggestions and scheduler
+  escalations while stable OK policies, hot-query prewarm, predictive prefetch,
+  priority learning, and required worker tasks stay active. It is deterministic
+  local/staging evidence; real production automation remains locked behind
+  Redis, distributed lock, runtime env, and strict large-scale evidence.
 - `POST /feedback`, `POST /feedback/batch`, `wavemind feedback`, and
   `wavemind feedback-batch` now expose explicit useful/not-useful recall
   signals. They update priority/hotness, persist state, emit audit events,

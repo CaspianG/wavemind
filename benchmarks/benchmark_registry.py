@@ -137,6 +137,30 @@ def _external_multimodal_summary(payload: dict[str, Any] | None) -> dict[str, An
     }
 
 
+def _memory_os_evolution_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "cycles": payload.get("cycles"),
+        "target_memories": payload.get("target_memories"),
+        "namespace_count": payload.get("namespace_count"),
+        "replayed_query_count": payload.get("replayed_query_count"),
+        "decision_coverage_rate": summary.get("decision_coverage_rate"),
+        "repeated_required_cycle_count": summary.get("repeated_required_cycle_count"),
+        "history_suggestion_count": summary.get("history_suggestion_count"),
+        "escalation_action_count": summary.get("escalation_action_count"),
+        "scheduler_history_trend": summary.get("scheduler_history_trend"),
+        "scheduler_history_previous_runs": summary.get("scheduler_history_previous_runs"),
+        "scheduler_policy_escalation_ids": summary.get("scheduler_policy_escalation_ids"),
+        "stable_ok_ids": summary.get("stable_ok_ids"),
+        "prewarm_warmed": summary.get("prewarm_warmed"),
+        "predictive_prefetch_warmed": summary.get("predictive_prefetch_warmed"),
+        "priority_predictions": summary.get("priority_predictions"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -326,6 +350,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
+    memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     strict_evidence_readiness_payload = _load_json(
         root / "benchmarks" / "strict_evidence_readiness_results.json"
@@ -2100,6 +2125,36 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
             "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact.",
+        },
+        {
+            "id": "memory_os_policy_evolution",
+            "name": "Memory OS policy evolution",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "wavemind/memory_os_evolution.py",
+            "dataset": "Deterministic multi-cycle Memory OS workload with repeated query-audit traffic, production-scale target settings, policy-history audit events, and scheduler replanning.",
+            "competitors": ["Static vector memory", "one-shot memory maintenance"],
+            "metrics": [
+                "decision_coverage_rate",
+                "repeated_required_cycle_count",
+                "history_suggestion_count",
+                "escalation_action_count",
+                "scheduler_policy_escalation_ids",
+                "prewarm_warmed",
+                "predictive_prefetch_warmed",
+                "priority_predictions",
+            ],
+            "current": {
+                "WaveMind Memory OS policy evolution": (
+                    _memory_os_evolution_summary(memory_os_evolution_payload)
+                    or {
+                        "status": "action_required",
+                        "requires": "wavemind memory-os-evolution --write-artifacts --output benchmarks/memory_os_policy_evolution_results.json",
+                    }
+                ),
+            },
+            "target": "Keep multi-cycle policy history passing with full decision coverage, repeated required-policy escalation, stable OK policy detection, scheduler escalation, hot-query prewarm, predictive prefetch, and priority learning.",
+            "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior.",
         },
         {
             "id": "memory_competitor_adapter_profile",

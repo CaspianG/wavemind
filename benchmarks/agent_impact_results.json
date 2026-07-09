@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.agent_impact_leaderboard.v1",
-  "generated_at": "2026-07-09T08:38:16Z",
-  "source_ref": "040e94ca6594",
+  "generated_at": "2026-07-09T13:44:41Z",
+  "source_ref": "411562d66d33",
   "claim_boundary": "Agent-impact rows come from checked-in benchmark artifacts. They show behavioral lift on the configured tasks; they do not claim general agent success outside the listed scenarios.",
   "summary": {
     "benchmark_count": 6,
