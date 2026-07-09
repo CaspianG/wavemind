@@ -191,13 +191,20 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert external_http["namespaces"] == 32
     assert external_http["read_fanout"] == 1
     kubernetes_smoke = entries["kubernetes_operator_failover_smoke"]
-    assert kubernetes_smoke["status"] == "runner-ready"
-    assert kubernetes_smoke["current"]["WaveMind Kubernetes operator failover"][
-        "runner_ready"
-    ] is True
-    assert "not remote production admission" in kubernetes_smoke["current"][
+    assert kubernetes_smoke["status"] == "implemented"
+    kubernetes_current = kubernetes_smoke["current"][
         "WaveMind Kubernetes operator failover"
-    ]["claim_boundary"]
+    ]
+    assert kubernetes_current["status"] == "pass"
+    assert kubernetes_current["node_count"] == 4
+    assert kubernetes_current["operator_node_count"] >= 2
+    assert kubernetes_current["lease_transitions_after"] >= 1
+    assert kubernetes_current["operator_status_tracks_leader"] is True
+    assert kubernetes_current["data_pod_uid_changed"] is True
+    assert kubernetes_current["api_healthy_after_recovery"] is True
+    assert kubernetes_current["passed_checks"] == kubernetes_current["check_count"] == 9
+    assert kubernetes_current["workflow_run_url"].startswith("https://github.com/")
+    assert "does not unlock remote production" in kubernetes_current["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]

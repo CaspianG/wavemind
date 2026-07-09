@@ -181,6 +181,34 @@ def _memory_os_policy_bundle_summary(payload: dict[str, Any] | None) -> dict[str
     }
 
 
+def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "node_count": summary.get("node_count"),
+        "operator_pod_count": summary.get("operator_pod_count"),
+        "operator_node_count": summary.get("operator_node_count"),
+        "lease_transitions_after": summary.get("lease_transitions_after"),
+        "desired_replicas_after_scale": summary.get("desired_replicas_after_scale"),
+        "ready_replicas_after_scale": summary.get("ready_replicas_after_scale"),
+        "operator_status_tracks_leader": (
+            summary.get("cluster_status_holder") == summary.get("next_holder")
+        ),
+        "data_pod_uid_changed": summary.get("data_pod_uid_changed"),
+        "api_healthy_after_recovery": summary.get("api_healthy_after_recovery"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -365,6 +393,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     local_http_cluster_payload = _load_json(root / "benchmarks" / "local_http_cluster_smoke_results.json")
     local_http_active_active_payload = _load_json(root / "benchmarks" / "local_http_active_active_smoke_results.json")
     external_http_cluster_payload = _load_json(root / "benchmarks" / "http_cluster_load_results.json")
+    kubernetes_operator_smoke_payload = _load_json(
+        root / "benchmarks" / "kubernetes_operator_smoke_results.json"
+    )
     external_http_active_active_loopback_payload = _load_json(
         root / "benchmarks" / "external_http_active_active_loopback_results.json"
     )
@@ -2064,8 +2095,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "id": "kubernetes_operator_failover_smoke",
             "name": "Kubernetes operator leader failover smoke",
             "category": "production-scale",
-            "status": "runner-ready",
-            "source": "benchmarks/kubernetes_operator_smoke.py",
+            "status": "implemented",
+            "source": "benchmarks/kubernetes_operator_smoke_results.json",
             "dataset": "A four-node kind cluster with two WaveMind operator replicas. The runner deletes the current Lease holder, requires Kubernetes Lease takeover, verifies resourceVersion transition accounting, scales the WaveMind StatefulSet through the new leader, deletes a data pod, and checks API recovery.",
             "competitors": ["WaveMind Kubernetes operator"],
             "metrics": [
@@ -2077,12 +2108,13 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "api_healthy_after_recovery",
             ],
             "current": {
-                "WaveMind Kubernetes operator failover": {
-                    "runner_ready": True,
-                    "checked_in_result": False,
-                    "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
-                    "claim_boundary": "Ephemeral multi-node Kubernetes CI evidence; not remote production admission.",
-                }
+                "WaveMind Kubernetes operator failover": (
+                    _kubernetes_operator_smoke_summary(kubernetes_operator_smoke_payload)
+                    or {
+                        "status": "missing",
+                        "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    }
+                )
             },
             "target": "Pass real Kubernetes Lease-holder deletion, follower takeover, post-failover reconcile, StatefulSet scaling, data-pod replacement, and API recovery on every relevant main push.",
             "next_step": "Run the same failure drill against a non-ephemeral remote Kubernetes staging cluster and feed the resulting endpoints into cluster admission.",

@@ -73,6 +73,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/memory_os_intelligence_results.json",
         "benchmarks/memory_os_policy_evolution_results.json",
         "benchmarks/cluster_autoscale_results.json",
+        "benchmarks/kubernetes_operator_smoke_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -180,6 +181,15 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["cluster_autoscale"]["operator_controller_replicas"] >= 2
     assert payload["cluster_autoscale"]["operator_leader_election"] is True
     assert payload["cluster_autoscale"]["operator_lease_backend"] == "coordination.k8s.io/v1"
+    assert payload["kubernetes_operator_failover"]["status"] == "pass"
+    assert payload["kubernetes_operator_failover"]["node_count"] == 4
+    assert payload["kubernetes_operator_failover"]["operator_node_count"] >= 2
+    assert payload["kubernetes_operator_failover"]["lease_transitions_after"] >= 1
+    assert payload["kubernetes_operator_failover"]["passed_checks"] == 9
+    assert payload["kubernetes_operator_failover"]["api_healthy_after_recovery"] is True
+    assert "does not unlock remote production" in (
+        payload["kubernetes_operator_failover"]["claim_boundary"]
+    )
     assert (
         payload["cluster_autoscale"]["distributed_http_recalled_after_primary_loss"]
         is True
@@ -449,6 +459,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/memory_os_policy_evolution_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_policy_bundle_results.json" in payload["source_files"]
     assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
+    assert "benchmarks/kubernetes_operator_smoke_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -479,6 +490,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["memory_os_policy_evolution"]["status"] == "pass"
     assert payload["memory_os_policy_bundle"]["status"] == "staging_ready"
     assert payload["cluster_autoscale"]["status"] == "pass"
+    assert payload["kubernetes_operator_failover"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",

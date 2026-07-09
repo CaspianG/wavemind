@@ -124,6 +124,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    kubernetes_operator_failover = _load_json(
+        root / "benchmarks" / "kubernetes_operator_smoke_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -177,6 +182,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/structured_memory_results.json": structured_memory,
         "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
         "benchmarks/cluster_autoscale_results.json": cluster_autoscale,
+        "benchmarks/kubernetes_operator_smoke_results.json": kubernetes_operator_failover,
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -260,6 +266,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         },
         "memory_os_intelligence": _memory_os_intelligence_status(memory_os_intelligence),
         "cluster_autoscale": _cluster_autoscale_status(cluster_autoscale),
+        "kubernetes_operator_failover": _kubernetes_operator_failover_status(
+            kubernetes_operator_failover
+        ),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "memory_os_policy_evolution": _memory_os_policy_evolution_status(
             memory_os_evolution
@@ -801,6 +810,32 @@ def _cluster_autoscale_status(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/cluster_autoscale_results.json",
+    }
+
+
+def _kubernetes_operator_failover_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    return {
+        "schema": payload.get("schema"),
+        "status": payload.get("status", "missing"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "node_count": summary.get("node_count"),
+        "operator_pod_count": summary.get("operator_pod_count"),
+        "operator_node_count": summary.get("operator_node_count"),
+        "lease_transitions_after": summary.get("lease_transitions_after"),
+        "ready_replicas_after_scale": summary.get("ready_replicas_after_scale"),
+        "cluster_status_holder": summary.get("cluster_status_holder"),
+        "next_holder": summary.get("next_holder"),
+        "data_pod_uid_changed": summary.get("data_pod_uid_changed"),
+        "api_healthy_after_recovery": summary.get("api_healthy_after_recovery"),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/kubernetes_operator_smoke_results.json",
     }
 
 

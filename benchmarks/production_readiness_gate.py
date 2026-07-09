@@ -93,6 +93,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
             benchmark_dir / "local_http_active_active_smoke_results.json"
         ),
         "external_http_cluster": _load_optional_json(benchmark_dir / "http_cluster_load_results.json"),
+        "kubernetes_operator_smoke": _load_optional_json(
+            benchmark_dir / "kubernetes_operator_smoke_results.json"
+        ),
         "external_http_active_active": _load_optional_json(
             benchmark_dir / "external_http_active_active_results.json"
         ),
@@ -470,6 +473,35 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     control_plane = scale.get("WaveMind control-plane consensus", {})
     capacity_100m = scale.get("WaveMind 100M capacity envelope", {})
     operator = scale.get("WaveMind Kubernetes operator", {})
+    kubernetes_operator_smoke = artifacts["kubernetes_operator_smoke"]
+    kubernetes_operator_summary = (
+        kubernetes_operator_smoke.get("summary")
+        if isinstance(kubernetes_operator_smoke.get("summary"), dict)
+        else {}
+    )
+    kubernetes_operator_smoke_pass = (
+        kubernetes_operator_smoke.get("status") == "pass"
+        and kubernetes_operator_smoke.get("environment") == "kind-multinode-ci"
+        and kubernetes_operator_smoke.get("evidence_source") == "github-actions-kind"
+        and bool(kubernetes_operator_smoke.get("source_ref"))
+        and bool(kubernetes_operator_smoke.get("workflow_run_id"))
+        and str(kubernetes_operator_smoke.get("workflow_run_url") or "").startswith(
+            "https://github.com/CaspianG/wavemind/actions/runs/"
+        )
+        and int(kubernetes_operator_summary.get("node_count", 0)) >= 4
+        and int(kubernetes_operator_summary.get("operator_pod_count", 0)) >= 2
+        and int(kubernetes_operator_summary.get("operator_node_count", 0)) >= 2
+        and int(kubernetes_operator_summary.get("lease_transitions_after", 0))
+        > int(kubernetes_operator_summary.get("lease_transitions_before", 0))
+        and kubernetes_operator_summary.get("cluster_status_holder")
+        == kubernetes_operator_summary.get("next_holder")
+        and int(kubernetes_operator_summary.get("ready_replicas_after_scale", 0))
+        == int(kubernetes_operator_summary.get("desired_replicas_after_scale", -1))
+        and kubernetes_operator_summary.get("data_pod_uid_changed")
+        and kubernetes_operator_summary.get("api_healthy_after_recovery")
+        and int(kubernetes_operator_summary.get("passed_checks", 0))
+        == int(kubernetes_operator_summary.get("check_count", -1))
+    )
     serverless = scale.get("WaveMind serverless plan", {})
     serverless_ops = scale.get("WaveMind serverless operational profile", {})
     hot_cache = scale.get("WaveMind hot cache", {})
@@ -979,7 +1011,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         ),
         _criterion(
             criterion_id="operator_autoscaling_repair",
-            title="Kubernetes operator bundle includes HPA and repair job",
+            title="Kubernetes operator passes a real multi-node failover drill",
             status=(
                 "pass"
                 if operator.get("bundle_has_crd")
@@ -992,6 +1024,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and operator.get("operator_leader_election")
                 and operator.get("operator_lease_rbac")
                 and operator.get("operator_cross_node_anti_affinity")
+                and kubernetes_operator_smoke_pass
                 and int(operator.get("statefulset_replicas", 0))
                 == int(operator.get("capacity_required_replicas", -1))
                 and int(operator.get("capacity_target_max_node_memories", 0)) <= 700_000
@@ -1056,6 +1089,8 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "production admission wiring for 10M+ targets, "
                 "redundant operator replicas with Kubernetes Lease/etcd leader "
                 "election, resourceVersion CAS, and cross-node anti-affinity, "
+                "a traceable multi-node Kubernetes CI failure drill with leader "
+                "takeover, post-failover reconcile, pod replacement, and API recovery, "
                 "and status conditions for readiness/autoscaling/capacity/rebalance/"
                 "repair/Memory OS/production admission plus control-plane consensus safety."
             ),
@@ -1066,6 +1101,11 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"operator replicas {operator.get('operator_replicas')}, "
                 f"leader election {operator.get('operator_leader_election')} "
                 f"via {operator.get('operator_lease_backend')}, "
+                f"kind nodes {kubernetes_operator_summary.get('node_count')}, "
+                f"failure drill {kubernetes_operator_smoke.get('status')}, "
+                f"Lease transitions {kubernetes_operator_summary.get('lease_transitions_after')}, "
+                f"recovered API {kubernetes_operator_summary.get('api_healthy_after_recovery')}, "
+                f"workflow {kubernetes_operator_smoke.get('workflow_run_url')}, "
                 f"rebalance config {operator.get('has_rebalance_configmap')}, "
                 f"rebalance {operator.get('rebalance_status')} "
                 f"{operator.get('rebalance_move_count')} moves/"
@@ -1078,7 +1118,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"production admission ready {operator.get('status_production_admission_ready')}, "
                 f"control-plane {operator.get('control_plane_ready')}"
             ),
-            next_step="Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics.",
+            next_step=(
+                "Repeat the same drill against a non-ephemeral remote Kubernetes staging "
+                "cluster and feed its service endpoints into strict cluster admission."
+            ),
         ),
         _criterion(
             criterion_id="serverless_externalized_state",

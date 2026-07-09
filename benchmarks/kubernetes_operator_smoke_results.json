@@ -1,0 +1,86 @@
+{
+  "schema": "wavemind.kubernetes_operator_smoke.v1",
+  "generated_at": "2026-07-09T22:09:10.817572Z",
+  "environment": "kind-multinode-ci",
+  "evidence_source": "github-actions-kind",
+  "claim_boundary": "Ephemeral multi-node Kubernetes CI evidence. It proves real Kubernetes API reconciliation, Lease/etcd-backed operator failover, StatefulSet reconciliation, and pod recovery. It does not unlock remote production, multi-region, managed-serverless, or 100M admission claims.",
+  "status": "pass",
+  "summary": {
+    "passed_checks": 9,
+    "check_count": 9,
+    "node_count": 4,
+    "operator_pod_count": 2,
+    "operator_node_count": 2,
+    "initial_holder": "wavemind-operator-78944944b8-z9wnh",
+    "next_holder": "wavemind-operator-78944944b8-q857k",
+    "lease_transitions_before": 0,
+    "lease_transitions_after": 1,
+    "lease_resource_version_after": "976",
+    "original_replicas": 3,
+    "desired_replicas_after_scale": 4,
+    "ready_replicas_after_scale": 4,
+    "cluster_status_holder": "wavemind-operator-78944944b8-q857k",
+    "data_pod_uid_changed": true,
+    "api_healthy_after_recovery": true,
+    "elapsed_ms": 83051.675
+  },
+  "checks": [
+    {
+      "id": "multi_node_cluster",
+      "passed": true,
+      "value": 4,
+      "target": 3
+    },
+    {
+      "id": "redundant_operator_pods",
+      "passed": true,
+      "value": 2,
+      "target": 2
+    },
+    {
+      "id": "operator_cross_node_placement",
+      "passed": true,
+      "value": 2,
+      "target": 2
+    },
+    {
+      "id": "leader_failover",
+      "passed": true,
+      "value": "wavemind-operator-78944944b8-z9wnh -> wavemind-operator-78944944b8-q857k",
+      "target": "holder changes"
+    },
+    {
+      "id": "lease_transition_recorded",
+      "passed": true,
+      "value": 1,
+      "target": 1
+    },
+    {
+      "id": "leader_reconcile_after_failover",
+      "passed": true,
+      "value": 4,
+      "target": 4
+    },
+    {
+      "id": "operator_status_tracks_leader",
+      "passed": true,
+      "value": "wavemind-operator-78944944b8-q857k",
+      "target": "wavemind-operator-78944944b8-q857k"
+    },
+    {
+      "id": "data_pod_recovered",
+      "passed": true,
+      "value": true,
+      "target": true
+    },
+    {
+      "id": "api_healthy_after_recovery",
+      "passed": true,
+      "value": true,
+      "target": true
+    }
+  ],
+  "source_ref": "df73c3b56a6367f171f97a7e6cf4ae585fe717ef",
+  "workflow_run_id": "29053524619",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29053524619"
+}

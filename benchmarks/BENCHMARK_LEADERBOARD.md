@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-09T21:07:48Z` from `9c9cfee3ed02`.
+Last refresh: `2026-07-09T22:13:36Z` from `df73c3b56a63`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -34,7 +34,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-09T21:07:48Z` | source `9c9cfee3ed02`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-09T22:13:36Z` | source `df73c3b56a63`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | local-loopback; `loopback-api-processes`; 4 nodes | SLO `True`; local loopback service-node evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |

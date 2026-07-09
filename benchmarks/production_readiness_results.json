@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-09T20:53:15Z",
+  "generated_at": "2026-07-09T22:13:35Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-09T19:30:16Z",
+      "evidence": "audit status pass, generated_at 2026-07-09T22:12:51Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -142,11 +142,11 @@
     },
     {
       "id": "operator_autoscaling_repair",
-      "title": "Kubernetes operator bundle includes HPA and repair job",
+      "title": "Kubernetes operator passes a real multi-node failover drill",
       "status": "pass",
-      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, redundant operator replicas with Kubernetes Lease/etcd leader election, resourceVersion CAS, and cross-node anti-affinity, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
-      "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
-      "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
+      "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, redundant operator replicas with Kubernetes Lease/etcd leader election, resourceVersion CAS, and cross-node anti-affinity, a traceable multi-node Kubernetes CI failure drill with leader takeover, post-failover reconcile, pod replacement, and API recovery, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
+      "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29053524619, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
+      "next_step": "Repeat the same drill against a non-ephemeral remote Kubernetes staging cluster and feed its service endpoints into strict cluster admission."
     },
     {
       "id": "serverless_externalized_state",

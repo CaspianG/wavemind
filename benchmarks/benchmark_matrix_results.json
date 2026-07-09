@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T21:07:48Z",
-  "source_ref": "9c9cfee3ed02",
+  "generated_at": "2026-07-09T22:13:36Z",
+  "source_ref": "df73c3b56a63",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2148,8 +2148,8 @@
       "id": "kubernetes_operator_failover_smoke",
       "name": "Kubernetes operator leader failover smoke",
       "category": "production-scale",
-      "status": "runner-ready",
-      "source": "benchmarks/kubernetes_operator_smoke.py",
+      "status": "implemented",
+      "source": "benchmarks/kubernetes_operator_smoke_results.json",
       "dataset": "A four-node kind cluster with two WaveMind operator replicas. The runner deletes the current Lease holder, requires Kubernetes Lease takeover, verifies resourceVersion transition accounting, scales the WaveMind StatefulSet through the new leader, deletes a data pod, and checks API recovery.",
       "competitors": [
         "WaveMind Kubernetes operator"
@@ -2164,10 +2164,24 @@
       ],
       "current": {
         "WaveMind Kubernetes operator failover": {
-          "runner_ready": true,
-          "checked_in_result": false,
-          "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
-          "claim_boundary": "Ephemeral multi-node Kubernetes CI evidence; not remote production admission."
+          "status": "pass",
+          "environment": "kind-multinode-ci",
+          "evidence_source": "github-actions-kind",
+          "source_ref": "df73c3b56a6367f171f97a7e6cf4ae585fe717ef",
+          "workflow_run_id": "29053524619",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29053524619",
+          "node_count": 4,
+          "operator_pod_count": 2,
+          "operator_node_count": 2,
+          "lease_transitions_after": 1,
+          "desired_replicas_after_scale": 4,
+          "ready_replicas_after_scale": 4,
+          "operator_status_tracks_leader": true,
+          "data_pod_uid_changed": true,
+          "api_healthy_after_recovery": true,
+          "passed_checks": 9,
+          "check_count": 9,
+          "claim_boundary": "Ephemeral multi-node Kubernetes CI evidence. It proves real Kubernetes API reconciliation, Lease/etcd-backed operator failover, StatefulSet reconciliation, and pod recovery. It does not unlock remote production, multi-region, managed-serverless, or 100M admission claims."
         }
       },
       "target": "Pass real Kubernetes Lease-holder deletion, follower takeover, post-failover reconcile, StatefulSet scaling, data-pod replacement, and API recovery on every relevant main push.",
