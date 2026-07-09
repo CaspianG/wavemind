@@ -1670,6 +1670,16 @@ _SCALE_GAP_BASELINES = {
 }
 
 
+_ADMISSION_MIN_STRICT_MEMORIES = 10_000_000
+_ADMISSION_PROFILE_TITLES = {
+    "qdrant-10m": "10M Qdrant service admission",
+    "qdrant-sharded-10m": "10M sharded Qdrant admission",
+    "pgvector-10m": "10M pgvector service admission",
+    "faiss-ivfpq-50m": "50M FAISS IVF-PQ admission",
+    "qdrant-sharded-100m": "100M sharded Qdrant admission",
+}
+
+
 def _artifact_exists(root: Path, artifact: str) -> bool:
     return bool(artifact) and (root / artifact).exists()
 
@@ -1767,6 +1777,17 @@ def build_scale_gap_manifest(
         for row in scale_contract.get("profiles", [])
         if isinstance(row, dict)
     }
+    full_scale_plan = _load_optional_json(
+        root / "benchmarks" / "production_scale_run_plan.json"
+    )
+    for row in full_scale_plan.get("profiles", []) if isinstance(full_scale_plan, dict) else []:
+        if not isinstance(row, dict):
+            continue
+        profile = str(row.get("profile") or "")
+        if not profile:
+            continue
+        compact = plans.get(profile, {})
+        plans[profile] = {**compact, **row}
 
     profile_gaps: list[dict[str, Any]] = []
     for profile, requirement_id in _SCALE_GAP_REQUIREMENTS.items():
@@ -1872,6 +1893,261 @@ def build_scale_gap_manifest(
             "preflight": "benchmarks/production_evidence_preflight_results.json",
         },
     }
+
+
+def _normalize_admission_engine(engine: str | None) -> str | None:
+    normalized = str(engine or "").strip().lower().replace("_", "-")
+    if not normalized:
+        return None
+    aliases = {
+        "qdrant": "qdrant-service",
+        "qdrant-service": "qdrant-service",
+        "qdrant-local": "qdrant-service",
+        "qdrant-sharded": "qdrant-sharded-service",
+        "sharded-qdrant": "qdrant-sharded-service",
+        "qdrant-sharded-service": "qdrant-sharded-service",
+        "pgvector": "pgvector-service",
+        "postgres": "pgvector-service",
+        "postgresql": "pgvector-service",
+        "pgvector-service": "pgvector-service",
+        "faiss": "faiss-ivfpq-persisted",
+        "faiss-ivfpq": "faiss-ivfpq-persisted",
+        "faiss-ivfpq-persisted": "faiss-ivfpq-persisted",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _admission_profiles_for_target(
+    *,
+    target_memories: int,
+    engine: str | None,
+) -> tuple[str, ...]:
+    normalized_engine = _normalize_admission_engine(engine)
+    target = int(target_memories)
+    if target < _ADMISSION_MIN_STRICT_MEMORIES:
+        return ()
+    if target >= 100_000_000:
+        if normalized_engine in {None, "qdrant-sharded-service"}:
+            return ("qdrant-sharded-100m",)
+        return ()
+    if target >= 50_000_000:
+        if normalized_engine in {None, "faiss-ivfpq-persisted"}:
+            return ("faiss-ivfpq-50m",)
+        if normalized_engine == "qdrant-sharded-service":
+            return ("qdrant-sharded-100m",)
+        return ()
+    if normalized_engine is None:
+        return ("qdrant-10m", "qdrant-sharded-10m", "pgvector-10m")
+    if normalized_engine == "qdrant-service":
+        return ("qdrant-10m",)
+    if normalized_engine == "qdrant-sharded-service":
+        return ("qdrant-sharded-10m",)
+    if normalized_engine == "pgvector-service":
+        return ("pgvector-10m",)
+    if normalized_engine == "faiss-ivfpq-persisted":
+        return ("faiss-ivfpq-50m",)
+    return ()
+
+
+def evaluate_production_admission(
+    root: Path = PROJECT_ROOT,
+    *,
+    target_memories: int,
+    engine: str | None = None,
+    deployment: str = "production",
+    allow_plan_only: bool = False,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Decide whether a requested production scale is currently admissible.
+
+    This is stricter than the roadmap and stricter than scale planning. It only
+    admits large-N deployments when matching strict evidence artifacts already
+    pass. Plan-only contracts are reported as useful next steps, never as
+    production admission.
+    """
+
+    root = Path(root)
+    target = max(0, int(target_memories))
+    normalized_engine = _normalize_admission_engine(engine)
+    strict = evaluate_production_evidence(root)
+    strict_requirements = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    gap = build_scale_gap_manifest(root, env=env)
+    gaps = {
+        str(row.get("profile")): row
+        for row in gap.get("profile_gaps", [])
+        if isinstance(row, dict)
+    }
+    selected_profiles = _admission_profiles_for_target(
+        target_memories=target,
+        engine=normalized_engine,
+    )
+    issues: list[str] = []
+    warnings: list[str] = []
+    required_evidence: list[dict[str, Any]] = []
+
+    if target >= _ADMISSION_MIN_STRICT_MEMORIES and not selected_profiles:
+        issues.append(
+            "No strict production-evidence profile covers this target/engine combination."
+        )
+        warnings.append(
+            "Use `wavemind production-scale-plan --profile all --json` to choose a supported 10M/50M/100M profile."
+        )
+
+    if target < _ADMISSION_MIN_STRICT_MEMORIES:
+        warnings.append(
+            "Strict large-N admission is not required below 10M memories; still run scale-plan and production-readiness gates."
+        )
+
+    for profile in selected_profiles:
+        gap_row = gaps.get(profile, {})
+        requirement_id = str(
+            gap_row.get("requirement_id") or _SCALE_GAP_REQUIREMENTS.get(profile) or ""
+        )
+        requirement = strict_requirements.get(requirement_id, {})
+        status = str(requirement.get("status") or gap_row.get("strict_status") or "missing")
+        profile_status = str(gap_row.get("status") or "missing")
+        row = {
+            "profile": profile,
+            "title": _ADMISSION_PROFILE_TITLES.get(profile, profile),
+            "requirement_id": requirement_id,
+            "strict_status": status,
+            "scale_gap_status": profile_status,
+            "admitted": status == "pass",
+            "artifact": requirement.get("artifact") or gap_row.get("output_artifact"),
+            "artifact_exists": bool(gap_row.get("output_artifact_exists")),
+            "target_memories": gap_row.get("target_memories") or target,
+            "target_recall_at_k": gap_row.get("target_recall_at_k"),
+            "target_p99_ms": gap_row.get("target_p99_ms"),
+            "target_qps": gap_row.get("target_qps"),
+            "nearest_baseline": gap_row.get("nearest_baseline") or {},
+            "baseline_progress_ratio": gap_row.get("baseline_progress_ratio"),
+            "target_gap_multiplier": gap_row.get("target_gap_multiplier"),
+            "missing_env": list(gap_row.get("missing_env") or []),
+            "blockers": list(gap_row.get("blockers") or []),
+            "issues": list(requirement.get("issues") or []),
+            "command": requirement.get("command") or gap_row.get("command"),
+            "next_action": gap_row.get("next_action")
+            or "Run the strict evidence command and ingest the resulting artifact.",
+        }
+        required_evidence.append(row)
+        if status != "pass":
+            issues.append(
+                f"{profile} is not admitted: strict_status={status}, scale_gap_status={profile_status}"
+            )
+        if profile_status in {"ready_to_run", "planned"} and status != "pass":
+            warnings.append(f"{profile} has a run contract, but no passing strict artifact yet.")
+
+    admitted = bool(required_evidence) and any(row["admitted"] for row in required_evidence)
+    if not required_evidence and target < _ADMISSION_MIN_STRICT_MEMORIES:
+        admitted = True
+
+    if admitted:
+        status = "admitted"
+    elif allow_plan_only and required_evidence and any(
+        row["scale_gap_status"] in {"ready_to_run", "planned", "blocked_by_env", "blocked_by_preflight"}
+        for row in required_evidence
+    ):
+        status = "plan_only"
+    else:
+        status = "blocked"
+
+    next_actions: list[str] = []
+    if status == "admitted":
+        next_actions.append("Proceed with deployment, keeping production-readiness and runtime health gates enabled.")
+    elif status == "plan_only":
+        next_actions.append("Do not admit production traffic yet; run the listed strict-evidence job first.")
+    elif target >= _ADMISSION_MIN_STRICT_MEMORIES:
+        next_actions.append("Keep the production claim locked until a matching strict evidence artifact passes.")
+    else:
+        next_actions.append("Run `wavemind scale-plan --fail-on action_required` for the concrete deployment.")
+    for row in required_evidence:
+        command = str(row.get("command") or "")
+        if command and command not in next_actions:
+            next_actions.append(command)
+
+    return {
+        "schema": "wavemind.production_admission.v1",
+        "generated_at": _utc_now(),
+        "status": status,
+        "admitted": admitted,
+        "deployment": str(deployment),
+        "target_memories": target,
+        "engine": normalized_engine,
+        "allow_plan_only": bool(allow_plan_only),
+        "claim_boundary": (
+            "strict_evidence_required"
+            if target >= _ADMISSION_MIN_STRICT_MEMORIES
+            else "scale_plan_required"
+        ),
+        "summary": {
+            "status": status,
+            "admitted": admitted,
+            "required_profiles": list(selected_profiles),
+            "required_evidence_count": len(required_evidence),
+            "blocking_issue_count": len(dict.fromkeys(issues)),
+            "warning_count": len(dict.fromkeys(warnings)),
+            "strict_overall_status": strict.get("overall_status"),
+            "scale_gap_status": gap.get("overall_status"),
+        },
+        "required_evidence": required_evidence,
+        "issues": list(dict.fromkeys(issues)),
+        "warnings": list(dict.fromkeys(warnings)),
+        "next_actions": list(dict.fromkeys(next_actions)),
+        "source_artifacts": {
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "scale_gap": "benchmarks/scale_gap_results.json",
+            "production_scale_run_plan": "benchmarks/production_scale_run_plan.json",
+        },
+    }
+
+
+def render_production_admission_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# WaveMind Production Admission",
+        "",
+        "This is the deployment-facing admission gate. It answers whether a",
+        "requested production scale is backed by passing strict evidence, or still",
+        "limited to a plan-only run contract.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| status | `{payload['status']}` |",
+        f"| admitted | `{payload['admitted']}` |",
+        f"| deployment | `{payload['deployment']}` |",
+        f"| engine | `{payload.get('engine')}` |",
+        f"| target memories | `{payload['target_memories']}` |",
+        f"| required profiles | `{', '.join(summary.get('required_profiles') or [])}` |",
+        f"| blocking issues | `{summary['blocking_issue_count']}` |",
+        f"| strict evidence | `{summary['strict_overall_status']}` |",
+        f"| scale gap | `{summary['scale_gap_status']}` |",
+        "",
+        "## Required Evidence",
+        "",
+        "| profile | strict | scale gap | artifact | nearest baseline | missing env |",
+        "|---|---|---|---|---:|---|",
+    ]
+    for row in payload.get("required_evidence", []):
+        baseline = row.get("nearest_baseline") or {}
+        missing_env = ", ".join(row.get("missing_env") or ())
+        lines.append(
+            f"| {row['profile']} | `{row['strict_status']}` | `{row['scale_gap_status']}` | "
+            f"`{row.get('artifact')}` | {baseline.get('vectors') or 0} | `{missing_env}` |"
+        )
+    lines.extend(["", "## Issues", ""])
+    issues = payload.get("issues") or []
+    if issues:
+        lines.extend(f"- {issue}" for issue in issues)
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Next Actions", ""])
+    lines.extend(f"- `{action}`" if action.startswith(("python ", "gh ", "wavemind ")) else f"- {action}" for action in payload.get("next_actions", []))
+    lines.append("")
+    return "\n".join(lines)
 
 
 def render_scale_gap_markdown(payload: dict[str, Any]) -> str:

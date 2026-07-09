@@ -53,12 +53,14 @@ from .production_evidence import (
     build_production_evidence_dispatch_plan,
     build_scale_gap_manifest,
     build_release_claims_manifest,
+    evaluate_production_admission,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
     evaluate_production_evidence_preflight,
     render_bundle_markdown,
     render_dispatch_markdown,
     render_markdown,
+    render_production_admission_markdown,
     render_preflight_markdown,
     render_release_claims_markdown,
     render_scale_gap_markdown,
@@ -533,6 +535,59 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/SCALE_GAP.md"),
     )
     scale_gap.add_argument("--json", action="store_true")
+
+    production_admission = sub.add_parser(
+        "production-admission",
+        help="Gate a requested production deployment against strict scale evidence",
+    )
+    production_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_admission.add_argument(
+        "--target-memories",
+        type=int,
+        required=True,
+        help="Requested production memory count to admit.",
+    )
+    production_admission.add_argument(
+        "--engine",
+        default=None,
+        help="Requested engine, for example qdrant, qdrant-sharded, pgvector, or faiss.",
+    )
+    production_admission.add_argument(
+        "--deployment",
+        default="production",
+        help="Deployment name shown in the report.",
+    )
+    production_admission.add_argument(
+        "--allow-plan-only",
+        action="store_true",
+        help="Report plan-only status instead of collapsing every missing strict artifact to blocked.",
+    )
+    production_admission.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON and Markdown production-admission reports to the output paths.",
+    )
+    production_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless the requested deployment is admitted.",
+    )
+    production_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_admission_results.json"),
+    )
+    production_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_ADMISSION.md"),
+    )
+    production_admission.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1307,6 +1362,46 @@ def print_release_claims(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_production_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"engine: {payload.get('engine')}")
+    print(f"target_memories: {payload['target_memories']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    print(f"required_profiles: {', '.join(summary.get('required_profiles') or [])}")
+    evidence_rows = payload.get("required_evidence", [])
+    if evidence_rows:
+        print("required_evidence:")
+    for row in evidence_rows:
+        print(f"- [{row['strict_status']}/{row['scale_gap_status']}] {row['profile']}")
+        print(f"  artifact: {row.get('artifact')}")
+        print(f"  artifact_exists: {str(row.get('artifact_exists')).lower()}")
+        baseline = row.get("nearest_baseline") or {}
+        if baseline:
+            print(f"  nearest_baseline_vectors: {baseline.get('vectors')}")
+        missing_env = row.get("missing_env") or []
+        if missing_env:
+            print(f"  missing_env: {', '.join(missing_env)}")
+        blockers = row.get("blockers") or []
+        if blockers:
+            print(f"  blockers: {', '.join(blockers)}")
+        command = row.get("command")
+        if command:
+            print(f"  command: {command}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_cluster_autoscale_plan(plan: dict[str, object]) -> None:
     print(f"status: {plan['status']}")
     print(f"current_nodes: {len(plan['current_nodes'])}")
@@ -1994,6 +2089,36 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_action_required and payload["overall_status"] != "complete":
             return 2
         return 0
+
+    if args.command == "production-admission":
+        payload = evaluate_production_admission(
+            args.root,
+            target_memories=args.target_memories,
+            engine=args.engine,
+            deployment=args.deployment,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_production_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

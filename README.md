@@ -1885,12 +1885,18 @@ large-run commands, and can fail deployments with
 all unfinished strict-evidence jobs. Combined operator bundle:
 `wavemind production-evidence-bundle --write-artifacts`, or `wavemind
 production-evidence-bundle --strict` when a release must fail unless all
-remote/large-N production claims are unlocked.
+remote/large-N production claims are unlocked. Deployment admission:
+`wavemind production-admission --target-memories 100000000 --engine
+qdrant-sharded-service --fail-on-blocked` is the final deploy-facing check; it
+keeps 10M/50M/100M traffic blocked until the matching strict evidence artifact
+passes, and `--allow-plan-only` reports the next run contract without admitting
+production.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
 production-readiness report, the strict production-evidence report, the
-production-evidence dispatch plan, and the combined production-evidence bundle,
+production-evidence dispatch plan, the combined production-evidence bundle, and
+the production-admission report,
 validates freshness with `benchmarks/validate_benchmark_artifacts.py`, writes
 `benchmarks/benchmark_artifact_audit.json`, renders
 `docs/data/leaderboard-status.json`, and uploads changed benchmark artifacts for
@@ -1939,6 +1945,7 @@ public claim boundaries stable:
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |
 | Release claims | Compact release-facing claim contract for GitHub Releases and launch posts: what is safe to claim, what remains locked, and which command unlocks the next evidence tier. | `benchmarks/release_claims_results.json`, `benchmarks/RELEASE_CLAIMS.md`, `wavemind release-claims --write-artifacts --fail-on-blocked` | `core_release_ready` allows a core library release; strict remote/50M/100M production claims remain locked until the strict artifacts pass. |
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
+| Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M sharded Qdrant status is `plan_only`, not admitted: the run contract exists, but `production_streaming_load_qdrant_sharded_100m_results.json` is still missing. |
 | Production scale run planner | One command plans the next large-N jobs across 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant, including env, checkpoint, storage, SLO, monthly budget, cost per 1M memories, compute cost per 1M queries, plan-only Pareto frontier, and output artifact contracts. | `benchmarks/production_scale_run_plan.json`, `wavemind production-scale-plan --write-artifact` | This is a run contract and preflight only; it does not replace the real latency/recall result artifacts. |
 | 10M memory-scale profile | Checked-in compressed FAISS IVF-PQ streaming profile exists and is reported in the generated leaderboard. | `benchmarks/production_streaming_load_ivfpq_10m_results.json` | Not yet a completed 10M Qdrant/pgvector service comparison. |
 | 50M memory-scale preflight | Checked-in plan-only artifact estimates local index/transient storage, application storage, required env, blockers, and exact resumable reproduction command with checkpointing. | `benchmarks/production_streaming_load_50m_plan.json` | Not a completed latency/recall benchmark until `production_streaming_load_ivfpq_50m_results.json` is produced by a real run. |

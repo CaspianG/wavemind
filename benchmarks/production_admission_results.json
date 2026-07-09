@@ -1,0 +1,77 @@
+{
+  "schema": "wavemind.production_admission.v1",
+  "generated_at": "2026-07-09T00:07:33Z",
+  "status": "plan_only",
+  "admitted": false,
+  "deployment": "production",
+  "target_memories": 100000000,
+  "engine": "qdrant-sharded-service",
+  "allow_plan_only": true,
+  "claim_boundary": "strict_evidence_required",
+  "summary": {
+    "status": "plan_only",
+    "admitted": false,
+    "required_profiles": [
+      "qdrant-sharded-100m"
+    ],
+    "required_evidence_count": 1,
+    "blocking_issue_count": 1,
+    "warning_count": 0,
+    "strict_overall_status": "action_required",
+    "scale_gap_status": "action_required"
+  },
+  "required_evidence": [
+    {
+      "profile": "qdrant-sharded-100m",
+      "title": "100M sharded Qdrant admission",
+      "requirement_id": "hundred_million_remote_load",
+      "strict_status": "action_required",
+      "scale_gap_status": "blocked_by_env",
+      "admitted": false,
+      "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+      "artifact_exists": false,
+      "target_memories": 100000000,
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 500.0,
+      "nearest_baseline": {
+        "artifact": "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+        "engine": "Qdrant service streaming",
+        "vectors": 1000000,
+        "recall_at_k": 1.0,
+        "target_recall_at_k": 1.0,
+        "p99_latency_ms": 26.373000000603497,
+        "avg_latency_ms": 16.16433600662276,
+        "slo_status": "pass",
+        "cost_status": "valid_slo"
+      },
+      "baseline_progress_ratio": 0.01,
+      "target_gap_multiplier": 100.0,
+      "missing_env": [
+        "WAVEMIND_QDRANT_URLS"
+      ],
+      "blockers": [
+        "missing_env:WAVEMIND_QDRANT_URLS",
+        "insufficient_local_disk_for_index_and_transient_batches"
+      ],
+      "issues": [
+        "missing artifact"
+      ],
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+    }
+  ],
+  "issues": [
+    "qdrant-sharded-100m is not admitted: strict_status=action_required, scale_gap_status=blocked_by_env"
+  ],
+  "warnings": [],
+  "next_actions": [
+    "Do not admit production traffic yet; run the listed strict-evidence job first.",
+    "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json"
+  ],
+  "source_artifacts": {
+    "strict_evidence": "benchmarks/production_evidence_results.json",
+    "scale_gap": "benchmarks/scale_gap_results.json",
+    "production_scale_run_plan": "benchmarks/production_scale_run_plan.json"
+  }
+}

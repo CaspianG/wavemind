@@ -31,6 +31,10 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert workflow.index("production-evidence-dispatch") < workflow.index(
         "production-evidence-bundle"
     )
+    assert "python -m wavemind production-admission" in workflow
+    assert "--output benchmarks/production_admission_results.json" in workflow
+    assert "--markdown-output benchmarks/PRODUCTION_ADMISSION.md" in workflow
+    assert workflow.index("scale-gap") < workflow.index("production-admission")
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(
@@ -69,6 +73,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
     assert "benchmarks/production_evidence_dispatch_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
+    assert "cp benchmarks/PRODUCTION_ADMISSION.md site/benchmarks/PRODUCTION_ADMISSION.md" in workflow
+    assert "cp benchmarks/production_admission_results.json site/data/production_admission_results.json" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():

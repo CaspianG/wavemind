@@ -3,7 +3,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from wavemind.production_evidence import evaluate_production_evidence
+from wavemind.production_evidence import (
+    evaluate_production_admission,
+    evaluate_production_evidence,
+    render_production_admission_markdown,
+)
 
 
 def test_production_evidence_gate_tracks_strict_external_claims():
@@ -91,3 +95,142 @@ def test_production_evidence_gate_strict_exits_nonzero(tmp_path):
 
     assert result.returncode == 2
     assert "action_required" in result.stdout
+
+
+def test_production_admission_blocks_100m_without_strict_artifact():
+    root = Path(__file__).resolve().parents[1]
+    payload = evaluate_production_admission(
+        root,
+        target_memories=100_000_000,
+        engine="qdrant-sharded-service",
+    )
+
+    assert payload["schema"] == "wavemind.production_admission.v1"
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False
+    assert payload["claim_boundary"] == "strict_evidence_required"
+
+    row = payload["required_evidence"][0]
+    assert row["profile"] == "qdrant-sharded-100m"
+    assert row["requirement_id"] == "hundred_million_remote_load"
+    assert row["strict_status"] == "action_required"
+    assert row["artifact"] == (
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+    )
+    assert "100m" in row["command"].lower()
+    assert payload["issues"]
+
+
+def test_production_admission_plan_only_never_admits_production():
+    root = Path(__file__).resolve().parents[1]
+    payload = evaluate_production_admission(
+        root,
+        target_memories=100_000_000,
+        engine="qdrant-sharded",
+        allow_plan_only=True,
+    )
+
+    assert payload["status"] == "plan_only"
+    assert payload["admitted"] is False
+    assert "Do not admit production traffic yet" in payload["next_actions"][0]
+
+
+def test_production_admission_allows_small_targets_with_scale_guardrail():
+    root = Path(__file__).resolve().parents[1]
+    payload = evaluate_production_admission(
+        root,
+        target_memories=500_000,
+        engine="numpy",
+    )
+
+    assert payload["status"] == "admitted"
+    assert payload["admitted"] is True
+    assert payload["claim_boundary"] == "scale_plan_required"
+    assert payload["required_evidence"] == []
+    assert "Strict large-N admission is not required" in payload["warnings"][0]
+
+
+def test_render_production_admission_markdown():
+    root = Path(__file__).resolve().parents[1]
+    payload = evaluate_production_admission(
+        root,
+        target_memories=100_000_000,
+        engine="qdrant-sharded-service",
+    )
+    markdown = render_production_admission_markdown(payload)
+
+    assert "# WaveMind Production Admission" in markdown
+    assert "qdrant-sharded-100m" in markdown
+    assert "hundred_million_remote_load" not in markdown
+    assert "Keep the production claim locked" in markdown
+
+
+def test_production_admission_cli_writes_json_and_markdown(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "production_admission_results.json"
+    markdown = tmp_path / "PRODUCTION_ADMISSION.md"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "production-admission",
+            "--root",
+            str(project_root),
+            "--target-memories",
+            "100000000",
+            "--engine",
+            "qdrant-sharded-service",
+            "--write-artifacts",
+            "--output",
+            str(output),
+            "--markdown-output",
+            str(markdown),
+        ],
+        cwd=project_root,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    report = markdown.read_text(encoding="utf-8")
+
+    assert "status: blocked" in result.stdout
+    assert "admitted: false" in result.stdout
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False
+    assert "# WaveMind Production Admission" in report
+    assert "qdrant-sharded-100m" in report
+
+
+def test_production_admission_cli_fail_on_blocked_exits_nonzero():
+    project_root = Path(__file__).resolve().parents[1]
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "production-admission",
+            "--root",
+            str(project_root),
+            "--target-memories",
+            "100000000",
+            "--engine",
+            "qdrant-sharded-service",
+            "--fail-on-blocked",
+            "--json",
+        ],
+        cwd=project_root,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False

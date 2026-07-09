@@ -264,6 +264,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "scale_gap_results.json" in readme
     assert "SCALE_GAP.md" in readme
     assert "wavemind scale-gap --write-artifacts" in readme
+    assert "production_admission_results.json" in readme
+    assert "PRODUCTION_ADMISSION.md" in readme
+    assert "wavemind production-admission" in readme
     assert "faiss-persisted" in readme
     assert "SHA-256 checksum of normalized source" in readme
     assert "rebuilds it from the durable store" in readme
@@ -325,6 +328,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "release-claims --write-artifacts --fail-on-blocked" in benchmark_brief
     assert "SCALE_GAP.md" in benchmark_brief
     assert "scale-gap --write-artifacts" in benchmark_brief
+    assert "PRODUCTION_ADMISSION.md" in benchmark_brief
+    assert "production-admission --target-memories" in benchmark_brief
+    assert "production-admission" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
     assert "production-evidence-preflight" in roadmap
     leaderboard_workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(
@@ -339,6 +345,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind scale-gap" in leaderboard_workflow
     assert "benchmarks/scale_gap_results.json" in leaderboard_workflow
     assert "benchmarks/SCALE_GAP.md" in leaderboard_workflow
+    assert "wavemind production-admission" in leaderboard_workflow
+    assert "benchmarks/production_admission_results.json" in leaderboard_workflow
+    assert "benchmarks/PRODUCTION_ADMISSION.md" in leaderboard_workflow
     assert "memory-os-plan" in roadmap
     assert Path("benchmarks/validate_benchmark_artifacts.py").exists()
     assert Path("benchmarks/render_leaderboard_status.py").exists()
@@ -353,6 +362,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/RELEASE_CLAIMS.md").exists()
     assert Path("benchmarks/scale_gap_results.json").exists()
     assert Path("benchmarks/SCALE_GAP.md").exists()
+    assert Path("benchmarks/production_admission_results.json").exists()
+    assert Path("benchmarks/PRODUCTION_ADMISSION.md").exists()
     assert Path("wavemind/production_evidence.py").exists()
     assert "consolidate_concepts" in roadmap
     assert "scale-plan" in use_cases

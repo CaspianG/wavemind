@@ -14,6 +14,7 @@ python -m build
 python -m twine check dist/*
 wavemind release-claims --write-artifacts --fail-on-blocked
 wavemind scale-gap --write-artifacts
+wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --allow-plan-only --write-artifacts
 ```
 
 On Windows PowerShell:
@@ -24,6 +25,7 @@ python -m build
 python -m twine check dist\*
 wavemind release-claims --write-artifacts --fail-on-blocked
 wavemind scale-gap --write-artifacts
+wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --allow-plan-only --write-artifacts
 ```
 
 4. Commit the version bump.
@@ -58,6 +60,9 @@ git push origin main --tags
 - Do not claim 10M/50M/100M production scale unless
   `wavemind scale-gap --fail-on-action-required` passes or the release notes
   explicitly say the remaining rows are plan-only.
+- Do not route production traffic to a named large-N deployment unless
+  `wavemind production-admission --target-memories ... --engine ... --fail-on-blocked`
+  admits that exact target/engine pair.
 - Do not add benchmark claims to release notes unless the result JSON is
   committed under `benchmarks/`.
 - If the release changes public benchmark numbers, update README and

@@ -195,6 +195,18 @@ def refresh_commands() -> list[list[str]]:
         [python, "-m", "wavemind", "scale-gap", "--write-artifacts"],
         [
             python,
+            "-m",
+            "wavemind",
+            "production-admission",
+            "--target-memories",
+            "100000000",
+            "--engine",
+            "qdrant-sharded-service",
+            "--allow-plan-only",
+            "--write-artifacts",
+        ],
+        [
+            python,
             "benchmarks/render_leaderboard_status.py",
             "--output",
             "docs/data/leaderboard-status.json",

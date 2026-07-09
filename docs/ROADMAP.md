@@ -100,6 +100,13 @@ policy matters more than raw vector-database scale:
   state, exact commands, missing environment, and nearest checked baselines, so
   the next scale work is a ranked execution queue rather than a loose roadmap
   note.
+- `wavemind production-admission --target-memories ... --engine ...` is the
+  deploy-facing large-N gate. It maps a requested 10M/50M/100M deployment to the
+  required strict evidence profile, writes
+  `benchmarks/production_admission_results.json` and
+  `benchmarks/PRODUCTION_ADMISSION.md`, and returns non-zero with
+  `--fail-on-blocked` until the matching strict result artifact passes. Plan-only
+  contracts remain useful for operators, but never admit production traffic.
 - `wavemind memory-os-plan` is now the read-only scheduler preflight for the
   adaptive Memory OS worker set. It turns stats and query-audit traffic into
   concrete cadences, worker counts, Redis/shared-cache requirements,

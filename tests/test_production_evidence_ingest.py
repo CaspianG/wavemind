@@ -192,4 +192,5 @@ def test_ingest_refresh_commands_cover_claim_boundary_artifacts():
     assert any("production-evidence-bundle" in command for command in commands)
     assert any("release-claims" in command for command in commands)
     assert any("scale-gap" in command for command in commands)
+    assert any("production-admission" in command for command in commands)
     assert any("docs/data/leaderboard-status.json" in command for command in commands)

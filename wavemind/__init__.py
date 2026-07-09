@@ -170,6 +170,8 @@ from .scale import (
 )
 from .production_evidence import (
     build_scale_gap_manifest,
+    evaluate_production_admission,
+    render_production_admission_markdown,
     render_scale_gap_markdown,
 )
 from .serverless import (
@@ -360,6 +362,7 @@ __all__ = [
     "event_payload",
     "estimate_production_cost",
     "evaluate_production_slo",
+    "evaluate_production_admission",
     "graph_payload",
     "image_payload",
     "kubernetes_resource_path",
@@ -376,6 +379,7 @@ __all__ = [
     "remember_payload",
     "restore_recovery_journal",
     "render_scale_gap_markdown",
+    "render_production_admission_markdown",
     "run_control_plane_consensus_profile",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",
