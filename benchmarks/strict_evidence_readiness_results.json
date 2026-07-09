@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-09T06:00:28Z",
+  "generated_at": "2026-07-09T10:21:55Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -240,7 +240,7 @@
         "set WAVEMIND_QDRANT_URL"
       ],
       "warnings": [],
-      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
+      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
       "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_url=\"$WAVEMIND_QDRANT_URL\"",
       "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_url=\"$WAVEMIND_QDRANT_URL\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
@@ -283,7 +283,7 @@
         "set WAVEMIND_QDRANT_URLS"
       ],
       "warnings": [],
-      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
+      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"250.0\" -f replicas=\"4\" -f autoscaling_max_replicas=\"48\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
       "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"250.0\" -f replicas=\"4\" -f autoscaling_max_replicas=\"48\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
@@ -324,7 +324,7 @@
         "set WAVEMIND_PGVECTOR_DSN"
       ],
       "warnings": [],
-      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
+      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
       "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
@@ -365,7 +365,7 @@
         "set WAVEMIND_FAISS_IVFPQ_PATH"
       ],
       "warnings": [],
-      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"faiss-ivfpq-persisted\" -f size=\"50000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f faiss_ivfpq_path=\"$WAVEMIND_FAISS_IVFPQ_PATH\"",
       "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"faiss-ivfpq-persisted\" -f size=\"50000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f faiss_ivfpq_path=\"$WAVEMIND_FAISS_IVFPQ_PATH\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
@@ -389,7 +389,7 @@
       "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "artifact_exists": false,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
-      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+      "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
       "locked_claim": "10M-100M service-backed production scale",
       "target_memories": 100000000,
       "target_recall_at_k": 0.95,
@@ -408,7 +408,7 @@
         "set WAVEMIND_QDRANT_URLS"
       ],
       "warnings": [],
-      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
       "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"100000000\" -f dim=\"128\" -f queries=\"5000\" -f top_k=\"10\" -f batch_size=\"10000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"500.0\" -f replicas=\"8\" -f autoscaling_max_replicas=\"128\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
       "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"qdrant-sharded-service\" -f size=\"100000000\" -f dim=\"128\" -f queries=\"5000\" -f top_k=\"10\" -f batch_size=\"10000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"500.0\" -f replicas=\"8\" -f autoscaling_max_replicas=\"128\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f qdrant_urls=\"$WAVEMIND_QDRANT_URLS\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",

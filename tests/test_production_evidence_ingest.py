@@ -28,10 +28,15 @@ def _cluster_payload() -> dict:
             "namespace_count": 32,
             "memories_per_namespace": 8,
             "replication_factor": 3,
+            "read_quorum": 1,
+            "read_fanout": 1,
         },
         "results": [
             {
                 "engine": "WaveMind external HTTP cluster load",
+                "replication_factor": 3,
+                "read_quorum": 1,
+                "read_fanout": 1,
                 "success_rate": 1.0,
                 "write_success_rate": 1.0,
                 "query_hit_rate": 1.0,

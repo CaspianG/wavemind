@@ -979,6 +979,7 @@ Maintenance workers:
 ```sh
 wavemind maintenance --namespace user:42 --consolidate-steps 10 --consolidate-concepts --json
 wavemind memory-os-plan --namespace user:42 --deployment production --target-memories 2000000 --namespace-count 4096 --cache-mode auto --json
+wavemind cluster-admission --deployment production --min-nodes 4 --namespace-count 32 --replication-factor 3 --read-quorum 1 --read-fanout 1 --batch-query-size 24 --allow-plan-only --write-artifacts --json
 wavemind active-active-admission --deployment production --min-regions 3 --namespace-count 16 --allow-plan-only --write-artifacts --json
 wavemind serverless-admission --deployment production --target-rps 3200 --target-p99-ms 500 --max-scale 256 --allow-plan-only --write-artifacts --json
 wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts --json
@@ -1041,6 +1042,14 @@ sharing. Plans also include `policy_manifest`, `policy_history`,
 when repeated Memory OS gaps changed cadence, priority, cache mode, or lock
 requirements. Production `memory-os` commands emitted by the planner include
 `--lock-required` whenever the plan requires a distributed single-flight lock.
+`wavemind cluster-admission` is the deployment-facing gate for remote
+service-node cluster rollout. It joins the strict `external_http_cluster`
+evidence requirement with cluster-node preflight state and writes
+`benchmarks/cluster_admission_results.json` plus
+`benchmarks/CLUSTER_ADMISSION.md`. `--fail-on-blocked` stops deploys until real
+external HTTP service nodes have passed quorum writes, recall, failover,
+repair, delete suppression, batch query, and p99 SLO checks; local loopback
+HTTP-cluster profiles remain development evidence only.
 `wavemind active-active-admission` is the deployment-facing gate for remote
 multi-region active-active rollout. It joins the strict
 `external_http_active_active` evidence requirement with active-active preflight
@@ -2024,6 +2033,7 @@ public claim boundaries stable:
 | Scale gap matrix | Large-N proof gap contract for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS IVF-PQ, and 100M sharded Qdrant. It joins strict evidence, preflight, run commands, missing env, and nearest existing baselines. | `benchmarks/scale_gap_results.json`, `benchmarks/SCALE_GAP.md`, `wavemind scale-gap --write-artifacts` | Current status is `action_required`: the largest nearby checked baseline is 10M FAISS IVF-PQ, but the strict 10M service, 50M, and 100M result artifacts are still missing. |
 | Cost-efficiency leaderboard | Cost, latency, recall, SLO, and memory-count evidence are ranked across measured production-load artifacts and plan-only 10M/50M/100M contracts. | `benchmarks/cost_efficiency_results.json`, `benchmarks/COST_EFFICIENCY.md`, `benchmarks/cost_efficiency_leaderboard.py` | Planned rows are capacity/cost contracts only; they do not unlock 50M/100M production latency or recall claims until matching result artifacts pass strict evidence. |
 | Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M sharded Qdrant status is `plan_only`, not admitted: the run contract exists, but `production_streaming_load_qdrant_sharded_100m_results.json` is still missing. |
+| Cluster admission | Deployment-facing gate for remote service-node cluster rollout. It admits only when strict external HTTP cluster evidence passes for the requested nodes, namespaces, replication, batch-query, and p99 SLO. | `benchmarks/cluster_admission_results.json`, `benchmarks/CLUSTER_ADMISSION.md`, `wavemind cluster-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: checked-in HTTP cluster evidence is local-loopback, and remote cluster node env is not configured. |
 | Active-active admission | Deployment-facing gate for remote multi-region active-active rollout. It admits only when the strict external HTTP active-active artifact passes; local/loopback runs remain development evidence. | `benchmarks/active_active_admission_results.json`, `benchmarks/ACTIVE_ACTIVE_ADMISSION.md`, `wavemind active-active-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `benchmarks/external_http_active_active_results.json` is still missing and remote region env is not configured. |
 | Serverless admission | Deployment-facing gate for managed/serverless rollout. It admits only when remote deployed API nodes produce strict telemetry; loopback telemetry remains development evidence. | `benchmarks/serverless_admission_results.json`, `benchmarks/SERVERLESS_ADMISSION.md`, `wavemind serverless-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `deploy/serverless/observed-telemetry.remote.json` is still missing and `WAVEMIND_SERVERLESS_NODES` is not configured. |
 | Memory OS canary | Staging proof that representative query-audit traffic can drive Memory OS prewarm, predictive prefetch, priority learning, TTL cleanup, and admission. | `benchmarks/memory_os_canary_results.json`, `benchmarks/MEMORY_OS_CANARY.md`, `wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts` | This is not remote Kubernetes, real Redis, or 10M/100M production evidence; it only proves the worker/admission contract under seeded staging traffic. |

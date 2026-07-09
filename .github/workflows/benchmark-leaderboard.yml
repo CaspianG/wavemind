@@ -210,6 +210,12 @@ jobs:
             --output benchmarks/production_admission_results.json \
             --markdown-output benchmarks/PRODUCTION_ADMISSION.md \
             --json
+          python -m wavemind cluster-admission \
+            --allow-plan-only \
+            --write-artifacts \
+            --output benchmarks/cluster_admission_results.json \
+            --markdown-output benchmarks/CLUSTER_ADMISSION.md \
+            --json
           python -m wavemind active-active-admission \
             --allow-plan-only \
             --write-artifacts \

@@ -1,0 +1,102 @@
+{
+  "schema": "wavemind.cluster_admission.v1",
+  "generated_at": "2026-07-09T10:20:16Z",
+  "status": "plan_only",
+  "admitted": false,
+  "deployment": "production",
+  "min_nodes": 4,
+  "namespace_count": 32,
+  "memories_per_namespace": 8,
+  "replication_factor": 3,
+  "read_quorum": 1,
+  "read_fanout": 1,
+  "batch_query_size": 24,
+  "p99_slo_ms": 1000.0,
+  "allow_plan_only": true,
+  "claim_boundary": "external_http_cluster_evidence_required",
+  "summary": {
+    "status": "plan_only",
+    "admitted": false,
+    "strict_status": "action_required",
+    "requested_evidence_status": "fail",
+    "preflight_status": "action_required",
+    "required_artifact": "benchmarks/http_cluster_load_results.json",
+    "missing_env": [
+      "WAVEMIND_CLUSTER_NODES",
+      "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+    ],
+    "blocking_issue_count": 4,
+    "warning_count": 3
+  },
+  "required_evidence": {
+    "id": "external_http_cluster",
+    "title": "External HTTP service-node load",
+    "status": "action_required",
+    "artifact": "benchmarks/http_cluster_load_results.json",
+    "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
+    "issues": [
+      "environment must be a real remote/staging/production deployment",
+      "source must identify a real remote run, not a sample or loopback"
+    ],
+    "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true",
+    "claim_unlocked": "Remote service-node cluster load SLO."
+  },
+  "requested_evidence": {
+    "status": "fail",
+    "artifact": "benchmarks/http_cluster_load_results.json",
+    "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms; issues: environment must be a real remote/staging/production deployment, source must identify a real remote run, not a sample or loopback",
+    "issues": [
+      "environment must be a real remote/staging/production deployment",
+      "source must identify a real remote run, not a sample or loopback"
+    ],
+    "min_nodes": 4,
+    "namespace_count": 32,
+    "memories_per_namespace": 8,
+    "replication_factor": 3,
+    "read_quorum": 1,
+    "read_fanout": 1,
+    "batch_query_size": 24,
+    "p99_slo_ms": 1000.0
+  },
+  "preflight": {
+    "status": "action_required",
+    "ready": false,
+    "evidence": "0 URLs configured",
+    "required_env": [
+      "WAVEMIND_CLUSTER_NODES",
+      "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+    ],
+    "missing_env": [
+      "WAVEMIND_CLUSTER_NODES",
+      "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+    ],
+    "issues": [
+      "cluster node requires at least 4 URLs",
+      "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+    ],
+    "warnings": [
+      "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+    ],
+    "output_artifact": "benchmarks/http_cluster_load_results.json"
+  },
+  "issues": [
+    "external_http_cluster is not admitted: strict_status=action_required",
+    "external_http_cluster artifact does not satisfy requested rollout: requested_evidence_status=fail",
+    "environment must be a real remote/staging/production deployment",
+    "source must identify a real remote run, not a sample or loopback"
+  ],
+  "warnings": [
+    "external HTTP cluster preflight is not ready; provide real node URLs or a node manifest before dispatching the workflow.",
+    "cluster node requires at least 4 URLs",
+    "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
+  ],
+  "next_actions": [
+    "Do not admit remote production cluster traffic yet; run the external HTTP cluster workflow against real service nodes first.",
+    "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true"
+  ],
+  "source_artifacts": {
+    "strict_evidence": "benchmarks/production_evidence_results.json",
+    "preflight": "benchmarks/production_evidence_preflight_results.json",
+    "required_result": "benchmarks/http_cluster_load_results.json"
+  }
+}

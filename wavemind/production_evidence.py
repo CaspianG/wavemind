@@ -316,9 +316,13 @@ def _validate_external_cluster_payload(
     min_namespaces: int = 32,
     min_memories_per_namespace: int = 8,
     min_batch_query_size: int = 12,
+    min_replication_factor: int = 3,
+    min_read_quorum: int = 1,
+    min_read_fanout: int = 1,
     min_success_rate: float = 1.0,
     min_failover_hit_rate: float = 0.95,
     p99_slo_ms: float = 1000.0,
+    require_remote: bool = False,
 ) -> dict[str, Any]:
     if not payload:
         return {
@@ -345,11 +349,23 @@ def _validate_external_cluster_payload(
             issues.append(issue)
 
     require(scenario.get("name") == "http_cluster_load", "scenario name must be http_cluster_load")
+    environment = str(scenario.get("environment") or "").lower()
+    source = str(scenario.get("source") or "").lower()
+
     require(int(scenario.get("node_count", 0)) >= min_nodes, f"node_count must be >= {min_nodes}")
     require(bool(scenario.get("deployment_id")), "deployment_id is required")
     require(bool(scenario.get("environment")), "environment is required")
+    if require_remote:
+        require(
+            environment not in {"", "local", "local-loopback", "loopback", "dev"},
+            "environment must be a real remote/staging/production deployment",
+        )
+        require(
+            source not in {"", "fixture", "sample", "loopback-api-processes", "local"},
+            "source must identify a real remote run, not a sample or loopback",
+        )
     require(
-        str(scenario.get("source") or "").lower() not in {"fixture", "sample"},
+        source not in {"fixture", "sample"},
         "source cannot be fixture/sample",
     )
     require(int(scenario.get("namespace_count", 0)) >= min_namespaces, f"namespace_count must be >= {min_namespaces}")
@@ -357,9 +373,32 @@ def _validate_external_cluster_payload(
         int(scenario.get("memories_per_namespace", 0)) >= min_memories_per_namespace,
         f"memories_per_namespace must be >= {min_memories_per_namespace}",
     )
-    require(int(scenario.get("replication_factor", 0)) >= 3, "replication_factor must be >= 3")
+    require(
+        int(scenario.get("replication_factor", 0)) >= min_replication_factor,
+        f"replication_factor must be >= {min_replication_factor}",
+    )
+    require(
+        int(scenario.get("read_quorum", 0)) >= min_read_quorum,
+        f"read_quorum must be >= {min_read_quorum}",
+    )
+    require(
+        int(scenario.get("read_fanout", 0)) >= min_read_fanout,
+        f"read_fanout must be >= {min_read_fanout}",
+    )
     require(bool(result), "WaveMind external HTTP cluster load result is required")
     if result:
+        require(
+            int(result.get("replication_factor", 0)) >= min_replication_factor,
+            f"result replication_factor must be >= {min_replication_factor}",
+        )
+        require(
+            int(result.get("read_quorum", 0)) >= min_read_quorum,
+            f"result read_quorum must be >= {min_read_quorum}",
+        )
+        require(
+            int(result.get("read_fanout", 0)) >= min_read_fanout,
+            f"result read_fanout must be >= {min_read_fanout}",
+        )
         require(float(result.get("success_rate", 0.0)) >= min_success_rate, "success_rate below SLO")
         require(float(result.get("write_success_rate", 0.0)) >= min_success_rate, "write_success_rate below SLO")
         require(float(result.get("query_hit_rate", 0.0)) >= min_success_rate, "query_hit_rate below SLO")
@@ -2157,6 +2196,298 @@ def evaluate_production_admission(
             "production_scale_run_plan": "benchmarks/production_scale_run_plan.json",
         },
     }
+
+
+def evaluate_cluster_admission(
+    root: Path = PROJECT_ROOT,
+    *,
+    deployment: str = "production",
+    min_nodes: int = 4,
+    namespace_count: int = 32,
+    memories_per_namespace: int = 8,
+    replication_factor: int = 3,
+    read_quorum: int = 1,
+    read_fanout: int = 1,
+    batch_query_size: int = 24,
+    p99_slo_ms: float = 1000.0,
+    allow_plan_only: bool = False,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Gate remote service-node cluster rollout against strict evidence.
+
+    This is the deployment-facing counterpart to the strict production evidence
+    requirement named ``external_http_cluster``. It admits a cluster rollout
+    only when real remote/staging/production service nodes pass the sustained
+    external HTTP load profile. Local loopback runs remain development evidence.
+    """
+
+    root = Path(root)
+    strict = evaluate_production_evidence(root)
+    strict_requirements = {
+        str(row.get("id")): row
+        for row in strict.get("requirements", [])
+        if isinstance(row, dict)
+    }
+    requirement = strict_requirements.get("external_http_cluster", {})
+    evidence_artifact = (
+        requirement.get("artifact") or "benchmarks/http_cluster_load_results.json"
+    )
+    evidence_payload = _load_optional_json(root / str(evidence_artifact))
+    requested_validation = _validate_external_cluster_payload(
+        evidence_payload or None,
+        min_nodes=int(min_nodes),
+        min_namespaces=int(namespace_count),
+        min_memories_per_namespace=int(memories_per_namespace),
+        min_batch_query_size=int(batch_query_size),
+        min_replication_factor=int(replication_factor),
+        min_read_quorum=int(read_quorum),
+        min_read_fanout=int(read_fanout),
+        p99_slo_ms=float(p99_slo_ms),
+        require_remote=True,
+    )
+    preflight = evaluate_production_evidence_preflight(root, env=env)
+    preflight_checks = {
+        str(row.get("id")): row
+        for row in preflight.get("checks", [])
+        if isinstance(row, dict)
+    }
+    preflight_check = preflight_checks.get("external_http_cluster", {})
+
+    strict_status = str(requirement.get("status") or "missing")
+    requested_evidence_status = str(requested_validation.get("status") or "missing")
+    preflight_status = str(preflight_check.get("status") or "missing")
+    admitted = strict_status == "pass" and requested_evidence_status == "pass"
+    if admitted:
+        status = "admitted"
+    elif allow_plan_only:
+        status = "plan_only"
+    else:
+        status = "blocked"
+
+    issues: list[str] = []
+    warnings: list[str] = []
+    if strict_status != "pass":
+        issues.append(
+            "external_http_cluster is not admitted: "
+            f"strict_status={strict_status}"
+        )
+    if requested_evidence_status != "pass":
+        issues.append(
+            "external_http_cluster artifact does not satisfy requested rollout: "
+            f"requested_evidence_status={requested_evidence_status}"
+        )
+    if preflight_status != "ready":
+        warnings.append(
+            "external HTTP cluster preflight is not ready; provide real node URLs "
+            "or a node manifest before dispatching the workflow."
+        )
+    if int(min_nodes) < 4:
+        issues.append("min_nodes must be at least 4 for production cluster admission.")
+    if int(namespace_count) < 1:
+        issues.append("namespace_count must be positive.")
+    if int(memories_per_namespace) < 1:
+        issues.append("memories_per_namespace must be positive.")
+    if int(replication_factor) < 3:
+        issues.append("replication_factor must be at least 3.")
+    if int(read_quorum) < 1:
+        issues.append("read_quorum must be positive.")
+    if int(read_fanout) < 1:
+        issues.append("read_fanout must be positive.")
+    if int(batch_query_size) < 1:
+        issues.append("batch_query_size must be positive.")
+    if float(p99_slo_ms) <= 0:
+        issues.append("p99_slo_ms must be positive.")
+
+    command = str(requirement.get("command") or preflight_check.get("command") or "")
+    next_actions: list[str] = []
+    if admitted:
+        next_actions.append(
+            "Proceed with cluster rollout while keeping quorum, failover, repair, delete-suppression, batch-query, and p99 monitors enabled."
+        )
+    elif status == "plan_only":
+        next_actions.append(
+            "Do not admit remote production cluster traffic yet; run the external HTTP cluster workflow against real service nodes first."
+        )
+    else:
+        next_actions.append(
+            "Keep the remote service-node production claim locked until the strict external cluster artifact passes."
+        )
+    if command:
+        next_actions.append(command)
+
+    requirement_issues = list(requirement.get("issues") or [])
+    requested_validation_issues = list(requested_validation.get("issues") or [])
+    preflight_issues = list(preflight_check.get("issues") or [])
+    missing_env = list(preflight_check.get("missing_env") or [])
+    required_env = list(preflight_check.get("required_env") or [])
+
+    return {
+        "schema": "wavemind.cluster_admission.v1",
+        "generated_at": _utc_now(),
+        "status": status,
+        "admitted": admitted,
+        "deployment": str(deployment),
+        "min_nodes": int(min_nodes),
+        "namespace_count": int(namespace_count),
+        "memories_per_namespace": int(memories_per_namespace),
+        "replication_factor": int(replication_factor),
+        "read_quorum": int(read_quorum),
+        "read_fanout": int(read_fanout),
+        "batch_query_size": int(batch_query_size),
+        "p99_slo_ms": float(p99_slo_ms),
+        "allow_plan_only": bool(allow_plan_only),
+        "claim_boundary": "external_http_cluster_evidence_required",
+        "summary": {
+            "status": status,
+            "admitted": admitted,
+            "strict_status": strict_status,
+            "requested_evidence_status": requested_evidence_status,
+            "preflight_status": preflight_status,
+            "required_artifact": evidence_artifact,
+            "missing_env": missing_env,
+            "blocking_issue_count": len(
+                dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+            ),
+            "warning_count": len(dict.fromkeys(warnings + preflight_issues)),
+        },
+        "required_evidence": {
+            "id": "external_http_cluster",
+            "title": requirement.get("title") or "External HTTP service-node load",
+            "status": strict_status,
+            "artifact": evidence_artifact,
+            "evidence": requirement.get("evidence")
+            or "missing external HTTP cluster artifact",
+            "issues": requirement_issues,
+            "command": command,
+            "claim_unlocked": requirement.get("claim_unlocked")
+            or "Remote service-node cluster load SLO.",
+        },
+        "requested_evidence": {
+            "status": requested_evidence_status,
+            "artifact": evidence_artifact,
+            "evidence": requested_validation.get("evidence")
+            or "missing external HTTP cluster artifact",
+            "issues": requested_validation_issues,
+            "min_nodes": int(min_nodes),
+            "namespace_count": int(namespace_count),
+            "memories_per_namespace": int(memories_per_namespace),
+            "replication_factor": int(replication_factor),
+            "read_quorum": int(read_quorum),
+            "read_fanout": int(read_fanout),
+            "batch_query_size": int(batch_query_size),
+            "p99_slo_ms": float(p99_slo_ms),
+        },
+        "preflight": {
+            "status": preflight_status,
+            "ready": bool(preflight_check.get("ready")),
+            "evidence": preflight_check.get("evidence") or "",
+            "required_env": required_env,
+            "missing_env": missing_env,
+            "issues": preflight_issues,
+            "warnings": list(preflight_check.get("warnings") or []),
+            "output_artifact": preflight_check.get("output_artifact")
+            or "benchmarks/http_cluster_load_results.json",
+        },
+        "issues": list(
+            dict.fromkeys(issues + requirement_issues + requested_validation_issues)
+        ),
+        "warnings": list(dict.fromkeys(warnings + preflight_issues)),
+        "next_actions": list(dict.fromkeys(next_actions)),
+        "source_artifacts": {
+            "strict_evidence": "benchmarks/production_evidence_results.json",
+            "preflight": "benchmarks/production_evidence_preflight_results.json",
+            "required_result": "benchmarks/http_cluster_load_results.json",
+        },
+    }
+
+
+def render_cluster_admission_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    required = payload["required_evidence"]
+    requested = payload.get("requested_evidence") or {}
+    preflight = payload["preflight"]
+    lines = [
+        "# WaveMind Cluster Admission",
+        "",
+        "This is the deployment-facing gate for remote service-node cluster",
+        "rollouts. It admits production traffic only when real external HTTP",
+        "service nodes have passed quorum writes, recall, failover, repair,",
+        "delete suppression, batch query, and p99 SLO evidence. Local loopback",
+        "profiles stay useful for development, but do not unlock this gate.",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| status | `{payload['status']}` |",
+        f"| admitted | `{payload['admitted']}` |",
+        f"| deployment | `{payload['deployment']}` |",
+        f"| min nodes | `{payload['min_nodes']}` |",
+        f"| namespace count | `{payload['namespace_count']}` |",
+        f"| memories per namespace | `{payload['memories_per_namespace']}` |",
+        f"| replication factor | `{payload['replication_factor']}` |",
+        f"| read quorum | `{payload['read_quorum']}` |",
+        f"| read fanout | `{payload['read_fanout']}` |",
+        f"| batch query size | `{payload['batch_query_size']}` |",
+        f"| p99 SLO ms | `{payload['p99_slo_ms']}` |",
+        f"| strict evidence | `{summary['strict_status']}` |",
+        f"| requested evidence | `{summary.get('requested_evidence_status', 'missing')}` |",
+        f"| preflight | `{summary['preflight_status']}` |",
+        f"| required artifact | `{summary['required_artifact']}` |",
+        "",
+        "## Required Evidence",
+        "",
+        "| requirement | status | artifact | evidence |",
+        "|---|---|---|---|",
+        "| {title} | `{status}` | `{artifact}` | {evidence} |".format(
+            title=required["title"],
+            status=required["status"],
+            artifact=required["artifact"],
+            evidence=str(required.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Requested Evidence",
+        "",
+        "| status | min nodes | namespaces | RF | read quorum | read fanout | batch size | p99 SLO ms | evidence |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---|",
+        (
+            "| `{status}` | `{min_nodes}` | `{namespace_count}` | `{replication_factor}` | "
+            "`{read_quorum}` | `{read_fanout}` | `{batch_query_size}` | `{p99_slo_ms}` | {evidence} |"
+        ).format(
+            status=requested.get("status", "missing"),
+            min_nodes=requested.get("min_nodes", payload["min_nodes"]),
+            namespace_count=requested.get("namespace_count", payload["namespace_count"]),
+            replication_factor=requested.get("replication_factor", payload["replication_factor"]),
+            read_quorum=requested.get("read_quorum", payload["read_quorum"]),
+            read_fanout=requested.get("read_fanout", payload["read_fanout"]),
+            batch_query_size=requested.get("batch_query_size", payload["batch_query_size"]),
+            p99_slo_ms=requested.get("p99_slo_ms", payload["p99_slo_ms"]),
+            evidence=str(requested.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Preflight",
+        "",
+        "| status | required env | missing env | evidence |",
+        "|---|---|---|---|",
+        "| `{status}` | `{required_env}` | `{missing_env}` | {evidence} |".format(
+            status=preflight["status"],
+            required_env=", ".join(preflight.get("required_env") or []),
+            missing_env=", ".join(preflight.get("missing_env") or []),
+            evidence=str(preflight.get("evidence") or "").replace("|", "\\|"),
+        ),
+        "",
+        "## Issues",
+        "",
+    ]
+    issues = payload.get("issues") or []
+    lines.extend(f"- {issue}" for issue in issues) if issues else lines.append("- none")
+    lines.extend(["", "## Next Actions", ""])
+    for action in payload.get("next_actions", []):
+        lines.append(
+            f"- `{action}`"
+            if action.startswith(("python ", "gh ", "wavemind "))
+            else f"- {action}"
+        )
+    lines.append("")
+    return "\n".join(lines)
 
 
 def evaluate_active_active_admission(

@@ -53,6 +53,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output benchmarks/production_admission_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_ADMISSION.md" in workflow
     assert workflow.index("scale-gap") < workflow.index("production-admission")
+    assert "python -m wavemind cluster-admission" in workflow
+    assert "--output benchmarks/cluster_admission_results.json" in workflow
+    assert "--markdown-output benchmarks/CLUSTER_ADMISSION.md" in workflow
     assert "python -m wavemind active-active-admission" in workflow
     assert "--output benchmarks/active_active_admission_results.json" in workflow
     assert "--markdown-output benchmarks/ACTIVE_ACTIVE_ADMISSION.md" in workflow
@@ -68,6 +71,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output benchmarks/memory_os_admission_results.json" in workflow
     assert "--markdown-output benchmarks/MEMORY_OS_ADMISSION.md" in workflow
     assert workflow.index("production-admission") < workflow.index("memory-os-canary")
+    assert workflow.index("production-admission") < workflow.index("cluster-admission")
+    assert workflow.index("cluster-admission") < workflow.index("active-active-admission")
+    assert workflow.index("cluster-admission") < workflow.index("memory-os-canary")
     assert workflow.index("production-admission") < workflow.index(
         "active-active-admission"
     )

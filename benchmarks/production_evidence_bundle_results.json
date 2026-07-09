@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-09T08:48:22Z",
+  "generated_at": "2026-07-09T10:23:34Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-09T08:48:22Z",
+    "generated_at": "2026-07-09T10:23:34Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -60,7 +60,7 @@
         "id": "serverless_remote_telemetry",
         "title": "Managed/serverless remote telemetry",
         "status": "action_required",
-        "evidence": "no checked-in remote serverless telemetry",
+        "evidence": "missing remote serverless telemetry",
         "artifact": "deploy/serverless/observed-telemetry.remote.json",
         "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
         "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
@@ -120,10 +120,10 @@
         "id": "hundred_million_remote_load",
         "title": "100M remote load result",
         "status": "action_required",
-        "evidence": "no checked-in 100M remote service-backed latency result",
+        "evidence": "no checked-in 100,000,000-vector result for Qdrant sharded service streaming",
         "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
-        "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO.",
+        "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
         "issues": [
           "missing artifact"
         ]
@@ -132,7 +132,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-09T08:48:22Z",
+    "generated_at": "2026-07-09T10:23:34Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -310,7 +310,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-09T08:47:43Z",
+    "generated_at": "2026-07-09T10:21:56Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -327,7 +327,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-09T08:38:16Z",
+        "evidence": "audit status pass, generated_at 2026-07-09T10:21:24Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -662,13 +662,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T08:47:32Z",
-    "generated_at": "2026-07-09T08:38:16Z",
-    "source_ref": "4409f178a6d6",
+    "checked_at": "2026-07-09T10:23:26Z",
+    "generated_at": "2026-07-09T10:22:38Z",
+    "source_ref": "040e94ca6594",
     "workflow_run_id": null,
     "refresh_profile": "local",
-    "max_age_days": 8.0,
-    "age_days": 0.00643549380787037,
+    "max_age_days": 3650.0,
+    "age_days": 0.0005580422222222223,
     "implemented_count": 29,
     "runner_ready_count": 2,
     "planned_count": 6,
@@ -915,7 +915,7 @@
       ],
       "warnings": [],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
-      "claim_unlocked": "100M+ memories with measured recall, p99, and cost SLO."
+      "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
     }
   ],
   "claim_boundaries": [

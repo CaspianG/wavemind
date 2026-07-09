@@ -62,6 +62,7 @@ from .production_evidence import (
     build_scale_gap_manifest,
     build_release_claims_manifest,
     evaluate_active_active_admission,
+    evaluate_cluster_admission,
     evaluate_production_admission,
     evaluate_production_evidence,
     evaluate_production_evidence_bundle,
@@ -69,6 +70,7 @@ from .production_evidence import (
     evaluate_serverless_admission,
     render_active_active_admission_markdown,
     render_bundle_markdown,
+    render_cluster_admission_markdown,
     render_dispatch_markdown,
     render_markdown,
     render_production_admission_markdown,
@@ -600,6 +602,44 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_ADMISSION.md"),
     )
     production_admission.add_argument("--json", action="store_true")
+
+    cluster_admission = sub.add_parser(
+        "cluster-admission",
+        help="Gate a remote service-node cluster rollout against strict evidence",
+    )
+    cluster_admission.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    cluster_admission.add_argument("--deployment", default="production")
+    cluster_admission.add_argument("--min-nodes", type=int, default=4)
+    cluster_admission.add_argument("--namespace-count", type=int, default=32)
+    cluster_admission.add_argument("--memories-per-namespace", type=int, default=8)
+    cluster_admission.add_argument("--replication-factor", type=int, default=3)
+    cluster_admission.add_argument("--read-quorum", type=int, default=1)
+    cluster_admission.add_argument("--read-fanout", type=int, default=1)
+    cluster_admission.add_argument("--batch-query-size", type=int, default=24)
+    cluster_admission.add_argument("--p99-slo-ms", type=float, default=1000.0)
+    cluster_admission.add_argument("--allow-plan-only", action="store_true")
+    cluster_admission.add_argument("--write-artifacts", action="store_true")
+    cluster_admission.add_argument(
+        "--fail-on-blocked",
+        action="store_true",
+        help="Exit non-zero unless the remote cluster rollout is admitted.",
+    )
+    cluster_admission.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/cluster_admission_results.json"),
+    )
+    cluster_admission.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/CLUSTER_ADMISSION.md"),
+    )
+    cluster_admission.add_argument("--json", action="store_true")
 
     active_active_admission = sub.add_parser(
         "active-active-admission",
@@ -1612,6 +1652,45 @@ def print_active_active_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_cluster_admission(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['status']}")
+    print(f"admitted: {str(payload['admitted']).lower()}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"min_nodes: {payload['min_nodes']}")
+    print(f"namespace_count: {payload['namespace_count']}")
+    print(f"memories_per_namespace: {payload['memories_per_namespace']}")
+    print(f"replication_factor: {payload['replication_factor']}")
+    print(f"read_quorum: {payload['read_quorum']}")
+    print(f"read_fanout: {payload['read_fanout']}")
+    print(f"batch_query_size: {payload['batch_query_size']}")
+    print(f"p99_slo_ms: {payload['p99_slo_ms']}")
+    print(f"claim_boundary: {payload['claim_boundary']}")
+    print(f"strict_status: {summary['strict_status']}")
+    print(f"requested_evidence_status: {summary.get('requested_evidence_status')}")
+    print(f"preflight_status: {summary['preflight_status']}")
+    print(f"required_artifact: {summary['required_artifact']}")
+    preflight = payload.get("preflight") or {}
+    missing_env = preflight.get("missing_env") or []
+    if missing_env:
+        print(f"missing_env: {', '.join(missing_env)}")
+    issues = payload.get("issues") or []
+    if issues:
+        print("issues:")
+        for issue in issues:
+            print(f"- {issue}")
+    warnings = payload.get("warnings") or []
+    if warnings:
+        print("warnings:")
+        for warning in warnings:
+            print(f"- {warning}")
+    next_actions = payload.get("next_actions") or []
+    if next_actions:
+        print("next_actions:")
+        for action in next_actions:
+            print(f"- {action}")
+
+
 def print_serverless_admission(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"status: {payload['status']}")
@@ -2412,6 +2491,42 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print_production_admission(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_blocked and not payload["admitted"]:
+            return 2
+        return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "cluster-admission":
+        payload = evaluate_cluster_admission(
+            args.root,
+            deployment=args.deployment,
+            min_nodes=args.min_nodes,
+            namespace_count=args.namespace_count,
+            memories_per_namespace=args.memories_per_namespace,
+            replication_factor=args.replication_factor,
+            read_quorum=args.read_quorum,
+            read_fanout=args.read_fanout,
+            batch_query_size=args.batch_query_size,
+            p99_slo_ms=args.p99_slo_ms,
+            allow_plan_only=args.allow_plan_only,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_cluster_admission_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_cluster_admission(payload)
             if args.write_artifacts:
                 print(f"json_report: {args.output}")
                 print(f"markdown_report: {args.markdown_output}")

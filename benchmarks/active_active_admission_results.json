@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.active_active_admission.v1",
-  "generated_at": "2026-07-09T08:37:57Z",
+  "generated_at": "2026-07-09T10:20:56Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
