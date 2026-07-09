@@ -378,8 +378,9 @@ def render_strict_evidence_readiness_markdown(payload: dict[str, Any]) -> str:
         "|---|---|---|",
     ]
     for check in payload.get("checks", []):
+        detail = str(check["detail"]).replace("|", "\\|")
         lines.append(
-            f"| {check['id']} | `{check['status']}` | {str(check['detail']).replace('|', '\\|')} |"
+            f"| {check['id']} | `{check['status']}` | {detail} |"
         )
 
     lines.extend(
