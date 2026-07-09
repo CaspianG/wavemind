@@ -40,6 +40,10 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "python -m wavemind production-scale-plan" in workflow
     assert "--output benchmarks/production_scale_run_plan.json" in workflow
     assert workflow.index("production-scale-plan") < workflow.index("production-evidence-bundle")
+    assert "python -m wavemind production-evidence-env" in workflow
+    assert "--output benchmarks/production_evidence_env_contract.json" in workflow
+    assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE_ENV.md" in workflow
+    assert "--env-output deploy/cluster/production-evidence.env.example" in workflow
     assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "--output benchmarks/production_evidence_dispatch_results.json" in workflow
     assert "--markdown-output benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
@@ -104,6 +108,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "tests/test_cluster_autoscale_report.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
+    assert "tests/test_production_evidence_env.py" in workflow
     assert "tests/test_production_evidence_dispatch.py" in workflow
     assert "tests/test_strict_evidence_readiness_report.py" in workflow
     assert "tests/test_http_cluster_load_benchmark.py" in workflow
@@ -130,6 +135,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "docs/data/leaderboard-status.json" in workflow
     assert "benchmarks/production_evidence_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE.md" in workflow
+    assert "benchmarks/production_evidence_env_contract.json" in workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE_ENV.md" in workflow
+    assert "deploy/cluster/production-evidence.env.example" in workflow
     assert "benchmarks/production_evidence_dispatch_results.json" in workflow
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in workflow
     assert "benchmarks/strict_evidence_readiness_results.json" in workflow

@@ -1916,6 +1916,7 @@ Memory OS policy evolution report: [`benchmarks/MEMORY_OS_POLICY_EVOLUTION.md`](
 Cluster autoscale report: [`benchmarks/CLUSTER_AUTOSCALE.md`](benchmarks/CLUSTER_AUTOSCALE.md).
 Cost-efficiency leaderboard: [`benchmarks/COST_EFFICIENCY.md`](benchmarks/COST_EFFICIENCY.md).
 Strict evidence readiness runbook: [`benchmarks/STRICT_EVIDENCE_READINESS.md`](benchmarks/STRICT_EVIDENCE_READINESS.md).
+Production evidence environment contract: [`benchmarks/PRODUCTION_EVIDENCE_ENV.md`](benchmarks/PRODUCTION_EVIDENCE_ENV.md).
 Living HTML dashboard: [`docs/benchmark-dashboard.html`](docs/benchmark-dashboard.html).
 Machine-readable dashboard status: [`docs/data/leaderboard-status.json`](docs/data/leaderboard-status.json).
 The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
@@ -1923,7 +1924,8 @@ The weekly workflow also publishes the refreshed dashboard to GitHub Pages at
 writing scheduled bot commits to `main`.
 The status JSON exposes first-class `publication_contract`, `freshness_gate`,
 `agent_quality`, `agent_impact`, `structured_memory`, `memory_os_intelligence`,
-`cluster_autoscale`, `memory_os_policy`, `memory_os_policy_evolution`, `production_evidence_dispatch`,
+`cluster_autoscale`, `memory_os_policy`, `memory_os_policy_evolution`,
+`production_evidence_env`, `production_evidence_dispatch`,
 `strict_evidence_readiness`, and `cost_efficiency`
 sections, so dashboards can verify the weekly GitHub Pages publication path,
 detect stale or missing public evidence, track task success, stale-error
@@ -1935,7 +1937,12 @@ from `benchmarks/production_readiness_results.json`.
 Strict production evidence gate: [`benchmarks/PRODUCTION_EVIDENCE.md`](benchmarks/PRODUCTION_EVIDENCE.md)
 from `benchmarks/production_evidence_results.json`. This is the hard boundary
 for remote multi-region, managed-serverless, 50M, and 100M scale claims.
-Production evidence dispatch plan:
+Production evidence environment contract:
+[`benchmarks/PRODUCTION_EVIDENCE_ENV.md`](benchmarks/PRODUCTION_EVIDENCE_ENV.md)
+from `benchmarks/production_evidence_env_contract.json`. This maps every
+strict-evidence variable to the claims, workflows, artifacts, GitHub Actions
+secrets, workflow inputs, and safe `.env.example` placeholders without
+serializing credential values. Production evidence dispatch plan:
 [`benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md`](benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md)
 from `benchmarks/production_evidence_dispatch_results.json`. This turns the
 strict evidence gaps into secret-safe `gh workflow run ...` payloads, download
@@ -1983,7 +1990,12 @@ This writes `benchmarks/production_evidence_preflight_results.json` and
 `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, checks the required remote URLs,
 service index env vars, FAISS paths, plan artifacts, disk headroom, and exact
 large-run commands, and can fail deployments with
-`--fail-on-action-required`. Strict claim gate: `wavemind production-evidence
+`--fail-on-action-required`. Operator env contract: `wavemind
+production-evidence-env --write-artifacts`. This writes
+`benchmarks/production_evidence_env_contract.json`,
+`benchmarks/PRODUCTION_EVIDENCE_ENV.md`, and
+`deploy/cluster/production-evidence.env.example`, and can fail staging setup
+with `--fail-on-missing`. Strict claim gate: `wavemind production-evidence
 --strict`. Dispatch contract: `wavemind production-evidence-dispatch
 --write-artifacts`, or `wavemind production-evidence-dispatch
 --fail-on-action-required` when the environment must already be ready to launch
@@ -2049,6 +2061,7 @@ public claim boundaries stable:
 | Production readiness | WaveMind core readiness is gated by checked-in artifacts before release. | `benchmarks/production_readiness_results.json`, `benchmarks/PRODUCTION_READINESS.md` | Missing external competitor credentials should not be treated as WaveMind core failure, but they still limit competitor claims. |
 | Strict production evidence | Remote service-node, active-active, serverless, 10M service, 50M, and 100M claims are separated into a hard evidence gate. | `benchmarks/production_evidence_results.json`, `benchmarks/PRODUCTION_EVIDENCE.md`, `benchmarks/production_evidence_gate.py`, `wavemind production-evidence --strict` | Current status remains action-required until real remote/service artifacts are committed. |
 | Production evidence preflight | Remote endpoint/env/path prerequisites are checked before launching expensive strict-evidence jobs. | `benchmarks/production_evidence_preflight_results.json`, `benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md`, `wavemind production-evidence-preflight --write-artifacts` | A ready preflight is not a passing evidence result; it only proves the environment is ready to run the remote/large-N jobs. |
+| Production evidence env contract | Secret-safe operator map from every strict-evidence env var to the workflows, claims, artifacts, GitHub Actions secrets, input bindings, and `.env.example` placeholders it unlocks. | `benchmarks/production_evidence_env_contract.json`, `benchmarks/PRODUCTION_EVIDENCE_ENV.md`, `deploy/cluster/production-evidence.env.example`, `wavemind production-evidence-env --write-artifacts` | It does not unlock production claims; it prevents ambiguous or unsafe production evidence launches and keeps secrets out of checked-in artifacts. |
 | Production evidence dispatch | Secret-safe workflow dispatch contract for every unfinished strict-evidence job, including safe `commit_results=false` launch commands, publish commands, required env/secrets, and artifact promotion commands. | `benchmarks/production_evidence_dispatch_results.json`, `benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md`, `wavemind production-evidence-dispatch --write-artifacts` | A dispatch plan only launches or reviews evidence runs; it does not unlock production claims until downloaded artifacts pass ingest and strict validation. |
 | Strict evidence readiness | Operator runbook that joins strict evidence, preflight, dispatch, scale plans, scale gaps, release claims, and freshness into one table of blockers, locked claims, safe dispatch commands, ingest commands, and validation commands. | `benchmarks/strict_evidence_readiness_results.json`, `benchmarks/STRICT_EVIDENCE_READINESS.md`, `python benchmarks/strict_evidence_readiness_report.py` | Current readiness is `action_required`: it proves the remaining strict jobs are mapped and runnable, not that remote/10M/50M/100M production claims are complete. |
 | Production evidence bundle | Single operator-facing status contract that combines strict gate, preflight, readiness, artifact audit, claim boundaries, next actions, and release exit behavior. | `benchmarks/production_evidence_bundle_results.json`, `benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md`, `wavemind production-evidence-bundle --write-artifacts` | `claims_limited` is expected until the strict remote/large-N artifacts pass. |

@@ -57,6 +57,13 @@ from .memory_os_evolution import (
     run_memory_os_policy_evolution,
     write_memory_os_policy_evolution_artifacts,
 )
+from .production_evidence_env import (
+    PRODUCTION_EVIDENCE_ENV_SCHEMA,
+    build_production_evidence_env_contract,
+    render_production_evidence_env_example,
+    render_production_evidence_env_markdown,
+    write_production_evidence_env_artifacts,
+)
 from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
@@ -298,6 +305,7 @@ __all__ = [
     "MemoryRecord",
     "MemoryPayload",
     "MEMORY_OS_EVOLUTION_SCHEMA",
+    "PRODUCTION_EVIDENCE_ENV_SCHEMA",
     "CrossModalEncoder",
     "CrossModalContractFixture",
     "CrossModalEncoderContractReport",
@@ -377,6 +385,7 @@ __all__ = [
     "append_recovery_journal_entry",
     "advise_memory_architecture",
     "build_postgres_pitr_plan",
+    "build_production_evidence_env_contract",
     "build_production_scale_run_plan",
     "build_scale_plan",
     "build_scale_gap_manifest",
@@ -420,6 +429,8 @@ __all__ = [
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
     "render_memory_os_policy_evolution_markdown",
+    "render_production_evidence_env_example",
+    "render_production_evidence_env_markdown",
     "render_multimodal_admission_markdown",
     "render_external_multimodal_evidence_markdown",
     "run_control_plane_consensus_profile",
@@ -438,4 +449,5 @@ __all__ = [
     "validate_external_multimodal_evidence",
     "validate_postgres_pitr_commands",
     "write_memory_os_policy_evolution_artifacts",
+    "write_production_evidence_env_artifacts",
 ]

@@ -352,6 +352,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
+    production_evidence_env_payload = _load_json(
+        root / "benchmarks" / "production_evidence_env_contract.json"
+    )
     strict_evidence_readiness_payload = _load_json(
         root / "benchmarks" / "strict_evidence_readiness_results.json"
     )
@@ -406,6 +409,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_readiness_summary = (
         production_readiness_payload.get("summary", {})
         if production_readiness_payload
+        else {}
+    )
+    production_evidence_env_summary = (
+        production_evidence_env_payload.get("summary", {})
+        if production_evidence_env_payload
         else {}
     )
     strict_evidence_readiness_summary = (
@@ -1816,6 +1824,47 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
             "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile.",
+        },
+        {
+            "id": "production_evidence_env_contract",
+            "name": "Production evidence environment contract",
+            "category": "production-ops",
+            "status": "implemented",
+            "source": "benchmarks/production_evidence_env_contract.json",
+            "dataset": "Secret-safe operator contract for strict production evidence. It maps required and recommended variables to claims, workflows, artifacts, GitHub Actions secrets, workflow inputs, and env templates without serializing credential values.",
+            "competitors": [],
+            "metrics": [
+                "overall_status",
+                "required_env_count",
+                "configured_required_count",
+                "missing_required_count",
+                "recommended_missing_count",
+                "workflow_count",
+                "dispatch_job_count",
+                "scale_gap_profile_count",
+            ],
+            "current": {
+                "WaveMind production evidence env": _metric_summary(
+                    {
+                        "overall_status": (production_evidence_env_payload or {}).get(
+                            "overall_status"
+                        ),
+                        **production_evidence_env_summary,
+                    },
+                    (
+                        "overall_status",
+                        "required_env_count",
+                        "configured_required_count",
+                        "missing_required_count",
+                        "recommended_missing_count",
+                        "workflow_count",
+                        "dispatch_job_count",
+                        "scale_gap_profile_count",
+                    ),
+                ),
+            },
+            "target": "Keep every strict production evidence job mapped to explicit environment variables, GitHub secrets, workflow inputs, artifact outputs, and locked claims before any expensive remote/large-N run is launched.",
+            "next_step": "Set the missing environment-scoped GitHub secrets, run the safe dispatch commands, and ingest downloaded artifacts through the strict evidence gate.",
         },
         {
             "id": "strict_evidence_readiness_runbook",

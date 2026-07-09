@@ -34,6 +34,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    production_evidence_env = _load_json(
+        root / "benchmarks" / "production_evidence_env_contract.json",
+        load_errors,
+        required=False,
+    )
     release_claims = _load_json(
         root / "benchmarks" / "release_claims_results.json",
         load_errors,
@@ -147,6 +152,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/production_readiness_results.json": readiness,
         "benchmarks/production_evidence_results.json": evidence,
         "benchmarks/production_evidence_preflight_results.json": preflight,
+        "benchmarks/production_evidence_env_contract.json": production_evidence_env,
         "benchmarks/production_evidence_bundle_results.json": evidence_bundle,
         "benchmarks/release_claims_results.json": release_claims,
         "benchmarks/scale_gap_results.json": scale_gap,
@@ -330,6 +336,19 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "schema": preflight.get("schema"),
             "overall_status": preflight_status,
             "summary": preflight.get("summary", {}),
+        },
+        "production_evidence_env": {
+            "schema": production_evidence_env.get("schema"),
+            "overall_status": production_evidence_env.get("overall_status", "missing"),
+            "summary": production_evidence_env.get("summary", {}),
+            "github_secret_count": len(
+                (production_evidence_env.get("github_actions") or {}).get(
+                    "secret_names", []
+                )
+            ),
+            "check_count": len(production_evidence_env.get("checks", []))
+            if isinstance(production_evidence_env.get("checks"), list)
+            else 0,
         },
         "production_evidence_dispatch": {
             "schema": dispatch.get("schema"),

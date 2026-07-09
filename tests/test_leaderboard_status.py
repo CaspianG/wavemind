@@ -242,6 +242,16 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
     assert payload["production_evidence_bundle"]["next_action_count"] == 8
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
+    assert payload["production_evidence_env"]["schema"] == (
+        "wavemind.production_evidence_env_contract.v1"
+    )
+    assert payload["production_evidence_env"]["overall_status"] in {
+        "action_required",
+        "ready",
+    }
+    assert payload["production_evidence_env"]["summary"]["required_env_count"] >= 9
+    assert payload["production_evidence_env"]["github_secret_count"] >= 9
+    assert payload["production_evidence_env"]["check_count"] == 6
     assert payload["production_evidence_dispatch"]["schema"] == (
         "wavemind.production_evidence_dispatch.v1"
     )
@@ -409,6 +419,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     )
     assert "benchmarks/benchmark_matrix_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_results.json" in payload["source_files"]
+    assert "benchmarks/production_evidence_env_contract.json" in payload["source_files"]
     assert "benchmarks/production_evidence_bundle_results.json" in payload["source_files"]
     assert "benchmarks/production_evidence_dispatch_results.json" in payload["source_files"]
     assert "benchmarks/release_claims_results.json" in payload["source_files"]
@@ -458,6 +469,10 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
         "claims_limited",
         "claims_unlocked",
     }
+    assert payload["production_evidence_env"]["schema"] == (
+        "wavemind.production_evidence_env_contract.v1"
+    )
+    assert payload["production_evidence_env"]["summary"]["required_env_count"] >= 9
     assert payload["production_evidence_dispatch"]["schema"] == (
         "wavemind.production_evidence_dispatch.v1"
     )

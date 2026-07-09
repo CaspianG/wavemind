@@ -161,6 +161,11 @@ jobs:
             --write-artifacts \
             --output benchmarks/production_evidence_preflight_results.json \
             --markdown-output benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+          python -m wavemind production-evidence-env \
+            --write-artifacts \
+            --output benchmarks/production_evidence_env_contract.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_ENV.md \
+            --env-output deploy/cluster/production-evidence.env.example
           python -m wavemind production-scale-plan \
             --disk-free-gb 0 \
             --runner-storage-root state/production-runs \
@@ -324,18 +329,19 @@ jobs:
             tests/test_production_readiness_gate.py \
             tests/test_production_evidence_gate.py \
             tests/test_production_evidence_preflight.py \
+            tests/test_production_evidence_env.py \
             tests/test_production_evidence_dispatch.py \
             tests/test_production_evidence_bundle.py \
             tests/test_strict_evidence_readiness_report.py
 
       - name: Report benchmark artifact drift
         run: |
-          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json deploy/cluster/production-evidence.env.example; then
             echo "No benchmark changes."
             exit 0
           fi
           echo "::notice::Benchmark artifacts changed. Download the benchmark-leaderboard artifact and commit the reviewed files from a maintainer account."
-          git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json
+          git diff --stat -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.loopback.json deploy/cluster/production-evidence.env.example
 
       - name: Build GitHub Pages leaderboard
         run: |
@@ -348,6 +354,7 @@ jobs:
           cp benchmarks/PRODUCTION_READINESS.md site/benchmarks/PRODUCTION_READINESS.md
           cp benchmarks/PRODUCTION_EVIDENCE.md site/benchmarks/PRODUCTION_EVIDENCE.md
           cp benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md site/benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+          cp benchmarks/PRODUCTION_EVIDENCE_ENV.md site/benchmarks/PRODUCTION_EVIDENCE_ENV.md
           cp benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md site/benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
           cp benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md site/benchmarks/PRODUCTION_EVIDENCE_BUNDLE.md
           cp benchmarks/RELEASE_CLAIMS.md site/benchmarks/RELEASE_CLAIMS.md
@@ -369,6 +376,7 @@ jobs:
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
           cp benchmarks/production_evidence_results.json site/data/production_evidence_results.json
           cp benchmarks/production_evidence_preflight_results.json site/data/production_evidence_preflight_results.json
+          cp benchmarks/production_evidence_env_contract.json site/data/production_evidence_env_contract.json
           cp benchmarks/production_evidence_dispatch_results.json site/data/production_evidence_dispatch_results.json
           cp benchmarks/production_evidence_bundle_results.json site/data/production_evidence_bundle_results.json
           cp benchmarks/release_claims_results.json site/data/release_claims_results.json
@@ -430,6 +438,9 @@ jobs:
             benchmarks/PRODUCTION_EVIDENCE.md
             benchmarks/production_evidence_preflight_results.json
             benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md
+            benchmarks/production_evidence_env_contract.json
+            benchmarks/PRODUCTION_EVIDENCE_ENV.md
+            deploy/cluster/production-evidence.env.example
             benchmarks/production_evidence_dispatch_results.json
             benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md
             benchmarks/production_evidence_bundle_results.json

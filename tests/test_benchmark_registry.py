@@ -260,6 +260,11 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert http_active_active["final_noop_records_imported"] == 0
     assert entries["memory_competitor_adapter_profile"]["status"] == "implemented"
     assert entries["memory_competitor_adapter_profile"]["current"]["WaveMind"]["stale_suppression"] >= 0.8
+    env_contract = entries["production_evidence_env_contract"]
+    assert env_contract["category"] == "production-ops"
+    assert env_contract["status"] == "implemented"
+    assert env_contract["current"]["WaveMind production evidence env"]["required_env_count"] >= 9
+    assert env_contract["current"]["WaveMind production evidence env"]["workflow_count"] >= 4
     assert entries["longmemeval_answer_generation"]["status"] == "implemented"
     assert entries["longmemeval_answer_generation"]["current"]["WaveMind + qwen2.5:1.5b"]["queries"] == 50
     assert entries["lmeb"]["source_url"].startswith("https://")

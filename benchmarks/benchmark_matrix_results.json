@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T13:44:41Z",
-  "source_ref": "411562d66d33",
+  "generated_at": "2026-07-09T14:18:25Z",
+  "source_ref": "901db1b0f562",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1938,6 +1938,39 @@
       },
       "target": "Reach readiness_score 1.0 with zero action_required items before claiming complete million-plus production readiness.",
       "next_step": "Keep the gate at readiness_score 1.0 while repeating larger service-backed runs and moving external competitor evidence into the separate adapter profile."
+    },
+    {
+      "id": "production_evidence_env_contract",
+      "name": "Production evidence environment contract",
+      "category": "production-ops",
+      "status": "implemented",
+      "source": "benchmarks/production_evidence_env_contract.json",
+      "dataset": "Secret-safe operator contract for strict production evidence. It maps required and recommended variables to claims, workflows, artifacts, GitHub Actions secrets, workflow inputs, and env templates without serializing credential values.",
+      "competitors": [],
+      "metrics": [
+        "overall_status",
+        "required_env_count",
+        "configured_required_count",
+        "missing_required_count",
+        "recommended_missing_count",
+        "workflow_count",
+        "dispatch_job_count",
+        "scale_gap_profile_count"
+      ],
+      "current": {
+        "WaveMind production evidence env": {
+          "overall_status": "action_required",
+          "required_env_count": 9,
+          "configured_required_count": 0,
+          "missing_required_count": 9,
+          "recommended_missing_count": 3,
+          "workflow_count": 4,
+          "dispatch_job_count": 8,
+          "scale_gap_profile_count": 5
+        }
+      },
+      "target": "Keep every strict production evidence job mapped to explicit environment variables, GitHub secrets, workflow inputs, artifact outputs, and locked claims before any expensive remote/large-N run is launched.",
+      "next_step": "Set the missing environment-scoped GitHub secrets, run the safe dispatch commands, and ingest downloaded artifacts through the strict evidence gate."
     },
     {
       "id": "strict_evidence_readiness_runbook",

@@ -255,6 +255,10 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_evidence_preflight_results.json" in readme
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in readme
     assert "wavemind production-evidence-preflight" in readme
+    assert "production_evidence_env_contract.json" in readme
+    assert "PRODUCTION_EVIDENCE_ENV.md" in readme
+    assert "deploy/cluster/production-evidence.env.example" in readme
+    assert "wavemind production-evidence-env" in readme
     assert "production_evidence_dispatch_results.json" in readme
     assert "PRODUCTION_EVIDENCE_DISPATCH.md" in readme
     assert "wavemind production-evidence-dispatch" in readme
@@ -346,6 +350,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind production-evidence --strict" in benchmark_brief
     assert "PRODUCTION_EVIDENCE_PREFLIGHT.md" in benchmark_brief
     assert "production-evidence-preflight" in benchmark_brief
+    assert "PRODUCTION_EVIDENCE_ENV.md" in benchmark_brief
+    assert "production-evidence-env" in benchmark_brief
+    assert "deploy/cluster/production-evidence.env.example" in benchmark_brief
     assert "PRODUCTION_EVIDENCE_DISPATCH.md" in benchmark_brief
     assert "production-evidence-dispatch" in benchmark_brief
     assert "STRICT_EVIDENCE_READINESS.md" in benchmark_brief
@@ -379,11 +386,16 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "memory-os-evolution" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
     assert "production-evidence-preflight" in roadmap
+    assert "production-evidence-env" in roadmap
     assert "strict_evidence_readiness_report.py" in roadmap
     leaderboard_workflow = Path(".github/workflows/benchmark-leaderboard.yml").read_text(
         encoding="utf-8"
     )
     assert "wavemind release-claims" in leaderboard_workflow
+    assert "wavemind production-evidence-env" in leaderboard_workflow
+    assert "benchmarks/production_evidence_env_contract.json" in leaderboard_workflow
+    assert "benchmarks/PRODUCTION_EVIDENCE_ENV.md" in leaderboard_workflow
+    assert "deploy/cluster/production-evidence.env.example" in leaderboard_workflow
     assert "wavemind production-evidence-dispatch" in leaderboard_workflow
     assert "benchmarks/production_evidence_dispatch_results.json" in leaderboard_workflow
     assert "benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md" in leaderboard_workflow
@@ -424,6 +436,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/production_evidence_gate.py").exists()
     assert Path("benchmarks/production_evidence_preflight_results.json").exists()
     assert Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md").exists()
+    assert Path("benchmarks/production_evidence_env_contract.json").exists()
+    assert Path("benchmarks/PRODUCTION_EVIDENCE_ENV.md").exists()
+    assert Path("deploy/cluster/production-evidence.env.example").exists()
     assert Path("benchmarks/production_evidence_dispatch_results.json").exists()
     assert Path("benchmarks/PRODUCTION_EVIDENCE_DISPATCH.md").exists()
     assert Path("benchmarks/strict_evidence_readiness_results.json").exists()

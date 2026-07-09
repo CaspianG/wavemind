@@ -89,6 +89,13 @@ policy matters more than raw vector-database scale:
   service index env, FAISS storage paths, plan artifacts, disk headroom, and
   exact output-producing commands, and can fail deployments with
   `--fail-on-action-required`.
+- `wavemind production-evidence-env --write-artifacts` is the secret-safe
+  environment contract for those jobs. It writes
+  `benchmarks/production_evidence_env_contract.json`,
+  `benchmarks/PRODUCTION_EVIDENCE_ENV.md`, and
+  `deploy/cluster/production-evidence.env.example`, mapping required and
+  recommended variables to GitHub Actions secret names, workflow inputs,
+  artifacts, and locked claims without committing credential values.
 - `wavemind release-claims --write-artifacts --fail-on-blocked` is the compact
   release-facing claim contract. It writes
   `benchmarks/release_claims_results.json` and `benchmarks/RELEASE_CLAIMS.md`,

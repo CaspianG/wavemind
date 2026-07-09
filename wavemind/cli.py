@@ -92,6 +92,11 @@ from .production_evidence import (
     render_scale_gap_markdown,
     render_serverless_admission_markdown,
 )
+from .production_evidence_env import (
+    build_production_evidence_env_contract,
+    render_production_evidence_env_markdown,
+    write_production_evidence_env_artifacts,
+)
 from .production_evidence_ingest import (
     ProductionEvidenceIngestError,
     ingest_production_evidence_artifacts,
@@ -390,6 +395,48 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/PRODUCTION_EVIDENCE_PREFLIGHT.md"),
     )
     production_evidence_preflight.add_argument("--json", action="store_true")
+
+    production_evidence_env = sub.add_parser(
+        "production-evidence-env",
+        help="Build the secret-safe environment contract for strict production-evidence runs",
+    )
+    production_evidence_env.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Repository/artifact root. Defaults to the current working directory.",
+    )
+    production_evidence_env.add_argument(
+        "--repo",
+        default="CaspianG/wavemind",
+        help="GitHub repository used in generated gh secret commands.",
+    )
+    production_evidence_env.add_argument(
+        "--write-artifacts",
+        action="store_true",
+        help="Write JSON, Markdown, and .env.example contract artifacts.",
+    )
+    production_evidence_env.add_argument(
+        "--fail-on-missing",
+        action="store_true",
+        help="Exit non-zero unless every required production-evidence variable is configured.",
+    )
+    production_evidence_env.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/production_evidence_env_contract.json"),
+    )
+    production_evidence_env.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/PRODUCTION_EVIDENCE_ENV.md"),
+    )
+    production_evidence_env.add_argument(
+        "--env-output",
+        type=Path,
+        default=Path("deploy/cluster/production-evidence.env.example"),
+    )
+    production_evidence_env.add_argument("--json", action="store_true")
 
     production_evidence_dispatch = sub.add_parser(
         "production-evidence-dispatch",
@@ -1612,6 +1659,28 @@ def print_production_evidence_preflight(payload: dict[str, object]) -> None:
             print(f"  command: {command}")
 
 
+def print_production_evidence_env(payload: dict[str, object]) -> None:
+    summary = payload["summary"]
+    print(f"status: {payload['overall_status']}")
+    print(
+        "required_env: "
+        f"{summary['configured_required_count']}/{summary['required_env_count']} configured"
+    )
+    print(f"missing_required_env: {summary['missing_required_count']}")
+    print(f"recommended_missing_env: {summary['recommended_missing_count']}")
+    print(f"workflows: {summary['workflow_count']}")
+    missing = summary.get("missing_required_env") or []
+    if missing:
+        print("missing:")
+        for name in missing:
+            print(f"- {name}")
+    recommended = summary.get("recommended_missing_env") or []
+    if recommended:
+        print("recommended:")
+        for name in recommended:
+            print(f"- {name}")
+
+
 def print_production_evidence_bundle(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"claim_status: {summary['claim_status']}")
@@ -2583,6 +2652,27 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_action_required and payload["overall_status"] != "ready":
             return 2
         return 0
+
+    if args.command == "production-evidence-env":
+        payload = build_production_evidence_env_contract(args.root, repo=args.repo)
+        if args.write_artifacts:
+            write_production_evidence_env_artifacts(
+                payload,
+                output=args.output,
+                markdown_output=args.markdown_output,
+                env_output=args.env_output,
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_production_evidence_env(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+                print(f"env_example: {args.env_output}")
+        if args.fail_on_missing and payload["overall_status"] != "ready":
+            return 2
+        return 0 if payload["overall_status"] in {"ready", "action_required"} else 1
 
     if args.command == "production-evidence-dispatch":
         payload = build_production_evidence_dispatch_plan(
