@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -318,3 +319,72 @@ def test_production_admission_cli_fail_on_blocked_exits_nonzero():
     assert result.returncode == 2
     assert payload["status"] == "blocked"
     assert payload["admitted"] is False
+
+
+def test_serve_production_guard_blocks_before_uvicorn_start():
+    project_root = Path(__file__).resolve().parents[1]
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8999",
+            "--require-production-admission",
+            "--production-admission-root",
+            str(project_root),
+            "--production-target-memories",
+            "100000000",
+            "--production-engine",
+            "qdrant-sharded-service",
+        ],
+        cwd=project_root,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        timeout=15,
+    )
+
+    assert result.returncode == 2
+    assert "production admission blocked" in result.stderr
+    assert "qdrant-sharded-100m is not admitted" in result.stderr
+    assert "Uvicorn running" not in result.stderr
+
+
+def test_serve_production_guard_can_be_enabled_from_environment():
+    project_root = Path(__file__).resolve().parents[1]
+    env = {
+        **os.environ,
+        "PYTHONPATH": str(project_root) + os.pathsep + os.environ.get("PYTHONPATH", ""),
+        "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION": "1",
+        "WAVEMIND_PRODUCTION_ADMISSION_ROOT": str(project_root),
+        "WAVEMIND_PRODUCTION_TARGET_MEMORIES": "100000000",
+        "WAVEMIND_PRODUCTION_ENGINE": "qdrant-sharded-service",
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wavemind",
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8998",
+        ],
+        cwd=project_root,
+        env=env,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        timeout=15,
+    )
+
+    assert result.returncode == 2
+    assert "production admission blocked" in result.stderr
+    assert "target_memories=100000000" in result.stderr

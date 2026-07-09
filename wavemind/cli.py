@@ -1441,6 +1441,34 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--replication-factor", type=int, default=3)
     serve.add_argument("--write-quorum", type=int)
     serve.add_argument("--read-quorum", type=int, default=1)
+    serve.add_argument(
+        "--require-production-admission",
+        action="store_true",
+        default=_env_flag("WAVEMIND_REQUIRE_PRODUCTION_ADMISSION"),
+        help="Run the strict production-admission gate before the API binds a port.",
+    )
+    serve.add_argument(
+        "--production-target-memories",
+        type=int,
+        default=_env_int("WAVEMIND_PRODUCTION_TARGET_MEMORIES"),
+        help="Requested production memory count for the serve startup guard.",
+    )
+    serve.add_argument(
+        "--production-engine",
+        default=os.environ.get("WAVEMIND_PRODUCTION_ENGINE"),
+        help="Requested production engine for the serve startup guard.",
+    )
+    serve.add_argument(
+        "--production-deployment",
+        default=os.environ.get("WAVEMIND_PRODUCTION_DEPLOYMENT", "production"),
+        help="Deployment name shown in the serve startup guard report.",
+    )
+    serve.add_argument(
+        "--production-admission-root",
+        type=Path,
+        default=Path(os.environ.get("WAVEMIND_PRODUCTION_ADMISSION_ROOT", Path.cwd())),
+        help="Repository/artifact root used by the serve startup guard.",
+    )
 
     studio = sub.add_parser("studio", help="Run local WaveMind Studio dashboard")
     studio.add_argument("--host", default="127.0.0.1")
@@ -1501,6 +1529,60 @@ def make_served_mind(args) -> WaveMind | ReplicatedWaveMind:
             raise SystemExit("--replica-node is required when --replicated-root is used")
         return make_replicated_mind(args)
     return make_mind(args)
+
+
+def _env_flag(name: str, *, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, *, default: int = 0) -> int:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    return int(raw)
+
+
+def enforce_serve_production_admission(args) -> int:
+    """Stop `wavemind serve` before binding a port when production evidence is missing."""
+
+    if not getattr(args, "require_production_admission", False):
+        return 0
+    target_memories = int(getattr(args, "production_target_memories", 0) or 0)
+    if target_memories <= 0:
+        print(
+            "production admission blocked: --production-target-memories is required "
+            "when --require-production-admission is set",
+            file=sys.stderr,
+        )
+        return 2
+    payload = evaluate_production_admission(
+        getattr(args, "production_admission_root", Path.cwd()),
+        target_memories=target_memories,
+        engine=getattr(args, "production_engine", None),
+        deployment=getattr(args, "production_deployment", "production"),
+        allow_plan_only=False,
+    )
+    if payload["admitted"]:
+        print(
+            "production admission: admitted "
+            f"target_memories={payload['target_memories']} engine={payload.get('engine')}",
+            file=sys.stderr,
+        )
+        return 0
+    print(
+        "production admission blocked: "
+        f"status={payload['status']} target_memories={payload['target_memories']} "
+        f"engine={payload.get('engine')}",
+        file=sys.stderr,
+    )
+    for issue in payload.get("issues") or []:
+        print(f"- {issue}", file=sys.stderr)
+    for action in payload.get("next_actions") or []:
+        print(f"next: {action}", file=sys.stderr)
+    return 2
 
 
 def replicated_restore_kwargs(args) -> dict[str, object]:
@@ -2222,6 +2304,9 @@ def main(argv: list[str] | None = None) -> int:
 
         from .api import create_app
 
+        guard_status = enforce_serve_production_admission(args)
+        if guard_status != 0:
+            return guard_status
         uvicorn.run(create_app(mind=make_served_mind(args)), host=args.host, port=args.port)
         return 0
 

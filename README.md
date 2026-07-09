@@ -2007,7 +2007,13 @@ remote/large-N production claims are unlocked. Deployment admission:
 qdrant-sharded-service --fail-on-blocked` is the final deploy-facing check; it
 keeps 10M/50M/100M traffic blocked until the matching strict evidence artifact
 passes, and `--allow-plan-only` reports the next run contract without admitting
-production.
+production. The same gate can protect the API process itself:
+`wavemind serve --require-production-admission --production-target-memories
+100000000 --production-engine qdrant-sharded-service`. Environment-driven
+deployments can set `WAVEMIND_REQUIRE_PRODUCTION_ADMISSION=1`,
+`WAVEMIND_PRODUCTION_TARGET_MEMORIES`, `WAVEMIND_PRODUCTION_ENGINE`, and
+`WAVEMIND_PRODUCTION_ADMISSION_ROOT`; the server exits before binding a port
+when the requested scale is not admitted.
 Weekly benchmark refresh: `.github/workflows/benchmark-leaderboard.yml` reruns
 the fast benchmark profiles, regenerates the benchmark matrix/report/leaderboard
 `docs/assets/benchmark-summary.svg`, `docs/benchmark-dashboard.html`, the
