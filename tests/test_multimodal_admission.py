@@ -55,6 +55,7 @@ def _write_external_multimodal_evidence(
                     "target_modality_routing_rate": 0.99,
                     "vector_persistence_rate": 1.0,
                     "provenance_rate": 1.0,
+                    "object_store_verified_rate": 1.0,
                     "dimension_match_rate": 1.0,
                     "finite_vector_rate": 1.0,
                     "normalized_vector_rate": 1.0,

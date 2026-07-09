@@ -982,6 +982,7 @@ wavemind memory-os-plan --namespace user:42 --deployment production --target-mem
 wavemind cluster-admission --deployment production --min-nodes 4 --namespace-count 32 --replication-factor 3 --read-quorum 1 --read-fanout 1 --batch-query-size 24 --allow-plan-only --write-artifacts --json
 wavemind active-active-admission --deployment production --min-regions 3 --namespace-count 16 --allow-plan-only --write-artifacts --json
 wavemind serverless-admission --deployment production --target-rps 3200 --target-p99-ms 500 --max-scale 256 --allow-plan-only --write-artifacts --json
+wavemind multimodal-external-evidence --manifest path/to/external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json --markdown-output benchmarks/MULTIMODAL_EXTERNAL_EVIDENCE.md --json
 wavemind multimodal-admission --deployment production --allow-plan-only --write-artifacts --json
 wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts --json
 wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts --json
@@ -1066,14 +1067,17 @@ with the remote-node preflight state and writes
 `benchmarks/SERVERLESS_ADMISSION.md`. `--fail-on-blocked` stops deploys until
 real deployed API nodes have produced remote telemetry for p99 latency,
 cold-start budget, error rate, and scale-out capacity.
+`wavemind multimodal-external-evidence` turns a real external multimodal
+manifest into `benchmarks/multimodal_external_encoder_results.json`: assets
+must already have external shared-space vectors, `s3://` object-store metadata,
+verified sha256/byte-size provenance, and precomputed query vectors.
 `wavemind multimodal-admission` is the deployment-facing gate for production
 multimodal claims. It uses the checked structured-memory report as the API
-contract, but only admits production when
-`benchmarks/multimodal_external_encoder_results.json` proves real external
-image/audio/video/3D encoder quality, object-store-backed assets, vector
-persistence, provenance, and query/encode latency SLOs. Deterministic
-structured fixtures stay useful for development, but they do not unlock broad
-multimodal model-quality claims.
+contract, but only admits production when the external evidence artifact proves
+real image/audio/video/3D encoder quality, object-store-backed assets, object
+verification, vector persistence, provenance, and query/encode latency SLOs.
+Deterministic structured fixtures stay useful for development, but they do not
+unlock broad multimodal model-quality claims.
 `wavemind memory-os-admission` is the stricter deployment gate for the same
 worker set: it checks hot-query audit signal, Redis/shared-cache wiring,
 distributed lock wiring, singleton/idempotent mutations, policy coverage, and
@@ -2045,6 +2049,7 @@ public claim boundaries stable:
 | Cluster admission | Deployment-facing gate for remote service-node cluster rollout. It admits only when strict external HTTP cluster evidence passes for the requested nodes, namespaces, replication, batch-query, and p99 SLO. | `benchmarks/cluster_admission_results.json`, `benchmarks/CLUSTER_ADMISSION.md`, `wavemind cluster-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: checked-in HTTP cluster evidence is local-loopback, and remote cluster node env is not configured. |
 | Active-active admission | Deployment-facing gate for remote multi-region active-active rollout. It admits only when the strict external HTTP active-active artifact passes; local/loopback runs remain development evidence. | `benchmarks/active_active_admission_results.json`, `benchmarks/ACTIVE_ACTIVE_ADMISSION.md`, `wavemind active-active-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `benchmarks/external_http_active_active_results.json` is still missing and remote region env is not configured. |
 | Serverless admission | Deployment-facing gate for managed/serverless rollout. It admits only when remote deployed API nodes produce strict telemetry; loopback telemetry remains development evidence. | `benchmarks/serverless_admission_results.json`, `benchmarks/SERVERLESS_ADMISSION.md`, `wavemind serverless-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `deploy/serverless/observed-telemetry.remote.json` is still missing and `WAVEMIND_SERVERLESS_NODES` is not configured. |
+| External multimodal evidence runner | Reproducible path from a real external encoder/object-store manifest to the admission artifact. It validates external vectors, target queries, `s3://` asset URIs, object-store verification metadata, vector persistence, provenance, routing, precision, query latency, and encode p95 fields. | `wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json` | Runner-ready. No checked production artifact is included until a real external manifest is available. |
 | Multimodal admission | Deployment-facing gate for production multimodal memory claims. It admits only when the structured-memory contract passes and a real external encoder/object-store artifact satisfies modality count, payload/query volume, precision, cross-modal routing, vector persistence, provenance, p99 query latency, encode p95, and error-rate thresholds. | `benchmarks/multimodal_admission_results.json`, `benchmarks/MULTIMODAL_ADMISSION.md`, `wavemind multimodal-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: deterministic structured-memory evidence passes, but `benchmarks/multimodal_external_encoder_results.json` is still missing. |
 | Memory OS canary | Staging proof that representative query-audit traffic can drive Memory OS prewarm, predictive prefetch, priority learning, TTL cleanup, and admission. | `benchmarks/memory_os_canary_results.json`, `benchmarks/MEMORY_OS_CANARY.md`, `wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts` | This is not remote Kubernetes, real Redis, or 10M/100M production evidence; it only proves the worker/admission contract under seeded staging traffic. |
 | Memory OS admission | Deployment-facing gate for adaptive workers. It checks scheduler safety, hot-query audit signal, Redis cache wiring, distributed lock wiring, singleton/idempotent mutations, policy coverage, and strict architecture boundaries before Memory OS workers become production automation. | `benchmarks/memory_os_admission_results.json`, `benchmarks/MEMORY_OS_ADMISSION.md`, `wavemind memory-os-admission --target-memories 10000000 --namespace-count 4096 --deployment production --allow-plan-only --write-artifacts` | Current 10M Memory OS status is `plan_only`, not admitted: the worker plan exists, but staging query-audit traffic, Redis/lock runtime env, and strict million-plus architecture evidence are still required. |
@@ -2810,8 +2815,10 @@ If you already use Chroma for local memory, see the practical migration guide:
   embeddings or strong descriptors until dedicated backends are benchmarked.
 - `wavemind multimodal-admission` keeps production multimodal claims locked
   until an external encoder/object-store benchmark artifact proves real
-  image/audio/video/3D quality, cross-modal routing, persistence, provenance,
-  p99 query latency, encode p95, and error-rate thresholds.
+  image/audio/video/3D quality, cross-modal routing, object-store verification,
+  persistence, provenance, p99 query latency, encode p95, and error-rate
+  thresholds. Use `wavemind multimodal-external-evidence` to generate that
+  artifact from a real external manifest; no fixture unlocks this claim.
 - The `quantized` backend is an explicit int8 candidate-index experiment. It
   reduces vector precision, stores the local candidate matrix compactly, uses an
   int32 accumulator to avoid dot-product overflow, and must be benchmarked per

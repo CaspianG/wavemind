@@ -47,6 +47,10 @@ from .multimodal_admission import (
     evaluate_multimodal_admission,
     render_multimodal_admission_markdown,
 )
+from .multimodal_external import (
+    render_external_multimodal_evidence_markdown,
+    run_external_multimodal_evidence,
+)
 from .memory_os_canary import (
     render_memory_os_canary_markdown,
     run_memory_os_canary,
@@ -761,6 +765,45 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("benchmarks/MULTIMODAL_ADMISSION.md"),
     )
     multimodal_admission.add_argument("--json", action="store_true")
+
+    multimodal_external = sub.add_parser(
+        "multimodal-external-evidence",
+        help="Generate external multimodal encoder evidence from a manifest",
+    )
+    multimodal_external.add_argument(
+        "--manifest",
+        type=Path,
+        required=True,
+        help="JSON manifest with externally encoded assets and query vectors.",
+    )
+    multimodal_external.add_argument(
+        "--namespace",
+        default="__wavemind_external_multimodal__",
+    )
+    multimodal_external.add_argument(
+        "--db-path",
+        type=Path,
+        help="Optional SQLite path for debugging the temporary evidence run.",
+    )
+    multimodal_external.add_argument("--top-k", type=int, default=3)
+    multimodal_external.add_argument(
+        "--no-require-object-store",
+        action="store_true",
+        help="Allow non-s3 asset URIs. Intended for manifest development only.",
+    )
+    multimodal_external.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/multimodal_external_encoder_results.json"),
+    )
+    multimodal_external.add_argument(
+        "--markdown-output",
+        type=Path,
+        default=Path("benchmarks/MULTIMODAL_EXTERNAL_EVIDENCE.md"),
+    )
+    multimodal_external.add_argument("--write-artifacts", action="store_true")
+    multimodal_external.add_argument("--fail-on-error", action="store_true")
+    multimodal_external.add_argument("--json", action="store_true")
 
     cluster_plan = sub.add_parser("cluster-plan", help="Plan namespace placement across cluster nodes")
     cluster_plan.add_argument("--namespace", action="append", default=[])
@@ -1811,6 +1854,30 @@ def print_multimodal_admission(payload: dict[str, object]) -> None:
             print(f"- {action}")
 
 
+def print_external_multimodal_evidence(payload: dict[str, object]) -> None:
+    metrics = payload.get("metrics", {})
+    print(f"status: {payload['status']}")
+    print(f"source: {payload['source']}")
+    print(f"deployment: {payload['deployment']}")
+    print(f"environment: {payload['environment']}")
+    print(f"object_store: {payload['object_store']}")
+    print(f"encoder: {payload['encoder_name']}")
+    print(f"modalities: {payload['modality_count']}")
+    print(f"payloads: {payload['payload_count']}")
+    print(f"queries: {payload['query_count']}")
+    if isinstance(metrics, dict):
+        print(f"precision_at_1: {metrics.get('precision_at_1')}")
+        print(f"cross_modal_precision_at_1: {metrics.get('cross_modal_precision_at_1')}")
+        print(f"object_store_verified_rate: {metrics.get('object_store_verified_rate')}")
+        print(f"query_p99_ms: {metrics.get('query_p99_ms')}")
+        print(f"error_rate: {metrics.get('error_rate')}")
+    errors = payload.get("errors") or []
+    if errors:
+        print("errors:")
+        for error in errors:
+            print(f"- {error}")
+
+
 def print_memory_os_admission(payload: dict[str, object]) -> None:
     summary = payload["summary"]
     print(f"status: {payload['status']}")
@@ -2718,6 +2785,36 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on_blocked and not payload["admitted"]:
             return 2
         return 0 if payload["status"] in {"admitted", "plan_only", "blocked"} else 1
+
+    if args.command == "multimodal-external-evidence":
+        payload = run_external_multimodal_evidence(
+            args.manifest,
+            namespace=args.namespace,
+            db_path=args.db_path,
+            top_k=args.top_k,
+            require_object_store=not args.no_require_object_store,
+        )
+        if args.write_artifacts:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown_output.write_text(
+                render_external_multimodal_evidence_markdown(payload),
+                encoding="utf-8",
+            )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_external_multimodal_evidence(payload)
+            if args.write_artifacts:
+                print(f"json_report: {args.output}")
+                print(f"markdown_report: {args.markdown_output}")
+        if args.fail_on_error and payload["status"] != "pass":
+            return 2
+        return 0 if payload["status"] == "pass" else 1
 
     if args.command == "cluster-plan":
         namespaces = list(args.namespace)

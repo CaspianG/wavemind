@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T10:22:38Z",
-  "source_ref": "040e94ca6594",
+  "generated_at": "2026-07-09T12:56:08Z",
+  "source_ref": "1c94e073e315",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2178,6 +2178,39 @@
       },
       "target": "Check in a real remote Kubernetes/serverless active-active region result with convergence, delete suppression, and success at 1.0, final no-op imports at 0, and p99 below 1500 ms.",
       "next_step": "Run workflow_dispatch external-http-active-active against at least three remote API regions backed by external Postgres/Qdrant/Redis state."
+    },
+    {
+      "id": "external_multimodal_evidence_runner",
+      "name": "External multimodal evidence runner",
+      "category": "production-scale",
+      "status": "runner-ready",
+      "source": "wavemind/multimodal_external.py",
+      "dataset": "User-supplied external multimodal manifest with shared-space asset/query vectors, s3 object-store URIs, verified sha256/byte-size metadata, encode p95 values, and target relevance labels.",
+      "competitors": [
+        "WaveMind external multimodal encoder pipeline"
+      ],
+      "metrics": [
+        "precision_at_1",
+        "precision_at_3",
+        "cross_modal_precision_at_1",
+        "target_modality_routing_rate",
+        "vector_persistence_rate",
+        "provenance_rate",
+        "object_store_verified_rate",
+        "query_p99_ms",
+        "payload_encode_p95_ms",
+        "query_encode_p95_ms",
+        "error_rate"
+      ],
+      "current": {
+        "WaveMind external multimodal evidence": {
+          "runner_ready": true,
+          "checked_in_result": false,
+          "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json"
+        }
+      },
+      "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
+      "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact."
     },
     {
       "id": "memory_competitor_adapter_profile",

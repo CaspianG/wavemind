@@ -1,7 +1,7 @@
 # WaveMind Benchmark Report
 
 This report is generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-09T10:22:38Z` from `040e94ca6594`.
+Last refresh: `2026-07-09T12:56:08Z` from `1c94e073e315`.
 It separates completed local runs from runner-ready public benchmarks and planned external evaluations.
 
 Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.
@@ -44,6 +44,7 @@ Planned rows are not claimed wins. They are the public proof path WaveMind must 
 
 | benchmark | category | status | current result | next step |
 |---|---|---|---|---|
+| External multimodal evidence runner | production-scale | runner-ready | WaveMind external multimodal evidence: runner ready True, checked in result False, requires wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json | Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact. |
 | [MIRACL Russian](https://miracl.ai/) | multilingual-retrieval | runner-ready | No checked-in result yet. | Extend the NoMIRACL loader to full MIRACL Russian corpus once disk/service capacity is available. |
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | vector-db | runner-ready | WaveMind custom dataset export: status ready, vectors 10000, queries 100, dim 128, top k 10 | Run the generated custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles. |
 

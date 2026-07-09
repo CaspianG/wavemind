@@ -279,6 +279,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "multimodal_admission_results.json" in readme
     assert "MULTIMODAL_ADMISSION.md" in readme
     assert "wavemind multimodal-admission" in readme
+    assert "wavemind multimodal-external-evidence" in readme
+    assert "multimodal_external_encoder_results.json" in readme
+    assert "MULTIMODAL_EXTERNAL_EVIDENCE.md" in readme
     assert "memory_os_admission_results.json" in readme
     assert "MEMORY_OS_ADMISSION.md" in readme
     assert "wavemind memory-os-admission" in readme
@@ -356,6 +359,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "serverless-admission --allow-plan-only" in benchmark_brief
     assert "MULTIMODAL_ADMISSION.md" in benchmark_brief
     assert "multimodal-admission --allow-plan-only" in benchmark_brief
+    assert "multimodal-external-evidence --manifest" in benchmark_brief
     assert "MEMORY_OS_ADMISSION.md" in benchmark_brief
     assert "memory-os-admission --target-memories" in benchmark_brief
     assert "MEMORY_OS_CANARY.md" in benchmark_brief
@@ -364,6 +368,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "active-active-admission" in roadmap
     assert "serverless-admission" in roadmap
     assert "multimodal-admission" in roadmap
+    assert "multimodal-external-evidence" in roadmap
     assert "memory-os-admission" in roadmap
     assert "memory-os-canary" in roadmap
     assert "release-claims --write-artifacts --fail-on-blocked" in roadmap
@@ -426,6 +431,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("benchmarks/SERVERLESS_ADMISSION.md").exists()
     assert Path("benchmarks/multimodal_admission_results.json").exists()
     assert Path("benchmarks/MULTIMODAL_ADMISSION.md").exists()
+    assert Path("wavemind/multimodal_external.py").exists()
     assert Path("benchmarks/memory_os_admission_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_ADMISSION.md").exists()
     assert Path("benchmarks/memory_os_canary_results.json").exists()

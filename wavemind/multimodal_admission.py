@@ -219,6 +219,13 @@ def validate_external_multimodal_evidence(
             "provenance_rate must be >= 0.990",
         ),
         _check(
+            "object_store_verified_rate",
+            _metric(payload, "object_store_verified_rate", "asset_verified_rate"),
+            0.99,
+            ">=",
+            "object_store_verified_rate must be >= 0.990",
+        ),
+        _check(
             "dimension_match_rate",
             _metric(payload, "dimension_match_rate"),
             1.0,

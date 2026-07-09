@@ -56,6 +56,11 @@ from .multimodal_admission import (
     render_multimodal_admission_markdown,
     validate_external_multimodal_evidence,
 )
+from .multimodal_external import (
+    EXTERNAL_MULTIMODAL_SCHEMA,
+    render_external_multimodal_evidence_markdown,
+    run_external_multimodal_evidence,
+)
 from .jobs import (
     ActiveActivePairSyncReport,
     ActiveActiveSyncJobReport,
@@ -370,6 +375,7 @@ __all__ = [
     "build_scale_gap_manifest",
     "evaluate_active_active_admission",
     "evaluate_multimodal_admission",
+    "EXTERNAL_MULTIMODAL_SCHEMA",
     "evaluate_serverless_admission",
     "build_cluster_autoscale_plan",
     "build_cluster_plan",
@@ -407,7 +413,9 @@ __all__ = [
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
     "render_multimodal_admission_markdown",
+    "render_external_multimodal_evidence_markdown",
     "run_control_plane_consensus_profile",
+    "run_external_multimodal_evidence",
     "run_memory_os_canary",
     "production_scale_profile_names",
     "scale_status_meets_or_exceeds",

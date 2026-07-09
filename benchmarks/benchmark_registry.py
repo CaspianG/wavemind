@@ -108,6 +108,35 @@ def _external_http_cluster_summary(result: dict[str, Any] | None) -> dict[str, A
     return summary
 
 
+def _external_multimodal_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "source": payload.get("source"),
+        "deployment": payload.get("deployment"),
+        "environment": payload.get("environment"),
+        "object_store": payload.get("object_store"),
+        "object_store_verification_mode": payload.get("object_store_verification_mode"),
+        "encoder_name": payload.get("encoder_name"),
+        "modalities": payload.get("modality_count"),
+        "payloads": payload.get("payload_count"),
+        "queries": payload.get("query_count"),
+        "precision_at_1": metrics.get("precision_at_1"),
+        "precision_at_3": metrics.get("precision_at_3"),
+        "cross_modal_precision_at_1": metrics.get("cross_modal_precision_at_1"),
+        "target_modality_routing_rate": metrics.get("target_modality_routing_rate"),
+        "vector_persistence_rate": metrics.get("vector_persistence_rate"),
+        "provenance_rate": metrics.get("provenance_rate"),
+        "object_store_verified_rate": metrics.get("object_store_verified_rate"),
+        "query_p99_ms": metrics.get("query_p99_ms"),
+        "payload_encode_p95_ms": metrics.get("payload_encode_p95_ms"),
+        "query_encode_p95_ms": metrics.get("query_encode_p95_ms"),
+        "error_rate": metrics.get("error_rate"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -296,6 +325,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         root / "benchmarks" / "external_http_active_active_loopback_results.json"
     )
     external_http_active_active_payload = _load_json(root / "benchmarks" / "external_http_active_active_results.json")
+    multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     strict_evidence_readiness_payload = _load_json(
         root / "benchmarks" / "strict_evidence_readiness_results.json"
@@ -2036,6 +2066,40 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Check in a real remote Kubernetes/serverless active-active region result with convergence, delete suppression, and success at 1.0, final no-op imports at 0, and p99 below 1500 ms.",
             "next_step": "Run workflow_dispatch external-http-active-active against at least three remote API regions backed by external Postgres/Qdrant/Redis state.",
+        },
+        {
+            "id": "external_multimodal_evidence_runner",
+            "name": "External multimodal evidence runner",
+            "category": "production-scale",
+            "status": "runner-ready",
+            "source": "wavemind/multimodal_external.py",
+            "dataset": "User-supplied external multimodal manifest with shared-space asset/query vectors, s3 object-store URIs, verified sha256/byte-size metadata, encode p95 values, and target relevance labels.",
+            "competitors": ["WaveMind external multimodal encoder pipeline"],
+            "metrics": [
+                "precision_at_1",
+                "precision_at_3",
+                "cross_modal_precision_at_1",
+                "target_modality_routing_rate",
+                "vector_persistence_rate",
+                "provenance_rate",
+                "object_store_verified_rate",
+                "query_p99_ms",
+                "payload_encode_p95_ms",
+                "query_encode_p95_ms",
+                "error_rate",
+            ],
+            "current": {
+                "WaveMind external multimodal evidence": (
+                    _external_multimodal_summary(multimodal_external_payload)
+                    or {
+                        "runner_ready": True,
+                        "checked_in_result": False,
+                        "requires": "wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json",
+                    }
+                ),
+            },
+            "target": "Generate benchmarks/multimodal_external_encoder_results.json from a real external CLIP/audio/video/3D encoder manifest with >=1000 payloads, >=200 queries, precision@1 >=0.90, cross-modal precision@1 >=0.90, object-store verification >=0.99, and p99 <=250 ms.",
+            "next_step": "Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact.",
         },
         {
             "id": "memory_competitor_adapter_profile",
