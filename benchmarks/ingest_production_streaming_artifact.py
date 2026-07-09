@@ -205,6 +205,14 @@ def refresh_commands() -> list[list[str]]:
         ],
         [
             python,
+            "benchmarks/cluster_autoscale_report.py",
+            "--output",
+            "benchmarks/cluster_autoscale_results.json",
+            "--markdown-output",
+            "benchmarks/CLUSTER_AUTOSCALE.md",
+        ],
+        [
+            python,
             "benchmarks/cost_efficiency_leaderboard.py",
             "--output",
             "benchmarks/cost_efficiency_results.json",

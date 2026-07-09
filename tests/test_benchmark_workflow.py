@@ -28,6 +28,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/memory_os_intelligence_report.py" in workflow
     assert "benchmarks/memory_os_intelligence_results.json" in workflow
     assert "benchmarks/MEMORY_OS_INTELLIGENCE.md" in workflow
+    assert "benchmarks/cluster_autoscale_report.py" in workflow
+    assert "benchmarks/cluster_autoscale_results.json" in workflow
+    assert "benchmarks/CLUSTER_AUTOSCALE.md" in workflow
     assert "benchmarks/cost_efficiency_leaderboard.py" in workflow
     assert "benchmarks/cost_efficiency_results.json" in workflow
     assert "benchmarks/COST_EFFICIENCY.md" in workflow
@@ -84,6 +87,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "tests/test_agent_impact_leaderboard.py" in workflow
     assert "tests/test_structured_memory_report.py" in workflow
     assert "tests/test_memory_os_intelligence_report.py" in workflow
+    assert "tests/test_cluster_autoscale_report.py" in workflow
     assert "tests/test_cost_efficiency_leaderboard.py" in workflow
     assert "tests/test_production_evidence_gate.py" in workflow
     assert "tests/test_production_evidence_dispatch.py" in workflow
@@ -125,6 +129,8 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/structured_memory_results.json site/data/structured_memory_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_INTELLIGENCE.md site/benchmarks/MEMORY_OS_INTELLIGENCE.md" in workflow
     assert "cp benchmarks/memory_os_intelligence_results.json site/data/memory_os_intelligence_results.json" in workflow
+    assert "cp benchmarks/CLUSTER_AUTOSCALE.md site/benchmarks/CLUSTER_AUTOSCALE.md" in workflow
+    assert "cp benchmarks/cluster_autoscale_results.json site/data/cluster_autoscale_results.json" in workflow
     assert "cp benchmarks/COST_EFFICIENCY.md site/benchmarks/COST_EFFICIENCY.md" in workflow
     assert "cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md" in workflow

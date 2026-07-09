@@ -89,6 +89,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    cluster_autoscale = _load_json(
+        root / "benchmarks" / "cluster_autoscale_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -135,6 +140,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/agent_impact_results.json": agent_impact,
         "benchmarks/structured_memory_results.json": structured_memory,
         "benchmarks/memory_os_intelligence_results.json": memory_os_intelligence,
+        "benchmarks/cluster_autoscale_results.json": cluster_autoscale,
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
     }
@@ -207,6 +213,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "agent_impact": _agent_impact_status(agent_impact),
         "structured_memory": _structured_memory_status(structured_memory),
         "memory_os_intelligence": _memory_os_intelligence_status(memory_os_intelligence),
+        "cluster_autoscale": _cluster_autoscale_status(cluster_autoscale),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "strict_production_evidence": {
             "schema": evidence.get("schema"),
@@ -615,6 +622,68 @@ def _memory_os_intelligence_status(payload: dict[str, Any]) -> dict[str, Any]:
         "claim_boundary": payload.get("claim_boundary", ""),
         "source_files": payload.get("source_files", []),
         "source": "benchmarks/memory_os_intelligence_results.json",
+    }
+
+
+def _cluster_autoscale_status(payload: dict[str, Any]) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
+    passed_checks = sum(
+        1 for check in checks if isinstance(check, dict) and bool(check.get("pass"))
+    )
+    total_checks = len(checks)
+    return {
+        "schema": payload.get("schema"),
+        "status": summary.get("status", "missing"),
+        "check_count": total_checks,
+        "passed_check_count": passed_checks,
+        "simulated_memories": summary.get("simulated_memories"),
+        "namespace_count": summary.get("namespace_count"),
+        "planner_node_count": summary.get("planner_node_count"),
+        "planner_replication_factor": summary.get("planner_replication_factor"),
+        "planner_node_loss_min_availability": summary.get(
+            "planner_node_loss_min_availability"
+        ),
+        "planner_zone_loss_min_availability": summary.get(
+            "planner_zone_loss_min_availability"
+        ),
+        "autoscaler_status": summary.get("autoscaler_status"),
+        "autoscaler_target_memories": summary.get("autoscaler_target_memories"),
+        "autoscaler_required_nodes": summary.get("autoscaler_required_nodes"),
+        "autoscaler_additional_nodes": summary.get("autoscaler_additional_nodes"),
+        "autoscaler_target_within_headroom": summary.get(
+            "autoscaler_target_within_headroom"
+        ),
+        "autoscaler_rebalance_batches": summary.get("autoscaler_rebalance_batches"),
+        "operator_status_phase": summary.get("operator_status_phase"),
+        "operator_status_ready": summary.get("operator_status_ready"),
+        "operator_replicas": summary.get("operator_replicas"),
+        "operator_rebalance_move_count": summary.get("operator_rebalance_move_count"),
+        "operator_memory_os_ready": summary.get("operator_memory_os_ready"),
+        "control_plane_ok": summary.get("control_plane_ok"),
+        "distributed_http_recalled_after_primary_loss": summary.get(
+            "distributed_http_recalled_after_primary_loss"
+        ),
+        "distributed_http_concurrent_query_hit_rate": summary.get(
+            "distributed_http_concurrent_query_hit_rate"
+        ),
+        "active_active_convergence_rate": summary.get("active_active_convergence_rate"),
+        "http_active_active_success_rate": summary.get("http_active_active_success_rate"),
+        "field_crdt_commutative_convergence": summary.get(
+            "field_crdt_commutative_convergence"
+        ),
+        "capacity_target_memories": summary.get("capacity_target_memories"),
+        "capacity_node_count": summary.get("capacity_node_count"),
+        "capacity_zones": summary.get("capacity_zones"),
+        "capacity_replication_factor": summary.get("capacity_replication_factor"),
+        "capacity_valid_plan": summary.get("capacity_valid_plan"),
+        "capacity_distinct_replica_rate": summary.get("capacity_distinct_replica_rate"),
+        "capacity_zone_spread_rate": summary.get("capacity_zone_spread_rate"),
+        "capacity_recommended_autoscaling_max_replicas": summary.get(
+            "capacity_recommended_autoscaling_max_replicas"
+        ),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/cluster_autoscale_results.json",
     }
 
 

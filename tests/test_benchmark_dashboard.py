@@ -44,6 +44,10 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Worker evidence: hot-query prewarm" in html
     assert "Predictive warmed" in html
     assert "benchmarks/MEMORY_OS_INTELLIGENCE.md" in html
+    assert "Cluster Autoscale" in html
+    assert "Cluster evidence: shard placement" in html
+    assert "100M capacity nodes" in html
+    assert "benchmarks/CLUSTER_AUTOSCALE.md" in html
     assert "Benchmark Leaderboard" in html
     assert "Evidence Source Status" in html
     assert "External HTTP active-active" in html

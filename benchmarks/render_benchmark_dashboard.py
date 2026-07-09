@@ -283,6 +283,46 @@ def _memory_os_intelligence_panel(status: dict[str, Any]) -> str:
     )
 
 
+def _cluster_autoscale_panel(status: dict[str, Any]) -> str:
+    cluster = status.get("cluster_autoscale", {}) if isinstance(status, dict) else {}
+    if not isinstance(cluster, dict) or not cluster:
+        return ""
+    rows = [
+        ("Status", cluster.get("status", "missing")),
+        ("Gate checks", f"{cluster.get('passed_check_count', 0)}/{cluster.get('check_count', 0)}"),
+        ("Simulated memories", cluster.get("simulated_memories", 0)),
+        ("Namespaces", cluster.get("namespace_count", 0)),
+        ("Autoscale target", cluster.get("autoscaler_target_memories", 0)),
+        ("Required nodes", cluster.get("autoscaler_required_nodes", 0)),
+        ("Operator replicas", cluster.get("operator_replicas", 0)),
+        ("100M capacity nodes", cluster.get("capacity_node_count", 0)),
+        ("100M capacity zones", cluster.get("capacity_zones", 0)),
+        (
+            "Recommended max replicas",
+            cluster.get("capacity_recommended_autoscaling_max_replicas", 0),
+        ),
+    ]
+    table = ["<table class=\"compact\"><tbody>"]
+    for label, value in rows:
+        table.append(
+            "<tr>"
+            f"<th>{html.escape(str(label))}</th>"
+            f"<td>{html.escape(str(value))}</td>"
+            "</tr>"
+        )
+    table.append("</tbody></table>")
+    return (
+        '<section class="panel">'
+        "<h2>Cluster Autoscale</h2>"
+        "<p>Cluster evidence: shard placement, autoscale planning, Kubernetes operator "
+        "reconciliation, rebalance safety, active-active convergence, CRDT field state, "
+        "and the deterministic 100M capacity envelope.</p>"
+        f"{''.join(table)}"
+        '<p><a href="../benchmarks/CLUSTER_AUTOSCALE.md">Read the cluster autoscale report</a></p>'
+        "</section>"
+    )
+
+
 def _fmt_metric(value: Any) -> str:
     try:
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
@@ -392,6 +432,8 @@ def render_dashboard(root: Path = PROJECT_ROOT) -> str:
   {_structured_memory_panel(status)}
 
   {_memory_os_intelligence_panel(status)}
+
+  {_cluster_autoscale_panel(status)}
 
   <h2 class="section-title">Benchmark Leaderboard</h2>
   <div class="table-wrap">

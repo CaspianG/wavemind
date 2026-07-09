@@ -122,6 +122,12 @@ policy matters more than raw vector-database scale:
   transition-learned predictive prefetch, priority learning, adaptive
   forgetting, consolidation, Redis coordination, canary status, and the
   production-admission boundary as a standalone public report.
+- `benchmarks/cluster_autoscale_report.py` now turns checked-in cluster,
+  operator, rebalance, active-active, CRDT, and 100M capacity-envelope evidence
+  into `benchmarks/cluster_autoscale_results.json` and
+  `benchmarks/CLUSTER_AUTOSCALE.md`. It is the standalone public report for
+  autoscale/readiness claims while keeping real 100M latency/SLO claims locked
+  behind strict remote evidence.
 - `wavemind production-admission --target-memories ... --engine ...` is the
   deploy-facing large-N gate. It maps a requested 10M/50M/100M deployment to the
   required strict evidence profile, writes
@@ -422,6 +428,12 @@ policy matters more than raw vector-database scale:
   adaptive prewarm, predictive prefetch, priority learning, forgetting,
   consolidation, Redis coordination, agent context savings, canary admission,
   and strict production-admission limits.
+- `benchmarks/cluster_autoscale_report.py` now extracts cluster autoscale
+  evidence into a dedicated public report with dashboard/status coverage for
+  shard placement, node/zone loss availability, autoscale targets, rebalance
+  checkpointing, operator reconciliation, quorum safety, active-active
+  convergence, field-state CRDT behavior, and the deterministic 100M capacity
+  envelope.
 - Dynamic policy already covers hot memory, stale suppression, corrections,
   TTL, and namespace isolation.
 - Field self-consolidation is available through `WaveMind.consolidate_concepts()`,

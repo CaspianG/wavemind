@@ -70,6 +70,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/agent_impact_results.json",
         "benchmarks/structured_memory_results.json",
         "benchmarks/memory_os_intelligence_results.json",
+        "benchmarks/cluster_autoscale_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -153,6 +154,35 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["memory_os_intelligence"]["admission_status"] == "plan_only"
     assert "unattended production Memory OS automation" in (
         payload["memory_os_intelligence"]["claim_boundary"]
+    )
+    assert payload["cluster_autoscale"]["schema"] == (
+        "wavemind.cluster_autoscale_report.v1"
+    )
+    assert payload["cluster_autoscale"]["status"] == "pass"
+    assert payload["cluster_autoscale"]["passed_check_count"] == (
+        payload["cluster_autoscale"]["check_count"]
+    )
+    assert payload["cluster_autoscale"]["simulated_memories"] == 1_000_000
+    assert payload["cluster_autoscale"]["namespace_count"] == 4096
+    assert payload["cluster_autoscale"]["autoscaler_target_memories"] == 10_000_000
+    assert payload["cluster_autoscale"]["autoscaler_required_nodes"] >= 50
+    assert payload["cluster_autoscale"]["operator_status_phase"] == "Ready"
+    assert payload["cluster_autoscale"]["operator_status_ready"] is True
+    assert payload["cluster_autoscale"]["operator_memory_os_ready"] is True
+    assert payload["cluster_autoscale"]["control_plane_ok"] is True
+    assert (
+        payload["cluster_autoscale"]["distributed_http_recalled_after_primary_loss"]
+        is True
+    )
+    assert payload["cluster_autoscale"]["active_active_convergence_rate"] == 1.0
+    assert payload["cluster_autoscale"]["http_active_active_success_rate"] == 1.0
+    assert payload["cluster_autoscale"]["field_crdt_commutative_convergence"] is True
+    assert payload["cluster_autoscale"]["capacity_target_memories"] == 100_000_000
+    assert payload["cluster_autoscale"]["capacity_node_count"] >= 128
+    assert payload["cluster_autoscale"]["capacity_zones"] >= 8
+    assert payload["cluster_autoscale"]["capacity_valid_plan"] is True
+    assert "not a real 100M vector-query latency benchmark" in (
+        payload["cluster_autoscale"]["claim_boundary"]
     )
     assert payload["memory_os_policy"]["schema"] == "wavemind.scale_readiness_benchmark.v1"
     assert payload["memory_os_policy"]["status"] == "pass"
@@ -299,6 +329,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/agent_impact_results.json" in payload["source_files"]
     assert "benchmarks/structured_memory_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_intelligence_results.json" in payload["source_files"]
+    assert "benchmarks/cluster_autoscale_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]
@@ -326,6 +357,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["agent_impact"]["status"] == "pass"
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_intelligence"]["status"] == "pass"
+    assert payload["cluster_autoscale"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"
     assert payload["production_evidence_bundle"]["claim_status"] in {
         "claims_limited",
@@ -351,4 +383,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["production_scale_run_plan"]["schema"] == "wavemind.production_scale_run_plan.v1"
     assert payload["memory_os_intelligence"]["schema"] == (
         "wavemind.memory_os_intelligence_report.v1"
+    )
+    assert payload["cluster_autoscale"]["schema"] == (
+        "wavemind.cluster_autoscale_report.v1"
     )
