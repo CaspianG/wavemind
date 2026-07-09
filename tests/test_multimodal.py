@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 
 from wavemind import (
+    CrossModalEncoderHealthReport,
     CrossModalMemoryLayer,
     HashingTextEncoder,
     KnowledgeGraphMemoryLayer,
@@ -14,6 +15,7 @@ from wavemind import (
     WaveMind,
     asset3d_payload,
     audio_payload,
+    check_cross_modal_encoder_health,
     event_payload,
     graph_payload,
     image_payload,
@@ -49,6 +51,36 @@ class _FakeClipModel:
             else:
                 vectors.append(_one_hot(3))
         return np.asarray(vectors, dtype=np.float32)
+
+
+class _RuleBasedCrossModalEncoder:
+    name = "rule-based-health"
+    vector_dim = 7
+    _modalities = ("image", "audio", "table", "event", "video", "3d", "graph")
+
+    def encode_payload(self, payload, descriptor):
+        return self._encode(descriptor)
+
+    def encode_query(self, query, *, target_modality, descriptor):
+        return self._encode(descriptor)
+
+    def _encode(self, text):
+        lowered = str(text).lower()
+        for index, modality in enumerate(self._modalities):
+            if f"modality: {modality}" in lowered or f"target modality: {modality}" in lowered:
+                return np.asarray(_one_hot(index, self.vector_dim), dtype=np.float32)
+        raise ValueError(f"cannot route fixture text: {text}")
+
+
+class _CollapsedCrossModalEncoder:
+    name = "collapsed-health"
+    vector_dim = 7
+
+    def encode_payload(self, payload, descriptor):
+        return np.asarray(_one_hot(0, self.vector_dim), dtype=np.float32)
+
+    def encode_query(self, query, *, target_modality, descriptor):
+        return np.asarray(_one_hot(0, self.vector_dim), dtype=np.float32)
 
 
 def test_structured_and_multimodal_payloads_are_queryable(tmp_path):
@@ -482,6 +514,45 @@ def test_precomputed_cross_modal_contract_validates_full_external_vector_roundtr
         assert report.as_dict()["ok"] is True
     finally:
         memory.close()
+
+
+def test_cross_modal_encoder_health_passes_for_separated_encoder():
+    report = check_cross_modal_encoder_health(
+        _RuleBasedCrossModalEncoder(),
+        min_required_margin=0.20,
+        max_payload_encode_ms=1000.0,
+        max_query_encode_ms=1000.0,
+    )
+
+    assert isinstance(report, CrossModalEncoderHealthReport)
+    assert report.ok is True
+    assert report.encoder_name == "rule-based-health"
+    assert report.vector_dim == 7
+    assert report.modalities == ("image", "audio", "table", "event", "video", "3d", "graph")
+    assert report.global_precision_at_1 == 1.0
+    assert report.target_modality_routing_rate == 1.0
+    assert report.finite_payload_vector_rate == 1.0
+    assert report.normalized_payload_vector_rate == 1.0
+    assert report.finite_query_vector_rate == 1.0
+    assert report.normalized_query_vector_rate == 1.0
+    assert report.dimension_match_rate == 1.0
+    assert report.min_global_margin >= 0.20
+    assert report.as_dict()["ok"] is True
+
+
+def test_cross_modal_encoder_health_fails_collapsed_embedding_space():
+    report = check_cross_modal_encoder_health(
+        _CollapsedCrossModalEncoder(),
+        min_required_margin=0.20,
+        max_payload_encode_ms=1000.0,
+        max_query_encode_ms=1000.0,
+    )
+
+    assert report.ok is False
+    assert report.global_precision_at_1 < 1.0
+    assert report.min_global_margin < report.min_required_margin
+    assert "global precision@1 below required threshold" in report.failures
+    assert "global separation margin below required threshold" in report.failures
 
 
 def test_precomputed_cross_modal_contract_fails_when_vectors_are_not_separated(tmp_path):

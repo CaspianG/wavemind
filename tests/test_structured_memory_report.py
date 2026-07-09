@@ -51,6 +51,15 @@ def test_structured_memory_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["encoder_contract_margin"] >= (
         payload["summary"]["encoder_contract_min_required_margin"]
     )
+    assert payload["summary"]["encoder_health_ok"] is True
+    assert payload["summary"]["encoder_health_global_precision_at_1"] == 1.0
+    assert payload["summary"]["encoder_health_target_modality_routing_rate"] == 1.0
+    assert payload["summary"]["encoder_health_dimension_match_rate"] == 1.0
+    assert payload["summary"]["encoder_health_payload_encode_p95_ms"] <= 50.0
+    assert payload["summary"]["encoder_health_query_encode_p95_ms"] <= 50.0
+    assert payload["summary"]["encoder_health_margin"] >= (
+        payload["summary"]["encoder_health_min_required_margin"]
+    )
     assert payload["summary"]["temporal_event_precision_at_1"] == 1.0
     assert payload["summary"]["temporal_event_persistence_rate"] == 1.0
     assert payload["summary"]["temporal_event_provenance_rate"] == 1.0
@@ -62,7 +71,7 @@ def test_structured_memory_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["temporal_event_avg_latency_ms"] < 5.0
     assert payload["summary"]["knowledge_graph_avg_latency_ms"] < 5.0
     assert payload["summary"]["asset_manifest_verified"] is True
-    assert len(payload["checks"]) >= 19
+    assert len(payload["checks"]) >= 26
     assert all(check["pass"] for check in payload["checks"])
     assert "production multimodal model quality" in payload["claim_boundary"]
     assert "# WaveMind Structured Memory Report" in markdown
@@ -83,5 +92,7 @@ def test_checked_in_structured_memory_report_is_fresh_and_passing():
     assert payload["summary"]["status"] == "pass"
     assert payload["summary"]["modality_count"] == 7
     assert payload["summary"]["cross_modal_precision_at_1"] == 1.0
+    assert payload["summary"]["encoder_health_ok"] is True
     assert payload["summary"]["knowledge_graph_path_precision_at_1"] == 1.0
+    assert "Encoder health" in markdown
     assert "Run the same contract on real CLIP/audio/video/3D production encoders" in markdown

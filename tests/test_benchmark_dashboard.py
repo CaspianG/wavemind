@@ -39,6 +39,8 @@ def test_benchmark_dashboard_renderer_writes_static_html(tmp_path):
     assert "Structured Memory" in html
     assert "Typed memory evidence: image, audio, video, 3D, table, event, graph" in html
     assert "Cross-modal precision@1" in html
+    assert "Encoder health" in html
+    assert "Encoder query p95" in html
     assert "benchmarks/STRUCTURED_MEMORY.md" in html
     assert "Memory OS Intelligence" in html
     assert "Worker evidence: hot-query prewarm" in html

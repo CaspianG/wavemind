@@ -1679,6 +1679,18 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and payloads.get("encoder_contract_provenance_rate") == 1.0
                 and payloads.get("encoder_contract_min_global_margin", 0.0)
                 >= payloads.get("encoder_contract_min_required_margin", 1.0)
+                and payloads.get("encoder_health_ok") is True
+                and payloads.get("encoder_health_global_precision_at_1") == 1.0
+                and payloads.get("encoder_health_target_modality_routing_rate") == 1.0
+                and payloads.get("encoder_health_finite_payload_vector_rate") == 1.0
+                and payloads.get("encoder_health_normalized_payload_vector_rate") == 1.0
+                and payloads.get("encoder_health_finite_query_vector_rate") == 1.0
+                and payloads.get("encoder_health_normalized_query_vector_rate") == 1.0
+                and payloads.get("encoder_health_dimension_match_rate") == 1.0
+                and payloads.get("encoder_health_payload_encode_p95_ms", 999999.0) <= 50.0
+                and payloads.get("encoder_health_query_encode_p95_ms", 999999.0) <= 50.0
+                and payloads.get("encoder_health_min_global_margin", 0.0)
+                >= payloads.get("encoder_health_min_required_margin", 1.0)
                 and payloads.get("temporal_event_precision_at_1") == 1.0
                 and payloads.get("temporal_event_around_precision_at_1") == 1
                 and payloads.get("temporal_event_window_precision_at_1") == 1
@@ -1723,7 +1735,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "multi-hop path traversal, persistence, and provenance. External "
                 "multimodal encoders must pass a precomputed-vector contract that "
                 "checks global retrieval, target-modality routing, persisted finite "
-                "normalized vectors, provenance, and vector separation margin."
+                "normalized vectors, provenance, and vector separation margin. Active "
+                "cross-modal encoders must also pass health monitoring for finite "
+                "normalized payload/query vectors, target routing, p95 encode latency, "
+                "dimension compatibility, and separation margin."
             ),
             evidence=(
                 f"modalities {', '.join(payloads.get('modalities', []))}, "
@@ -1735,6 +1750,9 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"encoder global@1 {payloads.get('encoder_contract_global_precision_at_1')}, "
                 f"encoder target@1 {payloads.get('encoder_contract_target_precision_at_1')}, "
                 f"encoder margin {payloads.get('encoder_contract_min_global_margin')}, "
+                f"encoder health {payloads.get('encoder_health_ok')}, "
+                f"encoder health global@1 {payloads.get('encoder_health_global_precision_at_1')}, "
+                f"encoder health query p95 {payloads.get('encoder_health_query_encode_p95_ms')} ms, "
                 f"provenance {payloads.get('cross_modal_provenance_rate')}, "
                 f"temporal precision@1 {payloads.get('temporal_event_precision_at_1')}, "
                 f"temporal around/window/recency/interval "
@@ -1756,7 +1774,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"asset manifest verified {payloads.get('asset_manifest_verified')}, "
                 f"asset provenance {payloads.get('asset_manifest_provenance_rate')}"
             ),
-            next_step="Run the same encoder contract with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora.",
+            next_step="Run the same encoder contract and encoder-health check with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora.",
         ),
         _criterion(
             criterion_id="ten_million_load_profile",

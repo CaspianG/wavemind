@@ -1209,6 +1209,26 @@ The same contract is part of the scale-readiness and production-readiness gates,
 so external CLIP/audio/video/3D integrations must prove the storage and recall
 contract before they become published evidence.
 
+For encoders that produce both payload and query vectors, run the active encoder
+health check as a deployment preflight. It probes all supported modalities,
+checks finite normalized vectors, target routing, global precision@1, dimension
+compatibility, separation margin, and p95 encode latency:
+
+```python
+from wavemind import (
+    DescriptorCrossModalEncoder,
+    HashingTextEncoder,
+    check_cross_modal_encoder_health,
+)
+
+encoder = DescriptorCrossModalEncoder(HashingTextEncoder(vector_dim=64), vector_dim=64)
+report = check_cross_modal_encoder_health(encoder)
+assert report.ok, report.failures
+```
+
+The checked-in structured-memory report now includes this health gate, so a
+multimodal backend can fail before it reaches production traffic.
+
 For production media, keep large files in S3-compatible object storage and store
 a verified content-addressed manifest with the memory. This keeps SQLite/Postgres
 as metadata source of truth while video, audio, image, and 3D bytes live in S3,

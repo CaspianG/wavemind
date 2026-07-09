@@ -232,6 +232,11 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert structured["encoder_contract_target_modality_routing_rate"] == 1.0
     assert structured["encoder_contract_normalized_vector_rate"] == 1.0
     assert structured["encoder_contract_provenance_rate"] == 1.0
+    assert structured["encoder_health_ok"] is True
+    assert structured["encoder_health_global_precision_at_1"] == 1.0
+    assert structured["encoder_health_target_modality_routing_rate"] == 1.0
+    assert structured["encoder_health_dimension_match_rate"] == 1.0
+    assert structured["encoder_health_query_encode_p95_ms"] <= 50.0
     assert structured["knowledge_graph_precision_at_1"] == 1.0
     assert structured["knowledge_graph_path_precision_at_1"] == 1.0
     assert structured["knowledge_graph_persistence_rate"] == 1.0

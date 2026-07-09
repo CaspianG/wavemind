@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -123,6 +124,58 @@ class CrossModalEncoderContractReport:
             "provenance_rate": self.provenance_rate,
             "min_global_margin": self.min_global_margin,
             "min_required_margin": self.min_required_margin,
+            "failures": list(self.failures),
+        }
+
+
+@dataclass(frozen=True)
+class CrossModalEncoderHealthReport:
+    encoder_name: str
+    vector_dim: int
+    ok: bool
+    modalities: tuple[str, ...]
+    payloads: int
+    queries: int
+    global_precision_at_1: float
+    target_modality_routing_rate: float
+    finite_payload_vector_rate: float
+    normalized_payload_vector_rate: float
+    finite_query_vector_rate: float
+    normalized_query_vector_rate: float
+    dimension_match_rate: float
+    payload_encode_avg_ms: float
+    payload_encode_p95_ms: float
+    query_encode_avg_ms: float
+    query_encode_p95_ms: float
+    min_global_margin: float
+    min_required_margin: float
+    max_payload_encode_ms: float | None
+    max_query_encode_ms: float | None
+    failures: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "encoder_name": self.encoder_name,
+            "vector_dim": self.vector_dim,
+            "ok": self.ok,
+            "modalities": list(self.modalities),
+            "payloads": self.payloads,
+            "queries": self.queries,
+            "global_precision_at_1": self.global_precision_at_1,
+            "target_modality_routing_rate": self.target_modality_routing_rate,
+            "finite_payload_vector_rate": self.finite_payload_vector_rate,
+            "normalized_payload_vector_rate": self.normalized_payload_vector_rate,
+            "finite_query_vector_rate": self.finite_query_vector_rate,
+            "normalized_query_vector_rate": self.normalized_query_vector_rate,
+            "dimension_match_rate": self.dimension_match_rate,
+            "payload_encode_avg_ms": self.payload_encode_avg_ms,
+            "payload_encode_p95_ms": self.payload_encode_p95_ms,
+            "query_encode_avg_ms": self.query_encode_avg_ms,
+            "query_encode_p95_ms": self.query_encode_p95_ms,
+            "min_global_margin": self.min_global_margin,
+            "min_required_margin": self.min_required_margin,
+            "max_payload_encode_ms": self.max_payload_encode_ms,
+            "max_query_encode_ms": self.max_query_encode_ms,
             "failures": list(self.failures),
         }
 
@@ -818,6 +871,198 @@ def validate_precomputed_cross_modal_contract(
         provenance_rate=provenance_rate,
         min_global_margin=float(min_margin),
         min_required_margin=float(min_required_margin),
+        failures=tuple(failures),
+    )
+
+
+def check_cross_modal_encoder_health(
+    encoder: CrossModalEncoder,
+    *,
+    fixtures: Sequence[CrossModalContractFixture] | None = None,
+    min_required_margin: float = 0.05,
+    min_precision_at_1: float = 1.0,
+    max_payload_encode_ms: float | None = 250.0,
+    max_query_encode_ms: float | None = 250.0,
+) -> CrossModalEncoderHealthReport:
+    """Run a production-style health probe for an active cross-modal encoder.
+
+    This checks encoders that produce both payload and query embeddings. It is
+    separate from `validate_precomputed_cross_modal_contract()`, which validates
+    externally supplied vectors. Health probes intentionally remove fixture
+    embeddings before encoding so the report measures the encoder rather than a
+    stored vector shortcut.
+    """
+
+    selected = tuple(fixtures or default_cross_modal_contract_fixtures())
+    if not selected:
+        return CrossModalEncoderHealthReport(
+            encoder_name=str(getattr(encoder, "name", encoder.__class__.__name__)),
+            vector_dim=int(getattr(encoder, "vector_dim", 0) or 0),
+            ok=False,
+            modalities=(),
+            payloads=0,
+            queries=0,
+            global_precision_at_1=0.0,
+            target_modality_routing_rate=0.0,
+            finite_payload_vector_rate=0.0,
+            normalized_payload_vector_rate=0.0,
+            finite_query_vector_rate=0.0,
+            normalized_query_vector_rate=0.0,
+            dimension_match_rate=0.0,
+            payload_encode_avg_ms=0.0,
+            payload_encode_p95_ms=0.0,
+            query_encode_avg_ms=0.0,
+            query_encode_p95_ms=0.0,
+            min_global_margin=0.0,
+            min_required_margin=float(min_required_margin),
+            max_payload_encode_ms=max_payload_encode_ms,
+            max_query_encode_ms=max_query_encode_ms,
+            failures=("no fixtures provided",),
+        )
+
+    encoder_name = str(getattr(encoder, "name", encoder.__class__.__name__))
+    vector_dim = int(getattr(encoder, "vector_dim", 0) or 0)
+    failures: list[str] = []
+    payload_vectors: list[np.ndarray | None] = []
+    query_vectors: list[np.ndarray | None] = []
+    payload_latencies: list[float] = []
+    query_latencies: list[float] = []
+    payload_finite = 0
+    payload_normalized = 0
+    query_finite = 0
+    query_normalized = 0
+    dimension_matches = 0
+    dimension_checks = 0
+
+    for fixture in selected:
+        modality = normalize_modality(fixture.modality)
+        payload = _payload_without_vectors(fixture.payload)
+        descriptor = cross_modal_descriptor(payload)
+        try:
+            started = time.perf_counter()
+            payload_vector = _normalize_vector(
+                encoder.encode_payload(payload, descriptor),
+                vector_dim=vector_dim or None,
+            )
+            payload_latencies.append((time.perf_counter() - started) * 1000.0)
+            payload_vectors.append(payload_vector)
+            dimension_checks += 1
+            if vector_dim <= 0 or int(payload_vector.shape[0]) == vector_dim:
+                dimension_matches += 1
+            if np.all(np.isfinite(payload_vector)):
+                payload_finite += 1
+            if abs(float(np.linalg.norm(payload_vector)) - 1.0) <= 1e-5:
+                payload_normalized += 1
+        except Exception as exc:
+            payload_vectors.append(None)
+            failures.append(f"{modality}: payload encode failed: {exc}")
+
+        query_descriptor = cross_modal_query_descriptor(
+            fixture.query,
+            target_modality=modality,
+        )
+        try:
+            started = time.perf_counter()
+            query_vector = _normalize_vector(
+                encoder.encode_query(
+                    fixture.query,
+                    target_modality=modality,
+                    descriptor=query_descriptor,
+                ),
+                vector_dim=vector_dim or None,
+            )
+            query_latencies.append((time.perf_counter() - started) * 1000.0)
+            query_vectors.append(query_vector)
+            dimension_checks += 1
+            if vector_dim <= 0 or int(query_vector.shape[0]) == vector_dim:
+                dimension_matches += 1
+            if np.all(np.isfinite(query_vector)):
+                query_finite += 1
+            if abs(float(np.linalg.norm(query_vector)) - 1.0) <= 1e-5:
+                query_normalized += 1
+        except Exception as exc:
+            query_vectors.append(None)
+            failures.append(f"{modality}: query encode failed: {exc}")
+
+    hits = 0
+    route_hits = 0
+    margins: list[float] = []
+    modalities = tuple(normalize_modality(fixture.modality) for fixture in selected)
+    for index, (fixture, query_vector) in enumerate(zip(selected, query_vectors)):
+        if query_vector is None:
+            continue
+        scores: list[tuple[int, float]] = []
+        for payload_index, payload_vector in enumerate(payload_vectors):
+            if payload_vector is None:
+                continue
+            scores.append((payload_index, float(np.dot(query_vector, payload_vector))))
+        if not scores:
+            continue
+        scores.sort(key=lambda item: item[1], reverse=True)
+        best_index = scores[0][0]
+        expected_modality = normalize_modality(fixture.modality)
+        if best_index == index:
+            hits += 1
+        if modalities[best_index] == expected_modality:
+            route_hits += 1
+        if len(scores) > 1:
+            margins.append(float(scores[0][1] - scores[1][1]))
+        else:
+            margins.append(float(scores[0][1]))
+
+    payload_count = len(selected)
+    query_count = len(selected)
+    global_precision = _rate(hits, query_count)
+    routing_rate = _rate(route_hits, query_count)
+    min_margin = min(margins) if margins else 0.0
+    payload_avg = _mean(payload_latencies)
+    payload_p95 = _percentile(payload_latencies, 95)
+    query_avg = _mean(query_latencies)
+    query_p95 = _percentile(query_latencies, 95)
+
+    if global_precision < min_precision_at_1:
+        failures.append("global precision@1 below required threshold")
+    if routing_rate < min_precision_at_1:
+        failures.append("target modality routing below required threshold")
+    if _rate(payload_finite, payload_count) < 1.0:
+        failures.append("payload finite vector rate below 1.0")
+    if _rate(payload_normalized, payload_count) < 1.0:
+        failures.append("payload normalized vector rate below 1.0")
+    if _rate(query_finite, query_count) < 1.0:
+        failures.append("query finite vector rate below 1.0")
+    if _rate(query_normalized, query_count) < 1.0:
+        failures.append("query normalized vector rate below 1.0")
+    if _rate(dimension_matches, dimension_checks) < 1.0:
+        failures.append("encoder vector dimension mismatch")
+    if min_margin < min_required_margin:
+        failures.append("global separation margin below required threshold")
+    if max_payload_encode_ms is not None and payload_p95 > max_payload_encode_ms:
+        failures.append("payload encode p95 above threshold")
+    if max_query_encode_ms is not None and query_p95 > max_query_encode_ms:
+        failures.append("query encode p95 above threshold")
+
+    return CrossModalEncoderHealthReport(
+        encoder_name=encoder_name,
+        vector_dim=vector_dim,
+        ok=not failures,
+        modalities=modalities,
+        payloads=payload_count,
+        queries=query_count,
+        global_precision_at_1=global_precision,
+        target_modality_routing_rate=routing_rate,
+        finite_payload_vector_rate=_rate(payload_finite, payload_count),
+        normalized_payload_vector_rate=_rate(payload_normalized, payload_count),
+        finite_query_vector_rate=_rate(query_finite, query_count),
+        normalized_query_vector_rate=_rate(query_normalized, query_count),
+        dimension_match_rate=_rate(dimension_matches, dimension_checks),
+        payload_encode_avg_ms=payload_avg,
+        payload_encode_p95_ms=payload_p95,
+        query_encode_avg_ms=query_avg,
+        query_encode_p95_ms=query_p95,
+        min_global_margin=float(min_margin),
+        min_required_margin=float(min_required_margin),
+        max_payload_encode_ms=max_payload_encode_ms,
+        max_query_encode_ms=max_query_encode_ms,
         failures=tuple(failures),
     )
 
@@ -1577,6 +1822,46 @@ def _rate(numerator: int, denominator: int) -> float:
     if denominator <= 0:
         return 0.0
     return float(numerator) / float(denominator)
+
+
+def _mean(values: Sequence[float]) -> float:
+    if not values:
+        return 0.0
+    return float(sum(values) / len(values))
+
+
+def _percentile(values: Sequence[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(float(value) for value in values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * max(0.0, min(100.0, float(percentile))) / 100.0
+    lower = int(math.floor(rank))
+    upper = int(math.ceil(rank))
+    if lower == upper:
+        return ordered[lower]
+    fraction = rank - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def _payload_without_vectors(payload: MemoryPayload) -> MemoryPayload:
+    vector_keys = {
+        "cross_modal_vector",
+        "cross_modal_embedding",
+        "embedding",
+        "vector",
+    }
+    return MemoryPayload(
+        kind=payload.kind,
+        text=payload.text,
+        metadata={
+            key: value
+            for key, value in payload.metadata.items()
+            if key not in vector_keys
+        },
+        tags=payload.tags,
+    )
 
 
 def _normalize_vector(

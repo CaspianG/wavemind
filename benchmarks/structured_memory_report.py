@@ -38,6 +38,14 @@ def build_structured_memory_report(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "encoder_contract_global_precision_at_1": row.get("encoder_contract_global_precision_at_1"),
             "encoder_contract_margin": row.get("encoder_contract_min_global_margin"),
             "encoder_contract_min_required_margin": row.get("encoder_contract_min_required_margin"),
+            "encoder_health_ok": row.get("encoder_health_ok"),
+            "encoder_health_global_precision_at_1": row.get("encoder_health_global_precision_at_1"),
+            "encoder_health_target_modality_routing_rate": row.get("encoder_health_target_modality_routing_rate"),
+            "encoder_health_dimension_match_rate": row.get("encoder_health_dimension_match_rate"),
+            "encoder_health_payload_encode_p95_ms": row.get("encoder_health_payload_encode_p95_ms"),
+            "encoder_health_query_encode_p95_ms": row.get("encoder_health_query_encode_p95_ms"),
+            "encoder_health_margin": row.get("encoder_health_min_global_margin"),
+            "encoder_health_min_required_margin": row.get("encoder_health_min_required_margin"),
             "temporal_event_precision_at_1": row.get("temporal_event_precision_at_1"),
             "temporal_event_persistence_rate": row.get("temporal_event_persistence_rate"),
             "temporal_event_provenance_rate": row.get("temporal_event_provenance_rate"),
@@ -87,6 +95,7 @@ def render_structured_memory_markdown(payload: dict[str, Any]) -> str:
             f"- Structured precision@1: `{_fmt(summary.get('precision_at_1'))}`.",
             f"- Cross-modal precision@1: `{_fmt(summary.get('cross_modal_precision_at_1'))}`.",
             f"- Precomputed-vector precision@1: `{_fmt(summary.get('precomputed_vector_precision_at_1'))}`.",
+            f"- Encoder health: `{summary.get('encoder_health_ok')}`.",
             f"- Temporal event precision@1: `{_fmt(summary.get('temporal_event_precision_at_1'))}`.",
             f"- Knowledge-graph precision@1: `{_fmt(summary.get('knowledge_graph_precision_at_1'))}`.",
             f"- Cross-modal avg latency: `{_fmt(summary.get('cross_modal_avg_latency_ms'))} ms`.",
@@ -107,6 +116,7 @@ def render_structured_memory_markdown(payload: dict[str, Any]) -> str:
             f"| Cross-modal routing | `{raw.get('cross_modal_queries', 0)}` typed queries, persisted vector rate `{_fmt(raw.get('cross_modal_vectors_persisted_rate'))}`, provenance `{_fmt(raw.get('cross_modal_provenance_rate'))}`. |",
             f"| External vectors | `{raw.get('precomputed_vector_queries', 0)}` strict precomputed-vector queries over `{', '.join(raw.get('precomputed_vector_target_modalities', []))}`. |",
             f"| Encoder contract | target@1 `{_fmt(raw.get('encoder_contract_target_precision_at_1'))}`, global@1 `{_fmt(raw.get('encoder_contract_global_precision_at_1'))}`, margin `{_fmt(raw.get('encoder_contract_min_global_margin'))}`. |",
+            f"| Encoder health | active encoder `{raw.get('encoder_health_encoder')}`, global@1 `{_fmt(raw.get('encoder_health_global_precision_at_1'))}`, routing `{_fmt(raw.get('encoder_health_target_modality_routing_rate'))}`, payload p95 `{_fmt(raw.get('encoder_health_payload_encode_p95_ms'))} ms`, query p95 `{_fmt(raw.get('encoder_health_query_encode_p95_ms'))} ms`. |",
             f"| Temporal events | around/window/recency/interval `{raw.get('temporal_event_around_precision_at_1')}/{raw.get('temporal_event_window_precision_at_1')}/{raw.get('temporal_event_recency_precision_at_1')}/{raw.get('temporal_event_interval_precision_at_1')}`. |",
             f"| Knowledge graph | direct/two-hop/three-hop/predicate `{raw.get('knowledge_graph_direct_precision_at_1')}/{raw.get('knowledge_graph_two_hop_precision_at_1')}/{raw.get('knowledge_graph_three_hop_precision_at_1')}/{raw.get('knowledge_graph_predicate_precision_at_1')}`. |",
             "",
@@ -131,6 +141,13 @@ def _checks(row: dict[str, Any]) -> list[dict[str, Any]]:
         _check("encoder_contract_target_precision_at_1", row.get("encoder_contract_target_precision_at_1"), 1.0, ">="),
         _check("encoder_contract_global_precision_at_1", row.get("encoder_contract_global_precision_at_1"), 1.0, ">="),
         _check("encoder_contract_margin", row.get("encoder_contract_min_global_margin"), row.get("encoder_contract_min_required_margin"), ">="),
+        _check("encoder_health_ok", row.get("encoder_health_ok"), True, "is"),
+        _check("encoder_health_global_precision_at_1", row.get("encoder_health_global_precision_at_1"), 1.0, ">="),
+        _check("encoder_health_target_modality_routing_rate", row.get("encoder_health_target_modality_routing_rate"), 1.0, ">="),
+        _check("encoder_health_dimension_match_rate", row.get("encoder_health_dimension_match_rate"), 1.0, ">="),
+        _check("encoder_health_payload_p95_ms", row.get("encoder_health_payload_encode_p95_ms"), 50.0, "<="),
+        _check("encoder_health_query_p95_ms", row.get("encoder_health_query_encode_p95_ms"), 50.0, "<="),
+        _check("encoder_health_margin", row.get("encoder_health_min_global_margin"), row.get("encoder_health_min_required_margin"), ">="),
         _check("temporal_event_precision_at_1", row.get("temporal_event_precision_at_1"), 1.0, ">="),
         _check("temporal_event_persistence", row.get("temporal_event_persistence_rate"), 1.0, ">="),
         _check("temporal_event_provenance", row.get("temporal_event_provenance_rate"), 1.0, ">="),
@@ -151,6 +168,11 @@ def _check(name: str, value: Any, target: Any, op: str) -> dict[str, Any]:
             passed = False
     elif op == "is":
         passed = value is target
+    elif op == "<=":
+        try:
+            passed = float(value) <= float(target)
+        except (TypeError, ValueError):
+            passed = False
     return {
         "name": name,
         "value": value,

@@ -57,6 +57,7 @@ from wavemind import (
     audio_payload,
     build_cluster_autoscale_plan,
     build_cluster_plan,
+    check_cross_modal_encoder_health,
     event_payload,
     graph_payload,
     image_payload,
@@ -4115,6 +4116,12 @@ def run_multimodal_profile() -> dict[str, object]:
                 namespace="encoder-contract",
                 encoder_name="scale-readiness-precomputed-contract",
             )
+            encoder_health = check_cross_modal_encoder_health(
+                layer.cross_modal_encoder,
+                min_required_margin=0.01,
+                max_payload_encode_ms=50.0,
+                max_query_encode_ms=50.0,
+            )
 
             return {
                 "engine": "WaveMind structured payloads",
@@ -4150,6 +4157,22 @@ def run_multimodal_profile() -> dict[str, object]:
                 "encoder_contract_min_global_margin": encoder_contract.min_global_margin,
                 "encoder_contract_min_required_margin": encoder_contract.min_required_margin,
                 "encoder_contract_failures": list(encoder_contract.failures),
+                "encoder_health_ok": encoder_health.ok,
+                "encoder_health_encoder": encoder_health.encoder_name,
+                "encoder_health_payloads": encoder_health.payloads,
+                "encoder_health_queries": encoder_health.queries,
+                "encoder_health_global_precision_at_1": encoder_health.global_precision_at_1,
+                "encoder_health_target_modality_routing_rate": encoder_health.target_modality_routing_rate,
+                "encoder_health_finite_payload_vector_rate": encoder_health.finite_payload_vector_rate,
+                "encoder_health_normalized_payload_vector_rate": encoder_health.normalized_payload_vector_rate,
+                "encoder_health_finite_query_vector_rate": encoder_health.finite_query_vector_rate,
+                "encoder_health_normalized_query_vector_rate": encoder_health.normalized_query_vector_rate,
+                "encoder_health_dimension_match_rate": encoder_health.dimension_match_rate,
+                "encoder_health_payload_encode_p95_ms": encoder_health.payload_encode_p95_ms,
+                "encoder_health_query_encode_p95_ms": encoder_health.query_encode_p95_ms,
+                "encoder_health_min_global_margin": encoder_health.min_global_margin,
+                "encoder_health_min_required_margin": encoder_health.min_required_margin,
+                "encoder_health_failures": list(encoder_health.failures),
                 "temporal_event_queries": len(temporal_checks),
                 "temporal_event_precision_at_1": temporal_correct / len(temporal_checks),
                 "temporal_event_around_precision_at_1": temporal_kind_correct.get("around", 0),

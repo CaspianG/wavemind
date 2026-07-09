@@ -170,6 +170,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "cross-modal precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "vectors persisted 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "precomputed precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "encoder health True" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "encoder health global@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
+    assert "encoder health query p95" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "temporal precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "temporal around/window/recency/interval 1/1/1/1" in criteria[
@@ -179,6 +182,7 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "temporal provenance 1.0" in criteria["structured_multimodal_payloads"]["evidence"]
     assert "interval overlap" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "around-time reranking" in criteria["structured_multimodal_payloads"]["requirement"]
+    assert "p95 encode latency" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "content-addressed object-store manifests" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "multi-hop path traversal" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "knowledge graph precision@1 1.0" in criteria["structured_multimodal_payloads"]["evidence"]

@@ -126,6 +126,11 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["structured_memory"]["cross_modal_provenance_rate"] == 1.0
     assert payload["structured_memory"]["precomputed_vector_precision_at_1"] == 1.0
     assert payload["structured_memory"]["encoder_contract_ok"] is True
+    assert payload["structured_memory"]["encoder_health_ok"] is True
+    assert payload["structured_memory"]["encoder_health_global_precision_at_1"] == 1.0
+    assert payload["structured_memory"]["encoder_health_target_modality_routing_rate"] == 1.0
+    assert payload["structured_memory"]["encoder_health_dimension_match_rate"] == 1.0
+    assert payload["structured_memory"]["encoder_health_query_encode_p95_ms"] <= 50.0
     assert payload["structured_memory"]["temporal_event_precision_at_1"] == 1.0
     assert payload["structured_memory"]["knowledge_graph_precision_at_1"] == 1.0
     assert payload["structured_memory"]["knowledge_graph_path_precision_at_1"] == 1.0

@@ -574,6 +574,26 @@ def _structured_memory_status(payload: dict[str, Any]) -> dict[str, Any]:
         "encoder_contract_min_required_margin": summary.get(
             "encoder_contract_min_required_margin"
         ),
+        "encoder_health_ok": summary.get("encoder_health_ok"),
+        "encoder_health_global_precision_at_1": summary.get(
+            "encoder_health_global_precision_at_1"
+        ),
+        "encoder_health_target_modality_routing_rate": summary.get(
+            "encoder_health_target_modality_routing_rate"
+        ),
+        "encoder_health_dimension_match_rate": summary.get(
+            "encoder_health_dimension_match_rate"
+        ),
+        "encoder_health_payload_encode_p95_ms": summary.get(
+            "encoder_health_payload_encode_p95_ms"
+        ),
+        "encoder_health_query_encode_p95_ms": summary.get(
+            "encoder_health_query_encode_p95_ms"
+        ),
+        "encoder_health_margin": summary.get("encoder_health_margin"),
+        "encoder_health_min_required_margin": summary.get(
+            "encoder_health_min_required_margin"
+        ),
         "temporal_event_precision_at_1": summary.get("temporal_event_precision_at_1"),
         "temporal_event_persistence_rate": summary.get("temporal_event_persistence_rate"),
         "temporal_event_provenance_rate": summary.get("temporal_event_provenance_rate"),

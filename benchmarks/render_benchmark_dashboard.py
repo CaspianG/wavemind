@@ -219,6 +219,8 @@ def _structured_memory_panel(status: dict[str, Any]) -> str:
         ("Gate checks", f"{structured.get('passed_check_count', 0)}/{structured.get('check_count', 0)}"),
         ("Structured precision@1", _fmt_metric(structured.get("precision_at_1"))),
         ("Cross-modal precision@1", _fmt_metric(structured.get("cross_modal_precision_at_1"))),
+        ("Encoder health", structured.get("encoder_health_ok")),
+        ("Encoder query p95", f"{_fmt_metric(structured.get('encoder_health_query_encode_p95_ms'))} ms"),
         ("Temporal precision@1", _fmt_metric(structured.get("temporal_event_precision_at_1"))),
         ("Graph precision@1", _fmt_metric(structured.get("knowledge_graph_precision_at_1"))),
         ("Cross-modal avg latency", f"{_fmt_metric(structured.get('cross_modal_avg_latency_ms'))} ms"),

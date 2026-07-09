@@ -399,6 +399,11 @@ policy matters more than raw vector-database scale:
   preflight for those external vectors: target-modality routing, global
   retrieval, persisted finite normalized vectors, provenance, and separation
   margin across image, audio, table, event, video, 3D, and graph payloads.
+  `check_cross_modal_encoder_health()` is the active encoder health gate for
+  encoders that produce both payload and query vectors: it checks finite
+  normalized vectors, dimension compatibility, global precision@1,
+  target-modality routing, p95 encode latency, and separation margin before a
+  multimodal backend is admitted into production evidence.
   `SentenceTransformersCrossModalEncoder` adds an optional
   CLIP-style local image/text backend without making sentence-transformers or
   Pillow mandatory for the base install. `S3AssetStore` adds verified
@@ -713,10 +718,12 @@ Enterprise requirements:
 - Multi-encoder support: local sentence-transformers, OpenAI-compatible APIs,
   and application-provided embeddings.
 - Multimodal encoders: the optional sentence-transformers backend now covers
-  CLIP-style local image/text retrieval; next are benchmarked audio embeddings,
-  video scene embeddings, and 3D descriptors behind the same
-  `CrossModalMemoryLayer`, `PrecomputedCrossModalEncoder`, and
-  `validate_precomputed_cross_modal_contract()` contracts.
+  CLIP-style local image/text retrieval, and active encoder health monitoring is
+  part of the structured-memory evidence path. Next are benchmarked audio
+  embeddings, video scene embeddings, and 3D descriptors behind the same
+  `CrossModalMemoryLayer`, `PrecomputedCrossModalEncoder`,
+  `validate_precomputed_cross_modal_contract()`, and
+  `check_cross_modal_encoder_health()` contracts.
 - Community benchmark dashboard generated from checked-in result JSON, backed by
   the weekly freshness/audit gate.
 - Strict production-evidence dashboard/report that stays separate from the core
