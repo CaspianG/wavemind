@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-09T23:34:14Z",
-  "source_ref": "9956e3112dc5",
+  "generated_at": "2026-07-09T23:59:37Z",
+  "source_ref": "b63923536682",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2245,6 +2245,60 @@
       },
       "target": "Keep 100% deterministic quorum recall through a physical worker outage across non-loopback pod DNS, then recover every service node without replacing persistent pods.",
       "next_step": "Repeat the same protocol on a non-ephemeral remote Kubernetes staging cluster, then run node, zone, and region drills through strict cluster admission."
+    },
+    {
+      "id": "kubernetes_active_active_region_failure_smoke",
+      "name": "Kubernetes active-active region failure and recovery smoke",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/kubernetes_active_active_region_smoke_results.json",
+      "dataset": "Three PVC-backed replicated WaveMind regions placed in three Kubernetes worker zones. The runner converges 48 initial writes, physically pauses the region-b worker, performs 32 writes plus a delete while region-b is unavailable, verifies survivor convergence, restores the worker, and requires full convergence, tombstone suppression, and an idempotent final sync.",
+      "competitors": [
+        "WaveMind Kubernetes active-active regions"
+      ],
+      "metrics": [
+        "region_count",
+        "zone_count",
+        "outage_writes",
+        "outage_convergence_rate",
+        "outage_delete_suppression_rate",
+        "recovery_convergence_rate",
+        "recovery_delete_suppression_rate",
+        "final_noop_records_imported"
+      ],
+      "current": {
+        "WaveMind Kubernetes active-active region recovery": {
+          "status": "pass",
+          "environment": "kind-multizone-active-active-ci",
+          "evidence_source": "github-actions-kind-physical-region-worker-pause",
+          "source_ref": "b6392353668203196007e1cac695e178752d34d1",
+          "workflow_run_id": "29058433643",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29058433643",
+          "region_count": 3,
+          "zone_count": 3,
+          "all_regions_use_pvc": true,
+          "failure_method": "docker-pause-kind-worker",
+          "target_region": "region-b",
+          "outage_duration_ms": 9900.072,
+          "seed_writes": 48,
+          "seed_convergence_rate": 1.0,
+          "outage_unavailable_regions": [
+            "region-b"
+          ],
+          "outage_writes": 32,
+          "outage_convergence_rate": 1.0,
+          "outage_delete_suppression_rate": 1.0,
+          "recovery_convergence_rate": 1.0,
+          "recovery_delete_suppression_rate": 1.0,
+          "final_noop_records_imported": 0,
+          "final_noop_tombstones_imported": 0,
+          "passed_checks": 17,
+          "check_count": 17,
+          "claim_boundary": "Ephemeral non-loopback Kubernetes three-zone active-active region failure evidence; not remote multi-region production admission."
+        }
+      },
+      "target": "Keep write availability, convergence, and delete suppression at 1.00 through physical region loss and recovery without replacing the region PVC pod.",
+      "next_step": "Run this protocol across independent remote Kubernetes regions and use that external artifact for strict active-active admission."
     },
     {
       "id": "external_http_active_active_loopback",

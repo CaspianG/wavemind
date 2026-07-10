@@ -228,6 +228,30 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert network_current["passed_checks"] == network_current["check_count"] == 13
     assert network_current["workflow_run_url"].endswith("/29057247023")
     assert "not remote multi-region" in network_current["claim_boundary"]
+    region_smoke = entries["kubernetes_active_active_region_failure_smoke"]
+    assert region_smoke["status"] == "implemented"
+    region_current = region_smoke["current"][
+        "WaveMind Kubernetes active-active region recovery"
+    ]
+    assert region_current["status"] == "pass"
+    assert region_current["region_count"] == 3
+    assert region_current["zone_count"] == 3
+    assert region_current["all_regions_use_pvc"] is True
+    assert region_current["failure_method"] == "docker-pause-kind-worker"
+    assert region_current["target_region"] == "region-b"
+    assert region_current["seed_writes"] == 48
+    assert region_current["seed_convergence_rate"] == 1.0
+    assert region_current["outage_unavailable_regions"] == ["region-b"]
+    assert region_current["outage_writes"] == 32
+    assert region_current["outage_convergence_rate"] == 1.0
+    assert region_current["outage_delete_suppression_rate"] == 1.0
+    assert region_current["recovery_convergence_rate"] == 1.0
+    assert region_current["recovery_delete_suppression_rate"] == 1.0
+    assert region_current["final_noop_records_imported"] == 0
+    assert region_current["final_noop_tombstones_imported"] == 0
+    assert region_current["passed_checks"] == region_current["check_count"] == 17
+    assert region_current["workflow_run_url"].endswith("/29058433643")
+    assert "not remote multi-region" in region_current["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]

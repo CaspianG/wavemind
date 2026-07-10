@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-09T23:34:13Z",
+  "generated_at": "2026-07-09T23:59:37Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-09T23:34:00Z",
+      "evidence": "audit status pass, generated_at 2026-07-09T23:59:34Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -280,9 +280,9 @@
       "id": "active_active_field_crdt",
       "title": "Active-active sync and field-state CRDT converge",
       "status": "pass",
-      "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync, and CRDT deltas must carry actor watermarks so regions can audit sync progress, missing actors, and replication lag.",
-      "evidence": "delta sync True, incremental records 1, field-only keys 1, sustained regions 3, sustained convergence 1.0, sustained delete suppression 1.0, sustained success 1.0, HTTP service-region convergence 1.0, HTTP final no-op imports 0, CRDT idempotent True, watermarks 3, watermark health pass, missing detected True, lag detected True",
-      "next_step": "Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence."
+      "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync, and CRDT deltas must carry actor watermarks so regions can audit sync progress, missing actors, and replication lag. A non-loopback Kubernetes drill must also prove that surviving regions continue writes and tombstone convergence during a physical zone outage, then converge the recovered PVC-backed region without resurrecting deleted memory.",
+      "evidence": "delta sync True, incremental records 1, field-only keys 1, sustained regions 3, sustained convergence 1.0, sustained delete suppression 1.0, sustained success 1.0, HTTP service-region convergence 1.0, HTTP final no-op imports 0, Kubernetes regions 3, zones 3, failure docker-pause-kind-worker, outage unavailable ['region-b'], outage writes 32, outage convergence 1.0, outage delete suppression 1.0, recovery convergence 1.0, recovery delete suppression 1.0, region workflow https://github.com/CaspianG/wavemind/actions/runs/29058433643, CRDT idempotent True, watermarks 3, watermark health pass, missing detected True, lag detected True",
+      "next_step": "Repeat the passing kind region-failure protocol on independent remote Kubernetes regions and feed that artifact into strict active-active admission."
     },
     {
       "id": "backup_restore_dr",

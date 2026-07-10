@@ -1,0 +1,380 @@
+{
+  "schema": "wavemind.kubernetes_active_active_region_smoke.v1",
+  "generated_at": "2026-07-09T23:55:54.133679+00:00",
+  "environment": "kind-multizone-active-active-ci",
+  "evidence_source": "github-actions-kind-physical-region-worker-pause",
+  "claim_boundary": "Ephemeral non-loopback Kubernetes three-zone active-active region failure evidence; not remote multi-region production admission.",
+  "status": "pass",
+  "summary": {
+    "check_count": 17,
+    "passed_checks": 17,
+    "failed_checks": 0
+  },
+  "checks": [
+    {
+      "id": "three_regions",
+      "passed": true,
+      "observed": 3,
+      "required": 3
+    },
+    {
+      "id": "non_loopback_region_services",
+      "passed": true,
+      "observed": [
+        "http://region-a.wavemind-regions.svc.cluster.local:8000",
+        "http://region-b.wavemind-regions.svc.cluster.local:8000",
+        "http://region-c.wavemind-regions.svc.cluster.local:8000"
+      ],
+      "required": "three Kubernetes service DNS endpoints"
+    },
+    {
+      "id": "three_zone_placement",
+      "passed": true,
+      "observed": 3,
+      "required": 3
+    },
+    {
+      "id": "persistent_region_volumes",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "initial_convergence",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "physical_region_worker_pause",
+      "passed": true,
+      "observed": {
+        "method": "docker-pause-kind-worker",
+        "worker": "wavemind-ci-worker2"
+      },
+      "required": "physical worker pause"
+    },
+    {
+      "id": "runner_survives_other_zone",
+      "passed": true,
+      "observed": {
+        "runner_worker": "wavemind-ci-worker",
+        "target_worker": "wavemind-ci-worker2",
+        "runner_zone": "zone-a",
+        "target_zone": "zone-b"
+      },
+      "required": "runner survives in another zone"
+    },
+    {
+      "id": "failed_region_detected",
+      "passed": true,
+      "observed": [
+        "region-b"
+      ],
+      "required": [
+        "region-b"
+      ]
+    },
+    {
+      "id": "writes_continue_during_outage",
+      "passed": true,
+      "observed": 32,
+      "required": "> 0"
+    },
+    {
+      "id": "survivor_convergence",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "survivor_delete_suppression",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "worker_unpaused",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "region_api_recovers",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "region_pod_preserved",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "full_region_convergence",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "recovered_delete_suppression",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "final_sync_idempotent",
+      "passed": true,
+      "observed": {
+        "records": 0,
+        "tombstones": 0,
+        "failed_pairs": 0
+      },
+      "required": {
+        "records": 0,
+        "tombstones": 0,
+        "failed_pairs": 0
+      }
+    }
+  ],
+  "observed": {
+    "region_addresses": [
+      "http://region-a.wavemind-regions.svc.cluster.local:8000",
+      "http://region-b.wavemind-regions.svc.cluster.local:8000",
+      "http://region-c.wavemind-regions.svc.cluster.local:8000"
+    ],
+    "region_placement": {
+      "region-a": {
+        "pod": "region-a-0",
+        "uid": "be825835-7662-4dcf-8e4c-2a2631dd727f",
+        "worker": "wavemind-ci-worker",
+        "zone": "zone-a",
+        "uses_pvc": "true"
+      },
+      "region-b": {
+        "pod": "region-b-0",
+        "uid": "527357d6-37aa-48b9-867c-ca884a206afc",
+        "worker": "wavemind-ci-worker2",
+        "zone": "zone-b",
+        "uses_pvc": "true"
+      },
+      "region-c": {
+        "pod": "region-c-0",
+        "uid": "f1bd06d4-0ac3-42e7-a9a4-2eba09c76f4d",
+        "worker": "wavemind-ci-worker3",
+        "zone": "zone-c",
+        "uses_pvc": "true"
+      }
+    },
+    "zone_count": 3,
+    "all_regions_use_pvc": true,
+    "runner_region": "region-a",
+    "runner_worker": "wavemind-ci-worker",
+    "runner_zone": "zone-a",
+    "target_region": "region-b",
+    "target_worker": "wavemind-ci-worker2",
+    "target_zone": "zone-b",
+    "failure_method": "docker-pause-kind-worker",
+    "failure_settle_seconds": 2.0,
+    "outage_duration_ms": 9900.072,
+    "worker_unpaused": true,
+    "target_region_ready_after_recovery": true,
+    "target_region_pod_uid_preserved": true,
+    "seed": {
+      "schema": "wavemind.active_active_drill.v1",
+      "generated_at": "2026-07-09T23:55:36.518023+00:00",
+      "mode": "seed",
+      "namespace_prefix": "kind-region-drill",
+      "namespace_count": 16,
+      "regions": [
+        {
+          "id": "region-a",
+          "address": "http://region-a.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-b",
+          "address": "http://region-b.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-c",
+          "address": "http://region-c.wavemind-regions.svc.cluster.local:8000"
+        }
+      ],
+      "failed_region": null,
+      "region_health": {
+        "region-a": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 18.277
+        },
+        "region-b": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 13.729
+        },
+        "region-c": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 12.264
+        }
+      },
+      "unavailable_regions": [],
+      "min_convergence_rate": 1.0,
+      "workload_digest": "11ce258d1def2d2e2962ac099f0a3c5688780e0ca48c730cab1338b2dd17e2da",
+      "writes": 48,
+      "sync": {
+        "region_count": 3,
+        "namespace_count": 16,
+        "pair_count": 96,
+        "failed_pairs": 0,
+        "records_imported": 288,
+        "tombstones_imported": 0,
+        "duration_ms": 1520.8288820000462
+      },
+      "verification": {
+        "expected_checks": 144,
+        "hits": 144,
+        "convergence_rate": 1.0,
+        "delete_checks": 0,
+        "delete_suppression_rate": 1.0
+      },
+      "status": "pass",
+      "elapsed_ms": 3076.452
+    },
+    "outage": {
+      "schema": "wavemind.active_active_drill.v1",
+      "generated_at": "2026-07-09T23:55:47.464356+00:00",
+      "mode": "outage",
+      "namespace_prefix": "kind-region-drill",
+      "namespace_count": 16,
+      "regions": [
+        {
+          "id": "region-a",
+          "address": "http://region-a.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-b",
+          "address": "http://region-b.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-c",
+          "address": "http://region-c.wavemind-regions.svc.cluster.local:8000"
+        }
+      ],
+      "failed_region": "region-b",
+      "region_health": {
+        "region-a": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 15.669
+        },
+        "region-b": {
+          "status": "unavailable",
+          "error": "timed out",
+          "latency_ms": 5004.815
+        },
+        "region-c": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 16.324
+        }
+      },
+      "unavailable_regions": [
+        "region-b"
+      ],
+      "min_convergence_rate": 1.0,
+      "workload_digest": "6749306b69e816e14f12c545064bdbac15868ad913c9c656927a8cc450864258",
+      "surviving_regions": [
+        "region-a",
+        "region-c"
+      ],
+      "writes": 32,
+      "deleted_records_requested": 1,
+      "deleted_text": "WaveMind active-active initial memory from region-a in kind-region-drill:0000; token e563234f1bade090",
+      "sync": {
+        "region_count": 2,
+        "namespace_count": 16,
+        "pair_count": 32,
+        "failed_pairs": 0,
+        "records_imported": 96,
+        "tombstones_imported": 3,
+        "duration_ms": 528.2183379999879
+      },
+      "verification": {
+        "expected_checks": 158,
+        "hits": 158,
+        "convergence_rate": 1.0,
+        "delete_checks": 2,
+        "delete_suppression_rate": 1.0
+      },
+      "status": "pass",
+      "elapsed_ms": 6985.804
+    },
+    "recovered": {
+      "schema": "wavemind.active_active_drill.v1",
+      "generated_at": "2026-07-09T23:55:50.375222+00:00",
+      "mode": "recover",
+      "namespace_prefix": "kind-region-drill",
+      "namespace_count": 16,
+      "regions": [
+        {
+          "id": "region-a",
+          "address": "http://region-a.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-b",
+          "address": "http://region-b.wavemind-regions.svc.cluster.local:8000"
+        },
+        {
+          "id": "region-c",
+          "address": "http://region-c.wavemind-regions.svc.cluster.local:8000"
+        }
+      ],
+      "failed_region": "region-b",
+      "region_health": {
+        "region-a": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 19.429
+        },
+        "region-b": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 14.38
+        },
+        "region-c": {
+          "status": "healthy",
+          "error": null,
+          "latency_ms": 13.506
+        }
+      },
+      "unavailable_regions": [],
+      "min_convergence_rate": 1.0,
+      "workload_digest": "6749306b69e816e14f12c545064bdbac15868ad913c9c656927a8cc450864258",
+      "sync_cycles": 2,
+      "sync": {
+        "failed_pairs": 0,
+        "records_imported": 96,
+        "tombstones_imported": 3,
+        "final_noop_records_imported": 0,
+        "final_noop_tombstones_imported": 0,
+        "final_noop_failed_pairs": 0,
+        "duration_ms": 2046.9371570000021
+      },
+      "verification": {
+        "expected_checks": 237,
+        "hits": 237,
+        "convergence_rate": 1.0,
+        "delete_checks": 3,
+        "delete_suppression_rate": 1.0
+      },
+      "status": "pass",
+      "elapsed_ms": 3676.424
+    },
+    "elapsed_ms": 29733.65
+  },
+  "source_ref": "b6392353668203196007e1cac695e178752d34d1",
+  "workflow_run_id": "29058433643",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29058433643"
+}

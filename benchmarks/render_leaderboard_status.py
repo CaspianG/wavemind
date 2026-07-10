@@ -134,6 +134,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    kubernetes_active_active_region_failure = _load_json(
+        root / "benchmarks" / "kubernetes_active_active_region_smoke_results.json",
+        load_errors,
+        required=False,
+    )
     scale_readiness = _load_json(
         root / "benchmarks" / "scale_readiness_results.json",
         load_errors,
@@ -190,6 +195,9 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/kubernetes_operator_smoke_results.json": kubernetes_operator_failover,
         "benchmarks/kubernetes_cluster_network_smoke_results.json": (
             kubernetes_cluster_network_failure
+        ),
+        "benchmarks/kubernetes_active_active_region_smoke_results.json": (
+            kubernetes_active_active_region_failure
         ),
         "benchmarks/scale_readiness_results.json": scale_readiness,
         "benchmarks/cost_efficiency_results.json": cost_efficiency,
@@ -279,6 +287,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         ),
         "kubernetes_cluster_network_failure": _kubernetes_cluster_network_failure_status(
             kubernetes_cluster_network_failure
+        ),
+        "kubernetes_active_active_region_failure": (
+            _kubernetes_active_active_region_failure_status(
+                kubernetes_active_active_region_failure
+            )
         ),
         "memory_os_policy": _memory_os_policy_status(scale_readiness),
         "memory_os_policy_evolution": _memory_os_policy_evolution_status(
@@ -904,6 +917,60 @@ def _kubernetes_cluster_network_failure_status(
         "failed_nodes_after_recovery": recovered.get("failed_nodes_seen"),
         "claim_boundary": payload.get("claim_boundary", ""),
         "source": "benchmarks/kubernetes_cluster_network_smoke_results.json",
+    }
+
+
+def _kubernetes_active_active_region_failure_status(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    seed = observed.get("seed") if isinstance(observed.get("seed"), dict) else {}
+    outage = observed.get("outage") if isinstance(observed.get("outage"), dict) else {}
+    recovered = (
+        observed.get("recovered")
+        if isinstance(observed.get("recovered"), dict)
+        else {}
+    )
+    return {
+        "schema": payload.get("schema"),
+        "status": payload.get("status", "missing"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "region_count": len(observed.get("region_addresses") or []),
+        "zone_count": observed.get("zone_count"),
+        "all_regions_use_pvc": observed.get("all_regions_use_pvc"),
+        "failure_method": observed.get("failure_method"),
+        "target_region": observed.get("target_region"),
+        "outage_duration_ms": observed.get("outage_duration_ms"),
+        "seed_writes": seed.get("writes"),
+        "outage_unavailable_regions": outage.get("unavailable_regions"),
+        "outage_writes": outage.get("writes"),
+        "outage_convergence_rate": (outage.get("verification") or {}).get(
+            "convergence_rate"
+        ),
+        "outage_delete_suppression_rate": (outage.get("verification") or {}).get(
+            "delete_suppression_rate"
+        ),
+        "recovery_convergence_rate": (recovered.get("verification") or {}).get(
+            "convergence_rate"
+        ),
+        "recovery_delete_suppression_rate": (
+            recovered.get("verification") or {}
+        ).get("delete_suppression_rate"),
+        "final_noop_records_imported": (recovered.get("sync") or {}).get(
+            "final_noop_records_imported"
+        ),
+        "final_noop_tombstones_imported": (recovered.get("sync") or {}).get(
+            "final_noop_tombstones_imported"
+        ),
+        "claim_boundary": payload.get("claim_boundary", ""),
+        "source": "benchmarks/kubernetes_active_active_region_smoke_results.json",
     }
 
 

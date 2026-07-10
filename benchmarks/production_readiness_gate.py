@@ -99,6 +99,9 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "kubernetes_cluster_network_smoke": _load_optional_json(
             benchmark_dir / "kubernetes_cluster_network_smoke_results.json"
         ),
+        "kubernetes_active_active_region_smoke": _load_optional_json(
+            benchmark_dir / "kubernetes_active_active_region_smoke_results.json"
+        ),
         "external_http_active_active": _load_optional_json(
             benchmark_dir / "external_http_active_active_results.json"
         ),
@@ -588,6 +591,125 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and int(kubernetes_cluster_network_summary.get("check_count", 0)) >= 13
         and int(kubernetes_cluster_network_summary.get("passed_checks", 0))
         == int(kubernetes_cluster_network_summary.get("check_count", -1))
+    )
+    kubernetes_active_active_region_smoke = artifacts[
+        "kubernetes_active_active_region_smoke"
+    ]
+    kubernetes_active_active_region_summary = (
+        kubernetes_active_active_region_smoke.get("summary")
+        if isinstance(kubernetes_active_active_region_smoke.get("summary"), dict)
+        else {}
+    )
+    kubernetes_active_active_region_observed = (
+        kubernetes_active_active_region_smoke.get("observed")
+        if isinstance(kubernetes_active_active_region_smoke.get("observed"), dict)
+        else {}
+    )
+    kubernetes_active_active_seed = (
+        kubernetes_active_active_region_observed.get("seed")
+        if isinstance(kubernetes_active_active_region_observed.get("seed"), dict)
+        else {}
+    )
+    kubernetes_active_active_outage = (
+        kubernetes_active_active_region_observed.get("outage")
+        if isinstance(kubernetes_active_active_region_observed.get("outage"), dict)
+        else {}
+    )
+    kubernetes_active_active_recovered = (
+        kubernetes_active_active_region_observed.get("recovered")
+        if isinstance(kubernetes_active_active_region_observed.get("recovered"), dict)
+        else {}
+    )
+    kubernetes_active_active_seed_verification = dict(
+        kubernetes_active_active_seed.get("verification") or {}
+    )
+    kubernetes_active_active_outage_verification = dict(
+        kubernetes_active_active_outage.get("verification") or {}
+    )
+    kubernetes_active_active_recovery_verification = dict(
+        kubernetes_active_active_recovered.get("verification") or {}
+    )
+    kubernetes_active_active_recovery_sync = dict(
+        kubernetes_active_active_recovered.get("sync") or {}
+    )
+    kubernetes_active_active_addresses = [
+        str(value)
+        for value in kubernetes_active_active_region_observed.get("region_addresses")
+        or []
+    ]
+    kubernetes_active_active_region_smoke_pass = (
+        kubernetes_active_active_region_smoke.get("status") == "pass"
+        and kubernetes_active_active_region_smoke.get("environment")
+        == "kind-multizone-active-active-ci"
+        and kubernetes_active_active_region_smoke.get("evidence_source")
+        == "github-actions-kind-physical-region-worker-pause"
+        and bool(kubernetes_active_active_region_smoke.get("source_ref"))
+        and bool(kubernetes_active_active_region_smoke.get("workflow_run_id"))
+        and str(kubernetes_active_active_region_smoke.get("workflow_run_url") or "").startswith(
+            "https://github.com/CaspianG/wavemind/actions/runs/"
+        )
+        and len(kubernetes_active_active_addresses) == 3
+        and all(".svc.cluster.local" in value for value in kubernetes_active_active_addresses)
+        and all(
+            "127.0.0.1" not in value and "localhost" not in value
+            for value in kubernetes_active_active_addresses
+        )
+        and int(kubernetes_active_active_region_observed.get("zone_count", 0)) == 3
+        and kubernetes_active_active_region_observed.get("all_regions_use_pvc")
+        and kubernetes_active_active_region_observed.get("failure_method")
+        == "docker-pause-kind-worker"
+        and kubernetes_active_active_region_observed.get("runner_worker")
+        != kubernetes_active_active_region_observed.get("target_worker")
+        and kubernetes_active_active_region_observed.get("runner_zone")
+        != kubernetes_active_active_region_observed.get("target_zone")
+        and kubernetes_active_active_seed.get("status") == "pass"
+        and float(kubernetes_active_active_seed_verification.get("convergence_rate", 0.0))
+        >= 1.0
+        and kubernetes_active_active_outage.get("status") == "pass"
+        and kubernetes_active_active_outage.get("unavailable_regions")
+        == [kubernetes_active_active_region_observed.get("target_region")]
+        and int(kubernetes_active_active_outage.get("writes", 0)) > 0
+        and float(kubernetes_active_active_outage_verification.get("convergence_rate", 0.0))
+        >= 1.0
+        and float(
+            kubernetes_active_active_outage_verification.get(
+                "delete_suppression_rate", 0.0
+            )
+        )
+        >= 1.0
+        and kubernetes_active_active_region_observed.get("worker_unpaused")
+        and kubernetes_active_active_region_observed.get(
+            "target_region_ready_after_recovery"
+        )
+        and kubernetes_active_active_region_observed.get(
+            "target_region_pod_uid_preserved"
+        )
+        and kubernetes_active_active_recovered.get("status") == "pass"
+        and float(
+            kubernetes_active_active_recovery_verification.get(
+                "convergence_rate", 0.0
+            )
+        )
+        >= 1.0
+        and float(
+            kubernetes_active_active_recovery_verification.get(
+                "delete_suppression_rate", 0.0
+            )
+        )
+        >= 1.0
+        and int(kubernetes_active_active_recovery_sync.get("final_noop_records_imported", 1))
+        == 0
+        and int(
+            kubernetes_active_active_recovery_sync.get(
+                "final_noop_tombstones_imported", 1
+            )
+        )
+        == 0
+        and int(kubernetes_active_active_recovery_sync.get("final_noop_failed_pairs", 1))
+        == 0
+        and int(kubernetes_active_active_region_summary.get("check_count", 0)) >= 17
+        and int(kubernetes_active_active_region_summary.get("passed_checks", 0))
+        == int(kubernetes_active_active_region_summary.get("check_count", -1))
     )
     serverless = scale.get("WaveMind serverless plan", {})
     serverless_ops = scale.get("WaveMind serverless operational profile", {})
@@ -1757,6 +1879,7 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and float(http_active_active.get("success_rate", 0.0)) >= 1.0
                 and int(http_active_active.get("failed_pairs", 1)) == 0
                 and int(http_active_active.get("final_noop_records_imported", 1)) == 0
+                and kubernetes_active_active_region_smoke_pass
                 and field_crdt.get("commutative_convergence")
                 and field_crdt.get("idempotent_remerge")
                 and field_crdt.get("tombstone_wins")
@@ -1773,6 +1896,10 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "incremental sync, and CRDT deltas must carry actor watermarks "
                 "so regions can audit sync progress, missing actors, and "
                 "replication lag."
+                " A non-loopback Kubernetes drill must also prove that surviving "
+                "regions continue writes and tombstone convergence during a physical "
+                "zone outage, then converge the recovered PVC-backed region without "
+                "resurrecting deleted memory."
             ),
             evidence=(
                 f"delta sync {active_active.get('converged_after_bidirectional_sync')}, "
@@ -1784,13 +1911,23 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"sustained success {sustained_active_active.get('success_rate')}, "
                 f"HTTP service-region convergence {http_active_active.get('convergence_rate')}, "
                 f"HTTP final no-op imports {http_active_active.get('final_noop_records_imported')}, "
+                f"Kubernetes regions {len(kubernetes_active_active_addresses)}, "
+                f"zones {kubernetes_active_active_region_observed.get('zone_count')}, "
+                f"failure {kubernetes_active_active_region_observed.get('failure_method')}, "
+                f"outage unavailable {kubernetes_active_active_outage.get('unavailable_regions')}, "
+                f"outage writes {kubernetes_active_active_outage.get('writes')}, "
+                f"outage convergence {kubernetes_active_active_outage_verification.get('convergence_rate')}, "
+                f"outage delete suppression {kubernetes_active_active_outage_verification.get('delete_suppression_rate')}, "
+                f"recovery convergence {kubernetes_active_active_recovery_verification.get('convergence_rate')}, "
+                f"recovery delete suppression {kubernetes_active_active_recovery_verification.get('delete_suppression_rate')}, "
+                f"region workflow {kubernetes_active_active_region_smoke.get('workflow_run_url')}, "
                 f"CRDT idempotent {field_crdt.get('idempotent_remerge')}, "
                 f"watermarks {field_crdt.get('watermark_actors')}, "
                 f"watermark health {field_crdt.get('watermark_health_status')}, "
                 f"missing detected {field_crdt.get('watermark_missing_detected')}, "
                 f"lag detected {field_crdt.get('watermark_lag_detected')}"
             ),
-            next_step="Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence.",
+            next_step="Repeat the passing kind region-failure protocol on independent remote Kubernetes regions and feed that artifact into strict active-active admission.",
         ),
         _criterion(
             criterion_id="backup_restore_dr",

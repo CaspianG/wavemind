@@ -260,6 +260,63 @@ def _kubernetes_cluster_network_smoke_summary(
     }
 
 
+def _kubernetes_active_active_region_smoke_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    seed = observed.get("seed") if isinstance(observed.get("seed"), dict) else {}
+    outage = observed.get("outage") if isinstance(observed.get("outage"), dict) else {}
+    recovered = (
+        observed.get("recovered")
+        if isinstance(observed.get("recovered"), dict)
+        else {}
+    )
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "region_count": len(observed.get("region_addresses") or []),
+        "zone_count": observed.get("zone_count"),
+        "all_regions_use_pvc": observed.get("all_regions_use_pvc"),
+        "failure_method": observed.get("failure_method"),
+        "target_region": observed.get("target_region"),
+        "outage_duration_ms": observed.get("outage_duration_ms"),
+        "seed_writes": seed.get("writes"),
+        "seed_convergence_rate": (seed.get("verification") or {}).get(
+            "convergence_rate"
+        ),
+        "outage_unavailable_regions": outage.get("unavailable_regions"),
+        "outage_writes": outage.get("writes"),
+        "outage_convergence_rate": (outage.get("verification") or {}).get(
+            "convergence_rate"
+        ),
+        "outage_delete_suppression_rate": (outage.get("verification") or {}).get(
+            "delete_suppression_rate"
+        ),
+        "recovery_convergence_rate": (recovered.get("verification") or {}).get(
+            "convergence_rate"
+        ),
+        "recovery_delete_suppression_rate": (
+            recovered.get("verification") or {}
+        ).get("delete_suppression_rate"),
+        "final_noop_records_imported": (recovered.get("sync") or {}).get(
+            "final_noop_records_imported"
+        ),
+        "final_noop_tombstones_imported": (recovered.get("sync") or {}).get(
+            "final_noop_tombstones_imported"
+        ),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -449,6 +506,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     kubernetes_cluster_network_smoke_payload = _load_json(
         root / "benchmarks" / "kubernetes_cluster_network_smoke_results.json"
+    )
+    kubernetes_active_active_region_smoke_payload = _load_json(
+        root / "benchmarks" / "kubernetes_active_active_region_smoke_results.json"
     )
     external_http_active_active_loopback_payload = _load_json(
         root / "benchmarks" / "external_http_active_active_loopback_results.json"
@@ -2203,6 +2263,38 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep 100% deterministic quorum recall through a physical worker outage across non-loopback pod DNS, then recover every service node without replacing persistent pods.",
             "next_step": "Repeat the same protocol on a non-ephemeral remote Kubernetes staging cluster, then run node, zone, and region drills through strict cluster admission.",
+        },
+        {
+            "id": "kubernetes_active_active_region_failure_smoke",
+            "name": "Kubernetes active-active region failure and recovery smoke",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/kubernetes_active_active_region_smoke_results.json",
+            "dataset": "Three PVC-backed replicated WaveMind regions placed in three Kubernetes worker zones. The runner converges 48 initial writes, physically pauses the region-b worker, performs 32 writes plus a delete while region-b is unavailable, verifies survivor convergence, restores the worker, and requires full convergence, tombstone suppression, and an idempotent final sync.",
+            "competitors": ["WaveMind Kubernetes active-active regions"],
+            "metrics": [
+                "region_count",
+                "zone_count",
+                "outage_writes",
+                "outage_convergence_rate",
+                "outage_delete_suppression_rate",
+                "recovery_convergence_rate",
+                "recovery_delete_suppression_rate",
+                "final_noop_records_imported",
+            ],
+            "current": {
+                "WaveMind Kubernetes active-active region recovery": (
+                    _kubernetes_active_active_region_smoke_summary(
+                        kubernetes_active_active_region_smoke_payload
+                    )
+                    or {
+                        "status": "missing",
+                        "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    }
+                )
+            },
+            "target": "Keep write availability, convergence, and delete suppression at 1.00 through physical region loss and recovery without replacing the region PVC pod.",
+            "next_step": "Run this protocol across independent remote Kubernetes regions and use that external artifact for strict active-active admission.",
         },
         {
             "id": "external_http_active_active_loopback",

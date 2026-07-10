@@ -664,9 +664,11 @@ Priorities:
   documented production controller. The current CI now proves Lease-holder
   failover, CR-driven rolling upgrade, PDB/topology protection, four service
   pods across three zones, and `1.00` quorum recall through a physically paused
-  kind worker. The next gate is the same node/zone protocol on a non-ephemeral
-  remote staging cluster, followed by region failure and managed/serverless
-  admission;
+  kind worker. It also proves that three PVC-backed active-active regions keep
+  writing and propagating tombstones during a physical zone outage, then recover
+  to `1.00` convergence without resurrection. The next gate is the same
+  node/zone/region protocol on independent non-ephemeral remote staging
+  clusters, followed by managed/serverless admission;
 - short technical posts explaining stale memory, corrections, namespaces,
   dynamic priority, and benchmark methodology.
 
