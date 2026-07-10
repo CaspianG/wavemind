@@ -243,13 +243,8 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_QDRANT_URLS" in workflow
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
-    assert "WAVEMIND_FAISS_IVFPQ_NPROBE: ${{ inputs.faiss_nprobe }}" in workflow
-    assert (
-        "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES: "
-        "${{ inputs.faiss_checkpoint_interval_batches }}" in workflow
-    )
-    assert 'default: "1024"' in workflow
-    assert 'default: "5"' in workflow
+    assert 'WAVEMIND_FAISS_IVFPQ_NPROBE: "1024"' in workflow
+    assert 'WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES: "5"' in workflow
     assert 'python -m pip install -e ".[dev,bench,indexes,postgres]"' in workflow
     assert "Validate production streaming result" in workflow
     assert "expected exactly one {expected_engine!r} row" in workflow
@@ -266,6 +261,15 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
+    dispatch_inputs = workflow.split("    inputs:\n", 1)[1].split("\npermissions:", 1)[0]
+    input_names = [
+        line.strip()[:-1]
+        for line in dispatch_inputs.splitlines()
+        if line.startswith("      ")
+        and not line.startswith("        ")
+        and line.rstrip().endswith(":")
+    ]
+    assert len(input_names) <= 25
 
 
 def test_full_check_local_http_cluster_smoke_uses_ci_p99_ceiling():
