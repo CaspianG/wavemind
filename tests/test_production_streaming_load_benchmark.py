@@ -78,6 +78,7 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         _chunks,
         _merge_scored_hits,
         _qdrant_shard_index,
+        _upsert_qdrant_points,
         _upsert_qdrant_shards,
     )
 
@@ -128,6 +129,23 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         ("memories_s000", [5]),
     ]
     assert clients[1].calls == [("memories_s001", [2, 4])]
+
+    client = Client()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_points(
+            executor=executor,
+            client=client,
+            collection_name="memories",
+            points=[1, 2, 3, 4, 5],
+            upsert_batch_size=2,
+        )
+
+    assert inserted == 5
+    assert sorted(client.calls) == [
+        ("memories", [1, 2]),
+        ("memories", [3, 4]),
+        ("memories", [5]),
+    ]
 
 
 def test_qdrant_index_readiness_waits_for_green_index(monkeypatch):
@@ -496,6 +514,33 @@ def test_streaming_checkpoint_rejects_signature_mismatch(tmp_path):
     mismatch["vectors"] = 128
     with pytest.raises(ValueError, match="does not match"):
         _load_checkpoint(checkpoint_path, mismatch)
+
+
+def test_streaming_checkpoint_retries_transient_windows_replace_lock(
+    tmp_path,
+    monkeypatch,
+):
+    from benchmarks.production_streaming_load_benchmark import _write_checkpoint
+
+    checkpoint_path = tmp_path / "streaming.checkpoint.json"
+    original_replace = Path.replace
+    attempts = 0
+
+    def transient_lock(path, target):
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise PermissionError(5, "simulated sharing violation")
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", transient_lock)
+    monkeypatch.setenv("WAVEMIND_CHECKPOINT_REPLACE_RETRIES", "3")
+    monkeypatch.setenv("WAVEMIND_CHECKPOINT_REPLACE_DELAY_SECONDS", "0")
+
+    _write_checkpoint(checkpoint_path, {"schema": "test"})
+
+    assert attempts == 3
+    assert json.loads(checkpoint_path.read_text(encoding="utf-8"))["schema"] == "test"
 
 
 def test_streaming_load_cli_writes_json(tmp_path):

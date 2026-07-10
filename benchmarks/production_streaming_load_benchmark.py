@@ -283,7 +283,22 @@ def _write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     payload["updated_at"] = _utc_now()
     temp = path.with_suffix(path.suffix + ".tmp")
     temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temp.replace(path)
+    retry_count = max(
+        1,
+        int(os.environ.get("WAVEMIND_CHECKPOINT_REPLACE_RETRIES", "8")),
+    )
+    retry_delay_seconds = max(
+        0.0,
+        float(os.environ.get("WAVEMIND_CHECKPOINT_REPLACE_DELAY_SECONDS", "0.025")),
+    )
+    for attempt in range(retry_count):
+        try:
+            temp.replace(path)
+            return
+        except PermissionError:
+            if attempt + 1 >= retry_count:
+                raise
+            time.sleep(retry_delay_seconds * (attempt + 1))
 
 
 def _checkpoint_source_vectors(payload: dict[str, Any]) -> dict[int, np.ndarray]:
@@ -373,6 +388,23 @@ def _merge_scored_hits(hits_by_shard: Iterable[Iterable[Any]], top_k: int) -> li
             scored.append((float(getattr(hit, "score", 0.0)), int(hit.id)))
     scored.sort(key=lambda item: item[0], reverse=True)
     return [point_id for _, point_id in scored[: int(top_k)]]
+
+
+def _upsert_qdrant_points(
+    *,
+    executor: concurrent.futures.Executor,
+    client: Any,
+    collection_name: str,
+    points: list[Any],
+    upsert_batch_size: int,
+) -> int:
+    point_chunks = list(_chunks(points, upsert_batch_size))
+
+    def upsert_chunk(point_chunk: list[Any]) -> int:
+        client.upsert(collection_name=collection_name, points=point_chunk)
+        return len(point_chunk)
+
+    return sum(executor.map(upsert_chunk, point_chunks))
 
 
 def _upsert_qdrant_shards(
@@ -1491,6 +1523,7 @@ def run_qdrant_streaming(
         return skipped_result("Qdrant service streaming", "Set WAVEMIND_QDRANT_URL to run streaming Qdrant")
     try:
         upsert_batch_size = _positive_int_env("WAVEMIND_QDRANT_UPSERT_BATCH_SIZE", 5000)
+        upsert_workers = _positive_int_env("WAVEMIND_QDRANT_UPSERT_WORKERS", 1)
     except ValueError as exc:
         return skipped_result("Qdrant service streaming", str(exc))
     try:
@@ -1588,29 +1621,41 @@ def run_qdrant_streaming(
                 optimizers_config=ingest_optimizers_config,
                 timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
             )
-        for ids, vectors, captured in iter_vector_batches(
-            count=count,
-            dim=dim,
-            seed=seed + count,
-            batch_size=batch_size,
-            source_ids=source_ids,
-        ):
-            batch_start = int(ids[0]) if len(ids) else 0
-            if batch_start not in completed_batches:
-                points = [
-                    PointStruct(id=int(id), vector=vector.tolist())
-                    for id, vector in zip(ids, vectors)
-                ]
-                for point_chunk in _chunks(points, upsert_batch_size):
-                    client.upsert(collection_name=collection_name, points=point_chunk)
-            source_vectors.update(captured)
-            _record_checkpoint_batch(
-                path=checkpoint_path,
-                payload=checkpoint,
-                batch_start=batch_start,
-                captured=captured,
-            )
-            completed_batches.add(batch_start)
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=upsert_workers
+        ) as upsert_executor:
+            for ids, vectors, captured in iter_vector_batches(
+                count=count,
+                dim=dim,
+                seed=seed + count,
+                batch_size=batch_size,
+                source_ids=source_ids,
+            ):
+                batch_start = int(ids[0]) if len(ids) else 0
+                if batch_start not in completed_batches:
+                    points = [
+                        PointStruct(id=int(id), vector=vector.tolist())
+                        for id, vector in zip(ids, vectors)
+                    ]
+                    inserted = _upsert_qdrant_points(
+                        executor=upsert_executor,
+                        client=client,
+                        collection_name=collection_name,
+                        points=points,
+                        upsert_batch_size=upsert_batch_size,
+                    )
+                    if inserted != len(ids):
+                        raise RuntimeError(
+                            "Qdrant upsert did not acknowledge every point"
+                        )
+                source_vectors.update(captured)
+                _record_checkpoint_batch(
+                    path=checkpoint_path,
+                    payload=checkpoint,
+                    batch_start=batch_start,
+                    captured=captured,
+                )
+                completed_batches.add(batch_start)
         index_restore_ms = 0.0
         if deferred_indexing["enabled"]:
             restore_started = time.perf_counter()
@@ -1717,6 +1762,7 @@ def run_qdrant_streaming(
                 },
                 "collection_params": collection_config,
                 "upsert_batch_size": upsert_batch_size,
+                "upsert_workers": upsert_workers,
                 "memory_mode": "streaming upsert; query source vectors only",
                 **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },
