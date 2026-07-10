@@ -172,7 +172,7 @@ jobs:
             --redis-image redis:7-alpine \
             --memories 24 \
             --burst-requests 120 \
-            --burst-workers 12 \
+            --burst-workers 8 \
             --timeout-seconds 300 \
             --output benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
 
