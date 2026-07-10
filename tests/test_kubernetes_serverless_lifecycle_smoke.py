@@ -36,6 +36,9 @@ def _passing_observation():
             "visible_replicas": 3,
             "suppressed_replicas": 3,
             "deleted": 1,
+            "write_active_counts": [25, 25, 25],
+            "delete_active_counts": [24, 24, 24],
+            "seed_count": 24,
         },
         "burst": {
             "requests": 120,

@@ -26,6 +26,7 @@ import statistics
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 cfg = json.loads(sys.argv[1])
@@ -48,11 +49,14 @@ def request(base, path, payload=None, method="POST", timeout=10.0):
     elapsed = (time.perf_counter() - started) * 1000.0
     return (json.loads(raw.decode("utf-8")) if raw else {}), elapsed
 
-def query(base, text):
+def query(base, text, top_k=1, min_score=None):
+    payload = {"text": text, "namespace": cfg["namespace"], "top_k": top_k}
+    if min_score is not None:
+        payload["min_score"] = min_score
     payload, elapsed = request(
         base,
         "/query",
-        {"text": text, "namespace": cfg["namespace"], "top_k": 1},
+        payload,
     )
     return payload.get("results") or [], elapsed
 
@@ -101,10 +105,23 @@ elif mode == "cross-replica":
     )
     visible = 0
     read_ms = []
+    write_counts = []
     for index, base in enumerate(cfg["bases"]):
-        results, elapsed = query(base, marker + " replica-read-%d" % index)
+        results, elapsed = query(
+            base,
+            marker,
+            top_k=10,
+            min_score=(index + 1) * 0.000001,
+        )
         read_ms.append(elapsed)
-        if results and marker in results[0].get("text", ""):
+        stats, _ = request(
+            base,
+            "/stats?namespace=" + urllib.parse.quote(cfg["namespace"]),
+            None,
+            method="GET",
+        )
+        write_counts.append(int(stats.get("active_memories", -1)))
+        if any(marker in result.get("text", "") for result in results):
             visible += 1
     deleted, delete_ms = request(
         cfg["service_base"],
@@ -113,15 +130,31 @@ elif mode == "cross-replica":
         method="DELETE",
     )
     suppressed = 0
+    delete_counts = []
     for index, base in enumerate(cfg["bases"]):
-        results, _ = query(base, marker + " deleted-read-%d" % index)
-        if not results or marker not in results[0].get("text", ""):
+        results, _ = query(
+            base,
+            marker,
+            top_k=10,
+            min_score=0.0001 + ((index + 1) * 0.000001),
+        )
+        stats, _ = request(
+            base,
+            "/stats?namespace=" + urllib.parse.quote(cfg["namespace"]),
+            None,
+            method="GET",
+        )
+        delete_counts.append(int(stats.get("active_memories", -1)))
+        if not any(marker in result.get("text", "") for result in results):
             suppressed += 1
     print(json.dumps({
         "memory_id": int(created["id"]),
         "replicas": len(cfg["bases"]),
         "visible_replicas": visible,
         "suppressed_replicas": suppressed,
+        "write_active_counts": write_counts,
+        "delete_active_counts": delete_counts,
+        "seed_count": cfg["count"],
         "deleted": int(deleted.get("deleted", 0)),
         "write_ms": write_ms,
         "read_ms": read_ms,
@@ -476,6 +509,9 @@ def _percentile(values: list[float], quantile: float) -> float:
 def evaluate_kubernetes_serverless_lifecycle_smoke(observed: dict[str, Any]) -> dict[str, Any]:
     burst = observed.get("burst") or {}
     cross = observed.get("cross_replica") or {}
+    seed_count = int(cross.get("seed_count") or 0)
+    write_counts = [int(value) for value in cross.get("write_active_counts") or []]
+    delete_counts = [int(value) for value in cross.get("delete_active_counts") or []]
     checks = [
         {
             "id": "non_loopback_service_dns",
@@ -526,16 +562,28 @@ def evaluate_kubernetes_serverless_lifecycle_smoke(observed: dict[str, Any]) -> 
         },
         {
             "id": "cross_replica_write_visibility",
-            "passed": int(cross.get("visible_replicas") or 0) == int(cross.get("replicas") or -1) == 3,
-            "observed": {"visible": cross.get("visible_replicas"), "replicas": cross.get("replicas")},
-            "required": 3,
+            "passed": int(cross.get("visible_replicas") or 0)
+            == int(cross.get("replicas") or -1)
+            == 3
+            and write_counts == [seed_count + 1] * 3,
+            "observed": {
+                "visible": cross.get("visible_replicas"),
+                "replicas": cross.get("replicas"),
+                "active_counts": cross.get("write_active_counts"),
+            },
+            "required": {"visible": 3, "active_counts": "seed_count + 1"},
         },
         {
             "id": "cross_replica_delete_suppression",
             "passed": int(cross.get("suppressed_replicas") or 0) == int(cross.get("replicas") or -1) == 3
-            and int(cross.get("deleted") or 0) == 1,
-            "observed": {"suppressed": cross.get("suppressed_replicas"), "deleted": cross.get("deleted")},
-            "required": {"suppressed": 3, "deleted": 1},
+            and int(cross.get("deleted") or 0) == 1
+            and delete_counts == [seed_count] * 3,
+            "observed": {
+                "suppressed": cross.get("suppressed_replicas"),
+                "deleted": cross.get("deleted"),
+                "active_counts": cross.get("delete_active_counts"),
+            },
+            "required": {"suppressed": 3, "deleted": 1, "active_counts": "seed_count"},
         },
         {
             "id": "burst_success",
@@ -717,7 +765,13 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     cross = _workload(
         kubectl=args.kubectl,
         namespace=args.namespace,
-        config={**base_config, "mode": "cross-replica", "bases": pod_bases, "service_base": service_base},
+        config={
+            **base_config,
+            "mode": "cross-replica",
+            "bases": pod_bases,
+            "service_base": service_base,
+            "count": args.memories,
+        },
         timeout=180.0,
     )
     burst = _workload(
