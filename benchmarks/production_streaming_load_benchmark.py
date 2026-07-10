@@ -317,6 +317,85 @@ def _merge_scored_hits(hits_by_shard: Iterable[Iterable[Any]], top_k: int) -> li
     return [point_id for _, point_id in scored[: int(top_k)]]
 
 
+def _qdrant_model_value(payload: Any, key: str, default: Any = None) -> Any:
+    if isinstance(payload, dict):
+        return payload.get(key, default)
+    return getattr(payload, key, default)
+
+
+def _qdrant_status_text(value: Any) -> str:
+    if value is None:
+        return "missing"
+    enum_value = getattr(value, "value", None)
+    if enum_value is not None:
+        value = enum_value
+    if isinstance(value, dict):
+        if value.get("ok") is not None:
+            return "ok" if bool(value.get("ok")) else "error"
+        value = value.get("status", value)
+    return str(value).strip().lower()
+
+
+def _wait_for_qdrant_index_ready(
+    client: Any,
+    collection_name: str,
+    *,
+    expected_vectors: int,
+    timeout_seconds: float,
+    poll_interval_seconds: float = 5.0,
+    require_full_index: bool = False,
+) -> dict[str, Any]:
+    if timeout_seconds < 0:
+        raise ValueError("WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS must be non-negative")
+    if poll_interval_seconds < 0:
+        raise ValueError("WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS must be non-negative")
+
+    started = time.perf_counter()
+    attempts = 0
+    last: dict[str, Any] = {}
+    while True:
+        attempts += 1
+        info = client.get_collection(collection_name=collection_name)
+        points = int(_qdrant_model_value(info, "points_count", 0) or 0)
+        indexed = int(_qdrant_model_value(info, "indexed_vectors_count", 0) or 0)
+        collection_status = _qdrant_status_text(
+            _qdrant_model_value(info, "status")
+        )
+        optimizer_status = _qdrant_status_text(
+            _qdrant_model_value(info, "optimizer_status")
+        )
+        ready = (
+            points >= int(expected_vectors)
+            and (not require_full_index or indexed >= int(expected_vectors))
+            and collection_status == "green"
+            and optimizer_status == "ok"
+        )
+        elapsed = time.perf_counter() - started
+        last = {
+            "collection_name": collection_name,
+            "expected_vectors": int(expected_vectors),
+            "points_count": points,
+            "indexed_vectors_count": indexed,
+            "collection_status": collection_status,
+            "optimizer_status": optimizer_status,
+            "ready": ready,
+            "attempts": attempts,
+            "wait_ms": elapsed * 1000.0,
+            "timeout_seconds": float(timeout_seconds),
+            "poll_interval_seconds": float(poll_interval_seconds),
+            "require_full_index": bool(require_full_index),
+        }
+        if ready or timeout_seconds <= 0:
+            return last
+        if elapsed >= timeout_seconds:
+            raise TimeoutError(
+                f"Qdrant collection {collection_name!r} did not become index-ready "
+                f"within {timeout_seconds:g}s: points={points}, indexed={indexed}, "
+                f"status={collection_status}, optimizer={optimizer_status}"
+            )
+        time.sleep(poll_interval_seconds)
+
+
 def _pgvector_config_from_env() -> dict[str, Any]:
     return {
         "table": _safe_identifier(
@@ -616,7 +695,13 @@ def _streaming_plan_row(
         required_env = ["WAVEMIND_QDRANT_URL"]
         index_bytes = 0
         index_mode = "remote Qdrant service storage; local runner stores only generated batches"
-        command_env = {"WAVEMIND_QDRANT_URL": "http://qdrant.example:6333"}
+        command_env = {
+            "WAVEMIND_QDRANT_URL": "http://qdrant.example:6333",
+            "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
+            "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+            "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
+            "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
+        }
     elif key in {"qdrant-sharded", "qdrant-sharded-service", "qdrant-sharded-streaming"}:
         module_requirements = ["qdrant_client"]
         required_env = ["WAVEMIND_QDRANT_URLS"]
@@ -635,6 +720,10 @@ def _streaming_plan_row(
             "WAVEMIND_QDRANT_FANOUT_WORKERS": str(shard_count),
             "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
             "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
+            "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
+            "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+            "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
+            "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
         }
     elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
         module_requirements = ["psycopg"]
@@ -1402,6 +1491,21 @@ def run_qdrant_streaming(
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
+        index_ready_timeout_seconds = float(
+            os.environ.get("WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS", "0")
+        )
+        index_ready_poll_seconds = float(
+            os.environ.get("WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS", "5")
+        )
+        require_full_index = _bool_env("WAVEMIND_QDRANT_REQUIRE_FULL_INDEX", False)
+        index_readiness = _wait_for_qdrant_index_ready(
+            client,
+            collection_name,
+            expected_vectors=count,
+            timeout_seconds=index_ready_timeout_seconds,
+            poll_interval_seconds=index_ready_poll_seconds,
+            require_full_index=require_full_index,
+        )
         build_ms = (time.perf_counter() - started) * 1000.0
         hnsw_ef = os.environ.get("WAVEMIND_QDRANT_HNSW_EF")
         exact = os.environ.get("WAVEMIND_QDRANT_EXACT", "").lower() in {
@@ -1464,6 +1568,7 @@ def run_qdrant_streaming(
                 "collection_name": collection_name,
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
+                "index_readiness": index_readiness,
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,
@@ -1663,6 +1768,26 @@ def run_qdrant_sharded_streaming(
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
+        index_ready_timeout_seconds = float(
+            os.environ.get("WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS", "0")
+        )
+        index_ready_poll_seconds = float(
+            os.environ.get("WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS", "5")
+        )
+        require_full_index = _bool_env("WAVEMIND_QDRANT_REQUIRE_FULL_INDEX", False)
+        base_expected = int(count) // len(targets)
+        remainder = int(count) % len(targets)
+        index_readiness = [
+            _wait_for_qdrant_index_ready(
+                client,
+                target.collection_name,
+                expected_vectors=base_expected + (1 if target.index < remainder else 0),
+                timeout_seconds=index_ready_timeout_seconds,
+                poll_interval_seconds=index_ready_poll_seconds,
+                require_full_index=require_full_index,
+            )
+            for client, target in zip(clients, targets)
+        ]
         build_ms = (time.perf_counter() - started) * 1000.0
         hnsw_ef = os.environ.get("WAVEMIND_QDRANT_HNSW_EF")
         exact = os.environ.get("WAVEMIND_QDRANT_EXACT", "").lower() in {
@@ -1724,6 +1849,8 @@ def run_qdrant_sharded_streaming(
                 "routing": "point_id_minus_one_mod_shard_count",
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
+                "index_readiness": index_readiness,
+                "index_ready_all": all(row["ready"] for row in index_readiness),
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,

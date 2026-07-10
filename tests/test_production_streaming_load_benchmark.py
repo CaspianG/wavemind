@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -95,6 +96,96 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         ],
         top_k=3,
     ) == [3, 1, 2]
+
+
+def test_qdrant_index_readiness_waits_for_green_index(monkeypatch):
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    states = [
+        SimpleNamespace(
+            points_count=100,
+            indexed_vectors_count=80,
+            status="yellow",
+            optimizer_status="ok",
+        ),
+        SimpleNamespace(
+            points_count=100,
+            indexed_vectors_count=100,
+            status="green",
+            optimizer_status="ok",
+        ),
+    ]
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            assert collection_name == "memories"
+            return states.pop(0)
+
+    monkeypatch.setattr(benchmark.time, "sleep", lambda _seconds: None)
+    readiness = benchmark._wait_for_qdrant_index_ready(
+        FakeClient(),
+        "memories",
+        expected_vectors=100,
+        timeout_seconds=1.0,
+        poll_interval_seconds=0.0,
+        require_full_index=True,
+    )
+
+    assert readiness["ready"] is True
+    assert readiness["points_count"] == 100
+    assert readiness["indexed_vectors_count"] == 100
+    assert readiness["attempts"] == 2
+    assert readiness["require_full_index"] is True
+
+
+def test_qdrant_index_readiness_can_observe_without_waiting():
+    from benchmarks.production_streaming_load_benchmark import (
+        _wait_for_qdrant_index_ready,
+    )
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=100,
+                indexed_vectors_count=90,
+                status="yellow",
+                optimizer_status="ok",
+            )
+
+    readiness = _wait_for_qdrant_index_ready(
+        FakeClient(),
+        "memories",
+        expected_vectors=100,
+        timeout_seconds=0.0,
+    )
+
+    assert readiness["ready"] is False
+    assert readiness["attempts"] == 1
+
+
+def test_qdrant_index_readiness_allows_small_green_full_scan_collection():
+    from benchmarks.production_streaming_load_benchmark import (
+        _wait_for_qdrant_index_ready,
+    )
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=10_000,
+                indexed_vectors_count=0,
+                status="green",
+                optimizer_status="ok",
+            )
+
+    readiness = _wait_for_qdrant_index_ready(
+        FakeClient(),
+        "small-memories",
+        expected_vectors=10_000,
+        timeout_seconds=1.0,
+    )
+
+    assert readiness["ready"] is True
+    assert readiness["require_full_index"] is False
 
 
 def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
@@ -630,6 +721,13 @@ def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     assert row["index_mode"].startswith("remote Qdrant service")
     assert "WAVEMIND_QDRANT_URL" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
+    assert row["command_env"]["WAVEMIND_QDRANT_VECTOR_ON_DISK"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert (
+        row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
+        == "1800"
+    )
     assert "--engines qdrant-service" in row["command"]
     assert "production_streaming_load_qdrant_10m_results.json" in row["command"]
 
@@ -661,6 +759,11 @@ def test_streaming_load_plan_only_supports_qdrant_sharded_service(monkeypatch):
     assert "WAVEMIND_QDRANT_URLS" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URLS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_QDRANT_FANOUT_WORKERS"] == "6"
+    assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert (
+        row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
+        == "1800"
+    )
     assert "qdrant-5.example" in row["command_env"]["WAVEMIND_QDRANT_URLS"]
     assert "--engines qdrant-sharded-service" in row["command"]
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in row["command"]
