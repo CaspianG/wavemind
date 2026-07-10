@@ -193,6 +193,17 @@ def build_parser() -> argparse.ArgumentParser:
         in {"1", "true", "yes", "on"},
         help="Store query text in the audit log for cache prewarm and diagnostics.",
     )
+    parser.add_argument(
+        "--shared-store-refresh-seconds",
+        type=float,
+        default=float(
+            os.environ.get("WAVEMIND_SHARED_STORE_REFRESH_SECONDS", "-1")
+        ),
+        help=(
+            "Refresh local worker metadata from the shared store before queries. "
+            "Use 0 for stateless multi-worker deployments."
+        ),
+    )
 
     sub = parser.add_subparsers(dest="command")
 
@@ -1612,6 +1623,7 @@ def make_mind(args) -> WaveMind:
         graph_steps=args.graph_steps,
         graph_expand_k=args.graph_expand_k,
         recovery_journal_path=args.recovery_journal,
+        shared_store_refresh_seconds=args.shared_store_refresh_seconds,
     )
 
 

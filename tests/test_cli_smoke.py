@@ -414,6 +414,34 @@ def test_cli_serve_can_start_replicated_api_runtime(tmp_path, monkeypatch):
     assert callable(getattr(captured["mind"], "export_namespace_delta"))
 
 
+def test_cli_serve_honors_shared_store_refresh_environment(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_run(app, *, host, port):
+        captured["mind"] = app.state.mind
+
+    monkeypatch.setenv("WAVEMIND_SHARED_STORE_REFRESH_SECONDS", "0")
+    monkeypatch.setitem(sys.modules, "uvicorn", types.SimpleNamespace(run=fake_run))
+
+    assert cli.main(
+        [
+            "--db",
+            str(tmp_path / "shared-worker.sqlite3"),
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8124",
+        ]
+    ) == 0
+
+    mind = captured["mind"]
+    try:
+        assert mind.shared_store_refresh_seconds == 0.0
+    finally:
+        mind.close()
+
+
 def test_cli_maintenance_runs_one_job(tmp_path):
     db_path = tmp_path / "maintenance.sqlite3"
     run_cli(
