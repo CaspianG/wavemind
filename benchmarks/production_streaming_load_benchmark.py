@@ -1678,6 +1678,8 @@ def run_qdrant_streaming(
         client = QdrantClient(
             url=url,
             api_key=os.environ.get("WAVEMIND_QDRANT_API_KEY"),
+            grpc_port=_optional_int_env("WAVEMIND_QDRANT_GRPC_PORT"),
+            prefer_grpc=_bool_env("WAVEMIND_QDRANT_PREFER_GRPC", False),
             timeout=float(os.environ.get("WAVEMIND_QDRANT_TIMEOUT", "120")),
         )
     try:
@@ -1693,7 +1695,7 @@ def run_qdrant_streaming(
                 timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                 **recreate_kwargs,
             )
-        elif deferred_indexing["enabled"]:
+        elif deferred_indexing["enabled"] and not complete_resume:
             client.update_collection(
                 collection_name=collection_name,
                 optimizers_config=ingest_optimizers_config,
@@ -1737,7 +1739,7 @@ def run_qdrant_streaming(
                     )
                     completed_batches.add(batch_start)
         index_restore_ms = 0.0
-        if deferred_indexing["enabled"]:
+        if deferred_indexing["enabled"] and not complete_resume:
             restore_started = time.perf_counter()
             final_optimizers = dict(collection_config["optimizers"])
             final_optimizers["indexing_threshold"] = deferred_indexing[
@@ -1785,6 +1787,10 @@ def run_qdrant_streaming(
                 hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
                 exact=exact or None,
             )
+        query_timeout_seconds = _optional_int_env(
+            "WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS"
+        )
+        query_kwargs = _without_none({"timeout": query_timeout_seconds})
         queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
         warmup_queries = int(os.environ.get("WAVEMIND_QDRANT_WARMUP_QUERIES", "0"))
         if warmup_queries > 0 and queries:
@@ -1797,6 +1803,7 @@ def run_qdrant_streaming(
                         limit=top_k,
                         with_payload=False,
                         search_params=search_params,
+                        **query_kwargs,
                     ).points
                 )
         rows: list[dict[str, Any]] = []
@@ -1809,6 +1816,7 @@ def run_qdrant_streaming(
                     limit=top_k,
                     with_payload=False,
                     search_params=search_params,
+                    **query_kwargs,
                 ).points
             )
             latency_ms = (time.perf_counter() - started) * 1000.0
@@ -1839,6 +1847,13 @@ def run_qdrant_streaming(
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,
+                },
+                "transport": {
+                    "prefer_grpc": _bool_env(
+                        "WAVEMIND_QDRANT_PREFER_GRPC", False
+                    ),
+                    "grpc_port": _optional_int_env("WAVEMIND_QDRANT_GRPC_PORT"),
+                    "query_timeout_seconds": query_timeout_seconds,
                 },
                 "collection_params": collection_config,
                 "upsert_batch_size": upsert_batch_size,

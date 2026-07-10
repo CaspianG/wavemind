@@ -350,7 +350,11 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
             self.__dict__.update(kwargs)
 
     class FakeQdrantClient:
+        init_kwargs = None
+        query_kwargs = []
+
         def __init__(self, **kwargs):
+            type(self).init_kwargs = kwargs
             self.closed = False
 
         def get_collection(self, *, collection_name):
@@ -362,6 +366,7 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
             )
 
         def query_points(self, **kwargs):
+            type(self).query_kwargs.append(kwargs)
             return SimpleNamespace(points=[SimpleNamespace(id=1, score=1.0)])
 
         def close(self):
@@ -388,6 +393,9 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
     monkeypatch.setenv("WAVEMIND_QDRANT_COLLECTION", collection_name)
     monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
     monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_PREFER_GRPC", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_GRPC_PORT", "6336")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS", "300")
 
     source_ids = benchmark.choose_source_ids(64, 4, 3)
     signature = benchmark._checkpoint_signature(
@@ -430,6 +438,14 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
     assert row["qdrant_checkpoint_complete_resume"] is True
     assert row["checkpoint_completed_batches"] == 2
     assert row["checkpoint_source_vectors"] == 4
+    assert row["transport"] == {
+        "prefer_grpc": True,
+        "grpc_port": 6336,
+        "query_timeout_seconds": 300,
+    }
+    assert FakeQdrantClient.init_kwargs["prefer_grpc"] is True
+    assert FakeQdrantClient.init_kwargs["grpc_port"] == 6336
+    assert {call["timeout"] for call in FakeQdrantClient.query_kwargs} == {300}
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
