@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -304,11 +305,16 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
         and bool(batch_query["success"])
         and float(batch_query["batch_p99_ms"]) <= args.p99_slo_ms
     )
+    source_ref = str(os.getenv("GITHUB_SHA") or "").strip()
+    workflow_run_id = str(os.getenv("GITHUB_RUN_ID") or "").strip()
+    repository = str(os.getenv("GITHUB_REPOSITORY") or "").strip()
+    server_url = str(os.getenv("GITHUB_SERVER_URL") or "https://github.com").rstrip("/")
     return {
         "scenario": {
             "name": "http_cluster_load",
             "node_count": len(nodes),
             "node_ids": [node.id for node in nodes],
+            "node_addresses": [node.address for node in nodes],
             "zones": sorted({node.zone for node in nodes}),
             "replication_factor": args.replication_factor,
             "write_quorum": args.write_quorum
@@ -324,6 +330,13 @@ def run_from_args(args: argparse.Namespace) -> dict[str, object]:
             "deployment_id": deployment_id,
             "environment": environment,
             "source": source,
+            "source_ref": source_ref or None,
+            "workflow_run_id": workflow_run_id or None,
+            "workflow_run_url": (
+                f"{server_url}/{repository}/actions/runs/{workflow_run_id}"
+                if workflow_run_id and repository
+                else None
+            ),
             "description": (
                 "External WaveMind API-node sustained cluster benchmark for "
                 "production service deployments."

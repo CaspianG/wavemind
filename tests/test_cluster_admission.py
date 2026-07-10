@@ -55,7 +55,13 @@ def _write_remote_cluster_artifact(
         "scenario": {
             "name": "http_cluster_load",
             "node_count": nodes,
-            "node_ids": [f"node-{index:03d}" for index in range(nodes)],
+            "node_ids": [
+                f"node-{chr(ord('a') + index)}" for index in range(nodes)
+            ],
+            "node_addresses": [
+                f"https://wm-{chr(ord('a') + index)}.staging.internal"
+                for index in range(nodes)
+            ],
             "zones": ["zone-a", "zone-b", "zone-c"],
             "replication_factor": replication_factor,
             "write_quorum": 2,
@@ -69,6 +75,11 @@ def _write_remote_cluster_artifact(
             "deployment_id": "staging-cluster-001",
             "environment": "staging",
             "source": "github-actions-external-http-cluster-load",
+            "source_ref": "a" * 40,
+            "workflow_run_id": "123456789",
+            "workflow_run_url": (
+                "https://github.com/CaspianG/wavemind/actions/runs/123456789"
+            ),
             "description": "External HTTP cluster-load runner executed against remote staging WaveMind API processes.",
         },
         "results": [
@@ -86,7 +97,7 @@ def _write_remote_cluster_artifact(
                 "queries": namespaces * memories_per_namespace,
                 "failover_queries": namespaces * memories_per_namespace,
                 "forgets": namespaces,
-                "failed_node": "node-001",
+                "failed_node": "node-b",
                 "write_success_rate": 1.0,
                 "query_hit_rate": 1.0,
                 "failover_hit_rate": 1.0,
@@ -106,8 +117,8 @@ def _write_remote_cluster_artifact(
                 "batch_query": {
                     "namespace": "tenant:remote-cluster:batch-query",
                     "write_node_count": nodes,
-                    "individual_node": "node-000",
-                    "batch_node": "node-001",
+                    "individual_node": "node-a",
+                    "batch_node": "node-b",
                     "batch_size": batch_query_size,
                     "individual_http_requests": batch_query_size,
                     "batch_http_requests": 1,
@@ -203,6 +214,24 @@ def test_cluster_admission_blocks_when_artifact_is_too_small_for_rollout(tmp_pat
     assert "p99_operation_ms above SLO" in payload["requested_evidence"]["issues"]
 
 
+def test_cluster_admission_blocks_evidence_from_a_different_target(tmp_path):
+    _write_remote_cluster_artifact(tmp_path)
+    environment = _remote_cluster_env()
+    environment["WAVEMIND_CLUSTER_NODES"] = environment[
+        "WAVEMIND_CLUSTER_NODES"
+    ].replace("wm-d.staging.internal", "wm-other.staging.internal")
+
+    payload = evaluate_cluster_admission(tmp_path, env=environment)
+
+    assert payload["status"] == "blocked"
+    assert payload["admitted"] is False
+    assert payload["summary"]["strict_status"] == "pass"
+    assert payload["summary"]["requested_evidence_status"] == "pass"
+    assert payload["summary"]["preflight_status"] == "ready"
+    assert payload["summary"]["target_urls_match"] is False
+    assert any("do not match" in issue for issue in payload["issues"])
+
+
 def test_cluster_admission_allows_plan_only_reporting():
     payload = evaluate_cluster_admission(
         PROJECT_ROOT,
@@ -226,7 +255,8 @@ def test_cluster_admission_markdown_documents_claim_boundary():
     markdown = render_cluster_admission_markdown(payload)
 
     assert "# WaveMind Cluster Admission" in markdown
-    assert "remote service-node cluster" in markdown
+    assert "non-loopback Kubernetes or external" in markdown
+    assert "exact requested node" in markdown
     assert "benchmarks/http_cluster_load_results.json" in markdown
     assert "Local loopback" in markdown
     assert "Requested Evidence" in markdown

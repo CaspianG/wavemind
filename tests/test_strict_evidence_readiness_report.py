@@ -39,7 +39,9 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     }
 
     assert by_id["external_http_cluster"]["workflow"] == "external-http-cluster-load.yml"
-    assert by_id["external_http_cluster"]["locked_claim"] == "Remote service-node cluster SLO"
+    assert by_id["external_http_cluster"]["locked_claim"] == (
+        "Remote service-node cluster SLO"
+    )
     assert by_id["external_http_cluster"]["safe_dispatch_command"].endswith(
         '-f commit_results="false"'
     )

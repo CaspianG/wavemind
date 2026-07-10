@@ -26,6 +26,7 @@ class ExpectedEvidenceArtifact:
     destination: str
     requirement_id: str
     description: str
+    optional_dependencies: tuple[str, ...] = ()
 
 
 EXPECTED_EVIDENCE_ARTIFACTS: dict[str, ExpectedEvidenceArtifact] = {
@@ -33,7 +34,8 @@ EXPECTED_EVIDENCE_ARTIFACTS: dict[str, ExpectedEvidenceArtifact] = {
         filename="http_cluster_load_results.json",
         destination="benchmarks/http_cluster_load_results.json",
         requirement_id="external_http_cluster",
-        description="remote/staging/production HTTP service-node load result",
+        description="non-loopback Kubernetes/staging/production HTTP service-node load result",
+        optional_dependencies=("kubernetes_cluster_network_smoke_results.json",),
     ),
     "external_http_active_active_results.json": ExpectedEvidenceArtifact(
         filename="external_http_active_active_results.json",
@@ -110,12 +112,32 @@ def _copy_atomic(source: Path, destination: Path) -> None:
     temp.replace(destination)
 
 
-def _validate_with_strict_gate(source: Path, expected: ExpectedEvidenceArtifact) -> dict[str, Any]:
+def _dependency_sources(
+    artifact_dir: Path,
+    expected: ExpectedEvidenceArtifact,
+) -> list[Path]:
+    sources: list[Path] = []
+    for filename in expected.optional_dependencies:
+        matches = sorted(artifact_dir.rglob(filename))
+        if matches:
+            sources.append(matches[0])
+    return sources
+
+
+def _validate_with_strict_gate(
+    source: Path,
+    expected: ExpectedEvidenceArtifact,
+    *,
+    artifact_dir: Path,
+) -> dict[str, Any]:
     load_json(source)
+    dependencies = _dependency_sources(artifact_dir, expected)
     with tempfile.TemporaryDirectory(prefix="wavemind-evidence-ingest-") as directory:
         temp_root = Path(directory)
         destination = temp_root / expected.destination
         _copy_atomic(source, destination)
+        for dependency in dependencies:
+            _copy_atomic(dependency, temp_root / "benchmarks" / dependency.name)
         payload = evaluate_production_evidence(temp_root)
     requirements = {
         str(row.get("id")): row
@@ -143,6 +165,7 @@ def _validate_with_strict_gate(source: Path, expected: ExpectedEvidenceArtifact)
         "evidence": row.get("evidence"),
         "artifact": expected.destination,
         "claim_unlocked": row.get("claim_unlocked"),
+        "dependencies": [path.name for path in dependencies],
     }
 
 
@@ -250,7 +273,12 @@ def ingest_production_evidence_artifacts(
 
     ingested: list[dict[str, Any]] = []
     for source, expected in artifacts:
-        summary = _validate_with_strict_gate(source, expected)
+        dependencies = _dependency_sources(artifact_dir, expected)
+        summary = _validate_with_strict_gate(
+            source,
+            expected,
+            artifact_dir=artifact_dir,
+        )
         destination = output_root / expected.destination
         summary["source"] = str(source)
         summary["destination"] = str(destination)
@@ -258,6 +286,11 @@ def ingest_production_evidence_artifacts(
         ingested.append(summary)
         if not dry_run:
             _copy_atomic(source, destination)
+            for dependency in dependencies:
+                _copy_atomic(
+                    dependency,
+                    output_root / "benchmarks" / dependency.name,
+                )
 
     manifest = {
         "schema": "wavemind.production_evidence_artifact_ingest.v1",

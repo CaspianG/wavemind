@@ -295,6 +295,12 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
 
     assert payload["scenario"]["name"] == "http_cluster_load"
     assert payload["scenario"]["node_count"] == 4
+    assert payload["scenario"]["node_addresses"] == [
+        "http://node-a.test",
+        "http://node-b.test",
+        "http://node-c.test",
+        "http://node-d.test",
+    ]
     assert payload["scenario"]["read_fanout"] == 3
     assert payload["scenario"]["deployment_id"] == "test-deployment"
     assert payload["scenario"]["environment"] == "test"

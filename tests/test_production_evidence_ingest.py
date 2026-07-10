@@ -22,9 +22,21 @@ def _cluster_payload() -> dict:
         "scenario": {
             "name": "http_cluster_load",
             "node_count": 4,
+            "node_ids": ["node-a", "node-b", "node-c", "node-d"],
+            "node_addresses": [
+                "https://wm-a.staging.internal",
+                "https://wm-b.staging.internal",
+                "https://wm-c.staging.internal",
+                "https://wm-d.staging.internal",
+            ],
             "deployment_id": "staging-cluster-20260708",
             "environment": "staging",
             "source": "github-actions-staging",
+            "source_ref": "b" * 40,
+            "workflow_run_id": "987654321",
+            "workflow_run_url": (
+                "https://github.com/CaspianG/wavemind/actions/runs/987654321"
+            ),
             "namespace_count": 32,
             "memories_per_namespace": 8,
             "replication_factor": 3,

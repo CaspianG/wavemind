@@ -701,7 +701,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     cluster_admission = sub.add_parser(
         "cluster-admission",
-        help="Gate a remote service-node cluster rollout against strict evidence",
+        help="Gate a non-loopback service-node rollout against target-specific evidence",
     )
     cluster_admission.add_argument(
         "--root",

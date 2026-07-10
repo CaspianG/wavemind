@@ -61,7 +61,7 @@ def test_production_evidence_bundle_keeps_claims_limited_without_remote_artifact
     claims = {row["claim"]: row for row in payload["claim_boundaries"]}
     assert claims["Core library/API readiness"]["status"] == "unlocked"
     assert claims["Large-N production run contracts"]["status"] == "available"
-    assert claims["Remote service-node cluster SLO"]["status"] == "locked"
+    assert claims["Non-loopback Kubernetes service-node cluster SLO"]["status"] == "locked"
     assert claims["10M-100M service-backed production scale"]["status"] == "locked"
 
 

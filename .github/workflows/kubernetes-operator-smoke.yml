@@ -11,6 +11,8 @@ on:
       - "deploy/operator/**"
       - "benchmarks/kubernetes_operator_smoke.py"
       - "benchmarks/kubernetes_cluster_network_smoke.py"
+      - "benchmarks/kubernetes_external_http_cluster_evidence.py"
+      - "benchmarks/http_cluster_load_benchmark.py"
       - "benchmarks/kubernetes_active_active_region_smoke.py"
       - "benchmarks/kubernetes_serverless_lifecycle_smoke.py"
       - "wavemind/cluster_drill.py"
@@ -23,6 +25,7 @@ on:
       - "tests/test_kubernetes_operator_smoke.py"
       - "tests/test_cluster_drill.py"
       - "tests/test_kubernetes_cluster_network_smoke.py"
+      - "tests/test_kubernetes_external_http_cluster_evidence.py"
       - "tests/test_active_active_drill.py"
       - "tests/test_kubernetes_active_active_region_smoke.py"
       - "tests/test_kubernetes_serverless_lifecycle_smoke.py"
@@ -147,6 +150,53 @@ jobs:
             --timeout-seconds 240 \
             --output benchmarks/kubernetes_cluster_network_smoke_ci_results.json
 
+      - name: Bind sustained HTTP load to the physical Kubernetes failure drill
+        run: |
+          cp benchmarks/kubernetes_cluster_network_smoke_ci_results.json \
+            benchmarks/kubernetes_cluster_network_smoke_results.json
+          python benchmarks/kubernetes_external_http_cluster_evidence.py \
+            --namespace "$NAMESPACE" \
+            --cluster-name "$CLUSTER_NAME" \
+            --network-evidence benchmarks/kubernetes_cluster_network_smoke_results.json \
+            --namespace-count 32 \
+            --memories-per-namespace 8 \
+            --workers 8 \
+            --batch-query-size 24 \
+            --request-timeout 15 \
+            --p99-slo-ms 1000 \
+            --timeout-seconds 900 \
+            --output benchmarks/http_cluster_load_results.json
+
+      - name: Prove target-specific Kubernetes cluster admission
+        run: |
+          WAVEMIND_CLUSTER_NODES="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(
+              Path('benchmarks/http_cluster_load_results.json').read_text()
+          )
+          scenario = payload['scenario']
+          print(','.join(
+              f"{node_id}={address}"
+              for node_id, address in zip(
+                  scenario['node_ids'], scenario['node_addresses']
+              )
+          ))
+          PY
+          )"
+          export WAVEMIND_CLUSTER_NODES
+          python -m wavemind cluster-admission \
+            --root . \
+            --deployment kind-non-loopback-ci \
+            --fail-on-blocked \
+            --write-artifacts \
+            --output benchmarks/kubernetes_cluster_admission_ci_results.json \
+            --markdown-output benchmarks/KUBERNETES_CLUSTER_ADMISSION_CI.md
+          python benchmarks/production_evidence_gate.py \
+            --output benchmarks/production_evidence_ci_results.json \
+            --markdown-output benchmarks/PRODUCTION_EVIDENCE_CI.md
+
       - name: Run Kubernetes active-active region failure drill
         run: |
           python benchmarks/kubernetes_active_active_region_smoke.py \
@@ -223,6 +273,12 @@ jobs:
           path: |
             benchmarks/kubernetes_operator_smoke_ci_results.json
             benchmarks/kubernetes_cluster_network_smoke_ci_results.json
+            benchmarks/kubernetes_cluster_network_smoke_results.json
+            benchmarks/http_cluster_load_results.json
+            benchmarks/kubernetes_cluster_admission_ci_results.json
+            benchmarks/KUBERNETES_CLUSTER_ADMISSION_CI.md
+            benchmarks/production_evidence_ci_results.json
+            benchmarks/PRODUCTION_EVIDENCE_CI.md
             benchmarks/kubernetes_active_active_region_smoke_ci_results.json
             benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
             benchmarks/kubernetes_postgres_qdrant_dr_smoke_ci_results.json

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -9,6 +10,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 PROJECT_ROOT = Path.cwd()
@@ -66,6 +68,30 @@ def _utc_now() -> str:
         .replace(microsecond=0)
         .isoformat()
         .replace("+00:00", "Z")
+    )
+
+
+def _canonical_payload_sha256(payload: dict[str, Any]) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _is_non_loopback_http_url(value: str) -> bool:
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        return False
+    host = str(parsed.hostname or "").lower()
+    return (
+        parsed.scheme in {"http", "https"}
+        and bool(host)
+        and host not in {"localhost", "0.0.0.0", "::", "::1"}
+        and not host.startswith("127.")
     )
 
 
@@ -323,6 +349,7 @@ def _validate_external_cluster_payload(
     min_failover_hit_rate: float = 0.95,
     p99_slo_ms: float = 1000.0,
     require_remote: bool = False,
+    network_evidence_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not payload:
         return {
@@ -351,6 +378,11 @@ def _validate_external_cluster_payload(
     require(scenario.get("name") == "http_cluster_load", "scenario name must be http_cluster_load")
     environment = str(scenario.get("environment") or "").lower()
     source = str(scenario.get("source") or "").lower()
+    node_ids = [str(item) for item in scenario.get("node_ids") or []]
+    node_addresses = [str(item) for item in scenario.get("node_addresses") or []]
+    source_ref = str(scenario.get("source_ref") or "")
+    workflow_run_id = str(scenario.get("workflow_run_id") or "")
+    workflow_run_url = str(scenario.get("workflow_run_url") or "")
 
     require(int(scenario.get("node_count", 0)) >= min_nodes, f"node_count must be >= {min_nodes}")
     require(bool(scenario.get("deployment_id")), "deployment_id is required")
@@ -358,12 +390,151 @@ def _validate_external_cluster_payload(
     if require_remote:
         require(
             environment not in {"", "local", "local-loopback", "loopback", "dev"},
-            "environment must be a real remote/staging/production deployment",
+            "environment must be a non-loopback Kubernetes, staging, or production deployment",
         )
         require(
             source not in {"", "fixture", "sample", "loopback-api-processes", "local"},
-            "source must identify a real remote run, not a sample or loopback",
+            "source must identify a traceable non-loopback run, not a sample or loopback",
         )
+        require(
+            len(node_addresses) >= min_nodes,
+            f"node_addresses must contain at least {min_nodes} endpoints",
+        )
+        require(
+            len(node_ids) == len(node_addresses)
+            and len(set(node_ids)) == len(node_ids)
+            and len(set(node_addresses)) == len(node_addresses),
+            "node_ids and node_addresses must form a unique one-to-one mapping",
+        )
+        require(
+            bool(node_addresses) and all(_is_non_loopback_http_url(item) for item in node_addresses),
+            "node_addresses must contain only non-loopback HTTP endpoints",
+        )
+        require(
+            bool(re.fullmatch(r"[0-9a-fA-F]{40}", source_ref)),
+            "source_ref must be a full 40-character Git commit SHA",
+        )
+        require(
+            workflow_run_id.isdigit(),
+            "workflow_run_id must identify the GitHub Actions run",
+        )
+        require(
+            bool(workflow_run_url)
+            and workflow_run_id in workflow_run_url
+            and "/actions/runs/" in workflow_run_url,
+            "workflow_run_url must link to the GitHub Actions evidence run",
+        )
+        kubernetes_attestation = scenario.get("kubernetes_attestation")
+        requires_kubernetes_attestation = (
+            environment == "kubernetes-kind-non-loopback-ci"
+            or source == "kubernetes-pod-dns-physical-node-drill"
+        )
+        if requires_kubernetes_attestation:
+            require(
+                source == "kubernetes-pod-dns-physical-node-drill",
+                "kind evidence source must be kubernetes-pod-dns-physical-node-drill",
+            )
+            require(
+                isinstance(kubernetes_attestation, dict),
+                "kubernetes_attestation is required for kind evidence",
+            )
+            if isinstance(kubernetes_attestation, dict):
+                require(
+                    kubernetes_attestation.get("schema")
+                    == "wavemind.kubernetes_external_http_cluster_attestation.v1",
+                    "kubernetes_attestation schema is invalid",
+                )
+                require(
+                    kubernetes_attestation.get("status") == "pass",
+                    "kubernetes_attestation status must be pass",
+                )
+                require(
+                    kubernetes_attestation.get("network_evidence_artifact")
+                    == "benchmarks/kubernetes_cluster_network_smoke_results.json",
+                    "kubernetes_attestation must reference the canonical network evidence artifact",
+                )
+                attestation_checks = list(kubernetes_attestation.get("checks") or [])
+                require(
+                    len(attestation_checks) >= 10
+                    and all(bool(item.get("passed")) for item in attestation_checks),
+                    "all Kubernetes attestation checks must pass",
+                )
+                require(
+                    set(str(item) for item in kubernetes_attestation.get("service_addresses") or [])
+                    == set(node_addresses),
+                    "attested service addresses must match node_addresses",
+                )
+                require(
+                    kubernetes_attestation.get("source_ref") == source_ref,
+                    "kubernetes_attestation source_ref must match the load run",
+                )
+                require(
+                    str(kubernetes_attestation.get("workflow_run_id") or "")
+                    == workflow_run_id,
+                    "kubernetes_attestation workflow_run_id must match the load run",
+                )
+                require(
+                    bool(network_evidence_payload),
+                    "linked Kubernetes network evidence artifact is required",
+                )
+                if network_evidence_payload:
+                    require(
+                        kubernetes_attestation.get("network_evidence_sha256")
+                        == _canonical_payload_sha256(network_evidence_payload),
+                        "Kubernetes network evidence SHA-256 does not match the linked artifact",
+                    )
+                    require(
+                        network_evidence_payload.get("schema")
+                        == "wavemind.kubernetes_cluster_network_smoke.v1"
+                        and network_evidence_payload.get("status") == "pass",
+                        "linked Kubernetes network evidence must pass",
+                    )
+                    network_checks = list(network_evidence_payload.get("checks") or [])
+                    require(
+                        bool(network_checks)
+                        and all(bool(item.get("passed")) for item in network_checks),
+                        "all linked Kubernetes network checks must pass",
+                    )
+                    require(
+                        network_evidence_payload.get("source_ref") == source_ref,
+                        "linked Kubernetes evidence source_ref must match the load run",
+                    )
+                    require(
+                        str(network_evidence_payload.get("workflow_run_id") or "")
+                        == workflow_run_id,
+                        "linked Kubernetes evidence workflow_run_id must match the load run",
+                    )
+                    observed = dict(network_evidence_payload.get("observed") or {})
+                    outage = dict(observed.get("outage") or {})
+                    recovered = dict(observed.get("recovered") or {})
+                    target_pods = {
+                        str(item) for item in observed.get("target_data_pods") or []
+                    }
+                    failed_nodes = {
+                        str(item) for item in outage.get("failed_nodes_seen") or []
+                    }
+                    require(
+                        set(str(item) for item in observed.get("service_addresses") or [])
+                        == set(node_addresses),
+                        "linked Kubernetes service addresses must match node_addresses",
+                    )
+                    require(
+                        observed.get("failure_method") == "docker-pause-kind-worker"
+                        and bool(target_pods & failed_nodes),
+                        "linked evidence must prove a physical worker outage",
+                    )
+                    require(
+                        outage.get("status") == "pass"
+                        and float(outage.get("hit_rate") or 0.0) >= 1.0,
+                        "linked evidence must prove 100% recall during the outage",
+                    )
+                    require(
+                        recovered.get("status") == "pass"
+                        and float(recovered.get("hit_rate") or 0.0) >= 1.0
+                        and not recovered.get("failed_nodes_seen")
+                        and bool(observed.get("pod_uids_preserved")),
+                        "linked evidence must prove full recovery without pod replacement",
+                    )
     require(
         source not in {"fixture", "sample"},
         "source cannot be fixture/sample",
@@ -545,7 +716,15 @@ def _validate_external_active_active_payload(
 def _external_cluster_requirement(root: Path) -> EvidenceRequirement:
     artifact = "benchmarks/http_cluster_load_results.json"
     payload = _load_optional_json(root / artifact)
-    validation = _validate_external_cluster_payload(payload or None)
+    network_evidence = _load_optional_json(
+        root / "benchmarks/kubernetes_cluster_network_smoke_results.json"
+    )
+    base_validation = _validate_external_cluster_payload(payload or None)
+    validation = _validate_external_cluster_payload(
+        payload or None,
+        require_remote=True,
+        network_evidence_payload=network_evidence or None,
+    )
     scenario = payload.get("scenario", {}) if payload else {}
     validation_issues = list(validation.get("issues", []))
     issues = list(validation_issues)
@@ -554,17 +733,20 @@ def _external_cluster_requirement(root: Path) -> EvidenceRequirement:
     local_only = False
     if payload and environment in {"", "local", "local-loopback", "loopback"}:
         local_only = True
-        issues.append("environment must be a real remote/staging/production deployment")
+        issues.append(
+            "environment must be a non-loopback Kubernetes, staging, or production deployment"
+        )
     if payload and source in {"", "fixture", "sample", "loopback-api-processes"}:
         local_only = True
-        issues.append("source must identify a real remote run, not a sample or loopback")
+        issues.append("source must identify a traceable non-loopback run, not a sample or loopback")
     missing = not payload
-    status = _status_from_issues(missing=missing, issues=validation_issues)
-    if local_only and status == "pass":
+    if local_only and not list(base_validation.get("issues") or []):
         status = "action_required"
+    else:
+        status = _status_from_issues(missing=missing, issues=validation_issues)
     return EvidenceRequirement(
         id="external_http_cluster",
-        title="External HTTP service-node load",
+        title="Non-loopback Kubernetes or external HTTP service-node load",
         status=status,
         evidence=str(validation.get("evidence") or "missing external cluster artifact"),
         artifact=artifact,
@@ -576,7 +758,7 @@ def _external_cluster_requirement(root: Path) -> EvidenceRequirement:
             "-f batch_query_size=24 "
             "-f fail_on_slo=true -f commit_results=true"
         ),
-        claim_unlocked="Remote service-node cluster load SLO.",
+        claim_unlocked="Non-loopback Kubernetes service-node cluster load SLO.",
         issues=tuple(dict.fromkeys(issues)),
     )
 
@@ -849,6 +1031,38 @@ def _endpoint_preflight(
         issues=tuple(dict.fromkeys(issues)),
         warnings=tuple(dict.fromkeys(warnings)),
     )
+
+
+def _configured_cluster_nodes(
+    env: dict[str, str],
+) -> tuple[dict[str, str], list[str], list[str]]:
+    manifest_value = _env_value(env, "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON")
+    issues: list[str] = []
+    if manifest_value:
+        specs, manifest_issues, _ = _manifest_specs(manifest_value, kind="cluster")
+        issues.extend(manifest_issues)
+    else:
+        specs = _split_env_list(_env_value(env, "WAVEMIND_CLUSTER_NODES"))
+    urls, url_issues = _validate_url_specs(
+        specs,
+        min_count=4,
+        label="cluster node",
+    )
+    issues.extend(url_issues)
+    nodes: dict[str, str] = {}
+    for index, spec in enumerate(specs):
+        if "=" in spec:
+            node_id, url = spec.split("=", 1)
+        else:
+            node_id, url = f"node-{index:03d}", spec
+        node_id = node_id.strip()
+        url = url.strip().rstrip("/")
+        if node_id and url:
+            if node_id in nodes:
+                issues.append(f"duplicate cluster node id: {node_id}")
+            nodes[node_id] = url
+    normalized_urls = [str(url).rstrip("/") for url in urls]
+    return nodes, normalized_urls, list(dict.fromkeys(issues))
 
 
 def _serverless_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
@@ -1601,7 +1815,7 @@ def evaluate_production_evidence_bundle(
                 "evidence": "production_readiness_results.json and benchmark_artifact_audit.json",
             },
             {
-                "claim": "Remote service-node cluster SLO",
+                "claim": "Non-loopback Kubernetes service-node cluster SLO",
                 "status": "unlocked" if strict_by_id.get("external_http_cluster", {}).get("status") == "pass" else "locked",
                 "evidence": "benchmarks/http_cluster_load_results.json",
             },
@@ -2213,12 +2427,13 @@ def evaluate_cluster_admission(
     allow_plan_only: bool = False,
     env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Gate remote service-node cluster rollout against strict evidence.
+    """Gate a service-node cluster rollout against target-specific evidence.
 
     This is the deployment-facing counterpart to the strict production evidence
     requirement named ``external_http_cluster``. It admits a cluster rollout
-    only when real remote/staging/production service nodes pass the sustained
-    external HTTP load profile. Local loopback runs remain development evidence.
+    only when non-loopback Kubernetes/staging/production service nodes pass the
+    sustained HTTP profile and the requested target URLs match that evidence.
+    Local loopback runs remain development evidence.
     """
 
     root = Path(root)
@@ -2233,6 +2448,9 @@ def evaluate_cluster_admission(
         requirement.get("artifact") or "benchmarks/http_cluster_load_results.json"
     )
     evidence_payload = _load_optional_json(root / str(evidence_artifact))
+    network_evidence_payload = _load_optional_json(
+        root / "benchmarks/kubernetes_cluster_network_smoke_results.json"
+    )
     requested_validation = _validate_external_cluster_payload(
         evidence_payload or None,
         min_nodes=int(min_nodes),
@@ -2244,8 +2462,10 @@ def evaluate_cluster_admission(
         min_read_fanout=int(read_fanout),
         p99_slo_ms=float(p99_slo_ms),
         require_remote=True,
+        network_evidence_payload=network_evidence_payload or None,
     )
-    preflight = evaluate_production_evidence_preflight(root, env=env)
+    environment = dict(os.environ if env is None else env)
+    preflight = evaluate_production_evidence_preflight(root, env=environment)
     preflight_checks = {
         str(row.get("id")): row
         for row in preflight.get("checks", [])
@@ -2256,14 +2476,6 @@ def evaluate_cluster_admission(
     strict_status = str(requirement.get("status") or "missing")
     requested_evidence_status = str(requested_validation.get("status") or "missing")
     preflight_status = str(preflight_check.get("status") or "missing")
-    admitted = strict_status == "pass" and requested_evidence_status == "pass"
-    if admitted:
-        status = "admitted"
-    elif allow_plan_only:
-        status = "plan_only"
-    else:
-        status = "blocked"
-
     issues: list[str] = []
     warnings: list[str] = []
     if strict_status != "pass":
@@ -2276,11 +2488,33 @@ def evaluate_cluster_admission(
             "external_http_cluster artifact does not satisfy requested rollout: "
             f"requested_evidence_status={requested_evidence_status}"
         )
-    if preflight_status != "ready":
-        warnings.append(
-            "external HTTP cluster preflight is not ready; provide real node URLs "
-            "or a node manifest before dispatching the workflow."
+    if preflight_status != "ready" or not bool(preflight_check.get("ready")):
+        issues.append(
+            "external HTTP cluster preflight is not ready; provide target node URLs "
+            "or a node manifest before admitting the rollout."
         )
+    configured_nodes, configured_urls, configured_url_issues = _configured_cluster_nodes(
+        environment
+    )
+    evidence_node_ids = [
+        str(item) for item in (evidence_payload.get("scenario") or {}).get("node_ids") or []
+    ]
+    evidence_urls = [
+        str(item).rstrip("/")
+        for item in (evidence_payload.get("scenario") or {}).get("node_addresses") or []
+    ]
+    evidence_nodes = dict(zip(evidence_node_ids, evidence_urls))
+    target_urls_match = (
+        bool(configured_urls)
+        and bool(evidence_urls)
+        and set(configured_urls) == set(evidence_urls)
+        and configured_nodes == evidence_nodes
+    )
+    if not target_urls_match:
+        issues.append(
+            "requested cluster node URLs do not match the node_addresses in strict evidence"
+        )
+    issues.extend(configured_url_issues)
     if int(min_nodes) < 4:
         issues.append("min_nodes must be at least 4 for production cluster admission.")
     if int(namespace_count) < 1:
@@ -2297,6 +2531,21 @@ def evaluate_cluster_admission(
         issues.append("batch_query_size must be positive.")
     if float(p99_slo_ms) <= 0:
         issues.append("p99_slo_ms must be positive.")
+
+    admitted = (
+        strict_status == "pass"
+        and requested_evidence_status == "pass"
+        and preflight_status == "ready"
+        and bool(preflight_check.get("ready"))
+        and target_urls_match
+        and not issues
+    )
+    if admitted:
+        status = "admitted"
+    elif allow_plan_only:
+        status = "plan_only"
+    else:
+        status = "blocked"
 
     command = str(requirement.get("command") or preflight_check.get("command") or "")
     next_actions: list[str] = []
@@ -2343,6 +2592,9 @@ def evaluate_cluster_admission(
             "strict_status": strict_status,
             "requested_evidence_status": requested_evidence_status,
             "preflight_status": preflight_status,
+            "target_urls_match": target_urls_match,
+            "configured_node_count": len(configured_urls),
+            "evidence_node_count": len(evidence_urls),
             "required_artifact": evidence_artifact,
             "missing_env": missing_env,
             "blocking_issue_count": len(
@@ -2352,7 +2604,8 @@ def evaluate_cluster_admission(
         },
         "required_evidence": {
             "id": "external_http_cluster",
-            "title": requirement.get("title") or "External HTTP service-node load",
+            "title": requirement.get("title")
+            or "Non-loopback Kubernetes or external HTTP service-node load",
             "status": strict_status,
             "artifact": evidence_artifact,
             "evidence": requirement.get("evidence")
@@ -2360,7 +2613,7 @@ def evaluate_cluster_admission(
             "issues": requirement_issues,
             "command": command,
             "claim_unlocked": requirement.get("claim_unlocked")
-            or "Remote service-node cluster load SLO.",
+            or "Non-loopback Kubernetes service-node cluster load SLO.",
         },
         "requested_evidence": {
             "status": requested_evidence_status,
@@ -2385,6 +2638,11 @@ def evaluate_cluster_admission(
             "missing_env": missing_env,
             "issues": preflight_issues,
             "warnings": list(preflight_check.get("warnings") or []),
+            "configured_urls": configured_urls,
+            "evidence_urls": evidence_urls,
+            "configured_nodes": configured_nodes,
+            "evidence_nodes": evidence_nodes,
+            "target_urls_match": target_urls_match,
             "output_artifact": preflight_check.get("output_artifact")
             or "benchmarks/http_cluster_load_results.json",
         },
@@ -2409,11 +2667,11 @@ def render_cluster_admission_markdown(payload: dict[str, Any]) -> str:
     lines = [
         "# WaveMind Cluster Admission",
         "",
-        "This is the deployment-facing gate for remote service-node cluster",
-        "rollouts. It admits production traffic only when real external HTTP",
-        "service nodes have passed quorum writes, recall, failover, repair,",
-        "delete suppression, batch query, and p99 SLO evidence. Local loopback",
-        "profiles stay useful for development, but do not unlock this gate.",
+        "This is the deployment-facing gate for non-loopback Kubernetes or external",
+        "service-node rollouts. It admits traffic only when the exact requested node",
+        "URLs match evidence that passed quorum writes, recall, failover, repair,",
+        "delete suppression, batch query, and p99 SLO checks. Local loopback profiles",
+        "stay useful for development, but do not unlock this gate.",
         "",
         "| metric | value |",
         "|---|---:|",
