@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.cost_efficiency_leaderboard.v1",
-  "generated_at": "2026-07-10T03:54:52Z",
-  "source_ref": "5629d7400b4e",
+  "generated_at": "2026-07-10T06:49:30Z",
+  "source_ref": "b48e8f286570",
   "claim_boundary": "Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.",
   "summary": {
     "measured_row_count": 20,

@@ -1,6 +1,6 @@
 # WaveMind Agent Impact Leaderboard
 
-Generated: `2026-07-10T03:54:52Z`.
+Generated: `2026-07-10T06:49:30Z`.
 
 Agent-impact rows come from checked-in benchmark artifacts. They show behavioral lift on the configured tasks; they do not claim general agent success outside the listed scenarios.
 

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "a9ea9d7f8027",
+  "source_ref": "b48e8f286570",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/agent_coherence_results.json",

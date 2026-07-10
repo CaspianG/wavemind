@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-10T05:23:41Z",
+  "generated_at": "2026-07-10T06:49:49Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
