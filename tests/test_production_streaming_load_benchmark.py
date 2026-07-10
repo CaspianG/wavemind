@@ -339,6 +339,99 @@ def test_streaming_load_qdrant_sharded_requires_multiple_urls(monkeypatch):
     assert "WAVEMIND_QDRANT_URLS" in row["reason"]
 
 
+def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
+    tmp_path,
+    monkeypatch,
+):
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    class Model:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    class FakeQdrantClient:
+        def __init__(self, **kwargs):
+            self.closed = False
+
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=64,
+                indexed_vectors_count=64,
+                status="green",
+                optimizer_status="ok",
+            )
+
+        def query_points(self, **kwargs):
+            return SimpleNamespace(points=[SimpleNamespace(id=1, score=1.0)])
+
+        def close(self):
+            self.closed = True
+
+    fake_models = SimpleNamespace(
+        Distance=SimpleNamespace(COSINE="Cosine"),
+        HnswConfigDiff=Model,
+        OptimizersConfigDiff=Model,
+        PointStruct=Model,
+        SearchParams=Model,
+        VectorParams=Model,
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "qdrant_client",
+        SimpleNamespace(QdrantClient=FakeQdrantClient),
+    )
+    monkeypatch.setitem(sys.modules, "qdrant_client.models", fake_models)
+
+    checkpoint_path = tmp_path / "qdrant-complete.checkpoint.json"
+    collection_name = "complete_resume"
+    monkeypatch.setenv("WAVEMIND_QDRANT_URL", "http://127.0.0.1:6335")
+    monkeypatch.setenv("WAVEMIND_QDRANT_COLLECTION", collection_name)
+    monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "0")
+
+    source_ids = benchmark.choose_source_ids(64, 4, 3)
+    signature = benchmark._checkpoint_signature(
+        engine="Qdrant service streaming",
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+        extra={"collection_config": benchmark._qdrant_collection_config_from_env()},
+    )
+    checkpoint = benchmark._new_checkpoint(signature)
+    checkpoint["metadata"]["collection_name"] = collection_name
+    checkpoint["completed_batch_starts"] = [1, 33]
+    checkpoint["source_vectors"] = {
+        str(source_id): [1.0] + [0.0] * 7 for source_id in source_ids
+    }
+    benchmark._write_checkpoint(checkpoint_path, checkpoint)
+
+    def fail_if_vectors_are_regenerated(**kwargs):
+        raise AssertionError("complete Qdrant checkpoint must not regenerate batches")
+
+    monkeypatch.setattr(
+        benchmark,
+        "iter_vector_batches",
+        fail_if_vectors_are_regenerated,
+    )
+    row = benchmark.run_qdrant_streaming(
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+    )
+
+    assert row["qdrant_checkpoint_complete_resume"] is True
+    assert row["checkpoint_completed_batches"] == 2
+    assert row["checkpoint_source_vectors"] == 4
+
+
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     pytest.importorskip("faiss")
 
