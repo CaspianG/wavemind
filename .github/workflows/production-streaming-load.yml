@@ -151,7 +151,7 @@ jobs:
       - name: Install benchmark dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,bench]"
+          python -m pip install -e ".[dev,bench,indexes,postgres]"
 
       - name: Restore previous checkpoint artifact
         if: ${{ inputs.resume_run_id != '' }}
@@ -268,6 +268,45 @@ jobs:
           Path("production-streaming-output-path.txt").write_text(str(output), encoding="utf-8")
           Path("production-streaming-checkpoint-path.txt").write_text(str(checkpoint), encoding="utf-8")
           Path("production-streaming-runner-storage-root.txt").write_text(str(runner_storage_root), encoding="utf-8")
+          PY
+
+      - name: Validate production streaming result
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          output = Path("production-streaming-output-path.txt").read_text(encoding="utf-8").strip()
+          payload = json.loads(Path(output).read_text(encoding="utf-8"))
+          expected_vectors = int(os.environ["SIZE"])
+          expected_engine = {
+              "qdrant-service": "Qdrant service streaming",
+              "qdrant-sharded-service": "Qdrant sharded service streaming",
+              "pgvector-service": "WaveMind pgvector streaming",
+              "faiss-ivfpq-persisted": "WaveMind faiss-ivfpq-persisted streaming",
+          }[os.environ["ENGINE"]]
+          rows = [
+              row
+              for size_result in payload.get("results", [])
+              if int(size_result.get("vectors", 0) or 0) == expected_vectors
+              for row in size_result.get("results", [])
+              if row.get("engine") == expected_engine
+          ]
+          if len(rows) != 1:
+              raise SystemExit(
+                  f"expected exactly one {expected_engine!r} row at {expected_vectors} vectors; "
+                  f"found {len(rows)}"
+              )
+          row = rows[0]
+          if row.get("skipped"):
+              raise SystemExit(f"production benchmark skipped: {row.get('reason', 'unknown reason')}")
+          if int(row.get("vectors", 0) or 0) != expected_vectors:
+              raise SystemExit("production benchmark did not ingest the requested vector count")
+          print(
+              f"validated {expected_engine}: vectors={row['vectors']} "
+              f"recall={row.get('recall_at_k')} p99_ms={row.get('p99_latency_ms')}"
+          )
           PY
 
       - name: Refresh benchmark and evidence reports

@@ -243,6 +243,10 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_QDRANT_URLS" in workflow
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
+    assert 'python -m pip install -e ".[dev,bench,indexes,postgres]"' in workflow
+    assert "Validate production streaming result" in workflow
+    assert "expected exactly one {expected_engine!r} row" in workflow
+    assert "production benchmark skipped:" in workflow
     assert "production_streaming_load_qdrant_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in workflow
