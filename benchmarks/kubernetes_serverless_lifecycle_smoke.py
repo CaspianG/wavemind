@@ -108,6 +108,7 @@ elif mode == "cross-replica":
     visible = 0
     read_ms = []
     write_counts = []
+    write_replicas = []
     for index, base in enumerate(cfg["bases"]):
         results, elapsed = query(
             base,
@@ -124,6 +125,17 @@ elif mode == "cross-replica":
             method="GET",
         )
         write_counts.append(int(stats.get("active_memories", -1)))
+        write_replicas.append({
+            "base": base,
+            "result_ids": [int(result["id"]) for result in results],
+            "result_texts": [str(result.get("text", "")) for result in results],
+            "result_tags": [list(result.get("tags") or []) for result in results],
+            "active_memories": int(stats.get("active_memories", -1)),
+            "index_expected_records": int(stats.get("index_expected_records", -1)),
+            "index_vector_records": int(stats.get("index_vector_records", -1)),
+            "index_missing_records": int(stats.get("index_missing_records", -1)),
+            "index_extra_records": int(stats.get("index_extra_records", -1)),
+        })
         if any(marker in result.get("text", "") for result in results):
             visible += 1
     deleted, delete_ms = request(
@@ -134,6 +146,7 @@ elif mode == "cross-replica":
     )
     suppressed = 0
     delete_counts = []
+    delete_replicas = []
     for index, base in enumerate(cfg["bases"]):
         results, _ = query(
             base,
@@ -149,6 +162,17 @@ elif mode == "cross-replica":
             method="GET",
         )
         delete_counts.append(int(stats.get("active_memories", -1)))
+        delete_replicas.append({
+            "base": base,
+            "result_ids": [int(result["id"]) for result in results],
+            "result_texts": [str(result.get("text", "")) for result in results],
+            "result_tags": [list(result.get("tags") or []) for result in results],
+            "active_memories": int(stats.get("active_memories", -1)),
+            "index_expected_records": int(stats.get("index_expected_records", -1)),
+            "index_vector_records": int(stats.get("index_vector_records", -1)),
+            "index_missing_records": int(stats.get("index_missing_records", -1)),
+            "index_extra_records": int(stats.get("index_extra_records", -1)),
+        })
         if not any(marker in result.get("text", "") for result in results):
             suppressed += 1
     print(json.dumps({
@@ -158,6 +182,8 @@ elif mode == "cross-replica":
         "suppressed_replicas": suppressed,
         "write_active_counts": write_counts,
         "delete_active_counts": delete_counts,
+        "write_replicas": write_replicas,
+        "delete_replicas": delete_replicas,
         "seed_count": cfg["count"],
         "deleted": int(deleted.get("deleted", 0)),
         "write_ms": write_ms,
