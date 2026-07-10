@@ -53,6 +53,9 @@
       "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": null,
       "WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS": null,
       "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": null,
+      "WAVEMIND_QDRANT_DEFER_INDEXING": null,
+      "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": null,
+      "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": null,
       "WAVEMIND_QDRANT_HNSW_M": null,
       "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
       "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
@@ -64,7 +67,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 2.54,
+      "free_gb": 2.52,
       "total_gb": 231.85
     }
   },
@@ -106,7 +109,10 @@
         "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
         "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
         "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
-        "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1"
+        "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
+        "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
+        "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": "1000000000",
+        "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": "20000"
       },
       "checkpoint_path": "state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
       "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",

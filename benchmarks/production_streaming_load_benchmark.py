@@ -505,6 +505,28 @@ def _qdrant_collection_config_from_env() -> dict[str, Any]:
     }
 
 
+def _qdrant_deferred_indexing_config_from_env() -> dict[str, Any]:
+    enabled = _bool_env("WAVEMIND_QDRANT_DEFER_INDEXING", False)
+    deferred_threshold_kb = _positive_int_env(
+        "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB",
+        1_000_000_000,
+    )
+    final_threshold_kb = _positive_int_env(
+        "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB",
+        20_000,
+    )
+    if enabled and deferred_threshold_kb <= final_threshold_kb:
+        raise ValueError(
+            "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB must be greater "
+            "than WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB"
+        )
+    return {
+        "enabled": enabled,
+        "deferred_threshold_kb": deferred_threshold_kb,
+        "final_threshold_kb": final_threshold_kb,
+    }
+
+
 @contextmanager
 def _local_no_proxy(url: str):
     if not any(host in url for host in ("127.0.0.1", "localhost", "::1")):
@@ -759,6 +781,9 @@ def _streaming_plan_row(
             "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
             "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
             "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
+            "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
+            "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": "1000000000",
+            "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": "20000",
         }
     elif key in {"qdrant-sharded", "qdrant-sharded-service", "qdrant-sharded-streaming"}:
         module_requirements = ["qdrant_client"]
@@ -782,6 +807,9 @@ def _streaming_plan_row(
             "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
             "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
             "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
+            "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
+            "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": "1000000000",
+            "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": "20000",
         }
     elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
         module_requirements = ["psycopg"]
@@ -1452,6 +1480,7 @@ def run_qdrant_streaming(
         return skipped_result("Qdrant service streaming", f"Install qdrant-client: {exc}")
 
     collection_config = _qdrant_collection_config_from_env()
+    deferred_indexing = _qdrant_deferred_indexing_config_from_env()
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
         engine="Qdrant service streaming",
@@ -1491,15 +1520,18 @@ def run_qdrant_streaming(
         if collection_config["hnsw"]
         else None
     )
-    optimizers_config = (
-        OptimizersConfigDiff(**collection_config["optimizers"])
-        if collection_config["optimizers"]
-        else None
+    ingest_optimizers = dict(collection_config["optimizers"])
+    if deferred_indexing["enabled"]:
+        ingest_optimizers["indexing_threshold"] = deferred_indexing[
+            "deferred_threshold_kb"
+        ]
+    ingest_optimizers_config = (
+        OptimizersConfigDiff(**ingest_optimizers) if ingest_optimizers else None
     )
     recreate_kwargs = _without_none(
         {
             "hnsw_config": hnsw_config,
-            "optimizers_config": optimizers_config,
+            "optimizers_config": ingest_optimizers_config,
             "on_disk_payload": collection_config["on_disk_payload"],
             "shard_number": collection_config["shard_number"],
         }
@@ -1522,6 +1554,12 @@ def run_qdrant_streaming(
                 ),
                 timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                 **recreate_kwargs,
+            )
+        elif deferred_indexing["enabled"]:
+            client.update_collection(
+                collection_name=collection_name,
+                optimizers_config=ingest_optimizers_config,
+                timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
             )
         for ids, vectors, captured in iter_vector_batches(
             count=count,
@@ -1546,6 +1584,23 @@ def run_qdrant_streaming(
                 captured=captured,
             )
             completed_batches.add(batch_start)
+        index_restore_ms = 0.0
+        if deferred_indexing["enabled"]:
+            restore_started = time.perf_counter()
+            final_optimizers = dict(collection_config["optimizers"])
+            final_optimizers["indexing_threshold"] = deferred_indexing[
+                "final_threshold_kb"
+            ]
+            updated = client.update_collection(
+                collection_name=collection_name,
+                optimizers_config=OptimizersConfigDiff(**final_optimizers),
+                timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+            )
+            if not updated:
+                raise RuntimeError(
+                    f"Qdrant collection {collection_name!r} rejected final indexing threshold"
+                )
+            index_restore_ms = (time.perf_counter() - restore_started) * 1000.0
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
@@ -1627,6 +1682,8 @@ def run_qdrant_streaming(
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "index_readiness": index_readiness,
+                "deferred_indexing": deferred_indexing,
+                "index_restore_ms": index_restore_ms,
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,
@@ -1689,6 +1746,7 @@ def run_qdrant_sharded_streaming(
         return skipped_result(engine, f"Install qdrant-client: {exc}")
 
     collection_config = _qdrant_collection_config_from_env()
+    deferred_indexing = _qdrant_deferred_indexing_config_from_env()
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
         engine=engine,
@@ -1741,15 +1799,18 @@ def run_qdrant_sharded_streaming(
         if collection_config["hnsw"]
         else None
     )
-    optimizers_config = (
-        OptimizersConfigDiff(**collection_config["optimizers"])
-        if collection_config["optimizers"]
-        else None
+    ingest_optimizers = dict(collection_config["optimizers"])
+    if deferred_indexing["enabled"]:
+        ingest_optimizers["indexing_threshold"] = deferred_indexing[
+            "deferred_threshold_kb"
+        ]
+    ingest_optimizers_config = (
+        OptimizersConfigDiff(**ingest_optimizers) if ingest_optimizers else None
     )
     recreate_kwargs = _without_none(
         {
             "hnsw_config": hnsw_config,
-            "optimizers_config": optimizers_config,
+            "optimizers_config": ingest_optimizers_config,
             "on_disk_payload": collection_config["on_disk_payload"],
             "shard_number": collection_config["shard_number"],
         }
@@ -1793,6 +1854,13 @@ def run_qdrant_sharded_streaming(
                     timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                     **recreate_kwargs,
                 )
+        elif deferred_indexing["enabled"]:
+            for client, target in zip(clients, targets):
+                client.update_collection(
+                    collection_name=target.collection_name,
+                    optimizers_config=ingest_optimizers_config,
+                    timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+                )
         for ids, vectors, captured in iter_vector_batches(
             count=count,
             dim=dim,
@@ -1823,6 +1891,24 @@ def run_qdrant_sharded_streaming(
                 captured=captured,
             )
             completed_batches.add(batch_start)
+        index_restore_ms = 0.0
+        if deferred_indexing["enabled"]:
+            restore_started = time.perf_counter()
+            final_optimizers = dict(collection_config["optimizers"])
+            final_optimizers["indexing_threshold"] = deferred_indexing[
+                "final_threshold_kb"
+            ]
+            for client, target in zip(clients, targets):
+                updated = client.update_collection(
+                    collection_name=target.collection_name,
+                    optimizers_config=OptimizersConfigDiff(**final_optimizers),
+                    timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
+                )
+                if not updated:
+                    raise RuntimeError(
+                        f"Qdrant collection {target.collection_name!r} rejected final indexing threshold"
+                    )
+            index_restore_ms = (time.perf_counter() - restore_started) * 1000.0
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
@@ -1909,6 +1995,8 @@ def run_qdrant_sharded_streaming(
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "index_readiness": index_readiness,
                 "index_ready_all": all(row["ready"] for row in index_readiness),
+                "deferred_indexing": deferred_indexing,
+                "index_restore_ms": index_restore_ms,
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,

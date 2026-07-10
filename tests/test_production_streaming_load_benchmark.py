@@ -188,6 +188,29 @@ def test_qdrant_index_readiness_allows_small_green_full_scan_collection():
     assert readiness["require_full_index"] is False
 
 
+def test_qdrant_deferred_indexing_config_requires_higher_ingest_threshold(
+    monkeypatch,
+):
+    from benchmarks.production_streaming_load_benchmark import (
+        _qdrant_deferred_indexing_config_from_env,
+    )
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB", "500000")
+    monkeypatch.setenv("WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB", "20000")
+    config = _qdrant_deferred_indexing_config_from_env()
+
+    assert config == {
+        "enabled": True,
+        "deferred_threshold_kb": 500000,
+        "final_threshold_kb": 20000,
+    }
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB", "10000")
+    with pytest.raises(ValueError, match="must be greater"):
+        _qdrant_deferred_indexing_config_from_env()
+
+
 def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
     from benchmarks.production_streaming_load_benchmark import run_streaming_load
 
@@ -724,6 +747,7 @@ def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     assert row["command_env"]["WAVEMIND_QDRANT_VECTOR_ON_DISK"] == "1"
     assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "1"
     assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
     assert (
         row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
         == "1800"
@@ -760,6 +784,7 @@ def test_streaming_load_plan_only_supports_qdrant_sharded_service(monkeypatch):
     assert "missing_env:WAVEMIND_QDRANT_URLS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_QDRANT_FANOUT_WORKERS"] == "6"
     assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
     assert (
         row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
         == "1800"
