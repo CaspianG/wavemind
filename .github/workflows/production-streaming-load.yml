@@ -104,7 +104,7 @@ on:
         default: "state"
         type: string
       commit_results:
-        description: "Commit result and refreshed benchmark/evidence artifacts to main."
+        description: "Publish result and refreshed evidence on a reviewable benchmark PR."
         required: true
         default: false
         type: boolean
@@ -112,6 +112,7 @@ on:
 permissions:
   actions: read
   contents: write
+  pull-requests: write
 
 jobs:
   production-streaming-load:
@@ -393,8 +394,10 @@ jobs:
           python benchmarks/render_benchmark_dashboard.py \
             --output docs/benchmark-dashboard.html
 
-      - name: Commit production streaming result
+      - name: Publish production streaming result PR
         if: ${{ inputs.commit_results }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json; then
             echo "No benchmark changes."
@@ -402,9 +405,17 @@ jobs:
           fi
           git config user.name "CaspianG"
           git config user.email "259116618+CaspianG@users.noreply.github.com"
+          branch="benchmark/production-streaming-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
           git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json
           git commit -m "Refresh production streaming benchmark"
-          git push
+          git push --set-upstream origin "$branch"
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "$branch" \
+            --title "Refresh ${ENGINE} ${SIZE}-vector production evidence" \
+            --body "Real production streaming result from [workflow run ${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}). Review the measured recall, p99, cost gate, and refreshed claim boundaries before merging."
 
       - uses: actions/upload-artifact@v7
         if: always()

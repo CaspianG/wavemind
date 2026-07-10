@@ -224,6 +224,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "workflow_dispatch" in workflow
     assert "contents: write" in workflow
     assert "actions: read" in workflow
+    assert "pull-requests: write" in workflow
     assert "production_streaming_load_benchmark.py" in workflow
     assert "--checkpoint-path" in workflow
     assert "runner_storage_root" in workflow
@@ -257,6 +258,10 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "benchmarks/production_evidence_gate.py" in workflow
     assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
+    assert "Publish production streaming result PR" in workflow
+    assert 'branch="benchmark/production-streaming-${GITHUB_RUN_ID}"' in workflow
+    assert 'git push --set-upstream origin "$branch"' in workflow
+    assert "gh pr create" in workflow
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow
