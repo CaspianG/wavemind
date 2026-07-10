@@ -12,7 +12,7 @@
     "top_k": 10,
     "seed": 42,
     "noise": 0.08,
-    "batch_size": 5000,
+    "batch_size": 1000000,
     "engines": [
       "faiss-ivfpq-persisted"
     ],
@@ -31,8 +31,8 @@
     "python": "3.13.3",
     "platform": "Windows-11-10.0.26200-SP0",
     "docker": {
-      "available": true,
-      "server_version": "28.3.0"
+      "available": false,
+      "reason": "error during connect: Get \"http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/info\": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified."
     },
     "modules": {
       "faiss": true,
@@ -61,7 +61,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 0.04,
+      "free_gb": 5.16,
       "total_gb": 231.85
     }
   },
@@ -72,14 +72,14 @@
       "vector_dim": 128,
       "queries": 2000,
       "top_k": 10,
-      "batch_size": 5000,
+      "batch_size": 1000000,
       "index_mode": "persisted FAISS IVF-PQ compressed codes plus int64 ids",
       "estimated_index_gb": 1.12,
-      "estimated_transient_runner_gb": 0.099,
+      "estimated_transient_runner_gb": 0.573,
       "estimated_payload_storage_gb": 95.367,
       "estimated_float_vector_storage_gb": 23.842,
       "estimated_application_storage_gb": 119.209,
-      "required_local_free_gb": 1.523,
+      "required_local_free_gb": 2.116,
       "disk_free_gb": 0.0,
       "runner_storage_root": "state/production-runs",
       "disk_free_path": "C:/work/particles/wavemind 2.0/state",
@@ -99,11 +99,13 @@
         "WAVEMIND_FAISS_IVFPQ_M": "16",
         "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
         "WAVEMIND_FAISS_IVFPQ_NPROBE": "1024",
-        "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000"
+        "WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP": "64,128,256,512,1024",
+        "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000",
+        "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES": "5"
       },
       "checkpoint_path": "state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "status": "action_required",
       "blockers": [
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",

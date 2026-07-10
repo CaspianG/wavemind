@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.production_scale_run_plan.v1",
-  "generated_at": "2026-07-08T14:43:22Z",
+  "generated_at": "2026-07-10T04:17:18Z",
   "summary": {
     "schema": "wavemind.production_scale_run_plan.v1",
-    "generated_at": "2026-07-08T14:43:22Z",
+    "generated_at": "2026-07-10T04:17:18Z",
     "overall_status": "action_required",
     "ready_count": 0,
     "action_required_count": 5,
@@ -465,7 +465,7 @@
       "vector_dim": 128,
       "queries": 2000,
       "top_k": 10,
-      "batch_size": 5000,
+      "batch_size": 1000000,
       "target_recall_at_k": 0.95,
       "target_p99_ms": 100.0,
       "target_qps": 100.0,
@@ -474,14 +474,16 @@
       "capacity_headroom": 0.7,
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "checkpoint_path": "state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "command_env": {
         "WAVEMIND_FAISS_IVFPQ_PATH": "state/production-runs/wavemind-faiss-ivfpq-50m.faiss",
         "WAVEMIND_FAISS_IVFPQ_NLIST": "4096",
         "WAVEMIND_FAISS_IVFPQ_M": "16",
         "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
         "WAVEMIND_FAISS_IVFPQ_NPROBE": "1024",
-        "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000"
+        "WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP": "64,128,256,512,1024",
+        "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000",
+        "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES": "5"
       },
       "required_env": [
         "WAVEMIND_FAISS_IVFPQ_PATH"
@@ -493,11 +495,11 @@
         "faiss": true
       },
       "estimated_index_gb": 1.12,
-      "estimated_transient_runner_gb": 0.099,
+      "estimated_transient_runner_gb": 0.573,
       "estimated_payload_storage_gb": 95.367,
       "estimated_float_vector_storage_gb": 23.842,
       "estimated_application_storage_gb": 119.209,
-      "required_local_free_gb": 1.523,
+      "required_local_free_gb": 2.116,
       "disk_free_gb": 0.0,
       "runner_storage_root": "state/production-runs",
       "disk_free_path": "C:/work/particles/wavemind 2.0/state",
@@ -553,7 +555,7 @@
         "Use runner storage root `state/production-runs` for checkpoints, large local indexes, and resumable ingest state.",
         "Keep the FAISS IVF-PQ checkpoint and index path on durable fast storage.",
         "Provision the required service/index backend and set the required environment variables.",
-        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json` from the repository root.",
+        "Run `python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json` from the repository root.",
         "Commit `benchmarks/production_streaming_load_ivfpq_50m_results.json` only after the real run completes.",
         "Refresh `wavemind production-evidence-bundle --write-artifacts --json` after committing new evidence."
       ],

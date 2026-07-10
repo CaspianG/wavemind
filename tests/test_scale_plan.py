@@ -355,6 +355,7 @@ def test_production_scale_run_plan_can_use_external_runner_storage_root(tmp_path
     assert row["runner_storage_root"].endswith("large-runs")
     assert row["disk_free_path"].endswith("large-runs")
     assert row["checkpoint_path"].endswith("large-runs/faiss-ivfpq-persisted-50000000.checkpoint.json")
+    assert row["batch_size"] == 1_000_000
     assert row["command_env"]["WAVEMIND_FAISS_IVFPQ_PATH"].endswith(
         "large-runs/wavemind-faiss-ivfpq-50m.faiss"
     )

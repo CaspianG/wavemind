@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-10T03:54:53Z",
+  "generated_at": "2026-07-10T04:18:07Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -313,7 +313,7 @@
       "title": "50M streaming load run has a checked preflight contract",
       "status": "pass",
       "requirement": "The next 50M streaming run must have a committed plan-only artifact with exact reproduction command, local index/transient storage estimates, application-storage estimate, required env, and an explicit boundary that it is not a completed benchmark.",
-      "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 1.523 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches",
+      "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 2.116 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches",
       "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the embedded 50M command to produce production_streaming_load_ivfpq_50m_results.json."
     },
     {

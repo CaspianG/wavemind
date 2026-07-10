@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_preflight.v1",
-  "generated_at": "2026-07-10T03:54:53Z",
+  "generated_at": "2026-07-10T04:17:38Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -141,14 +141,14 @@
       "title": "50M FAISS IVF-PQ streaming load preflight",
       "status": "action_required",
       "ready": false,
-      "evidence": "plan benchmarks/production_streaming_load_50m_plan.json, vectors 50000000, required env 1, missing env 1, required local free 1.523 GB",
+      "evidence": "plan benchmarks/production_streaming_load_50m_plan.json, vectors 50000000, required env 1, missing env 1, required local free 2.116 GB",
       "required_env": [
         "WAVEMIND_FAISS_IVFPQ_PATH"
       ],
       "missing_env": [
         "WAVEMIND_FAISS_IVFPQ_PATH"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
+      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "issues": [
         "set WAVEMIND_FAISS_IVFPQ_PATH"

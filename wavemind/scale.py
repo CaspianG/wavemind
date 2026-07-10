@@ -400,7 +400,7 @@ def _production_scale_profiles(
             vector_dim=128,
             queries=2000,
             top_k=10,
-            batch_size=5000,
+            batch_size=1_000_000,
             target_recall_at_k=0.95,
             target_p99_ms=100.0,
             target_qps=100.0,
