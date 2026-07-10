@@ -1,0 +1,439 @@
+{
+  "schema": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
+  "generated_at": "2026-07-10T02:20:23.330388+00:00",
+  "environment": "kind-multizone-serverless-lifecycle-ci",
+  "evidence_source": "github-actions-kind-external-state-manual-scale-lifecycle",
+  "claim_boundary": "Ephemeral non-loopback Kubernetes lifecycle evidence with external durable state. It proves scale-to-zero state safety and multi-replica behavior, but does not unlock remote managed Knative/KEDA production admission.",
+  "status": "pass",
+  "summary": {
+    "check_count": 13,
+    "passed_checks": 13,
+    "failed_checks": 0
+  },
+  "checks": [
+    {
+      "id": "non_loopback_service_dns",
+      "passed": true,
+      "observed": "http://wavemind-serverless-keda.wavemind-serverless.svc.cluster.local:8000",
+      "required": "ClusterIP .svc.cluster.local endpoint"
+    },
+    {
+      "id": "external_durable_state",
+      "passed": true,
+      "observed": {
+        "services": [
+          "postgres",
+          "qdrant",
+          "redis"
+        ],
+        "pvcs": 3
+      },
+      "required": {
+        "services": [
+          "postgres",
+          "qdrant",
+          "redis"
+        ],
+        "pvcs": ">=3"
+      }
+    },
+    {
+      "id": "scale_to_zero",
+      "passed": true,
+      "observed": {
+        "replicas": true,
+        "endpoints": true
+      },
+      "required": true
+    },
+    {
+      "id": "cold_start_ready",
+      "passed": true,
+      "observed": 5083.951,
+      "required": "<= 120000.0 ms"
+    },
+    {
+      "id": "state_restored_after_zero",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "scale_out_three_replicas",
+      "passed": true,
+      "observed": {
+        "replicas": 3,
+        "endpoints": 3
+      },
+      "required": 3
+    },
+    {
+      "id": "multi_zone_placement",
+      "passed": true,
+      "observed": 3,
+      "required": 3
+    },
+    {
+      "id": "cross_replica_write_visibility",
+      "passed": true,
+      "observed": {
+        "visible": 3,
+        "replicas": 3,
+        "active_counts": [
+          25,
+          25,
+          25
+        ]
+      },
+      "required": {
+        "visible": 3,
+        "active_counts": "seed_count + 1"
+      }
+    },
+    {
+      "id": "cross_replica_delete_suppression",
+      "passed": true,
+      "observed": {
+        "suppressed": 3,
+        "deleted": 1,
+        "active_counts": [
+          24,
+          24,
+          24
+        ]
+      },
+      "required": {
+        "suppressed": 3,
+        "deleted": 1,
+        "active_counts": "seed_count"
+      }
+    },
+    {
+      "id": "cross_replica_coherence_budget",
+      "passed": true,
+      "observed": {
+        "write_ms": 1120.492258000013,
+        "delete_ms": 899.5455190000712
+      },
+      "required": "both <= 2000.0 ms"
+    },
+    {
+      "id": "burst_success",
+      "passed": true,
+      "observed": {
+        "successes": 120,
+        "requests": 120,
+        "errors": 0
+      },
+      "required": "100% successful"
+    },
+    {
+      "id": "burst_p99_budget",
+      "passed": true,
+      "observed": 1629.203890000099,
+      "required": "<= 2000.0 ms"
+    },
+    {
+      "id": "second_zero_restore",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    }
+  ],
+  "observed": {
+    "service_address": "http://wavemind-serverless-keda.wavemind-serverless.svc.cluster.local:8000",
+    "external_services": [
+      "postgres",
+      "qdrant",
+      "redis"
+    ],
+    "persistent_volume_claims": 3,
+    "zero_replicas": true,
+    "zero_endpoints": true,
+    "first_cold_start_ms": 4761.747,
+    "cold_start_ms": 5083.951,
+    "cold_start_budget_ms": 120000.0,
+    "seed": {
+      "ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "latencies_ms": [
+        49.802115000034064,
+        26.885911000022134,
+        62.86671499992735,
+        32.92330800002219,
+        68.87896299997465,
+        34.12012399996911,
+        64.99719700002515,
+        33.28723799995714,
+        67.85585000000083,
+        25.649164999890672,
+        70.38380000005873,
+        38.22002499998689,
+        75.8432930000481,
+        28.582371999959832,
+        72.20614299990302,
+        36.95765999998457,
+        60.938840000062555,
+        51.02622000003976,
+        57.89266600004339,
+        30.073239999978796,
+        66.98879900000065,
+        28.224664000049415,
+        67.05039500002385,
+        29.255050000074334
+      ]
+    },
+    "restored_after_zero": {
+      "successes": 24,
+      "count": 24,
+      "latencies_ms": [
+        41.74569799999972,
+        21.312444000045616,
+        18.115991999934522,
+        18.200761000002785,
+        18.327050999914718,
+        12.180464000039137,
+        37.89828000003581,
+        11.525189000053615,
+        13.027663999992,
+        26.558747999956722,
+        13.453283999979249,
+        35.47164300005079,
+        51.421177000065654,
+        11.24451400005455,
+        36.483312999962436,
+        11.568379999971512,
+        13.161498000044958,
+        23.311516000035226,
+        12.612791999913497,
+        36.69610699989789,
+        11.611934000029578,
+        16.514373000063642,
+        24.81654400003208,
+        11.55451300007826
+      ],
+      "rate": 1.0,
+      "p99_ms": 51.421177000065654
+    },
+    "ready_replicas": 3,
+    "endpoint_count": 3,
+    "zone_count": 3,
+    "placements": [
+      {
+        "pod": "wavemind-serverless-keda-57664cc977-7hbcz",
+        "worker": "wavemind-ci-worker",
+        "zone": "zone-a",
+        "pod_ip": "10.244.2.14"
+      },
+      {
+        "pod": "wavemind-serverless-keda-57664cc977-cp6jw",
+        "worker": "wavemind-ci-worker3",
+        "zone": "zone-c",
+        "pod_ip": "10.244.4.17"
+      },
+      {
+        "pod": "wavemind-serverless-keda-57664cc977-d7xxl",
+        "worker": "wavemind-ci-worker2",
+        "zone": "zone-b",
+        "pod_ip": "10.244.1.12"
+      }
+    ],
+    "cross_replica": {
+      "memory_id": 25,
+      "replicas": 3,
+      "visible_replicas": 3,
+      "suppressed_replicas": 3,
+      "write_active_counts": [
+        25,
+        25,
+        25
+      ],
+      "delete_active_counts": [
+        24,
+        24,
+        24
+      ],
+      "write_replicas": [
+        {
+          "base": "http://10.244.2.14:8000",
+          "result_ids": [
+            25
+          ],
+          "result_texts": [
+            "serverless shared mutation cross-replica-1783650012697"
+          ],
+          "result_tags": [
+            [
+              "serverless",
+              "coherence"
+            ]
+          ],
+          "active_memories": 25,
+          "index_expected_records": 25,
+          "index_vector_records": 25,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        },
+        {
+          "base": "http://10.244.4.17:8000",
+          "result_ids": [
+            25
+          ],
+          "result_texts": [
+            "serverless shared mutation cross-replica-1783650012697"
+          ],
+          "result_tags": [
+            [
+              "serverless",
+              "coherence"
+            ]
+          ],
+          "active_memories": 25,
+          "index_expected_records": 25,
+          "index_vector_records": 25,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        },
+        {
+          "base": "http://10.244.1.12:8000",
+          "result_ids": [
+            25
+          ],
+          "result_texts": [
+            "serverless shared mutation cross-replica-1783650012697"
+          ],
+          "result_tags": [
+            [
+              "serverless",
+              "coherence"
+            ]
+          ],
+          "active_memories": 25,
+          "index_expected_records": 25,
+          "index_vector_records": 25,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        }
+      ],
+      "delete_replicas": [
+        {
+          "base": "http://10.244.2.14:8000",
+          "result_ids": [],
+          "result_texts": [],
+          "result_tags": [],
+          "active_memories": 24,
+          "index_expected_records": 24,
+          "index_vector_records": 24,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        },
+        {
+          "base": "http://10.244.4.17:8000",
+          "result_ids": [],
+          "result_texts": [],
+          "result_tags": [],
+          "active_memories": 24,
+          "index_expected_records": 24,
+          "index_vector_records": 24,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        },
+        {
+          "base": "http://10.244.1.12:8000",
+          "result_ids": [],
+          "result_texts": [],
+          "result_tags": [],
+          "active_memories": 24,
+          "index_expected_records": 24,
+          "index_vector_records": 24,
+          "index_missing_records": 0,
+          "index_extra_records": 0
+        }
+      ],
+      "write_propagation_ms": 1120.492258000013,
+      "delete_propagation_ms": 899.5455190000712,
+      "coherence_budget_ms": 2000.0,
+      "seed_count": 24,
+      "deleted": 1,
+      "write_ms": 56.73989599995366,
+      "read_ms": [
+        40.92265300005238,
+        33.29571000006126,
+        37.145577000046615
+      ],
+      "delete_ms": 17.282111999975314
+    },
+    "burst": {
+      "requests": 120,
+      "successes": 120,
+      "errors": 0,
+      "error_sample": [],
+      "wall_seconds": 2.553890578999926,
+      "requests_per_second": 46.98713444762798,
+      "avg_ms": 253.38259333333704,
+      "p95_ms": 1355.1115820000632,
+      "p99_ms": 1629.203890000099
+    },
+    "burst_p99_budget_ms": 2000.0,
+    "final_restore": {
+      "successes": 24,
+      "count": 24,
+      "latencies_ms": [
+        25.798044999987724,
+        3.8781409999728567,
+        3.7160030000222832,
+        3.876407999996445,
+        3.8607290000527428,
+        3.7294620000238865,
+        3.70523799995226,
+        3.715502999966702,
+        3.440385999965656,
+        3.4185719999868525,
+        3.636345000018082,
+        3.3429059999434685,
+        3.1975670000292666,
+        3.151934000015899,
+        3.2338810000283047,
+        3.58246300004339,
+        4.506214999992153,
+        5.41097500001797,
+        5.1594280000699655,
+        5.838867000079517,
+        5.241099000045324,
+        4.928719999952591,
+        5.182079000064732,
+        3.596367999989525
+      ],
+      "rate": 1.0,
+      "p99_ms": 25.798044999987724
+    },
+    "elapsed_ms": 36833.206
+  },
+  "source_ref": "df3507ad3e7af6780435709b355543cab01fff91",
+  "workflow_run_id": "29064120175",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29064120175"
+}

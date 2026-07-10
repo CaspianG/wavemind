@@ -176,6 +176,19 @@ jobs:
             --timeout-seconds 300 \
             --output benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
 
+      - name: Run Kubernetes PostgreSQL and Qdrant disaster-recovery drill
+        run: |
+          python benchmarks/kubernetes_postgres_qdrant_dr_smoke.py \
+            --source-namespace wavemind-serverless \
+            --recovery-namespace wavemind-serverless-dr \
+            --image wavemind:ci-upgrade \
+            --postgres-image postgres:16-alpine \
+            --qdrant-image qdrant/qdrant:v1.15.1 \
+            --redis-image redis:7-alpine \
+            --memories 24 \
+            --timeout-seconds 300 \
+            --output benchmarks/kubernetes_postgres_qdrant_dr_smoke_ci_results.json
+
       - name: Capture diagnostics
         if: always()
         run: |
@@ -194,6 +207,13 @@ jobs:
           kubectl logs statefulset/postgres -n wavemind-serverless --tail=200 || true
           kubectl logs statefulset/qdrant -n wavemind-serverless --tail=200 || true
           kubectl logs statefulset/redis -n wavemind-serverless --tail=200 || true
+          kubectl get pods,deployments,statefulsets,services,endpoints,pvc \
+            -n wavemind-serverless-dr -o wide || true
+          kubectl describe pods -n wavemind-serverless-dr || true
+          kubectl logs deployment/wavemind-serverless-keda \
+            -n wavemind-serverless-dr --all-pods=true --prefix=true --tail=300 || true
+          kubectl logs statefulset/postgres -n wavemind-serverless-dr --tail=200 || true
+          kubectl logs statefulset/qdrant -n wavemind-serverless-dr --tail=200 || true
           docker ps -a --format 'table {{.Names}}\t{{.Status}}' || true
 
       - uses: actions/upload-artifact@v4
@@ -205,6 +225,7 @@ jobs:
             benchmarks/kubernetes_cluster_network_smoke_ci_results.json
             benchmarks/kubernetes_active_active_region_smoke_ci_results.json
             benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
+            benchmarks/kubernetes_postgres_qdrant_dr_smoke_ci_results.json
           if-no-files-found: warn
 
       - name: Delete kind cluster
