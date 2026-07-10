@@ -18,6 +18,13 @@ def _write_100m_streaming_artifact(root: Path, *, engine: str) -> Path:
         json.dumps(
             {
                 "schema": "wavemind.production_streaming_load.v1",
+                "generated_at": "2026-07-10T00:00:00Z",
+                "source_ref": "a" * 40,
+                "execution_id": "test-run-1",
+                "execution_environment": "test-service",
+                "evidence_source": "local-service",
+                "workflow_run_id": None,
+                "workflow_run_url": None,
                 "results": [
                     {
                         "vectors": 100_000_000,
@@ -106,6 +113,24 @@ def test_hundred_million_requirement_accepts_matching_sharded_qdrant_artifact(tm
     assert row["status"] == "pass"
     assert row["issues"] == []
     assert "Qdrant sharded service streaming" in row["evidence"]
+
+
+def test_large_service_requirement_rejects_missing_provenance(tmp_path):
+    artifact = _write_100m_streaming_artifact(
+        tmp_path,
+        engine="Qdrant sharded service streaming",
+    )
+    payload = json.loads(artifact.read_text(encoding="utf-8"))
+    payload.pop("source_ref")
+    artifact.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    evidence = evaluate_production_evidence(tmp_path)
+    row = {item["id"]: item for item in evidence["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert row["status"] == "fail"
+    assert any("source_ref" in issue for issue in row["issues"])
 
 
 def test_production_evidence_gate_cli_writes_json_and_markdown(tmp_path):

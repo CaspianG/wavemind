@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -94,6 +95,27 @@ def _require_number(row: dict[str, Any], key: str, filename: str) -> float:
 
 def validate_artifact(path: Path, expected: ExpectedArtifact) -> dict[str, Any]:
     payload = load_json(path)
+    source_ref = str(payload.get("source_ref") or "")
+    execution_id = str(payload.get("execution_id") or "")
+    evidence_source = str(payload.get("evidence_source") or "").lower()
+    generated_at = str(payload.get("generated_at") or "")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_ref):
+        raise ArtifactValidationError(
+            f"{path.name}: source_ref must be a full 40-character Git commit SHA"
+        )
+    if not execution_id:
+        raise ArtifactValidationError(f"{path.name}: execution_id is required")
+    if not generated_at:
+        raise ArtifactValidationError(f"{path.name}: generated_at is required")
+    if evidence_source in {"", "fixture", "sample", "plan-only"}:
+        raise ArtifactValidationError(
+            f"{path.name}: evidence_source must identify a real benchmark run"
+        )
+    if evidence_source == "github-actions":
+        if not payload.get("workflow_run_id") or not payload.get("workflow_run_url"):
+            raise ArtifactValidationError(
+                f"{path.name}: GitHub Actions evidence requires workflow run provenance"
+            )
     scenario = payload.get("scenario")
     if not isinstance(scenario, dict) or scenario.get("name") != "production_streaming_load_profile":
         raise ArtifactValidationError(
@@ -155,6 +177,11 @@ def validate_artifact(path: Path, expected: ExpectedArtifact) -> dict[str, Any]:
         "p99_latency_ms": p99_ms,
         "slo_status": slo_status,
         "cost_status": cost_status,
+        "source_ref": source_ref.lower(),
+        "execution_id": execution_id,
+        "evidence_source": evidence_source,
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
     }
 
 

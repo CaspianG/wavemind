@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import statistics
+import subprocess
 import sys
 import time
 from contextlib import contextmanager
@@ -131,6 +132,63 @@ def _chunks(items: list[Any], size: int) -> Iterable[list[Any]]:
 
 def _utc_now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _git_source_ref() -> str | None:
+    configured = (os.environ.get("GITHUB_SHA") or "").strip()
+    if re.fullmatch(r"[0-9a-fA-F]{40}", configured):
+        return configured.lower()
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    value = completed.stdout.strip()
+    return value.lower() if re.fullmatch(r"[0-9a-fA-F]{40}", value) else None
+
+
+def _benchmark_provenance() -> dict[str, Any]:
+    generated_at = _utc_now()
+    source_ref = _git_source_ref()
+    workflow_run_id = (os.environ.get("GITHUB_RUN_ID") or "").strip() or None
+    repository = (os.environ.get("GITHUB_REPOSITORY") or "").strip()
+    server_url = (os.environ.get("GITHUB_SERVER_URL") or "").strip()
+    workflow_run_url = None
+    if workflow_run_id and repository and server_url:
+        workflow_run_url = (
+            f"{server_url.rstrip('/')}/{repository}/actions/runs/{workflow_run_id}"
+        )
+    github_actions = (os.environ.get("GITHUB_ACTIONS") or "").lower() == "true"
+    evidence_source = (
+        os.environ.get("WAVEMIND_BENCHMARK_EVIDENCE_SOURCE")
+        or ("github-actions" if github_actions else "local-service")
+    ).strip()
+    environment = (
+        os.environ.get("WAVEMIND_BENCHMARK_ENVIRONMENT")
+        or ("github-actions" if github_actions else "local-service")
+    ).strip()
+    execution_id = (
+        os.environ.get("WAVEMIND_BENCHMARK_RUN_ID")
+        or workflow_run_id
+        or f"local-{generated_at.replace(':', '').replace('-', '')}-{(source_ref or 'unknown')[:12]}"
+    ).strip()
+    return {
+        "schema": "wavemind.production_streaming_load.v1",
+        "generated_at": generated_at,
+        "source_ref": source_ref,
+        "execution_id": execution_id,
+        "execution_environment": environment,
+        "evidence_source": evidence_source,
+        "workflow_run_id": workflow_run_id,
+        "workflow_run_url": workflow_run_url,
+    }
 
 
 def _checkpoint_path_from_env() -> Path | None:
@@ -2167,6 +2225,7 @@ def run_streaming_load(
 ) -> dict[str, Any]:
     size_list = [int(size) for size in sizes]
     payload = {
+        **_benchmark_provenance(),
         "scenario": {
             "name": "production_streaming_load_profile",
             "description": (

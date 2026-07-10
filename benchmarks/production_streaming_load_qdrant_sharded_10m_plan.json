@@ -50,6 +50,9 @@
       "WAVEMIND_QDRANT_EXACT": null,
       "WAVEMIND_QDRANT_WARMUP_QUERIES": null,
       "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS": null,
+      "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": null,
       "WAVEMIND_QDRANT_HNSW_M": null,
       "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
       "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
@@ -61,7 +64,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 0.03,
+      "free_gb": 2.53,
       "total_gb": 231.85
     }
   },
@@ -99,7 +102,11 @@
         "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
         "WAVEMIND_QDRANT_FANOUT_WORKERS": "4",
         "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
-        "WAVEMIND_QDRANT_WARMUP_QUERIES": "100"
+        "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
+        "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
+        "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+        "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
+        "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1"
       },
       "checkpoint_path": "state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",

@@ -933,6 +933,23 @@ def _large_service_requirement(
     row = max(rows, key=lambda item: int(item.get("vectors", 0) or 0), default={})
     issues: list[str] = []
     missing = not payload
+    source_ref = str(payload.get("source_ref") or "")
+    execution_id = str(payload.get("execution_id") or "")
+    evidence_source = str(payload.get("evidence_source") or "").lower()
+    generated_at = str(payload.get("generated_at") or "")
+    if payload:
+        if not re.fullmatch(r"[0-9a-fA-F]{40}", source_ref):
+            issues.append("source_ref must be a full 40-character Git commit SHA")
+        if not execution_id:
+            issues.append("execution_id is required")
+        if not generated_at:
+            issues.append("generated_at is required")
+        if evidence_source in {"", "fixture", "sample", "plan-only"}:
+            issues.append("evidence_source must identify a real benchmark run")
+        if evidence_source == "github-actions" and (
+            not payload.get("workflow_run_id") or not payload.get("workflow_run_url")
+        ):
+            issues.append("GitHub Actions evidence requires workflow run provenance")
     if not row:
         if missing:
             issues.append("missing artifact")
@@ -959,7 +976,8 @@ def _large_service_requirement(
         evidence=(
             f"{row.get('engine')}: vectors {row.get('vectors')}, "
             f"recall {row.get('recall_at_k', row.get('target_recall_at_k'))}, "
-            f"p99 {row.get('p99_latency_ms')} ms, cost {row.get('cost_status')}"
+            f"p99 {row.get('p99_latency_ms')} ms, cost {row.get('cost_status')}, "
+            f"source {source_ref[:12] or 'missing'}, run {execution_id or 'missing'}"
             if row
             else f"no checked-in {min_vectors:,}-vector result for {engine}"
         ),
