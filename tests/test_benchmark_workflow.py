@@ -263,6 +263,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert 'branch="benchmark/production-streaming-${GITHUB_RUN_ID}"' in workflow
     assert 'git push --set-upstream origin "$branch"' in workflow
     assert "gh pr create" in workflow
+    assert "repository settings prevented github-actions from opening the PR" in workflow
     assert "benchmarks/render_leaderboard_status.py" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
     assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json" in workflow

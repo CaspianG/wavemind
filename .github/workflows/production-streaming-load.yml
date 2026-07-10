@@ -411,12 +411,14 @@ jobs:
           git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json
           git commit -m "Refresh production streaming benchmark"
           git push --set-upstream origin "$branch"
-          gh pr create \
-            --repo "$GITHUB_REPOSITORY" \
-            --base main \
-            --head "$branch" \
-            --title "Refresh ${ENGINE} ${SIZE}-vector production evidence" \
-            --body "Real production streaming result from [workflow run ${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}). Review the measured recall, p99, cost gate, and refreshed claim boundaries before merging."
+          if ! gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head "$branch" \
+              --title "Refresh ${ENGINE} ${SIZE}-vector production evidence" \
+              --body "Real production streaming result from [workflow run ${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}). Review the measured recall, p99, cost gate, and refreshed claim boundaries before merging."; then
+            echo "::warning::Evidence branch $branch was published, but repository settings prevented github-actions from opening the PR."
+          fi
 
       - uses: actions/upload-artifact@v7
         if: always()
