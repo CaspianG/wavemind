@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
-  "generated_at": "2026-07-09T15:36:19Z",
-  "source_ref": "881594688fa0",
+  "generated_at": "2026-07-09T22:45:10Z",
+  "source_ref": "a9ea9d7f8027",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/agent_coherence_results.json",
@@ -25,7 +25,7 @@
     "positive_feedback_priority_delta": 0.3999999999999999,
     "negative_feedback_priority_delta": -0.30000000000000004,
     "priority_predictions": 2,
-    "priority_boost_total": 0.19999995964987127,
+    "priority_boost_total": 0.19999992046342835,
     "forgetting_demotions": 4,
     "forgetting_decay_total": 0.4,
     "policy_status": "architecture_required",
@@ -370,7 +370,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783611322.918986
+          "last_seen": 1783637014.8730922
         }
       ],
       "transition_prefetch_hit": true,
@@ -381,7 +381,7 @@
       "positive_feedback_priority_delta": 0.3999999999999999,
       "negative_feedback_priority_delta": -0.30000000000000004,
       "priority_predictions": 2,
-      "priority_boost_total": 0.19999995964987127,
+      "priority_boost_total": 0.19999992046342835,
       "forgetting_demotions": 4,
       "forgetting_decay_total": 0.4,
       "architecture_advice_status": "architecture_required",
@@ -517,7 +517,7 @@
         "Architecture advisor: [action_required] Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
         "Architecture advisor: [watch] Validate multimodal and structured payload retrieval - Use typed payload helpers and run structured retrieval checks before exposing multimodal claims."
       ],
-      "run_ms": 31.294899999920744
+      "run_ms": 77.4466000002576
     },
     "redis_memory_os": {
       "engine": "WaveMind Redis hot cache",
@@ -544,7 +544,7 @@
           "to_query": "risk limits",
           "count": 1,
           "probability": 1.0,
-          "last_seen": 1783611322.6063967
+          "last_seen": 1783637014.1264112
         }
       ],
       "memory_os_transition_prefetch_hit": true,
@@ -553,7 +553,7 @@
       "memory_os_positive_feedback_priority_delta": 0.3999999999999999,
       "memory_os_negative_feedback_priority_delta": -0.30000000000000004,
       "memory_os_priority_predictions": 2,
-      "memory_os_priority_boost_total": 0.19999997430874575,
+      "memory_os_priority_boost_total": 0.1999999350591051,
       "memory_os_forgetting_demotions": 4,
       "memory_os_forgetting_decay_total": 0.4,
       "memory_os_architecture_advice_status": "architecture_required",
@@ -567,7 +567,7 @@
         "multimodal-payloads"
       ],
       "memory_os_cross_worker_hit": true,
-      "memory_os_run_ms": 24.054999999862048,
+      "memory_os_run_ms": 57.681599995703436,
       "namespace_invalidation_removed": true,
       "redis_keys": 8,
       "writer_hits": 0,
@@ -575,8 +575,8 @@
       "reader_hits": 1,
       "os_hits": 0,
       "os_reader_hits": 2,
-      "avg_lookup_ms": 0.045650000174646266,
-      "p99_lookup_ms": 0.057499999456922524
+      "avg_lookup_ms": 0.08960000195656903,
+      "p99_lookup_ms": 0.10010000551119447
     },
     "agent_memory_os": {
       "worker_ok": true,

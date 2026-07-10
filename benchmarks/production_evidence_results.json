@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-09T10:20:28Z",
+  "generated_at": "2026-07-10T03:54:53Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
-    "pass_count": 0,
-    "action_required_count": 8,
+    "pass_count": 1,
+    "action_required_count": 7,
     "fail_count": 0,
     "total_requirements": 8
   },
@@ -86,14 +86,12 @@
     {
       "id": "faiss_ivfpq_50m",
       "title": "50M FAISS IVF-PQ streaming load",
-      "status": "action_required",
-      "evidence": "no checked-in 50,000,000-vector result for WaveMind faiss-ivfpq-persisted streaming",
+      "status": "pass",
+      "evidence": "WaveMind faiss-ivfpq-persisted streaming: vectors 50000000, recall 0.9705, p99 73.10794899996154 ms, cost valid_slo",
       "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "claim_unlocked": "50M compressed local/persistent FAISS profile.",
-      "issues": [
-        "missing artifact"
-      ]
+      "issues": []
     },
     {
       "id": "hundred_million_remote_load",

@@ -14,7 +14,7 @@ verdict, not a marketing claim.
 
 | criterion | status | evidence | next step |
 |---|---|---|---|
-| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-09T23:59:34Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
+| Checked-in benchmark artifacts are synchronized | `pass` | audit status pass, generated_at 2026-07-10T03:54:52Z | Keep the benchmark refresh workflow green and block stale artifacts before release. |
 | Agent coherence benchmark proves behavioral lift | `pass` | WaveMind success 0.917, Chroma static 0.333, Static vector 0.333, stale error 0.000, context saved 0.931, coherent turn rate 0.750, avg latency 2.647 ms | Keep agent-behavior quality gated in CI and extend it with LLM answer-quality runs on LoCoMo/LongMemEval. |
 | LongMemEval answer generation beats static RAG baselines | `pass` | ollama qwen2.5:1.5b, queries 50, exact 0.240, contains 0.380, token F1 0.333, answered 0.520, grounded 0.520, supported 1.000, unsupported 0.000, faithful 1.000, abstain 0.480, evidence recall 0.920, retrieval 36.586 ms, Chroma F1 0.170, Qdrant F1 0.170 | Scale this from the checked 50-query local run to full LongMemEval-S with stronger local/API models and faithfulness scoring. |
 | 100k service-backed load profile passes SLO and cost gate | `pass` | recall 1.0, p99 21.25629998045042 ms, cost $1.39/1M queries | Keep the 100k profile green while adding persisted FAISS and pgvector service runs. |

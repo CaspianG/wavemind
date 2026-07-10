@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-09T10:23:34Z",
+  "generated_at": "2026-07-10T03:54:54Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
     "strict_overall_status": "action_required",
-    "strict_pass_count": 0,
+    "strict_pass_count": 1,
     "strict_total_requirements": 8,
     "preflight_overall_status": "action_required",
     "preflight_ready_count": 0,
@@ -13,20 +13,20 @@
     "production_readiness_status": "pass",
     "production_readiness_score": 1.0,
     "artifact_audit_status": "pass",
-    "implemented_benchmarks": 29,
+    "implemented_benchmarks": 37,
     "production_scale_run_contract_status": "available",
     "production_scale_run_profile_count": 5,
     "production_scale_run_target_memories_total": 180000000,
-    "next_action_count": 8
+    "next_action_count": 7
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-09T10:23:34Z",
+    "generated_at": "2026-07-10T03:54:54Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "pass_count": 0,
-      "action_required_count": 8,
+      "pass_count": 1,
+      "action_required_count": 7,
       "fail_count": 0,
       "total_requirements": 8
     },
@@ -107,14 +107,12 @@
       {
         "id": "faiss_ivfpq_50m",
         "title": "50M FAISS IVF-PQ streaming load",
-        "status": "action_required",
-        "evidence": "no checked-in 50,000,000-vector result for WaveMind faiss-ivfpq-persisted streaming",
+        "status": "pass",
+        "evidence": "WaveMind faiss-ivfpq-persisted streaming: vectors 50000000, recall 0.9705, p99 73.10794899996154 ms, cost valid_slo",
         "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
         "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
         "claim_unlocked": "50M compressed local/persistent FAISS profile.",
-        "issues": [
-          "missing artifact"
-        ]
+        "issues": []
       },
       {
         "id": "hundred_million_remote_load",
@@ -132,7 +130,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-09T10:23:34Z",
+    "generated_at": "2026-07-10T03:54:54Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -310,7 +308,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-09T10:21:56Z",
+    "generated_at": "2026-07-10T03:54:53Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -327,7 +325,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-09T10:21:24Z",
+        "evidence": "audit status pass, generated_at 2026-07-10T03:54:52Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -452,18 +450,18 @@
       },
       {
         "id": "operator_autoscaling_repair",
-        "title": "Kubernetes operator bundle includes HPA and repair job",
+        "title": "Kubernetes operator passes a real multi-node failover drill",
         "status": "pass",
-        "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS plus control-plane consensus safety.",
-        "evidence": "CRD True, HPA True, repair True, memory OS True, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, control-plane True",
-        "next_step": "Run a real Kubernetes smoke deploy and patch the same status from live HPA, pod, and leader lease metrics."
+        "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, redundant operator replicas with Kubernetes Lease/etcd leader election, resourceVersion CAS, and cross-node anti-affinity, a traceable multi-node Kubernetes CI failure drill with leader takeover, post-failover reconcile, PDB/topology protection, pod replacement, CR-driven rolling upgrade, non-loopback pod-DNS quorum traffic through a physical worker outage, and API recovery, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
+        "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, PDB min available 3, topology constraints 2, rolling pods replaced 4, upgraded API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, network drill pass via docker-pause-kind-worker, service nodes 4, zones 3, outage recall 1.0, failed nodes ['wavemind-ci-0'], recovery recall 1.0, network workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
+        "next_step": "Repeat the same drill against a non-ephemeral remote Kubernetes staging cluster and feed its service endpoints into strict cluster admission."
       },
       {
         "id": "serverless_externalized_state",
         "title": "Serverless plan externalizes state and validates KEDA target",
         "status": "pass",
-        "requirement": "Serverless mode must use external durable state, external vector index, shared cache, valid KEDA scale target, scale-to-zero-safe workers, an operational SLO/cold-start/cost profile, and an observed-telemetry contract for real cluster load tests.",
-        "evidence": "Postgres True, Qdrant True, Redis True, required replicas 4, burst rps 256000, cold start 1220.0 ms, cost $81.76, observed source loopback-api-capacity-estimate, observed replicas 4, observed pool rps 583.26, observed p99 17.039 ms, observed errors 0.0",
+        "requirement": "Serverless mode must use external durable state, external vector index, shared cache, valid KEDA scale target, scale-to-zero-safe workers, an operational SLO/cold-start/cost profile, and an observed-telemetry contract for real cluster load tests. A non-loopback multi-zone Kubernetes lifecycle must also prove scale-to-zero restore, bounded cross-worker coherence, and burst SLO.",
+        "evidence": "Postgres True, Qdrant True, Redis True, required replicas 4, burst rps 256000, cold start 1220.0 ms, cost $81.76, observed source loopback-api-capacity-estimate, observed replicas 4, observed pool rps 583.26, observed p99 17.039 ms, observed errors 0.0, kind lifecycle pass 13/13, coherence 3/3, propagation 1130.6929430000991/915.0309450000123 ms, burst p99 1461.4564480000354 ms, workflow https://github.com/CaspianG/wavemind/actions/runs/29064934749",
         "next_step": "Run the same profile against a real Knative/KEDA cluster and replace loopback telemetry with remote p95/p99/cold-start/error-rate/scale-out metrics."
       },
       {
@@ -471,7 +469,7 @@
         "title": "Hot cache and query-audit prewarm work",
         "status": "pass",
         "requirement": "Frequently recalled memory paths must be cacheable and prewarmable.",
-        "evidence": "hit rate 0.92, prewarm hit True, p99 0.006300047971308231 ms",
+        "evidence": "hit rate 0.92, prewarm hit True, p99 0.014099998224992305 ms",
         "next_step": "Keep local cache prewarm green while Redis carries multi-worker production cache evidence."
       },
       {
@@ -479,7 +477,7 @@
         "title": "Query-vector cache avoids repeated encoder work",
         "status": "pass",
         "requirement": "Repeated hot queries must reuse encoded query vectors locally across Redis-backed workers, and through the FastAPI service before hitting the vector index.",
-        "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 7.589500048197806 ms, service metrics True",
+        "evidence": "local encode calls 1, local hit rate 0.995, Redis shared True, Redis encode calls 1, service encode calls 1, service hit rate 0.995, service p99 11.885699997947086 ms, service metrics True",
         "next_step": "Run the same service-mode vector-cache profile with a real sentence-transformer encoder on a larger API load test."
       },
       {
@@ -487,7 +485,7 @@
         "title": "Batch query API amortizes service recall overhead",
         "status": "pass",
         "requirement": "FastAPI must support production batch recall so agents can issue many memory lookups with one HTTP request while preserving vector-cache reuse.",
-        "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 15.371615089985946, metrics True",
+        "evidence": "queries 100, HTTP requests 100 -> 1, batch encode calls 1, batch hit rate 0.99, speedup 6.296683035844507, metrics True",
         "next_step": "Keep the real Redis multi-process batch recall profile green, then repeat it with larger batches on remote Kubernetes/serverless nodes."
       },
       {
@@ -519,7 +517,7 @@
         "title": "Batch recall feedback updates priority, audit, and cache",
         "status": "pass",
         "requirement": "Production agents must record recall feedback in batches, reject bad namespace items, update positive and negative memory priority, write audit events, and invalidate shared cache once per affected namespace.",
-        "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 1.1352000292390585 ms",
+        "evidence": "accepted 2, rejected 1, cache warmed True, cache invalidated True, audit 2, positive delta 0.55, negative delta -0.25, p99 1.8449999988661148 ms",
         "next_step": "Exercise the same batch feedback endpoint under multi-worker Redis API load."
       },
       {
@@ -575,7 +573,7 @@
         "title": "Sustained HTTP cluster load survives failover and repair",
         "status": "pass",
         "requirement": "The HTTP cluster path must survive a mixed write/query/failover/repair/forget workload across multiple namespaces and real API nodes.",
-        "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 527.24 ms",
+        "evidence": "nodes 4, writes 8, queries 8, failover hit 1.0, success 1.0, p99 891.74 ms",
         "next_step": "Repeat this profile against remote service nodes and larger namespace counts before claiming full distributed production scale."
       },
       {
@@ -583,31 +581,31 @@
         "title": "Runtime replica quorum survives node loss",
         "status": "pass",
         "requirement": "Quorum runtime must recall after node loss, repair missing records and tombstones, and survive concurrent read/write traffic.",
-        "evidence": "recall after loss True, repair copied 1, p99 1.8522999016568065 ms, concurrent hit rate 1.0",
+        "evidence": "recall after loss True, repair copied 1, p99 3.497999998216983 ms, concurrent hit rate 1.0",
         "next_step": "Extend the same replicated runtime profile to remote service nodes and sustained load."
       },
       {
         "id": "active_active_field_crdt",
         "title": "Active-active sync and field-state CRDT converge",
         "status": "pass",
-        "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync, and CRDT deltas must carry actor watermarks so regions can audit sync progress, missing actors, and replication lag.",
-        "evidence": "delta sync True, incremental records 1, field-only keys 1, sustained regions 3, sustained convergence 1.0, sustained delete suppression 1.0, sustained success 1.0, HTTP service-region convergence 1.0, HTTP final no-op imports 0, CRDT idempotent True, watermarks 3, watermark health pass, missing detected True, lag detected True",
-        "next_step": "Replace the FastAPI TestClient service-region profile with remote Kubernetes or serverless API-node evidence."
+        "requirement": "Multi-region memory deltas and field state must converge without duplicate amplification or full-namespace replay on incremental sync, and CRDT deltas must carry actor watermarks so regions can audit sync progress, missing actors, and replication lag. A non-loopback Kubernetes drill must also prove that surviving regions continue writes and tombstone convergence during a physical zone outage, then converge the recovered PVC-backed region without resurrecting deleted memory.",
+        "evidence": "delta sync True, incremental records 1, field-only keys 1, sustained regions 3, sustained convergence 1.0, sustained delete suppression 1.0, sustained success 1.0, HTTP service-region convergence 1.0, HTTP final no-op imports 0, Kubernetes regions 3, zones 3, failure docker-pause-kind-worker, outage unavailable ['region-b'], outage writes 32, outage convergence 1.0, outage delete suppression 1.0, recovery convergence 1.0, recovery delete suppression 1.0, region workflow https://github.com/CaspianG/wavemind/actions/runs/29058433643, CRDT idempotent True, watermarks 3, watermark health pass, missing detected True, lag detected True",
+        "next_step": "Repeat the passing kind region-failure protocol on independent remote Kubernetes regions and feed that artifact into strict active-active admission."
       },
       {
         "id": "backup_restore_dr",
         "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
         "status": "pass",
-        "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage.",
-        "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env",
-        "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, then execute the Postgres PITR runbook against a staging or managed Postgres service and commit the drill report."
+        "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage. Kubernetes external-state deployments must restore PostgreSQL into an independent namespace, rebuild Qdrant exactly, and preserve recall through API replacement.",
+        "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env, Kubernetes DR pass 10/10, backup bytes 1016635, restore recall 1.0, Qdrant 24/24, replacement recall 1.0, restore 20449.092 ms, workflow https://github.com/CaspianG/wavemind/actions/runs/29064934749",
+        "next_step": "Repeat the passing independent-namespace Kubernetes restore with managed PostgreSQL PITR, remote object storage, and a separate recovery cluster before claiming managed-cloud or multi-region DR."
       },
       {
         "id": "structured_multimodal_payloads",
         "title": "Structured and multimodal payload retrieval works",
         "status": "pass",
         "requirement": "Images, audio, video, 3D assets, tables, temporal events, and graph facts must be storable, retrievable through the same memory API, queryable through a shared cross-modal embedding space, returned with provenance, and compatible with externally computed multimodal vectors. Temporal events must support actor filters, interval overlap, around-time reranking, recency reranking, persistence, and provenance. Large media assets must be backed by verified content-addressed object-store manifests. Knowledge graphs must support entity/predicate filters, multi-hop path traversal, persistence, and provenance. External multimodal encoders must pass a precomputed-vector contract that checks global retrieval, target-modality routing, persisted finite normalized vectors, provenance, and vector separation margin. Active cross-modal encoders must also pass health monitoring for finite normalized payload/query vectors, target routing, p95 encode latency, dimension compatibility, and separation margin.",
-        "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, encoder contract True, encoder global@1 1.0, encoder target@1 1.0, encoder margin 0.8113185907521259, encoder health True, encoder health global@1 1.0, encoder health query p95 1.4515499933622777 ms, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
+        "evidence": "modalities image, audio, table, event, video, 3d, graph, precision@1 1.0, cross-modal precision@1 1.0, vectors persisted 1.0, precomputed precision@1 1.0, encoder contract True, encoder global@1 1.0, encoder target@1 1.0, encoder margin 0.8113164444259024, encoder health True, encoder health global@1 1.0, encoder health query p95 1.5152499952819198 ms, provenance 1.0, temporal precision@1 1.0, temporal around/window/recency/interval 1/1/1/1, temporal persisted 1.0, temporal provenance 1.0, knowledge graph precision@1 1.0, knowledge graph direct/two-hop/three-hop/predicate 1/1/1/1, knowledge graph paths 1.0, knowledge graph persisted 1.0, knowledge graph provenance 1.0, asset manifest verified True, asset provenance 1",
         "next_step": "Run the same encoder contract and encoder-health check with real CLIP/audio/video/3D vectors from production encoders, then expand the multimodal, temporal-event, and knowledge-graph retrieval profiles against larger object-store-backed corpora."
       },
       {
@@ -662,15 +660,15 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-09T10:23:26Z",
-    "generated_at": "2026-07-09T10:22:38Z",
-    "source_ref": "040e94ca6594",
-    "workflow_run_id": null,
+    "checked_at": "2026-07-10T03:54:52Z",
+    "generated_at": "2026-07-10T03:54:52Z",
+    "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
+    "workflow_run_id": "29067655616",
     "refresh_profile": "local",
-    "max_age_days": 3650.0,
-    "age_days": 0.0005580422222222223,
-    "implemented_count": 29,
-    "runner_ready_count": 2,
+    "max_age_days": 8.0,
+    "age_days": 5.987523148148147e-06,
+    "implemented_count": 37,
+    "runner_ready_count": 3,
     "planned_count": 6,
     "errors": []
   },
@@ -882,23 +880,6 @@
       "warnings": [],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."
-    },
-    {
-      "id": "faiss_ivfpq_50m",
-      "title": "50M FAISS IVF-PQ streaming load",
-      "strict_status": "action_required",
-      "preflight_status": "action_required",
-      "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
-      "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
-      "issues": [
-        "missing artifact"
-      ],
-      "missing_env": [
-        "WAVEMIND_FAISS_IVFPQ_PATH"
-      ],
-      "warnings": [],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
-      "claim_unlocked": "50M compressed local/persistent FAISS profile."
     },
     {
       "id": "hundred_million_remote_load",

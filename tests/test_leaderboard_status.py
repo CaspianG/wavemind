@@ -289,7 +289,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "wavemind.production_evidence_bundle.v1"
     )
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
-    assert payload["production_evidence_bundle"]["next_action_count"] == 8
+    assert payload["production_evidence_bundle"]["next_action_count"] == 7
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
     assert payload["production_evidence_env"]["schema"] == (
         "wavemind.production_evidence_env_contract.v1"
