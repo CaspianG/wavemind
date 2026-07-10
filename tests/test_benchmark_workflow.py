@@ -245,6 +245,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
     assert 'WAVEMIND_FAISS_IVFPQ_NPROBE: "1024"' in workflow
+    assert 'WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP: "64,128,256,512,1024"' in workflow
     assert 'WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES: "5"' in workflow
     assert 'python -m pip install -e ".[dev,bench,indexes,postgres]"' in workflow
     assert "Validate production streaming result" in workflow

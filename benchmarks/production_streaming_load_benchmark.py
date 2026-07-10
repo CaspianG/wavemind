@@ -89,6 +89,14 @@ def _positive_int_env(name: str, default: int) -> int:
     return value
 
 
+def _positive_int_list_env(name: str, default: Iterable[int]) -> list[int]:
+    raw = os.environ.get(name)
+    values = [int(value) for value in _split_env_list(raw)] if raw else list(default)
+    if not values or any(value <= 0 for value in values):
+        raise ValueError(f"{name} must contain positive integers")
+    return sorted(set(values))
+
+
 def _without_none(values: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
@@ -573,6 +581,7 @@ def _streaming_plan_row(
             "WAVEMIND_FAISS_IVFPQ_M": str(pq_m),
             "WAVEMIND_FAISS_IVFPQ_NBITS": str(nbits),
             "WAVEMIND_FAISS_IVFPQ_NPROBE": str(nprobe),
+            "WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP": "64,128,256,512,1024",
             "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": str(training_size),
             "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES": "5",
         }
@@ -973,6 +982,8 @@ def run_faiss_ivfpq_streaming(
     seed: int,
     noise: float,
     batch_size: int,
+    target_recall: float = 0.95,
+    target_p99_ms: float = 100.0,
 ) -> dict[str, Any]:
     path = os.environ.get("WAVEMIND_FAISS_IVFPQ_PATH") or os.environ.get("WAVEMIND_FAISS_PATH")
     engine = "WaveMind faiss-ivfpq-persisted streaming"
@@ -995,6 +1006,18 @@ def run_faiss_ivfpq_streaming(
         )
     except ValueError as exc:
         return skipped_result(engine, str(exc))
+    try:
+        nprobe_candidates = _positive_int_list_env(
+            "WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP",
+            [nprobe],
+        )
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    if any(candidate > nlist for candidate in nprobe_candidates):
+        return skipped_result(
+            engine,
+            "WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP values must not exceed nlist",
+        )
 
     if dim % pq_m != 0:
         return skipped_result(engine, f"vector dim {dim} must be divisible by WAVEMIND_FAISS_IVFPQ_M={pq_m}")
@@ -1017,7 +1040,6 @@ def run_faiss_ivfpq_streaming(
             "nlist": int(nlist),
             "pq_m": int(pq_m),
             "nbits": int(nbits),
-            "nprobe": int(nprobe),
             "training_size": int(training_size),
         },
     )
@@ -1061,7 +1083,7 @@ def run_faiss_ivfpq_streaming(
             int(nbits),
             faiss.METRIC_INNER_PRODUCT,
         )
-    index.nprobe = int(min(max(1, nprobe), nlist))
+    index.nprobe = int(nprobe_candidates[0])
     output.parent.mkdir(parents=True, exist_ok=True)
 
     started = time.perf_counter()
@@ -1134,43 +1156,86 @@ def run_faiss_ivfpq_streaming(
     build_ms = (time.perf_counter() - started) * 1000.0
 
     queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
-    rows: list[dict[str, Any]] = []
-    for source_id, query in queries:
-        started = time.perf_counter()
-        _, labels = index.search(query.reshape(1, -1).astype(np.float32), top_k)
-        latency_ms = (time.perf_counter() - started) * 1000.0
-        top = [int(id) for id in labels[0] if int(id) >= 0]
-        rows.append(
-            {
-                "source_id": int(source_id),
-                "target_hit": int(source_id) in top,
-                "target_hit_at_1": bool(top and top[0] == int(source_id)),
-                "latency_ms": latency_ms,
-            }
+    measured: list[dict[str, Any]] = []
+    selected: dict[str, Any] | None = None
+    selection_reason = ""
+    for candidate in nprobe_candidates:
+        index.nprobe = int(candidate)
+        rows: list[dict[str, Any]] = []
+        for source_id, query in queries:
+            query_started = time.perf_counter()
+            _, labels = index.search(query.reshape(1, -1).astype(np.float32), top_k)
+            latency_ms = (time.perf_counter() - query_started) * 1000.0
+            top = [int(id) for id in labels[0] if int(id) >= 0]
+            rows.append(
+                {
+                    "source_id": int(source_id),
+                    "target_hit": int(source_id) in top,
+                    "target_hit_at_1": bool(top and top[0] == int(source_id)),
+                    "latency_ms": latency_ms,
+                }
+            )
+        candidate_result = _metrics_from_hits(
+            engine=engine,
+            vector_count=count,
+            dim=dim,
+            batch_size=batch_size,
+            top_k=top_k,
+            build_ms=build_ms,
+            query_rows=rows,
+            extra={"ivfpq_nprobe": int(candidate)},
         )
-    return _metrics_from_hits(
-        engine=engine,
-        vector_count=count,
-        dim=dim,
-        batch_size=batch_size,
-        top_k=top_k,
-        build_ms=build_ms,
-        query_rows=rows,
-        extra={
+        measured.append(candidate_result)
+        if (
+            float(candidate_result["recall_at_k"]) >= float(target_recall)
+            and float(candidate_result["p99_latency_ms"]) <= float(target_p99_ms)
+        ):
+            selected = candidate_result
+            selection_reason = "first_candidate_meeting_recall_and_p99"
+            break
+    if selected is None:
+        selected = max(
+            measured,
+            key=lambda row: (
+                float(row["recall_at_k"]),
+                -float(row["p99_latency_ms"]),
+            ),
+        )
+        selection_reason = "best_recall_then_latency_no_candidate_met_both_targets"
+    selected_nprobe = int(selected["ivfpq_nprobe"])
+    index.nprobe = selected_nprobe
+    selected.update(
+        {
             "index_path": artifact_index_path(output),
             "memory_mode": "streaming IVF-PQ; compressed codes plus query source vectors only",
             "faiss_index": "IndexIVFPQ",
             "ivfpq_nlist": int(nlist),
             "ivfpq_m": int(pq_m),
             "ivfpq_nbits": int(nbits),
-            "ivfpq_nprobe": int(index.nprobe),
+            "ivfpq_nprobe": selected_nprobe,
+            "ivfpq_nprobe_candidates": nprobe_candidates,
+            "ivfpq_nprobe_selection_reason": selection_reason,
+            "ivfpq_nprobe_target_recall": float(target_recall),
+            "ivfpq_nprobe_target_p99_ms": float(target_p99_ms),
+            "ivfpq_nprobe_sweep": [
+                {
+                    "nprobe": int(row["ivfpq_nprobe"]),
+                    "recall_at_k": float(row["recall_at_k"]),
+                    "recall_at_1": float(row["target_recall_at_1"]),
+                    "avg_latency_ms": float(row["avg_latency_ms"]),
+                    "p95_latency_ms": float(row["p95_latency_ms"]),
+                    "p99_latency_ms": float(row["p99_latency_ms"]),
+                }
+                for row in measured
+            ],
             "ivfpq_training_size": int(training_size),
             "faiss_checkpoint_interval_batches": int(checkpoint_interval_batches),
             "faiss_checkpoint_write_count": int(checkpoint_write_count),
-            "compression_note": "approximate target-recall; tune nprobe/nlist/M for recall-latency tradeoff",
+            "compression_note": "adaptive approximate target-recall sweep; selected nprobe is the lowest measured candidate meeting recall and p99 when available",
             **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
-        },
+        }
     )
+    return selected
 
 
 def run_qdrant_streaming(
@@ -1869,6 +1934,8 @@ def run_size(
     noise: float,
     batch_size: int,
     engines: Iterable[str],
+    target_recall: float = 0.95,
+    target_p99_ms: float = 100.0,
 ) -> dict[str, Any]:
     results = []
     for engine in engines:
@@ -1887,7 +1954,13 @@ def run_size(
         elif key in {"faiss", "faiss-persisted", "faiss-streaming"}:
             results.append(run_faiss_streaming(**kwargs))
         elif key in {"faiss-ivfpq", "faiss-ivfpq-persisted", "faiss-ivfpq-streaming"}:
-            results.append(run_faiss_ivfpq_streaming(**kwargs))
+            results.append(
+                run_faiss_ivfpq_streaming(
+                    **kwargs,
+                    target_recall=target_recall,
+                    target_p99_ms=target_p99_ms,
+                )
+            )
         elif key in {"qdrant", "qdrant-service", "qdrant-streaming"}:
             results.append(run_qdrant_streaming(**kwargs))
         elif key in {"qdrant-sharded", "qdrant-sharded-service", "qdrant-sharded-streaming"}:
@@ -1963,6 +2036,8 @@ def run_streaming_load(
                 noise=noise,
                 batch_size=batch_size,
                 engines=engines,
+                target_recall=target_recall,
+                target_p99_ms=target_p99_ms,
             )
             for size in size_list
         ],

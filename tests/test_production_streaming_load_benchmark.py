@@ -154,6 +154,7 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_M", "2")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NBITS", "8")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP", "1,2,4,8")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", "12000")
     monkeypatch.setenv("WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES", "2")
 
@@ -172,7 +173,11 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert row["engine"] == "WaveMind faiss-ivfpq-persisted streaming"
     assert row["faiss_index"] == "IndexIVFPQ"
     assert row["target_recall_at_k"] >= 0.95
-    assert row["ivfpq_nprobe"] == 8
+    assert row["ivfpq_nprobe"] in {1, 2, 4, 8}
+    assert row["ivfpq_nprobe_candidates"] == [1, 2, 4, 8]
+    assert row["ivfpq_nprobe_sweep"]
+    assert row["ivfpq_nprobe_sweep"][-1]["nprobe"] == row["ivfpq_nprobe"]
+    assert row["ivfpq_nprobe_selection_reason"] == "first_candidate_meeting_recall_and_p99"
     assert index_path.exists()
     assert checkpoint_path.exists()
     assert row["checkpoint_enabled"] is True
@@ -377,6 +382,7 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert row["required_local_free_gb"] > row["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in row["required_env"]
     assert row["command_env"]["WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES"] == "5"
+    assert row["command_env"]["WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP"] == "64,128,256,512,1024"
     assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in row["blockers"]
     assert row["runner_storage_root"] == "state"
     assert row["disk_free_path"]
