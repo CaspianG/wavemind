@@ -186,6 +186,14 @@ jobs:
             -l app.kubernetes.io/name=wavemind-operator || true
           kubectl logs deployment/wavemind-operator -n "$NAMESPACE" \
             --all-pods=true --prefix=true --tail=300 || true
+          kubectl get pods,deployments,statefulsets,services,endpoints,pvc \
+            -n wavemind-serverless -o wide || true
+          kubectl describe pods -n wavemind-serverless || true
+          kubectl logs deployment/wavemind-serverless-keda \
+            -n wavemind-serverless --all-pods=true --prefix=true --tail=300 || true
+          kubectl logs statefulset/postgres -n wavemind-serverless --tail=200 || true
+          kubectl logs statefulset/qdrant -n wavemind-serverless --tail=200 || true
+          kubectl logs statefulset/redis -n wavemind-serverless --tail=200 || true
           docker ps -a --format 'table {{.Names}}\t{{.Status}}' || true
 
       - uses: actions/upload-artifact@v4

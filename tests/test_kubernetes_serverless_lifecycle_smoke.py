@@ -116,6 +116,8 @@ def test_serverless_resources_use_external_persistent_state_and_zero_api_replica
     assert env["WAVEMIND_INDEX"]["value"] == "qdrant"
     assert env["WAVEMIND_SHARED_STORE_REFRESH_SECONDS"]["value"] == "0"
     assert env["WAVEMIND_REDIS_URL"]["valueFrom"]["secretKeyRef"]["name"] == "wavemind-redis"
+    assert container["command"] == ["wavemind"]
+    assert container["args"][:3] == ["serve", "--host", "0.0.0.0"]
     assert service["spec"]["type"] == "ClusterIP"
 
 

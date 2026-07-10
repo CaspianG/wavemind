@@ -66,6 +66,7 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
     assert service["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/min-scale"] == "0"
     assert service["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/max-scale"] == "50"
     assert service["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/target"] == "80"
+    assert container["command"] == ["wavemind"]
     assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
     assert env["WAVEMIND_STORE"]["value"] == "postgres"
     assert env["WAVEMIND_POSTGRES_DSN"]["valueFrom"]["secretKeyRef"] == {"name": "pg", "key": "dsn"}

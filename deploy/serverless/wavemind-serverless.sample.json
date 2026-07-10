@@ -38,6 +38,9 @@
               {
                 "name": "api",
                 "image": "ghcr.io/caspiang/wavemind:2.4.30",
+                "command": [
+                  "wavemind"
+                ],
                 "ports": [
                   {
                     "name": "http1",
@@ -164,6 +167,9 @@
               {
                 "name": "api",
                 "image": "ghcr.io/caspiang/wavemind:2.4.30",
+                "command": [
+                  "wavemind"
+                ],
                 "ports": [
                   {
                     "name": "http1",
