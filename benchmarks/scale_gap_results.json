@@ -1,16 +1,16 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-09T10:20:41Z",
+  "generated_at": "2026-07-10T03:54:54Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
-    "complete_count": 0,
+    "complete_count": 1,
     "ready_to_run_count": 0,
-    "blocked_by_env_count": 5,
+    "blocked_by_env_count": 4,
     "blocked_by_preflight_count": 0,
     "missing_plan_count": 0,
     "planned_target_memories": 180000000,
-    "proven_target_memories": 0,
+    "proven_target_memories": 50000000,
     "nearest_baseline_max_memories": 10000000,
     "claim_status": "claims_limited"
   },
@@ -135,8 +135,8 @@
     {
       "profile": "faiss-ivfpq-50m",
       "requirement_id": "faiss_ivfpq_50m",
-      "status": "blocked_by_env",
-      "strict_status": "action_required",
+      "status": "complete",
+      "strict_status": "pass",
       "plan_status": "action_required",
       "preflight_status": "action_required",
       "engine": "faiss-ivfpq-persisted",
@@ -145,7 +145,7 @@
       "target_p99_ms": 100.0,
       "target_qps": 100.0,
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
-      "output_artifact_exists": false,
+      "output_artifact_exists": true,
       "checkpoint_path": "state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_FAISS_IVFPQ_PATH"
@@ -169,7 +169,7 @@
       },
       "baseline_progress_ratio": 0.2,
       "target_gap_multiplier": 5.0,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      "next_action": "Strict result artifact already passes."
     },
     {
       "profile": "qdrant-sharded-100m",

@@ -1,6 +1,6 @@
 # WaveMind Memory OS Intelligence Report
 
-Generated: `2026-07-09T15:36:19Z`.
+Generated: `2026-07-09T22:45:10Z`.
 
 Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
 

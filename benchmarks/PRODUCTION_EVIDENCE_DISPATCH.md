@@ -9,8 +9,8 @@ strict production-evidence validation.
 |---|---:|
 | overall status | `action_required` |
 | ready to dispatch | `0` |
-| blocked by preflight | `8` |
-| complete | `0` |
+| blocked by preflight | `7` |
+| complete | `1` |
 | total jobs | `8` |
 | runner label | `self-hosted-large` |
 | commit results default | `False` |
@@ -25,7 +25,7 @@ strict production-evidence validation.
 | 10M Qdrant service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` |
 | 10M sharded Qdrant service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` |
 | 10M pgvector service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` |
-| 50M FAISS IVF-PQ streaming load | `blocked_by_preflight` | `large-local-index` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` |
+| 50M FAISS IVF-PQ streaming load | `complete` | `large-local-index` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` |
 | 100M remote load result | `blocked_by_preflight` | `hundred-million-service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS` |
 
 ## Safe Launch Commands

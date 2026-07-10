@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-09T10:21:55Z",
+  "generated_at": "2026-07-10T03:54:54Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -9,8 +9,8 @@
     "readiness_status": "action_required",
     "claim_status": "claims_limited",
     "total_requirements": 8,
-    "action_required_count": 8,
-    "complete_count": 0,
+    "action_required_count": 7,
+    "complete_count": 1,
     "ready_for_safe_dispatch_count": 0,
     "can_auto_run_now_count": 0,
     "target_memories_total": 180000000,
@@ -18,10 +18,12 @@
       "pass": 8
     },
     "dispatch_status_counts": {
-      "blocked_by_preflight": 8
+      "blocked_by_preflight": 7,
+      "complete": 1
     },
     "blocker_counts": {
-      "missing_env": 8
+      "complete": 1,
+      "missing_env": 7
     }
   },
   "checks": [
@@ -339,14 +341,14 @@
     {
       "id": "faiss_ivfpq_50m",
       "title": "50M FAISS IVF-PQ streaming load",
-      "strict_status": "action_required",
+      "strict_status": "pass",
       "preflight_status": "action_required",
-      "dispatch_status": "blocked_by_preflight",
-      "scale_gap_status": "blocked_by_env",
+      "dispatch_status": "complete",
+      "scale_gap_status": "complete",
       "workflow": "production-streaming-load.yml",
       "wave": "large-local-index",
       "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
-      "artifact_exists": false,
+      "artifact_exists": true,
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "claim_unlocked": "50M compressed local/persistent FAISS profile.",
       "locked_claim": "10M-100M service-backed production scale",
@@ -374,8 +376,8 @@
       "post_ingest_refresh_command": "python benchmarks/strict_evidence_readiness_report.py --output benchmarks/strict_evidence_readiness_results.json --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md",
       "ready_for_safe_dispatch": false,
       "can_auto_run_now": false,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate.",
-      "blocker_category": "missing_env"
+      "next_action": "Strict result artifact already passes.",
+      "blocker_category": "complete"
     },
     {
       "id": "hundred_million_remote_load",
