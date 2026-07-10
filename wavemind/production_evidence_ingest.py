@@ -189,14 +189,6 @@ def refresh_commands() -> list[list[str]]:
         ],
         [
             python,
-            "benchmarks/validate_benchmark_artifacts.py",
-            "--max-age-days",
-            "8",
-            "--output",
-            "benchmarks/benchmark_artifact_audit.json",
-        ],
-        [
-            python,
             "benchmarks/production_readiness_gate.py",
             "--output",
             "benchmarks/production_readiness_results.json",
@@ -212,6 +204,7 @@ def refresh_commands() -> list[list[str]]:
             "benchmarks/PRODUCTION_EVIDENCE.md",
         ],
         [python, "-m", "wavemind", "production-evidence-preflight", "--write-artifacts"],
+        [python, "-m", "wavemind", "production-evidence-env", "--write-artifacts"],
         [python, "-m", "wavemind", "production-evidence-dispatch", "--write-artifacts"],
         [python, "-m", "wavemind", "production-evidence-bundle", "--write-artifacts"],
         [python, "-m", "wavemind", "release-claims", "--write-artifacts"],
@@ -235,6 +228,20 @@ def refresh_commands() -> list[list[str]]:
             "qdrant-sharded-service",
             "--allow-plan-only",
             "--write-artifacts",
+        ],
+        [
+            python,
+            "benchmarks/render_leaderboard_status.py",
+            "--output",
+            "docs/data/leaderboard-status.json",
+        ],
+        [
+            python,
+            "benchmarks/validate_benchmark_artifacts.py",
+            "--max-age-days",
+            "8",
+            "--output",
+            "benchmarks/benchmark_artifact_audit.json",
         ],
         [
             python,

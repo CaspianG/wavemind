@@ -51,10 +51,10 @@ def test_production_evidence_gate_tracks_strict_external_claims():
     assert payload["summary"]["action_required_count"] >= 1
 
     by_id = {row["id"]: row for row in payload["requirements"]}
-    assert by_id["external_http_cluster"]["status"] == "action_required"
-    assert "non-loopback Kubernetes, staging, or production" in " ".join(
-        by_id["external_http_cluster"]["issues"]
-    )
+    assert by_id["external_http_cluster"]["status"] == "pass"
+    assert by_id["external_http_cluster"]["issues"] == []
+    assert "query p99 84.799" in by_id["external_http_cluster"]["evidence"]
+    assert "lifecycle batch p99 6694.757" in by_id["external_http_cluster"]["evidence"]
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["external_http_active_active"]["artifact"] == (
         "benchmarks/external_http_active_active_results.json"

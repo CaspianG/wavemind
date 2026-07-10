@@ -53,15 +53,15 @@ def test_production_evidence_bundle_keeps_claims_limited_without_remote_artifact
     assert payload["summary"]["production_scale_run_contract_status"] == "available"
     assert payload["summary"]["production_scale_run_profile_count"] == 5
     assert payload["summary"]["production_scale_run_target_memories_total"] == 180_000_000
-    assert payload["summary"]["strict_pass_count"] == 1
-    assert payload["summary"]["next_action_count"] == 7
+    assert payload["summary"]["strict_pass_count"] == 2
+    assert payload["summary"]["next_action_count"] == 6
     assert payload["production_scale_run_contract"]["status"] == "available"
     assert payload["production_scale_run_contract"]["profile_count"] == 5
 
     claims = {row["claim"]: row for row in payload["claim_boundaries"]}
     assert claims["Core library/API readiness"]["status"] == "unlocked"
     assert claims["Large-N production run contracts"]["status"] == "available"
-    assert claims["Non-loopback Kubernetes service-node cluster SLO"]["status"] == "locked"
+    assert claims["Non-loopback Kubernetes service-node cluster SLO"]["status"] == "unlocked"
     assert claims["10M-100M service-backed production scale"]["status"] == "locked"
 
 
@@ -74,9 +74,7 @@ def test_production_evidence_bundle_uses_preflight_for_next_actions(tmp_path):
     assert payload["summary"]["preflight_ready_count"] == 8
 
     by_id = {row["id"]: row for row in payload["next_actions"]}
-    assert by_id["external_http_cluster"]["preflight_status"] == "ready"
-    assert by_id["external_http_cluster"]["missing_env"] == []
-    assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
+    assert "external_http_cluster" not in by_id
     assert by_id["hundred_million_remote_load"]["preflight_status"] == "ready"
 
 

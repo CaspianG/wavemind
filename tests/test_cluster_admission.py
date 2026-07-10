@@ -140,7 +140,7 @@ def _write_remote_cluster_artifact(
     return artifact
 
 
-def test_cluster_admission_blocks_current_loopback_evidence():
+def test_cluster_admission_blocks_without_a_matching_target_configuration():
     payload = evaluate_cluster_admission(
         PROJECT_ROOT,
         allow_plan_only=False,
@@ -152,16 +152,16 @@ def test_cluster_admission_blocks_current_loopback_evidence():
     assert payload["admitted"] is False
     assert payload["claim_boundary"] == "external_http_cluster_evidence_required"
     assert payload["required_evidence"]["id"] == "external_http_cluster"
-    assert payload["required_evidence"]["status"] == "action_required"
+    assert payload["required_evidence"]["status"] == "pass"
     assert payload["required_evidence"]["artifact"] == (
         "benchmarks/http_cluster_load_results.json"
     )
-    assert payload["requested_evidence"]["status"] == "fail"
+    assert payload["requested_evidence"]["status"] == "pass"
     assert "WAVEMIND_CLUSTER_NODES" in payload["summary"]["missing_env"]
-    assert any("strict_status=action_required" in item for item in payload["issues"])
-    assert any(
-        "requested_evidence_status=fail" in item for item in payload["issues"]
-    )
+    assert payload["summary"]["strict_status"] == "pass"
+    assert payload["summary"]["target_urls_match"] is False
+    assert any("preflight is not ready" in item for item in payload["issues"])
+    assert any("do not match" in item for item in payload["issues"])
 
 
 def test_cluster_admission_admits_matching_remote_cluster_evidence(tmp_path):
@@ -241,7 +241,7 @@ def test_cluster_admission_allows_plan_only_reporting():
 
     assert payload["status"] == "plan_only"
     assert payload["admitted"] is False
-    assert payload["summary"]["strict_status"] == "action_required"
+    assert payload["summary"]["strict_status"] == "pass"
     assert payload["summary"]["preflight_status"] == "action_required"
     assert payload["next_actions"]
 

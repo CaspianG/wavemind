@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-10T04:18:07Z",
+  "generated_at": "2026-07-10T05:23:35Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-10T03:54:52Z",
+      "evidence": "audit status pass, generated_at 2026-07-10T05:20:27Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -145,7 +145,7 @@
       "title": "Kubernetes operator passes a real multi-node failover drill",
       "status": "pass",
       "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, redundant operator replicas with Kubernetes Lease/etcd leader election, resourceVersion CAS, and cross-node anti-affinity, a traceable multi-node Kubernetes CI failure drill with leader takeover, post-failover reconcile, PDB/topology protection, pod replacement, CR-driven rolling upgrade, non-loopback pod-DNS quorum traffic through a physical worker outage, and API recovery, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
-      "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, PDB min available 3, topology constraints 2, rolling pods replaced 4, upgraded API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, network drill pass via docker-pause-kind-worker, service nodes 4, zones 3, outage recall 1.0, failed nodes ['wavemind-ci-0'], recovery recall 1.0, network workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
+      "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, PDB min available 3, topology constraints 2, rolling pods replaced 4, upgraded API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, network drill pass via docker-pause-kind-worker, service nodes 4, zones 3, outage recall 1.0, failed nodes ['wavemind-ci-2'], recovery recall 1.0, network workflow https://github.com/CaspianG/wavemind/actions/runs/29070578441, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
       "next_step": "Repeat the same drill against a non-ephemeral remote Kubernetes staging cluster and feed its service endpoints into strict cluster admission."
     },
     {
@@ -337,8 +337,8 @@
       "id": "external_http_cluster_load",
       "title": "External HTTP service-node load evidence",
       "status": "pass",
-      "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
-      "next_step": "Replace this loopback service-node run with a remote Kubernetes/serverless node manifest run."
+      "evidence": "nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms",
+      "next_step": "Keep the external service-node run current for release candidates."
     },
     {
       "id": "external_http_active_active",

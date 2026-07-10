@@ -18,13 +18,13 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     assert payload["readiness_status"] == "action_required"
     assert payload["claim_status"] == "claims_limited"
     assert payload["summary"]["total_requirements"] == 8
-    assert payload["summary"]["action_required_count"] == 7
-    assert payload["summary"]["complete_count"] == 1
+    assert payload["summary"]["action_required_count"] == 6
+    assert payload["summary"]["complete_count"] == 2
     assert payload["summary"]["target_memories_total"] == 180_000_000
     assert payload["summary"]["check_counts"] == {"pass": 8}
     assert payload["summary"]["can_auto_run_now_count"] == 0
-    assert payload["summary"]["blocker_counts"]["missing_env"] == 7
-    assert payload["summary"]["blocker_counts"]["complete"] == 1
+    assert payload["summary"]["blocker_counts"]["missing_env"] == 6
+    assert payload["summary"]["blocker_counts"]["complete"] == 2
 
     by_id = {row["id"]: row for row in payload["requirements"]}
     assert set(by_id) == {
@@ -40,7 +40,7 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
 
     assert by_id["external_http_cluster"]["workflow"] == "external-http-cluster-load.yml"
     assert by_id["external_http_cluster"]["locked_claim"] == (
-        "Remote service-node cluster SLO"
+        "Non-loopback Kubernetes service-node cluster load SLO."
     )
     assert by_id["external_http_cluster"]["safe_dispatch_command"].endswith(
         '-f commit_results="false"'

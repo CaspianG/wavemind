@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-10T04:17:42Z",
+  "generated_at": "2026-07-10T05:23:41Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -9,8 +9,8 @@
     "readiness_status": "action_required",
     "claim_status": "claims_limited",
     "total_requirements": 8,
-    "action_required_count": 7,
-    "complete_count": 1,
+    "action_required_count": 6,
+    "complete_count": 2,
     "ready_for_safe_dispatch_count": 0,
     "can_auto_run_now_count": 0,
     "target_memories_total": 180000000,
@@ -18,12 +18,12 @@
       "pass": 8
     },
     "dispatch_status_counts": {
-      "blocked_by_preflight": 7,
-      "complete": 1
+      "blocked_by_preflight": 6,
+      "complete": 2
     },
     "blocker_counts": {
-      "complete": 1,
-      "missing_env": 7
+      "complete": 2,
+      "missing_env": 6
     }
   },
   "checks": [
@@ -71,18 +71,18 @@
   "requirements": [
     {
       "id": "external_http_cluster",
-      "title": "External HTTP service-node load",
-      "strict_status": "action_required",
+      "title": "Non-loopback Kubernetes or external HTTP service-node load",
+      "strict_status": "pass",
       "preflight_status": "action_required",
-      "dispatch_status": "blocked_by_preflight",
+      "dispatch_status": "complete",
       "scale_gap_status": "",
       "workflow": "external-http-cluster-load.yml",
       "wave": "remote-service",
       "artifact": "benchmarks/http_cluster_load_results.json",
       "artifact_exists": true,
       "output_artifact": "benchmarks/http_cluster_load_results.json",
-      "claim_unlocked": "Remote service-node cluster load SLO.",
-      "locked_claim": "Remote service-node cluster SLO",
+      "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO.",
+      "locked_claim": "Non-loopback Kubernetes service-node cluster load SLO.",
       "target_memories": 0,
       "target_recall_at_k": null,
       "target_p99_ms": null,
@@ -115,7 +115,7 @@
       "ready_for_safe_dispatch": false,
       "can_auto_run_now": false,
       "next_action": "Provision prerequisites, run the safe dispatch command, download the artifact, ingest it, then rerun strict validation.",
-      "blocker_category": "missing_env"
+      "blocker_category": "complete"
     },
     {
       "id": "external_http_active_active",

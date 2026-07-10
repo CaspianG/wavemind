@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-10T04:18:05Z",
-  "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
-  "workflow_run_id": "29067655616",
+  "generated_at": "2026-07-10T05:43:25Z",
+  "source_ref": "3d40e894b493",
+  "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
   "publishing_status": "publishable_with_claim_limits",
@@ -14,8 +14,8 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
-    "workflow_run_id": "29067655616",
+    "source_ref": "3d40e894b493",
+    "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
     "github_pages": {
@@ -39,7 +39,7 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T04:18:05Z",
+    "checked_at": "2026-07-10T05:43:25Z",
     "max_age_days": 8.0,
     "source_count": 32,
     "fresh_count": 32,
@@ -55,15 +55,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T03:54:52Z",
-        "age_days": 0.016122685185185184,
+        "timestamp": "2026-07-10T05:23:32Z",
+        "age_days": 0.01380787037037037,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-10T04:18:05Z",
+        "timestamp": "2026-07-10T05:43:25Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -71,72 +71,72 @@
         "path": "benchmarks/production_readiness_results.json",
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:18:07Z",
-        "age_days": 0.0,
+        "timestamp": "2026-07-10T05:23:35Z",
+        "age_days": 0.013773148148148149,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_results.json",
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:37Z",
-        "age_days": 0.00032407407407407406,
+        "timestamp": "2026-07-10T05:23:36Z",
+        "age_days": 0.013761574074074074,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_preflight_results.json",
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:38Z",
-        "age_days": 0.0003125,
+        "timestamp": "2026-07-10T05:23:37Z",
+        "age_days": 0.01375,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_env_contract.json",
         "schema": "wavemind.production_evidence_env_contract.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-09T14:18:25Z",
-        "age_days": 0.5831018518518518,
+        "timestamp": "2026-07-10T05:23:37Z",
+        "age_days": 0.01375,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:40Z",
-        "age_days": 0.00028935185185185184,
+        "timestamp": "2026-07-10T05:23:39Z",
+        "age_days": 0.013726851851851851,
         "status": "pass"
       },
       {
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:41Z",
-        "age_days": 0.0002777777777777778,
+        "timestamp": "2026-07-10T05:23:40Z",
+        "age_days": 0.013715277777777778,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:42Z",
-        "age_days": 0.0002662037037037037,
+        "timestamp": "2026-07-10T05:23:41Z",
+        "age_days": 0.013703703703703704,
         "status": "pass"
       },
       {
         "path": "benchmarks/strict_evidence_readiness_results.json",
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:42Z",
-        "age_days": 0.0002662037037037037,
+        "timestamp": "2026-07-10T05:23:41Z",
+        "age_days": 0.013703703703703704,
         "status": "pass"
       },
       {
         "path": "benchmarks/cluster_admission_results.json",
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-09T10:20:16Z",
-        "age_days": 0.7484837962962962,
+        "timestamp": "2026-07-10T05:23:44Z",
+        "age_days": 0.013668981481481482,
         "status": "pass"
       },
       {
@@ -144,7 +144,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.7480208333333334,
+        "age_days": 0.8072800925925926,
         "status": "pass"
       },
       {
@@ -152,7 +152,7 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.7480208333333334,
+        "age_days": 0.8072800925925926,
         "status": "pass"
       },
       {
@@ -160,7 +160,7 @@
         "schema": "wavemind.multimodal_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T12:56:09Z",
-        "age_days": 0.6402314814814815,
+        "age_days": 0.6994907407407407,
         "status": "pass"
       },
       {
@@ -168,7 +168,7 @@
         "schema": "wavemind.memory_os_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T00:40:28Z",
-        "age_days": 1.1511226851851852,
+        "age_days": 1.2103819444444444,
         "status": "pass"
       },
       {
@@ -176,7 +176,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T01:06:28Z",
-        "age_days": 1.1330671296296295,
+        "age_days": 1.1923263888888889,
         "status": "pass"
       },
       {
@@ -184,7 +184,7 @@
         "schema": "wavemind.memory_os_policy_evolution.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T13:44:41Z",
-        "age_days": 0.6065277777777778,
+        "age_days": 0.665787037037037,
         "status": "pass"
       },
       {
@@ -192,15 +192,15 @@
         "schema": "wavemind.memory_os_policy_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T19:29:13Z",
-        "age_days": 0.3672685185185185,
+        "age_days": 0.4265277777777778,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_dispatch_results.json",
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T04:17:39Z",
-        "age_days": 0.00030092592592592595,
+        "timestamp": "2026-07-10T05:23:38Z",
+        "age_days": 0.013738425925925926,
         "status": "pass"
       },
       {
@@ -208,7 +208,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T04:17:18Z",
-        "age_days": 0.0005439814814814814,
+        "age_days": 0.05980324074074074,
         "status": "pass"
       },
       {
@@ -216,7 +216,7 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T17:24:13Z",
-        "age_days": 1.454074074074074,
+        "age_days": 1.5133333333333334,
         "status": "pass"
       },
       {
@@ -224,7 +224,7 @@
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T03:54:52Z",
-        "age_days": 0.016122685185185184,
+        "age_days": 0.07538194444444445,
         "status": "pass"
       },
       {
@@ -232,7 +232,7 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.23119212962962962,
+        "age_days": 0.2904513888888889,
         "status": "pass"
       },
       {
@@ -240,7 +240,7 @@
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.23119212962962962,
+        "age_days": 0.2904513888888889,
         "status": "pass"
       },
       {
@@ -248,7 +248,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.23119212962962962,
+        "age_days": 0.2904513888888889,
         "status": "pass"
       },
       {
@@ -256,15 +256,15 @@
         "schema": "wavemind.kubernetes_operator_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T23:28:34.759347Z",
-        "age_days": 0.20104445200231483,
+        "age_days": 0.2603037112615741,
         "status": "pass"
       },
       {
         "path": "benchmarks/kubernetes_cluster_network_smoke_results.json",
         "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-09T23:28:55.566930+00:00",
-        "age_days": 0.20080362349537037,
+        "timestamp": "2026-07-10T05:13:44.475824+00:00",
+        "age_days": 0.020607918703703702,
         "status": "pass"
       },
       {
@@ -272,7 +272,7 @@
         "schema": "wavemind.kubernetes_active_active_region_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T23:55:54.133679+00:00",
-        "age_days": 0.1820702120486111,
+        "age_days": 0.24132947130787039,
         "status": "pass"
       },
       {
@@ -280,7 +280,7 @@
         "schema": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T02:42:30.318307+00:00",
-        "age_days": 0.06637363070601852,
+        "age_days": 0.12563288996527777,
         "status": "pass"
       },
       {
@@ -288,7 +288,7 @@
         "schema": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T02:42:53.084317+00:00",
-        "age_days": 0.06611013521990741,
+        "age_days": 0.12536939447916665,
         "status": "pass"
       },
       {
@@ -296,7 +296,7 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.23119212962962962,
+        "age_days": 0.2904513888888889,
         "status": "pass"
       },
       {
@@ -304,14 +304,14 @@
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T03:54:52Z",
-        "age_days": 0.016122685185185184,
+        "age_days": 0.07538194444444445,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-10T03:54:52Z",
+    "generated_at": "2026-07-10T05:23:32Z",
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -340,8 +340,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T04:18:05Z",
-    "age_days": 0.01613123474537037,
+    "checked_at": "2026-07-10T05:43:25Z",
+    "age_days": 0.013808492650462965,
     "max_age_days": 8.0,
     "errors": []
   },
@@ -711,20 +711,20 @@
     "status": "pass",
     "environment": "kind-multinode-network-ci",
     "evidence_source": "github-actions-kind-physical-node-pause",
-    "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
-    "workflow_run_id": "29057247023",
-    "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023",
+    "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
+    "workflow_run_id": "29070578441",
+    "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
     "passed_checks": 13,
     "check_count": 13,
     "service_node_count": 4,
     "zone_count": 3,
     "failure_method": "docker-pause-kind-worker",
-    "target_worker": "wavemind-ci-worker2",
-    "target_zone": "zone-b",
-    "outage_duration_ms": 9254.708,
+    "target_worker": "wavemind-ci-worker",
+    "target_zone": "zone-a",
+    "outage_duration_ms": 8911.648,
     "outage_hit_rate": 1.0,
     "failed_nodes_during_outage": [
-      "wavemind-ci-0"
+      "wavemind-ci-2"
     ],
     "recovery_hit_rate": 1.0,
     "failed_nodes_after_recovery": [],
@@ -886,22 +886,12 @@
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "pass_count": 1,
-      "action_required_count": 7,
+      "pass_count": 2,
+      "action_required_count": 6,
       "fail_count": 0,
       "total_requirements": 8
     },
     "action_required": [
-      {
-        "id": "external_http_cluster",
-        "title": "External HTTP service-node load",
-        "artifact": "benchmarks/http_cluster_load_results.json",
-        "claim_unlocked": "Remote service-node cluster load SLO.",
-        "issues": [
-          "environment must be a real remote/staging/production deployment",
-          "source must identify a real remote run, not a sample or loopback"
-        ]
-      },
       {
         "id": "external_http_active_active",
         "title": "External HTTP active-active regions",
@@ -964,7 +954,7 @@
     "summary": {
       "claim_status": "claims_limited",
       "strict_overall_status": "action_required",
-      "strict_pass_count": 1,
+      "strict_pass_count": 2,
       "strict_total_requirements": 8,
       "preflight_overall_status": "action_required",
       "preflight_ready_count": 0,
@@ -976,9 +966,9 @@
       "production_scale_run_contract_status": "available",
       "production_scale_run_profile_count": 5,
       "production_scale_run_target_memories_total": 180000000,
-      "next_action_count": 7
+      "next_action_count": 6
     },
-    "next_action_count": 7,
+    "next_action_count": 6,
     "production_scale_run_contract": {
       "status": "available",
       "artifact": "benchmarks/production_scale_run_plan.json",
@@ -1190,8 +1180,8 @@
       "overall_status": "action_required",
       "total_jobs": 8,
       "ready_to_dispatch_count": 0,
-      "blocked_by_preflight_count": 7,
-      "complete_count": 1,
+      "blocked_by_preflight_count": 6,
+      "complete_count": 2,
       "commit_results_default": false,
       "runner_label": "self-hosted-large",
       "wave_counts": {
@@ -1201,23 +1191,23 @@
         "service-scale-10m": 3
       },
       "status_counts": {
-        "blocked_by_preflight": 7,
-        "complete": 1
+        "blocked_by_preflight": 6,
+        "complete": 2
       }
     },
     "jobs": [
       {
         "id": "external_http_cluster",
-        "title": "External HTTP service-node load",
-        "status": "blocked_by_preflight",
-        "dispatch_required": true,
+        "title": "Non-loopback Kubernetes or external HTTP service-node load",
+        "status": "complete",
+        "dispatch_required": false,
         "ready": false,
-        "strict_status": "action_required",
+        "strict_status": "pass",
         "preflight_status": "action_required",
         "wave": "remote-service",
         "workflow": "external-http-cluster-load.yml",
         "artifact": "benchmarks/http_cluster_load_results.json",
-        "claim_unlocked": "Remote service-node cluster load SLO.",
+        "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO.",
         "inputs": {
           "nodes": "$WAVEMIND_CLUSTER_NODES",
           "nodes_manifest_json": "$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
@@ -1616,9 +1606,9 @@
       "strict_overall_status": "action_required",
       "production_readiness_status": "pass",
       "artifact_audit_status": "pass",
-      "allowed_claim_count": 2,
-      "locked_claim_count": 3,
-      "next_action_count": 7
+      "allowed_claim_count": 3,
+      "locked_claim_count": 2,
+      "next_action_count": 6
     },
     "allowed_claims": [
       {
@@ -1627,17 +1617,17 @@
         "evidence": "production_readiness_results.json and benchmark_artifact_audit.json"
       },
       {
+        "claim": "Non-loopback Kubernetes service-node cluster SLO",
+        "status": "unlocked",
+        "evidence": "benchmarks/http_cluster_load_results.json"
+      },
+      {
         "claim": "Large-N production run contracts",
         "status": "available",
         "evidence": "benchmarks/production_scale_run_plan.json"
       }
     ],
     "locked_claims": [
-      {
-        "claim": "Remote service-node cluster SLO",
-        "status": "locked",
-        "evidence": "benchmarks/http_cluster_load_results.json"
-      },
       {
         "claim": "Remote multi-region active-active convergence",
         "status": "locked",
@@ -1873,8 +1863,8 @@
       "readiness_status": "action_required",
       "claim_status": "claims_limited",
       "total_requirements": 8,
-      "action_required_count": 7,
-      "complete_count": 1,
+      "action_required_count": 6,
+      "complete_count": 2,
       "ready_for_safe_dispatch_count": 0,
       "can_auto_run_now_count": 0,
       "target_memories_total": 180000000,
@@ -1882,12 +1872,12 @@
         "pass": 8
       },
       "dispatch_status_counts": {
-        "blocked_by_preflight": 7,
-        "complete": 1
+        "blocked_by_preflight": 6,
+        "complete": 2
       },
       "blocker_counts": {
-        "complete": 1,
-        "missing_env": 7
+        "complete": 2,
+        "missing_env": 6
       }
     },
     "checks": [
@@ -1935,18 +1925,18 @@
     "requirements": [
       {
         "id": "external_http_cluster",
-        "title": "External HTTP service-node load",
-        "strict_status": "action_required",
+        "title": "Non-loopback Kubernetes or external HTTP service-node load",
+        "strict_status": "pass",
         "preflight_status": "action_required",
-        "dispatch_status": "blocked_by_preflight",
+        "dispatch_status": "complete",
         "scale_gap_status": "",
         "workflow": "external-http-cluster-load.yml",
         "wave": "remote-service",
         "artifact": "benchmarks/http_cluster_load_results.json",
         "artifact_exists": true,
         "output_artifact": "benchmarks/http_cluster_load_results.json",
-        "claim_unlocked": "Remote service-node cluster load SLO.",
-        "locked_claim": "Remote service-node cluster SLO",
+        "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO.",
+        "locked_claim": "Non-loopback Kubernetes service-node cluster load SLO.",
         "target_memories": 0,
         "target_recall_at_k": null,
         "target_p99_ms": null,
@@ -1979,7 +1969,7 @@
         "ready_for_safe_dispatch": false,
         "can_auto_run_now": false,
         "next_action": "Provision prerequisites, run the safe dispatch command, download the artifact, ingest it, then rerun strict validation.",
-        "blocker_category": "missing_env"
+        "blocker_category": "complete"
       },
       {
         "id": "external_http_active_active",
@@ -2291,44 +2281,38 @@
   },
   "cluster_admission": {
     "schema": "wavemind.cluster_admission.v1",
-    "status": "plan_only",
-    "admitted": false,
+    "status": "admitted",
+    "admitted": true,
     "claim_boundary": "external_http_cluster_evidence_required",
     "summary": {
-      "status": "plan_only",
-      "admitted": false,
-      "strict_status": "action_required",
-      "requested_evidence_status": "fail",
-      "preflight_status": "action_required",
+      "status": "admitted",
+      "admitted": true,
+      "strict_status": "pass",
+      "requested_evidence_status": "pass",
+      "preflight_status": "ready",
+      "target_urls_match": true,
+      "configured_node_count": 4,
+      "evidence_node_count": 4,
       "required_artifact": "benchmarks/http_cluster_load_results.json",
-      "missing_env": [
-        "WAVEMIND_CLUSTER_NODES",
-        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
-      ],
-      "blocking_issue_count": 4,
-      "warning_count": 3
+      "missing_env": [],
+      "blocking_issue_count": 0,
+      "warning_count": 0
     },
     "required_evidence": {
       "id": "external_http_cluster",
-      "title": "External HTTP service-node load",
-      "status": "action_required",
+      "title": "Non-loopback Kubernetes or external HTTP service-node load",
+      "status": "pass",
       "artifact": "benchmarks/http_cluster_load_results.json",
-      "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
-      "issues": [
-        "environment must be a real remote/staging/production deployment",
-        "source must identify a real remote run, not a sample or loopback"
-      ],
+      "evidence": "nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms",
+      "issues": [],
       "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true",
-      "claim_unlocked": "Remote service-node cluster load SLO."
+      "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO."
     },
     "requested_evidence": {
-      "status": "fail",
+      "status": "pass",
       "artifact": "benchmarks/http_cluster_load_results.json",
-      "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms; issues: environment must be a real remote/staging/production deployment, source must identify a real remote run, not a sample or loopback",
-      "issues": [
-        "environment must be a real remote/staging/production deployment",
-        "source must identify a real remote run, not a sample or loopback"
-      ],
+      "evidence": "nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms",
+      "issues": [],
       "min_nodes": 4,
       "namespace_count": 32,
       "memories_per_namespace": 8,
@@ -2339,24 +2323,43 @@
       "p99_slo_ms": 1000.0
     },
     "preflight": {
-      "status": "action_required",
-      "ready": false,
-      "evidence": "0 URLs configured",
+      "status": "ready",
+      "ready": true,
+      "evidence": "4 URLs configured",
       "required_env": [
         "WAVEMIND_CLUSTER_NODES",
         "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
       ],
-      "missing_env": [
-        "WAVEMIND_CLUSTER_NODES",
-        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
-      ],
-      "issues": [
-        "cluster node requires at least 4 URLs",
-        "set WAVEMIND_CLUSTER_NODES or WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
-      ],
+      "missing_env": [],
+      "issues": [],
       "warnings": [
         "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
       ],
+      "configured_urls": [
+        "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      ],
+      "evidence_urls": [
+        "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      ],
+      "configured_nodes": {
+        "wavemind-ci-0": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-1": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-2": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-3": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      },
+      "evidence_nodes": {
+        "wavemind-ci-0": "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-1": "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-2": "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "wavemind-ci-3": "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      },
+      "target_urls_match": true,
       "output_artifact": "benchmarks/http_cluster_load_results.json"
     }
   },

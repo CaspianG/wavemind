@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.production_evidence_dispatch.v1",
-  "generated_at": "2026-07-10T04:17:39Z",
+  "generated_at": "2026-07-10T05:23:38Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
     "total_jobs": 8,
     "ready_to_dispatch_count": 0,
-    "blocked_by_preflight_count": 7,
-    "complete_count": 1,
+    "blocked_by_preflight_count": 6,
+    "complete_count": 2,
     "commit_results_default": false,
     "runner_label": "self-hosted-large",
     "wave_counts": {
@@ -17,8 +17,8 @@
       "service-scale-10m": 3
     },
     "status_counts": {
-      "blocked_by_preflight": 7,
-      "complete": 1
+      "blocked_by_preflight": 6,
+      "complete": 2
     }
   },
   "launch_policy": {
@@ -29,16 +29,16 @@
   "jobs": [
     {
       "id": "external_http_cluster",
-      "title": "External HTTP service-node load",
-      "status": "blocked_by_preflight",
-      "dispatch_required": true,
+      "title": "Non-loopback Kubernetes or external HTTP service-node load",
+      "status": "complete",
+      "dispatch_required": false,
       "ready": false,
-      "strict_status": "action_required",
+      "strict_status": "pass",
       "preflight_status": "action_required",
       "wave": "remote-service",
       "workflow": "external-http-cluster-load.yml",
       "artifact": "benchmarks/http_cluster_load_results.json",
-      "claim_unlocked": "Remote service-node cluster load SLO.",
+      "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO.",
       "inputs": {
         "nodes": "$WAVEMIND_CLUSTER_NODES",
         "nodes_manifest_json": "$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",

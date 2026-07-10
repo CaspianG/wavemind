@@ -222,11 +222,17 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert network_current["failure_method"] == "docker-pause-kind-worker"
     assert network_current["seed_memories"] == 256
     assert network_current["outage_hit_rate"] == 1.0
-    assert network_current["failed_nodes_during_outage"] == ["wavemind-ci-0"]
+    assert network_current["failed_nodes_during_outage"] == network_current[
+        "target_data_pods"
+    ]
+    assert len(network_current["failed_nodes_during_outage"]) >= 1
     assert network_current["recovery_hit_rate"] == 1.0
     assert network_current["failed_nodes_after_recovery"] == []
     assert network_current["passed_checks"] == network_current["check_count"] == 13
-    assert network_current["workflow_run_url"].endswith("/29057247023")
+    assert network_current["workflow_run_id"].isdigit()
+    assert network_current["workflow_run_url"].endswith(
+        f"/{network_current['workflow_run_id']}"
+    )
     assert "not remote multi-region" in network_current["claim_boundary"]
     region_smoke = entries["kubernetes_active_active_region_failure_smoke"]
     assert region_smoke["status"] == "implemented"

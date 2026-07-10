@@ -53,7 +53,7 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "loopback evidence, not a managed-serverless claim" in leaderboard
     assert "serverless-observed-telemetry.yml" in leaderboard
     assert "External HTTP cluster load" in leaderboard
-    assert "local loopback service-node evidence" in leaderboard
+    assert "non-loopback Kubernetes pod-DNS evidence" in leaderboard
     assert "External HTTP active-active loopback" in leaderboard
     assert "external URL contract over local API regions" in leaderboard
     assert "External HTTP active-active" in leaderboard

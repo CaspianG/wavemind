@@ -7,7 +7,7 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 | metric | value |
 |---|---:|
 | claim status | `claims_limited` |
-| strict evidence | `1/8` |
+| strict evidence | `2/8` |
 | preflight ready | `0/8` |
 | production readiness | `pass` |
 | readiness score | `1.0` |
@@ -16,14 +16,14 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 | production scale run contract | `available` |
 | production scale profiles | `5` |
 | production scale target memories | `180000000` |
-| next actions | `7` |
+| next actions | `6` |
 
 ## Claim Boundaries
 
 | claim | status | evidence |
 |---|---|---|
 | Core library/API readiness | `unlocked` | `production_readiness_results.json and benchmark_artifact_audit.json` |
-| Remote service-node cluster SLO | `locked` | `benchmarks/http_cluster_load_results.json` |
+| Non-loopback Kubernetes service-node cluster SLO | `unlocked` | `benchmarks/http_cluster_load_results.json` |
 | Remote multi-region active-active convergence | `locked` | `benchmarks/external_http_active_active_results.json` |
 | Large-N production run contracts | `available` | `benchmarks/production_scale_run_plan.json` |
 | 10M-100M service-backed production scale | `locked` | `large-N production_streaming_load result artifacts` |
@@ -42,7 +42,6 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 
 | item | strict | preflight | artifact | missing env | command |
 |---|---|---|---|---|---|
-| External HTTP service-node load | `action_required` | `action_required` | `benchmarks/http_cluster_load_results.json` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON; issues: environment must be a real remote/staging/production deployment, source must identify a real remote run, not a sample or loopback` | `gh workflow run external-http-cluster-load.yml -f nodes="$WAVEMIND_CLUSTER_NODES" -f batch_query_size=24 -f commit_results=true` |
 | External HTTP active-active regions | `action_required` | `action_required` | `benchmarks/external_http_active_active_results.json` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON; issues: missing artifact` | `gh workflow run external-http-active-active.yml -f regions="$WAVEMIND_ACTIVE_ACTIVE_REGIONS" -f commit_results=true` |
 | Managed/serverless remote telemetry | `action_required` | `action_required` | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES; issues: missing artifact` | `gh workflow run serverless-observed-telemetry.yml -f nodes="$WAVEMIND_SERVERLESS_NODES" -f seed_mode=first -f commit_results=true` |
 | 10M Qdrant service load | `action_required` | `action_required` | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL; issues: missing artifact` | `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json` |

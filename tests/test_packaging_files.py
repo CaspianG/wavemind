@@ -245,7 +245,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "production_streaming_load_pgvector_10m_results.json" in readme
     assert "deploy/serverless/observed-telemetry.loopback.json" in readme
     assert "observed-telemetry.remote.json" in readme
-    assert "Local loopback evidence is not a remote Kubernetes" in readme
+    assert "This is ephemeral non-loopback Kubernetes evidence" in readme
     assert "not a hosted managed-serverless claim" in readme
     assert "benchmarks/memory_competitor_results.json" in readme
     assert "production_readiness_results.json" in readme
