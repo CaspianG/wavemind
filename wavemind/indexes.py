@@ -984,12 +984,13 @@ class QdrantVectorIndex:
                 "yes",
                 "on",
             }
+        self.recreate_on_start = bool(recreate)
         if self.url == ":memory:":
             self.client = QdrantClient(":memory:")
         else:
             self.client = QdrantClient(url=self.url, api_key=self.api_key)
         self._closed = False
-        self._ensure_collection(recreate=bool(recreate))
+        self._ensure_collection(recreate=self.recreate_on_start)
 
     def _collection_exists(self) -> bool:
         collection_exists = getattr(self.client, "collection_exists", None)
@@ -1025,10 +1026,16 @@ class QdrantVectorIndex:
             return
 
         if not exists:
-            self.client.create_collection(
-                collection_name=self.collection,
-                vectors_config=vectors_config,
-            )
+            try:
+                self.client.create_collection(
+                    collection_name=self.collection,
+                    vectors_config=vectors_config,
+                )
+            except Exception:
+                # Multiple stateless workers may start together. One can create
+                # the shared collection after another worker's existence check.
+                if not self._collection_exists():
+                    raise
 
     def _point(self, id: int, vector: np.ndarray):
         memory_id = int(id)
@@ -1050,8 +1057,7 @@ class QdrantVectorIndex:
             points_selector=[int(id)],
         )
 
-    def build(self, records: Iterable) -> None:
-        self._ensure_collection(recreate=True)
+    def _upsert_records(self, records: Iterable) -> None:
         points = []
         for record in records:
             if record.id is None:
@@ -1068,6 +1074,23 @@ class QdrantVectorIndex:
                 collection_name=self.collection,
                 points=points,
             )
+
+    def build(self, records: Iterable) -> None:
+        """Idempotently synchronize records into a shared collection.
+
+        ``WaveMind.load()`` calls ``build`` when every API worker starts. A
+        destructive collection recreation here lets a newly autoscaled worker
+        erase vectors while existing workers are serving traffic. Explicit
+        replacement remains available through ``replace`` and
+        ``WAVEMIND_QDRANT_RECREATE=1``.
+        """
+
+        self._ensure_collection(recreate=False)
+        self._upsert_records(records)
+
+    def replace(self, records: Iterable) -> None:
+        self._ensure_collection(recreate=True)
+        self._upsert_records(records)
 
     def _allowed_filter(self, allowed_ids: set[int] | None):
         if allowed_ids is None:

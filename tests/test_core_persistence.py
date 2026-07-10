@@ -212,6 +212,41 @@ def test_index_health_and_rebuild_detect_index_drift(tmp_path):
         mind.close()
 
 
+def test_shared_store_refresh_propagates_cross_worker_writes_and_deletes(tmp_path):
+    db_path = tmp_path / "shared-store.sqlite3"
+    writer = make_mind(db_path)
+    reader = make_mind(db_path, shared_store_refresh_seconds=0)
+    try:
+        memory_id = writer.remember(
+            "shared serverless state survives worker replacement",
+            namespace="tenant:serverless",
+        )
+
+        results = reader.query(
+            "worker replacement",
+            namespace="tenant:serverless",
+            top_k=1,
+        )
+        assert results[0].id == memory_id
+        first_priority = reader._records_by_id[memory_id].priority
+        reader.query(
+            "worker replacement",
+            namespace="tenant:serverless",
+            top_k=1,
+        )
+        assert reader._records_by_id[memory_id].priority > first_priority
+
+        assert writer.forget(id=memory_id, namespace="tenant:serverless") == 1
+        assert reader.query(
+            "worker replacement",
+            namespace="tenant:serverless",
+            top_k=1,
+        ) == []
+    finally:
+        writer.close()
+        reader.close()
+
+
 def test_timestamped_backup_retention_and_restore(tmp_path):
     db_path = tmp_path / "memory.sqlite3"
     backup_dir = tmp_path / "backups"

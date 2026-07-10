@@ -1164,6 +1164,9 @@ def build_default_mind() -> WaveMind:
         audit_queries=os.environ.get("WAVEMIND_AUDIT_QUERIES", "0").lower()
         in {"1", "true", "yes", "on"},
         recovery_journal_path=os.environ.get("WAVEMIND_RECOVERY_JOURNAL"),
+        shared_store_refresh_seconds=float(
+            os.environ.get("WAVEMIND_SHARED_STORE_REFRESH_SECONDS", "-1")
+        ),
     )
 
 

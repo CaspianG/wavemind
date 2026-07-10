@@ -79,7 +79,7 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
         "kind": "Deployment",
         "name": "wm-serverless-keda",
     }
-    assert scaled_object["spec"]["minReplicaCount"] == 0
+    assert scaled_object["spec"]["minReplicaCount"] == 1
     assert scaled_object["spec"]["maxReplicaCount"] == 50
 
 
@@ -89,6 +89,7 @@ def test_serverless_readiness_report_marks_scale_to_zero_safe():
     assert report["mode"] == "serverless"
     assert report["stateless_workers"] is True
     assert report["scale_to_zero"] is True
+    assert report["scale_to_zero_provider"] == "knative"
     assert report["external_state_required"] is True
     assert report["uses_postgres"] is True
     assert report["uses_external_qdrant"] is True
@@ -96,6 +97,8 @@ def test_serverless_readiness_report_marks_scale_to_zero_safe():
     assert report["safe_for_pod_eviction"] is True
     assert report["valid_keda_scale_target"] is True
     assert report["keda_scale_target_kind"] == "Deployment"
+    assert report["keda_min_scale"] == 1
+    assert report["keda_scale_to_zero"] is False
 
 
 def test_serverless_operational_profile_checks_scale_slo_and_cost():

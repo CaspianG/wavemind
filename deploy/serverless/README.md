@@ -94,10 +94,14 @@ kubectl create secret generic wavemind-auth \
 The generated bundle contains two deployment profiles:
 
 - a Knative `Service` with scale-to-zero annotations and concurrency target;
-- a KEDA `Deployment`, Kubernetes `Service`, and `ScaledObject` where
-  `scaleTargetRef` points at the generated Deployment;
+- a KEDA `Deployment`, Kubernetes `Service`, and CPU `ScaledObject` where
+  `scaleTargetRef` points at the generated Deployment and `minReplicaCount` is
+  at least one, because CPU metrics cannot activate a workload from zero;
 - environment variables for Postgres, Qdrant, Redis, and API keys.
 
 Use one profile in a real cluster. The bundled sample keeps both profiles in one
 file so operators can compare Knative scale-to-zero and KEDA policy-driven
-autoscaling without hand-writing manifests.
+scale-out without hand-writing manifests. Knative owns the zero-to-one request
+activation path. The KEDA CPU profile deliberately keeps a warm replica; use
+the KEDA HTTP add-on or another external activation metric if the KEDA
+deployment itself must scale from zero.

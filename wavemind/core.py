@@ -173,6 +173,7 @@ class WaveMind:
         query_feedback_strength: float = 0.0,
         audit_queries: bool = False,
         recovery_journal_path: str | Path | None = None,
+        shared_store_refresh_seconds: float = -1.0,
     ):
         self.encoder = encoder or HashingTextEncoder(vector_dim=384)
         self.projector = FieldProjector(width, height, self.encoder.vector_dim)
@@ -201,6 +202,8 @@ class WaveMind:
         self.query_feedback_strength = float(query_feedback_strength)
         self.audit_queries = bool(audit_queries)
         self.recovery_journal_path = Path(recovery_journal_path) if recovery_journal_path else None
+        self.shared_store_refresh_seconds = float(shared_store_refresh_seconds)
+        self._namespace_store_refresh_at: dict[str, float] = {}
         self._records_by_id: dict[int, MemoryRecord] = {}
         self._namespace_ids: dict[str, set[int]] = {}
         self._token_ids: dict[str, set[int]] = {}
@@ -281,6 +284,7 @@ class WaveMind:
         min_score: float | None = None,
         query_vector: np.ndarray | None = None,
     ) -> list[QueryResult]:
+        self._refresh_namespace_if_due(namespace)
         allowed_ids = self._allowed_ids(namespace=namespace, tags=tags)
         if not allowed_ids:
             return []
@@ -719,6 +723,69 @@ class WaveMind:
                 self.field.evolve(self._evolve_n)
             self._refresh_field_magnitude()
 
+    @staticmethod
+    def _record_revision(record: MemoryRecord) -> tuple[Any, ...]:
+        return (
+            record.namespace,
+            record.text,
+            tuple(record.tags),
+            record.metadata,
+            float(record.created_at),
+            float(record.updated_at),
+            record.expires_at,
+        )
+
+    def refresh_namespace_from_store(self, namespace: str) -> dict[str, int]:
+        """Refresh one namespace from a shared source of truth.
+
+        Stateless workers keep a local metadata/reranking cache. PostgreSQL is
+        shared, so another worker can create or delete a memory without touching
+        this process. This incremental refresh makes those mutations visible
+        without rebuilding every namespace or destructively recreating a shared
+        vector index.
+        """
+
+        records = self.store.list(namespace=namespace, include_expired=False)
+        incoming = {
+            int(record.id): record
+            for record in records
+            if record.id is not None
+        }
+        current_ids = set(self._namespace_ids.get(namespace, set()))
+        incoming_ids = set(incoming)
+        added = 0
+        updated = 0
+        removed = 0
+
+        for memory_id, record in incoming.items():
+            current = self._records_by_id.get(memory_id)
+            if current is not None and self._record_revision(current) == self._record_revision(record):
+                continue
+            if current is not None:
+                self._uncache_record(memory_id)
+                updated += 1
+            else:
+                added += 1
+            self._cache_record(record)
+            self.index.add(memory_id, record.vector)
+
+        for memory_id in current_ids - incoming_ids:
+            self._uncache_record(memory_id)
+            removed += 1
+
+        self._namespace_store_refresh_at[namespace] = time.monotonic()
+        return {"added": added, "updated": updated, "removed": removed}
+
+    def _refresh_namespace_if_due(self, namespace: str) -> None:
+        interval = self.shared_store_refresh_seconds
+        if interval < 0:
+            return
+        now = time.monotonic()
+        last = self._namespace_store_refresh_at.get(namespace)
+        if last is not None and now - last < interval:
+            return
+        self.refresh_namespace_from_store(namespace)
+
     def _append_recovery_journal(
         self,
         action: str,
@@ -771,7 +838,11 @@ class WaveMind:
                 "wavemind.records": len(records),
             },
         ):
-            self.index.build(records)
+            replace = getattr(self.index, "replace", None)
+            if callable(replace):
+                replace(records)
+            else:
+                self.index.build(records)
         health = self.index_health()
         self.store.log_audit_event(
             "index_rebuild",

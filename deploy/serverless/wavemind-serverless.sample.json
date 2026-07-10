@@ -37,7 +37,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.4.24",
+                "image": "ghcr.io/caspiang/wavemind:2.4.30",
                 "ports": [
                   {
                     "name": "http1",
@@ -64,6 +64,10 @@
                   {
                     "name": "WAVEMIND_AUDIT_QUERIES",
                     "value": "1"
+                  },
+                  {
+                    "name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS",
+                    "value": "0"
                   },
                   {
                     "name": "WAVEMIND_POSTGRES_DSN",
@@ -159,7 +163,7 @@
             "containers": [
               {
                 "name": "api",
-                "image": "ghcr.io/caspiang/wavemind:2.4.24",
+                "image": "ghcr.io/caspiang/wavemind:2.4.30",
                 "ports": [
                   {
                     "name": "http1",
@@ -186,6 +190,10 @@
                   {
                     "name": "WAVEMIND_AUDIT_QUERIES",
                     "value": "1"
+                  },
+                  {
+                    "name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS",
+                    "value": "0"
                   },
                   {
                     "name": "WAVEMIND_POSTGRES_DSN",
@@ -294,7 +302,7 @@
           "kind": "Deployment",
           "name": "wavemind-keda"
         },
-        "minReplicaCount": 0,
+        "minReplicaCount": 1,
         "maxReplicaCount": 64,
         "pollingInterval": 10,
         "cooldownPeriod": 300,

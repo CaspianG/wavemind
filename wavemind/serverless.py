@@ -201,6 +201,7 @@ class WaveMindServerlessSpec:
             {"name": "WAVEMIND_ENCODER", "value": self.encoder},
             {"name": "WAVEMIND_SCORE_THRESHOLD", "value": str(float(self.score_threshold))},
             {"name": "WAVEMIND_AUDIT_QUERIES", "value": "1" if self.audit_queries else "0"},
+            {"name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS", "value": "0"},
             {"name": "WAVEMIND_POSTGRES_DSN", "valueFrom": _secret_key_ref(self.postgres_dsn)},
         ]
         if self.qdrant_url is not None:
@@ -331,7 +332,10 @@ class WaveMindServerlessSpec:
                     "kind": "Deployment",
                     "name": self.keda_name,
                 },
-                "minReplicaCount": self.min_scale,
+                # CPU metrics cannot activate a Deployment from zero because no
+                # pod exists to report CPU. Knative owns the scale-to-zero path;
+                # the KEDA CPU profile keeps one warm replica and scales out.
+                "minReplicaCount": max(1, self.min_scale),
                 "maxReplicaCount": self.max_scale,
                 "pollingInterval": 10,
                 "cooldownPeriod": self.scale_down_delay_seconds,
@@ -356,6 +360,7 @@ class WaveMindServerlessSpec:
             "mode": "serverless",
             "stateless_workers": True,
             "scale_to_zero": self.min_scale == 0,
+            "scale_to_zero_provider": "knative",
             "max_scale": self.max_scale,
             "target_concurrency": self.target_concurrency,
             "external_state_required": True,
@@ -368,6 +373,8 @@ class WaveMindServerlessSpec:
             "safe_for_pod_eviction": self.store.lower() == "postgres",
             "keda_scale_target_kind": "Deployment",
             "keda_scale_target": self.keda_name,
+            "keda_min_scale": max(1, self.min_scale),
+            "keda_scale_to_zero": False,
             "valid_keda_scale_target": True,
         }
 

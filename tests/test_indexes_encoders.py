@@ -644,6 +644,7 @@ def test_qdrant_index_uses_client_without_local_fallback(monkeypatch):
         SimpleNamespace(id=3, vector=np.array([0.8, 0.2, 0.0], dtype=np.float32)),
     ]
     index.build(records)
+    assert FakeQdrantClient.instances[-1].recreated == []
     index.add(4, np.array([0.7, 0.3, 0.0], dtype=np.float32))
 
     results = index.search(
@@ -655,6 +656,11 @@ def test_qdrant_index_uses_client_without_local_fallback(monkeypatch):
     assert [result.id for result in results] == [1, 3, 4]
     assert results[0].score > results[-1].score
     assert len(index) == 4
+    index.replace(records[:2])
+    assert FakeQdrantClient.instances[-1].recreated == ["tests"]
+    assert len(index) == 2
+    index.add(3, records[2].vector)
+    index.add(4, np.array([0.7, 0.3, 0.0], dtype=np.float32))
     index.remove(1)
     assert [result.id for result in index.search(np.array([1.0, 0.0, 0.0], dtype=np.float32), top_k=3)] == [3, 4, 2]
     index.close()

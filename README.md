@@ -997,13 +997,15 @@ python benchmarks/serverless_observed_telemetry_benchmark.py --node https://wm-a
 ```
 
 `deploy/serverless` contains a stateless API worker plan with two profiles: a
-Knative scale-to-zero `Service`, and a KEDA `Deployment`/`Service`/`ScaledObject`
-profile where the autoscaler targets the generated Deployment. It is
+Knative scale-to-zero `Service`, and a KEDA `Deployment`/`Service`/CPU
+`ScaledObject` profile where the autoscaler targets the generated Deployment
+and keeps one warm replica. It is
 intentionally stricter than local mode: Postgres is required as the source of
 truth, Qdrant is used as the external candidate index, Redis is used for shared
 hot-query cache, and API keys are read from Kubernetes Secrets. This path is the
-current foundation for scale-to-zero and managed/serverless deployments; it is
-not a claim that WaveMind has a hosted control plane yet.
+current foundation for Knative scale-to-zero and managed/serverless
+deployments; CPU-based KEDA handles scale-out, not zero-to-one activation. It
+is not a claim that WaveMind has a hosted control plane yet.
 
 The scale-readiness gate also runs a deterministic serverless operational
 profile: 3200 requests/second, 80 ms average request time, 320 ms warm p99,

@@ -12,14 +12,23 @@ on:
       - "benchmarks/kubernetes_operator_smoke.py"
       - "benchmarks/kubernetes_cluster_network_smoke.py"
       - "benchmarks/kubernetes_active_active_region_smoke.py"
+      - "benchmarks/kubernetes_serverless_lifecycle_smoke.py"
       - "wavemind/cluster_drill.py"
       - "wavemind/active_active_drill.py"
+      - "wavemind/serverless.py"
+      - "wavemind/indexes.py"
+      - "wavemind/core.py"
+      - "wavemind/api.py"
       - "tests/test_k8s_operator.py"
       - "tests/test_kubernetes_operator_smoke.py"
       - "tests/test_cluster_drill.py"
       - "tests/test_kubernetes_cluster_network_smoke.py"
       - "tests/test_active_active_drill.py"
       - "tests/test_kubernetes_active_active_region_smoke.py"
+      - "tests/test_kubernetes_serverless_lifecycle_smoke.py"
+      - "tests/test_serverless.py"
+      - "tests/test_indexes_encoders.py"
+      - "tests/test_core_persistence.py"
       - ".github/workflows/kubernetes-operator-smoke.yml"
   workflow_dispatch:
 
@@ -29,7 +38,7 @@ permissions:
 jobs:
   operator-failover:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       KIND_VERSION: v0.31.0
       KIND_SHA256: eb244cbafcc157dff60cf68693c14c9a75c4e6e6fedaf9cd71c58117cb93e3fa
@@ -70,9 +79,18 @@ jobs:
 
       - name: Build and load WaveMind image
         run: |
-          docker build --tag wavemind:ci .
+          docker build --build-arg INSTALL_PRODUCTION=true --tag wavemind:ci .
           docker tag wavemind:ci wavemind:ci-upgrade
-          kind load docker-image wavemind:ci wavemind:ci-upgrade --name "$CLUSTER_NAME"
+          docker pull postgres:16-alpine
+          docker pull qdrant/qdrant:v1.15.1
+          docker pull redis:7-alpine
+          kind load docker-image \
+            wavemind:ci \
+            wavemind:ci-upgrade \
+            postgres:16-alpine \
+            qdrant/qdrant:v1.15.1 \
+            redis:7-alpine \
+            --name "$CLUSTER_NAME"
 
       - name: Install redundant WaveMind operator
         run: |
@@ -139,6 +157,25 @@ jobs:
             --timeout-seconds 300 \
             --output benchmarks/kubernetes_active_active_region_smoke_ci_results.json
 
+      - name: Free previous drill workloads
+        run: |
+          kubectl delete namespace "$NAMESPACE" --wait=true --timeout=180s
+          kubectl delete namespace wavemind-regions --wait=true --timeout=180s
+
+      - name: Run Kubernetes serverless lifecycle drill
+        run: |
+          python benchmarks/kubernetes_serverless_lifecycle_smoke.py \
+            --namespace wavemind-serverless \
+            --image wavemind:ci-upgrade \
+            --postgres-image postgres:16-alpine \
+            --qdrant-image qdrant/qdrant:v1.15.1 \
+            --redis-image redis:7-alpine \
+            --memories 24 \
+            --burst-requests 120 \
+            --burst-workers 12 \
+            --timeout-seconds 300 \
+            --output benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
+
       - name: Capture diagnostics
         if: always()
         run: |
@@ -159,6 +196,7 @@ jobs:
             benchmarks/kubernetes_operator_smoke_ci_results.json
             benchmarks/kubernetes_cluster_network_smoke_ci_results.json
             benchmarks/kubernetes_active_active_region_smoke_ci_results.json
+            benchmarks/kubernetes_serverless_lifecycle_smoke_ci_results.json
           if-no-files-found: warn
 
       - name: Delete kind cluster
