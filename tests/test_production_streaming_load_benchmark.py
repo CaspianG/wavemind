@@ -155,6 +155,7 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NBITS", "8")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE", "8")
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", "12000")
+    monkeypatch.setenv("WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES", "2")
 
     payload = run_streaming_load(
         sizes=[1024],
@@ -177,6 +178,9 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert row["checkpoint_enabled"] is True
     assert row["checkpoint_completed_batches"] == 4
     assert row["checkpoint_source_vectors"] == 16
+    assert row["faiss_checkpoint_interval_batches"] == 2
+    assert row["faiss_checkpoint_write_count"] == 3
+    assert not list(tmp_path.glob("streaming-ivfpq.faiss.checkpoint-*"))
 
     resumed = run_streaming_load(
         sizes=[1024],
@@ -192,6 +196,7 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert resumed_row["target_recall_at_k"] >= 0.95
     assert resumed_row["checkpoint_completed_batches"] == 4
     assert resumed_row["checkpoint_source_vectors"] == 16
+    assert resumed_row["faiss_checkpoint_write_count"] == 1
 
 
 def test_streaming_checkpoint_rejects_signature_mismatch(tmp_path):
@@ -303,6 +308,7 @@ def test_streaming_load_plan_only_estimates_50m_without_generating_vectors(monke
     assert row["estimated_index_gb"] < row["estimated_application_storage_gb"]
     assert row["required_local_free_gb"] > row["estimated_index_gb"]
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in row["required_env"]
+    assert row["command_env"]["WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES"] == "5"
     assert "missing_env:WAVEMIND_FAISS_IVFPQ_PATH" in row["blockers"]
     assert row["runner_storage_root"] == "state"
     assert row["disk_free_path"]

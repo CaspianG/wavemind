@@ -38,6 +38,36 @@ on:
         required: true
         default: "100000"
         type: string
+      faiss_nlist:
+        description: "FAISS IVF centroid count. Used only by faiss-ivfpq-persisted."
+        required: true
+        default: "4096"
+        type: string
+      faiss_m:
+        description: "FAISS PQ subquantizer count. Used only by faiss-ivfpq-persisted."
+        required: true
+        default: "16"
+        type: string
+      faiss_nbits:
+        description: "FAISS bits per PQ code. Used only by faiss-ivfpq-persisted."
+        required: true
+        default: "8"
+        type: string
+      faiss_nprobe:
+        description: "FAISS IVF probes per query. The strict 50M profile uses 1024."
+        required: true
+        default: "1024"
+        type: string
+      faiss_training_size:
+        description: "FAISS IVF-PQ training sample size."
+        required: true
+        default: "200000"
+        type: string
+      faiss_checkpoint_interval_batches:
+        description: "Persist an atomic FAISS resume snapshot after this many completed batches."
+        required: true
+        default: "5"
+        type: string
       target_recall:
         description: "Required recall@k."
         required: true
@@ -123,6 +153,12 @@ jobs:
       QUERIES: ${{ inputs.queries }}
       TOP_K: ${{ inputs.top_k }}
       BATCH_SIZE: ${{ inputs.batch_size }}
+      WAVEMIND_FAISS_IVFPQ_NLIST: ${{ inputs.faiss_nlist }}
+      WAVEMIND_FAISS_IVFPQ_M: ${{ inputs.faiss_m }}
+      WAVEMIND_FAISS_IVFPQ_NBITS: ${{ inputs.faiss_nbits }}
+      WAVEMIND_FAISS_IVFPQ_NPROBE: ${{ inputs.faiss_nprobe }}
+      WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE: ${{ inputs.faiss_training_size }}
+      WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES: ${{ inputs.faiss_checkpoint_interval_batches }}
       TARGET_RECALL: ${{ inputs.target_recall }}
       TARGET_P99_MS: ${{ inputs.target_p99_ms }}
       TARGET_QPS: ${{ inputs.target_qps }}

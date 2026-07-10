@@ -243,6 +243,13 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_QDRANT_URLS" in workflow
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
+    assert "WAVEMIND_FAISS_IVFPQ_NPROBE: ${{ inputs.faiss_nprobe }}" in workflow
+    assert (
+        "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES: "
+        "${{ inputs.faiss_checkpoint_interval_batches }}" in workflow
+    )
+    assert 'default: "1024"' in workflow
+    assert 'default: "5"' in workflow
     assert 'python -m pip install -e ".[dev,bench,indexes,postgres]"' in workflow
     assert "Validate production streaming result" in workflow
     assert "expected exactly one {expected_engine!r} row" in workflow

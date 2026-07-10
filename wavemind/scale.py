@@ -422,6 +422,7 @@ def _production_scale_profiles(
                 "WAVEMIND_FAISS_IVFPQ_NBITS": "8",
                 "WAVEMIND_FAISS_IVFPQ_NPROBE": "1024",
                 "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": "200000",
+                "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES": "5",
             },
             module_requirements=("faiss",),
             index_mode="local persisted FAISS IVF-PQ compressed codes plus int64 ids",

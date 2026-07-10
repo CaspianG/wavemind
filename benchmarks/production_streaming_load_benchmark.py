@@ -574,6 +574,7 @@ def _streaming_plan_row(
             "WAVEMIND_FAISS_IVFPQ_NBITS": str(nbits),
             "WAVEMIND_FAISS_IVFPQ_NPROBE": str(nprobe),
             "WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE": str(training_size),
+            "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES": "5",
         }
     elif key == "qdrant-service":
         module_requirements = ["qdrant_client"]
@@ -987,6 +988,13 @@ def run_faiss_ivfpq_streaming(
     nbits = _int_env("WAVEMIND_FAISS_IVFPQ_NBITS", 8)
     nprobe = _int_env("WAVEMIND_FAISS_IVFPQ_NPROBE", min(64, nlist))
     training_size = _int_env("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", max(100_000, nlist * 40))
+    try:
+        checkpoint_interval_batches = _positive_int_env(
+            "WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES",
+            1,
+        )
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
 
     if dim % pq_m != 0:
         return skipped_result(engine, f"vector dim {dim} must be divisible by WAVEMIND_FAISS_IVFPQ_M={pq_m}")
@@ -1018,15 +1026,31 @@ def run_faiss_ivfpq_streaming(
     except ValueError as exc:
         return skipped_result(engine, str(exc))
     completed_batches = _checkpoint_completed_batches(checkpoint)
-    if completed_batches and not output.exists():
+    checkpoint_metadata = checkpoint.setdefault("metadata", {})
+    snapshot_value = checkpoint_metadata.get("faiss_snapshot_path")
+    snapshot_path = (
+        Path(str(snapshot_value)).expanduser() if snapshot_value else output
+    )
+    if completed_batches and not snapshot_path.exists():
         return skipped_result(
             engine,
-            f"checkpoint {checkpoint_path} exists but persisted FAISS IVF-PQ index {output} is missing",
+            f"checkpoint {checkpoint_path} exists but persisted FAISS IVF-PQ snapshot {snapshot_path} is missing",
         )
     source_ids = choose_source_ids(count, query_count, seed)
     source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
     if completed_batches:
-        index = faiss.read_index(str(output))
+        index = faiss.read_index(str(snapshot_path))
+        expected_ntotal = sum(
+            min(int(batch_size), int(count) - (int(batch_start) - 1))
+            for batch_start in completed_batches
+            if 1 <= int(batch_start) <= int(count)
+        )
+        if int(index.ntotal) != int(expected_ntotal):
+            return skipped_result(
+                engine,
+                f"checkpoint/index mismatch: snapshot has {int(index.ntotal)} vectors, "
+                f"checkpoint describes {int(expected_ntotal)}",
+            )
     else:
         quantizer = faiss.IndexFlatIP(int(dim))
         index = faiss.IndexIVFPQ(
@@ -1044,6 +1068,46 @@ def run_faiss_ivfpq_streaming(
     if not completed_batches:
         sample = training_sample(dim=dim, seed=seed + count, sample_size=training_size)
         index.train(sample)
+    pending_checkpoint_batches: list[tuple[int, dict[int, np.ndarray]]] = []
+    checkpoint_write_count = 0
+
+    def persist_checkpoint(*, final: bool) -> None:
+        nonlocal checkpoint_write_count, snapshot_path
+        if checkpoint_path is None:
+            return
+        target = (
+            output
+            if final
+            else output.with_name(f"{output.name}.checkpoint-{int(index.ntotal)}")
+        )
+        temp = target.with_name(f"{target.name}.tmp")
+        faiss.write_index(index, str(temp))
+        temp.replace(target)
+        previous_snapshot = snapshot_path if completed_batches else None
+        for pending_start, pending_captured in pending_checkpoint_batches:
+            _record_checkpoint_batch(
+                path=None,
+                payload=checkpoint,
+                batch_start=pending_start,
+                captured=pending_captured,
+            )
+            completed_batches.add(int(pending_start))
+        pending_checkpoint_batches.clear()
+        checkpoint_metadata["faiss_snapshot_path"] = str(target)
+        checkpoint_metadata["faiss_snapshot_ntotal"] = int(index.ntotal)
+        checkpoint_metadata["faiss_checkpoint_interval_batches"] = int(
+            checkpoint_interval_batches
+        )
+        _write_checkpoint(checkpoint_path, checkpoint)
+        checkpoint_write_count += 1
+        if (
+            previous_snapshot is not None
+            and previous_snapshot != target
+            and previous_snapshot.exists()
+        ):
+            previous_snapshot.unlink()
+        snapshot_path = target
+
     for ids, vectors, captured in iter_vector_batches(
         count=count,
         dim=dim,
@@ -1052,19 +1116,21 @@ def run_faiss_ivfpq_streaming(
         source_ids=source_ids,
     ):
         batch_start = int(ids[0]) if len(ids) else 0
-        if batch_start not in completed_batches:
-            index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
-            if checkpoint_path is not None:
-                faiss.write_index(index, str(output))
+        if batch_start in completed_batches:
+            source_vectors.update(captured)
+            continue
+        index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
         source_vectors.update(captured)
-        _record_checkpoint_batch(
-            path=checkpoint_path,
-            payload=checkpoint,
-            batch_start=batch_start,
-            captured=captured,
-        )
-        completed_batches.add(batch_start)
-    faiss.write_index(index, str(output))
+        pending_checkpoint_batches.append((batch_start, captured))
+        if (
+            checkpoint_path is not None
+            and len(pending_checkpoint_batches) >= checkpoint_interval_batches
+        ):
+            persist_checkpoint(final=False)
+    if checkpoint_path is not None:
+        persist_checkpoint(final=True)
+    else:
+        faiss.write_index(index, str(output))
     build_ms = (time.perf_counter() - started) * 1000.0
 
     queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
@@ -1099,6 +1165,8 @@ def run_faiss_ivfpq_streaming(
             "ivfpq_nbits": int(nbits),
             "ivfpq_nprobe": int(index.nprobe),
             "ivfpq_training_size": int(training_size),
+            "faiss_checkpoint_interval_batches": int(checkpoint_interval_batches),
+            "faiss_checkpoint_write_count": int(checkpoint_write_count),
             "compression_note": "approximate target-recall; tune nprobe/nlist/M for recall-latency tradeoff",
             **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
         },
