@@ -261,12 +261,13 @@ def test_production_readiness_gate_reports_current_blockers():
     assert external["external_http_cluster_load"]["status"] == "pass"
     cluster_evidence = external["external_http_cluster_load"]["evidence"]
     assert "deployment " in cluster_evidence
-    assert "environment local-loopback" in cluster_evidence
-    assert "source loopback-api-processes" in cluster_evidence
+    assert "environment kubernetes-kind-non-loopback-ci" in cluster_evidence
+    assert "source kubernetes-pod-dns-physical-node-drill" in cluster_evidence
     assert "namespaces 32" in cluster_evidence
     assert "success 1.0" in cluster_evidence
     assert "failover 1.0" in cluster_evidence
-    assert "p99" in cluster_evidence
+    assert "query p99" in cluster_evidence
+    assert "lifecycle batch p99" in cluster_evidence
     assert external["external_http_active_active"]["status"] == "action_required"
     assert "no checked-in external HTTP active-active region result" in external["external_http_active_active"]["evidence"]
 

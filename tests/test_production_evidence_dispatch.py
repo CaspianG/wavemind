@@ -51,14 +51,13 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert payload["schema"] == "wavemind.production_evidence_dispatch.v1"
     assert payload["overall_status"] == "action_required"
     assert payload["summary"]["total_jobs"] == 8
-    assert payload["summary"]["blocked_by_preflight_count"] == 7
+    assert payload["summary"]["blocked_by_preflight_count"] == 6
     assert payload["summary"]["ready_to_dispatch_count"] == 0
-    assert payload["summary"]["complete_count"] == 1
+    assert payload["summary"]["complete_count"] == 2
 
     by_id = {row["id"]: row for row in payload["jobs"]}
     assert by_id["external_http_cluster"]["workflow"] == "external-http-cluster-load.yml"
-    assert by_id["external_http_cluster"]["status"] == "blocked_by_preflight"
-    assert "WAVEMIND_CLUSTER_NODES" in by_id["external_http_cluster"]["missing_env"]
+    assert by_id["external_http_cluster"]["status"] == "complete"
     assert by_id["external_http_cluster"]["input_bindings"]["nodes"] == (
         "$WAVEMIND_CLUSTER_NODES"
     )
@@ -87,9 +86,9 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     serialized = json.dumps(payload, sort_keys=True)
 
     assert payload["overall_status"] == "ready_to_dispatch"
-    assert payload["summary"]["ready_to_dispatch_count"] == 7
+    assert payload["summary"]["ready_to_dispatch_count"] == 6
     assert payload["summary"]["blocked_by_preflight_count"] == 0
-    assert payload["summary"]["complete_count"] == 1
+    assert payload["summary"]["complete_count"] == 2
     assert payload["summary"]["runner_label"] == "self-hosted-xxl"
 
     assert "test-key" not in serialized

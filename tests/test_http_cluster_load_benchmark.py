@@ -295,6 +295,12 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
 
     assert payload["scenario"]["name"] == "http_cluster_load"
     assert payload["scenario"]["node_count"] == 4
+    assert payload["scenario"]["node_addresses"] == [
+        "http://node-a.test",
+        "http://node-b.test",
+        "http://node-c.test",
+        "http://node-d.test",
+    ]
     assert payload["scenario"]["read_fanout"] == 3
     assert payload["scenario"]["deployment_id"] == "test-deployment"
     assert payload["scenario"]["environment"] == "test"
@@ -302,6 +308,8 @@ def test_http_cluster_load_cli_payload_uses_external_engine(tmp_path):
     result = payload["results"][0]
     assert result["engine"] == "WaveMind external HTTP cluster load"
     assert result["slo_pass"] is True
+    assert result["query_p99_ms"] == result["batch_query"]["individual_p99_ms"]
+    assert result["lifecycle_batch_p99_ms"] == result["p99_operation_ms"]
     assert result["batch_query"]["success"] is True
     assert result["batch_query"]["individual_http_requests"] == 12
     assert result["batch_query"]["batch_http_requests"] == 1

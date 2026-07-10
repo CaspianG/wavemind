@@ -22,9 +22,21 @@ def _cluster_payload() -> dict:
         "scenario": {
             "name": "http_cluster_load",
             "node_count": 4,
+            "node_ids": ["node-a", "node-b", "node-c", "node-d"],
+            "node_addresses": [
+                "https://wm-a.staging.internal",
+                "https://wm-b.staging.internal",
+                "https://wm-c.staging.internal",
+                "https://wm-d.staging.internal",
+            ],
             "deployment_id": "staging-cluster-20260708",
             "environment": "staging",
             "source": "github-actions-staging",
+            "source_ref": "b" * 40,
+            "workflow_run_id": "987654321",
+            "workflow_run_url": (
+                "https://github.com/CaspianG/wavemind/actions/runs/987654321"
+            ),
             "namespace_count": 32,
             "memories_per_namespace": 8,
             "replication_factor": 3,
@@ -194,8 +206,21 @@ def test_ingest_refresh_commands_cover_claim_boundary_artifacts():
     commands = [" ".join(command) for command in refresh_commands()]
 
     assert any("benchmarks/production_evidence_gate.py" in command for command in commands)
+    assert any("production-evidence-env" in command for command in commands)
     assert any("production-evidence-bundle" in command for command in commands)
     assert any("release-claims" in command for command in commands)
     assert any("scale-gap" in command for command in commands)
     assert any("production-admission" in command for command in commands)
     assert any("docs/data/leaderboard-status.json" in command for command in commands)
+    status_indexes = [
+        index
+        for index, command in enumerate(commands)
+        if "render_leaderboard_status.py" in command
+    ]
+    audit_index = next(
+        index
+        for index, command in enumerate(commands)
+        if "validate_benchmark_artifacts.py" in command
+    )
+    assert len(status_indexes) == 2
+    assert status_indexes[0] < audit_index < status_indexes[1]

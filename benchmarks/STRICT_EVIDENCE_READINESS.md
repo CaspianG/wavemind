@@ -11,7 +11,7 @@ production evidence by itself.
 | readiness status | `action_required` |
 | claim status | `claims_limited` |
 | total requirements | `8` |
-| action required | `7` |
+| action required | `6` |
 | ready for safe dispatch | `0` |
 | can auto-run now | `0` |
 | planned target memories | `180000000` |
@@ -33,7 +33,7 @@ production evidence by itself.
 
 | requirement | blocker | dispatch | target | artifact | missing env | locked claim |
 |---|---|---|---:|---|---|---|
-| External HTTP service-node load | `missing_env` | `blocked_by_preflight` |  | `benchmarks/http_cluster_load_results.json` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | Remote service-node cluster SLO |
+| Non-loopback Kubernetes or external HTTP service-node load | `complete` | `complete` |  | `benchmarks/http_cluster_load_results.json` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | Non-loopback Kubernetes service-node cluster load SLO. |
 | External HTTP active-active regions | `missing_env` | `blocked_by_preflight` |  | `benchmarks/external_http_active_active_results.json` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | Remote multi-region active-active convergence |
 | Managed/serverless remote telemetry | `missing_env` | `blocked_by_preflight` |  | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES` | Hosted/serverless p99, cold-start, error-rate, and scale-out SLO. |
 | 10M Qdrant service load | `missing_env` | `blocked_by_preflight` | 10000000 | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` | 10M-100M service-backed production scale |

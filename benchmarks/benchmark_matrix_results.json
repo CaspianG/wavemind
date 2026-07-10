@@ -1,8 +1,8 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-10T03:54:52Z",
-  "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
-  "workflow_run_id": "29067655616",
+  "generated_at": "2026-07-10T05:23:32Z",
+  "source_ref": "3d40e894b493",
+  "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
   "benchmarks": [
@@ -1068,9 +1068,9 @@
           "vector_dim": 128,
           "queries": 2000,
           "estimated_index_gb": 1.12,
-          "estimated_transient_runner_gb": 0.099,
+          "estimated_transient_runner_gb": 0.573,
           "estimated_application_storage_gb": 119.209,
-          "required_local_free_gb": 1.523,
+          "required_local_free_gb": 2.116,
           "disk_free_gb": 0.0,
           "index_mode": "persisted FAISS IVF-PQ compressed codes plus int64 ids",
           "required_env": [
@@ -1996,7 +1996,7 @@
           "readiness_status": "action_required",
           "claim_status": "claims_limited",
           "total_requirements": 8,
-          "action_required_count": 8,
+          "action_required_count": 6,
           "ready_for_safe_dispatch_count": 0,
           "can_auto_run_now_count": 0,
           "target_memories_total": 180000000
@@ -2124,21 +2124,21 @@
           "memories_per_namespace": 8,
           "replication_factor": 3,
           "read_fanout": 1,
-          "workers": 4,
+          "workers": 8,
           "success_rate": 1.0,
           "write_success_rate": 1.0,
           "query_hit_rate": 1.0,
           "failover_hit_rate": 1.0,
           "delete_suppression_rate": 1.0,
           "repair_repaired_total": 1,
-          "p99_operation_ms": 531.5410000039265,
+          "p99_operation_ms": 6694.75712100001,
           "slo_pass": true,
           "batch_query_success": true,
           "batch_query_size": 24,
           "batch_query_http_requests": "24 -> 1",
           "batch_query_request_reduction_ratio": 0.9583333333333334,
-          "batch_query_p99_ms": 401.61139995325357,
-          "batch_query_total_speedup": 1.4871988196208712
+          "batch_query_p99_ms": 148.8199839999993,
+          "batch_query_total_speedup": 1.2556579632494516
         }
       },
       "target": "Keep the service-node workload and external batch recall green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
@@ -2217,22 +2217,22 @@
           "status": "pass",
           "environment": "kind-multinode-network-ci",
           "evidence_source": "github-actions-kind-physical-node-pause",
-          "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
-          "workflow_run_id": "29057247023",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023",
+          "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
+          "workflow_run_id": "29070578441",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
           "service_node_count": 4,
           "zone_count": 3,
           "failure_method": "docker-pause-kind-worker",
-          "target_worker": "wavemind-ci-worker2",
-          "target_zone": "zone-b",
+          "target_worker": "wavemind-ci-worker",
+          "target_zone": "zone-a",
           "target_data_pods": [
-            "wavemind-ci-0"
+            "wavemind-ci-2"
           ],
-          "outage_duration_ms": 9254.708,
+          "outage_duration_ms": 8911.648,
           "seed_memories": 256,
           "outage_hit_rate": 1.0,
           "failed_nodes_during_outage": [
-            "wavemind-ci-0"
+            "wavemind-ci-2"
           ],
           "recovery_hit_rate": 1.0,
           "failed_nodes_after_recovery": [],

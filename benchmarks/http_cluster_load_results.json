@@ -3,31 +3,213 @@
     "name": "http_cluster_load",
     "node_count": 4,
     "node_ids": [
-      "node-000",
-      "node-001",
-      "node-002",
-      "node-003"
+      "wavemind-ci-0",
+      "wavemind-ci-1",
+      "wavemind-ci-2",
+      "wavemind-ci-3"
+    ],
+    "node_addresses": [
+      "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+      "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
     ],
     "zones": [
-      "zone-0",
-      "zone-1",
-      "zone-2"
+      "zone-a",
+      "zone-b",
+      "zone-c"
     ],
     "replication_factor": 3,
     "write_quorum": 2,
     "read_quorum": 1,
     "read_fanout": 1,
-    "namespace_prefix": "tenant:external-loopback:2026-07-07-batch-query",
+    "namespace_prefix": "kind-external:29070578441",
     "namespace_count": 32,
     "memories_per_namespace": 8,
-    "workers": 4,
+    "workers": 8,
     "batch_query_size": 24,
-    "deployment_id": "loopback-2026-07-07-batch-query",
-    "environment": "local-loopback",
-    "source": "loopback-api-processes",
-    "description": "External HTTP cluster-load runner executed against real localhost WaveMind API processes. This proves the service-node transport, workload contract, SLO validation, repair, failover, and delete suppression path without requiring remote Kubernetes.",
-    "started_api_processes": 4,
-    "loopback_duration_ms": 51771.440505981445
+    "deployment_id": "github-actions-29070578441-wavemind-ci-wavemind-system",
+    "environment": "kubernetes-kind-non-loopback-ci",
+    "source": "kubernetes-pod-dns-physical-node-drill",
+    "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
+    "workflow_run_id": "29070578441",
+    "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
+    "description": "External WaveMind API-node sustained cluster benchmark for production service deployments.",
+    "kubernetes_attestation": {
+      "schema": "wavemind.kubernetes_external_http_cluster_attestation.v1",
+      "generated_at": "2026-07-10T05:13:58.888058+00:00",
+      "status": "pass",
+      "evidence_source": "github-actions-kind-physical-node-pause",
+      "network_evidence_artifact": "benchmarks/kubernetes_cluster_network_smoke_results.json",
+      "network_evidence_sha256": "8f7a2e194c77b68c3ff5a3fa4bafe18c72b378bc913df14087ed25ce5bf8933b",
+      "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
+      "workflow_run_id": "29070578441",
+      "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
+      "service_addresses": [
+        "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+        "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+      ],
+      "failure_domains": [
+        "zone-a",
+        "zone-b",
+        "zone-c"
+      ],
+      "physical_failure": {
+        "method": "docker-pause-kind-worker",
+        "target_worker": "wavemind-ci-worker",
+        "target_pods": [
+          "wavemind-ci-2"
+        ],
+        "outage_duration_ms": 8911.648
+      },
+      "summary": {
+        "check_count": 10,
+        "passed_checks": 10,
+        "failed_checks": 0
+      },
+      "checks": [
+        {
+          "id": "load_slo",
+          "passed": true,
+          "observed": {
+            "slo_pass": true,
+            "success_rate": 1.0,
+            "p99_operation_ms": 6694.75712100001
+          },
+          "required": "mixed workload SLO pass"
+        },
+        {
+          "id": "network_evidence_pass",
+          "passed": true,
+          "observed": {
+            "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
+            "status": "pass",
+            "passed_checks": 13,
+            "check_count": 13
+          },
+          "required": "passing Kubernetes physical-network evidence"
+        },
+        {
+          "id": "same_service_nodes",
+          "passed": true,
+          "observed": {
+            "load_addresses": [
+              "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+            ],
+            "network_addresses": [
+              "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+              "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+            ]
+          },
+          "required": "load and failure drill use the same four or more pods"
+        },
+        {
+          "id": "non_loopback_pod_dns",
+          "passed": true,
+          "observed": [
+            "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "http://wavemind-ci-2.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
+            "http://wavemind-ci-3.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000"
+          ],
+          "required": "Kubernetes pod DNS only"
+        },
+        {
+          "id": "three_failure_domains",
+          "passed": true,
+          "observed": 3,
+          "required": 3
+        },
+        {
+          "id": "physical_worker_failure",
+          "passed": true,
+          "observed": {
+            "method": "docker-pause-kind-worker",
+            "target_worker": "wavemind-ci-worker",
+            "target_pods": [
+              "wavemind-ci-2"
+            ],
+            "failed_nodes_seen": [
+              "wavemind-ci-2"
+            ]
+          },
+          "required": "physical worker pause makes at least one hosted pod unreachable"
+        },
+        {
+          "id": "quorum_availability_during_outage",
+          "passed": true,
+          "observed": {
+            "status": "pass",
+            "hit_rate": 1.0
+          },
+          "required": "100% recall during physical worker outage"
+        },
+        {
+          "id": "full_recovery",
+          "passed": true,
+          "observed": {
+            "status": "pass",
+            "hit_rate": 1.0,
+            "failed_nodes_seen": [],
+            "worker_unpaused": true,
+            "node_ready": true
+          },
+          "required": "worker and all service nodes recover"
+        },
+        {
+          "id": "pod_identity_preserved",
+          "passed": true,
+          "observed": {
+            "drill_reported": true,
+            "current_pods": {
+              "wavemind-ci-0": {
+                "id": "wavemind-ci-0",
+                "uid": "51561740-d801-4eba-a58e-6ef49da6641b",
+                "worker": "wavemind-ci-worker2",
+                "ready": true
+              },
+              "wavemind-ci-1": {
+                "id": "wavemind-ci-1",
+                "uid": "a45e58c6-fe85-4dc1-ae4f-ec5e12191205",
+                "worker": "wavemind-ci-worker3",
+                "ready": true
+              },
+              "wavemind-ci-2": {
+                "id": "wavemind-ci-2",
+                "uid": "6e6bd316-d273-4434-bac3-0b5784ebdfce",
+                "worker": "wavemind-ci-worker",
+                "ready": true
+              },
+              "wavemind-ci-3": {
+                "id": "wavemind-ci-3",
+                "uid": "2d3cc95a-eede-4192-bdb2-59e71a220d52",
+                "worker": "wavemind-ci-worker3",
+                "ready": true
+              }
+            }
+          },
+          "required": "same pod UIDs and worker placement after recovery"
+        },
+        {
+          "id": "github_workflow_provenance",
+          "passed": true,
+          "observed": {
+            "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
+            "workflow_run_id": "29070578441",
+            "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441"
+          },
+          "required": "traceable GitHub Actions source SHA and workflow run"
+        }
+      ]
+    },
+    "claim_boundary": "Ephemeral non-loopback Kubernetes service-network capability evidence; not managed multi-region production evidence."
   },
   "results": [
     {
@@ -39,12 +221,36 @@
       "write_quorum": 2,
       "read_quorum": 1,
       "read_fanout": 1,
-      "workers": 4,
+      "workers": 8,
       "writes": 256,
       "queries": 256,
       "failover_queries": 256,
       "forgets": 32,
-      "failed_node": "node-001",
+      "write_batches": 1,
+      "write_batch_http_requests": 4,
+      "write_batch_individual_http_requests": 768,
+      "write_batch_request_reduction_ratio": 0.9947916666666666,
+      "query_batches": 1,
+      "failover_query_batches": 1,
+      "delete_suppression_query_batches": 1,
+      "query_batch_http_requests": 4,
+      "query_batch_individual_http_requests": 256,
+      "query_batch_request_reduction_ratio": 0.984375,
+      "forget_batches": 1,
+      "forget_batch_http_requests": 4,
+      "forget_batch_individual_http_requests": 96,
+      "tombstone_batch_http_requests": 4,
+      "tombstone_batch_individual_http_requests": 96,
+      "forget_tombstone_batch_http_requests": 8,
+      "forget_tombstone_batch_individual_http_requests": 192,
+      "forget_tombstone_batch_request_reduction_ratio": 0.9583333333333334,
+      "failover_batch_http_requests": 3,
+      "failover_batch_individual_http_requests": 256,
+      "failover_batch_request_reduction_ratio": 0.98828125,
+      "delete_suppression_batch_http_requests": 4,
+      "delete_suppression_batch_individual_http_requests": 32,
+      "delete_suppression_batch_request_reduction_ratio": 0.875,
+      "failed_node": "wavemind-ci-1",
       "write_success_rate": 1.0,
       "query_hit_rate": 1.0,
       "failover_hit_rate": 1.0,
@@ -58,15 +264,25 @@
       "total_checks": 836,
       "errors": [],
       "error_count": 0,
-      "elapsed_ms": 33598.71009993367,
-      "avg_operation_ms": 159.40968463496984,
-      "p95_operation_ms": 436.7008999688551,
-      "p99_operation_ms": 531.5410000039265,
+      "elapsed_ms": 8896.252176000018,
+      "avg_operation_ms": 1480.0015598333498,
+      "p95_operation_ms": 6694.75712100001,
+      "p99_operation_ms": 6694.75712100001,
+      "write_avg_ms": 6694.75712100001,
+      "write_p99_ms": 6694.75712100001,
+      "query_batch_avg_ms": 539.4693655000253,
+      "query_batch_p99_ms": 682.5198170000135,
+      "failover_batch_avg_ms": 333.70055400001775,
+      "failover_batch_p99_ms": 333.70055400001775,
+      "repair_avg_ms": 23.42367300002479,
+      "repair_p99_ms": 23.42367300002479,
+      "forget_avg_ms": 749.189279999996,
+      "forget_p99_ms": 749.189279999996,
       "batch_query": {
-        "namespace": "tenant:external-loopback:2026-07-07-batch-query:batch-query",
+        "namespace": "kind-external:29070578441:batch-query",
         "write_node_count": 4,
-        "individual_node": "node-000",
-        "batch_node": "node-001",
+        "individual_node": "wavemind-ci-0",
+        "batch_node": "wavemind-ci-1",
         "batch_size": 24,
         "individual_http_requests": 24,
         "batch_http_requests": 1,
@@ -74,18 +290,22 @@
         "individual_success": true,
         "batch_success": true,
         "success": true,
-        "write_ms": 4370.818899944425,
-        "individual_total_ms": 597.2759999567643,
-        "individual_p95_ms": 33.493439975427464,
-        "individual_p99_ms": 34.14163399487734,
-        "batch_ms": 401.61139995325357,
-        "batch_p99_ms": 401.61139995325357,
-        "total_speedup": 1.4871988196208712
+        "write_ms": 3919.7300380000115,
+        "individual_total_ms": 186.86699800025508,
+        "individual_p95_ms": 3.9425413999651933,
+        "individual_p99_ms": 84.79942335998312,
+        "batch_ms": 148.8199839999993,
+        "batch_p99_ms": 148.8199839999993,
+        "total_speedup": 1.2556579632494516
       },
+      "lifecycle_batch_p99_ms": 6694.75712100001,
+      "query_p99_ms": 84.79942335998312,
       "slo_min_success_rate": 1.0,
       "slo_min_failover_hit_rate": 0.95,
       "slo_p99_ms": 1000.0,
-      "slo_pass": true
+      "slo_pass": true,
+      "physical_failure_slo_pass": true
     }
-  ]
+  ],
+  "schema": "wavemind.external_http_cluster.v2"
 }

@@ -289,7 +289,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "wavemind.production_evidence_bundle.v1"
     )
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
-    assert payload["production_evidence_bundle"]["next_action_count"] == 7
+    assert payload["production_evidence_bundle"]["next_action_count"] == 6
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
     assert payload["production_evidence_env"]["schema"] == (
         "wavemind.production_evidence_env_contract.v1"
@@ -362,17 +362,16 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "plan_only",
         "blocked",
     }
-    assert payload["cluster_admission"]["admitted"] is False
+    assert payload["cluster_admission"]["admitted"] is True
     assert payload["cluster_admission"]["claim_boundary"] == (
         "external_http_cluster_evidence_required"
     )
-    assert payload["cluster_admission"]["summary"]["strict_status"] == (
-        "action_required"
-    )
+    assert payload["cluster_admission"]["summary"]["strict_status"] == "pass"
+    assert payload["cluster_admission"]["summary"]["target_urls_match"] is True
     assert payload["cluster_admission"]["required_evidence"]["id"] == (
         "external_http_cluster"
     )
-    assert payload["cluster_admission"]["requested_evidence"]["status"] == "fail"
+    assert payload["cluster_admission"]["requested_evidence"]["status"] == "pass"
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
     )

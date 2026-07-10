@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-10T04:17:40Z",
+  "generated_at": "2026-07-10T05:23:39Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
     "strict_overall_status": "action_required",
-    "strict_pass_count": 1,
+    "strict_pass_count": 2,
     "strict_total_requirements": 8,
     "preflight_overall_status": "action_required",
     "preflight_ready_count": 0,
@@ -17,32 +17,29 @@
     "production_scale_run_contract_status": "available",
     "production_scale_run_profile_count": 5,
     "production_scale_run_target_memories_total": 180000000,
-    "next_action_count": 7
+    "next_action_count": 6
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-10T04:17:40Z",
+    "generated_at": "2026-07-10T05:23:39Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "pass_count": 1,
-      "action_required_count": 7,
+      "pass_count": 2,
+      "action_required_count": 6,
       "fail_count": 0,
       "total_requirements": 8
     },
     "requirements": [
       {
         "id": "external_http_cluster",
-        "title": "External HTTP service-node load",
-        "status": "action_required",
-        "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
+        "title": "Non-loopback Kubernetes or external HTTP service-node load",
+        "status": "pass",
+        "evidence": "nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms",
         "artifact": "benchmarks/http_cluster_load_results.json",
         "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f batch_query_size=24 -f fail_on_slo=true -f commit_results=true",
-        "claim_unlocked": "Remote service-node cluster load SLO.",
-        "issues": [
-          "environment must be a real remote/staging/production deployment",
-          "source must identify a real remote run, not a sample or loopback"
-        ]
+        "claim_unlocked": "Non-loopback Kubernetes service-node cluster load SLO.",
+        "issues": []
       },
       {
         "id": "external_http_active_active",
@@ -130,7 +127,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-10T04:17:40Z",
+    "generated_at": "2026-07-10T05:23:39Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -308,7 +305,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-10T03:54:53Z",
+    "generated_at": "2026-07-10T05:23:35Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -325,7 +322,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-10T03:54:52Z",
+        "evidence": "audit status pass, generated_at 2026-07-10T05:20:27Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -453,7 +450,7 @@
         "title": "Kubernetes operator passes a real multi-node failover drill",
         "status": "pass",
         "requirement": "Operator output must include CRD, StatefulSet, Service, HPA, scheduled repair, capacity-aware replica reconciliation, a bounded rebalance ConfigMap with full rolling namespace-move plan metadata, Memory OS CronJob plan/run scheduling with Redis/shared-lock safety, production admission wiring for 10M+ targets, redundant operator replicas with Kubernetes Lease/etcd leader election, resourceVersion CAS, and cross-node anti-affinity, a traceable multi-node Kubernetes CI failure drill with leader takeover, post-failover reconcile, PDB/topology protection, pod replacement, CR-driven rolling upgrade, non-loopback pod-DNS quorum traffic through a physical worker outage, and API recovery, and status conditions for readiness/autoscaling/capacity/rebalance/repair/Memory OS/production admission plus control-plane consensus safety.",
-        "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, PDB min available 3, topology constraints 2, rolling pods replaced 4, upgraded API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, network drill pass via docker-pause-kind-worker, service nodes 4, zones 3, outage recall 1.0, failed nodes ['wavemind-ci-0'], recovery recall 1.0, network workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
+        "evidence": "CRD True, HPA True, repair True, memory OS True, operator replicas 2, leader election True via coordination.k8s.io/v1, kind nodes 4, failure drill pass, Lease transitions 1, recovered API True, PDB min available 3, topology constraints 2, rolling pods replaced 4, upgraded API True, workflow https://github.com/CaspianG/wavemind/actions/runs/29057247023, network drill pass via docker-pause-kind-worker, service nodes 4, zones 3, outage recall 1.0, failed nodes ['wavemind-ci-2'], recovery recall 1.0, network workflow https://github.com/CaspianG/wavemind/actions/runs/29070578441, rebalance config True, rebalance ready 4048 moves/81 batches, replicas 34, required 34, target max 678711, status Ready, memory OS ready True, production admission ready True, control-plane True",
         "next_step": "Repeat the same drill against a non-ephemeral remote Kubernetes staging cluster and feed its service endpoints into strict cluster admission."
       },
       {
@@ -621,7 +618,7 @@
         "title": "50M streaming load run has a checked preflight contract",
         "status": "pass",
         "requirement": "The next 50M streaming run must have a committed plan-only artifact with exact reproduction command, local index/transient storage estimates, application-storage estimate, required env, and an explicit boundary that it is not a completed benchmark.",
-        "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 1.523 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches",
+        "evidence": "WaveMind faiss-ivfpq-persisted streaming: status action_required, index 1.12 GB, app storage 119.209 GB, required local free 2.116 GB, blockers missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches",
         "next_step": "Set WAVEMIND_FAISS_IVFPQ_PATH on sized storage and run the embedded 50M command to produce production_streaming_load_ivfpq_50m_results.json."
       },
       {
@@ -645,8 +642,8 @@
         "id": "external_http_cluster_load",
         "title": "External HTTP service-node load evidence",
         "status": "pass",
-        "evidence": "nodes 4, deployment loopback-2026-07-07-batch-query, environment local-loopback, source loopback-api-processes, namespaces 32, success 1.0, failover 1.0, p99 531.5410000039265 ms, batch query True, batch HTTP 24 -> 1, batch p99 401.61139995325357 ms",
-        "next_step": "Replace this loopback service-node run with a remote Kubernetes/serverless node manifest run."
+        "evidence": "nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms",
+        "next_step": "Keep the external service-node run current for release candidates."
       },
       {
         "id": "external_http_active_active",
@@ -660,13 +657,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T03:54:52Z",
-    "generated_at": "2026-07-10T03:54:52Z",
-    "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
-    "workflow_run_id": "29067655616",
+    "checked_at": "2026-07-10T05:20:29Z",
+    "generated_at": "2026-07-10T05:20:27Z",
+    "source_ref": "3d40e894b493",
+    "workflow_run_id": null,
     "refresh_profile": "local",
     "max_age_days": 8.0,
-    "age_days": 5.987523148148147e-06,
+    "age_days": 2.2194756944444443e-05,
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -770,27 +767,6 @@
     "issues": []
   },
   "next_actions": [
-    {
-      "id": "external_http_cluster",
-      "title": "External HTTP service-node load",
-      "strict_status": "action_required",
-      "preflight_status": "action_required",
-      "artifact": "benchmarks/http_cluster_load_results.json",
-      "output_artifact": "benchmarks/http_cluster_load_results.json",
-      "issues": [
-        "environment must be a real remote/staging/production deployment",
-        "source must identify a real remote run, not a sample or loopback"
-      ],
-      "missing_env": [
-        "WAVEMIND_CLUSTER_NODES",
-        "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON"
-      ],
-      "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
-      ],
-      "command": "gh workflow run external-http-cluster-load.yml -f nodes=\"$WAVEMIND_CLUSTER_NODES\" -f batch_query_size=24 -f commit_results=true",
-      "claim_unlocked": "Remote service-node cluster load SLO."
-    },
     {
       "id": "external_http_active_active",
       "title": "External HTTP active-active regions",
@@ -906,8 +882,8 @@
       "evidence": "production_readiness_results.json and benchmark_artifact_audit.json"
     },
     {
-      "claim": "Remote service-node cluster SLO",
-      "status": "locked",
+      "claim": "Non-loopback Kubernetes service-node cluster SLO",
+      "status": "unlocked",
       "evidence": "benchmarks/http_cluster_load_results.json"
     },
     {

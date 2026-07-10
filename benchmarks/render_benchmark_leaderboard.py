@@ -327,7 +327,15 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
                 f"{environment}; `{http_scenario.get('source', 'unknown')}`; {http_scenario.get('node_count', '?')} nodes",
                 (
                     f"SLO `{http_result.get('slo_pass')}`; "
-                    + ("remote cluster evidence" if environment != "local-loopback" else "local loopback service-node evidence")
+                    + (
+                        "non-loopback Kubernetes pod-DNS evidence"
+                        if environment == "kubernetes-kind-non-loopback-ci"
+                        else (
+                            "remote cluster evidence"
+                            if environment != "local-loopback"
+                            else "local loopback service-node evidence"
+                        )
+                    )
                 ),
                 "Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest.",
             )
