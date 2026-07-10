@@ -192,6 +192,32 @@ def _load_checkpoint(path: Path | None, signature: dict[str, Any]) -> dict[str, 
     return payload
 
 
+def _load_faiss_ivfpq_checkpoint(
+    path: Path | None,
+    signature: dict[str, Any],
+    *,
+    legacy_nprobe: int,
+) -> dict[str, Any]:
+    try:
+        return _load_checkpoint(path, signature)
+    except ValueError:
+        if path is None or not path.exists():
+            raise
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        legacy_signature = dict(signature)
+        legacy_extra = dict(signature.get("extra", {}))
+        legacy_extra["nprobe"] = int(legacy_nprobe)
+        legacy_signature["extra"] = legacy_extra
+        if payload.get("signature") != legacy_signature:
+            raise
+        payload["signature"] = signature
+        payload.setdefault("metadata", {})["signature_migrated_from_nprobe"] = int(
+            legacy_nprobe
+        )
+        _write_checkpoint(path, payload)
+        return payload
+
+
 def _write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     if path is None:
         return
@@ -1044,7 +1070,11 @@ def run_faiss_ivfpq_streaming(
         },
     )
     try:
-        checkpoint = _load_checkpoint(checkpoint_path, signature)
+        checkpoint = _load_faiss_ivfpq_checkpoint(
+            checkpoint_path,
+            signature,
+            legacy_nprobe=nprobe,
+        )
     except ValueError as exc:
         return skipped_result(engine, str(exc))
     completed_batches = _checkpoint_completed_batches(checkpoint)
@@ -1130,25 +1160,30 @@ def run_faiss_ivfpq_streaming(
             previous_snapshot.unlink()
         snapshot_path = target
 
-    for ids, vectors, captured in iter_vector_batches(
-        count=count,
-        dim=dim,
-        seed=seed + count,
-        batch_size=batch_size,
-        source_ids=source_ids,
-    ):
-        batch_start = int(ids[0]) if len(ids) else 0
-        if batch_start in completed_batches:
-            source_vectors.update(captured)
-            continue
-        index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
-        source_vectors.update(captured)
-        pending_checkpoint_batches.append((batch_start, captured))
-        if (
-            checkpoint_path is not None
-            and len(pending_checkpoint_batches) >= checkpoint_interval_batches
+    expected_batch_starts = set(range(1, int(count) + 1, int(batch_size)))
+    complete_resume = completed_batches == expected_batch_starts and all(
+        source_id in source_vectors for source_id in source_ids
+    )
+    if not complete_resume:
+        for ids, vectors, captured in iter_vector_batches(
+            count=count,
+            dim=dim,
+            seed=seed + count,
+            batch_size=batch_size,
+            source_ids=source_ids,
         ):
-            persist_checkpoint(final=False)
+            batch_start = int(ids[0]) if len(ids) else 0
+            if batch_start in completed_batches:
+                source_vectors.update(captured)
+                continue
+            index.add_with_ids(vectors.astype(np.float32), ids.astype(np.int64))
+            source_vectors.update(captured)
+            pending_checkpoint_batches.append((batch_start, captured))
+            if (
+                checkpoint_path is not None
+                and len(pending_checkpoint_batches) >= checkpoint_interval_batches
+            ):
+                persist_checkpoint(final=False)
     if checkpoint_path is not None:
         persist_checkpoint(final=True)
     else:
@@ -1231,6 +1266,7 @@ def run_faiss_ivfpq_streaming(
             "ivfpq_training_size": int(training_size),
             "faiss_checkpoint_interval_batches": int(checkpoint_interval_batches),
             "faiss_checkpoint_write_count": int(checkpoint_write_count),
+            "faiss_checkpoint_complete_resume": bool(complete_resume),
             "compression_note": "adaptive approximate target-recall sweep; selected nprobe is the lowest measured candidate meeting recall and p99 when available",
             **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
         }

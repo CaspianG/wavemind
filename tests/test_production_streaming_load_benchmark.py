@@ -8,7 +8,9 @@ import pytest
 
 
 def test_streaming_load_numpy_smoke_and_slo():
-    from benchmarks.production_streaming_load_benchmark import run_streaming_load
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    run_streaming_load = benchmark.run_streaming_load
 
     payload = run_streaming_load(
         sizes=[256],
@@ -144,7 +146,9 @@ def test_streaming_load_qdrant_sharded_requires_multiple_urls(monkeypatch):
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     pytest.importorskip("faiss")
 
-    from benchmarks.production_streaming_load_benchmark import run_streaming_load
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    run_streaming_load = benchmark.run_streaming_load
 
     index_path = tmp_path / "streaming-ivfpq.faiss"
     checkpoint_path = tmp_path / "streaming-ivfpq.checkpoint.json"
@@ -185,8 +189,24 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert row["checkpoint_source_vectors"] == 16
     assert row["faiss_checkpoint_interval_batches"] == 2
     assert row["faiss_checkpoint_write_count"] == 3
+    assert row["faiss_checkpoint_complete_resume"] is False
     assert not list(tmp_path.glob("streaming-ivfpq.faiss.checkpoint-*"))
 
+    legacy_checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    legacy_checkpoint["signature"]["extra"]["nprobe"] = 8
+    checkpoint_path.write_text(
+        json.dumps(legacy_checkpoint, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    def fail_if_vectors_are_regenerated(**kwargs):
+        raise AssertionError("complete checkpoint must not regenerate vector batches")
+
+    monkeypatch.setattr(
+        benchmark,
+        "iter_vector_batches",
+        fail_if_vectors_are_regenerated,
+    )
     resumed = run_streaming_load(
         sizes=[1024],
         dim=8,
@@ -202,6 +222,10 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert resumed_row["checkpoint_completed_batches"] == 4
     assert resumed_row["checkpoint_source_vectors"] == 16
     assert resumed_row["faiss_checkpoint_write_count"] == 1
+    assert resumed_row["faiss_checkpoint_complete_resume"] is True
+    migrated = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    assert "nprobe" not in migrated["signature"]["extra"]
+    assert migrated["metadata"]["signature_migrated_from_nprobe"] == 8
 
     monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP", "1,2")
     fallback = run_streaming_load(
