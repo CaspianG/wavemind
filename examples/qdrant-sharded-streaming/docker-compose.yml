@@ -1,10 +1,10 @@
 services:
   qdrant-0:
-    image: qdrant/qdrant:v1.15.1
+    image: qdrant/qdrant:v1.18.2
     ports:
       - "6333:6333"
 
   qdrant-1:
-    image: qdrant/qdrant:v1.15.1
+    image: qdrant/qdrant:v1.18.2
     ports:
       - "6334:6333"
