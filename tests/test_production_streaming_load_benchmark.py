@@ -203,6 +203,25 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert resumed_row["checkpoint_source_vectors"] == 16
     assert resumed_row["faiss_checkpoint_write_count"] == 1
 
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP", "1,2")
+    fallback = run_streaming_load(
+        sizes=[1024],
+        dim=8,
+        query_count=16,
+        top_k=10,
+        seed=13,
+        noise=0.0,
+        batch_size=256,
+        engines=["faiss-ivfpq-persisted"],
+        target_p99_ms=1e-9,
+    )
+    fallback_row = fallback["results"][0]["results"][0]
+    assert len(fallback_row["ivfpq_nprobe_sweep"]) == 2
+    assert (
+        fallback_row["ivfpq_nprobe_selection_reason"]
+        == "best_recall_then_latency_no_candidate_met_both_targets"
+    )
+
 
 def test_streaming_load_faiss_ivfpq_resumes_atomic_partial_snapshot(
     tmp_path,
