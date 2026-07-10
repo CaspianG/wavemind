@@ -71,10 +71,14 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
 
 
 def test_streaming_load_qdrant_chunks_large_upsert_batches():
+    import concurrent.futures
+
     from benchmarks.production_streaming_load_benchmark import (
+        QdrantShardTarget,
         _chunks,
         _merge_scored_hits,
         _qdrant_shard_index,
+        _upsert_qdrant_shards,
     )
 
     assert list(_chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
@@ -96,6 +100,34 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         ],
         top_k=3,
     ) == [3, 1, 2]
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+
+        def upsert(self, *, collection_name, points):
+            self.calls.append((collection_name, list(points)))
+
+    clients = [Client(), Client()]
+    targets = [
+        QdrantShardTarget(0, "http://shard-0", "memories_s000"),
+        QdrantShardTarget(1, "http://shard-1", "memories_s001"),
+    ]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_shards(
+            executor=executor,
+            clients=clients,
+            targets=targets,
+            points_by_shard={0: [1, 3, 5], 1: [2, 4]},
+            upsert_batch_size=2,
+        )
+
+    assert inserted == 5
+    assert clients[0].calls == [
+        ("memories_s000", [1, 3]),
+        ("memories_s000", [5]),
+    ]
+    assert clients[1].calls == [("memories_s001", [2, 4])]
 
 
 def test_qdrant_index_readiness_waits_for_green_index(monkeypatch):

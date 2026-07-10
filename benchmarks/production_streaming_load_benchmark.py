@@ -375,6 +375,33 @@ def _merge_scored_hits(hits_by_shard: Iterable[Iterable[Any]], top_k: int) -> li
     return [point_id for _, point_id in scored[: int(top_k)]]
 
 
+def _upsert_qdrant_shards(
+    *,
+    executor: concurrent.futures.Executor,
+    clients: list[Any],
+    targets: list[QdrantShardTarget],
+    points_by_shard: dict[int, list[Any]],
+    upsert_batch_size: int,
+) -> int:
+    active_shards = [
+        shard_index
+        for shard_index, points in points_by_shard.items()
+        if points
+    ]
+
+    def upsert_shard(shard_index: int) -> int:
+        points = points_by_shard[shard_index]
+        client = clients[shard_index]
+        collection_name = targets[shard_index].collection_name
+        inserted = 0
+        for point_chunk in _chunks(points, upsert_batch_size):
+            client.upsert(collection_name=collection_name, points=point_chunk)
+            inserted += len(point_chunk)
+        return inserted
+
+    return sum(executor.map(upsert_shard, active_shards))
+
+
 def _qdrant_model_value(payload: Any, key: str, default: Any = None) -> Any:
     if isinstance(payload, dict):
         return payload.get(key, default)
@@ -1861,36 +1888,47 @@ def run_qdrant_sharded_streaming(
                     optimizers_config=ingest_optimizers_config,
                     timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                 )
-        for ids, vectors, captured in iter_vector_batches(
-            count=count,
-            dim=dim,
-            seed=seed + count,
-            batch_size=batch_size,
-            source_ids=source_ids,
-        ):
-            batch_start = int(ids[0]) if len(ids) else 0
-            if batch_start not in completed_batches:
-                points_by_shard: dict[int, list[Any]] = {index: [] for index in range(len(targets))}
-                for point_id, vector in zip(ids, vectors):
-                    shard_index = _qdrant_shard_index(int(point_id), len(targets))
-                    points_by_shard[shard_index].append(
-                        PointStruct(id=int(point_id), vector=vector.tolist())
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=fanout_workers
+        ) as ingest_executor:
+            for ids, vectors, captured in iter_vector_batches(
+                count=count,
+                dim=dim,
+                seed=seed + count,
+                batch_size=batch_size,
+                source_ids=source_ids,
+            ):
+                batch_start = int(ids[0]) if len(ids) else 0
+                if batch_start not in completed_batches:
+                    points_by_shard: dict[int, list[Any]] = {
+                        index: [] for index in range(len(targets))
+                    }
+                    for point_id, vector in zip(ids, vectors):
+                        shard_index = _qdrant_shard_index(
+                            int(point_id), len(targets)
+                        )
+                        points_by_shard[shard_index].append(
+                            PointStruct(id=int(point_id), vector=vector.tolist())
+                        )
+                    inserted = _upsert_qdrant_shards(
+                        executor=ingest_executor,
+                        clients=clients,
+                        targets=targets,
+                        points_by_shard=points_by_shard,
+                        upsert_batch_size=upsert_batch_size,
                     )
-                for shard_index, points in points_by_shard.items():
-                    if not points:
-                        continue
-                    client = clients[shard_index]
-                    collection_name = targets[shard_index].collection_name
-                    for point_chunk in _chunks(points, upsert_batch_size):
-                        client.upsert(collection_name=collection_name, points=point_chunk)
-            source_vectors.update(captured)
-            _record_checkpoint_batch(
-                path=checkpoint_path,
-                payload=checkpoint,
-                batch_start=batch_start,
-                captured=captured,
-            )
-            completed_batches.add(batch_start)
+                    if inserted != len(ids):
+                        raise RuntimeError(
+                            "Qdrant sharded upsert did not acknowledge every point"
+                        )
+                source_vectors.update(captured)
+                _record_checkpoint_batch(
+                    path=checkpoint_path,
+                    payload=checkpoint,
+                    batch_start=batch_start,
+                    captured=captured,
+                )
+                completed_batches.add(batch_start)
         index_restore_ms = 0.0
         if deferred_indexing["enabled"]:
             restore_started = time.perf_counter()
@@ -1990,6 +2028,7 @@ def run_qdrant_sharded_streaming(
                 "collection_names": [target.collection_name for target in targets],
                 "shard_count": len(targets),
                 "fanout_workers": fanout_workers,
+                "parallel_shard_upsert": True,
                 "routing": "point_id_minus_one_mod_shard_count",
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
