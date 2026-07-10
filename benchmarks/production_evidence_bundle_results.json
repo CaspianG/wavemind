@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-10T07:17:00Z",
+  "generated_at": "2026-07-10T07:22:16Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-10T07:17:00Z",
+    "generated_at": "2026-07-10T07:22:16Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -127,7 +127,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-10T07:17:00Z",
+    "generated_at": "2026-07-10T07:22:16Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -305,7 +305,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-10T07:16:56Z",
+    "generated_at": "2026-07-10T07:22:10Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -322,7 +322,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-10T06:49:30Z",
+        "evidence": "audit status pass, generated_at 2026-07-10T07:16:51Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -657,13 +657,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T06:49:49Z",
-    "generated_at": "2026-07-10T06:49:30Z",
-    "source_ref": "b48e8f286570",
+    "checked_at": "2026-07-10T07:17:04Z",
+    "generated_at": "2026-07-10T07:16:51Z",
+    "source_ref": "111326f28dd7",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "max_age_days": 8.0,
-    "age_days": 0.00023017248842592593,
+    "age_days": 0.00015050810185185184,
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.cluster_autoscale_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "111326f28dd7",
+  "source_ref": "c643d815177d",
   "source_file": "benchmarks/scale_readiness_results.json",
   "claim_boundary": "Cluster autoscale evidence is extracted from the checked-in scale-readiness artifact. It proves deterministic shard placement, failure-domain availability, autoscale planning, rebalance planning, operator reconciliation, quorum safety, active-active convergence, field-state CRDT behavior, and the 100M capacity envelope on these fixtures. It is not a real 100M vector-query latency benchmark, managed Kubernetes production run, or independent multi-region SLO.",
   "summary": {

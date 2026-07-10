@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-10T07:16:51Z",
-  "source_ref": "111326f28dd7",
+  "generated_at": "2026-07-10T07:22:05Z",
+  "source_ref": "c643d815177d",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
