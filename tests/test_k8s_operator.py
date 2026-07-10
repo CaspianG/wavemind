@@ -203,6 +203,8 @@ def test_operator_reconcile_renders_cluster_resources():
     assert container["image"] == "ghcr.io/caspiang/wavemind:2.4.3"
     assert container["command"] == ["wavemind"]
     assert container["args"] == ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    assert container["readinessProbe"]["httpGet"]["path"] == "/healthz"
+    assert container["livenessProbe"]["httpGet"]["path"] == "/healthz"
     assert {"name": "WAVEMIND_REPLICATION_FACTOR", "value": "2"} in container["env"]
     assert resources["CronJob"]["metadata"]["name"] == "wm-prod-cluster-repair"
     repair_args = resources["CronJob"]["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["args"]

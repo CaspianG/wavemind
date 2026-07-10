@@ -660,12 +660,12 @@ class WaveMindClusterSpec:
             "ports": [{"name": "http", "containerPort": self.service_port, "protocol": "TCP"}],
             "env": env,
             "livenessProbe": {
-                "tcpSocket": {"port": "http"},
+                "httpGet": {"path": "/healthz", "port": "http"},
                 "initialDelaySeconds": 10,
                 "periodSeconds": 20,
             },
             "readinessProbe": {
-                "tcpSocket": {"port": "http"},
+                "httpGet": {"path": "/healthz", "port": "http"},
                 "initialDelaySeconds": 5,
                 "periodSeconds": 10,
             },

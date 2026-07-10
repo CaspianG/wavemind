@@ -232,8 +232,14 @@ class WaveMindServerlessSpec:
             "env": self.env(),
             "args": ["serve", "--host", "0.0.0.0", "--port", str(self.service_port)],
             "readinessProbe": {
-                "httpGet": {"path": "/stats", "port": self.service_port},
+                "httpGet": {"path": "/healthz", "port": self.service_port},
                 "periodSeconds": 10,
+                "timeoutSeconds": 2,
+            },
+            "livenessProbe": {
+                "httpGet": {"path": "/healthz", "port": self.service_port},
+                "initialDelaySeconds": 10,
+                "periodSeconds": 20,
                 "timeoutSeconds": 2,
             },
         }

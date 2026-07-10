@@ -1545,6 +1545,10 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
     try:
         memory_id = mind.remember("role based API memory", namespace="auth")
         with TestClient(create_app(mind=mind)) as client:
+            health = client.get("/healthz")
+            assert health.status_code == 200
+            assert health.json()["status"] == "ok"
+
             missing = client.get("/stats", params={"namespace": "auth"})
             assert missing.status_code == 401
 

@@ -118,10 +118,19 @@
                 ],
                 "readinessProbe": {
                   "httpGet": {
-                    "path": "/stats",
+                    "path": "/healthz",
                     "port": 8000
                   },
                   "periodSeconds": 10,
+                  "timeoutSeconds": 2
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/healthz",
+                    "port": 8000
+                  },
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 20,
                   "timeoutSeconds": 2
                 }
               }
@@ -247,10 +256,19 @@
                 ],
                 "readinessProbe": {
                   "httpGet": {
-                    "path": "/stats",
+                    "path": "/healthz",
                     "port": 8000
                   },
                   "periodSeconds": 10,
+                  "timeoutSeconds": 2
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/healthz",
+                    "port": 8000
+                  },
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 20,
                   "timeoutSeconds": 2
                 }
               }

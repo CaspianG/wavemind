@@ -1242,6 +1242,8 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
+        if request.url.path == "/healthz":
+            return await call_next(request)
         limiter = request.app.state.rate_limiter
         if limiter is not None and not limiter.allow(request):
             return JSONResponse(
@@ -1249,6 +1251,10 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 content={"detail": "Rate limit exceeded"},
             )
         return await call_next(request)
+
+    @app.get("/healthz", include_in_schema=False)
+    def healthz() -> dict[str, str]:
+        return {"status": "ok", "version": __version__}
 
     @app.get("/studio", response_class=HTMLResponse, include_in_schema=False)
     def studio() -> HTMLResponse:

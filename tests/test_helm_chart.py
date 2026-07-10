@@ -59,7 +59,7 @@ def test_helm_chart_templates_define_cluster_network_and_state():
     assert "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION" in statefulset
     assert "WAVEMIND_PRODUCTION_TARGET_MEMORIES" in statefulset
     assert "WAVEMIND_PRODUCTION_ADMISSION_ROOT" in statefulset
-    assert "tcpSocket:" in statefulset
+    assert "path: /healthz" in statefulset
     assert "kind: Service" in service
     assert "clusterIP: None" in headless
     assert "publishNotReadyAddresses: true" in headless
