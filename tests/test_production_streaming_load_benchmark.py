@@ -199,6 +199,74 @@ def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
     assert resumed_row["faiss_checkpoint_write_count"] == 1
 
 
+def test_streaming_load_faiss_ivfpq_resumes_atomic_partial_snapshot(
+    tmp_path,
+    monkeypatch,
+):
+    pytest.importorskip("faiss")
+
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    index_path = tmp_path / "interrupted-ivfpq.faiss"
+    checkpoint_path = tmp_path / "interrupted-ivfpq.checkpoint.json"
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_PATH", str(index_path))
+    monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NLIST", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_M", "2")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NBITS", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_NPROBE", "8")
+    monkeypatch.setenv("WAVEMIND_FAISS_IVFPQ_TRAINING_SIZE", "12000")
+    monkeypatch.setenv("WAVEMIND_FAISS_CHECKPOINT_INTERVAL_BATCHES", "2")
+
+    original_iter = benchmark.iter_vector_batches
+
+    def interrupted_iter(**kwargs):
+        for batch_index, batch in enumerate(original_iter(**kwargs)):
+            yield batch
+            if batch_index == 1:
+                raise RuntimeError("simulated runner interruption")
+
+    monkeypatch.setattr(benchmark, "iter_vector_batches", interrupted_iter)
+    with pytest.raises(RuntimeError, match="simulated runner interruption"):
+        benchmark.run_streaming_load(
+            sizes=[1024],
+            dim=8,
+            query_count=16,
+            top_k=10,
+            seed=17,
+            noise=0.0,
+            batch_size=256,
+            engines=["faiss-ivfpq-persisted"],
+        )
+
+    partial = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    assert partial["completed_batch_starts"] == [1, 257]
+    assert partial["metadata"]["faiss_snapshot_ntotal"] == 512
+    partial_snapshot = Path(partial["metadata"]["faiss_snapshot_path"])
+    assert partial_snapshot.exists()
+    assert not index_path.exists()
+
+    monkeypatch.setattr(benchmark, "iter_vector_batches", original_iter)
+    resumed = benchmark.run_streaming_load(
+        sizes=[1024],
+        dim=8,
+        query_count=16,
+        top_k=10,
+        seed=17,
+        noise=0.0,
+        batch_size=256,
+        engines=["faiss-ivfpq-persisted"],
+    )
+
+    row = resumed["results"][0]["results"][0]
+    assert row["target_recall_at_k"] >= 0.95
+    assert row["checkpoint_completed_batches"] == 4
+    assert row["checkpoint_source_vectors"] == 16
+    assert index_path.exists()
+    assert not partial_snapshot.exists()
+    assert not list(tmp_path.glob("interrupted-ivfpq.faiss.checkpoint-*"))
+
+
 def test_streaming_checkpoint_rejects_signature_mismatch(tmp_path):
     from benchmarks.production_streaming_load_benchmark import (
         _checkpoint_signature,
