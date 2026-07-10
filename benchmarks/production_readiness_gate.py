@@ -102,6 +102,12 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "kubernetes_active_active_region_smoke": _load_optional_json(
             benchmark_dir / "kubernetes_active_active_region_smoke_results.json"
         ),
+        "kubernetes_serverless_lifecycle_smoke": _load_optional_json(
+            benchmark_dir / "kubernetes_serverless_lifecycle_smoke_results.json"
+        ),
+        "kubernetes_postgres_qdrant_dr_smoke": _load_optional_json(
+            benchmark_dir / "kubernetes_postgres_qdrant_dr_smoke_results.json"
+        ),
         "external_http_active_active": _load_optional_json(
             benchmark_dir / "external_http_active_active_results.json"
         ),
@@ -710,6 +716,125 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and int(kubernetes_active_active_region_summary.get("check_count", 0)) >= 17
         and int(kubernetes_active_active_region_summary.get("passed_checks", 0))
         == int(kubernetes_active_active_region_summary.get("check_count", -1))
+    )
+    kubernetes_serverless_lifecycle = artifacts[
+        "kubernetes_serverless_lifecycle_smoke"
+    ]
+    kubernetes_serverless_summary = dict(
+        kubernetes_serverless_lifecycle.get("summary") or {}
+    )
+    kubernetes_serverless_observed = dict(
+        kubernetes_serverless_lifecycle.get("observed") or {}
+    )
+    kubernetes_serverless_cross = dict(
+        kubernetes_serverless_observed.get("cross_replica") or {}
+    )
+    kubernetes_serverless_burst = dict(
+        kubernetes_serverless_observed.get("burst") or {}
+    )
+    kubernetes_serverless_seed_count = int(
+        kubernetes_serverless_cross.get("seed_count") or 0
+    )
+    kubernetes_serverless_lifecycle_pass = (
+        kubernetes_serverless_lifecycle.get("status") == "pass"
+        and kubernetes_serverless_lifecycle.get("environment")
+        == "kind-multizone-serverless-lifecycle-ci"
+        and kubernetes_serverless_lifecycle.get("evidence_source")
+        == "github-actions-kind-external-state-manual-scale-lifecycle"
+        and bool(kubernetes_serverless_lifecycle.get("source_ref"))
+        and bool(kubernetes_serverless_lifecycle.get("workflow_run_id"))
+        and str(kubernetes_serverless_lifecycle.get("workflow_run_url") or "").startswith(
+            "https://github.com/CaspianG/wavemind/actions/runs/"
+        )
+        and ".svc.cluster.local" in str(
+            kubernetes_serverless_observed.get("service_address") or ""
+        )
+        and kubernetes_serverless_observed.get("external_services")
+        == ["postgres", "qdrant", "redis"]
+        and int(kubernetes_serverless_observed.get("persistent_volume_claims") or 0)
+        >= 3
+        and kubernetes_serverless_observed.get("zero_replicas") is True
+        and kubernetes_serverless_observed.get("zero_endpoints") is True
+        and float(
+            (kubernetes_serverless_observed.get("restored_after_zero") or {}).get(
+                "rate", 0.0
+            )
+        )
+        >= 1.0
+        and int(kubernetes_serverless_observed.get("ready_replicas") or 0) == 3
+        and int(kubernetes_serverless_observed.get("endpoint_count") or 0) == 3
+        and int(kubernetes_serverless_observed.get("zone_count") or 0) >= 3
+        and int(kubernetes_serverless_cross.get("visible_replicas") or 0) == 3
+        and int(kubernetes_serverless_cross.get("suppressed_replicas") or 0) == 3
+        and [int(value) for value in kubernetes_serverless_cross.get("write_active_counts") or []]
+        == [kubernetes_serverless_seed_count + 1] * 3
+        and [int(value) for value in kubernetes_serverless_cross.get("delete_active_counts") or []]
+        == [kubernetes_serverless_seed_count] * 3
+        and float(kubernetes_serverless_cross.get("write_propagation_ms") or float("inf"))
+        <= float(kubernetes_serverless_cross.get("coherence_budget_ms") or 0.0)
+        and float(kubernetes_serverless_cross.get("delete_propagation_ms") or float("inf"))
+        <= float(kubernetes_serverless_cross.get("coherence_budget_ms") or 0.0)
+        and int(kubernetes_serverless_burst.get("successes") or 0)
+        == int(kubernetes_serverless_burst.get("requests") or -1)
+        and int(kubernetes_serverless_burst.get("errors") or 0) == 0
+        and float(kubernetes_serverless_burst.get("p99_ms") or float("inf"))
+        <= float(kubernetes_serverless_observed.get("burst_p99_budget_ms") or 0.0)
+        and float((kubernetes_serverless_observed.get("final_restore") or {}).get("rate", 0.0))
+        >= 1.0
+        and int(kubernetes_serverless_summary.get("check_count") or 0) >= 13
+        and int(kubernetes_serverless_summary.get("passed_checks") or 0)
+        == int(kubernetes_serverless_summary.get("check_count") or -1)
+    )
+    kubernetes_postgres_qdrant_dr = artifacts[
+        "kubernetes_postgres_qdrant_dr_smoke"
+    ]
+    kubernetes_dr_summary = dict(kubernetes_postgres_qdrant_dr.get("summary") or {})
+    kubernetes_dr_observed = dict(kubernetes_postgres_qdrant_dr.get("observed") or {})
+    kubernetes_dr_stats = dict(kubernetes_dr_observed.get("recovery_stats") or {})
+    kubernetes_dr_memory_count = int(kubernetes_dr_observed.get("memory_count") or 0)
+    kubernetes_postgres_qdrant_dr_pass = (
+        kubernetes_postgres_qdrant_dr.get("status") == "pass"
+        and kubernetes_postgres_qdrant_dr.get("environment")
+        == "kind-independent-namespace-postgres-qdrant-dr-ci"
+        and kubernetes_postgres_qdrant_dr.get("evidence_source")
+        == "github-actions-kind-pg-dump-independent-restore"
+        and bool(kubernetes_postgres_qdrant_dr.get("source_ref"))
+        and bool(kubernetes_postgres_qdrant_dr.get("workflow_run_id"))
+        and str(kubernetes_postgres_qdrant_dr.get("workflow_run_url") or "").startswith(
+            "https://github.com/CaspianG/wavemind/actions/runs/"
+        )
+        and kubernetes_dr_observed.get("source_namespace")
+        != kubernetes_dr_observed.get("recovery_namespace")
+        and kubernetes_dr_observed.get("backup_format") == "pg_dump-custom"
+        and int(kubernetes_dr_observed.get("backup_bytes") or 0) > 0
+        and len(str(kubernetes_dr_observed.get("backup_sha256") or "")) == 64
+        and kubernetes_dr_observed.get("source_state_stopped") is True
+        and kubernetes_dr_observed.get("recovery_services")
+        == ["postgres", "qdrant", "redis"]
+        and int(kubernetes_dr_observed.get("recovery_pvcs") or 0) >= 3
+        and kubernetes_dr_observed.get("postgres_restore_completed") is True
+        and float((kubernetes_dr_observed.get("restored") or {}).get("rate", 0.0))
+        >= 1.0
+        and kubernetes_dr_stats.get("index_healthy") is True
+        and int(kubernetes_dr_stats.get("index_expected_records") or -1)
+        == kubernetes_dr_memory_count
+        and int(kubernetes_dr_stats.get("index_vector_records") or -1)
+        == kubernetes_dr_memory_count
+        and int(kubernetes_dr_stats.get("index_missing_records", -1)) == 0
+        and int(kubernetes_dr_stats.get("index_extra_records", -1)) == 0
+        and kubernetes_dr_observed.get("recovery_api_uid_before")
+        != kubernetes_dr_observed.get("recovery_api_uid_after")
+        and float(
+            (kubernetes_dr_observed.get("restored_after_api_replacement") or {}).get(
+                "rate", 0.0
+            )
+        )
+        >= 1.0
+        and float(kubernetes_dr_observed.get("restore_elapsed_ms") or float("inf"))
+        <= float(kubernetes_dr_observed.get("restore_budget_ms") or 0.0)
+        and int(kubernetes_dr_summary.get("check_count") or 0) >= 10
+        and int(kubernetes_dr_summary.get("passed_checks") or 0)
+        == int(kubernetes_dr_summary.get("check_count") or -1)
     )
     serverless = scale.get("WaveMind serverless plan", {})
     serverless_ops = scale.get("WaveMind serverless operational profile", {})
@@ -1373,13 +1498,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and serverless_ops.get("cost_ok")
                 and serverless_ops.get("observed_telemetry_present")
                 and serverless_ops.get("observed_slo_pass")
+                and kubernetes_serverless_lifecycle_pass
                 else "fail"
             ),
             requirement=(
                 "Serverless mode must use external durable state, external vector "
                 "index, shared cache, valid KEDA scale target, scale-to-zero-safe "
                 "workers, an operational SLO/cold-start/cost profile, and an "
-                "observed-telemetry contract for real cluster load tests."
+                "observed-telemetry contract for real cluster load tests. A "
+                "non-loopback multi-zone Kubernetes lifecycle must also prove "
+                "scale-to-zero restore, bounded cross-worker coherence, and burst SLO."
             ),
             evidence=(
                 f"Postgres {serverless.get('uses_postgres')}, "
@@ -1393,7 +1521,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"observed replicas {serverless_ops.get('observed_measured_replicas')}, "
                 f"observed pool rps {serverless_ops.get('observed_measured_pool_requests_per_second')}, "
                 f"observed p99 {serverless_ops.get('observed_p99_request_ms')} ms, "
-                f"observed errors {serverless_ops.get('observed_error_rate')}"
+                f"observed errors {serverless_ops.get('observed_error_rate')}, "
+                f"kind lifecycle {kubernetes_serverless_lifecycle.get('status')} "
+                f"{kubernetes_serverless_summary.get('passed_checks')}/"
+                f"{kubernetes_serverless_summary.get('check_count')}, "
+                f"coherence {kubernetes_serverless_cross.get('visible_replicas')}/"
+                f"{kubernetes_serverless_cross.get('suppressed_replicas')}, "
+                f"propagation {kubernetes_serverless_cross.get('write_propagation_ms')}/"
+                f"{kubernetes_serverless_cross.get('delete_propagation_ms')} ms, "
+                f"burst p99 {kubernetes_serverless_burst.get('p99_ms')} ms, "
+                f"workflow {kubernetes_serverless_lifecycle.get('workflow_run_url')}"
             ),
             next_step="Run the same profile against a real Knative/KEDA cluster and replace loopback telemetry with remote p95/p99/cold-start/error-rate/scale-out metrics.",
         ),
@@ -1945,13 +2082,16 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 and int(recovery_journal.get("full_restored_records", 0)) >= 1
                 and int(recovery_journal.get("point_restored_records", 0)) >= 1
                 and postgres_pitr_pass
+                and kubernetes_postgres_qdrant_dr_pass
                 else "fail"
             ),
             requirement=(
                 "Backups must be checksummed, restorable, offsite-capable, "
                 "recover recall after restore, and support SQLite point-in-time "
                 "recovery from an append-only mutation journal plus database-native "
-                "Postgres PITR runbook/preflight coverage."
+                "Postgres PITR runbook/preflight coverage. Kubernetes external-state "
+                "deployments must restore PostgreSQL into an independent namespace, "
+                "rebuild Qdrant exactly, and preserve recall through API replacement."
             ),
             evidence=(
                 f"archive {snapshot.get('archive_verified')}, "
@@ -1963,12 +2103,23 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"deleted {recovery_journal.get('full_deleted_records')}, "
                 f"Postgres PITR {postgres_pitr.get('status')}, "
                 f"commands {postgres_pitr.get('summary', {}).get('command_count')}, "
-                f"env {postgres_pitr.get('environment_status')}"
+                f"env {postgres_pitr.get('environment_status')}, "
+                f"Kubernetes DR {kubernetes_postgres_qdrant_dr.get('status')} "
+                f"{kubernetes_dr_summary.get('passed_checks')}/"
+                f"{kubernetes_dr_summary.get('check_count')}, "
+                f"backup bytes {kubernetes_dr_observed.get('backup_bytes')}, "
+                f"restore recall {(kubernetes_dr_observed.get('restored') or {}).get('rate')}, "
+                f"Qdrant {kubernetes_dr_stats.get('index_vector_records')}/"
+                f"{kubernetes_dr_stats.get('index_expected_records')}, "
+                f"replacement recall "
+                f"{(kubernetes_dr_observed.get('restored_after_api_replacement') or {}).get('rate')}, "
+                f"restore {kubernetes_dr_observed.get('restore_elapsed_ms')} ms, "
+                f"workflow {kubernetes_postgres_qdrant_dr.get('workflow_run_url')}"
             ),
             next_step=(
-                "Repeat the drill with real S3-compatible storage, larger SQLite "
-                "journals, then execute the Postgres PITR runbook against a "
-                "staging or managed Postgres service and commit the drill report."
+                "Repeat the passing independent-namespace Kubernetes restore with "
+                "managed PostgreSQL PITR, remote object storage, and a separate "
+                "recovery cluster before claiming managed-cloud or multi-region DR."
             ),
         ),
         _criterion(

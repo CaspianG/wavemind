@@ -76,6 +76,8 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "benchmarks/kubernetes_operator_smoke_results.json",
         "benchmarks/kubernetes_cluster_network_smoke_results.json",
         "benchmarks/kubernetes_active_active_region_smoke_results.json",
+        "benchmarks/kubernetes_serverless_lifecycle_smoke_results.json",
+        "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json",
         "benchmarks/scale_readiness_results.json",
         "benchmarks/cost_efficiency_results.json",
     }.issubset({row["path"] for row in payload["freshness_gate"]["sources"]})
@@ -204,6 +206,16 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "does not unlock remote production" in (
         payload["kubernetes_operator_failover"]["claim_boundary"]
     )
+    assert payload["kubernetes_serverless_lifecycle"]["status"] == "pass"
+    assert payload["kubernetes_serverless_lifecycle"]["passed_checks"] == 13
+    assert payload["kubernetes_serverless_lifecycle"]["visible_replicas"] == 3
+    assert payload["kubernetes_serverless_lifecycle"]["suppressed_replicas"] == 3
+    assert payload["kubernetes_serverless_lifecycle"]["burst_p99_ms"] <= 2000.0
+    assert payload["kubernetes_postgres_qdrant_dr"]["status"] == "pass"
+    assert payload["kubernetes_postgres_qdrant_dr"]["passed_checks"] == 10
+    assert payload["kubernetes_postgres_qdrant_dr"]["restored_rate"] == 1.0
+    assert payload["kubernetes_postgres_qdrant_dr"]["index_vector_records"] == 24
+    assert payload["kubernetes_postgres_qdrant_dr"]["restored_after_api_replacement_rate"] == 1.0
     assert (
         payload["cluster_autoscale"]["distributed_http_recalled_after_primary_loss"]
         is True
@@ -476,6 +488,8 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert "benchmarks/kubernetes_operator_smoke_results.json" in payload["source_files"]
     assert "benchmarks/kubernetes_cluster_network_smoke_results.json" in payload["source_files"]
     assert "benchmarks/kubernetes_active_active_region_smoke_results.json" in payload["source_files"]
+    assert "benchmarks/kubernetes_serverless_lifecycle_smoke_results.json" in payload["source_files"]
+    assert "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json" in payload["source_files"]
     assert "benchmarks/memory_os_admission_results.json" in payload["source_files"]
     assert "benchmarks/production_scale_run_plan.json" in payload["source_files"]
     assert "benchmarks/agent_coherence_results.json" in payload["source_files"]

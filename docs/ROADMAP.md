@@ -76,6 +76,18 @@ policy matters more than raw vector-database scale:
   `0` action required, `0` fail). Live Zep competitor evidence is tracked
   separately because a missing commercial competitor credential should not block
   WaveMind's own production readiness verdict.
+- `benchmarks/kubernetes_serverless_lifecycle_smoke_results.json` now records a
+  real four-node, three-zone kind lifecycle: PVC-backed PostgreSQL, Qdrant, and
+  Redis preserve all `24/24` memories through two scale-to-zero cycles; write
+  and delete coherence reach `3/3` within `1.14 s`; the 120-request burst has
+  zero errors and p99 `1.46 s`. This is non-loopback Kubernetes evidence, not a
+  managed Knative/KEDA claim.
+- `benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json` now records an
+  independent-namespace disaster-recovery drill: a checksummed PostgreSQL
+  archive restores into fresh PVCs, an empty Qdrant index rebuilds exactly to
+  `24/24`, recall remains `1.000` after recovery API replacement, and restore
+  completes in `20.45 s`. Managed PostgreSQL PITR, remote object storage, and
+  multi-region recovery remain strict external evidence requirements.
 - `benchmarks/production_evidence_gate.py` is the stricter production-claim
   boundary. It does not let local loopback evidence unlock remote service-node,
   active-active, managed-serverless, 10M service, 50M, or 100M scale claims.

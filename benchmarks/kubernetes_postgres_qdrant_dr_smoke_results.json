@@ -1,0 +1,231 @@
+{
+  "schema": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
+  "generated_at": "2026-07-10T02:42:53.084317+00:00",
+  "environment": "kind-independent-namespace-postgres-qdrant-dr-ci",
+  "evidence_source": "github-actions-kind-pg-dump-independent-restore",
+  "claim_boundary": "Ephemeral non-loopback Kubernetes disaster-recovery evidence. It proves logical PostgreSQL backup/restore and Qdrant rebuild in an independent namespace, not managed-cloud PITR or multi-region DR.",
+  "status": "pass",
+  "summary": {
+    "check_count": 10,
+    "passed_checks": 10,
+    "failed_checks": 0
+  },
+  "checks": [
+    {
+      "id": "source_and_recovery_non_loopback",
+      "passed": true,
+      "observed": {
+        "source": "http://wavemind-serverless-keda.wavemind-serverless.svc.cluster.local:8000",
+        "recovery": "http://wavemind-serverless-keda.wavemind-serverless-dr.svc.cluster.local:8000"
+      },
+      "required": "distinct non-loopback Kubernetes service DNS endpoints"
+    },
+    {
+      "id": "postgres_backup_materialized",
+      "passed": true,
+      "observed": {
+        "format": "pg_dump-custom",
+        "bytes": 1016635,
+        "sha256": "34a7718692967a0191a11db9f34bcfe8b532060c2483cbbc3f2b8b51dc231fb1"
+      },
+      "required": "non-empty checksummed pg_dump custom archive"
+    },
+    {
+      "id": "source_state_services_stopped",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "fresh_recovery_state",
+      "passed": true,
+      "observed": {
+        "services": [
+          "postgres",
+          "qdrant",
+          "redis"
+        ],
+        "pvcs": 3
+      },
+      "required": {
+        "services": [
+          "postgres",
+          "qdrant",
+          "redis"
+        ],
+        "pvcs": ">=3"
+      }
+    },
+    {
+      "id": "postgres_restore_completed",
+      "passed": true,
+      "observed": true,
+      "required": true
+    },
+    {
+      "id": "all_memories_recalled_after_restore",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "qdrant_rebuilt_from_postgres",
+      "passed": true,
+      "observed": {
+        "healthy": true,
+        "expected": 24,
+        "vectors": 24,
+        "missing": 0,
+        "extra": 0
+      },
+      "required": "Qdrant exactly rebuilt from restored PostgreSQL rows"
+    },
+    {
+      "id": "recovery_api_replaced",
+      "passed": true,
+      "observed": {
+        "before": "b3a78af0-35ed-4c48-9de8-7faecf7b07dd",
+        "after": "5ad14bb8-5ccc-435c-8517-e26c795708d0"
+      },
+      "required": "replacement pod UID differs"
+    },
+    {
+      "id": "recall_survives_recovery_api_replacement",
+      "passed": true,
+      "observed": 1.0,
+      "required": 1.0
+    },
+    {
+      "id": "restore_time_budget",
+      "passed": true,
+      "observed": 20449.092,
+      "required": "<= 180000.0 ms"
+    }
+  ],
+  "observed": {
+    "source_namespace": "wavemind-serverless",
+    "recovery_namespace": "wavemind-serverless-dr",
+    "source_service": "http://wavemind-serverless-keda.wavemind-serverless.svc.cluster.local:8000",
+    "recovery_service": "http://wavemind-serverless-keda.wavemind-serverless-dr.svc.cluster.local:8000",
+    "backup_format": "pg_dump-custom",
+    "backup_bytes": 1016635,
+    "backup_sha256": "34a7718692967a0191a11db9f34bcfe8b532060c2483cbbc3f2b8b51dc231fb1",
+    "source_state_stopped": true,
+    "recovery_services": [
+      "postgres",
+      "qdrant",
+      "redis"
+    ],
+    "recovery_pvcs": 3,
+    "postgres_restore_completed": true,
+    "memory_count": 24,
+    "restored": {
+      "successes": 24,
+      "count": 24,
+      "latencies_ms": [
+        48.89864000006128,
+        14.456939999945462,
+        15.217296000059832,
+        17.119446000037897,
+        26.746441999989656,
+        21.148957000036717,
+        13.138636999997289,
+        28.50698600002488,
+        12.80256800009738,
+        23.791160999962813,
+        13.051663999931407,
+        12.060719000032805,
+        36.20166599989716,
+        12.906894000025204,
+        25.377370000001065,
+        15.448449000018627,
+        13.92912599999363,
+        39.289133000011134,
+        33.41630099998838,
+        25.914307999983066,
+        36.09424399996897,
+        29.55166099991402,
+        12.935454000057689,
+        10.89906599997903
+      ],
+      "rate": 1.0
+    },
+    "recovery_stats": {
+      "active_memories": 24,
+      "expired_memories": 0,
+      "total_memories": 24,
+      "audit_events": 101,
+      "field_energy": 503.720306,
+      "clusters": 1,
+      "field_shape": "128x128x6",
+      "index": "qdrant-cosine",
+      "index_healthy": true,
+      "index_expected_records": 24,
+      "index_vector_records": 24,
+      "index_missing_records": 0,
+      "index_extra_records": 0,
+      "index_health": {
+        "backend": "qdrant-cosine",
+        "healthy": true,
+        "exact": true,
+        "vector_dim": 384,
+        "expected_count": 24,
+        "vector_count": 24,
+        "missing_count": 0,
+        "extra_count": 0,
+        "missing_ids_sample": [],
+        "extra_ids_sample": [],
+        "dirty": false,
+        "persisted": false,
+        "loaded_from_persisted": false,
+        "path": null
+      },
+      "vector_dim": 384,
+      "graph_enabled": false,
+      "graph_nodes": 24,
+      "graph_edges": 0,
+      "graph_positive_edges": 0,
+      "graph_negative_edges": 0,
+      "graph_energy": 0.0
+    },
+    "recovery_api_uid_before": "b3a78af0-35ed-4c48-9de8-7faecf7b07dd",
+    "recovery_api_uid_after": "5ad14bb8-5ccc-435c-8517-e26c795708d0",
+    "restored_after_api_replacement": {
+      "successes": 24,
+      "count": 24,
+      "latencies_ms": [
+        17.16054299993175,
+        3.6655380000638615,
+        3.669010999942657,
+        4.605489000027774,
+        3.8615660000687058,
+        3.7763429999131404,
+        3.76651099998071,
+        3.852449999953933,
+        3.7426740000228165,
+        3.6249739999902886,
+        3.6626419999947757,
+        3.735196999969048,
+        3.586227000027975,
+        3.508641999928841,
+        3.7032230000022537,
+        3.622644999950353,
+        3.557247000003372,
+        3.5525629999710873,
+        3.6006450000058976,
+        3.705807999949684,
+        3.4992890000467014,
+        3.5462220000681555,
+        3.574258999947233,
+        3.5155719999693247
+      ],
+      "rate": 1.0
+    },
+    "restore_elapsed_ms": 20449.092,
+    "restore_budget_ms": 180000.0,
+    "elapsed_ms": 22461.369
+  },
+  "source_ref": "880cafdf5ce5f7c9da878bd8e82ada39ca2d02cc",
+  "workflow_run_id": "29064934749",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29064934749"
+}

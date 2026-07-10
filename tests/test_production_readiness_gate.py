@@ -90,6 +90,10 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "observed replicas" in criteria["serverless_externalized_state"]["evidence"]
     assert "observed pool rps" in criteria["serverless_externalized_state"]["evidence"]
     assert "observed errors 0.0" in criteria["serverless_externalized_state"]["evidence"]
+    assert "non-loopback multi-zone Kubernetes lifecycle" in criteria["serverless_externalized_state"]["requirement"]
+    assert "kind lifecycle pass 13/13" in criteria["serverless_externalized_state"]["evidence"]
+    assert "coherence 3/3" in criteria["serverless_externalized_state"]["evidence"]
+    assert "actions/runs/29064934749" in criteria["serverless_externalized_state"]["evidence"]
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]
@@ -188,6 +192,12 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "Postgres PITR" in criteria["backup_restore_dr"]["requirement"]
     assert "Postgres PITR ready" in criteria["backup_restore_dr"]["evidence"]
     assert "commands 7" in criteria["backup_restore_dr"]["evidence"]
+    assert "independent namespace" in criteria["backup_restore_dr"]["requirement"]
+    assert "Kubernetes DR pass 10/10" in criteria["backup_restore_dr"]["evidence"]
+    assert "restore recall 1.0" in criteria["backup_restore_dr"]["evidence"]
+    assert "Qdrant 24/24" in criteria["backup_restore_dr"]["evidence"]
+    assert "replacement recall 1.0" in criteria["backup_restore_dr"]["evidence"]
+    assert "actions/runs/29064934749" in criteria["backup_restore_dr"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]

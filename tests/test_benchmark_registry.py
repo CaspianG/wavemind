@@ -252,6 +252,39 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert region_current["passed_checks"] == region_current["check_count"] == 17
     assert region_current["workflow_run_url"].endswith("/29058433643")
     assert "not remote multi-region" in region_current["claim_boundary"]
+    serverless_lifecycle = entries["kubernetes_serverless_lifecycle_smoke"]["current"][
+        "WaveMind Kubernetes serverless lifecycle"
+    ]
+    assert serverless_lifecycle["status"] == "pass"
+    assert serverless_lifecycle["passed_checks"] == serverless_lifecycle["check_count"] == 13
+    assert serverless_lifecycle["persistent_volume_claims"] == 3
+    assert serverless_lifecycle["restored_after_zero_rate"] == 1.0
+    assert serverless_lifecycle["ready_replicas"] == 3
+    assert serverless_lifecycle["zone_count"] == 3
+    assert serverless_lifecycle["visible_replicas"] == 3
+    assert serverless_lifecycle["suppressed_replicas"] == 3
+    assert serverless_lifecycle["write_propagation_ms"] <= 2000.0
+    assert serverless_lifecycle["delete_propagation_ms"] <= 2000.0
+    assert serverless_lifecycle["burst_p99_ms"] <= 2000.0
+    assert serverless_lifecycle["final_restore_rate"] == 1.0
+    assert serverless_lifecycle["workflow_run_url"].endswith("/29064934749")
+    assert "does not unlock remote managed" in serverless_lifecycle["claim_boundary"]
+    kubernetes_dr = entries["kubernetes_postgres_qdrant_dr_smoke"]["current"][
+        "WaveMind Kubernetes PostgreSQL/Qdrant DR"
+    ]
+    assert kubernetes_dr["status"] == "pass"
+    assert kubernetes_dr["passed_checks"] == kubernetes_dr["check_count"] == 10
+    assert kubernetes_dr["backup_format"] == "pg_dump-custom"
+    assert kubernetes_dr["backup_bytes"] > 0
+    assert kubernetes_dr["source_state_stopped"] is True
+    assert kubernetes_dr["recovery_pvcs"] == 3
+    assert kubernetes_dr["restored_rate"] == 1.0
+    assert kubernetes_dr["index_healthy"] is True
+    assert kubernetes_dr["index_vector_records"] == kubernetes_dr["index_expected_records"] == 24
+    assert kubernetes_dr["restored_after_api_replacement_rate"] == 1.0
+    assert kubernetes_dr["restore_elapsed_ms"] <= 180000.0
+    assert kubernetes_dr["workflow_run_url"].endswith("/29064934749")
+    assert "not managed-cloud PITR" in kubernetes_dr["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"
     ]

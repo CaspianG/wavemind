@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-09T23:59:37Z",
+  "generated_at": "2026-07-10T02:48:30Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -152,8 +152,8 @@
       "id": "serverless_externalized_state",
       "title": "Serverless plan externalizes state and validates KEDA target",
       "status": "pass",
-      "requirement": "Serverless mode must use external durable state, external vector index, shared cache, valid KEDA scale target, scale-to-zero-safe workers, an operational SLO/cold-start/cost profile, and an observed-telemetry contract for real cluster load tests.",
-      "evidence": "Postgres True, Qdrant True, Redis True, required replicas 4, burst rps 256000, cold start 1220.0 ms, cost $81.76, observed source loopback-api-capacity-estimate, observed replicas 4, observed pool rps 583.26, observed p99 17.039 ms, observed errors 0.0",
+      "requirement": "Serverless mode must use external durable state, external vector index, shared cache, valid KEDA scale target, scale-to-zero-safe workers, an operational SLO/cold-start/cost profile, and an observed-telemetry contract for real cluster load tests. A non-loopback multi-zone Kubernetes lifecycle must also prove scale-to-zero restore, bounded cross-worker coherence, and burst SLO.",
+      "evidence": "Postgres True, Qdrant True, Redis True, required replicas 4, burst rps 256000, cold start 1220.0 ms, cost $81.76, observed source loopback-api-capacity-estimate, observed replicas 4, observed pool rps 583.26, observed p99 17.039 ms, observed errors 0.0, kind lifecycle pass 13/13, coherence 3/3, propagation 1130.6929430000991/915.0309450000123 ms, burst p99 1461.4564480000354 ms, workflow https://github.com/CaspianG/wavemind/actions/runs/29064934749",
       "next_step": "Run the same profile against a real Knative/KEDA cluster and replace loopback telemetry with remote p95/p99/cold-start/error-rate/scale-out metrics."
     },
     {
@@ -288,9 +288,9 @@
       "id": "backup_restore_dr",
       "title": "Snapshots, archives, offsite mirror, and object-store DR verify",
       "status": "pass",
-      "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage.",
-      "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env",
-      "next_step": "Repeat the drill with real S3-compatible storage, larger SQLite journals, then execute the Postgres PITR runbook against a staging or managed Postgres service and commit the drill report."
+      "requirement": "Backups must be checksummed, restorable, offsite-capable, recover recall after restore, and support SQLite point-in-time recovery from an append-only mutation journal plus database-native Postgres PITR runbook/preflight coverage. Kubernetes external-state deployments must restore PostgreSQL into an independent namespace, rebuild Qdrant exactly, and preserve recall through API replacement.",
+      "evidence": "archive True, object-store DR True, restored files 3, PITR full True, PITR point True, journal entries 5, deleted 2, Postgres PITR ready, commands 7, env missing_env, Kubernetes DR pass 10/10, backup bytes 1016635, restore recall 1.0, Qdrant 24/24, replacement recall 1.0, restore 20449.092 ms, workflow https://github.com/CaspianG/wavemind/actions/runs/29064934749",
+      "next_step": "Repeat the passing independent-namespace Kubernetes restore with managed PostgreSQL PITR, remote object storage, and a separate recovery cluster before claiming managed-cloud or multi-region DR."
     },
     {
       "id": "structured_multimodal_payloads",

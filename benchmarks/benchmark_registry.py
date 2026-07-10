@@ -317,6 +317,73 @@ def _kubernetes_active_active_region_smoke_summary(
     }
 
 
+def _kubernetes_serverless_lifecycle_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    cross = observed.get("cross_replica") if isinstance(observed.get("cross_replica"), dict) else {}
+    burst = observed.get("burst") if isinstance(observed.get("burst"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "persistent_volume_claims": observed.get("persistent_volume_claims"),
+        "cold_start_ms": observed.get("cold_start_ms"),
+        "restored_after_zero_rate": (observed.get("restored_after_zero") or {}).get("rate"),
+        "ready_replicas": observed.get("ready_replicas"),
+        "zone_count": observed.get("zone_count"),
+        "visible_replicas": cross.get("visible_replicas"),
+        "suppressed_replicas": cross.get("suppressed_replicas"),
+        "write_propagation_ms": cross.get("write_propagation_ms"),
+        "delete_propagation_ms": cross.get("delete_propagation_ms"),
+        "burst_requests_per_second": burst.get("requests_per_second"),
+        "burst_p99_ms": burst.get("p99_ms"),
+        "final_restore_rate": (observed.get("final_restore") or {}).get("rate"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
+def _kubernetes_postgres_qdrant_dr_summary(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    stats = observed.get("recovery_stats") if isinstance(observed.get("recovery_stats"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "evidence_source": payload.get("evidence_source"),
+        "source_ref": payload.get("source_ref"),
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "workflow_run_url": payload.get("workflow_run_url"),
+        "passed_checks": summary.get("passed_checks"),
+        "check_count": summary.get("check_count"),
+        "backup_format": observed.get("backup_format"),
+        "backup_bytes": observed.get("backup_bytes"),
+        "source_state_stopped": observed.get("source_state_stopped"),
+        "recovery_pvcs": observed.get("recovery_pvcs"),
+        "restored_rate": (observed.get("restored") or {}).get("rate"),
+        "index_healthy": stats.get("index_healthy"),
+        "index_expected_records": stats.get("index_expected_records"),
+        "index_vector_records": stats.get("index_vector_records"),
+        "restored_after_api_replacement_rate": (
+            observed.get("restored_after_api_replacement") or {}
+        ).get("rate"),
+        "restore_elapsed_ms": observed.get("restore_elapsed_ms"),
+        "claim_boundary": payload.get("claim_boundary"),
+    }
+
+
 def _ann_latest_results(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     if not payload:
         return {}
@@ -509,6 +576,12 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     kubernetes_active_active_region_smoke_payload = _load_json(
         root / "benchmarks" / "kubernetes_active_active_region_smoke_results.json"
+    )
+    kubernetes_serverless_lifecycle_payload = _load_json(
+        root / "benchmarks" / "kubernetes_serverless_lifecycle_smoke_results.json"
+    )
+    kubernetes_postgres_qdrant_dr_payload = _load_json(
+        root / "benchmarks" / "kubernetes_postgres_qdrant_dr_smoke_results.json"
     )
     external_http_active_active_loopback_payload = _load_json(
         root / "benchmarks" / "external_http_active_active_loopback_results.json"
@@ -2295,6 +2368,68 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep write availability, convergence, and delete suppression at 1.00 through physical region loss and recovery without replacing the region PVC pod.",
             "next_step": "Run this protocol across independent remote Kubernetes regions and use that external artifact for strict active-active admission.",
+        },
+        {
+            "id": "kubernetes_serverless_lifecycle_smoke",
+            "name": "Kubernetes serverless external-state lifecycle smoke",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/kubernetes_serverless_lifecycle_smoke_results.json",
+            "dataset": "A four-node, three-zone kind deployment with PVC-backed PostgreSQL, Qdrant, and Redis plus stateless WaveMind workers. It scales API replicas 1-to-0-to-1-to-3-to-0-to-1, verifies durable recall, bounded cross-replica write/delete visibility, and a concurrent burst SLO.",
+            "competitors": ["WaveMind Kubernetes serverless workers"],
+            "metrics": [
+                "restored_after_zero_rate",
+                "visible_replicas",
+                "suppressed_replicas",
+                "write_propagation_ms",
+                "delete_propagation_ms",
+                "burst_requests_per_second",
+                "burst_p99_ms",
+                "cold_start_ms",
+            ],
+            "current": {
+                "WaveMind Kubernetes serverless lifecycle": (
+                    _kubernetes_serverless_lifecycle_summary(
+                        kubernetes_serverless_lifecycle_payload
+                    )
+                    or {
+                        "status": "missing",
+                        "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    }
+                )
+            },
+            "target": "Keep both scale-to-zero restores at 1.00, write/delete visibility at 3/3 within 2000 ms, and burst p99 below 2000 ms on every relevant main push.",
+            "next_step": "Repeat the same lifecycle on managed Knative/KEDA endpoints and ingest remote telemetry through strict serverless admission.",
+        },
+        {
+            "id": "kubernetes_postgres_qdrant_dr_smoke",
+            "name": "Kubernetes PostgreSQL backup and Qdrant rebuild DR smoke",
+            "category": "production-ops",
+            "status": "implemented",
+            "source": "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json",
+            "dataset": "A checksummed PostgreSQL custom-format backup from the serverless lifecycle namespace. Source state services are stopped, the archive is restored into fresh PVC-backed PostgreSQL in an independent namespace, and an empty Qdrant collection is rebuilt before recall and API-pod replacement checks.",
+            "competitors": ["WaveMind Kubernetes disaster recovery"],
+            "metrics": [
+                "backup_bytes",
+                "restored_rate",
+                "index_expected_records",
+                "index_vector_records",
+                "restored_after_api_replacement_rate",
+                "restore_elapsed_ms",
+            ],
+            "current": {
+                "WaveMind Kubernetes PostgreSQL/Qdrant DR": (
+                    _kubernetes_postgres_qdrant_dr_summary(
+                        kubernetes_postgres_qdrant_dr_payload
+                    )
+                    or {
+                        "status": "missing",
+                        "workflow": ".github/workflows/kubernetes-operator-smoke.yml",
+                    }
+                )
+            },
+            "target": "Restore 100% of memories into an independent namespace, rebuild Qdrant exactly from PostgreSQL, survive recovery API replacement, and finish within 180 seconds.",
+            "next_step": "Run the same protocol against managed PostgreSQL backups, object storage, and a remote Kubernetes recovery cluster before claiming managed-cloud PITR or multi-region DR.",
         },
         {
             "id": "external_http_active_active_loopback",
