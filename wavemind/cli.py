@@ -4217,6 +4217,13 @@ def _add_serverless_spec_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--encoder", default="hash")
     parser.add_argument("--index", default="qdrant")
     parser.add_argument("--score-threshold", type=float, default=0.0)
+    parser.add_argument(
+        "--shared-store-refresh-seconds",
+        dest="serverless_shared_store_refresh_seconds",
+        type=float,
+        default=0.5,
+        help="Maximum local worker metadata staleness before refreshing Postgres.",
+    )
     parser.add_argument("--no-audit-queries", action="store_true")
     parser.add_argument("--postgres-secret", default="wavemind-postgres")
     parser.add_argument("--postgres-secret-key", default="dsn")
@@ -4254,6 +4261,7 @@ def _serverless_spec_from_args(args: argparse.Namespace) -> WaveMindServerlessSp
         encoder=args.encoder,
         score_threshold=args.score_threshold,
         audit_queries=not args.no_audit_queries,
+        shared_store_refresh_seconds=args.serverless_shared_store_refresh_seconds,
         postgres_dsn=SecretEnvRef(args.postgres_secret, args.postgres_secret_key),
         qdrant_url=qdrant_url,
         qdrant_api_key=qdrant_api_key,

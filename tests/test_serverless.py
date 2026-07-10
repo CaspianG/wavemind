@@ -38,6 +38,9 @@ def test_serverless_spec_requires_external_postgres_state():
     with pytest.raises(ValueError, match="qdrant_url"):
         WaveMindServerlessSpec(index="qdrant", qdrant_url=None)
 
+    with pytest.raises(ValueError, match="shared_store_refresh_seconds"):
+        WaveMindServerlessSpec(shared_store_refresh_seconds=-0.1)
+
 
 def test_serverless_bundle_renders_knative_and_keda_resources():
     spec = WaveMindServerlessSpec(
@@ -74,6 +77,7 @@ def test_serverless_bundle_renders_knative_and_keda_resources():
     assert env["WAVEMIND_POSTGRES_DSN"]["valueFrom"]["secretKeyRef"] == {"name": "pg", "key": "dsn"}
     assert env["WAVEMIND_QDRANT_URL"]["valueFrom"]["secretKeyRef"] == {"name": "qdrant", "key": "url"}
     assert env["WAVEMIND_REDIS_URL"]["valueFrom"]["secretKeyRef"] == {"name": "redis", "key": "url"}
+    assert env["WAVEMIND_SHARED_STORE_REFRESH_SECONDS"]["value"] == "0.5"
     assert deployment["apiVersion"] == "apps/v1"
     assert deployment["metadata"]["name"] == "wm-serverless-keda"
     assert scaled_object["apiVersion"] == "keda.sh/v1alpha1"
@@ -97,6 +101,8 @@ def test_serverless_readiness_report_marks_scale_to_zero_safe():
     assert report["uses_postgres"] is True
     assert report["uses_external_qdrant"] is True
     assert report["uses_shared_cache"] is True
+    assert report["shared_store_refresh_seconds"] == 0.5
+    assert report["bounded_worker_cache_staleness"] is True
     assert report["safe_for_pod_eviction"] is True
     assert report["valid_keda_scale_target"] is True
     assert report["keda_scale_target_kind"] == "Deployment"

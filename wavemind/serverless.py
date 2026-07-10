@@ -157,6 +157,7 @@ class WaveMindServerlessSpec:
     encoder: str = "hash"
     score_threshold: float = 0.0
     audit_queries: bool = True
+    shared_store_refresh_seconds: float = 0.5
     postgres_dsn: SecretEnvRef = field(
         default_factory=lambda: SecretEnvRef("wavemind-postgres", "dsn")
     )
@@ -189,6 +190,8 @@ class WaveMindServerlessSpec:
             raise ValueError("target_concurrency must be positive")
         if self.scale_down_delay_seconds < 0:
             raise ValueError("scale_down_delay_seconds cannot be negative")
+        if self.shared_store_refresh_seconds < 0:
+            raise ValueError("shared_store_refresh_seconds cannot be negative")
         if self.store.lower() != "postgres":
             raise ValueError("serverless mode requires store='postgres'")
         if self.index.lower() == "qdrant" and self.qdrant_url is None:
@@ -201,7 +204,10 @@ class WaveMindServerlessSpec:
             {"name": "WAVEMIND_ENCODER", "value": self.encoder},
             {"name": "WAVEMIND_SCORE_THRESHOLD", "value": str(float(self.score_threshold))},
             {"name": "WAVEMIND_AUDIT_QUERIES", "value": "1" if self.audit_queries else "0"},
-            {"name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS", "value": "0"},
+            {
+                "name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS",
+                "value": str(float(self.shared_store_refresh_seconds)),
+            },
             {"name": "WAVEMIND_POSTGRES_DSN", "valueFrom": _secret_key_ref(self.postgres_dsn)},
         ]
         if self.qdrant_url is not None:
@@ -376,6 +382,8 @@ class WaveMindServerlessSpec:
             "uses_postgres": self.store.lower() == "postgres",
             "uses_external_qdrant": self.index.lower() == "qdrant" and self.qdrant_url is not None,
             "uses_shared_cache": self.redis_url is not None,
+            "shared_store_refresh_seconds": self.shared_store_refresh_seconds,
+            "bounded_worker_cache_staleness": self.shared_store_refresh_seconds > 0,
             "has_auth_secret": self.api_keys is not None,
             "safe_for_pod_eviction": self.store.lower() == "postgres",
             "keda_scale_target_kind": "Deployment",

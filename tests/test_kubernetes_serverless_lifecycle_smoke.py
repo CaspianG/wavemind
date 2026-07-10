@@ -39,6 +39,9 @@ def _passing_observation():
             "write_active_counts": [25, 25, 25],
             "delete_active_counts": [24, 24, 24],
             "seed_count": 24,
+            "write_propagation_ms": 640.0,
+            "delete_propagation_ms": 680.0,
+            "coherence_budget_ms": 2000.0,
         },
         "burst": {
             "requests": 120,
@@ -61,7 +64,7 @@ def test_serverless_lifecycle_evaluator_requires_all_runtime_invariants(monkeypa
     )
 
     assert payload["status"] == "pass"
-    assert payload["summary"]["passed_checks"] == payload["summary"]["check_count"] == 12
+    assert payload["summary"]["passed_checks"] == payload["summary"]["check_count"] == 13
     assert "does not unlock remote managed" in payload["claim_boundary"]
     assert payload["source_ref"] == "abc123"
     assert payload["workflow_run_url"] == (
@@ -74,6 +77,7 @@ def test_serverless_lifecycle_evaluator_rejects_local_or_incomplete_evidence():
     observed["service_address"] = "http://127.0.0.1:8000"
     observed["persistent_volume_claims"] = 1
     observed["cross_replica"]["visible_replicas"] = 2
+    observed["cross_replica"]["write_propagation_ms"] = 3000.0
     observed["burst"]["p99_ms"] = 5000.0
 
     payload = MODULE.evaluate_kubernetes_serverless_lifecycle_smoke(observed)
@@ -83,6 +87,7 @@ def test_serverless_lifecycle_evaluator_rejects_local_or_incomplete_evidence():
     assert checks["non_loopback_service_dns"]["passed"] is False
     assert checks["external_durable_state"]["passed"] is False
     assert checks["cross_replica_write_visibility"]["passed"] is False
+    assert checks["cross_replica_coherence_budget"]["passed"] is False
     assert checks["burst_p99_budget"]["passed"] is False
 
 
@@ -117,7 +122,7 @@ def test_serverless_resources_use_external_persistent_state_and_zero_api_replica
     ] == "topology.kubernetes.io/zone"
     assert env["WAVEMIND_STORE"]["value"] == "postgres"
     assert env["WAVEMIND_INDEX"]["value"] == "qdrant"
-    assert env["WAVEMIND_SHARED_STORE_REFRESH_SECONDS"]["value"] == "0"
+    assert env["WAVEMIND_SHARED_STORE_REFRESH_SECONDS"]["value"] == "0.5"
     assert env["WAVEMIND_REDIS_URL"]["valueFrom"]["secretKeyRef"]["name"] == "wavemind-redis"
     assert container["command"] == ["wavemind"]
     assert container["args"][:3] == ["serve", "--host", "0.0.0.0"]

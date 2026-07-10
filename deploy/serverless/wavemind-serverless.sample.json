@@ -70,7 +70,7 @@
                   },
                   {
                     "name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS",
-                    "value": "0"
+                    "value": "0.5"
                   },
                   {
                     "name": "WAVEMIND_POSTGRES_DSN",
@@ -208,7 +208,7 @@
                   },
                   {
                     "name": "WAVEMIND_SHARED_STORE_REFRESH_SECONDS",
-                    "value": "0"
+                    "value": "0.5"
                   },
                   {
                     "name": "WAVEMIND_POSTGRES_DSN",

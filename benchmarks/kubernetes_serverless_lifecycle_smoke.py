@@ -105,6 +105,8 @@ elif mode == "cross-replica":
             "tags": ["serverless", "coherence"],
         },
     )
+    write_propagation_started = time.perf_counter()
+    time.sleep(cfg["refresh_grace_seconds"])
     visible = 0
     read_ms = []
     write_counts = []
@@ -138,12 +140,15 @@ elif mode == "cross-replica":
         })
         if any(marker in result.get("text", "") for result in results):
             visible += 1
+    write_propagation_ms = (time.perf_counter() - write_propagation_started) * 1000.0
     deleted, delete_ms = request(
         cfg["service_base"],
         "/forget",
         {"id": int(created["id"]), "namespace": cfg["namespace"]},
         method="DELETE",
     )
+    delete_propagation_started = time.perf_counter()
+    time.sleep(cfg["refresh_grace_seconds"])
     suppressed = 0
     delete_counts = []
     delete_replicas = []
@@ -175,6 +180,7 @@ elif mode == "cross-replica":
         })
         if not any(marker in result.get("text", "") for result in results):
             suppressed += 1
+    delete_propagation_ms = (time.perf_counter() - delete_propagation_started) * 1000.0
     print(json.dumps({
         "memory_id": int(created["id"]),
         "replicas": len(cfg["bases"]),
@@ -184,6 +190,9 @@ elif mode == "cross-replica":
         "delete_active_counts": delete_counts,
         "write_replicas": write_replicas,
         "delete_replicas": delete_replicas,
+        "write_propagation_ms": write_propagation_ms,
+        "delete_propagation_ms": delete_propagation_ms,
+        "coherence_budget_ms": cfg["coherence_budget_ms"],
         "seed_count": cfg["count"],
         "deleted": int(deleted.get("deleted", 0)),
         "write_ms": write_ms,
@@ -616,6 +625,20 @@ def evaluate_kubernetes_serverless_lifecycle_smoke(observed: dict[str, Any]) -> 
             "required": {"suppressed": 3, "deleted": 1, "active_counts": "seed_count"},
         },
         {
+            "id": "cross_replica_coherence_budget",
+            "passed": (
+                float(cross.get("write_propagation_ms") or float("inf"))
+                <= float(cross.get("coherence_budget_ms") or 0.0)
+                and float(cross.get("delete_propagation_ms") or float("inf"))
+                <= float(cross.get("coherence_budget_ms") or 0.0)
+            ),
+            "observed": {
+                "write_ms": cross.get("write_propagation_ms"),
+                "delete_ms": cross.get("delete_propagation_ms"),
+            },
+            "required": f"both <= {cross.get('coherence_budget_ms')} ms",
+        },
+        {
             "id": "burst_success",
             "passed": int(burst.get("successes") or 0) == int(burst.get("requests") or -1)
             and int(burst.get("errors") or 0) == 0,
@@ -801,6 +824,8 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
             "bases": pod_bases,
             "service_base": service_base,
             "count": args.memories,
+            "refresh_grace_seconds": args.refresh_grace_seconds,
+            "coherence_budget_ms": args.coherence_budget_ms,
         },
         timeout=180.0,
     )
@@ -883,6 +908,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--burst-workers", type=int, default=12)
     parser.add_argument("--cold-start-budget-ms", type=float, default=120000.0)
     parser.add_argument("--burst-p99-budget-ms", type=float, default=2000.0)
+    parser.add_argument("--refresh-grace-seconds", type=float, default=0.6)
+    parser.add_argument("--coherence-budget-ms", type=float, default=2000.0)
     parser.add_argument("--timeout-seconds", type=float, default=300.0)
     parser.add_argument("--output", type=Path, default=Path("benchmarks/kubernetes_serverless_lifecycle_smoke_results.json"))
     return parser
