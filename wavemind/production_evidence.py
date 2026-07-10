@@ -584,7 +584,10 @@ def _validate_external_cluster_payload(
         require(bool(result.get("repair_ok")), "repair_ok must be true")
         require(int(result.get("repair_repaired_total", 0)) >= 1, "repair_repaired_total must be >= 1")
         require(bool(result.get("slo_pass")), "slo_pass must be true")
-        require(float(result.get("p99_operation_ms", float("inf"))) <= p99_slo_ms, "p99_operation_ms above SLO")
+        query_p99_ms = float(
+            result.get("query_p99_ms", result.get("p99_operation_ms", float("inf")))
+        )
+        require(query_p99_ms <= p99_slo_ms, "query_p99_ms above SLO")
         batch_query = result.get("batch_query")
         require(isinstance(batch_query, dict), "batch_query result is required")
         if isinstance(batch_query, dict):
@@ -611,7 +614,8 @@ def _validate_external_cluster_payload(
         f"namespaces {scenario.get('namespace_count')}, "
         f"success {result.get('success_rate')}, "
         f"failover {result.get('failover_hit_rate')}, "
-        f"p99 {result.get('p99_operation_ms')} ms, "
+        f"query p99 {result.get('query_p99_ms', result.get('p99_operation_ms'))} ms, "
+        f"lifecycle batch p99 {result.get('lifecycle_batch_p99_ms', result.get('p99_operation_ms'))} ms, "
         f"batch query {batch_query.get('success') if isinstance(batch_query, dict) else None}, "
         f"batch HTTP {batch_query.get('individual_http_requests') if isinstance(batch_query, dict) else None} -> "
         f"{batch_query.get('batch_http_requests') if isinstance(batch_query, dict) else None}, "

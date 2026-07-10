@@ -211,7 +211,7 @@ def test_cluster_admission_blocks_when_artifact_is_too_small_for_rollout(tmp_pat
     assert payload["requested_evidence"]["status"] == "fail"
     assert "node_count must be >= 8" in payload["requested_evidence"]["issues"]
     assert "namespace_count must be >= 64" in payload["requested_evidence"]["issues"]
-    assert "p99_operation_ms above SLO" in payload["requested_evidence"]["issues"]
+    assert "query_p99_ms above SLO" in payload["requested_evidence"]["issues"]
 
 
 def test_cluster_admission_blocks_evidence_from_a_different_target(tmp_path):

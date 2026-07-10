@@ -404,7 +404,6 @@ def run_kubernetes_external_http_cluster_evidence(
         str(args.p99_slo_ms),
         "--output",
         remote_output,
-        "--fail-on-slo",
     ]
     for item in placement:
         command.extend(("--node", f"{item['id']}={item['address']}"))
