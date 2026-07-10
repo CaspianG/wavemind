@@ -49,10 +49,12 @@ def request(base, path, payload=None, method="POST", timeout=10.0):
     elapsed = (time.perf_counter() - started) * 1000.0
     return (json.loads(raw.decode("utf-8")) if raw else {}), elapsed
 
-def query(base, text, top_k=1, min_score=None):
+def query(base, text, top_k=1, min_score=None, tags=None):
     payload = {"text": text, "namespace": cfg["namespace"], "top_k": top_k}
     if min_score is not None:
         payload["min_score"] = min_score
+    if tags is not None:
+        payload["tags"] = tags
     payload, elapsed = request(
         base,
         "/query",
@@ -112,6 +114,7 @@ elif mode == "cross-replica":
             marker,
             top_k=10,
             min_score=(index + 1) * 0.000001,
+            tags=["coherence"],
         )
         read_ms.append(elapsed)
         stats, _ = request(
@@ -137,6 +140,7 @@ elif mode == "cross-replica":
             marker,
             top_k=10,
             min_score=0.0001 + ((index + 1) * 0.000001),
+            tags=["coherence"],
         )
         stats, _ = request(
             base,
