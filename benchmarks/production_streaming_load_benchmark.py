@@ -398,13 +398,66 @@ def _upsert_qdrant_points(
     points: list[Any],
     upsert_batch_size: int,
 ) -> int:
-    point_chunks = list(_chunks(points, upsert_batch_size))
+    return _upsert_qdrant_point_chunks(
+        executor=executor,
+        client=client,
+        collection_name=collection_name,
+        point_chunks=_chunks(points, upsert_batch_size),
+        max_in_flight=1,
+    )
+
+
+def _upsert_qdrant_point_chunks(
+    *,
+    executor: concurrent.futures.Executor,
+    client: Any,
+    collection_name: str,
+    point_chunks: Iterable[list[Any]],
+    max_in_flight: int,
+) -> int:
+    if max_in_flight <= 0:
+        raise ValueError("max_in_flight must be positive")
 
     def upsert_chunk(point_chunk: list[Any]) -> int:
         client.upsert(collection_name=collection_name, points=point_chunk)
         return len(point_chunk)
 
-    return sum(executor.map(upsert_chunk, point_chunks))
+    inserted = 0
+    pending: set[concurrent.futures.Future[int]] = set()
+    chunks = iter(point_chunks)
+    exhausted = False
+    while pending or not exhausted:
+        while len(pending) < max_in_flight and not exhausted:
+            try:
+                point_chunk = next(chunks)
+            except StopIteration:
+                exhausted = True
+                break
+            pending.add(executor.submit(upsert_chunk, point_chunk))
+        if pending:
+            completed, pending = concurrent.futures.wait(
+                pending,
+                return_when=concurrent.futures.FIRST_COMPLETED,
+            )
+            inserted += sum(future.result() for future in completed)
+    return inserted
+
+
+def _iter_qdrant_point_chunks(
+    ids: np.ndarray,
+    vectors: np.ndarray,
+    *,
+    point_type: Any,
+    chunk_size: int,
+) -> Iterable[list[Any]]:
+    if chunk_size <= 0:
+        raise ValueError("chunk size must be positive")
+    for start in range(0, len(ids), chunk_size):
+        stop = min(len(ids), start + chunk_size)
+        yield [
+            point_type(id=int(point_id), vector=vector.tolist())
+            for point_id, vector in zip(ids[start:stop], vectors[start:stop])
+        ]
 
 
 def _upsert_qdrant_shards(
@@ -1633,16 +1686,17 @@ def run_qdrant_streaming(
             ):
                 batch_start = int(ids[0]) if len(ids) else 0
                 if batch_start not in completed_batches:
-                    points = [
-                        PointStruct(id=int(id), vector=vector.tolist())
-                        for id, vector in zip(ids, vectors)
-                    ]
-                    inserted = _upsert_qdrant_points(
+                    inserted = _upsert_qdrant_point_chunks(
                         executor=upsert_executor,
                         client=client,
                         collection_name=collection_name,
-                        points=points,
-                        upsert_batch_size=upsert_batch_size,
+                        point_chunks=_iter_qdrant_point_chunks(
+                            ids,
+                            vectors,
+                            point_type=PointStruct,
+                            chunk_size=upsert_batch_size,
+                        ),
+                        max_in_flight=upsert_workers,
                     )
                     if inserted != len(ids):
                         raise RuntimeError(

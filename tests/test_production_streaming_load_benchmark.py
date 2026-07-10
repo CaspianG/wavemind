@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 
@@ -78,6 +79,8 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         _chunks,
         _merge_scored_hits,
         _qdrant_shard_index,
+        _iter_qdrant_point_chunks,
+        _upsert_qdrant_point_chunks,
         _upsert_qdrant_points,
         _upsert_qdrant_shards,
     )
@@ -146,6 +149,35 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         ("memories", [3, 4]),
         ("memories", [5]),
     ]
+
+    class Point:
+        def __init__(self, *, id, vector):
+            self.id = id
+            self.vector = vector
+
+    chunks = list(
+        _iter_qdrant_point_chunks(
+            np.asarray([1, 2, 3, 4, 5]),
+            np.asarray([[1.0], [2.0], [3.0], [4.0], [5.0]]),
+            point_type=Point,
+            chunk_size=2,
+        )
+    )
+    assert [[point.id for point in chunk] for chunk in chunks] == [
+        [1, 2],
+        [3, 4],
+        [5],
+    ]
+    client = Client()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_point_chunks(
+            executor=executor,
+            client=client,
+            collection_name="memories",
+            point_chunks=iter(chunks),
+            max_in_flight=2,
+        )
+    assert inserted == 5
 
 
 def test_qdrant_index_readiness_waits_for_green_index(monkeypatch):
