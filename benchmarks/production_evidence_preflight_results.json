@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_preflight.v1",
-  "generated_at": "2026-07-11T05:56:50Z",
+  "generated_at": "2026-07-11T19:47:58Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -124,15 +124,15 @@
       "ready": false,
       "evidence": "plan benchmarks/production_streaming_load_pgvector_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.004 GB",
       "required_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "missing_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "issues": [
-        "set WAVEMIND_PGVECTOR_DSN"
+        "set WAVEMIND_PGVECTOR_DSNS"
       ],
       "warnings": []
     },

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-11T05:56:53Z",
+  "generated_at": "2026-07-11T19:48:01Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
@@ -109,10 +109,10 @@
       "output_artifact_exists": false,
       "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
       "missing_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "blockers": [
-        "missing_env:WAVEMIND_PGVECTOR_DSN",
+        "missing_env:WAVEMIND_PGVECTOR_DSNS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
@@ -152,6 +152,7 @@
       ],
       "blockers": [
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+        "missing_module:faiss",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",

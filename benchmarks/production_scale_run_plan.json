@@ -1,9 +1,9 @@
 {
   "schema": "wavemind.production_scale_run_plan.v1",
-  "generated_at": "2026-07-10T04:17:18Z",
+  "generated_at": "2026-07-11T19:47:53Z",
   "summary": {
     "schema": "wavemind.production_scale_run_plan.v1",
-    "generated_at": "2026-07-10T04:17:18Z",
+    "generated_at": "2026-07-11T19:47:53Z",
     "overall_status": "action_required",
     "ready_count": 0,
     "action_required_count": 5,
@@ -371,16 +371,23 @@
       "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "command_env": {
-        "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
+        "WAVEMIND_PGVECTOR_DSNS": "postgresql://user:password@postgres-0.example:5432/wavemind,postgresql://user:password@postgres-1.example:5432/wavemind,postgresql://user:password@postgres-2.example:5432/wavemind,postgresql://user:password@postgres-3.example:5432/wavemind",
         "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
-        "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+        "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
+        "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
+        "WAVEMIND_PGVECTOR_INDEX_TYPE": "hnsw",
+        "WAVEMIND_PGVECTOR_HNSW_M": "16",
+        "WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION": "256",
+        "WAVEMIND_PGVECTOR_EF_SEARCH": "800",
+        "WAVEMIND_PGVECTOR_QUERY_ROUTING": "namespace",
+        "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
         "WAVEMIND_PGVECTOR_WARMUP_QUERIES": "100"
       },
       "required_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "missing_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "module_requirements": {
         "psycopg": true
@@ -394,7 +401,7 @@
       "disk_free_gb": 0.0,
       "runner_storage_root": "state/production-runs",
       "disk_free_path": "C:/work/particles/wavemind 2.0/state",
-      "index_mode": "remote PostgreSQL/pgvector HNSW service",
+      "index_mode": "remote namespace-sharded PostgreSQL/pgvector HNSW services",
       "slo_capacity_envelope": {
         "engine": "pgvector-service",
         "status": "scale_required",
@@ -439,7 +446,7 @@
         "monthly_total_cost_at_target_qps_usd": 1462.3841857910156
       },
       "blockers": [
-        "missing_env:WAVEMIND_PGVECTOR_DSN",
+        "missing_env:WAVEMIND_PGVECTOR_DSNS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [
@@ -492,7 +499,7 @@
         "WAVEMIND_FAISS_IVFPQ_PATH"
       ],
       "module_requirements": {
-        "faiss": true
+        "faiss": false
       },
       "estimated_index_gb": 1.12,
       "estimated_transient_runner_gb": 0.573,
@@ -549,6 +556,7 @@
       },
       "blockers": [
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+        "missing_module:faiss",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "actions": [

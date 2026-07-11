@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.cost_efficiency_leaderboard.v1",
-  "generated_at": "2026-07-11T05:56:44Z",
-  "source_ref": "c4f786e131c8",
+  "generated_at": "2026-07-11T19:47:54Z",
+  "source_ref": "30415f5a049a",
   "claim_boundary": "Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.",
   "summary": {
     "measured_row_count": 22,
@@ -664,7 +664,7 @@
         "claim_status": "plan_only",
         "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
         "blockers": [
-          "missing_env:WAVEMIND_PGVECTOR_DSN",
+          "missing_env:WAVEMIND_PGVECTOR_DSNS",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
         "slo_pass": false,
@@ -725,6 +725,7 @@
         "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
         "blockers": [
           "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+          "missing_module:faiss",
           "insufficient_local_disk_for_index_and_transient_batches"
         ],
         "slo_pass": false,
@@ -1345,6 +1346,7 @@
       "output_artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "blockers": [
         "missing_env:WAVEMIND_FAISS_IVFPQ_PATH",
+        "missing_module:faiss",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "slo_pass": false,
@@ -1373,7 +1375,7 @@
       "claim_status": "plan_only",
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "blockers": [
-        "missing_env:WAVEMIND_PGVECTOR_DSN",
+        "missing_env:WAVEMIND_PGVECTOR_DSNS",
         "insufficient_local_disk_for_index_and_transient_batches"
       ],
       "slo_pass": false,

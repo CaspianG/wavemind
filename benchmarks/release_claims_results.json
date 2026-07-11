@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.release_claims.v1",
-  "generated_at": "2026-07-11T05:56:52Z",
+  "generated_at": "2026-07-11T19:48:00Z",
   "release_status": "core_release_ready",
   "claim_status": "claims_limited",
   "summary": {
@@ -75,7 +75,7 @@
       "preflight_status": "action_required",
       "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "missing_env": [
-        "WAVEMIND_PGVECTOR_DSN"
+        "WAVEMIND_PGVECTOR_DSNS"
       ],
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."

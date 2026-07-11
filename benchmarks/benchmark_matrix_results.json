@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-11T05:56:44Z",
-  "source_ref": "c4f786e131c8",
+  "generated_at": "2026-07-11T19:47:54Z",
+  "source_ref": "30415f5a049a",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1281,15 +1281,15 @@
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.004,
           "disk_free_gb": 0.0,
-          "index_mode": "remote PostgreSQL/pgvector storage; local runner stores only generated batches",
+          "index_mode": "modulo-sharded PostgreSQL/pgvector services; local runner stores only generated batches",
           "required_env": [
-            "WAVEMIND_PGVECTOR_DSN"
+            "WAVEMIND_PGVECTOR_DSNS"
           ],
           "missing_env": [
-            "WAVEMIND_PGVECTOR_DSN"
+            "WAVEMIND_PGVECTOR_DSNS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_PGVECTOR_DSN",
+            "missing_env:WAVEMIND_PGVECTOR_DSNS",
             "insufficient_local_disk_for_index_and_transient_batches"
           ]
         }
