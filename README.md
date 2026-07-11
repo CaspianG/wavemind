@@ -2042,11 +2042,14 @@ Set `WAVEMIND_PGVECTOR_PREWARM_INDEX=1` for steady-state service evidence. The
 runner loads the selected candidate-index relation through PostgreSQL
 `pg_prewarm` and records the
 number of cached index blocks, so warm latency is explicit rather than inferred.
-Large pgvector profiles can select `WAVEMIND_PGVECTOR_INDEX_TYPE=hnsw|ivfflat`.
+Large pgvector profiles can select
+`WAVEMIND_PGVECTOR_INDEX_TYPE=hnsw|hnsw-binary|ivfflat`.
 For IVFFlat, `WAVEMIND_PGVECTOR_IVFFLAT_LISTS` controls partition count and
 `WAVEMIND_PGVECTOR_IVFFLAT_PROBES` controls the recall/latency tradeoff. The
-10M plan uses IVFFlat because low-degree HNSW graphs do not preserve adequate
-recall under the memory limit of the reproducible local service profile.
+The 10M plan uses binary-quantized HNSW candidate generation followed by
+original-`halfvec` reranking. `WAVEMIND_PGVECTOR_BINARY_CANDIDATES` controls the
+rerank window. This keeps a full-quality HNSW graph in memory without treating
+binary distance as the final score.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and

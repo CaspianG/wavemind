@@ -1131,9 +1131,9 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
     assert row["command_env"]["WAVEMIND_PGVECTOR_STORAGE_TYPE"] == "halfvec"
     assert row["command_env"]["WAVEMIND_PGVECTOR_INSERT_MODE"] == "copy"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "ivfflat"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_LISTS"] == "4096"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_PROBES"] == "256"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "hnsw-binary"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_M"] == "16"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_BINARY_CANDIDATES"] == "200"
     assert row["command_env"]["WAVEMIND_PGVECTOR_PREWARM_INDEX"] == "1"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]
@@ -1144,11 +1144,11 @@ def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
 
     monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
-    monkeypatch.setenv("WAVEMIND_PGVECTOR_INDEX_TYPE", "ivfflat")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw-binary")
     config = _pgvector_config_from_env()
     assert config["storage_type"] == "halfvec"
     assert config["insert_mode"] == "copy"
-    assert config["index_type"] == "ivfflat"
+    assert config["index_type"] == "hnsw-binary"
 
     monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "binary")
     with pytest.raises(ValueError, match="must be vector or halfvec"):
