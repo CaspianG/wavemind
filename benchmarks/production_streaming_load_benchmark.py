@@ -615,6 +615,12 @@ def _wait_for_qdrant_index_ready(
 
 
 def _pgvector_config_from_env() -> dict[str, Any]:
+    storage_type = os.environ.get("WAVEMIND_PGVECTOR_STORAGE_TYPE", "vector").strip().lower()
+    if storage_type not in {"vector", "halfvec"}:
+        raise ValueError("WAVEMIND_PGVECTOR_STORAGE_TYPE must be vector or halfvec")
+    insert_mode = os.environ.get("WAVEMIND_PGVECTOR_INSERT_MODE", "copy").strip().lower()
+    if insert_mode not in {"copy", "upsert"}:
+        raise ValueError("WAVEMIND_PGVECTOR_INSERT_MODE must be copy or upsert")
     return {
         "table": _safe_identifier(
             os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_streaming_vectors"),
@@ -622,6 +628,8 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         ),
         "collection": os.environ.get("WAVEMIND_PGVECTOR_COLLECTION")
         or f"streaming_load_{time.time_ns()}",
+        "storage_type": storage_type,
+        "insert_mode": insert_mode,
         "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
         "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
         "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
@@ -632,6 +640,53 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         "scan_mem_multiplier": _optional_int_env("WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER"),
         "keep_collection": _bool_env("WAVEMIND_PGVECTOR_KEEP_COLLECTION", False),
     }
+
+
+def _pgvector_operator_class(storage_type: str) -> str:
+    return "halfvec_cosine_ops" if storage_type == "halfvec" else "vector_cosine_ops"
+
+
+def _pgvector_insert_batch(
+    cursor: Any,
+    *,
+    table: str,
+    collection: str,
+    ids: np.ndarray,
+    vectors: np.ndarray,
+    storage_type: str,
+    insert_mode: str,
+) -> None:
+    if len(ids) == 0:
+        return
+    if insert_mode == "copy":
+        # A missing checkpoint after a committed COPY is safe to resume: the
+        # uncheckpointed id range is replaced before it is copied again.
+        cursor.execute(
+            f"DELETE FROM {table} WHERE collection = %s AND memory_id BETWEEN %s AND %s",
+            (collection, int(ids[0]), int(ids[-1])),
+        )
+        with cursor.copy(
+            f"COPY {table} (collection, memory_id, embedding) FROM STDIN"
+        ) as copy:
+            for memory_id, vector in zip(ids, vectors):
+                copy.write_row(
+                    (collection, int(memory_id), _vector_literal(vector))
+                )
+        return
+
+    insert_sql = (
+        f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
+        f"VALUES (%s, %s, %s::{storage_type}, now()) "
+        f"ON CONFLICT (collection, memory_id) "
+        f"DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()"
+    )
+    cursor.executemany(
+        insert_sql,
+        [
+            (collection, int(memory_id), _vector_literal(vector))
+            for memory_id, vector in zip(ids, vectors)
+        ],
+    )
 
 
 def _qdrant_collection_config_from_env() -> dict[str, Any]:
@@ -1007,6 +1062,8 @@ def _streaming_plan_row(
         command_env = {
             "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
             "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+            "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
+            "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
             "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
         }
     else:
@@ -2430,6 +2487,9 @@ def run_pgvector_streaming(
         )
 
     table = str(config["table"])
+    storage_type = str(config["storage_type"])
+    insert_mode = str(config["insert_mode"])
+    index_name = f"{table}_embedding_hnsw_idx"
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
         engine=engine,
@@ -2442,6 +2502,8 @@ def run_pgvector_streaming(
         batch_size=batch_size,
         extra={
             "table": table,
+            "storage_type": storage_type,
+            "insert_mode": insert_mode,
             "create_hnsw": bool(config["create_hnsw"]),
             "hnsw_m": config["hnsw_m"],
             "hnsw_ef_construction": config["hnsw_ef_construction"],
@@ -2467,6 +2529,12 @@ def run_pgvector_streaming(
     completed_batches = _checkpoint_completed_batches(checkpoint)
     source_ids = choose_source_ids(count, query_count, seed)
     source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+    complete_resume = _checkpoint_complete_for_run(
+        checkpoint,
+        count=count,
+        batch_size=batch_size,
+        source_ids=source_ids,
+    )
     conn = psycopg.connect(dsn, autocommit=True)
     try:
         started = time.perf_counter()
@@ -2476,44 +2544,76 @@ def run_pgvector_streaming(
             CREATE TABLE IF NOT EXISTS {table} (
                 collection TEXT NOT NULL,
                 memory_id BIGINT NOT NULL,
-                embedding vector({int(dim)}) NOT NULL,
+                embedding {storage_type}({int(dim)}) NOT NULL,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                 PRIMARY KEY (collection, memory_id)
             )
             """
         )
         conn.execute(f"CREATE INDEX IF NOT EXISTS {table}_collection_idx ON {table} (collection)")
+        column_type = conn.execute(
+            """
+            SELECT format_type(attribute.atttypid, attribute.atttypmod)
+            FROM pg_attribute AS attribute
+            WHERE attribute.attrelid = %s::regclass
+              AND attribute.attname = 'embedding'
+              AND NOT attribute.attisdropped
+            """,
+            (table,),
+        ).fetchone()
+        expected_column_type = f"{storage_type}({int(dim)})"
+        if not column_type or str(column_type[0]).lower() != expected_column_type:
+            actual = None if not column_type else str(column_type[0])
+            raise RuntimeError(
+                f"pgvector table {table!r} embedding type is {actual!r}; "
+                f"expected {expected_column_type!r}"
+            )
         if not completed_batches:
             conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
-        insert_sql = (
-            f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
-            f"VALUES (%s, %s, %s::vector, now()) "
-            f"ON CONFLICT (collection, memory_id) "
-            f"DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()"
+        if not complete_resume:
+            with conn.cursor() as cur:
+                for ids, vectors, captured in iter_vector_batches(
+                    count=count,
+                    dim=dim,
+                    seed=seed + count,
+                    batch_size=batch_size,
+                    source_ids=source_ids,
+                ):
+                    batch_start = int(ids[0]) if len(ids) else 0
+                    if batch_start not in completed_batches:
+                        _pgvector_insert_batch(
+                            cur,
+                            table=table,
+                            collection=collection,
+                            ids=ids,
+                            vectors=vectors,
+                            storage_type=storage_type,
+                            insert_mode=insert_mode,
+                        )
+                    source_vectors.update(captured)
+                    _record_checkpoint_batch(
+                        path=checkpoint_path,
+                        payload=checkpoint,
+                        batch_start=batch_start,
+                        captured=captured,
+                    )
+                    completed_batches.add(batch_start)
+
+        remote_row_count = int(
+            conn.execute(
+                f"SELECT count(*) FROM {table} WHERE collection = %s",
+                (collection,),
+            ).fetchone()[0]
         )
-        with conn.cursor() as cur:
-            for ids, vectors, captured in iter_vector_batches(
-                count=count,
-                dim=dim,
-                seed=seed + count,
-                batch_size=batch_size,
-                source_ids=source_ids,
-            ):
-                batch_start = int(ids[0]) if len(ids) else 0
-                if batch_start not in completed_batches:
-                    rows = [
-                        (collection, int(id), _vector_literal(vector))
-                        for id, vector in zip(ids, vectors)
-                    ]
-                    cur.executemany(insert_sql, rows)
-                source_vectors.update(captured)
-                _record_checkpoint_batch(
-                    path=checkpoint_path,
-                    payload=checkpoint,
-                    batch_start=batch_start,
-                    captured=captured,
-                )
-                completed_batches.add(batch_start)
+        if remote_row_count != int(count):
+            raise RuntimeError(
+                f"pgvector collection {collection!r} contains {remote_row_count} rows; "
+                f"expected {int(count)}"
+            )
+        checkpoint_metadata["remote_row_count"] = remote_row_count
+        checkpoint_metadata["storage_type"] = storage_type
+        checkpoint_metadata["insert_mode"] = insert_mode
+        _write_checkpoint(checkpoint_path, checkpoint)
         if config["create_hnsw"]:
             options = []
             if config["hnsw_m"] is not None:
@@ -2522,10 +2622,18 @@ def run_pgvector_streaming(
                 options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
             with_options = f" WITH ({', '.join(options)})" if options else ""
             conn.execute(
-                f"CREATE INDEX IF NOT EXISTS {table}_embedding_hnsw_idx "
-                f"ON {table} USING hnsw (embedding vector_cosine_ops)"
+                f"CREATE INDEX IF NOT EXISTS {index_name} "
+                f"ON {table} USING hnsw (embedding {_pgvector_operator_class(storage_type)})"
                 f"{with_options}"
             )
+        index_present = bool(
+            conn.execute("SELECT to_regclass(%s)", (index_name,)).fetchone()[0]
+        )
+        if config["create_hnsw"] and not index_present:
+            raise RuntimeError(f"pgvector HNSW index {index_name!r} is missing")
+        checkpoint_metadata["index_name"] = index_name
+        checkpoint_metadata["index_present"] = index_present
+        _write_checkpoint(checkpoint_path, checkpoint)
         conn.execute(f"ANALYZE {table}")
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_PGVECTOR_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
@@ -2549,7 +2657,7 @@ def run_pgvector_streaming(
         search_sql = (
             f"SELECT memory_id FROM {table} "
             f"WHERE collection = %s "
-            f"ORDER BY embedding <=> %s::vector "
+            f"ORDER BY embedding <=> %s::{storage_type} "
             f"LIMIT %s"
         )
         if warmup_queries > 0 and queries:
@@ -2581,6 +2689,12 @@ def run_pgvector_streaming(
             extra={
                 "table": table,
                 "collection": collection,
+                "storage_type": storage_type,
+                "insert_mode": insert_mode,
+                "remote_row_count": remote_row_count,
+                "complete_resume": complete_resume,
+                "index_name": index_name,
+                "index_present": index_present,
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "search_params": {

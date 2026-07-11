@@ -1129,8 +1129,81 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert "WAVEMIND_PGVECTOR_DSN" in row["required_env"]
     assert "missing_env:WAVEMIND_PGVECTOR_DSN" in row["blockers"]
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_STORAGE_TYPE"] == "halfvec"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INSERT_MODE"] == "copy"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]
+
+
+def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import _pgvector_config_from_env
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
+    config = _pgvector_config_from_env()
+    assert config["storage_type"] == "halfvec"
+    assert config["insert_mode"] == "copy"
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "binary")
+    with pytest.raises(ValueError, match="must be vector or halfvec"):
+        _pgvector_config_from_env()
+
+
+def test_pgvector_copy_batch_replaces_only_uncheckpointed_range():
+    from benchmarks.production_streaming_load_benchmark import _pgvector_insert_batch
+
+    class FakeCopy:
+        def __init__(self):
+            self.rows = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def write_row(self, row):
+            self.rows.append(row)
+
+    class FakeCursor:
+        def __init__(self):
+            self.executed = []
+            self.copy_sql = None
+            self.copy_stream = FakeCopy()
+
+        def execute(self, sql, params):
+            self.executed.append((sql, params))
+
+        def copy(self, sql):
+            self.copy_sql = sql
+            return self.copy_stream
+
+    cursor = FakeCursor()
+    ids = np.asarray([101, 102], dtype=np.int64)
+    vectors = np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    _pgvector_insert_batch(
+        cursor,
+        table="wavemind_vectors",
+        collection="run-1",
+        ids=ids,
+        vectors=vectors,
+        storage_type="halfvec",
+        insert_mode="copy",
+    )
+
+    assert cursor.executed == [
+        (
+            "DELETE FROM wavemind_vectors WHERE collection = %s AND memory_id BETWEEN %s AND %s",
+            ("run-1", 101, 102),
+        )
+    ]
+    assert cursor.copy_sql == (
+        "COPY wavemind_vectors (collection, memory_id, embedding) FROM STDIN"
+    )
+    assert [row[:2] for row in cursor.copy_stream.rows] == [
+        ("run-1", 101),
+        ("run-1", 102),
+    ]
 
 
 def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):

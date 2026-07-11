@@ -229,6 +229,8 @@ jobs:
               if not value:
                   raise SystemExit("pgvector-service requires pgvector_dsn or secret WAVEMIND_PGVECTOR_DSN")
               env["WAVEMIND_PGVECTOR_DSN"] = value
+              env.setdefault("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
+              env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
               env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or str(runner_storage_root / f"faiss-ivfpq-{size}.faiss")

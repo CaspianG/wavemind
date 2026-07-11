@@ -35,7 +35,7 @@
       "server_version": "28.3.0"
     },
     "modules": {
-      "faiss": true,
+      "faiss": false,
       "qdrant_client": true,
       "psycopg": true,
       "numpy": true
@@ -50,6 +50,12 @@
       "WAVEMIND_QDRANT_EXACT": null,
       "WAVEMIND_QDRANT_WARMUP_QUERIES": null,
       "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS": null,
+      "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": null,
+      "WAVEMIND_QDRANT_DEFER_INDEXING": null,
+      "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": null,
+      "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": null,
       "WAVEMIND_QDRANT_HNSW_M": null,
       "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
       "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
@@ -61,7 +67,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 0.04,
+      "free_gb": 12.62,
       "total_gb": 231.85
     }
   },
@@ -96,6 +102,8 @@
       "command_env": {
         "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
         "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
+        "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
+        "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
         "WAVEMIND_PGVECTOR_EF_SEARCH": "1000"
       },
       "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",

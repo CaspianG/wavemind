@@ -746,7 +746,9 @@ Enterprise requirements:
   runner for Qdrant/pgvector 10M service-backed profiles so large-N profiles do
   not hold the full vector corpus or exact-neighbor matrix in RAM. The
   pgvector 10M service-backed profile now has a checked preflight contract;
-  the next step is producing `production_streaming_load_pgvector_10m_results.json`
+  its runner now supports bounded `COPY` ingest, `halfvec` storage, exact remote
+  row-count validation, HNSW presence checks, and constant-time complete resume.
+  The next step is producing `production_streaming_load_pgvector_10m_results.json`
   from a real sized PostgreSQL service.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.

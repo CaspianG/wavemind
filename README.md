@@ -2031,6 +2031,13 @@ next actions into one publishable status contract.
 Large-N service plans include resumable `--checkpoint-path` commands so
 interrupted 10M/50M/100M ingest runs can continue from completed batches instead
 of restarting from zero.
+The pgvector large-N runner uses bounded `COPY` batches and supports
+`WAVEMIND_PGVECTOR_STORAGE_TYPE=halfvec` for a smaller PostgreSQL and HNSW
+footprint. A completed checkpoint is accepted only when the remote collection
+still contains the exact expected row count and the requested HNSW index is
+present; otherwise the evidence run fails instead of silently benchmarking a
+partial corpus. Use a dedicated table when switching between `vector` and
+`halfvec` because PostgreSQL column types are intentionally validated.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and
