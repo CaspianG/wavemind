@@ -93,6 +93,11 @@ on:
         required: false
         default: ""
         type: string
+      pgvector_dsns:
+        description: "Optional comma/newline-separated pgvector shard DSNs. Falls back to secret WAVEMIND_PGVECTOR_DSNS."
+        required: false
+        default: ""
+        type: string
       faiss_ivfpq_path:
         description: "Optional persisted FAISS IVF-PQ path. Defaults under ./state."
         required: false
@@ -141,11 +146,13 @@ jobs:
       INPUT_QDRANT_URL: ${{ inputs.qdrant_url }}
       INPUT_QDRANT_URLS: ${{ inputs.qdrant_urls }}
       INPUT_PGVECTOR_DSN: ${{ inputs.pgvector_dsn }}
+      INPUT_PGVECTOR_DSNS: ${{ inputs.pgvector_dsns }}
       INPUT_FAISS_IVFPQ_PATH: ${{ inputs.faiss_ivfpq_path }}
       RUNNER_STORAGE_ROOT: ${{ inputs.runner_storage_root }}
       SECRET_QDRANT_URL: ${{ secrets.WAVEMIND_QDRANT_URL }}
       SECRET_QDRANT_URLS: ${{ secrets.WAVEMIND_QDRANT_URLS }}
       SECRET_PGVECTOR_DSN: ${{ secrets.WAVEMIND_PGVECTOR_DSN }}
+      SECRET_PGVECTOR_DSNS: ${{ secrets.WAVEMIND_PGVECTOR_DSNS }}
       SECRET_QDRANT_API_KEY: ${{ secrets.WAVEMIND_QDRANT_API_KEY }}
       SECRET_QDRANT_API_KEYS: ${{ secrets.WAVEMIND_QDRANT_API_KEYS }}
 
@@ -225,10 +232,18 @@ jobs:
               if api_keys:
                   env["WAVEMIND_QDRANT_API_KEYS"] = api_keys
           elif engine == "pgvector-service":
+              shard_values = pick("INPUT_PGVECTOR_DSNS", "SECRET_PGVECTOR_DSNS")
               value = pick("INPUT_PGVECTOR_DSN", "SECRET_PGVECTOR_DSN")
-              if not value:
-                  raise SystemExit("pgvector-service requires pgvector_dsn or secret WAVEMIND_PGVECTOR_DSN")
-              env["WAVEMIND_PGVECTOR_DSN"] = value
+              if shard_values:
+                  env["WAVEMIND_PGVECTOR_DSNS"] = shard_values
+                  env.pop("WAVEMIND_PGVECTOR_DSN", None)
+              elif value:
+                  env["WAVEMIND_PGVECTOR_DSN"] = value
+              else:
+                  raise SystemExit(
+                      "pgvector-service requires pgvector_dsns/WAVEMIND_PGVECTOR_DSNS "
+                      "or pgvector_dsn/WAVEMIND_PGVECTOR_DSN"
+                  )
               env.setdefault("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
               env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
               env.setdefault("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw-binary")

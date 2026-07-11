@@ -2050,6 +2050,13 @@ The 10M plan uses binary-quantized HNSW candidate generation followed by
 original-`halfvec` reranking. `WAVEMIND_PGVECTOR_BINARY_CANDIDATES` controls the
 rerank window. This keeps a full-quality HNSW graph in memory without treating
 binary distance as the final score.
+For horizontal service sharding, set `WAVEMIND_PGVECTOR_DSNS` to two or more
+comma-, semicolon-, or newline-separated PostgreSQL DSNs. The runner assigns
+`memory_id` values by modulo, validates exact per-shard counts and placement,
+builds one index per service, and fanout-merges shard-local results by original
+vector distance. Checkpoints are committed only after every shard accepts the
+batch, so interrupted multi-service ingest resumes without silently losing a
+shard.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and

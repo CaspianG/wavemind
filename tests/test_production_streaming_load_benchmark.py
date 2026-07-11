@@ -1260,6 +1260,40 @@ def test_pgvector_checkpoint_migrates_only_index_specific_signature(tmp_path):
     }
 
 
+def test_pgvector_shard_counts_cover_every_id_exactly():
+    from benchmarks.production_streaming_load_benchmark import (
+        _pgvector_shard_expected_count,
+    )
+
+    assert [
+        _pgvector_shard_expected_count(10, 4, index) for index in range(4)
+    ] == [3, 3, 2, 2]
+    assert sum(
+        _pgvector_shard_expected_count(10_000_003, 4, index)
+        for index in range(4)
+    ) == 10_000_003
+
+
+def test_pgvector_sharded_mode_requires_multiple_services(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import run_pgvector_streaming
+
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_DSNS", "postgresql://only-one")
+
+    row = run_pgvector_streaming(
+        count=10,
+        dim=4,
+        query_count=2,
+        top_k=1,
+        seed=42,
+        noise=0.01,
+        batch_size=5,
+    )
+
+    assert row["skipped"] is True
+    assert "at least two service DSNs" in row["reason"]
+
+
 def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     from benchmarks.production_streaming_load_benchmark import plan_streaming_load
 
