@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-11T03:37:56Z",
-  "source_ref": "be2cebfd776b",
+  "generated_at": "2026-07-11T04:26:44Z",
+  "source_ref": "11d0be8c62e8",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1202,7 +1202,7 @@
           "estimated_transient_runner_gb": 0.003,
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.004,
-          "disk_free_gb": 0.0,
+          "disk_free_gb": 10.771,
           "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
           "required_env": [
             "WAVEMIND_QDRANT_URLS"
@@ -1211,8 +1211,7 @@
             "WAVEMIND_QDRANT_URLS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_QDRANT_URLS",
-            "insufficient_local_disk_for_index_and_transient_batches"
+            "missing_env:WAVEMIND_QDRANT_URLS"
           ]
         },
         "100M Qdrant sharded preflight / Qdrant sharded service streaming": {
@@ -1224,7 +1223,7 @@
           "estimated_transient_runner_gb": 0.007,
           "estimated_application_storage_gb": 238.419,
           "required_local_free_gb": 0.009,
-          "disk_free_gb": 0.0,
+          "disk_free_gb": 10.771,
           "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
           "required_env": [
             "WAVEMIND_QDRANT_URLS"
@@ -1233,8 +1232,7 @@
             "WAVEMIND_QDRANT_URLS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_QDRANT_URLS",
-            "insufficient_local_disk_for_index_and_transient_batches"
+            "missing_env:WAVEMIND_QDRANT_URLS"
           ]
         },
         "pgvector smoke / WaveMind pgvector streaming": {
