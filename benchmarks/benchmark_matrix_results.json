@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-11T03:37:56Z",
-  "source_ref": "be2cebfd776b",
+  "generated_at": "2026-07-11T05:56:44Z",
+  "source_ref": "c4f786e131c8",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1171,6 +1171,25 @@
           "fanout_workers": 2,
           "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge"
         },
+        "10M Qdrant sharded measured / Qdrant sharded service streaming": {
+          "recall_at_k": 0.9925,
+          "target_recall_at_k": 0.9925,
+          "target_recall_at_1": 0.9925,
+          "avg_latency_ms": 46.60563879973779,
+          "p95_latency_ms": 60.49189998884685,
+          "p99_latency_ms": 71.27849999233149,
+          "build_ms": 5520602.228099975,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 17,
+          "slo_autoscaled_qps": 720.9428057488408,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 4.722222222222222,
+          "monthly_total_cost_at_target_qps_usd": 3104.8841857910156,
+          "estimated_storage_gb": 23.84185791015625,
+          "shard_count": 4,
+          "fanout_workers": 4,
+          "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge"
+        },
         "10M Qdrant preflight / Qdrant service streaming": {
           "status": "action_required",
           "vectors": 10000000,
@@ -1202,7 +1221,7 @@
           "estimated_transient_runner_gb": 0.003,
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.004,
-          "disk_free_gb": 0.0,
+          "disk_free_gb": 10.771,
           "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
           "required_env": [
             "WAVEMIND_QDRANT_URLS"
@@ -1211,8 +1230,7 @@
             "WAVEMIND_QDRANT_URLS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_QDRANT_URLS",
-            "insufficient_local_disk_for_index_and_transient_batches"
+            "missing_env:WAVEMIND_QDRANT_URLS"
           ]
         },
         "100M Qdrant sharded preflight / Qdrant sharded service streaming": {
@@ -1224,7 +1242,7 @@
           "estimated_transient_runner_gb": 0.007,
           "estimated_application_storage_gb": 238.419,
           "required_local_free_gb": 0.009,
-          "disk_free_gb": 0.0,
+          "disk_free_gb": 10.771,
           "index_mode": "remote horizontally sharded Qdrant storage; local runner routes ids across service URLs and fanout-merges top-k",
           "required_env": [
             "WAVEMIND_QDRANT_URLS"
@@ -1233,8 +1251,7 @@
             "WAVEMIND_QDRANT_URLS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_QDRANT_URLS",
-            "insufficient_local_disk_for_index_and_transient_batches"
+            "missing_env:WAVEMIND_QDRANT_URLS"
           ]
         },
         "pgvector smoke / WaveMind pgvector streaming": {
@@ -1277,8 +1294,8 @@
           ]
         }
       },
-      "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant, sharded Qdrant, and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS, and 100M sharded Qdrant preflights reproducible, then run those service profiles on hardware sized for the index.",
-      "next_step": "Run .github/workflows/production-streaming-load.yml with service credentials on a sized runner for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M compressed FAISS, and 100M sharded Qdrant profiles."
+      "target": "Keep strict 10M single-service and four-service sharded Qdrant, 10M/50M compressed FAISS, and service smokes green while completing 10M pgvector and 100M sharded Qdrant evidence.",
+      "next_step": "Run .github/workflows/production-streaming-load.yml with sized pgvector infrastructure for 10M, then execute the 100M sharded Qdrant profile."
     },
     {
       "id": "scale_readiness",
@@ -2013,7 +2030,7 @@
           "readiness_status": "action_required",
           "claim_status": "claims_limited",
           "total_requirements": 8,
-          "action_required_count": 5,
+          "action_required_count": 4,
           "ready_for_safe_dispatch_count": 0,
           "can_auto_run_now_count": 0,
           "target_memories_total": 180000000

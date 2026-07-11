@@ -7,18 +7,18 @@ are proven, which are plan-only, and what must run next.
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| complete profiles | `2/5` |
+| complete profiles | `3/5` |
 | ready to run | `0` |
-| blocked by env | `3` |
+| blocked by env | `2` |
 | planned target memories | `180000000` |
-| proven target memories | `60000000` |
+| proven target memories | `70000000` |
 | nearest baseline max memories | `10000000` |
 | claim status | `claims_limited` |
 
 | profile | status | target | nearest baseline | gap | artifact | missing env |
 |---|---|---:|---:|---:|---|---|
 | qdrant-10m | `complete` | 10000000 | 1000000 | 10.0 | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` |
-| qdrant-sharded-10m | `blocked_by_env` | 10000000 | 1000000 | 10.0 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` |
+| qdrant-sharded-10m | `complete` | 10000000 | 1000000 | 10.0 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` |
 | pgvector-10m | `blocked_by_env` | 10000000 | 50000 | 200.0 | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` |
 | faiss-ivfpq-50m | `complete` | 50000000 | 10000000 | 5.0 | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` |
 | qdrant-sharded-100m | `blocked_by_env` | 100000000 | 1000000 | 100.0 | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS` |

@@ -560,6 +560,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_qdrant_1m_tuned_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_1m_tuned_results.json")
     production_streaming_qdrant_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_10m_results.json")
     production_streaming_qdrant_sharded_smoke_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_smoke_results.json")
+    production_streaming_qdrant_sharded_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_10m_results.json")
     production_streaming_qdrant_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_10m_plan.json")
     production_streaming_qdrant_sharded_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_10m_plan.json")
     production_streaming_qdrant_sharded_100m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_100m_plan.json")
@@ -633,6 +634,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("1M Qdrant tuned", production_streaming_qdrant_1m_tuned_payload),
         **_prefixed_ann_results("10M Qdrant measured", production_streaming_qdrant_10m_payload),
         **_prefixed_ann_results("Qdrant sharded smoke", production_streaming_qdrant_sharded_smoke_payload),
+        **_prefixed_ann_results("10M Qdrant sharded measured", production_streaming_qdrant_sharded_10m_payload),
         **_streaming_plan_results("10M Qdrant preflight", production_streaming_qdrant_10m_plan_payload),
         **_streaming_plan_results("10M Qdrant sharded preflight", production_streaming_qdrant_sharded_10m_plan_payload),
         **_streaming_plan_results("100M Qdrant sharded preflight", production_streaming_qdrant_sharded_100m_plan_payload),
@@ -1372,8 +1374,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "build_ms",
             ],
             "current": production_streaming_results,
-            "target": "Keep 10M compressed FAISS IVF-PQ above recall@10 0.95 and p99 below 100 ms, keep tuned 1M Qdrant streaming below p99 100 ms, keep Qdrant, sharded Qdrant, and pgvector streaming smokes green, keep 10M single-service Qdrant, 10M sharded Qdrant, 10M pgvector, 50M FAISS, and 100M sharded Qdrant preflights reproducible, then run those service profiles on hardware sized for the index.",
-            "next_step": "Run .github/workflows/production-streaming-load.yml with service credentials on a sized runner for 10M Qdrant, 10M sharded Qdrant, 10M pgvector, 50M compressed FAISS, and 100M sharded Qdrant profiles.",
+            "target": "Keep strict 10M single-service and four-service sharded Qdrant, 10M/50M compressed FAISS, and service smokes green while completing 10M pgvector and 100M sharded Qdrant evidence.",
+            "next_step": "Run .github/workflows/production-streaming-load.yml with sized pgvector infrastructure for 10M, then execute the 100M sharded Qdrant profile.",
         },
         {
             "id": "scale_readiness",

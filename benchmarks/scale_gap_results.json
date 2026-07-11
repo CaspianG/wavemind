@@ -1,16 +1,16 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-11T03:38:04Z",
+  "generated_at": "2026-07-11T05:56:53Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
-    "complete_count": 2,
+    "complete_count": 3,
     "ready_to_run_count": 0,
-    "blocked_by_env_count": 3,
+    "blocked_by_env_count": 2,
     "blocked_by_preflight_count": 0,
     "missing_plan_count": 0,
     "planned_target_memories": 180000000,
-    "proven_target_memories": 60000000,
+    "proven_target_memories": 70000000,
     "nearest_baseline_max_memories": 10000000,
     "claim_status": "claims_limited"
   },
@@ -57,8 +57,8 @@
     {
       "profile": "qdrant-sharded-10m",
       "requirement_id": "qdrant_sharded_10m_service",
-      "status": "blocked_by_env",
-      "strict_status": "action_required",
+      "status": "complete",
+      "strict_status": "pass",
       "plan_status": "action_required",
       "preflight_status": "action_required",
       "engine": "qdrant-sharded-service",
@@ -67,7 +67,7 @@
       "target_p99_ms": 100.0,
       "target_qps": 250.0,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
-      "output_artifact_exists": false,
+      "output_artifact_exists": true,
       "checkpoint_path": "state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_QDRANT_URLS"
@@ -91,7 +91,7 @@
       },
       "baseline_progress_ratio": 0.1,
       "target_gap_multiplier": 10.0,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      "next_action": "Strict result artifact already passes."
     },
     {
       "profile": "pgvector-10m",

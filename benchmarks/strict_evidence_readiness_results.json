@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-11T03:38:04Z",
+  "generated_at": "2026-07-11T05:56:54Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -9,8 +9,8 @@
     "readiness_status": "action_required",
     "claim_status": "claims_limited",
     "total_requirements": 8,
-    "action_required_count": 5,
-    "complete_count": 3,
+    "action_required_count": 4,
+    "complete_count": 4,
     "ready_for_safe_dispatch_count": 0,
     "can_auto_run_now_count": 0,
     "target_memories_total": 180000000,
@@ -18,12 +18,12 @@
       "pass": 8
     },
     "dispatch_status_counts": {
-      "blocked_by_preflight": 5,
-      "complete": 3
+      "blocked_by_preflight": 4,
+      "complete": 4
     },
     "blocker_counts": {
-      "complete": 3,
-      "missing_env": 5
+      "complete": 4,
+      "missing_env": 4
     }
   },
   "checks": [
@@ -257,14 +257,14 @@
     {
       "id": "qdrant_sharded_10m_service",
       "title": "10M sharded Qdrant service load",
-      "strict_status": "action_required",
+      "strict_status": "pass",
       "preflight_status": "action_required",
-      "dispatch_status": "blocked_by_preflight",
-      "scale_gap_status": "blocked_by_env",
+      "dispatch_status": "complete",
+      "scale_gap_status": "complete",
       "workflow": "production-streaming-load.yml",
       "wave": "service-scale-10m",
       "artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
-      "artifact_exists": false,
+      "artifact_exists": true,
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
       "claim_unlocked": "Horizontally sharded Qdrant service recall/latency SLO.",
       "locked_claim": "10M-100M service-backed production scale",
@@ -294,8 +294,8 @@
       "post_ingest_refresh_command": "python benchmarks/strict_evidence_readiness_report.py --output benchmarks/strict_evidence_readiness_results.json --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md",
       "ready_for_safe_dispatch": false,
       "can_auto_run_now": false,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate.",
-      "blocker_category": "missing_env"
+      "next_action": "Strict result artifact already passes.",
+      "blocker_category": "complete"
     },
     {
       "id": "pgvector_10m_service",

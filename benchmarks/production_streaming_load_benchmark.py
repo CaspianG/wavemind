@@ -375,6 +375,7 @@ class QdrantShardTarget:
     url: str
     collection_name: str
     api_key: str | None = None
+    grpc_port: int | None = None
 
 
 def _qdrant_shard_index(point_id: int, shard_count: int) -> int:
@@ -391,15 +392,21 @@ def _qdrant_shard_targets_from_env(base_collection_name: str) -> list[QdrantShar
             urls = [url]
     api_keys = _split_env_list(os.environ.get("WAVEMIND_QDRANT_API_KEYS"))
     default_api_key = os.environ.get("WAVEMIND_QDRANT_API_KEY")
+    grpc_ports = _split_env_list(os.environ.get("WAVEMIND_QDRANT_GRPC_PORTS"))
+    default_grpc_port = _optional_int_env("WAVEMIND_QDRANT_GRPC_PORT")
     targets: list[QdrantShardTarget] = []
     for index, url in enumerate(urls):
         api_key = api_keys[index] if index < len(api_keys) else default_api_key
+        grpc_port = (
+            int(grpc_ports[index]) if index < len(grpc_ports) else default_grpc_port
+        )
         targets.append(
             QdrantShardTarget(
                 index=index,
                 url=url,
                 collection_name=f"{base_collection_name}_s{index:03d}",
                 api_key=api_key,
+                grpc_port=grpc_port,
             )
         )
     return targets
@@ -484,26 +491,43 @@ def _iter_qdrant_point_chunks(
         ]
 
 
+def _iter_qdrant_shard_point_chunks(
+    ids: np.ndarray,
+    vectors: np.ndarray,
+    *,
+    shard_index: int,
+    shard_count: int,
+    point_type: Any,
+    chunk_size: int,
+) -> Iterable[list[Any]]:
+    if chunk_size <= 0:
+        raise ValueError("chunk size must be positive")
+    point_chunk: list[Any] = []
+    for point_id, vector in zip(ids, vectors):
+        if _qdrant_shard_index(int(point_id), shard_count) != shard_index:
+            continue
+        point_chunk.append(point_type(id=int(point_id), vector=vector.tolist()))
+        if len(point_chunk) >= chunk_size:
+            yield point_chunk
+            point_chunk = []
+    if point_chunk:
+        yield point_chunk
+
+
 def _upsert_qdrant_shards(
     *,
     executor: concurrent.futures.Executor,
     clients: list[Any],
     targets: list[QdrantShardTarget],
-    points_by_shard: dict[int, list[Any]],
-    upsert_batch_size: int,
+    point_chunks_by_shard: dict[int, Iterable[list[Any]]],
 ) -> int:
-    active_shards = [
-        shard_index
-        for shard_index, points in points_by_shard.items()
-        if points
-    ]
+    active_shards = list(point_chunks_by_shard)
 
     def upsert_shard(shard_index: int) -> int:
-        points = points_by_shard[shard_index]
         client = clients[shard_index]
         collection_name = targets[shard_index].collection_name
         inserted = 0
-        for point_chunk in _chunks(points, upsert_batch_size):
+        for point_chunk in point_chunks_by_shard[shard_index]:
             client.upsert(collection_name=collection_name, points=point_chunk)
             inserted += len(point_chunk)
         return inserted
@@ -958,10 +982,17 @@ def _streaming_plan_row(
             "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_10m",
             "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
             "WAVEMIND_QDRANT_FANOUT_WORKERS": str(shard_count),
+            "WAVEMIND_QDRANT_PREFER_GRPC": "1",
+            "WAVEMIND_QDRANT_GRPC_PORT": "6334",
+            "WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS": "60",
             "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
             "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
             "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
-            "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+            "WAVEMIND_QDRANT_HNSW_ON_DISK": "0",
+            "WAVEMIND_QDRANT_SCALAR_QUANTIZATION": "1",
+            "WAVEMIND_QDRANT_SCALAR_QUANTILE": "0.99",
+            "WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM": "1",
+            "WAVEMIND_QDRANT_QUANTIZATION_RESCORE": "0",
             "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
             "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
             "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
@@ -1990,6 +2021,10 @@ def run_qdrant_sharded_streaming(
             HnswConfigDiff,
             OptimizersConfigDiff,
             PointStruct,
+            QuantizationSearchParams,
+            ScalarQuantization,
+            ScalarQuantizationConfig,
+            ScalarType,
             SearchParams,
             VectorParams,
         )
@@ -2032,7 +2067,10 @@ def run_qdrant_sharded_streaming(
     )
     checkpoint_metadata["collection_prefix"] = base_collection_name
     _write_checkpoint(checkpoint_path, checkpoint)
-    targets = _qdrant_shard_targets_from_env(base_collection_name)
+    try:
+        targets = _qdrant_shard_targets_from_env(base_collection_name)
+    except ValueError as exc:
+        return skipped_result(engine, f"Invalid Qdrant shard transport configuration: {exc}")
     if len(targets) < 2:
         return skipped_result(
             engine,
@@ -2050,6 +2088,18 @@ def run_qdrant_sharded_streaming(
         if collection_config["hnsw"]
         else None
     )
+    scalar_quantization_config = collection_config["scalar_quantization"]
+    quantization_config = (
+        ScalarQuantization(
+            scalar=ScalarQuantizationConfig(
+                type=ScalarType.INT8,
+                quantile=float(scalar_quantization_config["quantile"]),
+                always_ram=bool(scalar_quantization_config["always_ram"]),
+            )
+        )
+        if scalar_quantization_config
+        else None
+    )
     ingest_optimizers = dict(collection_config["optimizers"])
     if deferred_indexing["enabled"]:
         ingest_optimizers["indexing_threshold"] = deferred_indexing[
@@ -2062,6 +2112,7 @@ def run_qdrant_sharded_streaming(
         {
             "hnsw_config": hnsw_config,
             "optimizers_config": ingest_optimizers_config,
+            "quantization_config": quantization_config,
             "on_disk_payload": collection_config["on_disk_payload"],
             "shard_number": collection_config["shard_number"],
         }
@@ -2073,6 +2124,8 @@ def run_qdrant_sharded_streaming(
                 QdrantClient(
                     url=target.url,
                     api_key=target.api_key,
+                    grpc_port=target.grpc_port,
+                    prefer_grpc=_bool_env("WAVEMIND_QDRANT_PREFER_GRPC", False),
                     timeout=float(os.environ.get("WAVEMIND_QDRANT_TIMEOUT", "120")),
                 )
             )
@@ -2085,6 +2138,7 @@ def run_qdrant_sharded_streaming(
                 limit=top_k,
                 with_payload=False,
                 search_params=search_params,
+                **query_kwargs,
             ).points
         )
 
@@ -2092,6 +2146,12 @@ def run_qdrant_sharded_streaming(
         source_ids = choose_source_ids(count, query_count, seed)
         source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
         completed_batches = _checkpoint_completed_batches(checkpoint)
+        complete_resume = _checkpoint_complete_for_run(
+            checkpoint,
+            count=count,
+            batch_size=batch_size,
+            source_ids=source_ids,
+        )
         started = time.perf_counter()
         if not completed_batches:
             for client, target in zip(clients, targets):
@@ -2105,56 +2165,69 @@ def run_qdrant_sharded_streaming(
                     timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                     **recreate_kwargs,
                 )
-        elif deferred_indexing["enabled"]:
+        elif complete_resume and (
+            hnsw_config is not None or quantization_config is not None
+        ):
+            for client, target in zip(clients, targets):
+                client.update_collection(
+                    collection_name=target.collection_name,
+                    hnsw_config=hnsw_config,
+                    quantization_config=quantization_config,
+                    timeout=int(
+                        os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")
+                    ),
+                )
+        elif deferred_indexing["enabled"] and not complete_resume:
             for client, target in zip(clients, targets):
                 client.update_collection(
                     collection_name=target.collection_name,
                     optimizers_config=ingest_optimizers_config,
                     timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                 )
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=fanout_workers
-        ) as ingest_executor:
-            for ids, vectors, captured in iter_vector_batches(
-                count=count,
-                dim=dim,
-                seed=seed + count,
-                batch_size=batch_size,
-                source_ids=source_ids,
-            ):
-                batch_start = int(ids[0]) if len(ids) else 0
-                if batch_start not in completed_batches:
-                    points_by_shard: dict[int, list[Any]] = {
-                        index: [] for index in range(len(targets))
-                    }
-                    for point_id, vector in zip(ids, vectors):
-                        shard_index = _qdrant_shard_index(
-                            int(point_id), len(targets)
+        if not complete_resume:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=fanout_workers
+            ) as ingest_executor:
+                for ids, vectors, captured in iter_vector_batches(
+                    count=count,
+                    dim=dim,
+                    seed=seed + count,
+                    batch_size=batch_size,
+                    source_ids=source_ids,
+                ):
+                    batch_start = int(ids[0]) if len(ids) else 0
+                    if batch_start not in completed_batches:
+                        point_chunks_by_shard = {
+                            target.index: _iter_qdrant_shard_point_chunks(
+                                ids,
+                                vectors,
+                                shard_index=target.index,
+                                shard_count=len(targets),
+                                point_type=PointStruct,
+                                chunk_size=upsert_batch_size,
+                            )
+                            for target in targets
+                        }
+                        inserted = _upsert_qdrant_shards(
+                            executor=ingest_executor,
+                            clients=clients,
+                            targets=targets,
+                            point_chunks_by_shard=point_chunks_by_shard,
                         )
-                        points_by_shard[shard_index].append(
-                            PointStruct(id=int(point_id), vector=vector.tolist())
-                        )
-                    inserted = _upsert_qdrant_shards(
-                        executor=ingest_executor,
-                        clients=clients,
-                        targets=targets,
-                        points_by_shard=points_by_shard,
-                        upsert_batch_size=upsert_batch_size,
+                        if inserted != len(ids):
+                            raise RuntimeError(
+                                "Qdrant sharded upsert did not acknowledge every point"
+                            )
+                    source_vectors.update(captured)
+                    _record_checkpoint_batch(
+                        path=checkpoint_path,
+                        payload=checkpoint,
+                        batch_start=batch_start,
+                        captured=captured,
                     )
-                    if inserted != len(ids):
-                        raise RuntimeError(
-                            "Qdrant sharded upsert did not acknowledge every point"
-                        )
-                source_vectors.update(captured)
-                _record_checkpoint_batch(
-                    path=checkpoint_path,
-                    payload=checkpoint,
-                    batch_start=batch_start,
-                    captured=captured,
-                )
-                completed_batches.add(batch_start)
+                    completed_batches.add(batch_start)
         index_restore_ms = 0.0
-        if deferred_indexing["enabled"]:
+        if deferred_indexing["enabled"] and not complete_resume:
             restore_started = time.perf_counter()
             final_optimizers = dict(collection_config["optimizers"])
             final_optimizers["indexing_threshold"] = deferred_indexing[
@@ -2202,12 +2275,30 @@ def run_qdrant_sharded_streaming(
             "yes",
             "on",
         }
+        quantization_search_params = None
+        if scalar_quantization_config:
+            quantization_search_params = QuantizationSearchParams(
+                ignore=_optional_bool_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_IGNORE"
+                ),
+                rescore=_optional_bool_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_RESCORE"
+                ),
+                oversampling=_optional_float_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_OVERSAMPLING"
+                ),
+            )
         search_params = None
-        if hnsw_ef or exact:
+        if hnsw_ef or exact or quantization_search_params is not None:
             search_params = SearchParams(
                 hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
                 exact=exact or None,
+                quantization=quantization_search_params,
             )
+        query_timeout_seconds = _optional_int_env(
+            "WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS"
+        )
+        query_kwargs = _without_none({"timeout": query_timeout_seconds})
         queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
         with concurrent.futures.ThreadPoolExecutor(max_workers=fanout_workers) as executor:
             warmup_queries = int(os.environ.get("WAVEMIND_QDRANT_WARMUP_QUERIES", "0"))
@@ -2263,9 +2354,29 @@ def run_qdrant_sharded_streaming(
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,
+                    "quantization": {
+                        "enabled": quantization_search_params is not None,
+                        "ignore": _optional_bool_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_IGNORE"
+                        ),
+                        "rescore": _optional_bool_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_RESCORE"
+                        ),
+                        "oversampling": _optional_float_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_OVERSAMPLING"
+                        ),
+                    },
+                },
+                "transport": {
+                    "prefer_grpc": _bool_env(
+                        "WAVEMIND_QDRANT_PREFER_GRPC", False
+                    ),
+                    "grpc_ports": [target.grpc_port for target in targets],
+                    "query_timeout_seconds": query_timeout_seconds,
                 },
                 "collection_params": collection_config,
                 "upsert_batch_size": upsert_batch_size,
+                "qdrant_checkpoint_complete_resume": bool(complete_resume),
                 "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge",
                 **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },

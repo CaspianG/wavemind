@@ -25,7 +25,7 @@
     "plan_only": true,
     "runner_storage_root": "state/production-runs",
     "disk_free_path": "C:/work/particles/wavemind 2.0/state",
-    "disk_free_gb": 0.0
+    "disk_free_gb": 10.771
   },
   "preflight": {
     "python": "3.13.3",
@@ -35,9 +35,9 @@
       "server_version": "28.3.0"
     },
     "modules": {
-      "faiss": true,
+      "faiss": false,
       "qdrant_client": true,
-      "psycopg": true,
+      "psycopg": false,
       "numpy": true
     },
     "environment": {
@@ -67,7 +67,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 2.51,
+      "free_gb": 10.77,
       "total_gb": 231.85
     }
   },
@@ -86,7 +86,7 @@
       "estimated_float_vector_storage_gb": 4.768,
       "estimated_application_storage_gb": 23.842,
       "required_local_free_gb": 0.004,
-      "disk_free_gb": 0.0,
+      "disk_free_gb": 10.771,
       "runner_storage_root": "state/production-runs",
       "disk_free_path": "C:/work/particles/wavemind 2.0/state",
       "safety_factor": 1.25,
@@ -104,10 +104,17 @@
         "WAVEMIND_QDRANT_COLLECTION_PREFIX": "wavemind_streaming_load_10m",
         "WAVEMIND_QDRANT_UPSERT_BATCH_SIZE": "2000",
         "WAVEMIND_QDRANT_FANOUT_WORKERS": "4",
+        "WAVEMIND_QDRANT_PREFER_GRPC": "1",
+        "WAVEMIND_QDRANT_GRPC_PORT": "6334",
+        "WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS": "60",
         "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "30",
         "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
         "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
-        "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+        "WAVEMIND_QDRANT_HNSW_ON_DISK": "0",
+        "WAVEMIND_QDRANT_SCALAR_QUANTIZATION": "1",
+        "WAVEMIND_QDRANT_SCALAR_QUANTILE": "0.99",
+        "WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM": "1",
+        "WAVEMIND_QDRANT_QUANTIZATION_RESCORE": "0",
         "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
         "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
         "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
@@ -119,8 +126,7 @@
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 250.0 --replicas 4 --autoscaling-max-replicas 48 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_10m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-10000000.checkpoint.json",
       "status": "action_required",
       "blockers": [
-        "missing_env:WAVEMIND_QDRANT_URLS",
-        "insufficient_local_disk_for_index_and_transient_batches"
+        "missing_env:WAVEMIND_QDRANT_URLS"
       ],
       "claim_boundary": "preflight only; this is not a completed latency or recall benchmark"
     }

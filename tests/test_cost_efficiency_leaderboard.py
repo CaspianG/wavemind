@@ -58,6 +58,17 @@ def test_cost_efficiency_leaderboard_renderer_writes_json_and_markdown(tmp_path)
     assert qdrant_10m["p99_latency_ms"] < 100.0
     assert qdrant_10m["valid_cost"] is True
 
+    qdrant_sharded_10m = next(
+        row
+        for row in payload["measured_rows"]
+        if row["source_file"]
+        == "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json"
+    )
+    assert qdrant_sharded_10m["memory_count"] == 10_000_000
+    assert qdrant_sharded_10m["recall_at_k"] >= 0.95
+    assert qdrant_sharded_10m["p99_latency_ms"] < 100.0
+    assert qdrant_sharded_10m["valid_cost"] is True
+
     assert planned["faiss-ivfpq-50m"]["evidence_level"] == "planned"
     assert planned["faiss-ivfpq-50m"]["memory_count"] == 50_000_000
     assert planned["faiss-ivfpq-50m"]["claim_status"] == "plan_only"

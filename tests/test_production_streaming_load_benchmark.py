@@ -78,6 +78,7 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         QdrantShardTarget,
         _chunks,
         _merge_scored_hits,
+        _iter_qdrant_shard_point_chunks,
         _qdrant_shard_index,
         _iter_qdrant_point_chunks,
         _upsert_qdrant_point_chunks,
@@ -91,6 +92,34 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
     assert [_qdrant_shard_index(point_id, 3) for point_id in range(1, 8)] == [0, 1, 2, 0, 1, 2, 0]
     with pytest.raises(ValueError, match="shard_count must be positive"):
         _qdrant_shard_index(1, 0)
+
+    class Point:
+        def __init__(self, *, id, vector):
+            self.id = id
+            self.vector = vector
+
+    shard_chunks = list(
+        _iter_qdrant_shard_point_chunks(
+            np.arange(1, 8, dtype=np.int64),
+            np.arange(14, dtype=np.float32).reshape(7, 2),
+            shard_index=1,
+            shard_count=3,
+            point_type=Point,
+            chunk_size=2,
+        )
+    )
+    assert [[point.id for point in chunk] for chunk in shard_chunks] == [[2, 5]]
+    with pytest.raises(ValueError, match="chunk size must be positive"):
+        list(
+            _iter_qdrant_shard_point_chunks(
+                np.array([1]),
+                np.array([[1.0]], dtype=np.float32),
+                shard_index=0,
+                shard_count=1,
+                point_type=Point,
+                chunk_size=0,
+            )
+        )
 
     class Hit:
         def __init__(self, point_id, score):
@@ -122,8 +151,10 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
             executor=executor,
             clients=clients,
             targets=targets,
-            points_by_shard={0: [1, 3, 5], 1: [2, 4]},
-            upsert_batch_size=2,
+            point_chunks_by_shard={
+                0: iter([[1, 3], [5]]),
+                1: iter([[2, 4]]),
+            },
         )
 
     assert inserted == 5
@@ -472,6 +503,145 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
         "always_ram": True,
     }
     assert row["search_params"]["quantization"]["rescore"] is False
+
+
+def test_qdrant_sharded_complete_resume_uses_grpc_and_quantization(
+    tmp_path,
+    monkeypatch,
+):
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    class Model:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    class FakeQdrantClient:
+        init_kwargs = []
+        query_kwargs = []
+        update_kwargs = []
+
+        def __init__(self, **kwargs):
+            type(self).init_kwargs.append(kwargs)
+
+        def recreate_collection(self, **kwargs):
+            raise AssertionError("complete sharded checkpoint must reuse collections")
+
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=32,
+                indexed_vectors_count=32,
+                status="green",
+                optimizer_status="ok",
+            )
+
+        def update_collection(self, **kwargs):
+            type(self).update_kwargs.append(kwargs)
+            return True
+
+        def query_points(self, **kwargs):
+            type(self).query_kwargs.append(kwargs)
+            return SimpleNamespace(points=[SimpleNamespace(id=1, score=1.0)])
+
+        def close(self):
+            return None
+
+    fake_models = SimpleNamespace(
+        Distance=SimpleNamespace(COSINE="Cosine"),
+        HnswConfigDiff=Model,
+        OptimizersConfigDiff=Model,
+        PointStruct=Model,
+        QuantizationSearchParams=Model,
+        ScalarQuantization=Model,
+        ScalarQuantizationConfig=Model,
+        ScalarType=SimpleNamespace(INT8="int8"),
+        SearchParams=Model,
+        VectorParams=Model,
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "qdrant_client",
+        SimpleNamespace(QdrantClient=FakeQdrantClient),
+    )
+    monkeypatch.setitem(sys.modules, "qdrant_client.models", fake_models)
+
+    checkpoint_path = tmp_path / "qdrant-sharded-complete.checkpoint.json"
+    urls = ["http://127.0.0.1:6335", "http://127.0.0.1:6337"]
+    collection_prefix = "complete_sharded_resume"
+    monkeypatch.setenv("WAVEMIND_QDRANT_URLS", ",".join(urls))
+    monkeypatch.setenv("WAVEMIND_QDRANT_COLLECTION_PREFIX", collection_prefix)
+    monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_PREFER_GRPC", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_GRPC_PORTS", "6336,6338")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS", "300")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_ON_DISK", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTIZATION", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTILE", "0.99")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUANTIZATION_RESCORE", "0")
+
+    source_ids = benchmark.choose_source_ids(64, 4, 3)
+    signature = benchmark._checkpoint_signature(
+        engine="Qdrant sharded service streaming",
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+        extra={
+            "collection_config": benchmark._qdrant_collection_config_from_env(),
+            "target_urls": urls,
+        },
+    )
+    checkpoint = benchmark._new_checkpoint(signature)
+    checkpoint["metadata"]["collection_prefix"] = collection_prefix
+    checkpoint["completed_batch_starts"] = [1, 33]
+    checkpoint["source_vectors"] = {
+        str(source_id): [1.0] + [0.0] * 7 for source_id in source_ids
+    }
+    benchmark._write_checkpoint(checkpoint_path, checkpoint)
+
+    def fail_if_vectors_are_regenerated(**kwargs):
+        raise AssertionError("complete sharded checkpoint must not regenerate batches")
+
+    monkeypatch.setattr(
+        benchmark,
+        "iter_vector_batches",
+        fail_if_vectors_are_regenerated,
+    )
+    row = benchmark.run_qdrant_sharded_streaming(
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+    )
+
+    assert row["qdrant_checkpoint_complete_resume"] is True
+    assert row["checkpoint_completed_batches"] == 2
+    assert row["checkpoint_source_vectors"] == 4
+    assert row["transport"] == {
+        "prefer_grpc": True,
+        "grpc_ports": [6336, 6338],
+        "query_timeout_seconds": 300,
+    }
+    assert [call["grpc_port"] for call in FakeQdrantClient.init_kwargs] == [
+        6336,
+        6338,
+    ]
+    assert all(call["prefer_grpc"] is True for call in FakeQdrantClient.init_kwargs)
+    assert {call["timeout"] for call in FakeQdrantClient.query_kwargs} == {300}
+    assert len(FakeQdrantClient.update_kwargs) == 2
+    assert all(
+        call["quantization_config"].scalar.always_ram is True
+        for call in FakeQdrantClient.update_kwargs
+    )
+    assert row["search_params"]["quantization"]["rescore"] is False
+    assert row["collection_params"]["scalar_quantization"]["quantile"] == 0.99
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
@@ -1032,6 +1202,11 @@ def test_streaming_load_plan_only_supports_qdrant_sharded_service(monkeypatch):
     assert "WAVEMIND_QDRANT_URLS" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URLS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_QDRANT_FANOUT_WORKERS"] == "6"
+    assert row["command_env"]["WAVEMIND_QDRANT_PREFER_GRPC"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_GRPC_PORT"] == "6334"
+    assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "0"
+    assert row["command_env"]["WAVEMIND_QDRANT_SCALAR_QUANTIZATION"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_QUANTIZATION_RESCORE"] == "0"
     assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
     assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
     assert (

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-11T03:37:59Z",
+  "generated_at": "2026-07-11T05:56:48Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-11T03:28:43Z",
+      "evidence": "audit status pass, generated_at 2026-07-11T05:53:28Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
