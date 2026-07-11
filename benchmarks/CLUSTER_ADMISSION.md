@@ -28,13 +28,13 @@ stay useful for development, but do not unlock this gate.
 
 | requirement | status | artifact | evidence |
 |---|---|---|---|
-| Non-loopback Kubernetes or external HTTP service-node load | `pass` | `benchmarks/http_cluster_load_results.json` | nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms |
+| Non-loopback Kubernetes or external HTTP service-node load | `pass` | `benchmarks/http_cluster_load_results.json` | nodes 4, deployment github-actions-29165761261-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 79.44286219996737 ms, lifecycle batch p99 8351.044338999998 ms, batch query True, batch HTTP 24 -> 1, batch p99 186.78031600001077 ms |
 
 ## Requested Evidence
 
 | status | min nodes | namespaces | RF | read quorum | read fanout | batch size | p99 SLO ms | evidence |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `pass` | `4` | `32` | `3` | `1` | `1` | `24` | `1000.0` | nodes 4, deployment github-actions-29070578441-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 84.79942335998312 ms, lifecycle batch p99 6694.75712100001 ms, batch query True, batch HTTP 24 -> 1, batch p99 148.8199839999993 ms |
+| `pass` | `4` | `32` | `3` | `1` | `1` | `24` | `1000.0` | nodes 4, deployment github-actions-29165761261-wavemind-ci-wavemind-system, environment kubernetes-kind-non-loopback-ci, source kubernetes-pod-dns-physical-node-drill, namespaces 32, success 1.0, failover 1.0, query p99 79.44286219996737 ms, lifecycle batch p99 8351.044338999998 ms, batch query True, batch HTTP 24 -> 1, batch p99 186.78031600001077 ms |
 
 ## Preflight
 

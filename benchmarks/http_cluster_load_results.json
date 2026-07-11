@@ -23,28 +23,28 @@
     "write_quorum": 2,
     "read_quorum": 1,
     "read_fanout": 1,
-    "namespace_prefix": "kind-external:29070578441",
+    "namespace_prefix": "kind-external:29165761261",
     "namespace_count": 32,
     "memories_per_namespace": 8,
     "workers": 8,
     "batch_query_size": 24,
-    "deployment_id": "github-actions-29070578441-wavemind-ci-wavemind-system",
+    "deployment_id": "github-actions-29165761261-wavemind-ci-wavemind-system",
     "environment": "kubernetes-kind-non-loopback-ci",
     "source": "kubernetes-pod-dns-physical-node-drill",
-    "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
-    "workflow_run_id": "29070578441",
-    "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
+    "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+    "workflow_run_id": "29165761261",
+    "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
     "description": "External WaveMind API-node sustained cluster benchmark for production service deployments.",
     "kubernetes_attestation": {
       "schema": "wavemind.kubernetes_external_http_cluster_attestation.v1",
-      "generated_at": "2026-07-10T05:13:58.888058+00:00",
+      "generated_at": "2026-07-11T19:49:51.279909+00:00",
       "status": "pass",
       "evidence_source": "github-actions-kind-physical-node-pause",
       "network_evidence_artifact": "benchmarks/kubernetes_cluster_network_smoke_results.json",
-      "network_evidence_sha256": "8f7a2e194c77b68c3ff5a3fa4bafe18c72b378bc913df14087ed25ce5bf8933b",
-      "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
-      "workflow_run_id": "29070578441",
-      "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
+      "network_evidence_sha256": "aa11cb6d54a4a0973d17eeb9e7debcecb486326460877a8724bff5f4539a69ad",
+      "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+      "workflow_run_id": "29165761261",
+      "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
       "service_addresses": [
         "http://wavemind-ci-0.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
         "http://wavemind-ci-1.wavemind-ci-headless.wavemind-system.svc.cluster.local:8000",
@@ -58,11 +58,11 @@
       ],
       "physical_failure": {
         "method": "docker-pause-kind-worker",
-        "target_worker": "wavemind-ci-worker",
+        "target_worker": "wavemind-ci-worker2",
         "target_pods": [
           "wavemind-ci-2"
         ],
-        "outage_duration_ms": 8911.648
+        "outage_duration_ms": 9431.139
       },
       "summary": {
         "check_count": 10,
@@ -76,7 +76,7 @@
           "observed": {
             "slo_pass": true,
             "success_rate": 1.0,
-            "p99_operation_ms": 6694.75712100001
+            "p99_operation_ms": 8351.044338999998
           },
           "required": "mixed workload SLO pass"
         },
@@ -132,7 +132,7 @@
           "passed": true,
           "observed": {
             "method": "docker-pause-kind-worker",
-            "target_worker": "wavemind-ci-worker",
+            "target_worker": "wavemind-ci-worker2",
             "target_pods": [
               "wavemind-ci-2"
             ],
@@ -171,26 +171,26 @@
             "current_pods": {
               "wavemind-ci-0": {
                 "id": "wavemind-ci-0",
-                "uid": "51561740-d801-4eba-a58e-6ef49da6641b",
-                "worker": "wavemind-ci-worker2",
+                "uid": "7911e75d-25f8-492b-b960-49e6b30e0aee",
+                "worker": "wavemind-ci-worker",
                 "ready": true
               },
               "wavemind-ci-1": {
                 "id": "wavemind-ci-1",
-                "uid": "a45e58c6-fe85-4dc1-ae4f-ec5e12191205",
+                "uid": "7e6b108e-c9b0-4cf4-97cb-41fd20edd6ec",
                 "worker": "wavemind-ci-worker3",
                 "ready": true
               },
               "wavemind-ci-2": {
                 "id": "wavemind-ci-2",
-                "uid": "6e6bd316-d273-4434-bac3-0b5784ebdfce",
-                "worker": "wavemind-ci-worker",
+                "uid": "caf4f583-344d-4ceb-917e-f47768ca1ecc",
+                "worker": "wavemind-ci-worker2",
                 "ready": true
               },
               "wavemind-ci-3": {
                 "id": "wavemind-ci-3",
-                "uid": "2d3cc95a-eede-4192-bdb2-59e71a220d52",
-                "worker": "wavemind-ci-worker3",
+                "uid": "8e30fe6f-1693-467a-a3b0-5bb8709a3539",
+                "worker": "wavemind-ci-worker",
                 "ready": true
               }
             }
@@ -201,9 +201,9 @@
           "id": "github_workflow_provenance",
           "passed": true,
           "observed": {
-            "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
-            "workflow_run_id": "29070578441",
-            "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441"
+            "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+            "workflow_run_id": "29165761261",
+            "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261"
           },
           "required": "traceable GitHub Actions source SHA and workflow run"
         }
@@ -264,22 +264,22 @@
       "total_checks": 836,
       "errors": [],
       "error_count": 0,
-      "elapsed_ms": 8896.252176000018,
-      "avg_operation_ms": 1480.0015598333498,
-      "p95_operation_ms": 6694.75712100001,
-      "p99_operation_ms": 6694.75712100001,
-      "write_avg_ms": 6694.75712100001,
-      "write_p99_ms": 6694.75712100001,
-      "query_batch_avg_ms": 539.4693655000253,
-      "query_batch_p99_ms": 682.5198170000135,
-      "failover_batch_avg_ms": 333.70055400001775,
-      "failover_batch_p99_ms": 333.70055400001775,
-      "repair_avg_ms": 23.42367300002479,
-      "repair_p99_ms": 23.42367300002479,
-      "forget_avg_ms": 749.189279999996,
-      "forget_p99_ms": 749.189279999996,
+      "elapsed_ms": 11038.628927000047,
+      "avg_operation_ms": 1836.9360310000125,
+      "p95_operation_ms": 8351.044338999998,
+      "p99_operation_ms": 8351.044338999998,
+      "write_avg_ms": 8351.044338999998,
+      "write_p99_ms": 8351.044338999998,
+      "query_batch_avg_ms": 672.4865545000114,
+      "query_batch_p99_ms": 859.8281710000037,
+      "failover_batch_avg_ms": 455.4705230000309,
+      "failover_batch_p99_ms": 455.4705230000309,
+      "repair_avg_ms": 40.554676999988715,
+      "repair_p99_ms": 40.554676999988715,
+      "forget_avg_ms": 829.5735380000337,
+      "forget_p99_ms": 829.5735380000337,
       "batch_query": {
-        "namespace": "kind-external:29070578441:batch-query",
+        "namespace": "kind-external:29165761261:batch-query",
         "write_node_count": 4,
         "individual_node": "wavemind-ci-0",
         "batch_node": "wavemind-ci-1",
@@ -290,16 +290,16 @@
         "individual_success": true,
         "batch_success": true,
         "success": true,
-        "write_ms": 3919.7300380000115,
-        "individual_total_ms": 186.86699800025508,
-        "individual_p95_ms": 3.9425413999651933,
-        "individual_p99_ms": 84.79942335998312,
-        "batch_ms": 148.8199839999993,
-        "batch_p99_ms": 148.8199839999993,
-        "total_speedup": 1.2556579632494516
+        "write_ms": 4103.411026999993,
+        "individual_total_ms": 201.564347999863,
+        "individual_p95_ms": 5.628512749973423,
+        "individual_p99_ms": 79.44286219996737,
+        "batch_ms": 186.78031600001077,
+        "batch_p99_ms": 186.78031600001077,
+        "total_speedup": 1.0791519808749621
       },
-      "lifecycle_batch_p99_ms": 6694.75712100001,
-      "query_p99_ms": 84.79942335998312,
+      "lifecycle_batch_p99_ms": 8351.044338999998,
+      "query_p99_ms": 79.44286219996737,
       "slo_min_success_rate": 1.0,
       "slo_min_failover_hit_rate": 0.95,
       "slo_p99_ms": 1000.0,
