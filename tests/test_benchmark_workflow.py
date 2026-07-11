@@ -249,6 +249,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "pgvector_shard_count" in workflow
     assert "Provision isolated pgvector services" in workflow
     assert '"pgvector/pgvector:pg16"' in workflow
+    assert "--shm-size 1g" in workflow
     assert "pg_isready --username postgres --dbname wavemind" in workflow
     assert "pgvector-managed-dsns.txt" in workflow
     assert "github-hosted-isolated-service-processes" in workflow

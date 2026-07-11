@@ -201,6 +201,7 @@ jobs:
             docker run --detach \
               --name "$name" \
               --network wavemind-pgvector-ci \
+              --shm-size 1g \
               --publish "127.0.0.1:${port}:5432" \
               --env POSTGRES_PASSWORD=wavemind-ci \
               --env POSTGRES_DB=wavemind \
