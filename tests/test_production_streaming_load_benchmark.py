@@ -1125,15 +1125,16 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["engine"] == "WaveMind pgvector streaming"
     assert row["vectors"] == 10_000_000
     assert row["estimated_index_gb"] == 0.0
-    assert row["index_mode"].startswith("remote PostgreSQL/pgvector")
-    assert "WAVEMIND_PGVECTOR_DSN" in row["required_env"]
-    assert "missing_env:WAVEMIND_PGVECTOR_DSN" in row["blockers"]
+    assert row["index_mode"].startswith("modulo-sharded PostgreSQL/pgvector")
+    assert "WAVEMIND_PGVECTOR_DSNS" in row["required_env"]
+    assert "missing_env:WAVEMIND_PGVECTOR_DSNS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
     assert row["command_env"]["WAVEMIND_PGVECTOR_STORAGE_TYPE"] == "halfvec"
     assert row["command_env"]["WAVEMIND_PGVECTOR_INSERT_MODE"] == "copy"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "hnsw-binary"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "hnsw"
     assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_M"] == "16"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_BINARY_CANDIDATES"] == "200"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] == "256"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_EF_SEARCH"] == "800"
     assert row["command_env"]["WAVEMIND_PGVECTOR_PREWARM_INDEX"] == "1"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]

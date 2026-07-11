@@ -166,7 +166,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     ]
     assert pgvector_plan["status"] == "action_required"
     assert pgvector_plan["estimated_index_gb"] == 0.0
-    assert "WAVEMIND_PGVECTOR_DSN" in pgvector_plan["missing_env"]
+    assert "WAVEMIND_PGVECTOR_DSNS" in pgvector_plan["missing_env"]
     assert "100M" in entries["production_streaming_load_runner"]["dataset"]
     assert "production-streaming-load.yml" in entries["production_streaming_load_runner"]["next_step"]
     assert entries["postgres_pitr_plan"]["status"] == "implemented"

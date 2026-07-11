@@ -2045,11 +2045,14 @@ number of cached index blocks, so warm latency is explicit rather than inferred.
 Large pgvector profiles can select
 `WAVEMIND_PGVECTOR_INDEX_TYPE=hnsw|hnsw-binary|ivfflat`.
 For IVFFlat, `WAVEMIND_PGVECTOR_IVFFLAT_LISTS` controls partition count and
-`WAVEMIND_PGVECTOR_IVFFLAT_PROBES` controls the recall/latency tradeoff. The
-The 10M plan uses binary-quantized HNSW candidate generation followed by
-original-`halfvec` reranking. `WAVEMIND_PGVECTOR_BINARY_CANDIDATES` controls the
-rerank window. This keeps a full-quality HNSW graph in memory without treating
-binary distance as the final score.
+`WAVEMIND_PGVECTOR_IVFFLAT_PROBES` controls the recall/latency tradeoff.
+The strict 10M profile uses four modulo-sharded PostgreSQL services with
+`halfvec` HNSW (`m=16`, `ef_construction=256`, `ef_search=800`). This profile was
+selected from measured binary-HNSW, IVFFlat, and full-HNSW sweeps: the larger
+construction depth preserves the production recall target while parallel
+fanout keeps the global latency budget bounded. Binary HNSW remains available
+for storage-constrained experiments through `WAVEMIND_PGVECTOR_INDEX_TYPE`, but
+it is not the strict-evidence default.
 For horizontal service sharding, set `WAVEMIND_PGVECTOR_DSNS` to two or more
 comma-, semicolon-, or newline-separated PostgreSQL DSNs. The runner assigns
 `memory_id` values by modulo, validates exact per-shard counts and placement,

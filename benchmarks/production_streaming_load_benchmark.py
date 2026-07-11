@@ -1102,19 +1102,24 @@ def _streaming_plan_row(
         }
     elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
         module_requirements = ["psycopg"]
-        required_env = ["WAVEMIND_PGVECTOR_DSN"]
+        required_env = ["WAVEMIND_PGVECTOR_DSNS"]
         index_bytes = 0
-        index_mode = "remote PostgreSQL/pgvector storage; local runner stores only generated batches"
+        index_mode = (
+            "modulo-sharded PostgreSQL/pgvector services; local runner stores only "
+            "generated batches"
+        )
         command_env = {
-            "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
+            "WAVEMIND_PGVECTOR_DSNS": ",".join(
+                f"postgresql://user:password@postgres-{index}.example:5432/wavemind"
+                for index in range(4)
+            ),
             "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
             "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
             "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
-            "WAVEMIND_PGVECTOR_INDEX_TYPE": "hnsw-binary",
+            "WAVEMIND_PGVECTOR_INDEX_TYPE": "hnsw",
             "WAVEMIND_PGVECTOR_HNSW_M": "16",
-            "WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION": "64",
-            "WAVEMIND_PGVECTOR_EF_SEARCH": "400",
-            "WAVEMIND_PGVECTOR_BINARY_CANDIDATES": "200",
+            "WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION": "256",
+            "WAVEMIND_PGVECTOR_EF_SEARCH": "800",
             "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
         }
     else:
@@ -2525,6 +2530,11 @@ def run_pgvector_streaming(
             engine,
             "Set WAVEMIND_PGVECTOR_DSN or WAVEMIND_PGVECTOR_DSNS to run streaming pgvector",
         )
+    if shard_dsns and len(shard_dsns) < 2:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_DSNS must contain at least two service DSNs",
+        )
     try:
         import psycopg
     except ImportError as exc:
@@ -2541,11 +2551,6 @@ def run_pgvector_streaming(
             "WAVEMIND_PGVECTOR_ITERATIVE_SCAN must be strict_order, relaxed_order, or off",
         )
     if shard_dsns:
-        if len(shard_dsns) < 2:
-            return skipped_result(
-                engine,
-                "WAVEMIND_PGVECTOR_DSNS must contain at least two service DSNs",
-            )
         return _run_pgvector_sharded_streaming(
             psycopg=psycopg,
             dsns=shard_dsns,
