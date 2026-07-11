@@ -496,6 +496,17 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
         nested_results = qdrant_sharded_smoke_result["results"]
         if nested_results:
             qdrant_sharded_smoke_result = nested_results[0]
+    qdrant_sharded_10m = load_json_if_exists(
+        root,
+        "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
+    )
+    qdrant_sharded_10m_result = _first_result(qdrant_sharded_10m)
+    if qdrant_sharded_10m_result and isinstance(
+        qdrant_sharded_10m_result.get("results"), list
+    ):
+        nested_results = qdrant_sharded_10m_result["results"]
+        if nested_results:
+            qdrant_sharded_10m_result = nested_results[0]
     qdrant_sharded_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json")
     qdrant_sharded_100m_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json")
     qdrant_sharded_plan_row = {}
@@ -519,20 +530,39 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
     if qdrant_sharded_smoke_result and qdrant_sharded_plan_row:
         shard_urls = qdrant_sharded_plan_row.get("command_env", {}).get("WAVEMIND_QDRANT_URLS", "")
         shard_count = len([part for part in str(shard_urls).split(",") if part.strip()])
-        blockers = ", ".join(qdrant_sharded_plan_row.get("blockers", [])) or "none"
+        blockers = (
+            "none (measured artifact passes)"
+            if qdrant_sharded_10m_result
+            else ", ".join(qdrant_sharded_plan_row.get("blockers", [])) or "none"
+        )
         hundred_million_status = qdrant_sharded_100m_plan_row.get("status", "missing")
+        measured_readout = (
+            f"10M recall `{fmt(qdrant_sharded_10m_result.get('target_recall_at_k'))}`, "
+            f"10M p99 `{fmt(qdrant_sharded_10m_result.get('p99_latency_ms'))} ms`, "
+            f"shards `{qdrant_sharded_10m_result.get('shard_count', '?')}`"
+            if qdrant_sharded_10m_result
+            else f"10M preflight `{qdrant_sharded_plan_row.get('status', 'unknown')}`"
+        )
         rows.append(
             (
                 "Qdrant sharded streaming",
-                "real two-service fanout smoke plus horizontal Qdrant preflight",
+                (
+                    "real fanout smoke plus measured four-service 10M profile"
+                    if qdrant_sharded_10m_result
+                    else "real two-service fanout smoke plus horizontal Qdrant preflight"
+                ),
                 (
                     f"smoke recall `{fmt(qdrant_sharded_smoke_result.get('target_recall_at_k'))}`, "
                     f"smoke p99 `{fmt(qdrant_sharded_smoke_result.get('p99_latency_ms'))} ms`; "
-                    f"10M preflight `{qdrant_sharded_plan_row.get('status', 'unknown')}`; "
+                    f"{measured_readout}; "
                     f"100M preflight `{hundred_million_status}`; "
                     f"planned shards `{shard_count}`; blockers `{blockers}`"
                 ),
-                "Run `.github/workflows/production-streaming-load.yml` with `qdrant-sharded-service` and publish `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` or `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`.",
+                (
+                    "Keep the measured 10M sharded profile green and run the strict 100M sharded profile next."
+                    if qdrant_sharded_10m_result
+                    else "Run `.github/workflows/production-streaming-load.yml` with `qdrant-sharded-service` and publish the 10M or 100M result artifact."
+                ),
             )
         )
 

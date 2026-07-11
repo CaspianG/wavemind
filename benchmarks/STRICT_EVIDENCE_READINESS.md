@@ -11,7 +11,7 @@ production evidence by itself.
 | readiness status | `action_required` |
 | claim status | `claims_limited` |
 | total requirements | `8` |
-| action required | `5` |
+| action required | `4` |
 | ready for safe dispatch | `0` |
 | can auto-run now | `0` |
 | planned target memories | `180000000` |
@@ -37,7 +37,7 @@ production evidence by itself.
 | External HTTP active-active regions | `missing_env` | `blocked_by_preflight` |  | `benchmarks/external_http_active_active_results.json` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | Remote multi-region active-active convergence |
 | Managed/serverless remote telemetry | `missing_env` | `blocked_by_preflight` |  | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES` | Hosted/serverless p99, cold-start, error-rate, and scale-out SLO. |
 | 10M Qdrant service load | `complete` | `complete` | 10000000 | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` | 10M-100M service-backed production scale |
-| 10M sharded Qdrant service load | `missing_env` | `blocked_by_preflight` | 10000000 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` | 10M-100M service-backed production scale |
+| 10M sharded Qdrant service load | `complete` | `complete` | 10000000 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` | 10M-100M service-backed production scale |
 | 10M pgvector service load | `missing_env` | `blocked_by_preflight` | 10000000 | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` | 10M-100M service-backed production scale |
 | 50M FAISS IVF-PQ streaming load | `complete` | `complete` | 50000000 | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` | 10M-100M service-backed production scale |
 | 100M remote load result | `missing_env` | `blocked_by_preflight` | 100000000 | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS` | 10M-100M service-backed production scale |

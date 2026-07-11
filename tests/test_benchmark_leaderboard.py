@@ -62,7 +62,9 @@ def test_benchmark_leaderboard_renderer_writes_compact_leaderboard(tmp_path):
     assert "iterative recall `0.97`" in leaderboard
     assert "Qdrant streaming" in leaderboard
     assert "Qdrant sharded streaming" in leaderboard
-    assert "real two-service fanout smoke" in leaderboard
+    assert "real fanout smoke plus measured four-service 10M profile" in leaderboard
+    assert "10M recall `0.993`" in leaderboard
+    assert "10M p99 `71.3 ms`" in leaderboard
     assert "Qdrant 1M streaming" in leaderboard
     assert "tuned p99" in leaderboard
     assert "pgvector streaming" in leaderboard

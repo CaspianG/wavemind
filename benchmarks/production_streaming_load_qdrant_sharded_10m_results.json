@@ -1,0 +1,304 @@
+{
+  "schema": "wavemind.production_streaming_load.v1",
+  "generated_at": "2026-07-11T04:18:28Z",
+  "source_ref": "11d0be8c62e8678f5f154585f89eb4d016183cf7",
+  "execution_id": "local-qdrant-sharded10m-4x-v1182-20260711",
+  "execution_environment": "qdrant-1.18.2-docker-wsl2-four-posix-named-volumes-grpc-int8-ram",
+  "evidence_source": "local-service",
+  "workflow_run_id": null,
+  "workflow_run_url": null,
+  "scenario": {
+    "name": "production_streaming_load_profile",
+    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",
+    "sizes": [
+      10000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 2000,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "batch_size": 10000,
+    "target_recall_definition": "source id appears in top-k for a noisy copy of that source vector",
+    "memory_model": "streaming batches; stores only selected query source vectors outside the index",
+    "default_target_sizes": [
+      10000000,
+      50000000
+    ],
+    "slo_targets": {
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 250.0,
+      "replicas": 4,
+      "autoscaling_max_replicas": 48,
+      "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0,
+      "monthly_budget_usd": null,
+      "max_cost_per_1m_memories_usd": null,
+      "max_compute_cost_per_1m_queries_usd": null
+    }
+  },
+  "preflight": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "docker": {
+      "available": true,
+      "server_version": "28.3.0"
+    },
+    "modules": {
+      "faiss": false,
+      "qdrant_client": true,
+      "psycopg": false,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": false,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": null,
+      "WAVEMIND_QDRANT_HNSW_EF": "1024",
+      "WAVEMIND_QDRANT_EXACT": null,
+      "WAVEMIND_QDRANT_WARMUP_QUERIES": "100",
+      "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": "10",
+      "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "21600",
+      "WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS": "10",
+      "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
+      "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
+      "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": "1000000000",
+      "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": "20000",
+      "WAVEMIND_QDRANT_HNSW_M": "16",
+      "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": "100",
+      "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER": "4",
+      "WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD": null,
+      "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
+      "WAVEMIND_QDRANT_ON_DISK_PAYLOAD": "1",
+      "WAVEMIND_QDRANT_SHARD_NUMBER": null
+    },
+    "disk": {
+      "root": "D:\\",
+      "free_gb": 2.51,
+      "total_gb": 931.51
+    }
+  },
+  "results": [
+    {
+      "vectors": 10000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "noise": 0.08,
+      "batch_size": 10000,
+      "results": [
+        {
+          "engine": "Qdrant sharded service streaming",
+          "vectors": 10000000,
+          "vector_dim": 128,
+          "batch_size": 10000,
+          "recall_at_k": 0.9925,
+          "target_recall_at_k": 0.9925,
+          "target_recall_at_1": 0.9925,
+          "avg_latency_ms": 46.60563879973779,
+          "p50_latency_ms": 45.0464000023203,
+          "p95_latency_ms": 60.49189998884685,
+          "p99_latency_ms": 71.27849999233149,
+          "max_latency_ms": 125.04669997724704,
+          "build_ms": 5520602.228099975,
+          "queries": 2000,
+          "recall_definition": "source vector id appears in top_k for a noisy copy of that vector",
+          "collection_prefix": "wavemind_qdrant_sharded_10m_v1182",
+          "collection_names": [
+            "wavemind_qdrant_sharded_10m_v1182_s000",
+            "wavemind_qdrant_sharded_10m_v1182_s001",
+            "wavemind_qdrant_sharded_10m_v1182_s002",
+            "wavemind_qdrant_sharded_10m_v1182_s003"
+          ],
+          "shard_count": 4,
+          "fanout_workers": 4,
+          "parallel_shard_upsert": true,
+          "routing": "point_id_minus_one_mod_shard_count",
+          "warmup_queries": 100,
+          "wait_after_build_seconds": 10.0,
+          "index_readiness": [
+            {
+              "collection_name": "wavemind_qdrant_sharded_10m_v1182_s000",
+              "expected_vectors": 2500000,
+              "points_count": 2500000,
+              "indexed_vectors_count": 2500000,
+              "collection_status": "green",
+              "optimizer_status": "ok",
+              "ready": true,
+              "attempts": 235,
+              "wait_ms": 2347914.449499978,
+              "timeout_seconds": 21600.0,
+              "poll_interval_seconds": 10.0,
+              "require_full_index": true
+            },
+            {
+              "collection_name": "wavemind_qdrant_sharded_10m_v1182_s001",
+              "expected_vectors": 2500000,
+              "points_count": 2500000,
+              "indexed_vectors_count": 2500000,
+              "collection_status": "green",
+              "optimizer_status": "ok",
+              "ready": true,
+              "attempts": 78,
+              "wait_ms": 772670.2865000116,
+              "timeout_seconds": 21600.0,
+              "poll_interval_seconds": 10.0,
+              "require_full_index": true
+            },
+            {
+              "collection_name": "wavemind_qdrant_sharded_10m_v1182_s002",
+              "expected_vectors": 2500000,
+              "points_count": 2500000,
+              "indexed_vectors_count": 2500000,
+              "collection_status": "green",
+              "optimizer_status": "ok",
+              "ready": true,
+              "attempts": 1,
+              "wait_ms": 120.68679998628795,
+              "timeout_seconds": 21600.0,
+              "poll_interval_seconds": 10.0,
+              "require_full_index": true
+            },
+            {
+              "collection_name": "wavemind_qdrant_sharded_10m_v1182_s003",
+              "expected_vectors": 2500000,
+              "points_count": 2500000,
+              "indexed_vectors_count": 2500000,
+              "collection_status": "green",
+              "optimizer_status": "ok",
+              "ready": true,
+              "attempts": 1,
+              "wait_ms": 43.11050000251271,
+              "timeout_seconds": 21600.0,
+              "poll_interval_seconds": 10.0,
+              "require_full_index": true
+            }
+          ],
+          "index_ready_all": true,
+          "deferred_indexing": {
+            "enabled": true,
+            "deferred_threshold_kb": 1000000000,
+            "final_threshold_kb": 20000
+          },
+          "index_restore_ms": 1727.1943000087049,
+          "search_params": {
+            "hnsw_ef": 1024,
+            "exact": false,
+            "quantization": {
+              "enabled": true,
+              "ignore": null,
+              "rescore": false,
+              "oversampling": null
+            }
+          },
+          "transport": {
+            "prefer_grpc": true,
+            "grpc_ports": [
+              6352,
+              6354,
+              6356,
+              6358
+            ],
+            "query_timeout_seconds": 60
+          },
+          "collection_params": {
+            "hnsw": {
+              "m": 16,
+              "ef_construct": 100,
+              "max_indexing_threads": 2,
+              "on_disk": false
+            },
+            "optimizers": {
+              "default_segment_number": 4
+            },
+            "vector_on_disk": true,
+            "on_disk_payload": true,
+            "shard_number": null,
+            "scalar_quantization": {
+              "type": "int8",
+              "quantile": 0.99,
+              "always_ram": true
+            }
+          },
+          "upsert_batch_size": 5000,
+          "qdrant_checkpoint_complete_resume": false,
+          "memory_mode": "horizontally sharded streaming upsert; parallel fanout query merge",
+          "checkpoint_enabled": true,
+          "checkpoint_path": "qdrant-sharded-service-10000000.checkpoint.json",
+          "checkpoint_completed_batches": 1000,
+          "checkpoint_source_vectors": 2000,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 17,
+          "slo_autoscaled_qps": 720.9428057488408,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 4.722222222222222,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 3104.8841857910156,
+          "estimated_storage_gb": 23.84185791015625
+        }
+      ],
+      "slo": [
+        {
+          "engine": "Qdrant sharded service streaming",
+          "status": "scale_required",
+          "target_recall_at_k": 0.95,
+          "target_p99_ms": 100.0,
+          "target_qps": 250.0,
+          "recall_at_k": 0.9925,
+          "p99_latency_ms": 71.27849999233149,
+          "avg_latency_ms": 46.60563879973779,
+          "per_replica_qps_at_headroom": 15.019641786434182,
+          "current_replicas": 4,
+          "current_capacity_qps": 60.07856714573673,
+          "required_replicas": 17,
+          "autoscaling_max_replicas": 48,
+          "autoscaled_capacity_qps": 720.9428057488408,
+          "blocking_reasons": [],
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 4.722222222222222,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 3104.8841857910156,
+          "estimated_storage_gb": 23.84185791015625
+        }
+      ],
+      "cost": [
+        {
+          "engine": "Qdrant sharded service streaming",
+          "cost_status": "valid_slo",
+          "cost_blocking_reasons": [],
+          "memory_count": 10000000,
+          "vector_dim": 128,
+          "required_replicas": 17,
+          "target_qps": 250.0,
+          "replica_hourly_cost_usd": 0.25,
+          "storage_gb_monthly_cost_usd": 0.1,
+          "monthly_budget_usd": null,
+          "monthly_budget_headroom_usd": null,
+          "max_cost_per_1m_memories_usd": null,
+          "max_compute_cost_per_1m_queries_usd": null,
+          "vector_storage_gb": 4.76837158203125,
+          "payload_storage_gb": 19.073486328125,
+          "total_storage_gb": 23.84185791015625,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_storage_cost_per_1m_memories_usd": 0.2384185791015625,
+          "monthly_compute_cost_per_1m_memories_usd": 310.25,
+          "monthly_total_cost_per_1m_memories_usd": 310.48841857910156,
+          "monthly_queries_at_target_qps": 657000000.0,
+          "compute_cost_per_1m_queries_usd": 4.722222222222222,
+          "monthly_compute_cost_at_target_qps_usd": 3102.5,
+          "monthly_total_cost_at_target_qps_usd": 3104.8841857910156
+        }
+      ]
+    }
+  ]
+}
