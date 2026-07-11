@@ -2049,8 +2049,10 @@ For IVFFlat, `WAVEMIND_PGVECTOR_IVFFLAT_LISTS` controls partition count and
 The strict 10M profile uses four modulo-sharded PostgreSQL services with
 `halfvec` HNSW (`m=16`, `ef_construction=256`, `ef_search=800`). This profile was
 selected from measured binary-HNSW, IVFFlat, and full-HNSW sweeps: the larger
-construction depth preserves the production recall target while parallel
-fanout keeps the global latency budget bounded. Binary HNSW remains available
+construction depth reached the recall target in dedicated-shard sweeps, while
+namespace routing avoids broadcasting ordinary scoped queries across every
+service. The full four-service 10M artifact remains a release gate and is not
+claimed from those component measurements. Binary HNSW remains available
 for storage-constrained experiments through `WAVEMIND_PGVECTOR_INDEX_TYPE`, but
 it is not the strict-evidence default.
 For horizontal service sharding, set `WAVEMIND_PGVECTOR_DSNS` to two or more
@@ -2060,6 +2062,12 @@ builds one index per service, and fanout-merges shard-local results by original
 vector distance. Checkpoints are committed only after every shard accepts the
 batch, so interrupted multi-service ingest resumes without silently losing a
 shard.
+`WAVEMIND_PGVECTOR_QUERY_ROUTING=namespace` is the strict production default:
+the benchmark label supplies the same namespace ownership information that a
+real WaveMind request carries, and the query is sent only to its owning shard.
+Set it to `fanout` only for explicit cross-namespace search. Results record the
+routing mode and do not present namespace-scoped latency as global-corpus
+fanout latency.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and

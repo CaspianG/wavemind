@@ -1135,6 +1135,7 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_M"] == "16"
     assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] == "256"
     assert row["command_env"]["WAVEMIND_PGVECTOR_EF_SEARCH"] == "800"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_QUERY_ROUTING"] == "namespace"
     assert row["command_env"]["WAVEMIND_PGVECTOR_PREWARM_INDEX"] == "1"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]
@@ -1151,6 +1152,15 @@ def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
     assert config["insert_mode"] == "copy"
     assert config["index_type"] == "hnsw-binary"
 
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
+    config = _pgvector_config_from_env()
+    assert config["query_routing"] == "namespace"
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "broadcast")
+    with pytest.raises(ValueError, match="must be fanout or namespace"):
+        _pgvector_config_from_env()
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "fanout")
     monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "binary")
     with pytest.raises(ValueError, match="must be vector or halfvec"):
         _pgvector_config_from_env()
@@ -1263,6 +1273,7 @@ def test_pgvector_checkpoint_migrates_only_index_specific_signature(tmp_path):
 
 def test_pgvector_shard_counts_cover_every_id_exactly():
     from benchmarks.production_streaming_load_benchmark import (
+        _pgvector_benchmark_namespace_shard,
         _pgvector_shard_expected_count,
     )
 
@@ -1273,6 +1284,12 @@ def test_pgvector_shard_counts_cover_every_id_exactly():
         _pgvector_shard_expected_count(10_000_003, 4, index)
         for index in range(4)
     ) == 10_000_003
+    assert [
+        _pgvector_benchmark_namespace_shard(source_id, 4)
+        for source_id in range(1, 9)
+    ] == [0, 1, 2, 3, 0, 1, 2, 3]
+    with pytest.raises(ValueError, match="source_id must be positive"):
+        _pgvector_benchmark_namespace_shard(0, 4)
 
 
 def test_pgvector_sharded_mode_requires_multiple_services(monkeypatch):

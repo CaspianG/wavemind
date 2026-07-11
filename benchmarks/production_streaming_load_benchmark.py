@@ -662,6 +662,13 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         raise ValueError(
             "WAVEMIND_PGVECTOR_INDEX_TYPE must be hnsw, hnsw-binary, or ivfflat"
         )
+    query_routing = os.environ.get(
+        "WAVEMIND_PGVECTOR_QUERY_ROUTING", "fanout"
+    ).strip().lower()
+    if query_routing not in {"fanout", "namespace"}:
+        raise ValueError(
+            "WAVEMIND_PGVECTOR_QUERY_ROUTING must be fanout or namespace"
+        )
     return {
         "table": _safe_identifier(
             os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_streaming_vectors"),
@@ -672,6 +679,7 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         "storage_type": storage_type,
         "insert_mode": insert_mode,
         "index_type": index_type,
+        "query_routing": query_routing,
         "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
         "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
         "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
@@ -1120,6 +1128,7 @@ def _streaming_plan_row(
             "WAVEMIND_PGVECTOR_HNSW_M": "16",
             "WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION": "256",
             "WAVEMIND_PGVECTOR_EF_SEARCH": "800",
+            "WAVEMIND_PGVECTOR_QUERY_ROUTING": "namespace",
             "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
         }
     else:
@@ -2868,6 +2877,14 @@ def _pgvector_shard_expected_count(count: int, shard_count: int, shard_index: in
     return max(0, (int(count) + int(shard_count) - 1 - int(shard_index)) // int(shard_count))
 
 
+def _pgvector_benchmark_namespace_shard(source_id: int, shard_count: int) -> int:
+    if int(source_id) <= 0:
+        raise ValueError("source_id must be positive")
+    if int(shard_count) <= 0:
+        raise ValueError("shard_count must be positive")
+    return (int(source_id) - 1) % int(shard_count)
+
+
 def _run_pgvector_sharded_streaming(
     *,
     psycopg: Any,
@@ -2911,6 +2928,7 @@ def _run_pgvector_sharded_streaming(
             "WAVEMIND_PGVECTOR_BINARY_CANDIDATES must be at least top_k",
         )
     iterative_scan = config.get("iterative_scan")
+    query_routing = str(config["query_routing"])
     index_name = f"{table}_embedding_{index_type.replace('-', '_')}_idx"
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
@@ -3172,6 +3190,7 @@ def _run_pgvector_sharded_streaming(
             shard_count,
             _positive_int_env("WAVEMIND_PGVECTOR_FANOUT_WORKERS", shard_count),
         )
+        query_workers = fanout_workers if query_routing == "fanout" else 1
 
         def search_shard(shard_index: int, query: np.ndarray) -> list[tuple[int, float]]:
             rows = connections[shard_index].execute(
@@ -3191,6 +3210,21 @@ def _run_pgvector_sharded_streaming(
             merged.sort(key=lambda item: (item[1], item[0]))
             return [memory_id for memory_id, _ in merged[:top_k]]
 
+        def routed_search(
+            executor: concurrent.futures.ThreadPoolExecutor,
+            source_id: int,
+            query: np.ndarray,
+        ) -> list[int]:
+            if query_routing == "namespace":
+                shard_index = _pgvector_benchmark_namespace_shard(
+                    source_id, shard_count
+                )
+                return [
+                    memory_id
+                    for memory_id, _ in search_shard(shard_index, query)[:top_k]
+                ]
+            return fanout_search(executor, query)
+
         queries = make_queries(
             source_ids=source_ids,
             source_vectors=source_vectors,
@@ -3199,14 +3233,14 @@ def _run_pgvector_sharded_streaming(
         )
         warmup_queries = int(os.environ.get("WAVEMIND_PGVECTOR_WARMUP_QUERIES", "0"))
         measured: list[dict[str, Any]] = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=fanout_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=query_workers) as executor:
             if warmup_queries > 0 and queries:
                 for index in range(warmup_queries):
-                    _, query = queries[index % len(queries)]
-                    fanout_search(executor, query)
+                    source_id, query = queries[index % len(queries)]
+                    routed_search(executor, source_id, query)
             for source_id, query in queries:
                 query_started = time.perf_counter()
-                top = fanout_search(executor, query)
+                top = routed_search(executor, source_id, query)
                 measured.append(
                     {
                         "source_id": int(source_id),
@@ -3242,7 +3276,17 @@ def _run_pgvector_sharded_streaming(
                 "shard_row_counts": row_counts,
                 "shard_expected_counts": expected_counts,
                 "shard_misplaced_rows": misplaced_rows,
-                "fanout_workers": fanout_workers,
+                "query_routing": query_routing,
+                "fanout_workers": fanout_workers if query_routing == "fanout" else 0,
+                "query_workers": query_workers,
+                "per_namespace_vector_capacity": per_shard_count,
+                "global_cross_namespace_search": query_routing == "fanout",
+                "routing_key_source": (
+                    "synthetic benchmark namespace label derived from source id "
+                    "modulo shard count"
+                    if query_routing == "namespace"
+                    else "not applicable; all shards queried"
+                ),
                 "search_params": {
                     "hnsw_ef": config["ef_search"],
                     "ivfflat_probes": ivfflat_probes if index_type == "ivfflat" else None,
@@ -3258,8 +3302,11 @@ def _run_pgvector_sharded_streaming(
                     "ivfflat_lists": ivfflat_lists if index_type == "ivfflat" else None,
                 },
                 "memory_mode": (
-                    "streaming modulo-sharded PostgreSQL insert; parallel multi-service "
-                    "fanout query merge; query source vectors only"
+                    "streaming modulo-sharded PostgreSQL insert; namespace-routed "
+                    "single-service query; query source vectors only"
+                    if query_routing == "namespace"
+                    else "streaming modulo-sharded PostgreSQL insert; parallel "
+                    "multi-service fanout query merge; query source vectors only"
                 ),
                 **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
             },
