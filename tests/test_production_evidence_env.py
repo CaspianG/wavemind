@@ -59,6 +59,7 @@ def test_production_evidence_env_contract_maps_missing_variables():
     assert "external-http-cluster-load.yml" in cluster_nodes["workflows"]
     assert "benchmarks/http_cluster_load_results.json" in cluster_nodes["artifacts"]
     assert "gh secret set WAVEMIND_CLUSTER_NODES" in cluster_nodes["github_secret_command"]
+    assert by_name["WAVEMIND_PGVECTOR_DSNS"]["kind"] == "postgres-dsn-list"
 
     assert all(check["pass"] for check in payload["checks"])
 

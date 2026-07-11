@@ -63,10 +63,16 @@ ENV_METADATA: dict[str, dict[str, str]] = {
         "example": "REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B",
         "description": "Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.",
     },
-    "WAVEMIND_PGVECTOR_DSN": {
-        "kind": "postgres-dsn",
-        "example": "postgresql://USER:PASSWORD@pgvector.staging.example.com:5432/wavemind",
-        "description": "PostgreSQL/pgvector DSN for 10M pgvector service streaming load.",
+    "WAVEMIND_PGVECTOR_DSNS": {
+        "kind": "postgres-dsn-list",
+        "example": (
+            "postgresql://USER:PASSWORD@pgvector-a.staging.example.com:5432/wavemind,"
+            "postgresql://USER:PASSWORD@pgvector-b.staging.example.com:5432/wavemind"
+        ),
+        "description": (
+            "Comma-separated PostgreSQL/pgvector service DSNs for the namespace-sharded "
+            "10M streaming load."
+        ),
     },
     "WAVEMIND_FAISS_IVFPQ_PATH": {
         "kind": "filesystem-path",

@@ -1157,6 +1157,16 @@ def _large_run_preflight(
         dsn = _env_value(env, "WAVEMIND_PGVECTOR_DSN")
         if not dsn.startswith(("postgresql://", "postgres://")):
             issues.append("WAVEMIND_PGVECTOR_DSN must start with postgresql:// or postgres://")
+    if "WAVEMIND_PGVECTOR_DSNS" in required_env and _env_value(env, "WAVEMIND_PGVECTOR_DSNS"):
+        dsns = _split_env_list(_env_value(env, "WAVEMIND_PGVECTOR_DSNS"))
+        if len(dsns) < 2:
+            issues.append("WAVEMIND_PGVECTOR_DSNS must contain at least two service DSNs")
+        for index, dsn in enumerate(dsns):
+            if not dsn.startswith(("postgresql://", "postgres://")):
+                issues.append(
+                    f"WAVEMIND_PGVECTOR_DSNS item {index + 1} must start with "
+                    "postgresql:// or postgres://"
+                )
     for name in ("WAVEMIND_FAISS_PATH", "WAVEMIND_FAISS_IVFPQ_PATH"):
         if name in required_env and _env_value(env, name):
             required_free = float(plan.get("required_local_free_gb", 0.0) or 0.0)
@@ -1540,8 +1550,8 @@ def _dispatch_config(
                 plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
                 engine="pgvector-service",
                 size=10_000_000,
-                credential_input="pgvector_dsn",
-                credential_placeholder="$WAVEMIND_PGVECTOR_DSN",
+                credential_input="pgvector_dsns",
+                credential_placeholder="$WAVEMIND_PGVECTOR_DSNS",
                 runner_label=runner_label,
                 commit_results=commit_results,
             ),

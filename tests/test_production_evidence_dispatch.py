@@ -103,6 +103,10 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert qdrant["inputs"]["runner_storage_root"] == "state/production-runs"
     assert qdrant["input_bindings"]["qdrant_url"] == "$WAVEMIND_QDRANT_URL"
     assert qdrant["required_secrets"] == ["WAVEMIND_QDRANT_API_KEY"]
+    pgvector = by_id["pgvector_10m_service"]
+    assert pgvector["inputs"]["pgvector_dsns"] == "$WAVEMIND_PGVECTOR_DSNS"
+    assert pgvector["input_bindings"]["pgvector_dsns"] == "$WAVEMIND_PGVECTOR_DSNS"
+    assert "pgvector_dsn" not in pgvector["inputs"]
 
 
 def test_dispatch_markdown_lists_launch_and_promotion_commands(tmp_path):

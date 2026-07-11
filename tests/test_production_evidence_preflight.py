@@ -66,6 +66,7 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
 
     by_id = {row["id"]: row for row in payload["checks"]}
     assert by_id["external_http_active_active"]["missing_env"] == []
+    assert by_id["pgvector_10m_service"]["missing_env"] == []
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["hundred_million_remote_load"]["ready"] is True
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
