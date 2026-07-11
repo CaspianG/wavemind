@@ -638,6 +638,7 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         "iterative_scan": os.environ.get("WAVEMIND_PGVECTOR_ITERATIVE_SCAN"),
         "max_scan_tuples": _optional_int_env("WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES"),
         "scan_mem_multiplier": _optional_int_env("WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER"),
+        "prewarm_index": _bool_env("WAVEMIND_PGVECTOR_PREWARM_INDEX", False),
         "keep_collection": _bool_env("WAVEMIND_PGVECTOR_KEEP_COLLECTION", False),
     }
 
@@ -1064,6 +1065,7 @@ def _streaming_plan_row(
             "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
             "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
             "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
+            "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
             "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
         }
     else:
@@ -2635,6 +2637,15 @@ def run_pgvector_streaming(
         checkpoint_metadata["index_present"] = index_present
         _write_checkpoint(checkpoint_path, checkpoint)
         conn.execute(f"ANALYZE {table}")
+        prewarm_blocks = 0
+        if config["prewarm_index"] and index_present:
+            conn.execute("CREATE EXTENSION IF NOT EXISTS pg_prewarm")
+            prewarm_blocks = int(
+                conn.execute(
+                    "SELECT pg_prewarm(%s, 'buffer')",
+                    (index_name,),
+                ).fetchone()[0]
+            )
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_PGVECTOR_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
@@ -2695,6 +2706,8 @@ def run_pgvector_streaming(
                 "complete_resume": complete_resume,
                 "index_name": index_name,
                 "index_present": index_present,
+                "prewarm_index": bool(config["prewarm_index"]),
+                "prewarm_blocks": prewarm_blocks,
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "search_params": {

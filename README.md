@@ -2038,6 +2038,9 @@ still contains the exact expected row count and the requested HNSW index is
 present; otherwise the evidence run fails instead of silently benchmarking a
 partial corpus. Use a dedicated table when switching between `vector` and
 `halfvec` because PostgreSQL column types are intentionally validated.
+Set `WAVEMIND_PGVECTOR_PREWARM_INDEX=1` for steady-state service evidence. The
+runner loads the HNSW relation through PostgreSQL `pg_prewarm` and records the
+number of cached index blocks, so warm latency is explicit rather than inferred.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and
