@@ -313,7 +313,11 @@ def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
 
     payload = build_production_scale_run_plan(
         profiles=["pgvector-10m"],
-        env={"WAVEMIND_PGVECTOR_DSN": "postgresql://example/wavemind"},
+        env={
+            "WAVEMIND_PGVECTOR_DSNS": (
+                "postgresql://example-a/wavemind,postgresql://example-b/wavemind"
+            )
+        },
         disk_free_gb=1000.0,
     )
     row = payload["profiles"][0]
@@ -322,6 +326,7 @@ def test_production_scale_run_plan_can_mark_profile_ready(monkeypatch):
     assert row["status"] == "ready"
     assert row["missing_env"] == ()
     assert row["blockers"] == ()
+    assert row["command_env"]["WAVEMIND_PGVECTOR_QUERY_ROUTING"] == "namespace"
     assert row["slo_capacity_envelope"]["status"] in {"pass", "scale_required"}
     assert row["slo_capacity_envelope"]["required_replicas"] <= row["autoscaling_max_replicas"]
     assert row["cost_envelope"]["memory_count"] == 10_000_000

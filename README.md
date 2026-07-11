@@ -523,7 +523,7 @@ results:
 |---|---|---:|---|---|
 | `qdrant-10m` | `qdrant-service` | 10000000 | `WAVEMIND_QDRANT_URL` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
 | `qdrant-sharded-10m` | `qdrant-sharded-service` | 10000000 | `WAVEMIND_QDRANT_URLS` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
-| `pgvector-10m` | `pgvector-service` | 10000000 | `WAVEMIND_PGVECTOR_DSN` | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
+| `pgvector-10m` | `pgvector-service` | 10000000 | `WAVEMIND_PGVECTOR_DSNS` | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
 | `faiss-ivfpq-50m` | `faiss-ivfpq-persisted` | 50000000 | `WAVEMIND_FAISS_IVFPQ_PATH` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` |
 | `qdrant-sharded-100m` | `qdrant-sharded-service` | 100000000 | `WAVEMIND_QDRANT_URLS` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
 
