@@ -283,6 +283,42 @@ def _load_faiss_ivfpq_checkpoint(
         return payload
 
 
+def _load_pgvector_checkpoint(
+    path: Path | None,
+    signature: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        return _load_checkpoint(path, signature)
+    except ValueError:
+        if path is None or not path.exists():
+            raise
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload_signature = dict(payload.get("signature", {}))
+        payload_extra = dict(payload_signature.get("extra", {}))
+        migrated_keys = []
+        for key in (
+            "create_hnsw",
+            "hnsw_m",
+            "hnsw_ef_construction",
+            "exact",
+            "iterative_scan",
+            "index_type",
+            "ivfflat_lists",
+        ):
+            if key in payload_extra:
+                migrated_keys.append(key)
+                payload_extra.pop(key)
+        payload_signature["extra"] = payload_extra
+        if payload.get("schema") != CHECKPOINT_SCHEMA or payload_signature != signature:
+            raise
+        payload["signature"] = signature
+        payload.setdefault("metadata", {})["signature_migrated_index_keys"] = migrated_keys
+        payload.setdefault("completed_batch_starts", [])
+        payload.setdefault("source_vectors", {})
+        _write_checkpoint(path, payload)
+        return payload
+
+
 def _write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     if path is None:
         return
@@ -2524,15 +2560,10 @@ def run_pgvector_streaming(
             "table": table,
             "storage_type": storage_type,
             "insert_mode": insert_mode,
-            "create_hnsw": bool(config["create_hnsw"]),
-            "hnsw_m": config["hnsw_m"],
-            "hnsw_ef_construction": config["hnsw_ef_construction"],
-            "exact": bool(config["exact"]),
-            "iterative_scan": iterative_scan,
         },
     )
     try:
-        checkpoint = _load_checkpoint(checkpoint_path, signature)
+        checkpoint = _load_pgvector_checkpoint(checkpoint_path, signature)
     except ValueError as exc:
         return skipped_result(engine, str(exc))
     checkpoint_metadata = checkpoint.setdefault("metadata", {})

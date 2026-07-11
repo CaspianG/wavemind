@@ -1212,6 +1212,54 @@ def test_pgvector_copy_batch_replaces_only_uncheckpointed_range():
     ]
 
 
+def test_pgvector_checkpoint_migrates_only_index_specific_signature(tmp_path):
+    from benchmarks.production_streaming_load_benchmark import (
+        _checkpoint_signature,
+        _load_pgvector_checkpoint,
+        _new_checkpoint,
+    )
+
+    current = _checkpoint_signature(
+        engine="WaveMind pgvector streaming",
+        count=100,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=42,
+        noise=0.08,
+        batch_size=10,
+        extra={
+            "table": "vectors",
+            "storage_type": "halfvec",
+            "insert_mode": "copy",
+        },
+    )
+    legacy = json.loads(json.dumps(current))
+    legacy["extra"].update(
+        {
+            "create_hnsw": True,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 64,
+            "exact": False,
+            "iterative_scan": None,
+        }
+    )
+    checkpoint = _new_checkpoint(legacy)
+    path = tmp_path / "pgvector-checkpoint.json"
+    path.write_text(json.dumps(checkpoint), encoding="utf-8")
+
+    migrated = _load_pgvector_checkpoint(path, current)
+
+    assert migrated["signature"] == current
+    assert set(migrated["metadata"]["signature_migrated_index_keys"]) == {
+        "create_hnsw",
+        "hnsw_m",
+        "hnsw_ef_construction",
+        "exact",
+        "iterative_scan",
+    }
+
+
 def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     from benchmarks.production_streaming_load_benchmark import plan_streaming_load
 
