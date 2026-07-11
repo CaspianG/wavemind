@@ -3277,6 +3277,10 @@ def _run_pgvector_sharded_streaming(
                 "shard_expected_counts": expected_counts,
                 "shard_misplaced_rows": misplaced_rows,
                 "query_routing": query_routing,
+                "evidence_topology": os.environ.get(
+                    "WAVEMIND_PGVECTOR_EVIDENCE_TOPOLOGY",
+                    "configured-service-dsns",
+                ),
                 "fanout_workers": fanout_workers if query_routing == "fanout" else 0,
                 "query_workers": query_workers,
                 "per_namespace_vector_capacity": per_shard_count,

@@ -245,6 +245,17 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
     assert "WAVEMIND_PGVECTOR_DSNS" in workflow
     assert "pgvector_dsns" in workflow
+    assert "provision_pgvector_shards" in workflow
+    assert "pgvector_shard_count" in workflow
+    assert "Provision isolated pgvector services" in workflow
+    assert '"pgvector/pgvector:pg16"' in workflow
+    assert "pg_isready --username postgres --dbname wavemind" in workflow
+    assert "pgvector-managed-dsns.txt" in workflow
+    assert "github-hosted-isolated-service-processes" in workflow
+    assert "pgvector shard row counts do not prove an exact balanced layout" in workflow
+    assert "managed pgvector evidence must use namespace routing" in workflow
+    assert "isolated-service topology attestation" in workflow
+    assert "Capture pgvector service diagnostics" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
     assert 'WAVEMIND_FAISS_IVFPQ_NPROBE: "1024"' in workflow
     assert 'WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP: "64,128,256,512,1024"' in workflow
