@@ -67,7 +67,7 @@
     },
     "disk": {
       "root": "C:\\",
-      "free_gb": 2.3,
+      "free_gb": 1.83,
       "total_gb": 231.85
     }
   },
@@ -104,8 +104,10 @@
         "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
         "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
         "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
-        "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
-        "WAVEMIND_PGVECTOR_EF_SEARCH": "1000"
+        "WAVEMIND_PGVECTOR_INDEX_TYPE": "ivfflat",
+        "WAVEMIND_PGVECTOR_IVFFLAT_LISTS": "4096",
+        "WAVEMIND_PGVECTOR_IVFFLAT_PROBES": "256",
+        "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1"
       },
       "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
       "resume_mode": "batch checkpoint; safe to rerun after interrupted ingest",

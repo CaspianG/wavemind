@@ -747,7 +747,7 @@ Enterprise requirements:
   not hold the full vector corpus or exact-neighbor matrix in RAM. The
   pgvector 10M service-backed profile now has a checked preflight contract;
   its runner now supports bounded `COPY` ingest, `halfvec` storage, exact remote
-  row-count validation, HNSW presence checks, explicit `pg_prewarm` evidence,
+  row-count validation, HNSW/IVFFlat index checks, explicit `pg_prewarm` evidence,
   and constant-time complete resume.
   The next step is producing `production_streaming_load_pgvector_10m_results.json`
   from a real sized PostgreSQL service.

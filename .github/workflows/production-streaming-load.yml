@@ -231,6 +231,9 @@ jobs:
               env["WAVEMIND_PGVECTOR_DSN"] = value
               env.setdefault("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
               env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
+              env.setdefault("WAVEMIND_PGVECTOR_INDEX_TYPE", "ivfflat")
+              env.setdefault("WAVEMIND_PGVECTOR_IVFFLAT_LISTS", "4096")
+              env.setdefault("WAVEMIND_PGVECTOR_IVFFLAT_PROBES", "256")
               env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()

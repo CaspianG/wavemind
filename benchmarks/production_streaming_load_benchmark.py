@@ -621,6 +621,9 @@ def _pgvector_config_from_env() -> dict[str, Any]:
     insert_mode = os.environ.get("WAVEMIND_PGVECTOR_INSERT_MODE", "copy").strip().lower()
     if insert_mode not in {"copy", "upsert"}:
         raise ValueError("WAVEMIND_PGVECTOR_INSERT_MODE must be copy or upsert")
+    index_type = os.environ.get("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw").strip().lower()
+    if index_type not in {"hnsw", "ivfflat"}:
+        raise ValueError("WAVEMIND_PGVECTOR_INDEX_TYPE must be hnsw or ivfflat")
     return {
         "table": _safe_identifier(
             os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_streaming_vectors"),
@@ -630,10 +633,13 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         or f"streaming_load_{time.time_ns()}",
         "storage_type": storage_type,
         "insert_mode": insert_mode,
+        "index_type": index_type,
         "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
         "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
         "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
         "ef_search": _optional_int_env("WAVEMIND_PGVECTOR_EF_SEARCH"),
+        "ivfflat_lists": _optional_int_env("WAVEMIND_PGVECTOR_IVFFLAT_LISTS"),
+        "ivfflat_probes": _optional_int_env("WAVEMIND_PGVECTOR_IVFFLAT_PROBES"),
         "exact": _bool_env("WAVEMIND_PGVECTOR_EXACT", False),
         "iterative_scan": os.environ.get("WAVEMIND_PGVECTOR_ITERATIVE_SCAN"),
         "max_scan_tuples": _optional_int_env("WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES"),
@@ -1065,8 +1071,10 @@ def _streaming_plan_row(
             "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
             "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
             "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
+            "WAVEMIND_PGVECTOR_INDEX_TYPE": "ivfflat",
+            "WAVEMIND_PGVECTOR_IVFFLAT_LISTS": "4096",
+            "WAVEMIND_PGVECTOR_IVFFLAT_PROBES": "256",
             "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
-            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
         }
     else:
         raise ValueError(f"Unknown engine: {engine}")
@@ -2491,7 +2499,17 @@ def run_pgvector_streaming(
     table = str(config["table"])
     storage_type = str(config["storage_type"])
     insert_mode = str(config["insert_mode"])
-    index_name = f"{table}_embedding_hnsw_idx"
+    index_type = str(config["index_type"])
+    ivfflat_lists = config["ivfflat_lists"] or max(1, int(round(math.sqrt(count))))
+    ivfflat_probes = config["ivfflat_probes"] or max(1, int(round(math.sqrt(ivfflat_lists))))
+    if ivfflat_lists <= 0:
+        return skipped_result(engine, "WAVEMIND_PGVECTOR_IVFFLAT_LISTS must be positive")
+    if ivfflat_probes <= 0 or ivfflat_probes > ivfflat_lists:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_IVFFLAT_PROBES must be positive and no greater than lists",
+        )
+    index_name = f"{table}_embedding_{index_type}_idx"
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
         engine=engine,
@@ -2617,23 +2635,31 @@ def run_pgvector_streaming(
         checkpoint_metadata["insert_mode"] = insert_mode
         _write_checkpoint(checkpoint_path, checkpoint)
         if config["create_hnsw"]:
-            options = []
-            if config["hnsw_m"] is not None:
-                options.append(f"m = {int(config['hnsw_m'])}")
-            if config["hnsw_ef_construction"] is not None:
-                options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
-            with_options = f" WITH ({', '.join(options)})" if options else ""
-            conn.execute(
-                f"CREATE INDEX IF NOT EXISTS {index_name} "
-                f"ON {table} USING hnsw (embedding {_pgvector_operator_class(storage_type)})"
-                f"{with_options}"
-            )
+            if index_type == "hnsw":
+                options = []
+                if config["hnsw_m"] is not None:
+                    options.append(f"m = {int(config['hnsw_m'])}")
+                if config["hnsw_ef_construction"] is not None:
+                    options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
+                with_options = f" WITH ({', '.join(options)})" if options else ""
+                conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table} USING hnsw (embedding {_pgvector_operator_class(storage_type)})"
+                    f"{with_options}"
+                )
+            else:
+                conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table} USING ivfflat (embedding {_pgvector_operator_class(storage_type)}) "
+                    f"WITH (lists = {int(ivfflat_lists)})"
+                )
         index_present = bool(
             conn.execute("SELECT to_regclass(%s)", (index_name,)).fetchone()[0]
         )
         if config["create_hnsw"] and not index_present:
-            raise RuntimeError(f"pgvector HNSW index {index_name!r} is missing")
+            raise RuntimeError(f"pgvector {index_type} index {index_name!r} is missing")
         checkpoint_metadata["index_name"] = index_name
+        checkpoint_metadata["index_type"] = index_type
         checkpoint_metadata["index_present"] = index_present
         _write_checkpoint(checkpoint_path, checkpoint)
         conn.execute(f"ANALYZE {table}")
@@ -2652,8 +2678,10 @@ def run_pgvector_streaming(
         build_ms = (time.perf_counter() - started) * 1000.0
 
         queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
-        if config["ef_search"] is not None:
+        if index_type == "hnsw" and config["ef_search"] is not None:
             conn.execute(f"SET hnsw.ef_search = {int(config['ef_search'])}")
+        if index_type == "ivfflat":
+            conn.execute(f"SET ivfflat.probes = {int(ivfflat_probes)}")
         if iterative_scan:
             conn.execute(f"SET hnsw.iterative_scan = '{iterative_scan}'")
         if config["max_scan_tuples"] is not None:
@@ -2702,6 +2730,7 @@ def run_pgvector_streaming(
                 "collection": collection,
                 "storage_type": storage_type,
                 "insert_mode": insert_mode,
+                "index_type": index_type,
                 "remote_row_count": remote_row_count,
                 "complete_resume": complete_resume,
                 "index_name": index_name,
@@ -2712,6 +2741,7 @@ def run_pgvector_streaming(
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "search_params": {
                     "hnsw_ef": config["ef_search"],
+                    "ivfflat_probes": ivfflat_probes if index_type == "ivfflat" else None,
                     "exact": config["exact"],
                     "iterative_scan": iterative_scan,
                     "max_scan_tuples": config["max_scan_tuples"],
@@ -2721,6 +2751,8 @@ def run_pgvector_streaming(
                     "create_hnsw": config["create_hnsw"],
                     "hnsw_m": config["hnsw_m"],
                     "hnsw_ef_construction": config["hnsw_ef_construction"],
+                    "index_type": index_type,
+                    "ivfflat_lists": ivfflat_lists if index_type == "ivfflat" else None,
                 },
                 "memory_mode": "streaming PostgreSQL insert; query source vectors only",
                 **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),

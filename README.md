@@ -2039,8 +2039,14 @@ present; otherwise the evidence run fails instead of silently benchmarking a
 partial corpus. Use a dedicated table when switching between `vector` and
 `halfvec` because PostgreSQL column types are intentionally validated.
 Set `WAVEMIND_PGVECTOR_PREWARM_INDEX=1` for steady-state service evidence. The
-runner loads the HNSW relation through PostgreSQL `pg_prewarm` and records the
+runner loads the selected candidate-index relation through PostgreSQL
+`pg_prewarm` and records the
 number of cached index blocks, so warm latency is explicit rather than inferred.
+Large pgvector profiles can select `WAVEMIND_PGVECTOR_INDEX_TYPE=hnsw|ivfflat`.
+For IVFFlat, `WAVEMIND_PGVECTOR_IVFFLAT_LISTS` controls partition count and
+`WAVEMIND_PGVECTOR_IVFFLAT_PROBES` controls the recall/latency tradeoff. The
+10M plan uses IVFFlat because low-degree HNSW graphs do not preserve adequate
+recall under the memory limit of the reproducible local service profile.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and
