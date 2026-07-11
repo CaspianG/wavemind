@@ -352,6 +352,7 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
     class FakeQdrantClient:
         init_kwargs = None
         query_kwargs = []
+        update_kwargs = []
 
         def __init__(self, **kwargs):
             type(self).init_kwargs = kwargs
@@ -365,6 +366,10 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
                 optimizer_status="ok",
             )
 
+        def update_collection(self, **kwargs):
+            type(self).update_kwargs.append(kwargs)
+            return True
+
         def query_points(self, **kwargs):
             type(self).query_kwargs.append(kwargs)
             return SimpleNamespace(points=[SimpleNamespace(id=1, score=1.0)])
@@ -377,6 +382,10 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
         HnswConfigDiff=Model,
         OptimizersConfigDiff=Model,
         PointStruct=Model,
+        QuantizationSearchParams=Model,
+        ScalarQuantization=Model,
+        ScalarQuantizationConfig=Model,
+        ScalarType=SimpleNamespace(INT8="int8"),
         SearchParams=Model,
         VectorParams=Model,
     )
@@ -396,6 +405,11 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
     monkeypatch.setenv("WAVEMIND_QDRANT_PREFER_GRPC", "1")
     monkeypatch.setenv("WAVEMIND_QDRANT_GRPC_PORT", "6336")
     monkeypatch.setenv("WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS", "300")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_ON_DISK", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTIZATION", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTILE", "0.99")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUANTIZATION_RESCORE", "0")
 
     source_ids = benchmark.choose_source_ids(64, 4, 3)
     signature = benchmark._checkpoint_signature(
@@ -446,6 +460,18 @@ def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
     assert FakeQdrantClient.init_kwargs["prefer_grpc"] is True
     assert FakeQdrantClient.init_kwargs["grpc_port"] == 6336
     assert {call["timeout"] for call in FakeQdrantClient.query_kwargs} == {300}
+    assert len(FakeQdrantClient.update_kwargs) == 1
+    assert FakeQdrantClient.update_kwargs[0]["hnsw_config"].on_disk is False
+    assert (
+        FakeQdrantClient.update_kwargs[0]["quantization_config"].scalar.always_ram
+        is True
+    )
+    assert row["collection_params"]["scalar_quantization"] == {
+        "type": "int8",
+        "quantile": 0.99,
+        "always_ram": True,
+    }
+    assert row["search_params"]["quantization"]["rescore"] is False
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
@@ -963,7 +989,12 @@ def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     assert "WAVEMIND_QDRANT_URL" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
     assert row["command_env"]["WAVEMIND_QDRANT_VECTOR_ON_DISK"] == "1"
-    assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "0"
+    assert row["command_env"]["WAVEMIND_QDRANT_PREFER_GRPC"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_GRPC_PORT"] == "6334"
+    assert row["command_env"]["WAVEMIND_QDRANT_SCALAR_QUANTIZATION"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_QUANTIZATION_RESCORE"] == "0"
     assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
     assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
     assert (

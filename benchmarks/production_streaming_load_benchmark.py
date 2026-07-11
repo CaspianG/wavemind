@@ -62,6 +62,13 @@ def _optional_int_env(name: str) -> int | None:
     return int(value)
 
 
+def _optional_float_env(name: str) -> float | None:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return None
+    return float(value)
+
+
 def _optional_bool_env(name: str) -> bool | None:
     value = os.environ.get(name)
     if value is None or value == "":
@@ -625,12 +632,27 @@ def _qdrant_collection_config_from_env() -> dict[str, Any]:
             "max_optimization_threads": _optional_int_env("WAVEMIND_QDRANT_OPTIMIZER_MAX_THREADS"),
         }
     )
+    scalar_quantization = None
+    if _bool_env("WAVEMIND_QDRANT_SCALAR_QUANTIZATION", False):
+        quantile = float(
+            os.environ.get("WAVEMIND_QDRANT_SCALAR_QUANTILE", "0.99")
+        )
+        if not 0.0 < quantile <= 1.0:
+            raise ValueError("WAVEMIND_QDRANT_SCALAR_QUANTILE must be in (0, 1]")
+        scalar_quantization = {
+            "type": "int8",
+            "quantile": quantile,
+            "always_ram": _bool_env(
+                "WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM", True
+            ),
+        }
     return {
         "hnsw": hnsw,
         "optimizers": optimizers,
         "vector_on_disk": _optional_bool_env("WAVEMIND_QDRANT_VECTOR_ON_DISK"),
         "on_disk_payload": _optional_bool_env("WAVEMIND_QDRANT_ON_DISK_PAYLOAD"),
         "shard_number": _optional_int_env("WAVEMIND_QDRANT_SHARD_NUMBER"),
+        "scalar_quantization": scalar_quantization,
     }
 
 
@@ -906,8 +928,14 @@ def _streaming_plan_row(
         index_mode = "remote Qdrant service storage; local runner stores only generated batches"
         command_env = {
             "WAVEMIND_QDRANT_URL": "http://qdrant.example:6333",
+            "WAVEMIND_QDRANT_PREFER_GRPC": "1",
+            "WAVEMIND_QDRANT_GRPC_PORT": "6334",
             "WAVEMIND_QDRANT_VECTOR_ON_DISK": "1",
-            "WAVEMIND_QDRANT_HNSW_ON_DISK": "1",
+            "WAVEMIND_QDRANT_HNSW_ON_DISK": "0",
+            "WAVEMIND_QDRANT_SCALAR_QUANTIZATION": "1",
+            "WAVEMIND_QDRANT_SCALAR_QUANTILE": "0.99",
+            "WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM": "1",
+            "WAVEMIND_QDRANT_QUANTIZATION_RESCORE": "0",
             "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": "1800",
             "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": "1",
             "WAVEMIND_QDRANT_DEFER_INDEXING": "1",
@@ -1605,6 +1633,10 @@ def run_qdrant_streaming(
             HnswConfigDiff,
             OptimizersConfigDiff,
             PointStruct,
+            QuantizationSearchParams,
+            ScalarQuantization,
+            ScalarQuantizationConfig,
+            ScalarType,
             SearchParams,
             VectorParams,
         )
@@ -1658,6 +1690,18 @@ def run_qdrant_streaming(
         if collection_config["hnsw"]
         else None
     )
+    scalar_quantization_config = collection_config["scalar_quantization"]
+    quantization_config = (
+        ScalarQuantization(
+            scalar=ScalarQuantizationConfig(
+                type=ScalarType.INT8,
+                quantile=float(scalar_quantization_config["quantile"]),
+                always_ram=bool(scalar_quantization_config["always_ram"]),
+            )
+        )
+        if scalar_quantization_config
+        else None
+    )
     ingest_optimizers = dict(collection_config["optimizers"])
     if deferred_indexing["enabled"]:
         ingest_optimizers["indexing_threshold"] = deferred_indexing[
@@ -1670,6 +1714,7 @@ def run_qdrant_streaming(
         {
             "hnsw_config": hnsw_config,
             "optimizers_config": ingest_optimizers_config,
+            "quantization_config": quantization_config,
             "on_disk_payload": collection_config["on_disk_payload"],
             "shard_number": collection_config["shard_number"],
         }
@@ -1694,6 +1739,17 @@ def run_qdrant_streaming(
                 ),
                 timeout=int(os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")),
                 **recreate_kwargs,
+            )
+        elif complete_resume and (
+            hnsw_config is not None or quantization_config is not None
+        ):
+            client.update_collection(
+                collection_name=collection_name,
+                hnsw_config=hnsw_config,
+                quantization_config=quantization_config,
+                timeout=int(
+                    os.environ.get("WAVEMIND_QDRANT_COLLECTION_TIMEOUT", "120")
+                ),
             )
         elif deferred_indexing["enabled"] and not complete_resume:
             client.update_collection(
@@ -1781,11 +1837,25 @@ def run_qdrant_streaming(
             "yes",
             "on",
         }
+        quantization_search_params = None
+        if scalar_quantization_config:
+            quantization_search_params = QuantizationSearchParams(
+                ignore=_optional_bool_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_IGNORE"
+                ),
+                rescore=_optional_bool_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_RESCORE"
+                ),
+                oversampling=_optional_float_env(
+                    "WAVEMIND_QDRANT_QUANTIZATION_OVERSAMPLING"
+                ),
+            )
         search_params = None
-        if hnsw_ef or exact:
+        if hnsw_ef or exact or quantization_search_params is not None:
             search_params = SearchParams(
                 hnsw_ef=int(hnsw_ef) if hnsw_ef else None,
                 exact=exact or None,
+                quantization=quantization_search_params,
             )
         query_timeout_seconds = _optional_int_env(
             "WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS"
@@ -1847,6 +1917,18 @@ def run_qdrant_streaming(
                 "search_params": {
                     "hnsw_ef": int(hnsw_ef) if hnsw_ef else None,
                     "exact": exact,
+                    "quantization": {
+                        "enabled": quantization_search_params is not None,
+                        "ignore": _optional_bool_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_IGNORE"
+                        ),
+                        "rescore": _optional_bool_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_RESCORE"
+                        ),
+                        "oversampling": _optional_float_env(
+                            "WAVEMIND_QDRANT_QUANTIZATION_OVERSAMPLING"
+                        ),
+                    },
                 },
                 "transport": {
                     "prefer_grpc": _bool_env(
