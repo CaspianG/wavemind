@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-10T07:50:18Z",
-  "source_ref": "d88fa958082a",
+  "generated_at": "2026-07-11T03:37:56Z",
+  "source_ref": "be2cebfd776b",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1135,6 +1135,23 @@
           "estimated_storage_gb": 2.384185791015625,
           "memory_mode": "streaming upsert; query source vectors only"
         },
+        "10M Qdrant measured / Qdrant service streaming": {
+          "recall_at_k": 0.975,
+          "target_recall_at_k": 0.975,
+          "target_recall_at_1": 0.975,
+          "avg_latency_ms": 30.29816170023696,
+          "p95_latency_ms": 37.79420000500977,
+          "p99_latency_ms": 43.266599997878075,
+          "build_ms": 10214.860800013412,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 5,
+          "slo_autoscaled_qps": 554.4890863747885,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 3.472222222222222,
+          "monthly_total_cost_at_target_qps_usd": 914.8841857910156,
+          "estimated_storage_gb": 23.84185791015625,
+          "memory_mode": "streaming upsert; query source vectors only"
+        },
         "Qdrant sharded smoke / Qdrant sharded service streaming": {
           "recall_at_k": 1,
           "target_recall_at_k": 1,
@@ -1996,7 +2013,7 @@
           "readiness_status": "action_required",
           "claim_status": "claims_limited",
           "total_requirements": 8,
-          "action_required_count": 6,
+          "action_required_count": 5,
           "ready_for_safe_dispatch_count": 0,
           "can_auto_run_now_count": 0,
           "target_memories_total": 180000000

@@ -48,6 +48,16 @@ def test_cost_efficiency_leaderboard_renderer_writes_json_and_markdown(tmp_path)
     assert measured[qdrant_1m]["valid_cost"] is True
     assert measured[qdrant_1m]["compute_cost_per_1m_queries_usd"] > 0
 
+    qdrant_10m = next(
+        row
+        for row in payload["measured_rows"]
+        if row["source_file"] == "benchmarks/production_streaming_load_qdrant_10m_results.json"
+    )
+    assert qdrant_10m["memory_count"] == 10_000_000
+    assert qdrant_10m["recall_at_k"] >= 0.95
+    assert qdrant_10m["p99_latency_ms"] < 100.0
+    assert qdrant_10m["valid_cost"] is True
+
     assert planned["faiss-ivfpq-50m"]["evidence_level"] == "planned"
     assert planned["faiss-ivfpq-50m"]["memory_count"] == 50_000_000
     assert planned["faiss-ivfpq-50m"]["claim_status"] == "plan_only"

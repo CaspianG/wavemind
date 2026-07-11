@@ -136,6 +136,12 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert qdrant_1m_tuned["target_recall_at_k"] >= 0.95
     assert qdrant_1m_tuned["p99_latency_ms"] < 100.0
     assert qdrant_1m_tuned["slo_status"] == "pass"
+    qdrant_10m = entries["production_streaming_load_runner"]["current"][
+        "10M Qdrant measured / Qdrant service streaming"
+    ]
+    assert qdrant_10m["target_recall_at_k"] >= 0.95
+    assert qdrant_10m["p99_latency_ms"] < 100.0
+    assert qdrant_10m["cost_status"] == "valid_slo"
     qdrant_sharded_smoke = entries["production_streaming_load_runner"]["current"][
         "Qdrant sharded smoke / Qdrant sharded service streaming"
     ]

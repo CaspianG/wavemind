@@ -345,8 +345,8 @@ def build_strict_evidence_readiness_report(root: Path = PROJECT_ROOT) -> dict[st
             "leaderboard_status": "docs/data/leaderboard-status.json",
         },
         "claim_boundary": (
-            "Readiness report only. It does not unlock remote, 10M, 50M, 100M, "
-            "managed Kubernetes, serverless, or active-active production claims."
+            "Readiness report only. It does not itself unlock any production claim; "
+            "only a matching strict evidence artifact that passes validation does."
         ),
     }
 

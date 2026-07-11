@@ -463,22 +463,30 @@ def evidence_status_rows(payload: dict[str, Any], root: Path = PROJECT_ROOT) -> 
         if nested_results:
             qdrant_streaming_result = nested_results[0]
     qdrant_plan = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_10m_plan.json")
+    qdrant_10m = load_json_if_exists(root, "benchmarks/production_streaming_load_qdrant_10m_results.json")
+    qdrant_10m_result = _first_result(qdrant_10m)
+    if qdrant_10m_result and isinstance(qdrant_10m_result.get("results"), list):
+        nested_results = qdrant_10m_result["results"]
+        if nested_results:
+            qdrant_10m_result = nested_results[0]
     qdrant_plan_row = {}
     if qdrant_plan and isinstance(qdrant_plan.get("plans"), list) and qdrant_plan["plans"]:
         first_plan = qdrant_plan["plans"][0]
         if isinstance(first_plan, dict):
             qdrant_plan_row = first_plan
-    if qdrant_streaming_result and qdrant_plan_row:
+    if qdrant_streaming_result and qdrant_plan_row and qdrant_10m_result:
         rows.append(
             (
                 "Qdrant streaming",
-                "real Qdrant service smoke plus 10M preflight",
+                "real Qdrant service smoke plus measured 10M profile",
                 (
                     f"smoke recall `{fmt(qdrant_streaming_result.get('target_recall_at_k'))}`, "
                     f"smoke p99 `{fmt(qdrant_streaming_result.get('p99_latency_ms'))} ms`; "
-                    f"10M preflight `{qdrant_plan_row.get('status', 'unknown')}`"
+                    f"10M recall `{fmt(qdrant_10m_result.get('target_recall_at_k'))}`, "
+                    f"10M p99 `{fmt(qdrant_10m_result.get('p99_latency_ms'))} ms`, "
+                    f"SLO `{qdrant_10m_result.get('slo_status', 'unknown')}`"
                 ),
-                "Run `.github/workflows/production-streaming-load.yml` with `qdrant-service` against sized Qdrant storage.",
+                "Keep the measured 10M profile green and run the sharded Qdrant and pgvector 10M profiles next.",
             )
         )
 

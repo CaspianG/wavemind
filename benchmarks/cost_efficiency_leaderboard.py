@@ -25,6 +25,7 @@ MEASURED_ARTIFACTS = (
     "benchmarks/production_streaming_load_qdrant_smoke_results.json",
     "benchmarks/production_streaming_load_qdrant_1m_results.json",
     "benchmarks/production_streaming_load_qdrant_1m_tuned_results.json",
+    "benchmarks/production_streaming_load_qdrant_10m_results.json",
     "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json",
     "benchmarks/production_streaming_load_pgvector_smoke_results.json",
 )
