@@ -1,4 +1,12 @@
 {
+  "schema": "wavemind.production_streaming_load.v1",
+  "generated_at": "2026-07-10T03:55:47Z",
+  "source_ref": "a9ea9d7f8027c7127df4ea6f1c1dc02399f92859",
+  "execution_id": "github-actions-29067655616",
+  "execution_environment": "github-actions-ubuntu-latest",
+  "evidence_source": "github-actions",
+  "workflow_run_id": "29067655616",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29067655616",
   "scenario": {
     "name": "production_streaming_load_profile",
     "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",

@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.production_evidence_dispatch.v1",
-  "generated_at": "2026-07-10T05:23:38Z",
+  "generated_at": "2026-07-11T03:38:02Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
     "total_jobs": 8,
     "ready_to_dispatch_count": 0,
-    "blocked_by_preflight_count": 6,
-    "complete_count": 2,
+    "blocked_by_preflight_count": 5,
+    "complete_count": 3,
     "commit_results_default": false,
     "runner_label": "self-hosted-large",
     "wave_counts": {
@@ -17,8 +17,8 @@
       "service-scale-10m": 3
     },
     "status_counts": {
-      "blocked_by_preflight": 6,
-      "complete": 2
+      "blocked_by_preflight": 5,
+      "complete": 3
     }
   },
   "launch_policy": {
@@ -177,10 +177,10 @@
     {
       "id": "qdrant_10m_service",
       "title": "10M Qdrant service load",
-      "status": "blocked_by_preflight",
-      "dispatch_required": true,
+      "status": "complete",
+      "dispatch_required": false,
       "ready": false,
-      "strict_status": "action_required",
+      "strict_status": "pass",
       "preflight_status": "action_required",
       "wave": "service-scale-10m",
       "workflow": "production-streaming-load.yml",

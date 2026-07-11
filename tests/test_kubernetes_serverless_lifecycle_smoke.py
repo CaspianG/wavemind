@@ -96,7 +96,7 @@ def test_serverless_resources_use_external_persistent_state_and_zero_api_replica
         namespace="wavemind-serverless",
         image="wavemind:ci-upgrade",
         postgres_image="postgres:16-alpine",
-        qdrant_image="qdrant/qdrant:v1.15.1",
+        qdrant_image="qdrant/qdrant:v1.18.2",
         redis_image="redis:7-alpine",
     )
     statefulsets = [item for item in resources if item["kind"] == "StatefulSet"]
@@ -142,5 +142,5 @@ def test_kind_workflow_runs_serverless_lifecycle_drill():
     assert "kubernetes_serverless_lifecycle_smoke.py" in workflow
     assert "kubernetes_serverless_lifecycle_smoke_ci_results.json" in workflow
     assert "postgres:16-alpine" in workflow
-    assert "qdrant/qdrant:v1.15.1" in workflow
+    assert "qdrant/qdrant:v1.18.2" in workflow
     assert "redis:7-alpine" in workflow

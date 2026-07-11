@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.release_claims.v1",
-  "generated_at": "2026-07-10T05:23:40Z",
+  "generated_at": "2026-07-11T03:38:03Z",
   "release_status": "core_release_ready",
   "claim_status": "claims_limited",
   "summary": {
@@ -11,7 +11,7 @@
     "artifact_audit_status": "pass",
     "allowed_claim_count": 3,
     "locked_claim_count": 2,
-    "next_action_count": 6
+    "next_action_count": 5
   },
   "allowed_claims": [
     {
@@ -67,18 +67,6 @@
       ],
       "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
       "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
-    },
-    {
-      "id": "qdrant_10m_service",
-      "title": "10M Qdrant service load",
-      "strict_status": "action_required",
-      "preflight_status": "action_required",
-      "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
-      "missing_env": [
-        "WAVEMIND_QDRANT_URL"
-      ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
-      "claim_unlocked": "10M Qdrant service-backed candidate index SLO."
     },
     {
       "id": "qdrant_sharded_10m_service",

@@ -1,16 +1,16 @@
 # WaveMind Cost Efficiency Leaderboard
 
-Generated: `2026-07-10T03:54:52Z`.
+Generated: `2026-07-11T03:37:56Z`.
 
 Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.
 
 ## Summary
 
-- Measured rows: `20`.
+- Measured rows: `21`.
 - Measured SLO pass rows: `9`.
-- Measured valid cost rows: `11`.
+- Measured valid cost rows: `12`.
 - Planned cost rows: `5`.
-- Measured frontier: `sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results, 100k-qdrant-service-production_load_qdrant_100k_tuned_results, 1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_tuned_results, 1m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_1m_results, 100k-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_100k_results, 10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results`.
+- Measured frontier: `sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results, 100k-qdrant-service-production_load_qdrant_100k_tuned_results, 1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_tuned_results, 1m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_1m_results, 100k-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_100k_results, 10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results, 10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results`.
 - Planned frontier: `qdrant-sharded-100m, faiss-ivfpq-50m`.
 
 ## Measured Cost Frontier
@@ -28,7 +28,7 @@ Measured rows come from checked-in load artifacts. Planned rows are capacity and
 | 9 | 100k-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_100k_results | 100k | WaveMind faiss-ivfpq-persisted streaming | 100,000 | 0.96 | 1.104 | pass | $0.694 | $182.52 | `benchmarks/production_streaming_load_ivfpq_100k_results.json` |
 | 10 | 1m-wavemind-faiss-persisted-production_load_faiss_1m_results | 1m | WaveMind faiss-persisted | 1,000,000 | 1 | 57.71 | scale_required | $4.167 | $1,095.24 | `benchmarks/production_load_faiss_1m_results.json` |
 | 11 | 10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results | 10m | WaveMind faiss-ivfpq-persisted streaming | 10,000,000 | 0.99 | 60.13 | scale_required | $4.861 | $1,279.88 | `benchmarks/production_streaming_load_ivfpq_10m_results.json` |
-| 12 | 1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_results | 1m | Qdrant service streaming | 1,000,000 | 0.99 | 3,013.98 | fail | $16.67 | $4,380.24 | `benchmarks/production_streaming_load_qdrant_1m_results.json` |
+| 12 | 10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results | 10m | Qdrant service streaming | 10,000,000 | 0.975 | 43.27 | scale_required | $3.472 | $914.88 | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
 
 ## Planned Cost Frontier
 

@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-10T05:23:36Z",
+  "generated_at": "2026-07-11T03:38:00Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
-    "pass_count": 2,
-    "action_required_count": 6,
+    "pass_count": 3,
+    "action_required_count": 5,
     "fail_count": 0,
     "total_requirements": 8
   },
@@ -47,14 +47,12 @@
     {
       "id": "qdrant_10m_service",
       "title": "10M Qdrant service load",
-      "status": "action_required",
-      "evidence": "no checked-in 10,000,000-vector result for Qdrant service streaming",
+      "status": "pass",
+      "evidence": "Qdrant service streaming: vectors 10000000, recall 0.975, p99 43.266599997878075 ms, cost valid_slo, source be2cebfd776b, run local-qdrant10m-quantized-ef1024-v1182-20260711",
       "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines qdrant-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_10m_results.json --checkpoint-path state/production-runs/qdrant-service-10000000.checkpoint.json",
       "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
-      "issues": [
-        "missing artifact"
-      ]
+      "issues": []
     },
     {
       "id": "qdrant_sharded_10m_service",
@@ -84,7 +82,7 @@
       "id": "faiss_ivfpq_50m",
       "title": "50M FAISS IVF-PQ streaming load",
       "status": "pass",
-      "evidence": "WaveMind faiss-ivfpq-persisted streaming: vectors 50000000, recall 0.9705, p99 73.10794899996154 ms, cost valid_slo",
+      "evidence": "WaveMind faiss-ivfpq-persisted streaming: vectors 50000000, recall 0.9705, p99 73.10794899996154 ms, cost valid_slo, source a9ea9d7f8027, run github-actions-29067655616",
       "artifact": "benchmarks/production_streaming_load_ivfpq_50m_results.json",
       "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 50000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 1000000 --engines faiss-ivfpq-persisted --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_ivfpq_50m_results.json --checkpoint-path state/production-runs/faiss-ivfpq-persisted-50000000.checkpoint.json",
       "claim_unlocked": "50M compressed local/persistent FAISS profile.",

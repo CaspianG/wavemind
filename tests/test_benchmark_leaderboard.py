@@ -99,7 +99,7 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "production_streaming_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
     assert "qdrant-1:" in workflow
-    assert "qdrant/qdrant:v1.15.1" in workflow
+    assert "qdrant/qdrant:v1.18.2" in workflow
     assert "WAVEMIND_QDRANT_URLS=http://127.0.0.1:6333,http://127.0.0.1:6334" in workflow
     assert "benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json" in workflow
     assert "--engines qdrant-sharded-service" in workflow

@@ -9,8 +9,8 @@ strict production-evidence validation.
 |---|---:|
 | overall status | `action_required` |
 | ready to dispatch | `0` |
-| blocked by preflight | `6` |
-| complete | `2` |
+| blocked by preflight | `5` |
+| complete | `3` |
 | total jobs | `8` |
 | runner label | `self-hosted-large` |
 | commit results default | `False` |
@@ -22,7 +22,7 @@ strict production-evidence validation.
 | Non-loopback Kubernetes or external HTTP service-node load | `complete` | `remote-service` | `external-http-cluster-load.yml` | `benchmarks/http_cluster_load_results.json` | `WAVEMIND_CLUSTER_NODES, WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` |
 | External HTTP active-active regions | `blocked_by_preflight` | `remote-service` | `external-http-active-active.yml` | `benchmarks/external_http_active_active_results.json` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` |
 | Managed/serverless remote telemetry | `blocked_by_preflight` | `remote-service` | `serverless-observed-telemetry.yml` | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES` |
-| 10M Qdrant service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` |
+| 10M Qdrant service load | `complete` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` |
 | 10M sharded Qdrant service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` |
 | 10M pgvector service load | `blocked_by_preflight` | `service-scale-10m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` |
 | 50M FAISS IVF-PQ streaming load | `complete` | `large-local-index` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` |

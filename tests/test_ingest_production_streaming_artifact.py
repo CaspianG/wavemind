@@ -22,6 +22,14 @@ def _streaming_payload(
     cost_status: str = "valid_slo",
 ) -> dict:
     return {
+        "schema": "wavemind.production_streaming_load.v1",
+        "generated_at": "2026-07-10T00:00:00Z",
+        "source_ref": "a" * 40,
+        "execution_id": "test-run-1",
+        "execution_environment": "test-service",
+        "evidence_source": "local-service",
+        "workflow_run_id": None,
+        "workflow_run_url": None,
         "scenario": {"name": "production_streaming_load_profile"},
         "results": [
             {
@@ -99,6 +107,22 @@ def test_ingest_rejects_wrong_vectors_for_named_artifact(tmp_path):
             source,
             discover_expected_artifacts(artifact_dir)[0][1],
         )
+
+
+def test_ingest_rejects_large_n_artifact_without_provenance(tmp_path):
+    artifact_dir = tmp_path / "artifact"
+    payload = _streaming_payload(
+        engine="Qdrant service streaming",
+        vectors=10_000_000,
+    )
+    payload.pop("source_ref")
+    source = _write_json(
+        artifact_dir / "production_streaming_load_qdrant_10m_results.json",
+        payload,
+    )
+
+    with pytest.raises(ArtifactValidationError, match="source_ref"):
+        validate_artifact(source, discover_expected_artifacts(artifact_dir)[0][1])
 
 
 @pytest.mark.parametrize(

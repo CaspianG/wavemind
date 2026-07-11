@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
-  "generated_at": "2026-07-10T05:43:25Z",
-  "source_ref": "3d40e894b493",
+  "generated_at": "2026-07-11T03:38:05Z",
+  "source_ref": "be2cebfd776b",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "3d40e894b493",
+    "source_ref": "be2cebfd776b",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -39,7 +39,7 @@
   "freshness_gate": {
     "schema": "wavemind.leaderboard_freshness.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T05:43:25Z",
+    "checked_at": "2026-07-11T03:38:05Z",
     "max_age_days": 8.0,
     "source_count": 32,
     "fresh_count": 32,
@@ -55,15 +55,15 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:32Z",
-        "age_days": 0.01380787037037037,
+        "timestamp": "2026-07-11T03:37:56Z",
+        "age_days": 0.00010416666666666667,
         "status": "pass"
       },
       {
         "path": "benchmarks/benchmark_artifact_audit.json",
         "schema": "wavemind.benchmark_artifact_audit.v1",
         "timestamp_key": "checked_at",
-        "timestamp": "2026-07-10T05:43:25Z",
+        "timestamp": "2026-07-11T03:38:05Z",
         "age_days": 0.0,
         "status": "pass"
       },
@@ -71,24 +71,24 @@
         "path": "benchmarks/production_readiness_results.json",
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:35Z",
-        "age_days": 0.013773148148148149,
+        "timestamp": "2026-07-11T03:37:59Z",
+        "age_days": 6.944444444444444e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_results.json",
         "schema": "wavemind.production_evidence.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:36Z",
-        "age_days": 0.013761574074074074,
+        "timestamp": "2026-07-11T03:38:00Z",
+        "age_days": 5.787037037037037e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_preflight_results.json",
         "schema": "wavemind.production_evidence_preflight.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:37Z",
-        "age_days": 0.01375,
+        "timestamp": "2026-07-11T03:38:01Z",
+        "age_days": 4.6296296296296294e-05,
         "status": "pass"
       },
       {
@@ -96,39 +96,39 @@
         "schema": "wavemind.production_evidence_env_contract.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T05:23:37Z",
-        "age_days": 0.01375,
+        "age_days": 0.926712962962963,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_bundle_results.json",
         "schema": "wavemind.production_evidence_bundle.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:39Z",
-        "age_days": 0.013726851851851851,
+        "timestamp": "2026-07-11T03:38:02Z",
+        "age_days": 3.472222222222222e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:40Z",
-        "age_days": 0.013715277777777778,
+        "timestamp": "2026-07-11T03:38:03Z",
+        "age_days": 2.3148148148148147e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:41Z",
-        "age_days": 0.013703703703703704,
+        "timestamp": "2026-07-11T03:38:04Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
         "path": "benchmarks/strict_evidence_readiness_results.json",
         "schema": "wavemind.strict_evidence_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:41Z",
-        "age_days": 0.013703703703703704,
+        "timestamp": "2026-07-11T03:38:04Z",
+        "age_days": 1.1574074074074073e-05,
         "status": "pass"
       },
       {
@@ -136,7 +136,7 @@
         "schema": "wavemind.cluster_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T05:23:44Z",
-        "age_days": 0.013668981481481482,
+        "age_days": 0.9266319444444444,
         "status": "pass"
       },
       {
@@ -144,7 +144,7 @@
         "schema": "wavemind.active_active_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.8072800925925926,
+        "age_days": 1.7202430555555555,
         "status": "pass"
       },
       {
@@ -152,7 +152,7 @@
         "schema": "wavemind.serverless_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T10:20:56Z",
-        "age_days": 0.8072800925925926,
+        "age_days": 1.7202430555555555,
         "status": "pass"
       },
       {
@@ -160,7 +160,7 @@
         "schema": "wavemind.multimodal_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T12:56:09Z",
-        "age_days": 0.6994907407407407,
+        "age_days": 1.6124537037037037,
         "status": "pass"
       },
       {
@@ -168,7 +168,7 @@
         "schema": "wavemind.memory_os_admission.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T00:40:28Z",
-        "age_days": 1.2103819444444444,
+        "age_days": 2.1233449074074073,
         "status": "pass"
       },
       {
@@ -176,7 +176,7 @@
         "schema": "wavemind.memory_os_canary.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T01:06:28Z",
-        "age_days": 1.1923263888888889,
+        "age_days": 2.105289351851852,
         "status": "pass"
       },
       {
@@ -184,7 +184,7 @@
         "schema": "wavemind.memory_os_policy_evolution.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T13:44:41Z",
-        "age_days": 0.665787037037037,
+        "age_days": 1.57875,
         "status": "pass"
       },
       {
@@ -192,15 +192,15 @@
         "schema": "wavemind.memory_os_policy_bundle.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T19:29:13Z",
-        "age_days": 0.4265277777777778,
+        "age_days": 1.3394907407407408,
         "status": "pass"
       },
       {
         "path": "benchmarks/production_evidence_dispatch_results.json",
         "schema": "wavemind.production_evidence_dispatch.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T05:23:38Z",
-        "age_days": 0.013738425925925926,
+        "timestamp": "2026-07-11T03:38:02Z",
+        "age_days": 3.472222222222222e-05,
         "status": "pass"
       },
       {
@@ -208,7 +208,7 @@
         "schema": "wavemind.production_scale_run_plan.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T04:17:18Z",
-        "age_days": 0.05980324074074074,
+        "age_days": 0.9727662037037037,
         "status": "pass"
       },
       {
@@ -216,15 +216,15 @@
         "schema": "wavemind.agent_coherence_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-08T17:24:13Z",
-        "age_days": 1.5133333333333334,
+        "age_days": 2.426296296296296,
         "status": "pass"
       },
       {
         "path": "benchmarks/agent_impact_results.json",
         "schema": "wavemind.agent_impact_leaderboard.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T03:54:52Z",
-        "age_days": 0.07538194444444445,
+        "timestamp": "2026-07-11T03:37:56Z",
+        "age_days": 0.00010416666666666667,
         "status": "pass"
       },
       {
@@ -232,7 +232,7 @@
         "schema": "wavemind.structured_memory_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.2904513888888889,
+        "age_days": 1.2034143518518519,
         "status": "pass"
       },
       {
@@ -240,7 +240,7 @@
         "schema": "wavemind.memory_os_intelligence_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.2904513888888889,
+        "age_days": 1.2034143518518519,
         "status": "pass"
       },
       {
@@ -248,7 +248,7 @@
         "schema": "wavemind.cluster_autoscale_report.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.2904513888888889,
+        "age_days": 1.2034143518518519,
         "status": "pass"
       },
       {
@@ -256,7 +256,7 @@
         "schema": "wavemind.kubernetes_operator_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T23:28:34.759347Z",
-        "age_days": 0.2603037112615741,
+        "age_days": 1.173266674224537,
         "status": "pass"
       },
       {
@@ -264,7 +264,7 @@
         "schema": "wavemind.kubernetes_cluster_network_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T05:13:44.475824+00:00",
-        "age_days": 0.020607918703703702,
+        "age_days": 0.9335708816666667,
         "status": "pass"
       },
       {
@@ -272,7 +272,7 @@
         "schema": "wavemind.kubernetes_active_active_region_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T23:55:54.133679+00:00",
-        "age_days": 0.24132947130787039,
+        "age_days": 1.1542924342708332,
         "status": "pass"
       },
       {
@@ -280,7 +280,7 @@
         "schema": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T02:42:30.318307+00:00",
-        "age_days": 0.12563288996527777,
+        "age_days": 1.0385958529282409,
         "status": "pass"
       },
       {
@@ -288,7 +288,7 @@
         "schema": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-10T02:42:53.084317+00:00",
-        "age_days": 0.12536939447916665,
+        "age_days": 1.0383323574421297,
         "status": "pass"
       },
       {
@@ -296,22 +296,22 @@
         "schema": "wavemind.scale_readiness_benchmark.v1",
         "timestamp_key": "generated_at",
         "timestamp": "2026-07-09T22:45:10Z",
-        "age_days": 0.2904513888888889,
+        "age_days": 1.2034143518518519,
         "status": "pass"
       },
       {
         "path": "benchmarks/cost_efficiency_results.json",
         "schema": "wavemind.cost_efficiency_leaderboard.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-10T03:54:52Z",
-        "age_days": 0.07538194444444445,
+        "timestamp": "2026-07-11T03:37:56Z",
+        "age_days": 0.00010416666666666667,
         "status": "pass"
       }
     ]
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-10T05:23:32Z",
+    "generated_at": "2026-07-11T03:37:56Z",
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -340,8 +340,8 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-10T05:43:25Z",
-    "age_days": 0.013808492650462965,
+    "checked_at": "2026-07-11T03:38:05Z",
+    "age_days": 0.00010598428240740742,
     "max_age_days": 8.0,
     "errors": []
   },
@@ -886,8 +886,8 @@
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "pass_count": 2,
-      "action_required_count": 6,
+      "pass_count": 3,
+      "action_required_count": 5,
       "fail_count": 0,
       "total_requirements": 8
     },
@@ -906,15 +906,6 @@
         "title": "Managed/serverless remote telemetry",
         "artifact": "deploy/serverless/observed-telemetry.remote.json",
         "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
-        "issues": [
-          "missing artifact"
-        ]
-      },
-      {
-        "id": "qdrant_10m_service",
-        "title": "10M Qdrant service load",
-        "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
-        "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
         "issues": [
           "missing artifact"
         ]
@@ -954,7 +945,7 @@
     "summary": {
       "claim_status": "claims_limited",
       "strict_overall_status": "action_required",
-      "strict_pass_count": 2,
+      "strict_pass_count": 3,
       "strict_total_requirements": 8,
       "preflight_overall_status": "action_required",
       "preflight_ready_count": 0,
@@ -966,9 +957,9 @@
       "production_scale_run_contract_status": "available",
       "production_scale_run_profile_count": 5,
       "production_scale_run_target_memories_total": 180000000,
-      "next_action_count": 6
+      "next_action_count": 5
     },
-    "next_action_count": 6,
+    "next_action_count": 5,
     "production_scale_run_contract": {
       "status": "available",
       "artifact": "benchmarks/production_scale_run_plan.json",
@@ -1098,10 +1089,10 @@
   },
   "cost_efficiency": {
     "schema": "wavemind.cost_efficiency_leaderboard.v1",
-    "measured_row_count": 20,
+    "measured_row_count": 21,
     "planned_row_count": 5,
     "measured_slo_pass_count": 9,
-    "measured_valid_cost_count": 11,
+    "measured_valid_cost_count": 12,
     "planned_valid_cost_count": 5,
     "measured_frontier_profiles": [
       "sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results",
@@ -1109,7 +1100,8 @@
       "1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_tuned_results",
       "1m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_1m_results",
       "100k-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_100k_results",
-      "10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results"
+      "10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results",
+      "10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results"
     ],
     "planned_frontier_profiles": [
       "qdrant-sharded-100m",
@@ -1180,8 +1172,8 @@
       "overall_status": "action_required",
       "total_jobs": 8,
       "ready_to_dispatch_count": 0,
-      "blocked_by_preflight_count": 6,
-      "complete_count": 2,
+      "blocked_by_preflight_count": 5,
+      "complete_count": 3,
       "commit_results_default": false,
       "runner_label": "self-hosted-large",
       "wave_counts": {
@@ -1191,8 +1183,8 @@
         "service-scale-10m": 3
       },
       "status_counts": {
-        "blocked_by_preflight": 6,
-        "complete": 2
+        "blocked_by_preflight": 5,
+        "complete": 3
       }
     },
     "jobs": [
@@ -1346,10 +1338,10 @@
       {
         "id": "qdrant_10m_service",
         "title": "10M Qdrant service load",
-        "status": "blocked_by_preflight",
-        "dispatch_required": true,
+        "status": "complete",
+        "dispatch_required": false,
         "ready": false,
-        "strict_status": "action_required",
+        "strict_status": "pass",
         "preflight_status": "action_required",
         "wave": "service-scale-10m",
         "workflow": "production-streaming-load.yml",
@@ -1608,7 +1600,7 @@
       "artifact_audit_status": "pass",
       "allowed_claim_count": 3,
       "locked_claim_count": 2,
-      "next_action_count": 6
+      "next_action_count": 5
     },
     "allowed_claims": [
       {
@@ -1645,13 +1637,13 @@
     "overall_status": "action_required",
     "summary": {
       "total_profiles": 5,
-      "complete_count": 1,
+      "complete_count": 2,
       "ready_to_run_count": 0,
-      "blocked_by_env_count": 4,
+      "blocked_by_env_count": 3,
       "blocked_by_preflight_count": 0,
       "missing_plan_count": 0,
       "planned_target_memories": 180000000,
-      "proven_target_memories": 50000000,
+      "proven_target_memories": 60000000,
       "nearest_baseline_max_memories": 10000000,
       "claim_status": "claims_limited"
     },
@@ -1659,8 +1651,8 @@
       {
         "profile": "qdrant-10m",
         "requirement_id": "qdrant_10m_service",
-        "status": "blocked_by_env",
-        "strict_status": "action_required",
+        "status": "complete",
+        "strict_status": "pass",
         "plan_status": "action_required",
         "preflight_status": "action_required",
         "engine": "qdrant-service",
@@ -1669,7 +1661,7 @@
         "target_p99_ms": 100.0,
         "target_qps": 100.0,
         "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
-        "output_artifact_exists": false,
+        "output_artifact_exists": true,
         "checkpoint_path": "state/production-runs/qdrant-service-10000000.checkpoint.json",
         "missing_env": [
           "WAVEMIND_QDRANT_URL"
@@ -1693,7 +1685,7 @@
         },
         "baseline_progress_ratio": 0.1,
         "target_gap_multiplier": 10.0,
-        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+        "next_action": "Strict result artifact already passes."
       },
       {
         "profile": "qdrant-sharded-10m",
@@ -1863,8 +1855,8 @@
       "readiness_status": "action_required",
       "claim_status": "claims_limited",
       "total_requirements": 8,
-      "action_required_count": 6,
-      "complete_count": 2,
+      "action_required_count": 5,
+      "complete_count": 3,
       "ready_for_safe_dispatch_count": 0,
       "can_auto_run_now_count": 0,
       "target_memories_total": 180000000,
@@ -1872,12 +1864,12 @@
         "pass": 8
       },
       "dispatch_status_counts": {
-        "blocked_by_preflight": 6,
-        "complete": 2
+        "blocked_by_preflight": 5,
+        "complete": 3
       },
       "blocker_counts": {
-        "complete": 2,
-        "missing_env": 6
+        "complete": 3,
+        "missing_env": 5
       }
     },
     "checks": [
@@ -2068,14 +2060,14 @@
       {
         "id": "qdrant_10m_service",
         "title": "10M Qdrant service load",
-        "strict_status": "action_required",
+        "strict_status": "pass",
         "preflight_status": "action_required",
-        "dispatch_status": "blocked_by_preflight",
-        "scale_gap_status": "blocked_by_env",
+        "dispatch_status": "complete",
+        "scale_gap_status": "complete",
         "workflow": "production-streaming-load.yml",
         "wave": "service-scale-10m",
         "artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
-        "artifact_exists": false,
+        "artifact_exists": true,
         "output_artifact": "benchmarks/production_streaming_load_qdrant_10m_results.json",
         "claim_unlocked": "10M Qdrant service-backed candidate index SLO.",
         "locked_claim": "10M-100M service-backed production scale",
@@ -2105,8 +2097,8 @@
         "post_ingest_refresh_command": "python benchmarks/strict_evidence_readiness_report.py --output benchmarks/strict_evidence_readiness_results.json --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md",
         "ready_for_safe_dispatch": false,
         "can_auto_run_now": false,
-        "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate.",
-        "blocker_category": "missing_env"
+        "next_action": "Strict result artifact already passes.",
+        "blocker_category": "complete"
       },
       {
         "id": "qdrant_sharded_10m_service",
@@ -2277,7 +2269,7 @@
         "blocker_category": "missing_env"
       }
     ],
-    "claim_boundary": "Readiness report only. It does not unlock remote, 10M, 50M, 100M, managed Kubernetes, serverless, or active-active production claims."
+    "claim_boundary": "Readiness report only. It does not itself unlock any production claim; only a matching strict evidence artifact that passes validation does."
   },
   "cluster_admission": {
     "schema": "wavemind.cluster_admission.v1",

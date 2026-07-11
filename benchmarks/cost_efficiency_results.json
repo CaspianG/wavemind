@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.cost_efficiency_leaderboard.v1",
-  "generated_at": "2026-07-10T03:54:52Z",
-  "source_ref": "5629d7400b4e",
+  "generated_at": "2026-07-11T03:37:56Z",
+  "source_ref": "be2cebfd776b",
   "claim_boundary": "Measured rows come from checked-in load artifacts. Planned rows are capacity and cost contracts only; they do not unlock production latency or recall claims until the matching benchmark result exists.",
   "summary": {
-    "measured_row_count": 20,
+    "measured_row_count": 21,
     "planned_row_count": 5,
     "measured_slo_pass_count": 9,
-    "measured_valid_cost_count": 11,
+    "measured_valid_cost_count": 12,
     "planned_valid_cost_count": 5,
     "measured_frontier_profiles": [
       "sub_100k-wavemind-numpy-streaming-production_streaming_load_smoke_results",
@@ -15,7 +15,8 @@
       "1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_tuned_results",
       "1m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_1m_results",
       "100k-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_100k_results",
-      "10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results"
+      "10m-wavemind-faiss-ivfpq-persisted-streaming-production_streaming_load_ivfpq_10m_results",
+      "10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results"
     ],
     "planned_frontier_profiles": [
       "qdrant-sharded-100m",
@@ -164,6 +165,30 @@
         "valid_cost": true,
         "frontier_score": 33869.867549553164,
         "rank": 1
+      },
+      {
+        "profile": "10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results",
+        "evidence_level": "measured",
+        "source_file": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+        "engine": "Qdrant service streaming",
+        "memory_count": 10000000,
+        "vector_dim": 128,
+        "target_class": "10m",
+        "recall_at_k": 0.975,
+        "p99_latency_ms": 43.266599997878075,
+        "avg_latency_ms": 30.29816170023696,
+        "target_qps": null,
+        "slo_status": "scale_required",
+        "cost_status": "valid_slo",
+        "compute_cost_per_1m_queries_usd": 3.472222222222222,
+        "monthly_total_cost_at_target_qps_usd": 914.8841857910156,
+        "monthly_total_cost_per_1m_memories_usd": 91.48841857910156,
+        "estimated_storage_gb": 23.84185791015625,
+        "claim_status": "measured_scale_required",
+        "slo_pass": false,
+        "valid_cost": true,
+        "frontier_score": 64899.94591989463,
+        "rank": 2
       }
     ],
     "1m": [
@@ -950,6 +975,30 @@
       "rank": 11
     },
     {
+      "profile": "10m-qdrant-service-streaming-production_streaming_load_qdrant_10m_results",
+      "evidence_level": "measured",
+      "source_file": "benchmarks/production_streaming_load_qdrant_10m_results.json",
+      "engine": "Qdrant service streaming",
+      "memory_count": 10000000,
+      "vector_dim": 128,
+      "target_class": "10m",
+      "recall_at_k": 0.975,
+      "p99_latency_ms": 43.266599997878075,
+      "avg_latency_ms": 30.29816170023696,
+      "target_qps": null,
+      "slo_status": "scale_required",
+      "cost_status": "valid_slo",
+      "compute_cost_per_1m_queries_usd": 3.472222222222222,
+      "monthly_total_cost_at_target_qps_usd": 914.8841857910156,
+      "monthly_total_cost_per_1m_memories_usd": 91.48841857910156,
+      "estimated_storage_gb": 23.84185791015625,
+      "claim_status": "measured_scale_required",
+      "slo_pass": false,
+      "valid_cost": true,
+      "frontier_score": 64899.94591989463,
+      "rank": 12
+    },
+    {
       "profile": "1m-qdrant-service-streaming-production_streaming_load_qdrant_1m_results",
       "evidence_level": "measured",
       "source_file": "benchmarks/production_streaming_load_qdrant_1m_results.json",
@@ -971,7 +1020,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 19.708175013842546,
-      "rank": 12
+      "rank": 13
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_tuned_results",
@@ -995,7 +1044,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 856.5459610857889,
-      "rank": 13
+      "rank": 14
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_ef_sweep_results",
@@ -1019,7 +1068,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 1355.2697384743992,
-      "rank": 14
+      "rank": 15
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_ef_sweep_results",
@@ -1043,7 +1092,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 1127.117419200782,
-      "rank": 15
+      "rank": 16
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_ef_sweep_results",
@@ -1067,7 +1116,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 1652.2388029878396,
-      "rank": 16
+      "rank": 17
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_ef_sweep_results",
@@ -1091,7 +1140,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 2506.808217106415,
-      "rank": 17
+      "rank": 18
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_ef_sweep_results",
@@ -1115,7 +1164,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 2261.7523882657606,
-      "rank": 18
+      "rank": 19
     },
     {
       "profile": "100k-wavemind-pgvector-production_load_results",
@@ -1139,7 +1188,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 0.035328000000000005,
-      "rank": 19
+      "rank": 20
     },
     {
       "profile": "1m-qdrant-service-production_load_qdrant_1m_results",
@@ -1163,7 +1212,7 @@
       "slo_pass": false,
       "valid_cost": false,
       "frontier_score": 0.10409142857142857,
-      "rank": 20
+      "rank": 21
     }
   ],
   "planned_rows": [

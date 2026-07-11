@@ -481,7 +481,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--recovery-namespace", default="wavemind-serverless-dr")
     parser.add_argument("--image", default="wavemind:ci-upgrade")
     parser.add_argument("--postgres-image", default="postgres:16-alpine")
-    parser.add_argument("--qdrant-image", default="qdrant/qdrant:v1.15.1")
+    parser.add_argument("--qdrant-image", default="qdrant/qdrant:v1.18.2")
     parser.add_argument("--redis-image", default="redis:7-alpine")
     parser.add_argument("--memory-namespace", default="kind-serverless-lifecycle")
     parser.add_argument("--memories", type=int, default=24)

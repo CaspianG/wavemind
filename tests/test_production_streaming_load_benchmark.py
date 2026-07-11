@@ -3,7 +3,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 
@@ -70,10 +72,17 @@ def test_streaming_load_skips_unconfigured_service_engines(monkeypatch):
 
 
 def test_streaming_load_qdrant_chunks_large_upsert_batches():
+    import concurrent.futures
+
     from benchmarks.production_streaming_load_benchmark import (
+        QdrantShardTarget,
         _chunks,
         _merge_scored_hits,
         _qdrant_shard_index,
+        _iter_qdrant_point_chunks,
+        _upsert_qdrant_point_chunks,
+        _upsert_qdrant_points,
+        _upsert_qdrant_shards,
     )
 
     assert list(_chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
@@ -95,6 +104,193 @@ def test_streaming_load_qdrant_chunks_large_upsert_batches():
         ],
         top_k=3,
     ) == [3, 1, 2]
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+
+        def upsert(self, *, collection_name, points):
+            self.calls.append((collection_name, list(points)))
+
+    clients = [Client(), Client()]
+    targets = [
+        QdrantShardTarget(0, "http://shard-0", "memories_s000"),
+        QdrantShardTarget(1, "http://shard-1", "memories_s001"),
+    ]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_shards(
+            executor=executor,
+            clients=clients,
+            targets=targets,
+            points_by_shard={0: [1, 3, 5], 1: [2, 4]},
+            upsert_batch_size=2,
+        )
+
+    assert inserted == 5
+    assert clients[0].calls == [
+        ("memories_s000", [1, 3]),
+        ("memories_s000", [5]),
+    ]
+    assert clients[1].calls == [("memories_s001", [2, 4])]
+
+    client = Client()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_points(
+            executor=executor,
+            client=client,
+            collection_name="memories",
+            points=[1, 2, 3, 4, 5],
+            upsert_batch_size=2,
+        )
+
+    assert inserted == 5
+    assert sorted(client.calls) == [
+        ("memories", [1, 2]),
+        ("memories", [3, 4]),
+        ("memories", [5]),
+    ]
+
+    class Point:
+        def __init__(self, *, id, vector):
+            self.id = id
+            self.vector = vector
+
+    chunks = list(
+        _iter_qdrant_point_chunks(
+            np.asarray([1, 2, 3, 4, 5]),
+            np.asarray([[1.0], [2.0], [3.0], [4.0], [5.0]]),
+            point_type=Point,
+            chunk_size=2,
+        )
+    )
+    assert [[point.id for point in chunk] for chunk in chunks] == [
+        [1, 2],
+        [3, 4],
+        [5],
+    ]
+    client = Client()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        inserted = _upsert_qdrant_point_chunks(
+            executor=executor,
+            client=client,
+            collection_name="memories",
+            point_chunks=iter(chunks),
+            max_in_flight=2,
+        )
+    assert inserted == 5
+
+
+def test_qdrant_index_readiness_waits_for_green_index(monkeypatch):
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    states = [
+        SimpleNamespace(
+            points_count=100,
+            indexed_vectors_count=80,
+            status="yellow",
+            optimizer_status="ok",
+        ),
+        SimpleNamespace(
+            points_count=100,
+            indexed_vectors_count=100,
+            status="green",
+            optimizer_status="ok",
+        ),
+    ]
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            assert collection_name == "memories"
+            return states.pop(0)
+
+    monkeypatch.setattr(benchmark.time, "sleep", lambda _seconds: None)
+    readiness = benchmark._wait_for_qdrant_index_ready(
+        FakeClient(),
+        "memories",
+        expected_vectors=100,
+        timeout_seconds=1.0,
+        poll_interval_seconds=0.0,
+        require_full_index=True,
+    )
+
+    assert readiness["ready"] is True
+    assert readiness["points_count"] == 100
+    assert readiness["indexed_vectors_count"] == 100
+    assert readiness["attempts"] == 2
+    assert readiness["require_full_index"] is True
+
+
+def test_qdrant_index_readiness_can_observe_without_waiting():
+    from benchmarks.production_streaming_load_benchmark import (
+        _wait_for_qdrant_index_ready,
+    )
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=100,
+                indexed_vectors_count=90,
+                status="yellow",
+                optimizer_status="ok",
+            )
+
+    readiness = _wait_for_qdrant_index_ready(
+        FakeClient(),
+        "memories",
+        expected_vectors=100,
+        timeout_seconds=0.0,
+    )
+
+    assert readiness["ready"] is False
+    assert readiness["attempts"] == 1
+
+
+def test_qdrant_index_readiness_allows_small_green_full_scan_collection():
+    from benchmarks.production_streaming_load_benchmark import (
+        _wait_for_qdrant_index_ready,
+    )
+
+    class FakeClient:
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=10_000,
+                indexed_vectors_count=0,
+                status="green",
+                optimizer_status="ok",
+            )
+
+    readiness = _wait_for_qdrant_index_ready(
+        FakeClient(),
+        "small-memories",
+        expected_vectors=10_000,
+        timeout_seconds=1.0,
+    )
+
+    assert readiness["ready"] is True
+    assert readiness["require_full_index"] is False
+
+
+def test_qdrant_deferred_indexing_config_requires_higher_ingest_threshold(
+    monkeypatch,
+):
+    from benchmarks.production_streaming_load_benchmark import (
+        _qdrant_deferred_indexing_config_from_env,
+    )
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB", "500000")
+    monkeypatch.setenv("WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB", "20000")
+    config = _qdrant_deferred_indexing_config_from_env()
+
+    assert config == {
+        "enabled": True,
+        "deferred_threshold_kb": 500000,
+        "final_threshold_kb": 20000,
+    }
+
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB", "10000")
+    with pytest.raises(ValueError, match="must be greater"):
+        _qdrant_deferred_indexing_config_from_env()
 
 
 def test_streaming_load_qdrant_rejects_invalid_upsert_chunk_size(monkeypatch):
@@ -141,6 +337,141 @@ def test_streaming_load_qdrant_sharded_requires_multiple_urls(monkeypatch):
     assert row["engine"] == "Qdrant sharded service streaming"
     assert row["skipped"] is True
     assert "WAVEMIND_QDRANT_URLS" in row["reason"]
+
+
+def test_qdrant_complete_checkpoint_resume_skips_vector_regeneration(
+    tmp_path,
+    monkeypatch,
+):
+    from benchmarks import production_streaming_load_benchmark as benchmark
+
+    class Model:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    class FakeQdrantClient:
+        init_kwargs = None
+        query_kwargs = []
+        update_kwargs = []
+
+        def __init__(self, **kwargs):
+            type(self).init_kwargs = kwargs
+            self.closed = False
+
+        def get_collection(self, *, collection_name):
+            return SimpleNamespace(
+                points_count=64,
+                indexed_vectors_count=64,
+                status="green",
+                optimizer_status="ok",
+            )
+
+        def update_collection(self, **kwargs):
+            type(self).update_kwargs.append(kwargs)
+            return True
+
+        def query_points(self, **kwargs):
+            type(self).query_kwargs.append(kwargs)
+            return SimpleNamespace(points=[SimpleNamespace(id=1, score=1.0)])
+
+        def close(self):
+            self.closed = True
+
+    fake_models = SimpleNamespace(
+        Distance=SimpleNamespace(COSINE="Cosine"),
+        HnswConfigDiff=Model,
+        OptimizersConfigDiff=Model,
+        PointStruct=Model,
+        QuantizationSearchParams=Model,
+        ScalarQuantization=Model,
+        ScalarQuantizationConfig=Model,
+        ScalarType=SimpleNamespace(INT8="int8"),
+        SearchParams=Model,
+        VectorParams=Model,
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "qdrant_client",
+        SimpleNamespace(QdrantClient=FakeQdrantClient),
+    )
+    monkeypatch.setitem(sys.modules, "qdrant_client.models", fake_models)
+
+    checkpoint_path = tmp_path / "qdrant-complete.checkpoint.json"
+    collection_name = "complete_resume"
+    monkeypatch.setenv("WAVEMIND_QDRANT_URL", "http://127.0.0.1:6335")
+    monkeypatch.setenv("WAVEMIND_QDRANT_COLLECTION", collection_name)
+    monkeypatch.setenv("WAVEMIND_STREAMING_CHECKPOINT_PATH", str(checkpoint_path))
+    monkeypatch.setenv("WAVEMIND_QDRANT_DEFER_INDEXING", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_PREFER_GRPC", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_GRPC_PORT", "6336")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS", "300")
+    monkeypatch.setenv("WAVEMIND_QDRANT_HNSW_ON_DISK", "0")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTIZATION", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_QUANTILE", "0.99")
+    monkeypatch.setenv("WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM", "1")
+    monkeypatch.setenv("WAVEMIND_QDRANT_QUANTIZATION_RESCORE", "0")
+
+    source_ids = benchmark.choose_source_ids(64, 4, 3)
+    signature = benchmark._checkpoint_signature(
+        engine="Qdrant service streaming",
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+        extra={"collection_config": benchmark._qdrant_collection_config_from_env()},
+    )
+    checkpoint = benchmark._new_checkpoint(signature)
+    checkpoint["metadata"]["collection_name"] = collection_name
+    checkpoint["completed_batch_starts"] = [1, 33]
+    checkpoint["source_vectors"] = {
+        str(source_id): [1.0] + [0.0] * 7 for source_id in source_ids
+    }
+    benchmark._write_checkpoint(checkpoint_path, checkpoint)
+
+    def fail_if_vectors_are_regenerated(**kwargs):
+        raise AssertionError("complete Qdrant checkpoint must not regenerate batches")
+
+    monkeypatch.setattr(
+        benchmark,
+        "iter_vector_batches",
+        fail_if_vectors_are_regenerated,
+    )
+    row = benchmark.run_qdrant_streaming(
+        count=64,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=3,
+        noise=0.01,
+        batch_size=32,
+    )
+
+    assert row["qdrant_checkpoint_complete_resume"] is True
+    assert row["checkpoint_completed_batches"] == 2
+    assert row["checkpoint_source_vectors"] == 4
+    assert row["transport"] == {
+        "prefer_grpc": True,
+        "grpc_port": 6336,
+        "query_timeout_seconds": 300,
+    }
+    assert FakeQdrantClient.init_kwargs["prefer_grpc"] is True
+    assert FakeQdrantClient.init_kwargs["grpc_port"] == 6336
+    assert {call["timeout"] for call in FakeQdrantClient.query_kwargs} == {300}
+    assert len(FakeQdrantClient.update_kwargs) == 1
+    assert FakeQdrantClient.update_kwargs[0]["hnsw_config"].on_disk is False
+    assert (
+        FakeQdrantClient.update_kwargs[0]["quantization_config"].scalar.always_ram
+        is True
+    )
+    assert row["collection_params"]["scalar_quantization"] == {
+        "type": "int8",
+        "quantile": 0.99,
+        "always_ram": True,
+    }
+    assert row["search_params"]["quantization"]["rescore"] is False
 
 
 def test_streaming_load_faiss_ivfpq_smoke(tmp_path, monkeypatch):
@@ -350,6 +681,33 @@ def test_streaming_checkpoint_rejects_signature_mismatch(tmp_path):
     mismatch["vectors"] = 128
     with pytest.raises(ValueError, match="does not match"):
         _load_checkpoint(checkpoint_path, mismatch)
+
+
+def test_streaming_checkpoint_retries_transient_windows_replace_lock(
+    tmp_path,
+    monkeypatch,
+):
+    from benchmarks.production_streaming_load_benchmark import _write_checkpoint
+
+    checkpoint_path = tmp_path / "streaming.checkpoint.json"
+    original_replace = Path.replace
+    attempts = 0
+
+    def transient_lock(path, target):
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise PermissionError(5, "simulated sharing violation")
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", transient_lock)
+    monkeypatch.setenv("WAVEMIND_CHECKPOINT_REPLACE_RETRIES", "3")
+    monkeypatch.setenv("WAVEMIND_CHECKPOINT_REPLACE_DELAY_SECONDS", "0")
+
+    _write_checkpoint(checkpoint_path, {"schema": "test"})
+
+    assert attempts == 3
+    assert json.loads(checkpoint_path.read_text(encoding="utf-8"))["schema"] == "test"
 
 
 def test_streaming_load_cli_writes_json(tmp_path):
@@ -630,6 +988,19 @@ def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):
     assert row["index_mode"].startswith("remote Qdrant service")
     assert "WAVEMIND_QDRANT_URL" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URL" in row["blockers"]
+    assert row["command_env"]["WAVEMIND_QDRANT_VECTOR_ON_DISK"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_HNSW_ON_DISK"] == "0"
+    assert row["command_env"]["WAVEMIND_QDRANT_PREFER_GRPC"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_GRPC_PORT"] == "6334"
+    assert row["command_env"]["WAVEMIND_QDRANT_SCALAR_QUANTIZATION"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_QUANTIZATION_RESCORE"] == "0"
+    assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
+    assert (
+        row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
+        == "1800"
+    )
     assert "--engines qdrant-service" in row["command"]
     assert "production_streaming_load_qdrant_10m_results.json" in row["command"]
 
@@ -661,6 +1032,12 @@ def test_streaming_load_plan_only_supports_qdrant_sharded_service(monkeypatch):
     assert "WAVEMIND_QDRANT_URLS" in row["required_env"]
     assert "missing_env:WAVEMIND_QDRANT_URLS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_QDRANT_FANOUT_WORKERS"] == "6"
+    assert row["command_env"]["WAVEMIND_QDRANT_REQUIRE_FULL_INDEX"] == "1"
+    assert row["command_env"]["WAVEMIND_QDRANT_DEFER_INDEXING"] == "1"
+    assert (
+        row["command_env"]["WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS"]
+        == "1800"
+    )
     assert "qdrant-5.example" in row["command_env"]["WAVEMIND_QDRANT_URLS"]
     assert "--engines qdrant-sharded-service" in row["command"]
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in row["command"]

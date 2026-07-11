@@ -115,6 +115,14 @@ def _serverless_payload() -> dict:
 
 def _streaming_payload() -> dict:
     return {
+        "schema": "wavemind.production_streaming_load.v1",
+        "generated_at": "2026-07-10T00:00:00Z",
+        "source_ref": "a" * 40,
+        "execution_id": "test-run-1",
+        "execution_environment": "test-service",
+        "evidence_source": "local-service",
+        "workflow_run_id": None,
+        "workflow_run_url": None,
         "scenario": {"name": "production_streaming_load_profile"},
         "results": [
             {

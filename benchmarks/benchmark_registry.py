@@ -558,6 +558,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     production_streaming_qdrant_smoke_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_smoke_results.json")
     production_streaming_qdrant_1m_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_1m_results.json")
     production_streaming_qdrant_1m_tuned_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_1m_tuned_results.json")
+    production_streaming_qdrant_10m_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_10m_results.json")
     production_streaming_qdrant_sharded_smoke_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_smoke_results.json")
     production_streaming_qdrant_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_10m_plan.json")
     production_streaming_qdrant_sharded_10m_plan_payload = _load_json(root / "benchmarks" / "production_streaming_load_qdrant_sharded_10m_plan.json")
@@ -630,6 +631,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         **_prefixed_ann_results("Qdrant smoke", production_streaming_qdrant_smoke_payload),
         **_prefixed_ann_results("1M Qdrant cold", production_streaming_qdrant_1m_payload),
         **_prefixed_ann_results("1M Qdrant tuned", production_streaming_qdrant_1m_tuned_payload),
+        **_prefixed_ann_results("10M Qdrant measured", production_streaming_qdrant_10m_payload),
         **_prefixed_ann_results("Qdrant sharded smoke", production_streaming_qdrant_sharded_smoke_payload),
         **_streaming_plan_results("10M Qdrant preflight", production_streaming_qdrant_10m_plan_payload),
         **_streaming_plan_results("10M Qdrant sharded preflight", production_streaming_qdrant_sharded_10m_plan_payload),

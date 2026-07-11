@@ -85,13 +85,13 @@ jobs:
           docker build --build-arg INSTALL_PRODUCTION=true --tag wavemind:ci .
           docker tag wavemind:ci wavemind:ci-upgrade
           docker pull postgres:16-alpine
-          docker pull qdrant/qdrant:v1.15.1
+          docker pull qdrant/qdrant:v1.18.2
           docker pull redis:7-alpine
           kind load docker-image \
             wavemind:ci \
             wavemind:ci-upgrade \
             postgres:16-alpine \
-            qdrant/qdrant:v1.15.1 \
+            qdrant/qdrant:v1.18.2 \
             redis:7-alpine \
             --name "$CLUSTER_NAME"
 
@@ -218,7 +218,7 @@ jobs:
             --namespace wavemind-serverless \
             --image wavemind:ci-upgrade \
             --postgres-image postgres:16-alpine \
-            --qdrant-image qdrant/qdrant:v1.15.1 \
+            --qdrant-image qdrant/qdrant:v1.18.2 \
             --redis-image redis:7-alpine \
             --memories 24 \
             --burst-requests 120 \
@@ -233,7 +233,7 @@ jobs:
             --recovery-namespace wavemind-serverless-dr \
             --image wavemind:ci-upgrade \
             --postgres-image postgres:16-alpine \
-            --qdrant-image qdrant/qdrant:v1.15.1 \
+            --qdrant-image qdrant/qdrant:v1.18.2 \
             --redis-image redis:7-alpine \
             --memories 24 \
             --timeout-seconds 300 \

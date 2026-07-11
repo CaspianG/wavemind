@@ -1,7 +1,7 @@
 # WaveMind Benchmark Leaderboard
 
 Generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-10T05:23:32Z` from `3d40e894b493`.
+Last refresh: `2026-07-11T03:37:56Z` from `be2cebfd776b`.
 
 This is a compact reader-facing view of checked-in benchmark results. It is not a universal vector-database leaderboard: each row uses the primary quality metric for that benchmark, and latency is shown separately so quality wins are not confused with speed wins.
 
@@ -34,7 +34,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 
 | area | current source | claim status | next action |
 |---|---|---|---|
-| Artifact freshness | local matrix refresh at `2026-07-10T05:23:32Z` | source `3d40e894b493`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
+| Artifact freshness | local matrix refresh at `2026-07-11T03:37:56Z` | source `be2cebfd776b`; audit gate enforced by `validate_benchmark_artifacts.py` | Keep weekly refresh green before public claims. |
 | Serverless telemetry | loopback API pool; `loopback-api-capacity-estimate`; 4 measured replicas | observed SLO `True`; loopback evidence, not a managed-serverless claim | Run `.github/workflows/serverless-observed-telemetry.yml` against deployed API nodes. |
 | External HTTP cluster load | kubernetes-kind-non-loopback-ci; `kubernetes-pod-dns-physical-node-drill`; 4 nodes | SLO `True`; non-loopback Kubernetes pod-DNS evidence | Run `.github/workflows/external-http-cluster-load.yml` with a remote node manifest. |
 | External HTTP active-active loopback | local-loopback; `loopback-api-regions`; 3 regions | SLO `True`; external URL contract over local API regions | Run `.github/workflows/external-http-active-active.yml` with remote regions for production evidence. |
@@ -42,7 +42,7 @@ This is a compact reader-facing view of checked-in benchmark results. It is not 
 | pgvector tuning | real PostgreSQL/pgvector service profile at 50k vectors | iterative recall `0.97`, iterative p99 `55.2 ms`; exact recall `1` | Promote pgvector-iterative into the 100k and 1M production load SLO profiles. |
 | 10M streaming load | local `WaveMind faiss-ivfpq-persisted streaming` profile | target recall `0.99`, p99 `60.1 ms`, SLO `scale_required` | Repeat at 50M and add service-backed Qdrant/pgvector 10M artifacts. |
 | 50M streaming preflight | `WaveMind faiss-ivfpq-persisted streaming` plan-only contract | `action_required`; index `1.12 GB`; app storage `119.2 GB`; blockers `missing_env:WAVEMIND_FAISS_IVFPQ_PATH, insufficient_local_disk_for_index_and_transient_batches` | Run `.github/workflows/production-streaming-load.yml` with `faiss-ivfpq-persisted` and publish `benchmarks/production_streaming_load_ivfpq_50m_results.json`. |
-| Qdrant streaming | real Qdrant service smoke plus 10M preflight | smoke recall `1`, smoke p99 `17.9 ms`; 10M preflight `action_required` | Run `.github/workflows/production-streaming-load.yml` with `qdrant-service` against sized Qdrant storage. |
+| Qdrant streaming | real Qdrant service smoke plus measured 10M profile | smoke recall `1`, smoke p99 `17.9 ms`; 10M recall `0.975`, 10M p99 `43.3 ms`, SLO `scale_required` | Keep the measured 10M profile green and run the sharded Qdrant and pgvector 10M profiles next. |
 | Qdrant sharded streaming | real two-service fanout smoke plus horizontal Qdrant preflight | smoke recall `1`, smoke p99 `16.0 ms`; 10M preflight `action_required`; 100M preflight `action_required`; planned shards `4`; blockers `missing_env:WAVEMIND_QDRANT_URLS, insufficient_local_disk_for_index_and_transient_batches` | Run `.github/workflows/production-streaming-load.yml` with `qdrant-sharded-service` and publish `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` or `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`. |
 | Qdrant 1M streaming | real Qdrant service run before and after warmup/chunking tuning | cold p99 `3014.0 ms`; tuned recall `1`, tuned p99 `26.4 ms`, SLO `pass` | Use the tuned warmup/chunking profile for the 10M Qdrant service run. |
 | pgvector streaming | real PostgreSQL/pgvector service smoke plus 10M preflight | smoke recall `1`, smoke p99 `7.624 ms`; 10M preflight `action_required` | Run `.github/workflows/production-streaming-load.yml` with `pgvector-service` against sized Postgres storage. |

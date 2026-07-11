@@ -18,13 +18,13 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     assert payload["readiness_status"] == "action_required"
     assert payload["claim_status"] == "claims_limited"
     assert payload["summary"]["total_requirements"] == 8
-    assert payload["summary"]["action_required_count"] == 6
-    assert payload["summary"]["complete_count"] == 2
+    assert payload["summary"]["action_required_count"] == 5
+    assert payload["summary"]["complete_count"] == 3
     assert payload["summary"]["target_memories_total"] == 180_000_000
     assert payload["summary"]["check_counts"] == {"pass": 8}
     assert payload["summary"]["can_auto_run_now_count"] == 0
-    assert payload["summary"]["blocker_counts"]["missing_env"] == 6
-    assert payload["summary"]["blocker_counts"]["complete"] == 2
+    assert payload["summary"]["blocker_counts"]["missing_env"] == 5
+    assert payload["summary"]["blocker_counts"]["complete"] == 3
 
     by_id = {row["id"]: row for row in payload["requirements"]}
     assert set(by_id) == {
@@ -81,7 +81,7 @@ def test_strict_evidence_readiness_markdown_lists_runbook_commands():
     assert "gh run download <run-id>" in markdown
     assert "wavemind ingest-production-evidence" in markdown
     assert "production_evidence_gate.py" in markdown
-    assert "does not unlock remote, 10M, 50M, 100M" in markdown
+    assert "does not itself unlock any production claim" in markdown
 
 
 def test_cli_strict_evidence_readiness_report_writes_artifacts(tmp_path):
