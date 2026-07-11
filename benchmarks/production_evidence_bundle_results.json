@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-11T20:18:11Z",
+  "generated_at": "2026-07-11T20:56:03Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -8,7 +8,7 @@
     "strict_pass_count": 4,
     "strict_total_requirements": 8,
     "preflight_overall_status": "action_required",
-    "preflight_ready_count": 0,
+    "preflight_ready_count": 1,
     "preflight_total_checks": 8,
     "production_readiness_status": "pass",
     "production_readiness_score": 1.0,
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-11T20:18:11Z",
+    "generated_at": "2026-07-11T20:56:03Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -123,12 +123,12 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-11T20:18:11Z",
+    "generated_at": "2026-07-11T20:56:03Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "ready_count": 0,
-      "action_required_count": 8,
+      "ready_count": 1,
+      "action_required_count": 7,
       "total_checks": 8
     },
     "checks": [
@@ -243,21 +243,17 @@
       {
         "id": "pgvector_10m_service",
         "title": "10M pgvector service load preflight",
-        "status": "action_required",
-        "ready": false,
-        "evidence": "plan benchmarks/production_streaming_load_pgvector_10m_plan.json, vectors 10000000, required env 1, missing env 1, required local free 0.004 GB",
-        "required_env": [
-          "WAVEMIND_PGVECTOR_DSNS"
-        ],
-        "missing_env": [
-          "WAVEMIND_PGVECTOR_DSNS"
-        ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
+        "status": "ready",
+        "ready": true,
+        "evidence": "workflow-provisioned four-service pgvector topology; external DSNs optional; plan benchmarks/production_streaming_load_pgvector_10m_plan.json",
+        "required_env": [],
+        "missing_env": [],
+        "command": "gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f runner_storage_root=state -f commit_results=true",
         "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-        "issues": [
-          "set WAVEMIND_PGVECTOR_DSNS"
-        ],
-        "warnings": []
+        "issues": [],
+        "warnings": [
+          "Ephemeral isolated service processes prove the 10M candidate-index SLO, not PostgreSQL HA or independent-node failure tolerance."
+        ]
       },
       {
         "id": "faiss_ivfpq_50m",
@@ -807,17 +803,17 @@
       "id": "pgvector_10m_service",
       "title": "10M pgvector service load",
       "strict_status": "action_required",
-      "preflight_status": "action_required",
+      "preflight_status": "ready",
       "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "issues": [
         "missing artifact"
       ],
-      "missing_env": [
-        "WAVEMIND_PGVECTOR_DSNS"
+      "missing_env": [],
+      "warnings": [
+        "Ephemeral isolated service processes prove the 10M candidate-index SLO, not PostgreSQL HA or independent-node failure tolerance."
       ],
-      "warnings": [],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
+      "command": "gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f runner_storage_root=state -f commit_results=true",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."
     },
     {

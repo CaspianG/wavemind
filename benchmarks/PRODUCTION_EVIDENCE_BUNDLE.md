@@ -8,7 +8,7 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 |---|---:|
 | claim status | `claims_limited` |
 | strict evidence | `4/8` |
-| preflight ready | `0/8` |
+| preflight ready | `1/8` |
 | production readiness | `pass` |
 | readiness score | `1.0` |
 | artifact audit | `pass` |
@@ -44,5 +44,5 @@ claim boundaries, and the exact next actions required to unlock blocked claims.
 |---|---|---|---|---|---|
 | External HTTP active-active regions | `action_required` | `action_required` | `benchmarks/external_http_active_active_results.json` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON; issues: missing artifact` | `gh workflow run external-http-active-active.yml -f regions="$WAVEMIND_ACTIVE_ACTIVE_REGIONS" -f commit_results=true` |
 | Managed/serverless remote telemetry | `action_required` | `action_required` | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES; issues: missing artifact` | `gh workflow run serverless-observed-telemetry.yml -f nodes="$WAVEMIND_SERVERLESS_NODES" -f seed_mode=first -f commit_results=true` |
-| 10M pgvector service load | `action_required` | `action_required` | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSNS; issues: missing artifact` | `python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json` |
+| 10M pgvector service load | `action_required` | `ready` | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `issues: missing artifact` | `gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f runner_storage_root=state -f commit_results=true` |
 | 100M remote load result | `action_required` | `action_required` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS; issues: missing artifact` | `python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json` |

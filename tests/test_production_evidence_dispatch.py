@@ -52,8 +52,8 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert payload["schema"] == "wavemind.production_evidence_dispatch.v1"
     assert payload["overall_status"] == "action_required"
     assert payload["summary"]["total_jobs"] == 8
-    assert payload["summary"]["blocked_by_preflight_count"] == 4
-    assert payload["summary"]["ready_to_dispatch_count"] == 0
+    assert payload["summary"]["blocked_by_preflight_count"] == 3
+    assert payload["summary"]["ready_to_dispatch_count"] == 1
     assert payload["summary"]["complete_count"] == 4
 
     by_id = {row["id"]: row for row in payload["jobs"]}
@@ -72,6 +72,7 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert by_id["hundred_million_remote_load"]["workflow"] == (
         "production-streaming-load.yml"
     )
+    assert by_id["pgvector_10m_service"]["status"] == "ready_to_dispatch"
 
 
 def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_values(
@@ -104,8 +105,10 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert qdrant["input_bindings"]["qdrant_url"] == "$WAVEMIND_QDRANT_URL"
     assert qdrant["required_secrets"] == ["WAVEMIND_QDRANT_API_KEY"]
     pgvector = by_id["pgvector_10m_service"]
-    assert pgvector["inputs"]["pgvector_dsns"] == "$WAVEMIND_PGVECTOR_DSNS"
-    assert pgvector["input_bindings"]["pgvector_dsns"] == "$WAVEMIND_PGVECTOR_DSNS"
+    assert pgvector["inputs"]["provision_pgvector_shards"] is True
+    assert pgvector["inputs"]["pgvector_shard_count"] == "4"
+    assert pgvector["inputs"]["runner_label"] == "ubuntu-latest"
+    assert "pgvector_dsns" not in pgvector["input_bindings"]
     assert "pgvector_dsn" not in pgvector["inputs"]
 
 

@@ -343,7 +343,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["strict_evidence_readiness"]["summary"]["target_memories_total"] == (
         180_000_000
     )
-    assert payload["strict_evidence_readiness"]["summary"]["can_auto_run_now_count"] == 0
+    assert payload["strict_evidence_readiness"]["summary"]["can_auto_run_now_count"] == 1
     assert payload["strict_evidence_readiness"]["summary"]["check_counts"] == {"pass": 8}
     assert any(
         row["id"] == "hundred_million_remote_load"

@@ -53,6 +53,9 @@ def test_production_evidence_preflight_reports_missing_env():
     assert by_id["external_http_cluster"]["status"] == "action_required"
     assert "WAVEMIND_CLUSTER_NODES" in by_id["external_http_cluster"]["missing_env"]
     assert by_id["qdrant_10m_service"]["missing_env"] == ["WAVEMIND_QDRANT_URL"]
+    assert by_id["pgvector_10m_service"]["status"] == "ready"
+    assert by_id["pgvector_10m_service"]["missing_env"] == []
+    assert "provision_pgvector_shards=true" in by_id["pgvector_10m_service"]["command"]
     assert by_id["faiss_ivfpq_50m"]["missing_env"] == ["WAVEMIND_FAISS_IVFPQ_PATH"]
 
 
@@ -67,6 +70,7 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
     by_id = {row["id"]: row for row in payload["checks"]}
     assert by_id["external_http_active_active"]["missing_env"] == []
     assert by_id["pgvector_10m_service"]["missing_env"] == []
+    assert "four-service pgvector topology" in by_id["pgvector_10m_service"]["evidence"]
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["hundred_million_remote_load"]["ready"] is True
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
