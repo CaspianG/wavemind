@@ -233,7 +233,7 @@ jobs:
               env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
               env.setdefault("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw-binary")
               env.setdefault("WAVEMIND_PGVECTOR_HNSW_M", "16")
-              env.setdefault("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION", "128")
+              env.setdefault("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION", "64")
               env.setdefault("WAVEMIND_PGVECTOR_EF_SEARCH", "400")
               env.setdefault("WAVEMIND_PGVECTOR_BINARY_CANDIDATES", "200")
               env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
