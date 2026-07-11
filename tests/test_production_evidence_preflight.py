@@ -30,7 +30,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
-        "WAVEMIND_PGVECTOR_DSN": "postgresql://user:pass@postgres.staging.internal:5432/wavemind",
+        "WAVEMIND_PGVECTOR_DSNS": ",".join(
+            f"postgresql://user:pass@postgres-{index}.staging.internal:5432/wavemind"
+            for index in range(4)
+        ),
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
