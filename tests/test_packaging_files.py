@@ -249,7 +249,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "deploy/serverless/observed-telemetry.loopback.json" in readme
     assert "observed-telemetry.remote.json" in readme
     assert "This is ephemeral non-loopback Kubernetes evidence" in readme
-    assert "not a hosted managed-serverless claim" in readme
+    assert "Loopback and extrapolated URL-pool results cannot unlock the claim" in readme
+    assert ".github/workflows/managed-serverless-cloud-run.yml" in readme
+    assert "wavemind/cloud_run_evidence.py" in readme
     assert "benchmarks/memory_competitor_results.json" in readme
     assert "production_readiness_results.json" in readme
     assert "PRODUCTION_READINESS.md" in readme
@@ -325,6 +327,9 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind serverless-sample" in readme
     assert Path("deploy/operator/wavemindcluster.sample.json").exists()
     assert Path("deploy/serverless/wavemind-serverless.sample.json").exists()
+    assert Path("deploy/serverless/cloud_run_evidence.py").exists()
+    assert Path(".github/workflows/managed-serverless-cloud-run.yml").exists()
+    assert Path("wavemind/cloud_run_evidence.py").exists()
     assert "cluster-repair` CronJob" in readme
     assert "wavemind cluster-autoscale-plan" in readme
     assert '"targetMemories": 10000000' in readme

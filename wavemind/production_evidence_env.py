@@ -88,6 +88,31 @@ ENV_METADATA: dict[str, dict[str, str]] = {
         "example": "https://wm-serverless-a.example.com,https://wm-serverless-b.example.com",
         "description": "Deployed serverless/managed WaveMind API nodes for remote telemetry evidence.",
     },
+    "WAVEMIND_CLOUD_RUN_PROJECT_ID": {
+        "kind": "gcp-project-id",
+        "example": "wavemind-benchmarks",
+        "description": "Google Cloud project containing the dedicated managed Cloud Run evidence service.",
+    },
+    "WAVEMIND_CLOUD_RUN_REGION": {
+        "kind": "gcp-region",
+        "example": "us-central1",
+        "description": "Region of the managed Cloud Run evidence service.",
+    },
+    "WAVEMIND_CLOUD_RUN_SERVICE": {
+        "kind": "cloud-run-service",
+        "example": "wavemind-managed-evidence",
+        "description": "Dedicated Cloud Run service with min instances zero and external durable state.",
+    },
+    "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER": {
+        "kind": "gcp-workload-identity-provider",
+        "example": "projects/123456789/locations/global/workloadIdentityPools/github/providers/wavemind",
+        "description": "OIDC Workload Identity Federation provider restricted to this GitHub repository.",
+    },
+    "WAVEMIND_GCP_SERVICE_ACCOUNT": {
+        "kind": "gcp-service-account",
+        "example": "wavemind-evidence@wavemind-benchmarks.iam.gserviceaccount.com",
+        "description": "Least-privilege identity allowed to describe Cloud Run and read Cloud Monitoring metrics.",
+    },
     "WAVEMIND_QDRANT_URL": {
         "kind": "qdrant-url",
         "example": "https://qdrant-10m.staging.example.com:6333",

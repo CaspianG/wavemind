@@ -19,8 +19,17 @@ def test_serverless_observed_telemetry_benchmark_emits_capacity(monkeypatch):
     def fake_stop_api_nodes(nodes):
         stopped_nodes.extend(nodes)
 
-    def fake_request_json(method, url, payload=None, *, api_key=None, timeout=5.0):
+    def fake_request_json(
+        method,
+        url,
+        payload=None,
+        *,
+        api_key=None,
+        identity_token=None,
+        timeout=5.0,
+    ):
         assert api_key is None
+        assert identity_token is None
         if url.endswith("/remember"):
             return {"id": len(str(payload.get("text", "")))}
         if url.endswith("/query"):
@@ -87,9 +96,18 @@ def test_serverless_observed_telemetry_benchmark_measures_external_nodes(monkeyp
     def fake_stop_api_nodes(nodes):
         stopped_nodes.extend(nodes)
 
-    def fake_request_json(method, url, payload=None, *, api_key=None, timeout=5.0):
-        calls.append((method, url, dict(payload or {}), api_key, timeout))
+    def fake_request_json(
+        method,
+        url,
+        payload=None,
+        *,
+        api_key=None,
+        identity_token=None,
+        timeout=5.0,
+    ):
+        calls.append((method, url, dict(payload or {}), api_key, identity_token, timeout))
         assert api_key == "secret"
+        assert identity_token == "cloud-token"
         if url.endswith("/remember"):
             return {"id": len(str(payload.get("text", "")))}
         if url.endswith("/query"):
@@ -108,6 +126,8 @@ def test_serverless_observed_telemetry_benchmark_measures_external_nodes(monkeyp
             "http://node-b.example",
             "--api-key",
             "secret",
+            "--identity-token",
+            "cloud-token",
             "--seed-mode",
             "first",
             "--external-cold-start-ms",
@@ -137,6 +157,8 @@ def test_serverless_observed_telemetry_benchmark_measures_external_nodes(monkeyp
     assert payload["methodology"].startswith("Measured a balanced pool of user-supplied")
     assert payload["measured_replicas"] == 2
     assert payload["external_node_count"] == 2
+    assert len(payload["external_node_url_sha256"]) == 2
+    assert all(len(value) == 64 for value in payload["external_node_url_sha256"])
     assert payload["seed_mode"] == "first"
     assert payload["seed_memories"] == 2
     assert payload["warmup_queries"] == 4

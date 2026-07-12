@@ -29,7 +29,16 @@ def _ready_env(tmp_path):
         "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": "test-scale-private-key",
         "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": "test-scale-known-hosts",
         "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": "test-scale-qdrant-key",
-        "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID": "wavemind-benchmarks",
+        "WAVEMIND_CLOUD_RUN_REGION": "us-central1",
+        "WAVEMIND_CLOUD_RUN_SERVICE": "wm-bench-service",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER": (
+            "projects/123456789/locations/global/workloadIdentityPools/github/"
+            "providers/wavemind"
+        ),
+        "WAVEMIND_GCP_SERVICE_ACCOUNT": (
+            "wavemind-evidence@wavemind-benchmarks.iam.gserviceaccount.com"
+        ),
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
         "WAVEMIND_PGVECTOR_DSNS": ",".join(

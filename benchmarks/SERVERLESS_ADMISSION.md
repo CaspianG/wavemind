@@ -36,7 +36,7 @@ useful for development, but does not unlock this gate.
 
 | status | required env | missing env | evidence |
 |---|---|---|---|
-| `action_required` | `WAVEMIND_SERVERLESS_NODES` | `WAVEMIND_SERVERLESS_NODES` | 0 node URLs configured |
+| `action_required` | `WAVEMIND_CLOUD_RUN_PROJECT_ID, WAVEMIND_CLOUD_RUN_REGION, WAVEMIND_CLOUD_RUN_SERVICE, WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER, WAVEMIND_GCP_SERVICE_ACCOUNT, WAVEMIND_API_KEY` | `WAVEMIND_CLOUD_RUN_PROJECT_ID, WAVEMIND_CLOUD_RUN_REGION, WAVEMIND_CLOUD_RUN_SERVICE, WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER, WAVEMIND_GCP_SERVICE_ACCOUNT, WAVEMIND_API_KEY` | project missing, region missing, service missing, OIDC missing |
 
 ## Issues
 
@@ -47,4 +47,4 @@ useful for development, but does not unlock this gate.
 ## Next Actions
 
 - Do not admit managed/serverless production traffic yet; run the remote telemetry workflow against deployed nodes first.
-- `gh workflow run serverless-observed-telemetry.yml -f nodes="https://wm-a.example.com,https://wm-b.example.com" -f seed_mode=first -f commit_results=true`
+- `gh workflow run managed-serverless-cloud-run.yml --ref main -f project_id="$WAVEMIND_CLOUD_RUN_PROJECT_ID" -f region="$WAVEMIND_CLOUD_RUN_REGION" -f service_name="$WAVEMIND_CLOUD_RUN_SERVICE"`

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.serverless_admission.v1",
-  "generated_at": "2026-07-09T10:20:56Z",
+  "generated_at": "2026-07-12T20:39:56Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
@@ -18,10 +18,15 @@
     "preflight_status": "action_required",
     "required_artifact": "deploy/serverless/observed-telemetry.remote.json",
     "missing_env": [
-      "WAVEMIND_SERVERLESS_NODES"
+      "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+      "WAVEMIND_CLOUD_RUN_REGION",
+      "WAVEMIND_CLOUD_RUN_SERVICE",
+      "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+      "WAVEMIND_GCP_SERVICE_ACCOUNT",
+      "WAVEMIND_API_KEY"
     ],
     "blocking_issue_count": 3,
-    "warning_count": 3
+    "warning_count": 7
   },
   "required_evidence": {
     "id": "serverless_remote_telemetry",
@@ -32,7 +37,7 @@
     "issues": [
       "missing artifact"
     ],
-    "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
+    "command": "gh workflow run managed-serverless-cloud-run.yml --ref main -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\"",
     "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
   },
   "requested_evidence": {
@@ -50,19 +55,33 @@
   "preflight": {
     "status": "action_required",
     "ready": false,
-    "evidence": "0 node URLs configured",
+    "evidence": "project missing, region missing, service missing, OIDC missing",
     "required_env": [
-      "WAVEMIND_SERVERLESS_NODES"
+      "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+      "WAVEMIND_CLOUD_RUN_REGION",
+      "WAVEMIND_CLOUD_RUN_SERVICE",
+      "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+      "WAVEMIND_GCP_SERVICE_ACCOUNT",
+      "WAVEMIND_API_KEY"
     ],
     "missing_env": [
-      "WAVEMIND_SERVERLESS_NODES"
+      "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+      "WAVEMIND_CLOUD_RUN_REGION",
+      "WAVEMIND_CLOUD_RUN_SERVICE",
+      "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+      "WAVEMIND_GCP_SERVICE_ACCOUNT",
+      "WAVEMIND_API_KEY"
     ],
     "issues": [
-      "serverless node requires at least 1 URLs",
-      "set WAVEMIND_SERVERLESS_NODES"
+      "set WAVEMIND_CLOUD_RUN_PROJECT_ID",
+      "set WAVEMIND_CLOUD_RUN_REGION",
+      "set WAVEMIND_CLOUD_RUN_SERVICE",
+      "set WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+      "set WAVEMIND_GCP_SERVICE_ACCOUNT",
+      "set WAVEMIND_API_KEY"
     ],
     "warnings": [
-      "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+      "The dedicated Cloud Run service must use min instances 0 and external durable state. The workflow queries Cloud Run control plane and Cloud Monitoring before strict admission."
     ],
     "output_artifact": "deploy/serverless/observed-telemetry.remote.json"
   },
@@ -73,12 +92,16 @@
   ],
   "warnings": [
     "serverless remote telemetry preflight is not ready; provide deployed HTTP API node URLs before dispatching the workflow.",
-    "serverless node requires at least 1 URLs",
-    "set WAVEMIND_SERVERLESS_NODES"
+    "set WAVEMIND_CLOUD_RUN_PROJECT_ID",
+    "set WAVEMIND_CLOUD_RUN_REGION",
+    "set WAVEMIND_CLOUD_RUN_SERVICE",
+    "set WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+    "set WAVEMIND_GCP_SERVICE_ACCOUNT",
+    "set WAVEMIND_API_KEY"
   ],
   "next_actions": [
     "Do not admit managed/serverless production traffic yet; run the remote telemetry workflow against deployed nodes first.",
-    "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true"
+    "gh workflow run managed-serverless-cloud-run.yml --ref main -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\""
   ],
   "source_artifacts": {
     "strict_evidence": "benchmarks/production_evidence_results.json",

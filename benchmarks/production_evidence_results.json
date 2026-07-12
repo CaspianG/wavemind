@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-12T19:58:17Z",
+  "generated_at": "2026-07-12T20:39:49Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -39,7 +39,7 @@
       "status": "action_required",
       "evidence": "missing remote serverless telemetry",
       "artifact": "deploy/serverless/observed-telemetry.remote.json",
-      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" -f seed_mode=first -f commit_results=true",
+      "command": "gh workflow run managed-serverless-cloud-run.yml --ref main -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\"",
       "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
       "issues": [
         "missing artifact"

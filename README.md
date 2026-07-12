@@ -1015,7 +1015,7 @@ wavemind serverless-sample --namespace wavemind-system --max-scale 256 --out dep
 wavemind serverless-sample --readiness
 wavemind serverless-sample --operational-profile --max-scale 256 --target-concurrency 80
 wavemind serverless-sample --operational-profile --max-scale 256 --target-concurrency 80 --observed-telemetry deploy/serverless/observed-telemetry.loopback.json
-python benchmarks/serverless_observed_telemetry_benchmark.py --node https://wm-a.example --node https://wm-b.example --api-key "$WAVEMIND_API_KEY" --seed-mode first --external-cold-start-ms 900 --output deploy/serverless/observed-telemetry.remote.json
+python benchmarks/serverless_observed_telemetry_benchmark.py --node https://wm-a.example --node https://wm-b.example --api-key "$WAVEMIND_API_KEY" --seed-mode first --external-cold-start-ms 900 --output deploy/serverless/observed-telemetry.remote-candidate.json
 ```
 
 `deploy/serverless` contains a stateless API worker plan with two profiles: a
@@ -2086,7 +2086,8 @@ fanout latency.
 Manual strict-evidence runners include `.github/workflows/production-streaming-load.yml`,
 `.github/workflows/external-http-cluster-load.yml`,
 `.github/workflows/external-http-active-active.yml`, and
-`.github/workflows/serverless-observed-telemetry.yml`. They run checkpointed
+`.github/workflows/serverless-observed-telemetry.yml`, and
+`.github/workflows/managed-serverless-cloud-run.yml`. They run checkpointed
 Qdrant, sharded Qdrant, pgvector, FAISS IVF-PQ, remote API-node, remote
 active-active, or serverless telemetry profiles on sized infrastructure. The
 preferred review path is to leave `commit_results=false`, download the Actions
@@ -2173,13 +2174,14 @@ runs `benchmarks/local_http_active_active_smoke.py` against real API-region URLs
 or a JSON region manifest and can commit
 `benchmarks/external_http_active_active_results.json` plus refreshed
 leaderboard/readiness artifacts when `commit_results=true`.
-Remote serverless telemetry refresh: `.github/workflows/serverless-observed-telemetry.yml`
-runs `benchmarks/serverless_observed_telemetry_benchmark.py` against deployed
-HTTP/HTTPS API node URLs, uploads `deploy/serverless/observed-telemetry.remote.json`,
-and can commit the remote telemetry plus refreshed leaderboard/readiness
-artifacts when `commit_results=true`. When that remote file exists,
-`benchmarks/scale_readiness_benchmark.py` prefers it over the checked-in
-loopback telemetry.
+Managed serverless evidence: `.github/workflows/managed-serverless-cloud-run.yml`
+uses GitHub OIDC Workload Identity Federation, verifies the Cloud Run service
+and revision through the provider control plane, runs at least 1000 requests
+after a scale-to-zero idle window, and reads request count, request latency,
+container startup latency, and instance count from Cloud Monitoring. Strict
+admission rejects manually supplied cold-start/scale-out values and extrapolated
+RPS. The older `serverless-observed-telemetry.yml` remains a diagnostic capacity
+probe and writes only `observed-telemetry.remote-candidate.json`.
 
 ### Current Evidence Status
 
@@ -2210,7 +2212,7 @@ public claim boundaries stable:
 | Production admission | Deployment-facing gate for a requested memory count and engine. It maps the requested 10M/50M/100M deployment to the required strict evidence profile and fails deploys until that artifact passes. | `benchmarks/production_admission_results.json`, `benchmarks/PRODUCTION_ADMISSION.md`, `wavemind production-admission --target-memories 100000000 --engine qdrant-sharded-service --fail-on-blocked` | Current 100M status is `plan_only`: both the measured result and its same-run eight-host capacity attestation are required. |
 | Cluster admission | Deployment-facing gate for non-loopback service-node rollouts. It requires strict load evidence, a ready preflight, and an exact node ID-to-URL match for the requested target. | `benchmarks/cluster_admission_results.json`, `benchmarks/CLUSTER_ADMISSION.md`, `wavemind cluster-admission --fail-on-blocked --write-artifacts` | The attested kind target is `admitted`. A different staging or production target remains blocked until it produces matching endpoint-specific evidence. |
 | Active-active admission | Deployment-facing gate for remote multi-region active-active rollout. It admits only when both the external HTTP SLO artifact and `benchmarks/remote_active_active_failure_drill_results.json` prove physical region outage and recovery; local/loopback runs remain development evidence. | `benchmarks/active_active_admission_results.json`, `benchmarks/ACTIVE_ACTIVE_ADMISSION.md`, `wavemind active-active-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: the remote SLO and physical failure/recovery artifacts are missing and remote region env is not configured. |
-| Serverless admission | Deployment-facing gate for managed/serverless rollout. It admits only when remote deployed API nodes produce strict telemetry; loopback telemetry remains development evidence. | `benchmarks/serverless_admission_results.json`, `benchmarks/SERVERLESS_ADMISSION.md`, `wavemind serverless-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: `deploy/serverless/observed-telemetry.remote.json` is still missing and `WAVEMIND_SERVERLESS_NODES` is not configured. |
+| Serverless admission | Deployment-facing gate for managed/serverless rollout. It admits only provider-observed telemetry with control-plane identity, Git/workflow provenance, measured scale-from-zero and scale-out, at least 1000 successful requests, and no RPS extrapolation. | `benchmarks/serverless_admission_results.json`, `benchmarks/SERVERLESS_ADMISSION.md`, `.github/workflows/managed-serverless-cloud-run.yml`, `wavemind serverless-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: the Cloud Run project/service and OIDC secrets are not configured and `deploy/serverless/observed-telemetry.remote.json` is still missing. |
 | External multimodal evidence runner | Reproducible path from a real external encoder/object-store manifest to the admission artifact. It validates external vectors, target queries, `s3://` asset URIs, object-store verification metadata, vector persistence, provenance, routing, precision, query latency, and encode p95 fields. | `wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json` | Runner-ready. No checked production artifact is included until a real external manifest is available. |
 | Multimodal admission | Deployment-facing gate for production multimodal memory claims. It admits only when the structured-memory contract passes and a real external encoder/object-store artifact satisfies modality count, payload/query volume, precision, cross-modal routing, vector persistence, provenance, p99 query latency, encode p95, and error-rate thresholds. | `benchmarks/multimodal_admission_results.json`, `benchmarks/MULTIMODAL_ADMISSION.md`, `wavemind multimodal-admission --allow-plan-only --write-artifacts` | Current status is `plan_only`, not admitted: deterministic structured-memory evidence passes, but `benchmarks/multimodal_external_encoder_results.json` is still missing. |
 | Memory OS canary | Staging proof that representative query-audit traffic can drive Memory OS prewarm, predictive prefetch, priority learning, TTL cleanup, and admission. | `benchmarks/memory_os_canary_results.json`, `benchmarks/MEMORY_OS_CANARY.md`, `wavemind memory-os-canary --target-memories 100000 --namespace-count 64 --deployment staging --write-artifacts` | This is not remote Kubernetes, real Redis, or 10M/100M production evidence; it only proves the worker/admission contract under seeded staging traffic. |
@@ -2225,7 +2227,7 @@ public claim boundaries stable:
 | pgvector streaming | Real PostgreSQL/pgvector streaming smoke and a strict four-service 10M result are checked in. The IVFFlat production profile reaches recall@10 `0.975`, p99 `87.66 ms`, exact 2.5M-per-shard balance, and zero misplaced rows. | `benchmarks/production_streaming_load_pgvector_smoke_results.json`, `benchmarks/production_streaming_load_pgvector_10m_plan.json`, `benchmarks/production_streaming_load_pgvector_10m_results.json`, [workflow run 29198856925](https://github.com/CaspianG/wavemind/actions/runs/29198856925) | The workflow-provisioned services share one ephemeral GitHub host, so this is candidate-index evidence rather than PostgreSQL HA evidence. |
 | HTTP cluster load | The checked artifact runs the mixed workload from inside Kubernetes against four pod-DNS API nodes: success/failover/delete suppression `1.00`, repaired replica `1`, query p99 `79.44 ms`, batch p99 `186.78 ms`, and external batch requests `24 -> 1`. Bulk lifecycle batch p99 is reported separately at `8351.04 ms`. | `benchmarks/http_cluster_load_results.json`, `.github/workflows/kubernetes-operator-smoke.yml`, `.github/workflows/external-http-cluster-load.yml` | This is ephemeral non-loopback Kubernetes evidence, not managed multi-region or million-scale service evidence. |
 | HTTP active-active regions | Local multi-process API-region evidence exists, and the external URL-based contract now has a loopback artifact. The external workflow can run the same namespace-delta contract against real regional API URLs. | `benchmarks/local_http_active_active_smoke_results.json`, `benchmarks/external_http_active_active_loopback_results.json`, `.github/workflows/external-http-active-active.yml` | Local/loopback active-active evidence is not a remote Kubernetes/serverless multi-region result until `benchmarks/external_http_active_active_results.json` is produced by a real run. |
-| Serverless telemetry | Loopback replica telemetry exists; remote telemetry has a dedicated manual workflow and artifact path. | `deploy/serverless/observed-telemetry.loopback.json`, `.github/workflows/serverless-observed-telemetry.yml` | Loopback evidence is not a hosted managed-serverless claim until `observed-telemetry.remote.json` is committed. |
+| Serverless telemetry | Loopback and URL-pool capacity probes exist; provider-observed Cloud Run evidence has a dedicated OIDC workflow and strict artifact path. | `deploy/serverless/observed-telemetry.loopback.json`, `.github/workflows/serverless-observed-telemetry.yml`, `.github/workflows/managed-serverless-cloud-run.yml`, `wavemind/cloud_run_evidence.py` | Loopback and extrapolated URL-pool results cannot unlock the claim. `observed-telemetry.remote.json` must come from provider control-plane and Monitoring metrics. |
 | Competitor adapters | Local Mem0/LangGraph/GraphRAG-style adapters run; optional Zep evidence is skipped until configured. | `benchmarks/memory_competitor_results.json` | Not a full independent Mem0/Zep/Letta leaderboard without live service credentials and public runner parity. |
 
 Visual summary generated from the checked-in JSON results:
