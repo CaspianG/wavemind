@@ -63,6 +63,26 @@ ENV_METADATA: dict[str, dict[str, str]] = {
         "example": "REDACTED_REMOTE_POSTGRES_PASSWORD",
         "description": "PostgreSQL password installed on each isolated remote production stack.",
     },
+    "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON": {
+        "kind": "remote-qdrant-scale-inventory-json",
+        "example": "See deploy/remote-scale/inventory.example.json",
+        "description": "Validated eight-host inventory for the strict remote 100M Qdrant benchmark.",
+    },
+    "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": {
+        "kind": "ssh-private-key",
+        "example": "REDACTED_OPENSSH_PRIVATE_KEY",
+        "description": "SSH private key used only by the remote Qdrant 100M workflow.",
+    },
+    "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": {
+        "kind": "ssh-known-hosts",
+        "example": "wm-qdrant-0.example.com ssh-ed25519 REDACTED",
+        "description": "Pinned SSH host keys for all remote Qdrant shard hosts.",
+    },
+    "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": {
+        "kind": "qdrant-api-secret",
+        "example": "REDACTED_REMOTE_QDRANT_API_KEY",
+        "description": "Qdrant API key installed on private shards and used through SSH tunnels.",
+    },
     "WAVEMIND_SERVERLESS_NODES": {
         "kind": "serverless-api-node-list",
         "example": "https://wm-serverless-a.example.com,https://wm-serverless-b.example.com",

@@ -36,10 +36,91 @@ def _write_100m_streaming_artifact(root: Path, *, engine: str) -> Path:
                                 "target_recall_at_k": 0.95,
                                 "p99_latency_ms": 88.0,
                                 "cost_status": "valid_slo",
+                                "shard_count": 8,
+                                "collection_names": [
+                                    f"wavemind_remote_100m_s{index:03d}"
+                                    for index in range(8)
+                                ],
+                                "parallel_shard_upsert": True,
+                                "routing": "point_id_minus_one_mod_shard_count",
+                                "index_ready_all": True,
+                                "index_readiness": [
+                                    {
+                                        "collection_name": f"wavemind_remote_100m_s{index:03d}",
+                                        "expected_vectors": 12_500_000,
+                                        "points_count": 12_500_000,
+                                        "indexed_vectors_count": 12_500_000,
+                                        "ready": True,
+                                    }
+                                    for index in range(8)
+                                ],
+                                "checkpoint_completed_batches": 10_000,
                             }
                         ],
                     }
                 ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    _write_100m_attestation(root)
+    return artifact
+
+
+def _write_100m_attestation(root: Path) -> Path:
+    artifact = root / "benchmarks" / "remote_qdrant_100m_attestation.json"
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    shards = [
+        {
+            "id": f"shard-{index}",
+            "ssh_host": f"wm-qdrant-{index}",
+            "region": ("eu", "us", "ap", "ca")[index % 4],
+            "zone": f"zone-{index}",
+            "provider": f"provider-{index % 4}",
+            "reachable": True,
+            "issues": [],
+            "machine_identity_sha256": f"{index + 1:064x}",
+            "cpu_count": 4,
+            "memory_gb": 32.0,
+            "disk_free_gb": 50.0,
+            "docker_version": "28.3.0",
+        }
+        for index in range(8)
+    ]
+    artifact.write_text(
+        json.dumps(
+            {
+                "schema": "wavemind.remote_qdrant_scale_attestation.v1",
+                "status": "pass",
+                "generated_at": "2026-07-10T00:00:00Z",
+                "source_ref": "a" * 40,
+                "execution_id": "test-run-1",
+                "workflow_run_id": None,
+                "workflow_run_url": None,
+                "deployment_id": "wavemind-100m-staging",
+                "environment": "staging",
+                "source": "independent-cloud-vms",
+                "target_vectors": 100_000_000,
+                "vector_dim": 128,
+                "thresholds": {
+                    "min_shards": 8,
+                    "min_regions": 3,
+                    "min_cpu": 2,
+                    "min_memory_gb": 16.0,
+                    "min_disk_free_gb_per_shard": 35.0,
+                    "required_total_disk_gb": 280.0,
+                    "unique_machine_identity_required": True,
+                },
+                "summary": {
+                    "shard_count": 8,
+                    "region_count": 4,
+                    "reachable_count": 8,
+                    "ready_count": 8,
+                    "unique_machine_count": 8,
+                    "total_disk_free_gb": 400.0,
+                },
+                "shards": shards,
             },
             indent=2,
         ),
@@ -82,10 +163,10 @@ def test_production_evidence_gate_tracks_strict_external_claims():
     assert by_id["hundred_million_remote_load"]["artifact"] == (
         "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
     )
-    assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
+    assert "remote-qdrant-100m-lab.yml" in by_id["hundred_million_remote_load"]["command"]
+    assert "runner_label=self-hosted-large" in by_id[
         "hundred_million_remote_load"
     ]["command"]
-    assert "--checkpoint-path" in by_id["hundred_million_remote_load"]["command"]
 
 
 def test_hundred_million_requirement_requires_sharded_qdrant_engine(tmp_path):
@@ -120,6 +201,68 @@ def test_hundred_million_requirement_accepts_matching_sharded_qdrant_artifact(tm
     assert row["status"] == "pass"
     assert row["issues"] == []
     assert "Qdrant sharded service streaming" in row["evidence"]
+    assert "remote shards 8" in row["evidence"]
+
+
+def test_hundred_million_requirement_rejects_benchmark_without_remote_attestation(tmp_path):
+    _write_100m_streaming_artifact(
+        tmp_path,
+        engine="Qdrant sharded service streaming",
+    )
+    (tmp_path / "benchmarks" / "remote_qdrant_100m_attestation.json").unlink()
+
+    payload = evaluate_production_evidence(tmp_path)
+    row = {item["id"]: item for item in payload["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert row["status"] == "action_required"
+    assert any("missing remote Qdrant 100M attestation" in issue for issue in row["issues"])
+
+
+def test_hundred_million_requirement_rejects_unbound_attestation(tmp_path):
+    _write_100m_streaming_artifact(
+        tmp_path,
+        engine="Qdrant sharded service streaming",
+    )
+    artifact = tmp_path / "benchmarks" / "remote_qdrant_100m_attestation.json"
+    attestation = json.loads(artifact.read_text(encoding="utf-8"))
+    attestation["execution_id"] = "different-run"
+    artifact.write_text(json.dumps(attestation, indent=2), encoding="utf-8")
+
+    payload = evaluate_production_evidence(tmp_path)
+    row = {item["id"]: item for item in payload["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert row["status"] == "fail"
+    assert "remote topology: execution_id must match benchmark execution_id" in row[
+        "issues"
+    ]
+
+
+def test_hundred_million_requirement_rejects_under_sharded_benchmark(tmp_path):
+    artifact = _write_100m_streaming_artifact(
+        tmp_path,
+        engine="Qdrant sharded service streaming",
+    )
+    payload = json.loads(artifact.read_text(encoding="utf-8"))
+    row = payload["results"][0]["results"][0]
+    row["shard_count"] = 4
+    row["collection_names"] = row["collection_names"][:4]
+    row["index_readiness"] = row["index_readiness"][:4]
+    artifact.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    evidence = evaluate_production_evidence(tmp_path)
+    requirement = {item["id"]: item for item in evidence["requirements"]}[
+        "hundred_million_remote_load"
+    ]
+
+    assert requirement["status"] == "fail"
+    assert "remote topology: benchmark shard_count must be >= 8" in requirement[
+        "issues"
+    ]
+    assert any("point counts" in issue for issue in requirement["issues"])
 
 
 def test_large_service_requirement_rejects_missing_provenance(tmp_path):

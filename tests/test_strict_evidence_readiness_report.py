@@ -58,7 +58,11 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     assert qdrant_100m["target_recall_at_k"] == 0.95
     assert qdrant_100m["target_p99_ms"] == 100.0
     assert qdrant_100m["locked_claim"] == "10M-100M service-backed production scale"
-    assert '-f size="100000000"' in qdrant_100m["safe_dispatch_command"]
+    assert "remote-qdrant-100m-lab.yml" in qdrant_100m["safe_dispatch_command"]
+    assert '-f action="evidence"' in qdrant_100m["safe_dispatch_command"]
+    assert '-f runner_label="self-hosted-large"' in qdrant_100m[
+        "safe_dispatch_command"
+    ]
     assert qdrant_100m["can_auto_run_now"] is False
     pgvector_10m = by_id["pgvector_10m_service"]
     assert pgvector_10m["can_auto_run_now"] is False

@@ -1,0 +1,19 @@
+{
+  "schema": "wavemind.remote_qdrant_scale_lab.v1",
+  "deployment_id": "wavemind-100m-staging",
+  "environment": "staging",
+  "source": "independent-cloud-vms",
+  "image": "qdrant/qdrant:v1.18.2",
+  "target_vectors": 100000000,
+  "vector_dim": 128,
+  "shards": [
+    {"id":"shard-0","ssh_host":"wm-qdrant-0","region":"eu-west","zone":"eu-west-a","provider":"provider-a"},
+    {"id":"shard-1","ssh_host":"wm-qdrant-1","region":"eu-west","zone":"eu-west-b","provider":"provider-a"},
+    {"id":"shard-2","ssh_host":"wm-qdrant-2","region":"us-east","zone":"us-east-a","provider":"provider-b"},
+    {"id":"shard-3","ssh_host":"wm-qdrant-3","region":"us-east","zone":"us-east-b","provider":"provider-b"},
+    {"id":"shard-4","ssh_host":"wm-qdrant-4","region":"ap-south","zone":"ap-south-a","provider":"provider-c"},
+    {"id":"shard-5","ssh_host":"wm-qdrant-5","region":"ap-south","zone":"ap-south-b","provider":"provider-c"},
+    {"id":"shard-6","ssh_host":"wm-qdrant-6","region":"eu-central","zone":"eu-central-a","provider":"provider-d"},
+    {"id":"shard-7","ssh_host":"wm-qdrant-7","region":"eu-central","zone":"eu-central-b","provider":"provider-d"}
+  ]
+}

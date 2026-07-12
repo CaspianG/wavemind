@@ -1,0 +1,203 @@
+name: remote-qdrant-100m-lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Attest, deploy, or execute the strict 100M benchmark."
+        required: true
+        default: attest
+        type: choice
+        options:
+          - attest
+          - deploy
+          - evidence
+      runner_label:
+        description: "Self-hosted runner label with enough runtime for the resumable 100M job."
+        required: true
+        default: self-hosted-large
+      resume_run_id:
+        description: "Optional earlier workflow run containing a remote-qdrant-100m-checkpoint artifact."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  remote-qdrant-100m:
+    runs-on: ${{ inputs.runner_label }}
+    timeout-minutes: 4320
+    env:
+      WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY: ${{ secrets.WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Require durable self-hosted runner
+        env:
+          RUNNER_LABEL: ${{ inputs.runner_label }}
+        run: |
+          case "$RUNNER_LABEL" in
+            self-hosted*) ;;
+            *) echo "runner_label must start with self-hosted" >&2; exit 1 ;;
+          esac
+
+      - name: Install benchmark dependencies
+        run: python -m pip install -e ".[bench]"
+
+      - name: Materialize inventory and pinned SSH trust
+        env:
+          INVENTORY_JSON: ${{ secrets.WAVEMIND_REMOTE_SCALE_INVENTORY_JSON }}
+          SSH_PRIVATE_KEY: ${{ secrets.WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$INVENTORY_JSON"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
+          install -d -m 700 "$HOME/.ssh" state/remote-scale state/production-runs
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$INVENTORY_JSON" > state/remote-scale/inventory.json
+          chmod 600 state/remote-scale/inventory.json
+
+      - name: Validate strict 100M deployment plan
+        run: |
+          python deploy/remote-scale/remote_scale_lab.py plan \
+            --inventory state/remote-scale/inventory.json \
+            --output state/remote-scale/plan.json
+
+      - name: Attest eight independent shard machines and capacity
+        run: |
+          python deploy/remote-scale/remote_scale_lab.py attest \
+            --inventory state/remote-scale/inventory.json \
+            --output state/remote-scale/remote_qdrant_100m_attestation.json
+
+      - name: Deploy loopback-only Qdrant shards
+        if: inputs.action == 'deploy' || inputs.action == 'evidence'
+        run: |
+          python deploy/remote-scale/remote_scale_lab.py deploy \
+            --inventory state/remote-scale/inventory.json \
+            --output state/remote-scale/deployment.json
+
+      - name: Restore resumable checkpoint
+        if: inputs.action == 'evidence' && inputs.resume_run_id != ''
+        env:
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+        run: |
+          gh run download "$RESUME_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name remote-qdrant-100m-checkpoint \
+            --dir state/production-runs/resume
+          cp state/production-runs/resume/qdrant-sharded-service-100000000.checkpoint.json \
+            state/production-runs/qdrant-sharded-service-100000000.checkpoint.json
+
+      - name: Open pinned SSH tunnels to private shards
+        if: inputs.action == 'evidence'
+        run: |
+          python deploy/remote-scale/remote_scale_lab.py tunnel \
+            --inventory state/remote-scale/inventory.json \
+            --output state/remote-scale/tunnels.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path("state/remote-scale/tunnels.json").read_text(encoding="utf-8"))
+          urls = payload.get("urls", [])
+          if payload.get("status") != "pass" or len(urls) < 8:
+              raise SystemExit("eight healthy SSH-tunneled Qdrant shards are required")
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as sink:
+              sink.write("WAVEMIND_QDRANT_URLS=" + ",".join(urls) + "\n")
+          PY
+
+      - name: Run resumable strict 100M sharded Qdrant evidence
+        if: inputs.action == 'evidence'
+        env:
+          WAVEMIND_QDRANT_API_KEY: ${{ secrets.WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY }}
+          WAVEMIND_QDRANT_COLLECTION_PREFIX: wavemind_remote_100m
+          WAVEMIND_QDRANT_UPSERT_BATCH_SIZE: "2000"
+          WAVEMIND_QDRANT_FANOUT_WORKERS: "8"
+          WAVEMIND_QDRANT_PREFER_GRPC: "0"
+          WAVEMIND_QDRANT_QUERY_TIMEOUT_SECONDS: "120"
+          WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS: "30"
+          WAVEMIND_QDRANT_WARMUP_QUERIES: "100"
+          WAVEMIND_QDRANT_VECTOR_ON_DISK: "1"
+          WAVEMIND_QDRANT_HNSW_ON_DISK: "0"
+          WAVEMIND_QDRANT_SCALAR_QUANTIZATION: "1"
+          WAVEMIND_QDRANT_SCALAR_QUANTILE: "0.99"
+          WAVEMIND_QDRANT_SCALAR_ALWAYS_RAM: "1"
+          WAVEMIND_QDRANT_QUANTIZATION_RESCORE: "0"
+          WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS: "7200"
+          WAVEMIND_QDRANT_REQUIRE_FULL_INDEX: "1"
+          WAVEMIND_QDRANT_DEFER_INDEXING: "1"
+          WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB: "1000000000"
+          WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB: "20000"
+          WAVEMIND_BENCHMARK_EVIDENCE_SOURCE: github-actions
+          WAVEMIND_BENCHMARK_ENVIRONMENT: remote-qdrant-eight-host
+        run: |
+          python benchmarks/production_streaming_load_benchmark.py \
+            --sizes 100000000 \
+            --dim 128 \
+            --queries 5000 \
+            --top-k 10 \
+            --seed 42 \
+            --noise 0.08 \
+            --batch-size 10000 \
+            --engines qdrant-sharded-service \
+            --target-recall 0.95 \
+            --target-p99-ms 100 \
+            --target-qps 500 \
+            --replicas 8 \
+            --autoscaling-max-replicas 128 \
+            --capacity-headroom 0.7 \
+            --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json \
+            --output state/remote-scale/production_streaming_load_qdrant_sharded_100m_results.json
+
+      - name: Validate evidence through strict ingestion
+        if: inputs.action == 'evidence'
+        run: |
+          python -m wavemind ingest-production-evidence \
+            --artifact-dir state/remote-scale \
+            --root "$GITHUB_WORKSPACE" \
+            --dry-run
+
+      - name: Close SSH tunnels
+        if: always() && inputs.action == 'evidence'
+        run: |
+          python deploy/remote-scale/remote_scale_lab.py close-tunnels \
+            --inventory state/remote-scale/inventory.json \
+            --output state/remote-scale/tunnel-cleanup.json
+
+      - name: Upload remote lab evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: remote-qdrant-100m-${{ github.run_id }}
+          path: |
+            state/remote-scale/plan.json
+            state/remote-scale/remote_qdrant_100m_attestation.json
+            state/remote-scale/deployment.json
+            state/remote-scale/tunnels.json
+            state/remote-scale/tunnel-cleanup.json
+            state/remote-scale/production_streaming_load_qdrant_sharded_100m_results.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload resumable checkpoint
+        if: always() && inputs.action == 'evidence'
+        uses: actions/upload-artifact@v7
+        with:
+          name: remote-qdrant-100m-checkpoint
+          path: state/production-runs/qdrant-sharded-service-100000000.checkpoint.json
+          if-no-files-found: warn
+          retention-days: 30

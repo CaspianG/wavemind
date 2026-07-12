@@ -27,6 +27,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
         "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
         "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON": json.dumps(_remote_scale_inventory()),
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": "test-scale-private-key",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": "test-scale-known-hosts",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": "test-scale-qdrant-key",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -61,6 +65,22 @@ def _remote_inventory():
     }
 
 
+def _remote_scale_inventory():
+    return {
+        "schema": "wavemind.remote_qdrant_scale_lab.v1",
+        "deployment_id": "wavemind-100m-staging",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "qdrant/qdrant:v1.18.2",
+        "target_vectors": 100_000_000,
+        "vector_dim": 128,
+        "shards": [
+            {"id": f"shard-{index}", "ssh_host": f"wm-qdrant-{index}", "region": ("eu", "us", "ap", "ca")[index % 4], "zone": f"zone-{index}", "provider": f"provider-{index % 4}"}
+            for index in range(8)
+        ],
+    }
+
+
 def test_production_evidence_env_contract_maps_missing_variables():
     root = Path(__file__).resolve().parents[1]
     payload = build_production_evidence_env_contract(root, env={})
@@ -81,6 +101,7 @@ def test_production_evidence_env_contract_maps_missing_variables():
     assert by_name["WAVEMIND_PGVECTOR_DSNS"]["kind"] == "postgres-dsn-list"
     assert by_name["WAVEMIND_REMOTE_LAB_INVENTORY_JSON"]["status"] == "missing"
     assert by_name["WAVEMIND_REMOTE_SSH_PRIVATE_KEY"]["required"] is True
+    assert by_name["WAVEMIND_REMOTE_SCALE_INVENTORY_JSON"]["status"] == "missing"
 
     assert all(check["pass"] for check in payload["checks"])
 
@@ -99,6 +120,8 @@ def test_production_evidence_env_contract_ready_does_not_serialize_secret_values
     assert "test-key" not in serialized
     assert "test-private-key" not in serialized
     assert "test-remote-api-key" not in serialized
+    assert "test-scale-private-key" not in serialized
+    assert "test-scale-qdrant-key" not in serialized
     assert "gho_" not in serialized
     assert "ghp_" not in serialized
 
