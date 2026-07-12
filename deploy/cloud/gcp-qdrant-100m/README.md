@@ -32,10 +32,35 @@ After first boot:
    isolated Qdrant API key in the secrets consumed by
    `.github/workflows/remote-qdrant-100m-lab.yml`.
 4. Register a separate durable self-hosted runner with enough disk/runtime for
-   the resumable multi-day job; do not run it on a production application host.
+   the resumable multi-day job; the module creates a dedicated 32 GB / 250 GB
+   controller by default. Do not run the benchmark on a production application
+   host.
 5. Run `action=attest`, then `action=evidence`. Preserve checkpoint artifacts
    so interrupted runs can resume without rebuilding completed vectors.
 
 The module never receives a private key or Qdrant API key, and no rule exposes
 port 6333 publicly. Set `deletion_protection=false` only in a reviewed teardown
 plan after all evidence artifacts have been downloaded and validated.
+
+## Register the controller
+
+Wait for `/var/lib/wavemind-runner-bootstrap-ready`, verify the controller host
+key, then generate a short-lived repository registration token from an
+authenticated maintainer machine:
+
+```sh
+gh api --method POST repos/CaspianG/wavemind/actions/runners/registration-token --jq .token |
+  ssh wavemind@RUNNER_IP 'read -r GITHUB_RUNNER_TOKEN; export GITHUB_RUNNER_TOKEN; sudo --preserve-env=GITHUB_RUNNER_TOKEN /usr/local/sbin/register-wavemind-runner'
+```
+
+The downloaded Linux x64 runner is pinned to `2.335.1` and verified against the
+official release SHA-256. Auto-update is disabled so a multi-day benchmark is
+not interrupted; update the pinned version/checksum before it ages out.
+
+Before destroying the controller, obtain a fresh removal token and run the
+matching command so GitHub is not left with a stale offline runner:
+
+```sh
+gh api --method POST repos/CaspianG/wavemind/actions/runners/remove-token --jq .token |
+  ssh wavemind@RUNNER_IP 'read -r GITHUB_RUNNER_REMOVE_TOKEN; export GITHUB_RUNNER_REMOVE_TOKEN; sudo --preserve-env=GITHUB_RUNNER_REMOVE_TOKEN /usr/local/sbin/remove-wavemind-runner'
+```

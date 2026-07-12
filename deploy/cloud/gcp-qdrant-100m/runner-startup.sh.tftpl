@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y ca-certificates curl git jq tar gzip
+
+if ! id -u '${runner_user}' >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash '${runner_user}'
+fi
+
+install -d -o '${runner_user}' -g '${runner_user}' -m 0750 /opt/actions-runner
+
+cat > /usr/local/sbin/register-wavemind-runner <<'RUNNER_REGISTER'
+#!/usr/bin/env bash
+set -euo pipefail
+
+token="$${GITHUB_RUNNER_TOKEN:-}"
+if [[ -z "$token" ]]; then
+  echo "GITHUB_RUNNER_TOKEN must contain a fresh repository registration token" >&2
+  exit 2
+fi
+
+runner_root=/opt/actions-runner
+archive="/tmp/actions-runner-linux-x64-${runner_version}.tar.gz"
+url="https://github.com/actions/runner/releases/download/v${runner_version}/actions-runner-linux-x64-${runner_version}.tar.gz"
+
+if [[ -f "$runner_root/.runner" ]]; then
+  echo "runner is already configured; remove it explicitly before replacement" >&2
+  exit 3
+fi
+
+curl --fail --location --silent --show-error "$url" --output "$archive"
+printf '%s  %s\n' '${runner_sha256}' "$archive" | sha256sum --check --strict
+tar --extract --gzip --file "$archive" --directory "$runner_root"
+"$runner_root/bin/installdependencies.sh"
+chown -R '${runner_user}:${runner_user}' "$runner_root"
+
+runuser -u '${runner_user}' -- "$runner_root/config.sh" \
+  --url 'https://github.com/${runner_repository}' \
+  --token "$token" \
+  --name "$(hostname)" \
+  --labels 'self-hosted-large,wavemind-100m' \
+  --work '_work' \
+  --unattended \
+  --replace \
+  --disableupdate
+
+"$runner_root/svc.sh" install '${runner_user}'
+"$runner_root/svc.sh" start
+unset token GITHUB_RUNNER_TOKEN
+rm -f "$archive"
+RUNNER_REGISTER
+
+cat > /usr/local/sbin/remove-wavemind-runner <<'RUNNER_REMOVE'
+#!/usr/bin/env bash
+set -euo pipefail
+
+token="$${GITHUB_RUNNER_REMOVE_TOKEN:-}"
+if [[ -z "$token" ]]; then
+  echo "GITHUB_RUNNER_REMOVE_TOKEN must contain a fresh removal token" >&2
+  exit 2
+fi
+
+runner_root=/opt/actions-runner
+if [[ ! -f "$runner_root/.runner" ]]; then
+  echo "runner is not configured"
+  exit 0
+fi
+
+"$runner_root/svc.sh" stop || true
+"$runner_root/svc.sh" uninstall || true
+runuser -u '${runner_user}' -- "$runner_root/config.sh" remove --token "$token"
+unset token GITHUB_RUNNER_REMOVE_TOKEN
+RUNNER_REMOVE
+
+chmod 0755 /usr/local/sbin/register-wavemind-runner /usr/local/sbin/remove-wavemind-runner
+cat > /etc/sudoers.d/wavemind-runner <<'SUDOERS'
+${runner_user} ALL=(root) NOPASSWD:SETENV: /usr/local/sbin/register-wavemind-runner, /usr/local/sbin/remove-wavemind-runner
+SUDOERS
+chmod 0440 /etc/sudoers.d/wavemind-runner
+visudo --check --file /etc/sudoers.d/wavemind-runner
+touch /var/lib/wavemind-runner-bootstrap-ready

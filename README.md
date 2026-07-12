@@ -2202,7 +2202,10 @@ It emits the inventory consumed by
 `.github/workflows/remote-qdrant-100m-lab.yml`; Qdrant remains loopback-only and
 the benchmark uses pinned SSH tunnels. Provisioning and attestation do not
 unlock the 100M claim, and applying the module creates substantial billable
-resources for a potentially multi-day run.
+resources for a potentially multi-day run. The module also creates a dedicated
+durable controller by default and installs checksum-pinned registration/removal
+scripts for the required `self-hosted-large` runner; short-lived GitHub tokens
+are supplied only after apply and never enter Terraform state.
 
 ### Current Evidence Status
 

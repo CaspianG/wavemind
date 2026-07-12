@@ -146,3 +146,72 @@ variable "deletion_protection" {
   type    = bool
   default = true
 }
+
+variable "create_runner" {
+  description = "Create a dedicated durable controller for the multi-day GitHub Actions run."
+  type        = bool
+  default     = true
+}
+
+variable "runner_region" {
+  type    = string
+  default = "us-central1"
+}
+
+variable "runner_zone" {
+  type    = string
+  default = "us-central1-a"
+
+  validation {
+    condition     = startswith(var.runner_zone, "${var.runner_region}-")
+    error_message = "runner_zone must belong to runner_region."
+  }
+}
+
+variable "runner_machine_type" {
+  description = "Controller capacity for vector generation, checkpointing, and eight SSH tunnels."
+  type        = string
+  default     = "n2-standard-8"
+}
+
+variable "runner_disk_size_gb" {
+  type    = number
+  default = 250
+
+  validation {
+    condition     = var.runner_disk_size_gb >= 100
+    error_message = "runner_disk_size_gb must be at least 100 GB."
+  }
+}
+
+variable "runner_repository" {
+  type    = string
+  default = "CaspianG/wavemind"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.runner_repository))
+    error_message = "runner_repository must use owner/repository format."
+  }
+}
+
+variable "runner_version" {
+  description = "Pinned GitHub Actions runner release. Update with runner_sha256."
+  type        = string
+  default     = "2.335.1"
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.runner_version))
+    error_message = "runner_version must be an exact semantic version."
+  }
+}
+
+variable "runner_sha256" {
+  description = "Official linux-x64 release digest for runner_version."
+  type        = string
+  default     = "4ef2f25285f0ae4477f1fe1e346db76d2f3ebf03824e2ddd1973a2819bf6c8cf"
+
+  validation {
+    condition     = can(regex("^[0-9a-f]{64}$", var.runner_sha256))
+    error_message = "runner_sha256 must be a lowercase SHA-256 digest."
+  }
+}

@@ -138,6 +138,9 @@ The strict eight-host 100M topology is reproducibly provisioned by
 `deploy/cloud/gcp-qdrant-100m`. It creates billable capacity but never exposes
 Qdrant publicly; the measured workflow still requires a durable self-hosted
 runner, pinned SSH tunnels, checkpointed execution, and strict artifact review.
+The module includes a dedicated controller and checksum-pinned runner lifecycle;
+registration and removal tokens are short-lived post-apply inputs and are never
+stored in Terraform state.
 Large-N streaming service runs can be executed through
 `.github/workflows/production-streaming-load.yml`, which uploads checkpoint and
 result artifacts and can commit refreshed benchmark/evidence reports after a
