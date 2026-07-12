@@ -78,6 +78,8 @@ def test_terraform_workflow_formats_initializes_and_validates():
     assert "terraform fmt -check -recursive" in workflow
     assert "terraform init -backend=false -input=false" in workflow
     assert "terraform validate -no-color" in workflow
+    assert "deploy/cloud/gcp-managed-serverless" in workflow
+    assert "deploy/cloud/gcp-remote-active-active" in workflow
     assert parsed["permissions"]["contents"] == "read"
 
 

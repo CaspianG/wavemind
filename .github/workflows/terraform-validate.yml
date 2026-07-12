@@ -18,11 +18,20 @@ permissions:
   contents: read
 
 jobs:
-  gcp-managed-serverless:
+  terraform:
+    name: terraform (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: managed-serverless
+            root: deploy/cloud/gcp-managed-serverless
+          - name: remote-active-active
+            root: deploy/cloud/gcp-remote-active-active
     defaults:
       run:
-        working-directory: deploy/cloud/gcp-managed-serverless
+        working-directory: ${{ matrix.root }}
 
     steps:
       - uses: actions/checkout@v5

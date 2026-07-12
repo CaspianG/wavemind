@@ -2188,6 +2188,14 @@ state services. The older `serverless-observed-telemetry.yml` remains a
 diagnostic capacity probe and writes only
 `observed-telemetry.remote-candidate.json`.
 
+Remote active-active evidence: `deploy/cloud/gcp-remote-active-active` contains
+the validated Terraform root for three independently hosted GCE machines in
+three regions. It emits the inventory consumed by
+`.github/workflows/remote-production-lab.yml`, which performs machine
+attestation, deployment, the external transport workload, and a physical API
+stop/recovery drill. Provisioning alone does not unlock the claim and applying
+the module creates billable resources.
+
 ### Current Evidence Status
 
 The compact leaderboard now carries an explicit evidence-status table:
