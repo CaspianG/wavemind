@@ -852,7 +852,13 @@ The chart deploys a StatefulSet, normal and headless Services, optional auth
 Secret wiring, a scheduled `cluster-repair` CronJob, and optional Memory OS
 CronJobs that call `/memory-os/plan` before `/memory-os/run`. It uses
 `ghcr.io/caspiang/wavemind` by default; set `image.repository` when deploying
-from a private registry. The Memory OS CronJob applies the returned plan before
+from a private registry. Production images include the PostgreSQL, Qdrant,
+Redis, FAISS, S3, and OpenTelemetry dependencies. The chart can inject
+`WAVEMIND_POSTGRES_DSN`, `WAVEMIND_QDRANT_URL`, Qdrant API credentials, and
+`WAVEMIND_REDIS_URL` from existing Kubernetes Secrets; selecting PostgreSQL or
+Qdrant without its backend Secret fails Helm rendering instead of silently
+starting with SQLite or NumPy. See `deploy/helm/wavemind/README.md` for the
+secret-backed command. The Memory OS CronJob applies the returned plan before
 mutation: planned distributed-lock requirements are ORed into `/memory-os/run`,
 and a Redis-required plan fails early if `runtime.redisUrl` is missing.
 
@@ -865,6 +871,15 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
 
 With `memoryOs.strictPlan=true`, the Memory OS job fails before mutation when
 the plan reports `architecture_required`.
+
+Remote three-region staging can be prepared through `deploy/remote`. Its
+inventory requires unique SSH hosts, public URLs, regions, and zones; live
+attestation hashes `/etc/machine-id` and rejects multiple aliases for the same
+physical host. The deployer starts PostgreSQL + Qdrant + Redis + WaveMind on
+each host, checks loopback and public health, and emits the manifest consumed by
+the external active-active benchmark. Deployment alone does not unlock the
+claim: strict admission still requires measured convergence and failure/recovery
+artifacts.
 
 For strict production admission, route the container through `wavemind serve`
 and require checked evidence before the API opens port `8000`:

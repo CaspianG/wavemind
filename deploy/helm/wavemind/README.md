@@ -12,6 +12,36 @@ The API container starts through `wavemind serve`, so the same production
 admission guard used by CI and release gates can block unproven large-scale
 deployments before the pod binds its HTTP port.
 
+For a production backend, create Secrets for PostgreSQL, Qdrant, and Redis.
+The chart reads connection details through `secretKeyRef`; credentials do not
+need to appear in Helm values or release history:
+
+```sh
+kubectl create secret generic wavemind-postgres \
+  --from-literal=dsn="$WAVEMIND_POSTGRES_DSN"
+kubectl create secret generic wavemind-qdrant \
+  --from-literal=url="$WAVEMIND_QDRANT_URL" \
+  --from-literal=api-key="$WAVEMIND_QDRANT_API_KEY"
+kubectl create secret generic wavemind-redis \
+  --from-literal=url="$WAVEMIND_REDIS_URL"
+
+helm upgrade --install wavemind ./deploy/helm/wavemind \
+  --set runtime.store=postgres \
+  --set runtime.index=qdrant \
+  --set backends.postgres.enabled=true \
+  --set backends.postgres.existingSecret=wavemind-postgres \
+  --set backends.qdrant.enabled=true \
+  --set backends.qdrant.existingSecret=wavemind-qdrant \
+  --set backends.qdrant.apiKeyEnabled=true \
+  --set backends.redis.enabled=true \
+  --set backends.redis.existingSecret=wavemind-redis
+```
+
+Helm rendering fails when `runtime.store=postgres` or
+`runtime.index=qdrant` is selected without the corresponding backend and
+Secret. This keeps a production release from silently falling back to local
+SQLite or NumPy state.
+
 ```sh
 helm install wavemind ./deploy/helm/wavemind
 ```

@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wavemind
+      POSTGRES_USER: wavemind
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wavemind -d wavemind"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  qdrant:
+    image: qdrant/qdrant:v1.18.2
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/6333'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    image: ${WAVEMIND_IMAGE:?WAVEMIND_IMAGE is required}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      WAVEMIND_STORE: postgres
+      WAVEMIND_POSTGRES_DSN: postgresql://wavemind:${POSTGRES_PASSWORD_URLENCODED}@postgres:5432/wavemind
+      WAVEMIND_INDEX: qdrant
+      WAVEMIND_QDRANT_URL: http://qdrant:6333
+      WAVEMIND_QDRANT_COLLECTION: wavemind-${WAVEMIND_REGION_ID}
+      WAVEMIND_REDIS_URL: redis://redis:6379/0
+      WAVEMIND_REDIS_PREFIX: wavemind:${WAVEMIND_REGION_ID}
+      WAVEMIND_API_KEYS: ${WAVEMIND_API_KEY:?WAVEMIND_API_KEY is required}
+      WAVEMIND_ADMIN_KEYS: ${WAVEMIND_API_KEY:?WAVEMIND_API_KEY is required}
+      WAVEMIND_ENCODER: hash
+      WAVEMIND_AUDIT_QUERIES: "1"
+      WAVEMIND_SHARED_STORE_REFRESH_SECONDS: "1"
+      WAVEMIND_API_SERIALIZE_OPERATIONS: "0"
+      WAVEMIND_LOG_LEVEL: INFO
+    ports:
+      - "0.0.0.0:${WAVEMIND_HTTP_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).read()"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres-data:
+  qdrant-data:
+  redis-data:

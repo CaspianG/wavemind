@@ -1,0 +1,36 @@
+{
+  "schema": "wavemind.remote_production_lab.v1",
+  "deployment_id": "wavemind-staging",
+  "environment": "staging",
+  "source": "ssh-remote-production-lab",
+  "image": "ghcr.io/caspiang/wavemind:2.4.30",
+  "regions": [
+    {
+      "id": "eu-west",
+      "ssh_host": "wavemind-eu-west",
+      "public_url": "https://wavemind-eu-west.example.com",
+      "region": "eu-west",
+      "zone": "eu-west-a",
+      "provider": "provider-a",
+      "http_port": 8000
+    },
+    {
+      "id": "us-east",
+      "ssh_host": "wavemind-us-east",
+      "public_url": "https://wavemind-us-east.example.com",
+      "region": "us-east",
+      "zone": "us-east-a",
+      "provider": "provider-b",
+      "http_port": 8000
+    },
+    {
+      "id": "ap-south",
+      "ssh_host": "wavemind-ap-south",
+      "public_url": "https://wavemind-ap-south.example.com",
+      "region": "ap-south",
+      "zone": "ap-south-a",
+      "provider": "provider-c",
+      "http_port": 8000
+    }
+  ]
+}

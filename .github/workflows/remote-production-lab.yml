@@ -1,0 +1,137 @@
+name: remote-production-lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Attest hosts, deploy the stack, or produce active-active evidence."
+        required: true
+        default: attest
+        type: choice
+        options:
+          - attest
+          - deploy
+          - evidence
+      min_cpu:
+        description: "Minimum logical CPUs per remote host."
+        required: true
+        default: "2"
+      min_memory_gb:
+        description: "Minimum RAM per remote host."
+        required: true
+        default: "2"
+      min_disk_free_gb:
+        description: "Minimum free disk per remote host."
+        required: true
+        default: "10"
+      namespace_count:
+        description: "Namespaces used by the active-active evidence run."
+        required: true
+        default: "16"
+
+permissions:
+  contents: read
+
+jobs:
+  remote-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      WAVEMIND_REMOTE_API_KEY: ${{ secrets.WAVEMIND_REMOTE_API_KEY }}
+      WAVEMIND_REMOTE_POSTGRES_PASSWORD: ${{ secrets.WAVEMIND_REMOTE_POSTGRES_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install production dependencies
+        run: python -m pip install -e ".[production]"
+
+      - name: Materialize inventory and pinned SSH trust
+        env:
+          INVENTORY_JSON: ${{ secrets.WAVEMIND_REMOTE_LAB_INVENTORY_JSON }}
+          SSH_PRIVATE_KEY: ${{ secrets.WAVEMIND_REMOTE_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.WAVEMIND_REMOTE_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$INVENTORY_JSON"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh" state/remote-lab
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$INVENTORY_JSON" > state/remote-lab/inventory.json
+          chmod 600 state/remote-lab/inventory.json
+
+      - name: Validate offline deployment plan
+        run: |
+          python deploy/remote/remote_lab.py plan \
+            --inventory state/remote-lab/inventory.json \
+            --output state/remote-lab/plan.json \
+            --manifest-output state/remote-lab/active-active-regions.json
+
+      - name: Attest independent remote machines
+        run: |
+          python deploy/remote/remote_lab.py attest \
+            --inventory state/remote-lab/inventory.json \
+            --output state/remote-lab/attestation.json \
+            --min-cpu "${{ inputs.min_cpu }}" \
+            --min-memory-gb "${{ inputs.min_memory_gb }}" \
+            --min-disk-free-gb "${{ inputs.min_disk_free_gb }}"
+
+      - name: Deploy production backend stack
+        if: inputs.action == 'deploy' || inputs.action == 'evidence'
+        run: |
+          test -n "$WAVEMIND_REMOTE_API_KEY"
+          test -n "$WAVEMIND_REMOTE_POSTGRES_PASSWORD"
+          python deploy/remote/remote_lab.py deploy \
+            --inventory state/remote-lab/inventory.json \
+            --output state/remote-lab/deployment.json \
+            --manifest-output state/remote-lab/active-active-regions.json \
+            --min-cpu "${{ inputs.min_cpu }}" \
+            --min-memory-gb "${{ inputs.min_memory_gb }}" \
+            --min-disk-free-gb "${{ inputs.min_disk_free_gb }}"
+
+      - name: Verify public remote endpoints
+        if: inputs.action == 'deploy' || inputs.action == 'evidence'
+        run: |
+          python deploy/remote/remote_lab.py probe \
+            --inventory state/remote-lab/inventory.json \
+            --output state/remote-lab/public-probe.json
+
+      - name: Run strict active-active transport workload
+        if: inputs.action == 'evidence'
+        run: |
+          python benchmarks/local_http_active_active_smoke.py \
+            --regions-file state/remote-lab/active-active-regions.json \
+            --namespace-count "${{ inputs.namespace_count }}" \
+            --api-key "$WAVEMIND_REMOTE_API_KEY" \
+            --fail-on-slo \
+            --output state/remote-lab/external_http_active_active_results.json
+
+      - name: Validate evidence through the ingestion gate
+        if: inputs.action == 'evidence'
+        run: |
+          python -m wavemind ingest-production-evidence \
+            --artifact-dir state/remote-lab \
+            --root "$GITHUB_WORKSPACE" \
+            --dry-run
+
+      - name: Upload remote evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-production-lab-${{ github.run_id }}
+          path: |
+            state/remote-lab/plan.json
+            state/remote-lab/attestation.json
+            state/remote-lab/deployment.json
+            state/remote-lab/public-probe.json
+            state/remote-lab/active-active-regions.json
+            state/remote-lab/external_http_active_active_results.json
+          if-no-files-found: warn
+          retention-days: 30

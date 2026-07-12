@@ -36,6 +36,8 @@ def test_helm_chart_core_files_exist_and_track_app_version():
     assert "strictPlan: true" in values
     assert "productionAdmission:" in values
     assert "evidenceRoot: /evidence" in values
+    assert "backends:" in values
+    assert "store: sqlite" in values
 
 
 def test_helm_chart_templates_define_cluster_network_and_state():
@@ -54,6 +56,11 @@ def test_helm_chart_templates_define_cluster_network_and_state():
     assert "- wavemind" in statefulset
     assert "- serve" in statefulset
     assert "WAVEMIND_RECOVERY_JOURNAL" in statefulset
+    assert "WAVEMIND_STORE" in statefulset
+    assert "WAVEMIND_POSTGRES_DSN" in statefulset
+    assert "WAVEMIND_QDRANT_URL" in statefulset
+    assert "WAVEMIND_QDRANT_API_KEY" in statefulset
+    assert "WAVEMIND_REDIS_URL" in statefulset
     assert "WAVEMIND_API_KEYS" in statefulset
     assert "WAVEMIND_ADMIN_KEYS" in statefulset
     assert "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION" in statefulset
@@ -156,6 +163,22 @@ def test_helm_chart_auth_secret_is_optional_but_supported():
     assert "--set auth.existingSecret=wavemind-auth" in readme
 
 
+def test_helm_chart_requires_secret_backed_production_backends():
+    values = read_chart_file("values.yaml")
+    statefulset = read_chart_file("templates/statefulset.yaml")
+    readme = read_chart_file("README.md")
+
+    assert "backends:" in values
+    assert "backends.postgres.existingSecret is required" in statefulset
+    assert "backends.qdrant.existingSecret is required" in statefulset
+    assert "backends.redis.existingSecret is required" in statefulset
+    assert "runtime.store=postgres" in readme
+    assert "runtime.index=qdrant" in readme
+    assert "wavemind-postgres" in readme
+    assert "wavemind-qdrant" in readme
+    assert "wavemind-redis" in readme
+
+
 def test_helm_chart_files_do_not_contain_tabs_and_document_official_registry():
     for path in CHART_ROOT.rglob("*"):
         if path.is_file():
@@ -178,3 +201,6 @@ def test_helm_chart_is_checked_by_github_actions():
     assert "grep -q \"kind: HorizontalPodAutoscaler\"" in workflow
     assert "--set memoryOs.enabled=true" in workflow
     assert "grep -q \"memory-os\"" in workflow
+    assert "INSTALL_PRODUCTION=true" in Path(".github/workflows/container.yml").read_text(encoding="utf-8")
+    assert "grep -q \"WAVEMIND_POSTGRES_DSN\"" in workflow
+    assert "grep -q \"WAVEMIND_QDRANT_URL\"" in workflow
