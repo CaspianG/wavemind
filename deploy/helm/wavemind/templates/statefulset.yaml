@@ -1,3 +1,18 @@
+{{- if and (eq .Values.runtime.store "postgres") (not .Values.backends.postgres.enabled) }}
+{{- fail "backends.postgres.enabled must be true when runtime.store=postgres" }}
+{{- end }}
+{{- if and (eq .Values.runtime.index "qdrant") (not .Values.backends.qdrant.enabled) }}
+{{- fail "backends.qdrant.enabled must be true when runtime.index=qdrant" }}
+{{- end }}
+{{- if and .Values.backends.postgres.enabled (not .Values.backends.postgres.existingSecret) }}
+{{- fail "backends.postgres.existingSecret is required when PostgreSQL is enabled" }}
+{{- end }}
+{{- if and .Values.backends.qdrant.enabled (not .Values.backends.qdrant.existingSecret) }}
+{{- fail "backends.qdrant.existingSecret is required when Qdrant is enabled" }}
+{{- end }}
+{{- if and .Values.backends.redis.enabled (not .Values.backends.redis.existingSecret) }}
+{{- fail "backends.redis.existingSecret is required when Redis is enabled" }}
+{{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -48,6 +63,8 @@ spec:
           env:
             - name: WAVEMIND_DB
               value: /data/wavemind.sqlite3
+            - name: WAVEMIND_STORE
+              value: {{ .Values.runtime.store | quote }}
             - name: WAVEMIND_ENCODER
               value: {{ .Values.runtime.encoder | quote }}
             - name: WAVEMIND_INDEX
@@ -64,7 +81,34 @@ spec:
               value: {{ .Values.runtime.cacheCapacity | quote }}
             - name: WAVEMIND_CACHE_TTL_SECONDS
               value: {{ .Values.runtime.cacheTtlSeconds | quote }}
-            {{- if .Values.runtime.redisUrl }}
+            {{- if .Values.backends.postgres.enabled }}
+            - name: WAVEMIND_POSTGRES_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backends.postgres.existingSecret | quote }}
+                  key: {{ .Values.backends.postgres.dsnKey | quote }}
+            {{- end }}
+            {{- if .Values.backends.qdrant.enabled }}
+            - name: WAVEMIND_QDRANT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backends.qdrant.existingSecret | quote }}
+                  key: {{ .Values.backends.qdrant.urlKey | quote }}
+            {{- if .Values.backends.qdrant.apiKeyEnabled }}
+            - name: WAVEMIND_QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backends.qdrant.existingSecret | quote }}
+                  key: {{ .Values.backends.qdrant.apiKeyKey | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.backends.redis.enabled }}
+            - name: WAVEMIND_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backends.redis.existingSecret | quote }}
+                  key: {{ .Values.backends.redis.urlKey | quote }}
+            {{- else if .Values.runtime.redisUrl }}
             - name: WAVEMIND_REDIS_URL
               value: {{ .Values.runtime.redisUrl | quote }}
             {{- end }}

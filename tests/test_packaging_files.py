@@ -209,6 +209,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include deploy/helm/wavemind *" in manifest
     assert "recursive-include deploy/operator *" in manifest
     assert "recursive-include deploy/serverless *" in manifest
+    assert "recursive-include deploy/remote *" in manifest
     assert "prune benchmarks/data" in manifest
     assert "docs/CHROMA_MIGRATION.md" in readme
     assert "docs/BENCHMARK_BRIEF.md" in readme

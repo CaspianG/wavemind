@@ -363,7 +363,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Build Docker image
-        run: docker build -t wavemind-ci .
+        run: docker build --build-arg INSTALL_PRODUCTION=true -t wavemind-ci .
 
       - name: Run Docker API smoke
         run: |
@@ -383,6 +383,70 @@ jobs:
             -d '{"query":"Docker API","namespace":"ci","top_k":1}' \
             | tee /tmp/wavemind-query.json
           grep -q "Docker API" /tmp/wavemind-query.json
+
+      - name: Run PostgreSQL Qdrant Redis production stack
+        env:
+          COMPOSE_PROJECT_NAME: wavemind-production-ci
+          POSTGRES_PASSWORD: ci-postgres-password
+          POSTGRES_PASSWORD_URLENCODED: ci-postgres-password
+          WAVEMIND_IMAGE: wavemind-ci
+          WAVEMIND_REGION_ID: ci-region
+          WAVEMIND_API_KEY: ci-api-key
+          WAVEMIND_HTTP_PORT: "18080"
+        run: |
+          docker compose -f deploy/remote/docker-compose.yml up -d --wait --remove-orphans
+          curl -fsS -X POST http://127.0.0.1:18080/remember \
+            -H "x-api-key: $WAVEMIND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"CI production memory uses PostgreSQL Qdrant and Redis","namespace":"production-ci"}' \
+            | tee /tmp/production-remember.json
+          curl -fsS -X POST http://127.0.0.1:18080/query \
+            -H "x-api-key: $WAVEMIND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"PostgreSQL Qdrant Redis","namespace":"production-ci","top_k":1}' \
+            | tee /tmp/production-query-before-restart.json
+          grep -q "CI production memory" /tmp/production-query-before-restart.json
+          docker restart wavemind-production-ci-api-1
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18080/healthz >/tmp/production-health.json; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS -X POST http://127.0.0.1:18080/query \
+            -H "x-api-key: $WAVEMIND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"PostgreSQL Qdrant Redis","namespace":"production-ci","top_k":1}' \
+            | tee /tmp/production-query-after-restart.json
+          grep -q "CI production memory" /tmp/production-query-after-restart.json
+          curl -fsS http://127.0.0.1:18080/index/health \
+            -H "x-api-key: $WAVEMIND_API_KEY" \
+            | tee /tmp/production-index-health.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          health = json.loads(Path("/tmp/production-index-health.json").read_text())
+          if health["backend"] != "qdrant-cosine" or not health["healthy"]:
+              raise SystemExit(f"Qdrant index is not healthy: {health}")
+          if health["expected_count"] != 1 or health["vector_count"] != 1:
+              raise SystemExit(f"Qdrant index count mismatch: {health}")
+          PY
+          test "$(docker exec wavemind-production-ci-postgres-1 psql -U wavemind -d wavemind -Atc 'select count(*) from wavemind_memories')" = "1"
+          test "$(docker exec wavemind-production-ci-redis-1 redis-cli ping)" = "PONG"
+          test "$(docker exec wavemind-production-ci-redis-1 redis-cli dbsize)" -ge "1"
+
+      - name: Stop production stack
+        if: always()
+        env:
+          COMPOSE_PROJECT_NAME: wavemind-production-ci
+          POSTGRES_PASSWORD: ci-postgres-password
+          POSTGRES_PASSWORD_URLENCODED: ci-postgres-password
+          WAVEMIND_IMAGE: wavemind-ci
+          WAVEMIND_REGION_ID: ci-region
+          WAVEMIND_API_KEY: ci-api-key
+          WAVEMIND_HTTP_PORT: "18080"
+        run: docker compose -f deploy/remote/docker-compose.yml down -v --remove-orphans
 
   helm:
     runs-on: ubuntu-latest
@@ -408,6 +472,15 @@ jobs:
             --set autoscaling.enabled=true \
             --set autoscaling.maxReplicas=12 \
             --set memoryOs.enabled=true \
+            --set runtime.store=postgres \
+            --set runtime.index=qdrant \
+            --set backends.postgres.enabled=true \
+            --set backends.postgres.existingSecret=wavemind-postgres \
+            --set backends.qdrant.enabled=true \
+            --set backends.qdrant.existingSecret=wavemind-qdrant \
+            --set backends.qdrant.apiKeyEnabled=true \
+            --set backends.redis.enabled=true \
+            --set backends.redis.existingSecret=wavemind-redis \
             --set productionAdmission.enabled=true \
             --set productionAdmission.targetMemories=100000000 \
             > /tmp/wavemind-chart.yaml
@@ -418,4 +491,8 @@ jobs:
           grep -q "memory-os" /tmp/wavemind-chart.yaml
           grep -q "/memory-os/plan" /tmp/wavemind-chart.yaml
           grep -q "WAVEMIND_REQUIRE_PRODUCTION_ADMISSION" /tmp/wavemind-chart.yaml
+          grep -q "WAVEMIND_POSTGRES_DSN" /tmp/wavemind-chart.yaml
+          grep -q "WAVEMIND_QDRANT_URL" /tmp/wavemind-chart.yaml
+          grep -q "WAVEMIND_QDRANT_API_KEY" /tmp/wavemind-chart.yaml
+          grep -q "WAVEMIND_REDIS_URL" /tmp/wavemind-chart.yaml
           grep -q "ghcr.io/caspiang/wavemind:ci" /tmp/wavemind-chart.yaml

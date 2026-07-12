@@ -356,16 +356,31 @@ policy matters more than raw vector-database scale:
   revisions, stale-leader rejection, stale-revision rejection, and
   minority-partition rejection. This is a deterministic Raft-like safety
   preflight for config changes, not a full networked Raft log.
-- A first Helm chart is available in `deploy/helm/wavemind`: StatefulSet,
+- The Helm chart in `deploy/helm/wavemind` provides a StatefulSet,
   normal/headless Services, optional auth Secret wiring, persistent per-pod
   storage, scheduled `cluster-repair` CronJob, and opt-in Memory OS CronJobs
   that call `/memory-os/plan` before `/memory-os/run`. The Memory OS CronJob
   now applies plan output before mutation: planned distributed-lock
   requirements are passed into `/memory-os/run`, and a Redis-required plan
-  exits early when `runtime.redisUrl` is not configured.
+  exits early when `runtime.redisUrl` is not configured. PostgreSQL, Qdrant,
+  Qdrant API credentials, and Redis can now be wired from existing Kubernetes
+  Secrets. Helm rendering fails when a production store/index is selected
+  without its required backend Secret.
 - GitHub Actions builds and publishes the official
   `ghcr.io/caspiang/wavemind` container image for `main` and version tags, and
-  `full-check` validates Helm lint/template rendering.
+  `full-check` validates Helm lint/template rendering. The published image now
+  installs the production dependency set, and CI runs a PostgreSQL + Qdrant +
+  Redis lifecycle with remember/query, API restart, persisted recall, backend
+  counts, and shared-cache verification.
+- `deploy/remote` now provides a three-region SSH production-lab path. Its
+  inventory rejects loopback/sample sources and duplicate hosts/URLs/regions/
+  zones; live attestation verifies Docker, CPU, RAM, disk, and unique hashed
+  machine identities before deployment. The workflow keeps pinned SSH host
+  keys, API/database secrets, deployment health, public endpoint probing, and
+  external active-active evidence separate. A one-host masquerade was tested
+  against a real remote machine and correctly rejected by duplicate machine
+  identity. Three independent remote hosts are still required before strict
+  active-active admission can pass.
 - `deploy/operator` and `wavemind operator-*` commands provide the first
   Kubernetes operator-style control plane: a `WaveMindCluster` CRD, RBAC,
   operator Deployment, sample custom resource, deterministic reconciliation

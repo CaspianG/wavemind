@@ -35,4 +35,5 @@ recursive-include deploy/helm/wavemind *
 recursive-include deploy/cluster *
 recursive-include deploy/operator *
 recursive-include deploy/serverless *
+recursive-include deploy/remote *
 prune benchmarks/data
