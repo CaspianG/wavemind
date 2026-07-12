@@ -16,6 +16,7 @@ from wavemind.remote_lab import (
     deploy_remote_inventory,
     load_remote_inventory,
     probe_public_regions,
+    run_remote_region_failure_drill,
 )
 
 
@@ -26,7 +27,10 @@ def _write(path: Path, payload: object) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Attest and deploy a real three-region WaveMind lab")
-    parser.add_argument("action", choices=["plan", "attest", "deploy", "probe"])
+    parser.add_argument(
+        "action",
+        choices=["plan", "attest", "deploy", "probe", "failure-drill"],
+    )
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest-output", type=Path)
@@ -34,6 +38,9 @@ def main() -> int:
     parser.add_argument("--min-cpu", type=int, default=2)
     parser.add_argument("--min-memory-gb", type=float, default=2.0)
     parser.add_argument("--min-disk-free-gb", type=float, default=10.0)
+    parser.add_argument("--failed-region")
+    parser.add_argument("--namespace-prefix", default="remote-region-failure")
+    parser.add_argument("--namespace-count", type=int, default=16)
     args = parser.parse_args()
 
     try:
@@ -85,10 +92,28 @@ def main() -> int:
                 api_key=os.environ.get("WAVEMIND_REMOTE_API_KEY", ""),
                 postgres_password=os.environ.get("WAVEMIND_REMOTE_POSTGRES_PASSWORD", ""),
             )
-        else:
+        elif args.action == "probe":
             payload = probe_public_regions(
                 inventory,
                 api_key=os.environ.get("WAVEMIND_REMOTE_API_KEY"),
+            )
+        else:
+            if not args.failed_region:
+                raise RemoteLabError("failure-drill requires --failed-region")
+            attestation = attest_remote_inventory(
+                inventory,
+                min_cpu=args.min_cpu,
+                min_memory_gb=args.min_memory_gb,
+                min_disk_free_gb=args.min_disk_free_gb,
+            )
+            if attestation["status"] != "pass":
+                raise RemoteLabError("remote attestation must pass before failure drill")
+            payload = run_remote_region_failure_drill(
+                inventory,
+                failed_region=args.failed_region,
+                api_key=os.environ.get("WAVEMIND_REMOTE_API_KEY", ""),
+                namespace_prefix=args.namespace_prefix,
+                namespace_count=args.namespace_count,
             )
         _write(args.output, payload)
         if args.manifest_output:

@@ -381,6 +381,12 @@ policy matters more than raw vector-database scale:
   against a real remote machine and correctly rejected by duplicate machine
   identity. Three independent remote hosts are still required before strict
   active-active admission can pass.
+- The remote workflow now executes a physical region failure drill after the
+  transport SLO run. It stops the selected API container over SSH, requires the
+  endpoint to become unavailable while two survivors continue writes and
+  tombstones, restarts the region, waits for health, and requires convergence,
+  delete suppression, and final no-op sync. Strict active-active evidence now
+  requires the transport artifact and this failure/recovery companion together.
 - `deploy/operator` and `wavemind operator-*` commands provide the first
   Kubernetes operator-style control plane: a `WaveMindCluster` CRD, RBAC,
   operator Deployment, sample custom resource, deterministic reconciliation

@@ -22,13 +22,11 @@ def _ready_env(tmp_path):
                 "node-d=https://wm-d.staging.internal",
             ]
         ),
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS": ",".join(
-            [
-                "us=https://wm-us.staging.internal",
-                "eu=https://wm-eu.staging.internal",
-                "ap=https://wm-ap.staging.internal",
-            ]
-        ),
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": json.dumps(_remote_inventory()),
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": "test-private-key",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
+        "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -39,6 +37,27 @@ def _ready_env(tmp_path):
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
+    }
+
+
+def _remote_inventory():
+    return {
+        "schema": "wavemind.remote_production_lab.v1",
+        "deployment_id": "wm-regions-2026-07",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "ghcr.io/caspiang/wavemind:sha-0123456789abcdef",
+        "regions": [
+            {
+                "id": f"region-{index}",
+                "ssh_host": f"wavemind-{index}",
+                "public_url": f"https://wm-{index}.staging.internal",
+                "region": f"region-{index}",
+                "zone": f"zone-{index}",
+                "provider": f"provider-{index}",
+            }
+            for index in range(3)
+        ],
     }
 
 
@@ -60,6 +79,8 @@ def test_production_evidence_env_contract_maps_missing_variables():
     assert "benchmarks/http_cluster_load_results.json" in cluster_nodes["artifacts"]
     assert "gh secret set WAVEMIND_CLUSTER_NODES" in cluster_nodes["github_secret_command"]
     assert by_name["WAVEMIND_PGVECTOR_DSNS"]["kind"] == "postgres-dsn-list"
+    assert by_name["WAVEMIND_REMOTE_LAB_INVENTORY_JSON"]["status"] == "missing"
+    assert by_name["WAVEMIND_REMOTE_SSH_PRIVATE_KEY"]["required"] is True
 
     assert all(check["pass"] for check in payload["checks"])
 
@@ -76,6 +97,8 @@ def test_production_evidence_env_contract_ready_does_not_serialize_secret_values
     assert "qdrant.staging.internal" not in serialized
     assert "wm-a.staging.internal" not in serialized
     assert "test-key" not in serialized
+    assert "test-private-key" not in serialized
+    assert "test-remote-api-key" not in serialized
     assert "gho_" not in serialized
     assert "ghp_" not in serialized
 

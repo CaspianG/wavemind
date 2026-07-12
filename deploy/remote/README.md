@@ -45,6 +45,22 @@ python benchmarks/local_http_active_active_smoke.py \
   --output state/external_http_active_active_results.json
 ```
 
+Then physically stop one region API, keep writing and synchronizing through the
+survivors, restart the failed region, and require final convergence:
+
+```sh
+python deploy/remote/remote_lab.py failure-drill \
+  --inventory state/remote-inventory.json \
+  --failed-region eu-west \
+  --namespace-count 16 \
+  --output state/remote-active-active-failure-drill.json
+```
+
+The drill uses `docker compose stop api` on the selected SSH host. It passes
+only when the endpoint is physically unavailable, at least two survivors remain
+healthy, outage writes and tombstones converge, the container restarts, health
+recovers, and the final sync is idempotent.
+
 Deployment and attestation are not active-active proof by themselves. Strict
 admission still requires measured convergence, delete suppression, idempotent
 final sync, latency, outage, and recovery artifacts.

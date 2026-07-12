@@ -38,6 +38,31 @@ ENV_METADATA: dict[str, dict[str, str]] = {
         "example": '{"environment":"staging","source":"kubernetes","deployment_id":"wm-regions-2026-07","regions":[{"id":"us","url":"https://wm-us.staging.example.com"},{"id":"eu","url":"https://wm-eu.staging.example.com"},{"id":"ap","url":"https://wm-ap.staging.example.com"}]}',
         "description": "JSON manifest alternative for remote active-active region evidence.",
     },
+    "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": {
+        "kind": "remote-lab-inventory-json",
+        "example": '{"schema":"wavemind.remote_production_lab.v1","deployment_id":"wm-regions-2026-07","environment":"staging","source":"independent-cloud-vms","image":"ghcr.io/caspiang/wavemind:sha-0123456789abcdef","regions":[{"id":"us-east","ssh_host":"wavemind-us","public_url":"https://wm-us.example.com","region":"us-east-1","zone":"us-east-1a","provider":"provider-a"},{"id":"eu-west","ssh_host":"wavemind-eu","public_url":"https://wm-eu.example.com","region":"eu-west-1","zone":"eu-west-1a","provider":"provider-b"},{"id":"ap-south","ssh_host":"wavemind-ap","public_url":"https://wm-ap.example.com","region":"ap-south-1","zone":"ap-south-1a","provider":"provider-c"}]}',
+        "description": "Validated inventory for three or more independently hosted remote WaveMind regions.",
+    },
+    "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": {
+        "kind": "ssh-private-key",
+        "example": "REDACTED_OPENSSH_PRIVATE_KEY",
+        "description": "SSH private key used only by the remote production lab workflow.",
+    },
+    "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": {
+        "kind": "ssh-known-hosts",
+        "example": "wm-us.example.com ssh-ed25519 REDACTED",
+        "description": "Pinned SSH host keys for every host in the remote production lab inventory.",
+    },
+    "WAVEMIND_REMOTE_API_KEY": {
+        "kind": "api-secret",
+        "example": "REDACTED_REMOTE_API_KEY",
+        "description": "Shared API key installed on and used to probe the remote WaveMind regions.",
+    },
+    "WAVEMIND_REMOTE_POSTGRES_PASSWORD": {
+        "kind": "postgres-password",
+        "example": "REDACTED_REMOTE_POSTGRES_PASSWORD",
+        "description": "PostgreSQL password installed on each isolated remote production stack.",
+    },
     "WAVEMIND_SERVERLESS_NODES": {
         "kind": "serverless-api-node-list",
         "example": "https://wm-serverless-a.example.com,https://wm-serverless-b.example.com",

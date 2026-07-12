@@ -100,6 +100,41 @@ def _active_active_payload(*, environment: str = "staging", evidence_source: str
     }
 
 
+def _active_active_failure_payload() -> dict:
+    return {
+        "schema": "wavemind.remote_region_failure_drill.v1",
+        "status": "pass",
+        "deployment_id": "staging-regions-20260708",
+        "environment": "staging",
+        "source": "ssh-remote-production-lab",
+        "failed_region": "eu",
+        "region_count": 3,
+        "namespace_prefix": "remote-region-failure",
+        "namespace_count": 16,
+        "physical_failure": {
+            "stop": {"ok": True, "error": None},
+            "start": {"ok": True, "error": None},
+            "failure_observed": True,
+            "health_recovered": True,
+        },
+        "phase_statuses": {"seed": "pass", "outage": "pass", "recover": "pass"},
+        "outage": {
+            "unavailable_regions": ["eu"],
+            "surviving_regions": ["us", "ap"],
+        },
+        "recover": {
+            "sync": {
+                "final_noop_records_imported": 0,
+                "final_noop_tombstones_imported": 0,
+            },
+            "verification": {
+                "convergence_rate": 1.0,
+                "delete_suppression_rate": 1.0,
+            },
+        },
+    }
+
+
 def _serverless_payload() -> dict:
     return {
         "source": "knative-staging-us-east-eu-west",
@@ -165,6 +200,29 @@ def test_ingest_rejects_renamed_loopback_active_active_artifact(tmp_path):
 
     with pytest.raises(ProductionEvidenceIngestError, match="loopback"):
         ingest_production_evidence_artifacts(artifact_dir, output_root=tmp_path / "checkout")
+
+
+def test_ingest_requires_and_copies_remote_active_active_failure_drill(tmp_path):
+    artifact_dir = tmp_path / "artifact"
+    output_root = tmp_path / "checkout"
+    _write_json(
+        artifact_dir / "external_http_active_active_results.json",
+        _active_active_payload(),
+    )
+    with pytest.raises(ProductionEvidenceIngestError, match="failure drill"):
+        ingest_production_evidence_artifacts(artifact_dir, output_root=output_root)
+
+    _write_json(
+        artifact_dir / "remote_active_active_failure_drill_results.json",
+        _active_active_failure_payload(),
+    )
+    manifest = ingest_production_evidence_artifacts(artifact_dir, output_root=output_root)
+    assert manifest["ingested_count"] == 1
+    assert manifest["ingested"][0]["requirement_id"] == "external_http_active_active"
+    assert manifest["ingested"][0]["dependencies"] == [
+        "remote_active_active_failure_drill_results.json"
+    ]
+    assert (output_root / "benchmarks/remote_active_active_failure_drill_results.json").exists()
 
 
 def test_ingest_accepts_remote_serverless_telemetry_artifact(tmp_path):

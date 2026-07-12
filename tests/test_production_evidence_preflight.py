@@ -20,13 +20,11 @@ def _ready_env(tmp_path):
                 "node-d=https://wm-d.staging.internal",
             ]
         ),
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS": ",".join(
-            [
-                "us=https://wm-us.staging.internal",
-                "eu=https://wm-eu.staging.internal",
-                "ap=https://wm-ap.staging.internal",
-            ]
-        ),
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": json.dumps(_remote_inventory()),
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": "test-private-key",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
+        "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -37,6 +35,27 @@ def _ready_env(tmp_path):
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
+    }
+
+
+def _remote_inventory():
+    return {
+        "schema": "wavemind.remote_production_lab.v1",
+        "deployment_id": "wm-regions-2026-07",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "ghcr.io/caspiang/wavemind:sha-0123456789abcdef",
+        "regions": [
+            {
+                "id": f"region-{index}",
+                "ssh_host": f"wavemind-{index}",
+                "public_url": f"https://wm-{index}.staging.internal",
+                "region": f"region-{index}",
+                "zone": f"zone-{index}",
+                "provider": f"provider-{index}",
+            }
+            for index in range(3)
+        ],
     }
 
 
@@ -58,6 +77,9 @@ def test_production_evidence_preflight_reports_missing_env():
     assert "provision_pgvector_shards=true" in by_id["pgvector_10m_service"]["command"]
     assert "pgvector_profile=ivfflat-fine-production" in by_id["pgvector_10m_service"]["command"]
     assert by_id["faiss_ivfpq_50m"]["missing_env"] == ["WAVEMIND_FAISS_IVFPQ_PATH"]
+    assert "WAVEMIND_REMOTE_LAB_INVENTORY_JSON" in by_id[
+        "external_http_active_active"
+    ]["missing_env"]
 
 
 def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_path):
@@ -70,6 +92,11 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
 
     by_id = {row["id"]: row for row in payload["checks"]}
     assert by_id["external_http_active_active"]["missing_env"] == []
+    assert by_id["external_http_active_active"]["ready"] is True
+    assert "3 independently described remote regions" in by_id[
+        "external_http_active_active"
+    ]["evidence"]
+    assert "remote-production-lab.yml" in by_id["external_http_active_active"]["command"]
     assert by_id["pgvector_10m_service"]["missing_env"] == []
     assert "four-service pgvector topology" in by_id["pgvector_10m_service"]["evidence"]
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
@@ -77,6 +104,25 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
         "hundred_million_remote_load"
     ]["command"]
+
+
+def test_remote_lab_preflight_rejects_unpinned_or_loopback_inventory(tmp_path):
+    env = _ready_env(tmp_path)
+    inventory = _remote_inventory()
+    inventory["image"] = "ghcr.io/caspiang/wavemind:latest"
+    inventory["regions"][0]["public_url"] = "http://127.0.0.1:8000"
+    env["WAVEMIND_REMOTE_LAB_INVENTORY_JSON"] = json.dumps(inventory)
+
+    payload = evaluate_production_evidence_preflight(
+        Path(__file__).resolve().parents[1],
+        env=env,
+    )
+    check = next(row for row in payload["checks"] if row["id"] == "external_http_active_active")
+
+    assert check["status"] == "action_required"
+    assert check["ready"] is False
+    assert any("invalid remote lab inventory" in issue for issue in check["issues"])
+    assert "latest" not in json.dumps(check)
 
 
 def test_production_evidence_preflight_markdown_keeps_claim_boundary(tmp_path):

@@ -14,6 +14,10 @@ def test_remote_lab_workflow_requires_attestation_and_secret_backed_deploy():
     assert "remote_lab.py deploy" in workflow
     assert "remote_lab.py probe" in workflow
     assert "local_http_active_active_smoke.py" in workflow
+    assert "remote_lab.py failure-drill" in workflow
+    assert "remote_active_active_failure_drill_results.json" in workflow
+    assert "Resolve physical failure target" in workflow
+    assert "steps.failure-target.outputs.failed_region" in workflow
     assert "ingest-production-evidence" in workflow
     assert "--dry-run" in workflow
     assert "actions/upload-artifact@v4" in workflow

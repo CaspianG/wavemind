@@ -7,6 +7,7 @@ import os
 import re
 import socket
 import subprocess
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -14,10 +15,14 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 from urllib.parse import quote, urlparse
 
+from .active_active_drill import run_active_active_drill
+from .sharding import HTTPNamespaceShardClient
+
 
 INVENTORY_SCHEMA = "wavemind.remote_production_lab.v1"
 ATTESTATION_SCHEMA = "wavemind.remote_production_attestation.v1"
 DEPLOYMENT_SCHEMA = "wavemind.remote_production_deployment.v1"
+FAILURE_DRILL_SCHEMA = "wavemind.remote_region_failure_drill.v1"
 _SAFE_ID = re.compile(r"^[a-z][a-z0-9-]{1,62}$")
 _SAFE_SSH_HOST = re.compile(r"^(?:[A-Za-z_][A-Za-z0-9_-]*@)?[A-Za-z0-9][A-Za-z0-9._-]*$")
 _PINNED_IMAGE = re.compile(
@@ -423,4 +428,243 @@ def probe_public_regions(
     return {
         "status": "pass" if all(row["healthy"] for row in rows) else "fail",
         "regions": rows,
+    }
+
+
+def run_remote_region_failure_drill(
+    inventory: RemoteLabInventory,
+    *,
+    failed_region: str,
+    api_key: str,
+    namespace_prefix: str = "remote-region-failure",
+    namespace_count: int = 16,
+    runner: SSHRunner = _default_ssh_runner,
+    client: Any | None = None,
+    recovery_timeout_seconds: float = 90.0,
+) -> dict[str, Any]:
+    by_id = {row.id: row for row in inventory.regions}
+    if failed_region not in by_id:
+        raise RemoteLabError(f"unknown failed region: {failed_region}")
+    if not api_key:
+        raise RemoteLabError("remote failure drill requires WAVEMIND_REMOTE_API_KEY")
+    if namespace_count <= 0:
+        raise RemoteLabError("namespace_count must be positive")
+
+    regions = {row.id: row.public_url for row in inventory.regions}
+    client = client or HTTPNamespaceShardClient(
+        api_key=api_key,
+        timeout=15.0,
+        trust_env=False,
+    )
+    victim = by_id[failed_region]
+    remote_dir = f"$HOME/.local/share/wavemind/{inventory.deployment_id}/{victim.id}"
+    common = {
+        "namespace_prefix": namespace_prefix,
+        "namespace_count": namespace_count,
+        "min_convergence_rate": 1.0,
+    }
+    seed = run_active_active_drill(regions, client=client, mode="seed", **common)
+    if seed.get("status") != "pass":
+        return {
+            "schema": FAILURE_DRILL_SCHEMA,
+            "status": "fail",
+            "deployment_id": inventory.deployment_id,
+            "environment": inventory.environment,
+            "source": inventory.source,
+            "failed_region": failed_region,
+            "region_count": len(regions),
+            "namespace_prefix": namespace_prefix,
+            "namespace_count": namespace_count,
+            "physical_failure": {
+                "stop": {"ok": False, "error": "not attempted because seed phase failed"},
+                "start": {"ok": False, "error": "not required because stop was not attempted"},
+                "failure_observed": False,
+                "health_recovered": False,
+            },
+            "phase_statuses": {"seed": "fail", "outage": "not_run", "recover": "not_run"},
+            "seed": seed,
+            "outage": {"status": "not_run"},
+            "recover": {"status": "not_run"},
+            "claim_boundary": (
+                "No region was stopped because the seed baseline failed. Physical outage "
+                "evidence requires a healthy converged baseline first."
+            ),
+        }
+    stop_result: dict[str, Any] = {"ok": False, "error": None}
+    start_result: dict[str, Any] = {"ok": False, "error": None}
+    outage: dict[str, Any] = {"status": "not_run"}
+    recovery: dict[str, Any] = {"status": "not_run"}
+    recovered_health = False
+
+    try:
+        stopped = runner(
+            victim.ssh_host,
+            f"set -eu; cd {remote_dir}; docker compose stop --timeout 30 api",
+        )
+        stop_result = {
+            "ok": stopped.returncode == 0,
+            "error": None if stopped.returncode == 0 else _redact_error(stopped.stderr or stopped.stdout),
+        }
+        if not stop_result["ok"]:
+            raise RemoteLabError("failed to stop victim API container")
+        outage = run_active_active_drill(
+            regions,
+            client=client,
+            mode="outage",
+            failed_region=failed_region,
+            **common,
+        )
+    except Exception as exc:
+        if outage.get("status") == "not_run":
+            outage = {"status": "fail", "error": _redact_error(str(exc))}
+    finally:
+        started = runner(
+            victim.ssh_host,
+            f"set -eu; cd {remote_dir}; docker compose up -d --wait api",
+        )
+        start_result = {
+            "ok": started.returncode == 0,
+            "error": None if started.returncode == 0 else _redact_error(started.stderr or started.stdout),
+        }
+
+    if start_result["ok"]:
+        deadline = time.monotonic() + max(1.0, recovery_timeout_seconds)
+        while time.monotonic() < deadline:
+            try:
+                client.stats(victim.public_url)
+                recovered_health = True
+                break
+            except Exception:
+                time.sleep(1.0)
+        if recovered_health:
+            recovery = run_active_active_drill(
+                regions,
+                client=client,
+                mode="recover",
+                failed_region=failed_region,
+                **common,
+            )
+
+    physical_failure_observed = (
+        failed_region in set(outage.get("unavailable_regions") or [])
+        and len(outage.get("surviving_regions") or []) >= 2
+    )
+    phase_statuses = {
+        "seed": seed.get("status"),
+        "outage": outage.get("status"),
+        "recover": recovery.get("status"),
+    }
+    status = (
+        "pass"
+        if all(value == "pass" for value in phase_statuses.values())
+        and stop_result["ok"]
+        and start_result["ok"]
+        and physical_failure_observed
+        and recovered_health
+        else "fail"
+    )
+    return {
+        "schema": FAILURE_DRILL_SCHEMA,
+        "status": status,
+        "deployment_id": inventory.deployment_id,
+        "environment": inventory.environment,
+        "source": inventory.source,
+        "failed_region": failed_region,
+        "region_count": len(regions),
+        "namespace_prefix": namespace_prefix,
+        "namespace_count": namespace_count,
+        "physical_failure": {
+            "stop": stop_result,
+            "start": start_result,
+            "failure_observed": physical_failure_observed,
+            "health_recovered": recovered_health,
+        },
+        "phase_statuses": phase_statuses,
+        "seed": seed,
+        "outage": outage,
+        "recover": recovery,
+        "claim_boundary": (
+            "Physical API-container region outage and recovery evidence. Production admission "
+            "also requires independent-host attestation and the external active-active SLO artifact."
+        ),
+    }
+
+
+def validate_remote_region_failure_drill(
+    payload: Mapping[str, Any] | None,
+    *,
+    min_regions: int = 3,
+    min_namespaces: int = 16,
+) -> dict[str, Any]:
+    issues: list[str] = []
+    if not payload:
+        return {
+            "status": "action_required",
+            "issues": ["missing remote region failure drill artifact"],
+            "evidence": "no remote physical region failure and recovery artifact",
+        }
+
+    def require(condition: bool, issue: str) -> None:
+        if not condition:
+            issues.append(issue)
+
+    physical = payload.get("physical_failure") or {}
+    phases = payload.get("phase_statuses") or {}
+    outage = payload.get("outage") or {}
+    recovery = payload.get("recover") or {}
+    recovery_sync = recovery.get("sync") or {}
+    recovery_verification = recovery.get("verification") or {}
+    environment = str(payload.get("environment") or "").lower()
+    source = str(payload.get("source") or "").lower()
+
+    require(payload.get("schema") == FAILURE_DRILL_SCHEMA, "invalid failure drill schema")
+    require(payload.get("status") == "pass", "failure drill status must be pass")
+    require(environment in {"staging", "production"}, "environment must be staging/production")
+    require(source not in {"", "local", "loopback", "fixture", "sample"}, "source must be remote")
+    require(int(payload.get("region_count") or 0) >= min_regions, f"region_count must be >= {min_regions}")
+    require(
+        int(payload.get("namespace_count") or 0) >= min_namespaces,
+        f"namespace_count must be >= {min_namespaces}",
+    )
+    require(bool(payload.get("failed_region")), "failed_region is required")
+    require(bool((physical.get("stop") or {}).get("ok")), "physical stop must pass")
+    require(bool((physical.get("start") or {}).get("ok")), "physical restart must pass")
+    require(bool(physical.get("failure_observed")), "failed endpoint must be observed unavailable")
+    require(bool(physical.get("health_recovered")), "failed endpoint health must recover")
+    for phase in ("seed", "outage", "recover"):
+        require(phases.get(phase) == "pass", f"{phase} phase must pass")
+    require(
+        payload.get("failed_region") in set(outage.get("unavailable_regions") or []),
+        "outage must identify the selected failed region",
+    )
+    require(len(outage.get("surviving_regions") or []) >= 2, "at least two survivors are required")
+    require(
+        float(recovery_verification.get("convergence_rate") or 0.0) >= 1.0,
+        "recovery convergence_rate must be 1.0",
+    )
+    require(
+        float(recovery_verification.get("delete_suppression_rate") or 0.0) >= 1.0,
+        "recovery delete_suppression_rate must be 1.0",
+    )
+    require(
+        int(recovery_sync.get("final_noop_records_imported", -1)) == 0,
+        "recovery final_noop_records_imported must be 0",
+    )
+    require(
+        int(recovery_sync.get("final_noop_tombstones_imported", -1)) == 0,
+        "recovery final_noop_tombstones_imported must be 0",
+    )
+    evidence = (
+        f"regions {payload.get('region_count')}, failed {payload.get('failed_region')}, "
+        f"namespaces {payload.get('namespace_count')}, physical stop/start "
+        f"{bool((physical.get('stop') or {}).get('ok'))}/{bool((physical.get('start') or {}).get('ok'))}, "
+        f"failure observed {bool(physical.get('failure_observed'))}, health recovered "
+        f"{bool(physical.get('health_recovered'))}, recovery convergence "
+        f"{recovery_verification.get('convergence_rate')}, delete suppression "
+        f"{recovery_verification.get('delete_suppression_rate')}"
+    )
+    return {
+        "status": "pass" if not issues else "fail",
+        "issues": issues,
+        "evidence": evidence if not issues else f"{evidence}; issues: {', '.join(issues)}",
     }
