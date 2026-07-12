@@ -1220,6 +1220,7 @@ def _managed_pgvector_preflight(root: Path) -> EvidencePreflightCheck:
     for token in (
         "provision_pgvector_shards",
         "pgvector_shard_count",
+        "ivfflat-fine-production",
         "github-hosted-isolated-service-processes",
         "pgvector/pgvector:pg16",
     ):
@@ -1234,6 +1235,7 @@ def _managed_pgvector_preflight(root: Path) -> EvidencePreflightCheck:
         "-f replicas=3 -f autoscaling_max_replicas=24 "
         "-f capacity_headroom=0.7 -f runner_label=ubuntu-latest "
         "-f provision_pgvector_shards=true -f pgvector_shard_count=4 "
+        "-f pgvector_profile=ivfflat-fine-production "
         "-f runner_storage_root=state -f commit_results=true"
     )
     return EvidencePreflightCheck(
@@ -1597,6 +1599,7 @@ def _dispatch_config(
         inputs.pop("pgvector_dsns", None)
         inputs["provision_pgvector_shards"] = True
         inputs["pgvector_shard_count"] = "4"
+        inputs["pgvector_profile"] = "ivfflat-fine-production"
         return {
             "workflow": "production-streaming-load.yml",
             "wave": "service-scale-10m",

@@ -85,6 +85,7 @@ def _load_artifacts(root: Path) -> dict[str, dict[str, Any]]:
         "qdrant_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_qdrant_10m_plan.json"),
         "pgvector_streaming_smoke": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_smoke_results.json"),
         "pgvector_streaming_10m_plan": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_10m_plan.json"),
+        "pgvector_streaming_10m": _load_optional_json(benchmark_dir / "production_streaming_load_pgvector_10m_results.json"),
         "postgres_pitr": _load_optional_json(benchmark_dir / "postgres_pitr_plan.json"),
         "scale": _load_json(benchmark_dir / "scale_readiness_results.json"),
         "redis_api_load": _load_optional_json(benchmark_dir / "redis_api_load_results.json"),
@@ -434,6 +435,14 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     pgvector_streaming_plan_row = (
         pgvector_streaming_plan_rows[0] if pgvector_streaming_plan_rows else {}
     )
+    pgvector_streaming_10m = _size_results(artifacts["pgvector_streaming_10m"]).get(
+        "WaveMind pgvector streaming",
+        {},
+    )
+    pgvector_shard_rows = list(pgvector_streaming_10m.get("shard_row_counts") or [])
+    pgvector_misplaced_rows = list(
+        pgvector_streaming_10m.get("shard_misplaced_rows") or []
+    )
     pgvector_streaming_pass = (
         bool(pgvector_streaming_smoke)
         and int(pgvector_streaming_smoke.get("vectors", 0)) >= 1000
@@ -450,6 +459,17 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         and "production_streaming_load_pgvector_10m_results.json"
         in str(pgvector_streaming_plan_row.get("command", ""))
         and str(pgvector_streaming_plan_row.get("claim_boundary", "")).startswith("preflight only")
+        and int(pgvector_streaming_10m.get("vectors", 0)) >= 10_000_000
+        and int(pgvector_streaming_10m.get("queries", 0)) >= 2000
+        and float(pgvector_streaming_10m.get("recall_at_k", 0.0)) >= 0.95
+        and float(pgvector_streaming_10m.get("p99_latency_ms", float("inf"))) < 100.0
+        and pgvector_streaming_10m.get("cost_status") == "valid_slo"
+        and int(pgvector_streaming_10m.get("shard_count", 0)) >= 4
+        and sum(int(value) for value in pgvector_shard_rows) >= 10_000_000
+        and pgvector_misplaced_rows == [0] * len(pgvector_misplaced_rows)
+        and len(pgvector_misplaced_rows) >= 4
+        and pgvector_streaming_10m.get("evidence_topology")
+        == "github-hosted-isolated-service-processes"
     )
     load_1m_candidates = [row for row in (load_1m_faiss, load_1m_qdrant) if row]
     load_1m = max(
@@ -1187,12 +1207,13 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         ),
         _criterion(
             criterion_id="pgvector_streaming_path",
-            title="pgvector streaming runner has service smoke and 10M preflight",
+            title="pgvector streaming runner passes strict four-service 10M SLO",
             status="pass" if pgvector_streaming_pass else "action_required",
             requirement=(
                 "PostgreSQL/pgvector must have a memory-bounded streaming runner "
-                "that inserts vectors in batches, passes a real service smoke, "
-                "and has a committed 10M plan-only contract with exact reproduction command."
+                "that inserts vectors in batches, passes a real service smoke, keeps an "
+                "exact reproduction plan, and passes the strict four-service 10M recall, "
+                "p99, cost, placement, and topology contract."
             ),
             evidence=(
                 f"smoke vectors {pgvector_streaming_smoke.get('vectors')}, "
@@ -1200,11 +1221,15 @@ def evaluate_production_readiness(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 f"smoke p99 {pgvector_streaming_smoke.get('p99_latency_ms')} ms, "
                 f"plan status {pgvector_streaming_plan_row.get('status')}, "
                 f"plan required local free {pgvector_streaming_plan_row.get('required_local_free_gb')} GB, "
-                f"blockers {', '.join(pgvector_streaming_plan_row.get('blockers', [])) or '-'}"
+                f"10M recall {pgvector_streaming_10m.get('recall_at_k')}, "
+                f"10M p99 {pgvector_streaming_10m.get('p99_latency_ms')} ms, "
+                f"shards {pgvector_streaming_10m.get('shard_count')}, "
+                f"misplaced {sum(int(value) for value in pgvector_misplaced_rows)}, "
+                f"topology {pgvector_streaming_10m.get('evidence_topology')}"
             ),
             next_step=(
-                "Run the embedded 10M pgvector command against a sized PostgreSQL "
-                "service and commit production_streaming_load_pgvector_10m_results.json."
+                "Keep the workflow-provisioned 10M pgvector profile green and repeat it "
+                "on independent PostgreSQL nodes before claiming PostgreSQL HA."
             ),
         ),
         _criterion(

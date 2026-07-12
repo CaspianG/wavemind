@@ -56,6 +56,7 @@ def test_production_evidence_preflight_reports_missing_env():
     assert by_id["pgvector_10m_service"]["status"] == "ready"
     assert by_id["pgvector_10m_service"]["missing_env"] == []
     assert "provision_pgvector_shards=true" in by_id["pgvector_10m_service"]["command"]
+    assert "pgvector_profile=ivfflat-fine-production" in by_id["pgvector_10m_service"]["command"]
     assert by_id["faiss_ivfpq_50m"]["missing_env"] == ["WAVEMIND_FAISS_IVFPQ_PATH"]
 
 

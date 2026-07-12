@@ -262,7 +262,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["pgvector_streaming_path"]["status"] == "pass"
     assert "memory-bounded streaming runner" in criteria["pgvector_streaming_path"]["requirement"]
     assert "smoke recall 1" in criteria["pgvector_streaming_path"]["evidence"]
-    assert "missing_env:WAVEMIND_PGVECTOR_DSN" in criteria["pgvector_streaming_path"]["evidence"]
+    assert "10M recall 0.975" in criteria["pgvector_streaming_path"]["evidence"]
+    assert "misplaced 0" in criteria["pgvector_streaming_path"]["evidence"]
     assert criteria["fifty_million_streaming_preflight"]["status"] == "pass"
     assert "not a completed benchmark" in criteria["fifty_million_streaming_preflight"]["requirement"]
     assert "50000000" not in criteria["fifty_million_streaming_preflight"]["evidence"]
@@ -334,7 +335,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
     assert "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate" in report
-    assert "pgvector streaming runner has service smoke and 10M preflight" in report
+    assert "pgvector streaming runner passes strict four-service 10M SLO" in report
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report
     assert "External HTTP service-node load evidence" in report

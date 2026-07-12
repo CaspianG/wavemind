@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_readiness.v1",
-  "generated_at": "2026-07-11T20:18:10Z",
+  "generated_at": "2026-07-12T17:28:36Z",
   "overall_status": "pass",
   "readiness_score": 1.0,
   "summary": {
@@ -17,7 +17,7 @@
       "title": "Checked-in benchmark artifacts are synchronized",
       "status": "pass",
       "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-      "evidence": "audit status pass, generated_at 2026-07-11T19:56:03Z",
+      "evidence": "audit status pass, generated_at 2026-07-12T17:10:28Z",
       "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
     },
     {
@@ -94,11 +94,11 @@
     },
     {
       "id": "pgvector_streaming_path",
-      "title": "pgvector streaming runner has service smoke and 10M preflight",
+      "title": "pgvector streaming runner passes strict four-service 10M SLO",
       "status": "pass",
-      "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, and has a committed 10M plan-only contract with exact reproduction command.",
-      "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.004 GB, blockers missing_env:WAVEMIND_PGVECTOR_DSNS, insufficient_local_disk_for_index_and_transient_batches",
-      "next_step": "Run the embedded 10M pgvector command against a sized PostgreSQL service and commit production_streaming_load_pgvector_10m_results.json."
+      "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, keeps an exact reproduction plan, and passes the strict four-service 10M recall, p99, cost, placement, and topology contract.",
+      "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.004 GB, 10M recall 0.975, 10M p99 87.65708599958089 ms, shards 4, misplaced 0, topology github-hosted-isolated-service-processes",
+      "next_step": "Keep the workflow-provisioned 10M pgvector profile green and repeat it on independent PostgreSQL nodes before claiming PostgreSQL HA."
     },
     {
       "id": "vectordbbench_custom_dataset",

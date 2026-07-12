@@ -1,13 +1,13 @@
 {
   "schema": "wavemind.production_evidence_dispatch.v1",
-  "generated_at": "2026-07-11T20:56:02Z",
+  "generated_at": "2026-07-12T16:59:06Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
     "total_jobs": 8,
-    "ready_to_dispatch_count": 1,
+    "ready_to_dispatch_count": 0,
     "blocked_by_preflight_count": 3,
-    "complete_count": 4,
+    "complete_count": 5,
     "commit_results_default": false,
     "runner_label": "self-hosted-large",
     "wave_counts": {
@@ -18,8 +18,7 @@
     },
     "status_counts": {
       "blocked_by_preflight": 3,
-      "complete": 4,
-      "ready_to_dispatch": 1
+      "complete": 5
     }
   },
   "launch_policy": {
@@ -280,10 +279,10 @@
     {
       "id": "pgvector_10m_service",
       "title": "10M pgvector service load",
-      "status": "ready_to_dispatch",
-      "dispatch_required": true,
-      "ready": true,
-      "strict_status": "action_required",
+      "status": "complete",
+      "dispatch_required": false,
+      "ready": false,
+      "strict_status": "pass",
       "preflight_status": "ready",
       "wave": "service-scale-10m",
       "workflow": "production-streaming-load.yml",
@@ -306,20 +305,19 @@
         "runner_storage_root": "state/production-runs",
         "commit_results": false,
         "provision_pgvector_shards": true,
-        "pgvector_shard_count": "4"
+        "pgvector_shard_count": "4",
+        "pgvector_profile": "ivfflat-fine-production"
       },
       "input_bindings": {},
       "required_env": [],
       "missing_env": [],
       "required_secrets": [],
-      "issues": [
-        "missing artifact"
-      ],
+      "issues": [],
       "warnings": [
         "Ephemeral isolated service processes prove the 10M candidate-index SLO, not PostgreSQL HA or independent-node failure tolerance."
       ],
-      "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\"",
-      "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\"",
+      "safe_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\" -f pgvector_profile=\"ivfflat-fine-production\"",
+      "publish_launch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\" -f pgvector_profile=\"ivfflat-fine-production\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
       "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
     },

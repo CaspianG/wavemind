@@ -1,16 +1,16 @@
 {
   "schema": "wavemind.scale_gap.v1",
-  "generated_at": "2026-07-11T19:56:10Z",
+  "generated_at": "2026-07-12T16:59:09Z",
   "overall_status": "action_required",
   "summary": {
     "total_profiles": 5,
-    "complete_count": 3,
+    "complete_count": 4,
     "ready_to_run_count": 0,
-    "blocked_by_env_count": 2,
+    "blocked_by_env_count": 1,
     "blocked_by_preflight_count": 0,
     "missing_plan_count": 0,
     "planned_target_memories": 180000000,
-    "proven_target_memories": 70000000,
+    "proven_target_memories": 80000000,
     "nearest_baseline_max_memories": 10000000,
     "claim_status": "claims_limited"
   },
@@ -96,17 +96,17 @@
     {
       "profile": "pgvector-10m",
       "requirement_id": "pgvector_10m_service",
-      "status": "blocked_by_env",
-      "strict_status": "action_required",
+      "status": "complete",
+      "strict_status": "pass",
       "plan_status": "action_required",
-      "preflight_status": "action_required",
+      "preflight_status": "ready",
       "engine": "pgvector-service",
       "target_memories": 10000000,
       "target_recall_at_k": 0.95,
       "target_p99_ms": 100.0,
       "target_qps": 100.0,
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-      "output_artifact_exists": false,
+      "output_artifact_exists": true,
       "checkpoint_path": "state/production-runs/pgvector-service-10000000.checkpoint.json",
       "missing_env": [
         "WAVEMIND_PGVECTOR_DSNS"
@@ -130,7 +130,7 @@
       },
       "baseline_progress_ratio": 0.005,
       "target_gap_multiplier": 200.0,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
+      "next_action": "Strict result artifact already passes."
     },
     {
       "profile": "faiss-ivfpq-50m",

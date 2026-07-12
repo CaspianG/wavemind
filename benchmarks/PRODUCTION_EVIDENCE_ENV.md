@@ -28,7 +28,7 @@ Environment contract only. It stores placeholders and secret names, never creden
 | `WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | `missing` | `api-node-manifest-json` | `external_http_cluster` | `external-http-cluster-load.yml` | `benchmarks/http_cluster_load_results.json` |
 | `WAVEMIND_FAISS_IVFPQ_FREE_GB` | `optional` | `disk-free-override-gb` |  |  |  |
 | `WAVEMIND_FAISS_IVFPQ_PATH` | `missing` | `filesystem-path` | `faiss_ivfpq_50m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` |
-| `WAVEMIND_PGVECTOR_DSNS` | `missing` | `postgres-dsn-list` | `pgvector_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
+| `WAVEMIND_PGVECTOR_DSNS` | `missing` | `postgres-dsn-list` | `pgvector_10m_service` |  | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
 | `WAVEMIND_QDRANT_API_KEY` | `recommended` | `qdrant-api-secret` | `qdrant_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
 | `WAVEMIND_QDRANT_API_KEYS` | `recommended` | `qdrant-api-secret-list` | `hundred_million_remote_load`, `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
 | `WAVEMIND_QDRANT_URL` | `missing` | `qdrant-url` | `qdrant_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
@@ -59,8 +59,8 @@ the repository.
 
 | check | status | detail |
 |---|---|---|
-| all_preflight_env_represented | `pass` | 9/9 preflight env vars represented |
-| all_dispatch_env_represented | `pass` | 12/12 dispatch env vars represented |
+| all_preflight_env_represented | `pass` | 8/8 preflight env vars represented |
+| all_dispatch_env_represented | `pass` | 11/11 dispatch env vars represented |
 | all_scale_gap_env_represented | `pass` | 4/4 scale-gap env vars represented |
 | no_missing_contract_rows | `pass` | none |
 | strict_requirements_joined | `pass` | 8 strict requirements |

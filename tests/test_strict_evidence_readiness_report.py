@@ -18,14 +18,13 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     assert payload["readiness_status"] == "action_required"
     assert payload["claim_status"] == "claims_limited"
     assert payload["summary"]["total_requirements"] == 8
-    assert payload["summary"]["action_required_count"] == 4
-    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["action_required_count"] == 3
+    assert payload["summary"]["complete_count"] == 5
     assert payload["summary"]["target_memories_total"] == 180_000_000
     assert payload["summary"]["check_counts"] == {"pass": 8}
-    assert payload["summary"]["can_auto_run_now_count"] == 1
+    assert payload["summary"]["can_auto_run_now_count"] == 0
     assert payload["summary"]["blocker_counts"]["missing_env"] == 3
-    assert payload["summary"]["blocker_counts"]["missing_artifact"] == 1
-    assert payload["summary"]["blocker_counts"]["complete"] == 4
+    assert payload["summary"]["blocker_counts"]["complete"] == 5
 
     by_id = {row["id"]: row for row in payload["requirements"]}
     assert set(by_id) == {
@@ -62,9 +61,9 @@ def test_strict_evidence_readiness_joins_all_strict_requirements():
     assert '-f size="100000000"' in qdrant_100m["safe_dispatch_command"]
     assert qdrant_100m["can_auto_run_now"] is False
     pgvector_10m = by_id["pgvector_10m_service"]
-    assert pgvector_10m["can_auto_run_now"] is True
+    assert pgvector_10m["can_auto_run_now"] is False
     assert pgvector_10m["missing_env"] == []
-    assert "Run the safe dispatch command now" in pgvector_10m["next_action"]
+    assert pgvector_10m["next_action"] == "Strict result artifact already passes."
 
     serialized = json.dumps(payload, sort_keys=True)
     assert "ghp_" not in serialized

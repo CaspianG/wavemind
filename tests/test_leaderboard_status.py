@@ -289,7 +289,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
         "wavemind.production_evidence_bundle.v1"
     )
     assert payload["production_evidence_bundle"]["claim_status"] == "claims_limited"
-    assert payload["production_evidence_bundle"]["next_action_count"] == 4
+    assert payload["production_evidence_bundle"]["next_action_count"] == 3
     assert payload["production_evidence_bundle"]["production_scale_run_contract"]["status"] == "available"
     assert payload["production_evidence_env"]["schema"] == (
         "wavemind.production_evidence_env_contract.v1"
@@ -343,7 +343,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["strict_evidence_readiness"]["summary"]["target_memories_total"] == (
         180_000_000
     )
-    assert payload["strict_evidence_readiness"]["summary"]["can_auto_run_now_count"] == 1
+    assert payload["strict_evidence_readiness"]["summary"]["can_auto_run_now_count"] == 0
     assert payload["strict_evidence_readiness"]["summary"]["check_counts"] == {"pass": 8}
     assert any(
         row["id"] == "hundred_million_remote_load"
@@ -460,7 +460,7 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     )
     assert {
         "external_http_active_active",
-        "pgvector_10m_service",
+        "serverless_remote_telemetry",
         "hundred_million_remote_load",
     }.issubset(
         {entry["id"] for entry in payload["strict_production_evidence"]["action_required"]}

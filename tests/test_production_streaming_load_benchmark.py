@@ -1131,10 +1131,9 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
     assert row["command_env"]["WAVEMIND_PGVECTOR_STORAGE_TYPE"] == "halfvec"
     assert row["command_env"]["WAVEMIND_PGVECTOR_INSERT_MODE"] == "copy"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "hnsw"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_M"] == "16"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] == "256"
-    assert row["command_env"]["WAVEMIND_PGVECTOR_EF_SEARCH"] == "800"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "ivfflat"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_LISTS"] == "5000"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_PROBES"] == "475"
     assert row["command_env"]["WAVEMIND_PGVECTOR_QUERY_ROUTING"] == "namespace"
     assert row["command_env"]["WAVEMIND_PGVECTOR_PREWARM_INDEX"] == "1"
     assert "--engines pgvector-service" in row["command"]

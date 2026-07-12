@@ -53,8 +53,8 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert payload["overall_status"] == "action_required"
     assert payload["summary"]["total_jobs"] == 8
     assert payload["summary"]["blocked_by_preflight_count"] == 3
-    assert payload["summary"]["ready_to_dispatch_count"] == 1
-    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["ready_to_dispatch_count"] == 0
+    assert payload["summary"]["complete_count"] == 5
 
     by_id = {row["id"]: row for row in payload["jobs"]}
     assert by_id["external_http_cluster"]["workflow"] == "external-http-cluster-load.yml"
@@ -72,7 +72,7 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert by_id["hundred_million_remote_load"]["workflow"] == (
         "production-streaming-load.yml"
     )
-    assert by_id["pgvector_10m_service"]["status"] == "ready_to_dispatch"
+    assert by_id["pgvector_10m_service"]["status"] == "complete"
 
 
 def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_values(
@@ -88,9 +88,9 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     serialized = json.dumps(payload, sort_keys=True)
 
     assert payload["overall_status"] == "ready_to_dispatch"
-    assert payload["summary"]["ready_to_dispatch_count"] == 4
+    assert payload["summary"]["ready_to_dispatch_count"] == 3
     assert payload["summary"]["blocked_by_preflight_count"] == 0
-    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["complete_count"] == 5
     assert payload["summary"]["runner_label"] == "self-hosted-xxl"
 
     assert "test-key" not in serialized
@@ -107,6 +107,7 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     pgvector = by_id["pgvector_10m_service"]
     assert pgvector["inputs"]["provision_pgvector_shards"] is True
     assert pgvector["inputs"]["pgvector_shard_count"] == "4"
+    assert pgvector["inputs"]["pgvector_profile"] == "ivfflat-fine-production"
     assert pgvector["inputs"]["runner_label"] == "ubuntu-latest"
     assert "pgvector_dsns" not in pgvector["input_bindings"]
     assert "pgvector_dsn" not in pgvector["inputs"]

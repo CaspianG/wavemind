@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-11T20:56:03Z",
+  "generated_at": "2026-07-12T16:59:07Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
     "strict_overall_status": "action_required",
-    "strict_pass_count": 4,
+    "strict_pass_count": 5,
     "strict_total_requirements": 8,
     "preflight_overall_status": "action_required",
     "preflight_ready_count": 1,
@@ -17,16 +17,16 @@
     "production_scale_run_contract_status": "available",
     "production_scale_run_profile_count": 5,
     "production_scale_run_target_memories_total": 180000000,
-    "next_action_count": 4
+    "next_action_count": 3
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-11T20:56:03Z",
+    "generated_at": "2026-07-12T16:59:07Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
-      "pass_count": 4,
-      "action_required_count": 4,
+      "pass_count": 5,
+      "action_required_count": 3,
       "fail_count": 0,
       "total_requirements": 8
     },
@@ -88,14 +88,12 @@
       {
         "id": "pgvector_10m_service",
         "title": "10M pgvector service load",
-        "status": "action_required",
-        "evidence": "no checked-in 10,000,000-vector result for WaveMind pgvector streaming",
+        "status": "pass",
+        "evidence": "WaveMind pgvector streaming: vectors 10000000, recall 0.975, p99 87.65708599958089 ms, cost valid_slo, source baa23bc9a969, run 29198856925",
         "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
         "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --seed 42 --noise 0.08 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
         "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
-        "issues": [
-          "missing artifact"
-        ]
+        "issues": []
       },
       {
         "id": "faiss_ivfpq_50m",
@@ -123,7 +121,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-11T20:56:03Z",
+    "generated_at": "2026-07-12T16:59:07Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -248,7 +246,7 @@
         "evidence": "workflow-provisioned four-service pgvector topology; external DSNs optional; plan benchmarks/production_streaming_load_pgvector_10m_plan.json",
         "required_env": [],
         "missing_env": [],
-        "command": "gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f runner_storage_root=state -f commit_results=true",
+        "command": "gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f pgvector_profile=ivfflat-fine-production -f runner_storage_root=state -f commit_results=true",
         "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
         "issues": [],
         "warnings": [
@@ -297,7 +295,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-11T20:18:10Z",
+    "generated_at": "2026-07-12T16:59:02Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -314,7 +312,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-11T19:56:03Z",
+        "evidence": "audit status pass, generated_at 2026-07-12T16:53:49Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -391,11 +389,11 @@
       },
       {
         "id": "pgvector_streaming_path",
-        "title": "pgvector streaming runner has service smoke and 10M preflight",
+        "title": "pgvector streaming runner passes strict four-service 10M SLO",
         "status": "pass",
-        "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, and has a committed 10M plan-only contract with exact reproduction command.",
-        "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.004 GB, blockers missing_env:WAVEMIND_PGVECTOR_DSNS, insufficient_local_disk_for_index_and_transient_batches",
-        "next_step": "Run the embedded 10M pgvector command against a sized PostgreSQL service and commit production_streaming_load_pgvector_10m_results.json."
+        "requirement": "PostgreSQL/pgvector must have a memory-bounded streaming runner that inserts vectors in batches, passes a real service smoke, keeps an exact reproduction plan, and passes the strict four-service 10M recall, p99, cost, placement, and topology contract.",
+        "evidence": "smoke vectors 1000, smoke recall 1, smoke p99 7.623799960128963 ms, plan status action_required, plan required local free 0.004 GB, 10M recall 0.975, 10M p99 87.65708599958089 ms, shards 4, misplaced 0, topology github-hosted-isolated-service-processes",
+        "next_step": "Keep the workflow-provisioned 10M pgvector profile green and repeat it on independent PostgreSQL nodes before claiming PostgreSQL HA."
       },
       {
         "id": "vectordbbench_custom_dataset",
@@ -649,13 +647,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-11T20:18:09Z",
-    "generated_at": "2026-07-11T19:56:03Z",
-    "source_ref": "d0e3446be447",
+    "checked_at": "2026-07-12T16:54:02Z",
+    "generated_at": "2026-07-12T16:53:49Z",
+    "source_ref": "baa23bc9a969",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "max_age_days": 8.0,
-    "age_days": 0.015353437488425926,
+    "age_days": 0.00015873438657407408,
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -798,23 +796,6 @@
       ],
       "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
       "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
-    },
-    {
-      "id": "pgvector_10m_service",
-      "title": "10M pgvector service load",
-      "strict_status": "action_required",
-      "preflight_status": "ready",
-      "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-      "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-      "issues": [
-        "missing artifact"
-      ],
-      "missing_env": [],
-      "warnings": [
-        "Ephemeral isolated service processes prove the 10M candidate-index SLO, not PostgreSQL HA or independent-node failure tolerance."
-      ],
-      "command": "gh workflow run production-streaming-load.yml --ref main -f engine=pgvector-service -f size=10000000 -f dim=128 -f queries=2000 -f top_k=10 -f batch_size=5000 -f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 -f replicas=3 -f autoscaling_max_replicas=24 -f capacity_headroom=0.7 -f runner_label=ubuntu-latest -f provision_pgvector_shards=true -f pgvector_shard_count=4 -f runner_storage_root=state -f commit_results=true",
-      "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO."
     },
     {
       "id": "hundred_million_remote_load",

@@ -56,8 +56,8 @@ def test_production_evidence_bundle_keeps_claims_limited_without_remote_artifact
     assert payload["summary"]["production_scale_run_contract_status"] == "available"
     assert payload["summary"]["production_scale_run_profile_count"] == 5
     assert payload["summary"]["production_scale_run_target_memories_total"] == 180_000_000
-    assert payload["summary"]["strict_pass_count"] == 4
-    assert payload["summary"]["next_action_count"] == 4
+    assert payload["summary"]["strict_pass_count"] == 5
+    assert payload["summary"]["next_action_count"] == 3
     assert payload["production_scale_run_contract"]["status"] == "available"
     assert payload["production_scale_run_contract"]["profile_count"] == 5
 
@@ -134,8 +134,8 @@ def test_scale_gap_manifest_tracks_large_n_proof_gaps():
     assert payload["overall_status"] == "action_required"
     assert payload["summary"]["total_profiles"] == 5
     assert payload["summary"]["planned_target_memories"] == 180_000_000
-    assert payload["summary"]["complete_count"] == 3
-    assert payload["summary"]["proven_target_memories"] == 70_000_000
+    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["proven_target_memories"] == 80_000_000
     assert payload["summary"]["nearest_baseline_max_memories"] >= 10_000_000
 
     gaps = {row["profile"]: row for row in payload["profile_gaps"]}
@@ -154,6 +154,8 @@ def test_scale_gap_manifest_tracks_large_n_proof_gaps():
     assert gaps["qdrant-10m"]["strict_status"] == "pass"
     assert gaps["qdrant-sharded-10m"]["status"] == "complete"
     assert gaps["qdrant-sharded-10m"]["strict_status"] == "pass"
+    assert gaps["pgvector-10m"]["status"] == "complete"
+    assert gaps["pgvector-10m"]["strict_status"] == "pass"
     assert gaps["qdrant-10m"]["nearest_baseline"]["vectors"] >= 1_000_000
     assert gaps["faiss-ivfpq-50m"]["nearest_baseline"]["vectors"] >= 10_000_000
     assert gaps["faiss-ivfpq-50m"]["target_gap_multiplier"] == 5.0
