@@ -247,11 +247,23 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "pgvector_dsns" in workflow
     assert "provision_pgvector_shards" in workflow
     assert "pgvector_shard_count" in workflow
+    assert "pgvector_profile" in workflow
+    assert "hnsw-fast" in workflow
+    assert "hnsw-quality" in workflow
+    assert "ivfflat-balanced" in workflow
+    assert "ivfflat-quality" in workflow
+    assert "hnsw-binary-quality" in workflow
     assert "Provision isolated pgvector services" in workflow
     assert '"pgvector/pgvector:pg16"' in workflow
     assert "--shm-size 1g" in workflow
     assert "WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS" in workflow
-    assert 'env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = "64"' in workflow
+    assert "pgvector_managed_profile" in workflow
+    assert 'env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])' in workflow
+    assert 'tuning["hnsw_ef_construction"]' in workflow
+    assert 'tuning["hnsw_ef_search"]' in workflow
+    assert 'tuning["ivfflat_lists"]' in workflow
+    assert 'tuning["ivfflat_probes"]' in workflow
+    assert 'tuning["binary_candidates"]' in workflow
     assert 'env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"' in workflow
     assert "max_wal_size=4GB" in workflow
     assert "pg_isready --username postgres --dbname wavemind" in workflow
@@ -271,6 +283,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "Validate production streaming result" in workflow
     assert "expected exactly one {expected_engine!r} row" in workflow
     assert "production benchmark skipped:" in workflow
+    assert "production benchmark missed its retrieval SLO" in workflow
     assert "production_streaming_load_qdrant_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in workflow

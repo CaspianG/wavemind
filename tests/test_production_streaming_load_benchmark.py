@@ -1168,6 +1168,35 @@ def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
         _pgvector_config_from_env()
 
 
+def test_pgvector_managed_profiles_scale_per_shard():
+    from benchmarks.production_streaming_load_benchmark import pgvector_managed_profile
+
+    one_million = pgvector_managed_profile(
+        "ivfflat-quality", vector_count=1_000_000, shard_count=4
+    )
+    assert one_million["per_shard_vectors"] == 250_000
+    assert one_million["ivfflat_lists"] == 500
+    assert one_million["ivfflat_probes"] == 125
+    assert one_million["index_type"] == "ivfflat"
+
+    ten_million = pgvector_managed_profile(
+        "ivfflat-quality", vector_count=10_000_000, shard_count=4
+    )
+    assert ten_million["per_shard_vectors"] == 2_500_000
+    assert ten_million["ivfflat_lists"] == 2500
+    assert ten_million["ivfflat_probes"] == 625
+
+    hnsw = pgvector_managed_profile(
+        "hnsw-quality", vector_count=10_000_000, shard_count=4
+    )
+    assert hnsw["index_type"] == "hnsw"
+    assert hnsw["hnsw_ef_construction"] == 96
+    assert hnsw["hnsw_ef_search"] == 1600
+
+    with pytest.raises(ValueError, match="unsupported pgvector profile"):
+        pgvector_managed_profile("unknown", vector_count=10, shard_count=1)
+
+
 def test_pgvector_copy_batch_replaces_only_uncheckpointed_range():
     from benchmarks.production_streaming_load_benchmark import _pgvector_insert_batch
 

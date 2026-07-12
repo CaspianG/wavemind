@@ -108,6 +108,17 @@ on:
         required: true
         default: "4"
         type: string
+      pgvector_profile:
+        description: "Curated pgvector ANN build/search profile."
+        required: true
+        default: "hnsw-fast"
+        type: choice
+        options:
+          - hnsw-fast
+          - hnsw-quality
+          - ivfflat-balanced
+          - ivfflat-quality
+          - hnsw-binary-quality
       faiss_ivfpq_path:
         description: "Optional persisted FAISS IVF-PQ path. Defaults under ./state."
         required: false
@@ -160,6 +171,7 @@ jobs:
       INPUT_PGVECTOR_DSNS: ${{ inputs.pgvector_dsns }}
       PROVISION_PGVECTOR_SHARDS: ${{ inputs.provision_pgvector_shards }}
       PGVECTOR_SHARD_COUNT: ${{ inputs.pgvector_shard_count }}
+      PGVECTOR_PROFILE: ${{ inputs.pgvector_profile }}
       INPUT_FAISS_IVFPQ_PATH: ${{ inputs.faiss_ivfpq_path }}
       RUNNER_STORAGE_ROOT: ${{ inputs.runner_storage_root }}
       SECRET_QDRANT_URL: ${{ secrets.WAVEMIND_QDRANT_URL }}
@@ -255,6 +267,8 @@ jobs:
           import sys
           from pathlib import Path
 
+          from benchmarks.production_streaming_load_benchmark import pgvector_managed_profile
+
           engine = os.environ["ENGINE"]
           size = int(os.environ["SIZE"])
           runner_storage_root = Path(os.environ.get("RUNNER_STORAGE_ROOT", "state") or "state")
@@ -322,17 +336,35 @@ jobs:
                   )
               env.setdefault("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
               env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
-              env.setdefault("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw")
-              env.setdefault("WAVEMIND_PGVECTOR_HNSW_M", "16")
-              env.setdefault("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION", "256")
-              env.setdefault("WAVEMIND_PGVECTOR_EF_SEARCH", "800")
+              configured_shards = max(
+                  1,
+                  len([part for part in re.split(r"[,\n]+", shard_values) if part.strip()])
+                  if shard_values
+                  else 1,
+              )
+              profile = os.environ["PGVECTOR_PROFILE"]
+              tuning = pgvector_managed_profile(
+                  profile,
+                  vector_count=size,
+                  shard_count=configured_shards,
+              )
+              env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])
+              env["WAVEMIND_PGVECTOR_HNSW_M"] = "16"
+              env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = str(
+                  tuning["hnsw_ef_construction"]
+              )
+              env["WAVEMIND_PGVECTOR_EF_SEARCH"] = str(tuning["hnsw_ef_search"])
+              env["WAVEMIND_PGVECTOR_IVFFLAT_LISTS"] = str(tuning["ivfflat_lists"])
+              env["WAVEMIND_PGVECTOR_IVFFLAT_PROBES"] = str(tuning["ivfflat_probes"])
+              env["WAVEMIND_PGVECTOR_BINARY_CANDIDATES"] = str(
+                  tuning["binary_candidates"]
+              )
               env.setdefault("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
               env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
               if managed_shards:
                   env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = os.environ[
                       "PGVECTOR_SHARD_COUNT"
                   ]
-                  env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = "64"
                   env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
@@ -416,6 +448,16 @@ jobs:
               raise SystemExit(f"production benchmark skipped: {row.get('reason', 'unknown reason')}")
           if int(row.get("vectors", 0) or 0) != expected_vectors:
               raise SystemExit("production benchmark did not ingest the requested vector count")
+          recall = float(row.get("recall_at_k", 0.0) or 0.0)
+          p99_ms = float(row.get("p99_latency_ms", float("inf")) or float("inf"))
+          target_recall = float(os.environ["TARGET_RECALL"])
+          target_p99_ms = float(os.environ["TARGET_P99_MS"])
+          if recall < target_recall or p99_ms >= target_p99_ms:
+              raise SystemExit(
+                  "production benchmark missed its retrieval SLO: "
+                  f"recall={recall:.4f} target_recall={target_recall:.4f}, "
+                  f"p99_ms={p99_ms:.3f} target_p99_ms={target_p99_ms:.3f}"
+              )
           if (
               os.environ["ENGINE"] == "pgvector-service"
               and os.environ.get("PROVISION_PGVECTOR_SHARDS", "").lower() == "true"

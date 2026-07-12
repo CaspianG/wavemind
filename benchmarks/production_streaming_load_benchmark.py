@@ -697,6 +697,58 @@ def _pgvector_config_from_env() -> dict[str, Any]:
     }
 
 
+def pgvector_managed_profile(
+    profile: str,
+    *,
+    vector_count: int,
+    shard_count: int,
+) -> dict[str, int | str]:
+    if int(vector_count) <= 0:
+        raise ValueError("vector_count must be positive")
+    if int(shard_count) <= 0:
+        raise ValueError("shard_count must be positive")
+    per_shard_vectors = (int(vector_count) + int(shard_count) - 1) // int(shard_count)
+    recommended_lists = max(
+        1,
+        round(per_shard_vectors**0.5)
+        if per_shard_vectors <= 1_000_000
+        else per_shard_vectors // 1000,
+    )
+    profiles = {
+        "hnsw-fast": ("hnsw", 64, 800, 0, 1000),
+        "hnsw-quality": ("hnsw", 96, 1600, 0, 1000),
+        "ivfflat-balanced": (
+            "ivfflat",
+            64,
+            800,
+            max(1, round(recommended_lists * 0.10)),
+            1000,
+        ),
+        "ivfflat-quality": (
+            "ivfflat",
+            64,
+            800,
+            max(1, round(recommended_lists * 0.25)),
+            1000,
+        ),
+        "hnsw-binary-quality": ("hnsw-binary", 64, 800, 0, 2000),
+    }
+    normalized = str(profile).strip().lower()
+    if normalized not in profiles:
+        raise ValueError(f"unsupported pgvector profile: {profile}")
+    index_type, ef_construction, ef_search, probes, candidates = profiles[normalized]
+    return {
+        "profile": normalized,
+        "index_type": index_type,
+        "hnsw_ef_construction": ef_construction,
+        "hnsw_ef_search": ef_search,
+        "ivfflat_lists": recommended_lists,
+        "ivfflat_probes": probes or 1,
+        "binary_candidates": candidates,
+        "per_shard_vectors": per_shard_vectors,
+    }
+
+
 def _pgvector_operator_class(storage_type: str) -> str:
     return "halfvec_cosine_ops" if storage_type == "halfvec" else "vector_cosine_ops"
 
