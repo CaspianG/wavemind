@@ -1,0 +1,17 @@
+project_id   = "wavemind-benchmarks"
+region       = "us-central1"
+service_name = "wavemind-managed-evidence"
+
+# Mirror a released WaveMind image into the repository created by this module,
+# then pin the digest here. Mutable tags are rejected.
+image = "us-central1-docker.pkg.dev/wavemind-benchmarks/wavemind/wavemind@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+secret_env = {
+  WAVEMIND_POSTGRES_DSN = "wavemind-postgres-dsn"
+  WAVEMIND_QDRANT_URL   = "wavemind-qdrant-url"
+  WAVEMIND_REDIS_URL    = "wavemind-redis-url"
+  WAVEMIND_API_KEYS     = "wavemind-api-keys"
+}
+
+max_instances      = 16
+deletion_protection = true

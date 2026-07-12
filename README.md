@@ -2180,8 +2180,13 @@ and revision through the provider control plane, runs at least 1000 requests
 after a scale-to-zero idle window, and reads request count, request latency,
 container startup latency, and instance count from Cloud Monitoring. Strict
 admission rejects manually supplied cold-start/scale-out values and extrapolated
-RPS. The older `serverless-observed-telemetry.yml` remains a diagnostic capacity
-probe and writes only `observed-telemetry.remote-candidate.json`.
+RPS. `deploy/cloud/gcp-managed-serverless` contains the validated Terraform root
+for the dedicated IAM-protected Cloud Run service, least-privilege GitHub OIDC
+identity, and external PostgreSQL/Qdrant/Redis secret bindings. Applying it
+creates billable Google Cloud resources and still requires isolated external
+state services. The older `serverless-observed-telemetry.yml` remains a
+diagnostic capacity probe and writes only
+`observed-telemetry.remote-candidate.json`.
 
 ### Current Evidence Status
 
