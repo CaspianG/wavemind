@@ -3128,7 +3128,6 @@ def _run_pgvector_sharded_streaming(
                 raise RuntimeError(
                     f"pgvector {index_type} index {index_name!r} is missing"
                 )
-            index_present.append(present)
             connection.execute(f"ANALYZE {table}")
             blocks = 0
             if config["prewarm_index"] and present:
