@@ -51,12 +51,13 @@ policy matters more than raw vector-database scale:
   reaches target recall@10 `1.000`, p99 `16.02 ms`, and records id routing plus
   parallel fanout merge in
   `benchmarks/production_streaming_load_qdrant_sharded_smoke_results.json`.
-  Checked 10M plan-only contracts live in
+  Checked 10M reproduction contracts live in
   `benchmarks/production_streaming_load_qdrant_10m_plan.json`,
   `benchmarks/production_streaming_load_qdrant_sharded_10m_plan.json`, and
-  `benchmarks/production_streaming_load_pgvector_10m_plan.json`. These plans are
-  not completed 10M benchmarks; they are exact service-backed run contracts,
-  including a horizontal Qdrant fanout path for multi-node storage. The same
+  `benchmarks/production_streaming_load_pgvector_10m_plan.json`. Real checked
+  10M results now exist for single-service Qdrant, four-service sharded Qdrant,
+  and four-service pgvector; the plans remain the exact reproduction contracts.
+  The same
   runner now emits resumable checkpoint paths for large-N ingest, and
   `benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json` is the
   checked preflight contract for a future 100M sharded Qdrant service run.
@@ -746,7 +747,10 @@ Enterprise requirements:
   runner for Qdrant/pgvector 10M service-backed profiles so large-N profiles do
   not hold the full vector corpus or exact-neighbor matrix in RAM. The
   pgvector 10M service-backed profile now has a checked preflight contract;
-  the next step is producing `production_streaming_load_pgvector_10m_results.json`
+  its runner now supports bounded `COPY` ingest, `halfvec` storage, exact remote
+  row-count validation, HNSW/IVFFlat index checks, explicit `pg_prewarm` evidence,
+  and constant-time complete resume.
+  The next step is producing `production_streaming_load_pgvector_10m_results.json`
   from a real sized PostgreSQL service.
 - Harden the new Postgres source-of-truth backend with migration tooling,
   service-mode benchmarks, and operational docs.

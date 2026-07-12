@@ -213,6 +213,11 @@ def build_strict_evidence_readiness_report(root: Path = PROJECT_ROOT) -> dict[st
                 or "Provision prerequisites, run the safe dispatch command, download the artifact, ingest it, then rerun strict validation."
             ),
         }
+        if row["can_auto_run_now"]:
+            row["next_action"] = (
+                "Run the safe dispatch command now, download the resulting artifact, "
+                "ingest it, then rerun strict validation."
+            )
         row["blocker_category"] = _blocker_category(row)
         rows.append(row)
 

@@ -35,8 +35,9 @@ def _ready_env(tmp_path):
             "http://qdrant-a.staging.internal:6333,"
             "http://qdrant-b.staging.internal:6333"
         ),
-        "WAVEMIND_PGVECTOR_DSN": (
-            "postgresql://user:pass@postgres.staging.internal:5432/wavemind"
+        "WAVEMIND_PGVECTOR_DSNS": ",".join(
+            f"postgresql://user:pass@postgres-{index}.staging.internal:5432/wavemind"
+            for index in range(4)
         ),
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
@@ -51,9 +52,9 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert payload["schema"] == "wavemind.production_evidence_dispatch.v1"
     assert payload["overall_status"] == "action_required"
     assert payload["summary"]["total_jobs"] == 8
-    assert payload["summary"]["blocked_by_preflight_count"] == 4
+    assert payload["summary"]["blocked_by_preflight_count"] == 3
     assert payload["summary"]["ready_to_dispatch_count"] == 0
-    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["complete_count"] == 5
 
     by_id = {row["id"]: row for row in payload["jobs"]}
     assert by_id["external_http_cluster"]["workflow"] == "external-http-cluster-load.yml"
@@ -71,6 +72,7 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert by_id["hundred_million_remote_load"]["workflow"] == (
         "production-streaming-load.yml"
     )
+    assert by_id["pgvector_10m_service"]["status"] == "complete"
 
 
 def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_values(
@@ -86,9 +88,9 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     serialized = json.dumps(payload, sort_keys=True)
 
     assert payload["overall_status"] == "ready_to_dispatch"
-    assert payload["summary"]["ready_to_dispatch_count"] == 4
+    assert payload["summary"]["ready_to_dispatch_count"] == 3
     assert payload["summary"]["blocked_by_preflight_count"] == 0
-    assert payload["summary"]["complete_count"] == 4
+    assert payload["summary"]["complete_count"] == 5
     assert payload["summary"]["runner_label"] == "self-hosted-xxl"
 
     assert "test-key" not in serialized
@@ -102,6 +104,13 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert qdrant["inputs"]["runner_storage_root"] == "state/production-runs"
     assert qdrant["input_bindings"]["qdrant_url"] == "$WAVEMIND_QDRANT_URL"
     assert qdrant["required_secrets"] == ["WAVEMIND_QDRANT_API_KEY"]
+    pgvector = by_id["pgvector_10m_service"]
+    assert pgvector["inputs"]["provision_pgvector_shards"] is True
+    assert pgvector["inputs"]["pgvector_shard_count"] == "4"
+    assert pgvector["inputs"]["pgvector_profile"] == "ivfflat-fine-production"
+    assert pgvector["inputs"]["runner_label"] == "ubuntu-latest"
+    assert "pgvector_dsns" not in pgvector["input_bindings"]
+    assert "pgvector_dsn" not in pgvector["inputs"]
 
 
 def test_dispatch_markdown_lists_launch_and_promotion_commands(tmp_path):

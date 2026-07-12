@@ -1157,6 +1157,16 @@ def _large_run_preflight(
         dsn = _env_value(env, "WAVEMIND_PGVECTOR_DSN")
         if not dsn.startswith(("postgresql://", "postgres://")):
             issues.append("WAVEMIND_PGVECTOR_DSN must start with postgresql:// or postgres://")
+    if "WAVEMIND_PGVECTOR_DSNS" in required_env and _env_value(env, "WAVEMIND_PGVECTOR_DSNS"):
+        dsns = _split_env_list(_env_value(env, "WAVEMIND_PGVECTOR_DSNS"))
+        if len(dsns) < 2:
+            issues.append("WAVEMIND_PGVECTOR_DSNS must contain at least two service DSNs")
+        for index, dsn in enumerate(dsns):
+            if not dsn.startswith(("postgresql://", "postgres://")):
+                issues.append(
+                    f"WAVEMIND_PGVECTOR_DSNS item {index + 1} must start with "
+                    "postgresql:// or postgres://"
+                )
     for name in ("WAVEMIND_FAISS_PATH", "WAVEMIND_FAISS_IVFPQ_PATH"):
         if name in required_env and _env_value(env, name):
             required_free = float(plan.get("required_local_free_gb", 0.0) or 0.0)
@@ -1195,6 +1205,57 @@ def _large_run_preflight(
         output_artifact=output_artifact,
         issues=tuple(dict.fromkeys(issues)),
         warnings=tuple(dict.fromkeys(warnings)),
+    )
+
+
+def _managed_pgvector_preflight(root: Path) -> EvidencePreflightCheck:
+    plan_artifact = "benchmarks/production_streaming_load_pgvector_10m_plan.json"
+    output_artifact = "benchmarks/production_streaming_load_pgvector_10m_results.json"
+    workflow_path = root / ".github" / "workflows" / "production-streaming-load.yml"
+    plan = _first_plan(root, plan_artifact)
+    workflow = workflow_path.read_text(encoding="utf-8") if workflow_path.exists() else ""
+    issues: list[str] = []
+    if not plan:
+        issues.append(f"missing plan artifact {plan_artifact}")
+    for token in (
+        "provision_pgvector_shards",
+        "pgvector_shard_count",
+        "ivfflat-fine-production",
+        "github-hosted-isolated-service-processes",
+        "pgvector/pgvector:pg16",
+    ):
+        if token not in workflow:
+            issues.append(f"production streaming workflow is missing {token}")
+
+    command = (
+        "gh workflow run production-streaming-load.yml --ref main "
+        "-f engine=pgvector-service -f size=10000000 -f dim=128 "
+        "-f queries=2000 -f top_k=10 -f batch_size=5000 "
+        "-f target_recall=0.95 -f target_p99_ms=100 -f target_qps=100 "
+        "-f replicas=3 -f autoscaling_max_replicas=24 "
+        "-f capacity_headroom=0.7 -f runner_label=ubuntu-latest "
+        "-f provision_pgvector_shards=true -f pgvector_shard_count=4 "
+        "-f pgvector_profile=ivfflat-fine-production "
+        "-f runner_storage_root=state -f commit_results=true"
+    )
+    return EvidencePreflightCheck(
+        id="pgvector_10m_service",
+        title="10M pgvector service load preflight",
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=(
+            "workflow-provisioned four-service pgvector topology; external DSNs optional; "
+            f"plan {plan_artifact}"
+        ),
+        required_env=(),
+        missing_env=(),
+        command=command,
+        output_artifact=output_artifact,
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=(
+            "Ephemeral isolated service processes prove the 10M candidate-index SLO, "
+            "not PostgreSQL HA or independent-node failure tolerance.",
+        ),
     )
 
 
@@ -1253,14 +1314,7 @@ def evaluate_production_evidence_preflight(
             output_artifact="benchmarks/production_streaming_load_qdrant_sharded_10m_results.json",
             env=environment,
         ),
-        _large_run_preflight(
-            root,
-            check_id="pgvector_10m_service",
-            title="10M pgvector service load preflight",
-            plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
-            output_artifact="benchmarks/production_streaming_load_pgvector_10m_results.json",
-            env=environment,
-        ),
+        _managed_pgvector_preflight(root),
         _large_run_preflight(
             root,
             check_id="faiss_ivfpq_50m",
@@ -1532,19 +1586,24 @@ def _dispatch_config(
             "required_secrets": ["WAVEMIND_QDRANT_API_KEYS"],
         }
     if requirement_id == "pgvector_10m_service":
+        inputs = _streaming_dispatch_inputs(
+            root,
+            plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
+            engine="pgvector-service",
+            size=10_000_000,
+            credential_input="pgvector_dsns",
+            credential_placeholder="$WAVEMIND_PGVECTOR_DSNS",
+            runner_label="ubuntu-latest",
+            commit_results=commit_results,
+        )
+        inputs.pop("pgvector_dsns", None)
+        inputs["provision_pgvector_shards"] = True
+        inputs["pgvector_shard_count"] = "4"
+        inputs["pgvector_profile"] = "ivfflat-fine-production"
         return {
             "workflow": "production-streaming-load.yml",
             "wave": "service-scale-10m",
-            "inputs": _streaming_dispatch_inputs(
-                root,
-                plan_artifact="benchmarks/production_streaming_load_pgvector_10m_plan.json",
-                engine="pgvector-service",
-                size=10_000_000,
-                credential_input="pgvector_dsn",
-                credential_placeholder="$WAVEMIND_PGVECTOR_DSN",
-                runner_label=runner_label,
-                commit_results=commit_results,
-            ),
+            "inputs": inputs,
             "required_secrets": [],
         }
     if requirement_id == "faiss_ivfpq_50m":

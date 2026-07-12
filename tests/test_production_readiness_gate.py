@@ -4,6 +4,12 @@ import sys
 from pathlib import Path
 
 
+def _artifact_workflow_url(filename: str) -> str:
+    root = Path(__file__).resolve().parents[1]
+    payload = json.loads((root / "benchmarks" / filename).read_text(encoding="utf-8"))
+    return str(payload["workflow_run_url"])
+
+
 def test_production_readiness_gate_reports_current_blockers():
     from benchmarks.production_readiness_gate import evaluate_production_readiness
 
@@ -54,7 +60,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "failure drill pass" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "Lease transitions 1" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "recovered API True" in criteria["operator_autoscaling_repair"]["evidence"]
-    assert "actions/runs/29057247023" in criteria["operator_autoscaling_repair"]["evidence"]
+    assert _artifact_workflow_url("kubernetes_operator_smoke_results.json") in criteria[
+        "operator_autoscaling_repair"
+    ]["evidence"]
     assert "PDB min available 3" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "topology constraints 2" in criteria["operator_autoscaling_repair"]["evidence"]
     assert "rolling pods replaced 4" in criteria["operator_autoscaling_repair"]["evidence"]
@@ -93,7 +101,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "non-loopback multi-zone Kubernetes lifecycle" in criteria["serverless_externalized_state"]["requirement"]
     assert "kind lifecycle pass 13/13" in criteria["serverless_externalized_state"]["evidence"]
     assert "coherence 3/3" in criteria["serverless_externalized_state"]["evidence"]
-    assert "actions/runs/29064934749" in criteria["serverless_externalized_state"]["evidence"]
+    assert _artifact_workflow_url(
+        "kubernetes_serverless_lifecycle_smoke_results.json"
+    ) in criteria["serverless_externalized_state"]["evidence"]
     assert criteria["memory_os_worker"]["status"] == "pass"
     assert "predictive prewarm" in criteria["memory_os_worker"]["requirement"]
     assert "usage-pattern priority boosts" in criteria["memory_os_worker"]["requirement"]
@@ -176,7 +186,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "outage delete suppression 1.0" in criteria["active_active_field_crdt"]["evidence"]
     assert "recovery convergence 1.0" in criteria["active_active_field_crdt"]["evidence"]
     assert "recovery delete suppression 1.0" in criteria["active_active_field_crdt"]["evidence"]
-    assert "actions/runs/29058433643" in criteria["active_active_field_crdt"]["evidence"]
+    assert _artifact_workflow_url(
+        "kubernetes_active_active_region_smoke_results.json"
+    ) in criteria["active_active_field_crdt"]["evidence"]
     assert "actor watermarks" in criteria["active_active_field_crdt"]["requirement"]
     assert "replication lag" in criteria["active_active_field_crdt"]["requirement"]
     assert "watermarks 3" in criteria["active_active_field_crdt"]["evidence"]
@@ -197,7 +209,9 @@ def test_production_readiness_gate_reports_current_blockers():
     assert "restore recall 1.0" in criteria["backup_restore_dr"]["evidence"]
     assert "Qdrant 24/24" in criteria["backup_restore_dr"]["evidence"]
     assert "replacement recall 1.0" in criteria["backup_restore_dr"]["evidence"]
-    assert "actions/runs/29064934749" in criteria["backup_restore_dr"]["evidence"]
+    assert _artifact_workflow_url(
+        "kubernetes_postgres_qdrant_dr_smoke_results.json"
+    ) in criteria["backup_restore_dr"]["evidence"]
     assert criteria["structured_multimodal_payloads"]["status"] == "pass"
     assert "3D assets" in criteria["structured_multimodal_payloads"]["requirement"]
     assert "shared cross-modal embedding space" in criteria["structured_multimodal_payloads"]["requirement"]
@@ -248,7 +262,8 @@ def test_production_readiness_gate_reports_current_blockers():
     assert criteria["pgvector_streaming_path"]["status"] == "pass"
     assert "memory-bounded streaming runner" in criteria["pgvector_streaming_path"]["requirement"]
     assert "smoke recall 1" in criteria["pgvector_streaming_path"]["evidence"]
-    assert "missing_env:WAVEMIND_PGVECTOR_DSN" in criteria["pgvector_streaming_path"]["evidence"]
+    assert "10M recall 0.975" in criteria["pgvector_streaming_path"]["evidence"]
+    assert "misplaced 0" in criteria["pgvector_streaming_path"]["evidence"]
     assert criteria["fifty_million_streaming_preflight"]["status"] == "pass"
     assert "not a completed benchmark" in criteria["fifty_million_streaming_preflight"]["requirement"]
     assert "50000000" not in criteria["fifty_million_streaming_preflight"]["evidence"]
@@ -320,7 +335,7 @@ def test_production_readiness_gate_cli_writes_json_and_markdown(tmp_path):
     assert "pgvector exact and iterative service profile passes 50k tuning gate" in report
     assert "50M streaming load run has a checked preflight contract" in report
     assert "Qdrant streaming 1M tuned profile passes recall, p99, and cost gate" in report
-    assert "pgvector streaming runner has service smoke and 10M preflight" in report
+    assert "pgvector streaming runner passes strict four-service 10M SLO" in report
     assert "Architecture advisor blocks unsafe large production growth" in report
     assert "Non-Gating External Evidence" in report
     assert "External HTTP service-node load evidence" in report

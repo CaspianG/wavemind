@@ -93,6 +93,37 @@ on:
         required: false
         default: ""
         type: string
+      pgvector_dsns:
+        description: "Optional comma/newline-separated pgvector shard DSNs. Falls back to secret WAVEMIND_PGVECTOR_DSNS."
+        required: false
+        default: ""
+        type: string
+      provision_pgvector_shards:
+        description: "Provision isolated pgvector services on the ephemeral runner when external DSNs are unavailable."
+        required: true
+        default: false
+        type: boolean
+      pgvector_shard_count:
+        description: "Number of ephemeral pgvector services to provision. Strict 10M evidence requires four."
+        required: true
+        default: "4"
+        type: string
+      pgvector_profile:
+        description: "Curated pgvector ANN build/search profile."
+        required: true
+        default: "hnsw-fast"
+        type: choice
+        options:
+          - hnsw-fast
+          - hnsw-quality
+          - ivfflat-balanced
+          - ivfflat-quality
+          - ivfflat-fine-balanced
+          - ivfflat-fine-production
+          - ivfflat-fine-slo
+          - ivfflat-fine-quality
+          - hnsw-binary-quality
+          - hnsw-binary-high-recall
       faiss_ivfpq_path:
         description: "Optional persisted FAISS IVF-PQ path. Defaults under ./state."
         required: false
@@ -117,6 +148,7 @@ permissions:
 jobs:
   production-streaming-load:
     runs-on: ${{ inputs.runner_label }}
+    timeout-minutes: 340
     env:
       ENGINE: ${{ inputs.engine }}
       SIZE: ${{ inputs.size }}
@@ -141,11 +173,16 @@ jobs:
       INPUT_QDRANT_URL: ${{ inputs.qdrant_url }}
       INPUT_QDRANT_URLS: ${{ inputs.qdrant_urls }}
       INPUT_PGVECTOR_DSN: ${{ inputs.pgvector_dsn }}
+      INPUT_PGVECTOR_DSNS: ${{ inputs.pgvector_dsns }}
+      PROVISION_PGVECTOR_SHARDS: ${{ inputs.provision_pgvector_shards }}
+      PGVECTOR_SHARD_COUNT: ${{ inputs.pgvector_shard_count }}
+      PGVECTOR_PROFILE: ${{ inputs.pgvector_profile }}
       INPUT_FAISS_IVFPQ_PATH: ${{ inputs.faiss_ivfpq_path }}
       RUNNER_STORAGE_ROOT: ${{ inputs.runner_storage_root }}
       SECRET_QDRANT_URL: ${{ secrets.WAVEMIND_QDRANT_URL }}
       SECRET_QDRANT_URLS: ${{ secrets.WAVEMIND_QDRANT_URLS }}
       SECRET_PGVECTOR_DSN: ${{ secrets.WAVEMIND_PGVECTOR_DSN }}
+      SECRET_PGVECTOR_DSNS: ${{ secrets.WAVEMIND_PGVECTOR_DSNS }}
       SECRET_QDRANT_API_KEY: ${{ secrets.WAVEMIND_QDRANT_API_KEY }}
       SECRET_QDRANT_API_KEYS: ${{ secrets.WAVEMIND_QDRANT_API_KEYS }}
 
@@ -160,6 +197,67 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,bench,indexes,postgres]"
+
+      - name: Provision isolated pgvector services
+        if: ${{ inputs.engine == 'pgvector-service' && inputs.provision_pgvector_shards }}
+        run: |
+          case "$PGVECTOR_SHARD_COUNT" in
+            ''|*[!0-9]*) echo "pgvector_shard_count must be an integer" >&2; exit 1 ;;
+          esac
+          if [ "$PGVECTOR_SHARD_COUNT" -lt 2 ] || [ "$PGVECTOR_SHARD_COUNT" -gt 8 ]; then
+            echo "pgvector_shard_count must be between 2 and 8" >&2
+            exit 1
+          fi
+
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet /opt/hostedtoolcache/CodeQL
+          docker network create wavemind-pgvector-ci
+          : > pgvector-managed-dsns.txt
+          maintenance_work_mem="1536MB"
+          parallel_maintenance_workers="1"
+          if [[ "$PGVECTOR_PROFILE" == ivfflat-fine-* ]]; then
+            maintenance_work_mem="7GB"
+            parallel_maintenance_workers="0"
+          fi
+          for shard in $(seq 0 $((PGVECTOR_SHARD_COUNT - 1))); do
+            name="wavemind-pgvector-${shard}"
+            port=$((55432 + shard))
+            docker run --detach \
+              --name "$name" \
+              --network wavemind-pgvector-ci \
+              --shm-size 2g \
+              --publish "127.0.0.1:${port}:5432" \
+              --env POSTGRES_PASSWORD=wavemind-ci \
+              --env POSTGRES_DB=wavemind \
+              "pgvector/pgvector:pg16" \
+              postgres \
+              -c shared_buffers=512MB \
+              -c maintenance_work_mem="$maintenance_work_mem" \
+              -c effective_cache_size=2GB \
+              -c max_parallel_maintenance_workers="$parallel_maintenance_workers" \
+              -c max_wal_size=4GB \
+              -c min_wal_size=1GB \
+              -c checkpoint_timeout=30min \
+              -c checkpoint_completion_target=0.9 \
+              -c wal_compression=on
+            printf 'postgresql://postgres:wavemind-ci@127.0.0.1:%s/wavemind\n' "$port" \
+              >> pgvector-managed-dsns.txt
+          done
+
+          for shard in $(seq 0 $((PGVECTOR_SHARD_COUNT - 1))); do
+            name="wavemind-pgvector-${shard}"
+            for attempt in $(seq 1 90); do
+              if docker exec "$name" pg_isready --username postgres --dbname wavemind; then
+                break
+              fi
+              if [ "$attempt" -eq 90 ]; then
+                docker logs "$name"
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+          df -h
+          free -h
 
       - name: Restore previous checkpoint artifact
         if: ${{ inputs.resume_run_id != '' }}
@@ -179,6 +277,8 @@ jobs:
           import subprocess
           import sys
           from pathlib import Path
+
+          from benchmarks.production_streaming_load_benchmark import pgvector_managed_profile
 
           engine = os.environ["ENGINE"]
           size = int(os.environ["SIZE"])
@@ -225,10 +325,60 @@ jobs:
               if api_keys:
                   env["WAVEMIND_QDRANT_API_KEYS"] = api_keys
           elif engine == "pgvector-service":
+              shard_values = pick("INPUT_PGVECTOR_DSNS", "SECRET_PGVECTOR_DSNS")
               value = pick("INPUT_PGVECTOR_DSN", "SECRET_PGVECTOR_DSN")
-              if not value:
-                  raise SystemExit("pgvector-service requires pgvector_dsn or secret WAVEMIND_PGVECTOR_DSN")
-              env["WAVEMIND_PGVECTOR_DSN"] = value
+              managed_shards = os.environ.get("PROVISION_PGVECTOR_SHARDS", "").lower() == "true"
+              if managed_shards:
+                  shard_values = Path("pgvector-managed-dsns.txt").read_text(
+                      encoding="utf-8"
+                  ).strip()
+                  env["WAVEMIND_PGVECTOR_EVIDENCE_TOPOLOGY"] = (
+                      "github-hosted-isolated-service-processes"
+                  )
+              if shard_values:
+                  env["WAVEMIND_PGVECTOR_DSNS"] = shard_values
+                  env.pop("WAVEMIND_PGVECTOR_DSN", None)
+              elif value:
+                  env["WAVEMIND_PGVECTOR_DSN"] = value
+              else:
+                  raise SystemExit(
+                      "pgvector-service requires pgvector_dsns/WAVEMIND_PGVECTOR_DSNS "
+                      "or pgvector_dsn/WAVEMIND_PGVECTOR_DSN"
+                  )
+              env.setdefault("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
+              env.setdefault("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
+              configured_shards = max(
+                  1,
+                  len([part for part in re.split(r"[,\n]+", shard_values) if part.strip()])
+                  if shard_values
+                  else 1,
+              )
+              profile = os.environ["PGVECTOR_PROFILE"]
+              tuning = pgvector_managed_profile(
+                  profile,
+                  vector_count=size,
+                  shard_count=configured_shards,
+              )
+              env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])
+              env["WAVEMIND_PGVECTOR_HNSW_M"] = "16"
+              env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = str(
+                  tuning["hnsw_ef_construction"]
+              )
+              env["WAVEMIND_PGVECTOR_EF_SEARCH"] = str(tuning["hnsw_ef_search"])
+              env["WAVEMIND_PGVECTOR_IVFFLAT_LISTS"] = str(tuning["ivfflat_lists"])
+              env["WAVEMIND_PGVECTOR_IVFFLAT_PROBES"] = str(tuning["ivfflat_probes"])
+              env["WAVEMIND_PGVECTOR_BINARY_CANDIDATES"] = str(
+                  tuning["binary_candidates"]
+              )
+              env.setdefault("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
+              env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
+              if managed_shards:
+                  env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = (
+                      "1"
+                      if profile.startswith("ivfflat-fine-")
+                      else os.environ["PGVECTOR_SHARD_COUNT"]
+                  )
+                  env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
               env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or str(runner_storage_root / f"faiss-ivfpq-{size}.faiss")
@@ -311,6 +461,56 @@ jobs:
               raise SystemExit(f"production benchmark skipped: {row.get('reason', 'unknown reason')}")
           if int(row.get("vectors", 0) or 0) != expected_vectors:
               raise SystemExit("production benchmark did not ingest the requested vector count")
+          recall = float(row.get("recall_at_k", 0.0) or 0.0)
+          p99_ms = float(row.get("p99_latency_ms", float("inf")) or float("inf"))
+          target_recall = float(os.environ["TARGET_RECALL"])
+          target_p99_ms = float(os.environ["TARGET_P99_MS"])
+          if recall < target_recall or p99_ms >= target_p99_ms:
+              raise SystemExit(
+                  "production benchmark missed its retrieval SLO: "
+                  f"recall={recall:.4f} target_recall={target_recall:.4f}, "
+                  f"p99_ms={p99_ms:.3f} target_p99_ms={target_p99_ms:.3f}"
+              )
+          if (
+              os.environ["ENGINE"] == "pgvector-service"
+              and os.environ.get("PROVISION_PGVECTOR_SHARDS", "").lower() == "true"
+          ):
+              expected_shards = int(os.environ["PGVECTOR_SHARD_COUNT"])
+              if int(row.get("shard_count", 0) or 0) != expected_shards:
+                  raise SystemExit(
+                      f"expected {expected_shards} pgvector shards; "
+                      f"found {row.get('shard_count')}"
+                  )
+              expected_per_shard = expected_vectors // expected_shards
+              if row.get("shard_row_counts") != [expected_per_shard] * expected_shards:
+                  raise SystemExit(
+                      "pgvector shard row counts do not prove an exact balanced layout: "
+                      f"{row.get('shard_row_counts')}"
+                  )
+              if row.get("shard_misplaced_rows") != [0] * expected_shards:
+                  raise SystemExit(
+                      f"pgvector shards contain misplaced rows: {row.get('shard_misplaced_rows')}"
+                  )
+              if row.get("query_routing") != "namespace":
+                  raise SystemExit("managed pgvector evidence must use namespace routing")
+              expected_index_workers = (
+                  1
+                  if os.environ["PGVECTOR_PROFILE"].startswith("ivfflat-fine-")
+                  else expected_shards
+              )
+              if int(row.get("index_build_workers", 0) or 0) != expected_index_workers:
+                  raise SystemExit(
+                      "managed pgvector evidence used unexpected index build concurrency: "
+                      f"expected {expected_index_workers}, found {row.get('index_build_workers')}"
+                  )
+              if row.get("table_persistence") != "unlogged-candidate-index":
+                  raise SystemExit(
+                      "managed pgvector evidence must attest a rebuildable unlogged candidate index"
+                  )
+              if row.get("evidence_topology") != "github-hosted-isolated-service-processes":
+                  raise SystemExit(
+                      "managed pgvector evidence is missing its isolated-service topology attestation"
+                  )
           print(
               f"validated {expected_engine}: vectors={row['vectors']} "
               f"recall={row.get('recall_at_k')} p99_ms={row.get('p99_latency_ms')}"
@@ -419,6 +619,18 @@ jobs:
               --body "Real production streaming result from [workflow run ${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}). Review the measured recall, p99, cost gate, and refreshed claim boundaries before merging."; then
             echo "::warning::Evidence branch $branch was published, but repository settings prevented github-actions from opening the PR."
           fi
+
+      - name: Capture pgvector service diagnostics
+        if: ${{ always() && inputs.engine == 'pgvector-service' && inputs.provision_pgvector_shards }}
+        run: |
+          mkdir -p state/pgvector-service-diagnostics
+          docker stats --no-stream > state/pgvector-service-diagnostics/docker-stats.txt || true
+          df -h > state/pgvector-service-diagnostics/disk.txt || true
+          free -h > state/pgvector-service-diagnostics/memory.txt || true
+          for shard in $(seq 0 $((PGVECTOR_SHARD_COUNT - 1))); do
+            docker logs "wavemind-pgvector-${shard}" \
+              > "state/pgvector-service-diagnostics/shard-${shard}.log" 2>&1 || true
+          done
 
       - uses: actions/upload-artifact@v7
         if: always()

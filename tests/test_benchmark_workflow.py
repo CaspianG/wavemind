@@ -243,6 +243,47 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "WAVEMIND_QDRANT_URL" in workflow
     assert "WAVEMIND_QDRANT_URLS" in workflow
     assert "WAVEMIND_PGVECTOR_DSN" in workflow
+    assert "WAVEMIND_PGVECTOR_DSNS" in workflow
+    assert "pgvector_dsns" in workflow
+    assert "provision_pgvector_shards" in workflow
+    assert "pgvector_shard_count" in workflow
+    assert "pgvector_profile" in workflow
+    assert "hnsw-fast" in workflow
+    assert "hnsw-quality" in workflow
+    assert "ivfflat-balanced" in workflow
+    assert "ivfflat-quality" in workflow
+    assert "ivfflat-fine-balanced" in workflow
+    assert "ivfflat-fine-production" in workflow
+    assert "ivfflat-fine-slo" in workflow
+    assert "ivfflat-fine-quality" in workflow
+    assert "hnsw-binary-quality" in workflow
+    assert "hnsw-binary-high-recall" in workflow
+    assert "Provision isolated pgvector services" in workflow
+    assert '"pgvector/pgvector:pg16"' in workflow
+    assert "--shm-size 2g" in workflow
+    assert 'maintenance_work_mem="1536MB"' in workflow
+    assert 'maintenance_work_mem="7GB"' in workflow
+    assert 'parallel_maintenance_workers="0"' in workflow
+    assert "WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS" in workflow
+    assert 'profile.startswith("ivfflat-fine-")' in workflow
+    assert "pgvector_managed_profile" in workflow
+    assert 'env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])' in workflow
+    assert 'tuning["hnsw_ef_construction"]' in workflow
+    assert 'tuning["hnsw_ef_search"]' in workflow
+    assert 'tuning["ivfflat_lists"]' in workflow
+    assert 'tuning["ivfflat_probes"]' in workflow
+    assert 'tuning["binary_candidates"]' in workflow
+    assert 'env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"' in workflow
+    assert "max_wal_size=4GB" in workflow
+    assert "pg_isready --username postgres --dbname wavemind" in workflow
+    assert "pgvector-managed-dsns.txt" in workflow
+    assert "github-hosted-isolated-service-processes" in workflow
+    assert "pgvector shard row counts do not prove an exact balanced layout" in workflow
+    assert "managed pgvector evidence must use namespace routing" in workflow
+    assert "unexpected index build concurrency" in workflow
+    assert "rebuildable unlogged candidate index" in workflow
+    assert "isolated-service topology attestation" in workflow
+    assert "Capture pgvector service diagnostics" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow
     assert 'WAVEMIND_FAISS_IVFPQ_NPROBE: "1024"' in workflow
     assert 'WAVEMIND_FAISS_IVFPQ_NPROBE_SWEEP: "64,128,256,512,1024"' in workflow
@@ -251,6 +292,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "Validate production streaming result" in workflow
     assert "expected exactly one {expected_engine!r} row" in workflow
     assert "production benchmark skipped:" in workflow
+    assert "production benchmark missed its retrieval SLO" in workflow
     assert "production_streaming_load_qdrant_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_10m_results.json" in workflow
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in workflow

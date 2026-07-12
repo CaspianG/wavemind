@@ -283,6 +283,42 @@ def _load_faiss_ivfpq_checkpoint(
         return payload
 
 
+def _load_pgvector_checkpoint(
+    path: Path | None,
+    signature: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        return _load_checkpoint(path, signature)
+    except ValueError:
+        if path is None or not path.exists():
+            raise
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload_signature = dict(payload.get("signature", {}))
+        payload_extra = dict(payload_signature.get("extra", {}))
+        migrated_keys = []
+        for key in (
+            "create_hnsw",
+            "hnsw_m",
+            "hnsw_ef_construction",
+            "exact",
+            "iterative_scan",
+            "index_type",
+            "ivfflat_lists",
+        ):
+            if key in payload_extra:
+                migrated_keys.append(key)
+                payload_extra.pop(key)
+        payload_signature["extra"] = payload_extra
+        if payload.get("schema") != CHECKPOINT_SCHEMA or payload_signature != signature:
+            raise
+        payload["signature"] = signature
+        payload.setdefault("metadata", {})["signature_migrated_index_keys"] = migrated_keys
+        payload.setdefault("completed_batch_starts", [])
+        payload.setdefault("source_vectors", {})
+        _write_checkpoint(path, payload)
+        return payload
+
+
 def _write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     if path is None:
         return
@@ -615,6 +651,24 @@ def _wait_for_qdrant_index_ready(
 
 
 def _pgvector_config_from_env() -> dict[str, Any]:
+    storage_type = os.environ.get("WAVEMIND_PGVECTOR_STORAGE_TYPE", "vector").strip().lower()
+    if storage_type not in {"vector", "halfvec"}:
+        raise ValueError("WAVEMIND_PGVECTOR_STORAGE_TYPE must be vector or halfvec")
+    insert_mode = os.environ.get("WAVEMIND_PGVECTOR_INSERT_MODE", "copy").strip().lower()
+    if insert_mode not in {"copy", "upsert"}:
+        raise ValueError("WAVEMIND_PGVECTOR_INSERT_MODE must be copy or upsert")
+    index_type = os.environ.get("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw").strip().lower()
+    if index_type not in {"hnsw", "hnsw-binary", "ivfflat"}:
+        raise ValueError(
+            "WAVEMIND_PGVECTOR_INDEX_TYPE must be hnsw, hnsw-binary, or ivfflat"
+        )
+    query_routing = os.environ.get(
+        "WAVEMIND_PGVECTOR_QUERY_ROUTING", "fanout"
+    ).strip().lower()
+    if query_routing not in {"fanout", "namespace"}:
+        raise ValueError(
+            "WAVEMIND_PGVECTOR_QUERY_ROUTING must be fanout or namespace"
+        )
     return {
         "table": _safe_identifier(
             os.environ.get("WAVEMIND_PGVECTOR_TABLE", "wavemind_streaming_vectors"),
@@ -622,16 +676,133 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         ),
         "collection": os.environ.get("WAVEMIND_PGVECTOR_COLLECTION")
         or f"streaming_load_{time.time_ns()}",
+        "storage_type": storage_type,
+        "insert_mode": insert_mode,
+        "index_type": index_type,
+        "query_routing": query_routing,
+        "unlogged": _bool_env("WAVEMIND_PGVECTOR_UNLOGGED", False),
         "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
         "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
         "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
         "ef_search": _optional_int_env("WAVEMIND_PGVECTOR_EF_SEARCH"),
+        "ivfflat_lists": _optional_int_env("WAVEMIND_PGVECTOR_IVFFLAT_LISTS"),
+        "ivfflat_probes": _optional_int_env("WAVEMIND_PGVECTOR_IVFFLAT_PROBES"),
+        "binary_candidates": _optional_int_env("WAVEMIND_PGVECTOR_BINARY_CANDIDATES"),
         "exact": _bool_env("WAVEMIND_PGVECTOR_EXACT", False),
         "iterative_scan": os.environ.get("WAVEMIND_PGVECTOR_ITERATIVE_SCAN"),
         "max_scan_tuples": _optional_int_env("WAVEMIND_PGVECTOR_MAX_SCAN_TUPLES"),
         "scan_mem_multiplier": _optional_int_env("WAVEMIND_PGVECTOR_SCAN_MEM_MULTIPLIER"),
+        "prewarm_index": _bool_env("WAVEMIND_PGVECTOR_PREWARM_INDEX", False),
         "keep_collection": _bool_env("WAVEMIND_PGVECTOR_KEEP_COLLECTION", False),
     }
+
+
+def pgvector_managed_profile(
+    profile: str,
+    *,
+    vector_count: int,
+    shard_count: int,
+) -> dict[str, int | str]:
+    if int(vector_count) <= 0:
+        raise ValueError("vector_count must be positive")
+    if int(shard_count) <= 0:
+        raise ValueError("shard_count must be positive")
+    per_shard_vectors = (int(vector_count) + int(shard_count) - 1) // int(shard_count)
+    recommended_lists = max(
+        1,
+        round(per_shard_vectors**0.5)
+        if per_shard_vectors <= 1_000_000
+        else per_shard_vectors // 1000,
+    )
+    profiles = {
+        "hnsw-fast": ("hnsw", 64, 800, 1.0, 0.0, 1000),
+        "hnsw-quality": ("hnsw", 96, 1600, 1.0, 0.0, 1000),
+        "ivfflat-balanced": ("ivfflat", 64, 800, 1.0, 0.10, 1000),
+        "ivfflat-quality": ("ivfflat", 64, 800, 1.0, 0.25, 1000),
+        "ivfflat-fine-balanced": ("ivfflat", 64, 800, 2.0, 0.10, 1000),
+        "ivfflat-fine-production": ("ivfflat", 64, 800, 2.0, 0.095, 1000),
+        "ivfflat-fine-slo": ("ivfflat", 64, 800, 2.0, 0.105, 1000),
+        "ivfflat-fine-quality": ("ivfflat", 64, 800, 2.0, 0.125, 1000),
+        "hnsw-binary-quality": ("hnsw-binary", 64, 800, 1.0, 0.0, 2000),
+        "hnsw-binary-high-recall": (
+            "hnsw-binary",
+            64,
+            1000,
+            1.0,
+            0.0,
+            10000,
+        ),
+    }
+    normalized = str(profile).strip().lower()
+    if normalized not in profiles:
+        raise ValueError(f"unsupported pgvector profile: {profile}")
+    (
+        index_type,
+        ef_construction,
+        ef_search,
+        list_multiplier,
+        probe_ratio,
+        candidates,
+    ) = profiles[normalized]
+    lists = max(1, round(recommended_lists * list_multiplier))
+    probes = max(1, round(lists * probe_ratio)) if probe_ratio else 1
+    return {
+        "profile": normalized,
+        "index_type": index_type,
+        "hnsw_ef_construction": ef_construction,
+        "hnsw_ef_search": ef_search,
+        "ivfflat_lists": lists,
+        "ivfflat_probes": probes,
+        "binary_candidates": candidates,
+        "per_shard_vectors": per_shard_vectors,
+    }
+
+
+def _pgvector_operator_class(storage_type: str) -> str:
+    return "halfvec_cosine_ops" if storage_type == "halfvec" else "vector_cosine_ops"
+
+
+def _pgvector_insert_batch(
+    cursor: Any,
+    *,
+    table: str,
+    collection: str,
+    ids: np.ndarray,
+    vectors: np.ndarray,
+    storage_type: str,
+    insert_mode: str,
+) -> None:
+    if len(ids) == 0:
+        return
+    if insert_mode == "copy":
+        # A missing checkpoint after a committed COPY is safe to resume: the
+        # uncheckpointed id range is replaced before it is copied again.
+        cursor.execute(
+            f"DELETE FROM {table} WHERE collection = %s AND memory_id BETWEEN %s AND %s",
+            (collection, int(ids[0]), int(ids[-1])),
+        )
+        with cursor.copy(
+            f"COPY {table} (collection, memory_id, embedding) FROM STDIN"
+        ) as copy:
+            for memory_id, vector in zip(ids, vectors):
+                copy.write_row(
+                    (collection, int(memory_id), _vector_literal(vector))
+                )
+        return
+
+    insert_sql = (
+        f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
+        f"VALUES (%s, %s, %s::{storage_type}, now()) "
+        f"ON CONFLICT (collection, memory_id) "
+        f"DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()"
+    )
+    cursor.executemany(
+        insert_sql,
+        [
+            (collection, int(memory_id), _vector_literal(vector))
+            for memory_id, vector in zip(ids, vectors)
+        ],
+    )
 
 
 def _qdrant_collection_config_from_env() -> dict[str, Any]:
@@ -1001,13 +1172,25 @@ def _streaming_plan_row(
         }
     elif key in {"pgvector", "pgvector-service", "pgvector-streaming"}:
         module_requirements = ["psycopg"]
-        required_env = ["WAVEMIND_PGVECTOR_DSN"]
+        required_env = ["WAVEMIND_PGVECTOR_DSNS"]
         index_bytes = 0
-        index_mode = "remote PostgreSQL/pgvector storage; local runner stores only generated batches"
+        index_mode = (
+            "modulo-sharded PostgreSQL/pgvector services; local runner stores only "
+            "generated batches"
+        )
         command_env = {
-            "WAVEMIND_PGVECTOR_DSN": "postgresql://user:password@postgres.example:5432/wavemind",
+            "WAVEMIND_PGVECTOR_DSNS": ",".join(
+                f"postgresql://user:password@postgres-{index}.example:5432/wavemind"
+                for index in range(4)
+            ),
             "WAVEMIND_PGVECTOR_CREATE_HNSW": "1",
-            "WAVEMIND_PGVECTOR_EF_SEARCH": "1000",
+            "WAVEMIND_PGVECTOR_STORAGE_TYPE": "halfvec",
+            "WAVEMIND_PGVECTOR_INSERT_MODE": "copy",
+            "WAVEMIND_PGVECTOR_INDEX_TYPE": "ivfflat",
+            "WAVEMIND_PGVECTOR_IVFFLAT_LISTS": "5000",
+            "WAVEMIND_PGVECTOR_IVFFLAT_PROBES": "475",
+            "WAVEMIND_PGVECTOR_QUERY_ROUTING": "namespace",
+            "WAVEMIND_PGVECTOR_PREWARM_INDEX": "1",
         }
     else:
         raise ValueError(f"Unknown engine: {engine}")
@@ -2409,10 +2592,19 @@ def run_pgvector_streaming(
     noise: float,
     batch_size: int,
 ) -> dict[str, Any]:
+    shard_dsns = _split_env_list(os.environ.get("WAVEMIND_PGVECTOR_DSNS"))
     dsn = os.environ.get("WAVEMIND_PGVECTOR_DSN")
     engine = "WaveMind pgvector streaming"
-    if not dsn:
-        return skipped_result(engine, "Set WAVEMIND_PGVECTOR_DSN to run streaming pgvector")
+    if not dsn and not shard_dsns:
+        return skipped_result(
+            engine,
+            "Set WAVEMIND_PGVECTOR_DSN or WAVEMIND_PGVECTOR_DSNS to run streaming pgvector",
+        )
+    if shard_dsns and len(shard_dsns) < 2:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_DSNS must contain at least two service DSNs",
+        )
     try:
         import psycopg
     except ImportError as exc:
@@ -2428,8 +2620,40 @@ def run_pgvector_streaming(
             engine,
             "WAVEMIND_PGVECTOR_ITERATIVE_SCAN must be strict_order, relaxed_order, or off",
         )
+    if shard_dsns:
+        return _run_pgvector_sharded_streaming(
+            psycopg=psycopg,
+            dsns=shard_dsns,
+            config=config,
+            count=count,
+            dim=dim,
+            query_count=query_count,
+            top_k=top_k,
+            seed=seed,
+            noise=noise,
+            batch_size=batch_size,
+        )
 
     table = str(config["table"])
+    storage_type = str(config["storage_type"])
+    insert_mode = str(config["insert_mode"])
+    index_type = str(config["index_type"])
+    ivfflat_lists = config["ivfflat_lists"] or max(1, int(round(math.sqrt(count))))
+    ivfflat_probes = config["ivfflat_probes"] or max(1, int(round(math.sqrt(ivfflat_lists))))
+    binary_candidates = config["binary_candidates"] or max(100, int(top_k) * 20)
+    if ivfflat_lists <= 0:
+        return skipped_result(engine, "WAVEMIND_PGVECTOR_IVFFLAT_LISTS must be positive")
+    if ivfflat_probes <= 0 or ivfflat_probes > ivfflat_lists:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_IVFFLAT_PROBES must be positive and no greater than lists",
+        )
+    if binary_candidates < int(top_k):
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_BINARY_CANDIDATES must be at least top_k",
+        )
+    index_name = f"{table}_embedding_{index_type.replace('-', '_')}_idx"
     checkpoint_path = _checkpoint_path_from_env()
     signature = _checkpoint_signature(
         engine=engine,
@@ -2442,15 +2666,12 @@ def run_pgvector_streaming(
         batch_size=batch_size,
         extra={
             "table": table,
-            "create_hnsw": bool(config["create_hnsw"]),
-            "hnsw_m": config["hnsw_m"],
-            "hnsw_ef_construction": config["hnsw_ef_construction"],
-            "exact": bool(config["exact"]),
-            "iterative_scan": iterative_scan,
+            "storage_type": storage_type,
+            "insert_mode": insert_mode,
         },
     )
     try:
-        checkpoint = _load_checkpoint(checkpoint_path, signature)
+        checkpoint = _load_pgvector_checkpoint(checkpoint_path, signature)
     except ValueError as exc:
         return skipped_result(engine, str(exc))
     checkpoint_metadata = checkpoint.setdefault("metadata", {})
@@ -2467,74 +2688,160 @@ def run_pgvector_streaming(
     completed_batches = _checkpoint_completed_batches(checkpoint)
     source_ids = choose_source_ids(count, query_count, seed)
     source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+    complete_resume = _checkpoint_complete_for_run(
+        checkpoint,
+        count=count,
+        batch_size=batch_size,
+        source_ids=source_ids,
+    )
     conn = psycopg.connect(dsn, autocommit=True)
     try:
         started = time.perf_counter()
+        table_prefix = "UNLOGGED " if config["unlogged"] else ""
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
         conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {table} (
+            CREATE {table_prefix}TABLE IF NOT EXISTS {table} (
                 collection TEXT NOT NULL,
                 memory_id BIGINT NOT NULL,
-                embedding vector({int(dim)}) NOT NULL,
+                embedding {storage_type}({int(dim)}) NOT NULL,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                 PRIMARY KEY (collection, memory_id)
             )
             """
         )
         conn.execute(f"CREATE INDEX IF NOT EXISTS {table}_collection_idx ON {table} (collection)")
+        column_type = conn.execute(
+            """
+            SELECT format_type(attribute.atttypid, attribute.atttypmod)
+            FROM pg_attribute AS attribute
+            WHERE attribute.attrelid = %s::regclass
+              AND attribute.attname = 'embedding'
+              AND NOT attribute.attisdropped
+            """,
+            (table,),
+        ).fetchone()
+        expected_column_type = f"{storage_type}({int(dim)})"
+        if not column_type or str(column_type[0]).lower() != expected_column_type:
+            actual = None if not column_type else str(column_type[0])
+            raise RuntimeError(
+                f"pgvector table {table!r} embedding type is {actual!r}; "
+                f"expected {expected_column_type!r}"
+            )
+        relation_persistence = str(
+            conn.execute(
+                "SELECT relpersistence FROM pg_class WHERE oid = %s::regclass",
+                (table,),
+            ).fetchone()[0]
+        )
+        expected_persistence = "u" if config["unlogged"] else "p"
+        if relation_persistence != expected_persistence:
+            raise RuntimeError(
+                f"pgvector table {table!r} persistence is {relation_persistence!r}; "
+                f"expected {expected_persistence!r}"
+            )
         if not completed_batches:
             conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
-        insert_sql = (
-            f"INSERT INTO {table} (collection, memory_id, embedding, updated_at) "
-            f"VALUES (%s, %s, %s::vector, now()) "
-            f"ON CONFLICT (collection, memory_id) "
-            f"DO UPDATE SET embedding = EXCLUDED.embedding, updated_at = now()"
-        )
-        with conn.cursor() as cur:
-            for ids, vectors, captured in iter_vector_batches(
-                count=count,
-                dim=dim,
-                seed=seed + count,
-                batch_size=batch_size,
-                source_ids=source_ids,
-            ):
-                batch_start = int(ids[0]) if len(ids) else 0
-                if batch_start not in completed_batches:
-                    rows = [
-                        (collection, int(id), _vector_literal(vector))
-                        for id, vector in zip(ids, vectors)
-                    ]
-                    cur.executemany(insert_sql, rows)
-                source_vectors.update(captured)
-                _record_checkpoint_batch(
-                    path=checkpoint_path,
-                    payload=checkpoint,
-                    batch_start=batch_start,
-                    captured=captured,
-                )
-                completed_batches.add(batch_start)
-        if config["create_hnsw"]:
-            options = []
-            if config["hnsw_m"] is not None:
-                options.append(f"m = {int(config['hnsw_m'])}")
-            if config["hnsw_ef_construction"] is not None:
-                options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
-            with_options = f" WITH ({', '.join(options)})" if options else ""
+        if not complete_resume:
+            with conn.cursor() as cur:
+                for ids, vectors, captured in iter_vector_batches(
+                    count=count,
+                    dim=dim,
+                    seed=seed + count,
+                    batch_size=batch_size,
+                    source_ids=source_ids,
+                ):
+                    batch_start = int(ids[0]) if len(ids) else 0
+                    if batch_start not in completed_batches:
+                        _pgvector_insert_batch(
+                            cur,
+                            table=table,
+                            collection=collection,
+                            ids=ids,
+                            vectors=vectors,
+                            storage_type=storage_type,
+                            insert_mode=insert_mode,
+                        )
+                    source_vectors.update(captured)
+                    _record_checkpoint_batch(
+                        path=checkpoint_path,
+                        payload=checkpoint,
+                        batch_start=batch_start,
+                        captured=captured,
+                    )
+                    completed_batches.add(batch_start)
+
+        remote_row_count = int(
             conn.execute(
-                f"CREATE INDEX IF NOT EXISTS {table}_embedding_hnsw_idx "
-                f"ON {table} USING hnsw (embedding vector_cosine_ops)"
-                f"{with_options}"
+                f"SELECT count(*) FROM {table} WHERE collection = %s",
+                (collection,),
+            ).fetchone()[0]
+        )
+        if remote_row_count != int(count):
+            raise RuntimeError(
+                f"pgvector collection {collection!r} contains {remote_row_count} rows; "
+                f"expected {int(count)}"
             )
+        checkpoint_metadata["remote_row_count"] = remote_row_count
+        checkpoint_metadata["storage_type"] = storage_type
+        checkpoint_metadata["insert_mode"] = insert_mode
+        _write_checkpoint(checkpoint_path, checkpoint)
+        if config["create_hnsw"]:
+            if index_type in {"hnsw", "hnsw-binary"}:
+                options = []
+                if config["hnsw_m"] is not None:
+                    options.append(f"m = {int(config['hnsw_m'])}")
+                if config["hnsw_ef_construction"] is not None:
+                    options.append(f"ef_construction = {int(config['hnsw_ef_construction'])}")
+                with_options = f" WITH ({', '.join(options)})" if options else ""
+                if index_type == "hnsw-binary":
+                    conn.execute(
+                        f"CREATE INDEX IF NOT EXISTS {index_name} "
+                        f"ON {table} USING hnsw "
+                        f"((binary_quantize(embedding)::bit({int(dim)})) bit_hamming_ops)"
+                        f"{with_options}"
+                    )
+                else:
+                    conn.execute(
+                        f"CREATE INDEX IF NOT EXISTS {index_name} "
+                        f"ON {table} USING hnsw (embedding {_pgvector_operator_class(storage_type)})"
+                        f"{with_options}"
+                    )
+            else:
+                conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table} USING ivfflat (embedding {_pgvector_operator_class(storage_type)}) "
+                    f"WITH (lists = {int(ivfflat_lists)})"
+                )
+        index_present = bool(
+            conn.execute("SELECT to_regclass(%s)", (index_name,)).fetchone()[0]
+        )
+        if config["create_hnsw"] and not index_present:
+            raise RuntimeError(f"pgvector {index_type} index {index_name!r} is missing")
+        checkpoint_metadata["index_name"] = index_name
+        checkpoint_metadata["index_type"] = index_type
+        checkpoint_metadata["index_present"] = index_present
+        _write_checkpoint(checkpoint_path, checkpoint)
         conn.execute(f"ANALYZE {table}")
+        prewarm_blocks = 0
+        if config["prewarm_index"] and index_present:
+            conn.execute("CREATE EXTENSION IF NOT EXISTS pg_prewarm")
+            prewarm_blocks = int(
+                conn.execute(
+                    "SELECT pg_prewarm(%s, 'buffer')",
+                    (index_name,),
+                ).fetchone()[0]
+            )
         wait_after_build_seconds = float(os.environ.get("WAVEMIND_PGVECTOR_WAIT_AFTER_BUILD_SECONDS", "0"))
         if wait_after_build_seconds > 0:
             time.sleep(wait_after_build_seconds)
         build_ms = (time.perf_counter() - started) * 1000.0
 
         queries = make_queries(source_ids=source_ids, source_vectors=source_vectors, seed=seed + count, noise=noise)
-        if config["ef_search"] is not None:
+        if index_type in {"hnsw", "hnsw-binary"} and config["ef_search"] is not None:
             conn.execute(f"SET hnsw.ef_search = {int(config['ef_search'])}")
+        if index_type == "ivfflat":
+            conn.execute(f"SET ivfflat.probes = {int(ivfflat_probes)}")
         if iterative_scan:
             conn.execute(f"SET hnsw.iterative_scan = '{iterative_scan}'")
         if config["max_scan_tuples"] is not None:
@@ -2546,20 +2853,40 @@ def run_pgvector_streaming(
             conn.execute("SET enable_bitmapscan = off")
 
         warmup_queries = int(os.environ.get("WAVEMIND_PGVECTOR_WARMUP_QUERIES", "0"))
-        search_sql = (
-            f"SELECT memory_id FROM {table} "
-            f"WHERE collection = %s "
-            f"ORDER BY embedding <=> %s::vector "
-            f"LIMIT %s"
-        )
+        if index_type == "hnsw-binary":
+            search_sql = (
+                "SELECT memory_id FROM ("
+                f"SELECT memory_id, embedding FROM {table} "
+                f"WHERE collection = %s "
+                f"ORDER BY binary_quantize(embedding)::bit({int(dim)}) "
+                f"<~> binary_quantize(%s::{storage_type})::bit({int(dim)}) "
+                f"LIMIT {int(binary_candidates)}"
+                ") AS candidates "
+                f"ORDER BY embedding <=> %s::{storage_type} "
+                f"LIMIT {int(top_k)}"
+            )
+
+            def search_params(query: np.ndarray) -> tuple[Any, ...]:
+                literal = _vector_literal(query)
+                return (collection, literal, literal)
+        else:
+            search_sql = (
+                f"SELECT memory_id FROM {table} "
+                f"WHERE collection = %s "
+                f"ORDER BY embedding <=> %s::{storage_type} "
+                f"LIMIT %s"
+            )
+
+            def search_params(query: np.ndarray) -> tuple[Any, ...]:
+                return (collection, _vector_literal(query), int(top_k))
         if warmup_queries > 0 and queries:
             for index in range(warmup_queries):
                 _, query = queries[index % len(queries)]
-                conn.execute(search_sql, (collection, _vector_literal(query), int(top_k))).fetchall()
+                conn.execute(search_sql, search_params(query)).fetchall()
         rows: list[dict[str, Any]] = []
         for source_id, query in queries:
             started = time.perf_counter()
-            hits = conn.execute(search_sql, (collection, _vector_literal(query), int(top_k))).fetchall()
+            hits = conn.execute(search_sql, search_params(query)).fetchall()
             latency_ms = (time.perf_counter() - started) * 1000.0
             top = [int(row[0]) for row in hits]
             rows.append(
@@ -2581,10 +2908,26 @@ def run_pgvector_streaming(
             extra={
                 "table": table,
                 "collection": collection,
+                "storage_type": storage_type,
+                "insert_mode": insert_mode,
+                "table_persistence": (
+                    "unlogged-candidate-index"
+                    if relation_persistence == "u"
+                    else "logged"
+                ),
+                "index_type": index_type,
+                "remote_row_count": remote_row_count,
+                "complete_resume": complete_resume,
+                "index_name": index_name,
+                "index_present": index_present,
+                "prewarm_index": bool(config["prewarm_index"]),
+                "prewarm_blocks": prewarm_blocks,
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "search_params": {
                     "hnsw_ef": config["ef_search"],
+                    "ivfflat_probes": ivfflat_probes if index_type == "ivfflat" else None,
+                    "binary_candidates": binary_candidates if index_type == "hnsw-binary" else None,
                     "exact": config["exact"],
                     "iterative_scan": iterative_scan,
                     "max_scan_tuples": config["max_scan_tuples"],
@@ -2594,6 +2937,8 @@ def run_pgvector_streaming(
                     "create_hnsw": config["create_hnsw"],
                     "hnsw_m": config["hnsw_m"],
                     "hnsw_ef_construction": config["hnsw_ef_construction"],
+                    "index_type": index_type,
+                    "ivfflat_lists": ivfflat_lists if index_type == "ivfflat" else None,
                 },
                 "memory_mode": "streaming PostgreSQL insert; query source vectors only",
                 **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
@@ -2605,6 +2950,511 @@ def run_pgvector_streaming(
                 conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
         finally:
             conn.close()
+
+
+def _pgvector_shard_expected_count(count: int, shard_count: int, shard_index: int) -> int:
+    return max(0, (int(count) + int(shard_count) - 1 - int(shard_index)) // int(shard_count))
+
+
+def _pgvector_benchmark_namespace_shard(source_id: int, shard_count: int) -> int:
+    if int(source_id) <= 0:
+        raise ValueError("source_id must be positive")
+    if int(shard_count) <= 0:
+        raise ValueError("shard_count must be positive")
+    return (int(source_id) - 1) % int(shard_count)
+
+
+def _run_pgvector_sharded_streaming(
+    *,
+    psycopg: Any,
+    dsns: list[str],
+    config: dict[str, Any],
+    count: int,
+    dim: int,
+    query_count: int,
+    top_k: int,
+    seed: int,
+    noise: float,
+    batch_size: int,
+) -> dict[str, Any]:
+    engine = "WaveMind pgvector streaming"
+    shard_count = len(dsns)
+    table = str(config["table"])
+    storage_type = str(config["storage_type"])
+    insert_mode = str(config["insert_mode"])
+    index_type = str(config["index_type"])
+    per_shard_count = max(
+        _pgvector_shard_expected_count(count, shard_count, index)
+        for index in range(shard_count)
+    )
+    ivfflat_lists = config["ivfflat_lists"] or max(
+        1, int(round(math.sqrt(per_shard_count)))
+    )
+    ivfflat_probes = config["ivfflat_probes"] or max(
+        1, int(round(math.sqrt(ivfflat_lists)))
+    )
+    binary_candidates = config["binary_candidates"] or max(100, int(top_k) * 20)
+    if ivfflat_lists <= 0:
+        return skipped_result(engine, "WAVEMIND_PGVECTOR_IVFFLAT_LISTS must be positive")
+    if ivfflat_probes <= 0 or ivfflat_probes > ivfflat_lists:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_IVFFLAT_PROBES must be positive and no greater than lists",
+        )
+    if binary_candidates < int(top_k):
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_BINARY_CANDIDATES must be at least top_k",
+        )
+    iterative_scan = config.get("iterative_scan")
+    query_routing = str(config["query_routing"])
+    index_name = f"{table}_embedding_{index_type.replace('-', '_')}_idx"
+    checkpoint_path = _checkpoint_path_from_env()
+    signature = _checkpoint_signature(
+        engine=engine,
+        count=count,
+        dim=dim,
+        query_count=query_count,
+        top_k=top_k,
+        seed=seed,
+        noise=noise,
+        batch_size=batch_size,
+        extra={
+            "table": table,
+            "storage_type": storage_type,
+            "insert_mode": insert_mode,
+            "shard_count": shard_count,
+            "shard_layout": os.environ.get(
+                "WAVEMIND_PGVECTOR_SHARD_LAYOUT_ID", f"modulo-{shard_count}"
+            ),
+        },
+    )
+    try:
+        checkpoint = _load_pgvector_checkpoint(checkpoint_path, signature)
+    except ValueError as exc:
+        return skipped_result(engine, str(exc))
+    checkpoint_metadata = checkpoint.setdefault("metadata", {})
+    configured_collection = os.environ.get("WAVEMIND_PGVECTOR_COLLECTION")
+    checkpoint_collection = checkpoint_metadata.get("collection")
+    if configured_collection and checkpoint_collection and configured_collection != checkpoint_collection:
+        return skipped_result(
+            engine,
+            "WAVEMIND_PGVECTOR_COLLECTION does not match checkpoint collection",
+        )
+    collection = configured_collection or checkpoint_collection or str(config["collection"])
+    checkpoint_metadata["collection"] = collection
+    checkpoint_metadata["shard_count"] = shard_count
+    _write_checkpoint(checkpoint_path, checkpoint)
+    completed_batches = _checkpoint_completed_batches(checkpoint)
+    source_ids = choose_source_ids(count, query_count, seed)
+    source_vectors: dict[int, np.ndarray] = _checkpoint_source_vectors(checkpoint)
+    complete_resume = _checkpoint_complete_for_run(
+        checkpoint,
+        count=count,
+        batch_size=batch_size,
+        source_ids=source_ids,
+    )
+    connections = [psycopg.connect(dsn, autocommit=True) for dsn in dsns]
+    cursors: list[Any] = []
+    expected_counts = [
+        _pgvector_shard_expected_count(count, shard_count, index)
+        for index in range(shard_count)
+    ]
+    relation_persistence_by_shard: list[str] = []
+    try:
+        started = time.perf_counter()
+        table_prefix = "UNLOGGED " if config["unlogged"] else ""
+        expected_column_type = f"{storage_type}({int(dim)})"
+        for connection in connections:
+            connection.execute("CREATE EXTENSION IF NOT EXISTS vector")
+            connection.execute(
+                f"""
+                CREATE {table_prefix}TABLE IF NOT EXISTS {table} (
+                    collection TEXT NOT NULL,
+                    memory_id BIGINT NOT NULL,
+                    embedding {storage_type}({int(dim)}) NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (collection, memory_id)
+                )
+                """
+            )
+            connection.execute(
+                f"CREATE INDEX IF NOT EXISTS {table}_collection_idx ON {table} (collection)"
+            )
+            column_type = connection.execute(
+                """
+                SELECT format_type(attribute.atttypid, attribute.atttypmod)
+                FROM pg_attribute AS attribute
+                WHERE attribute.attrelid = %s::regclass
+                  AND attribute.attname = 'embedding'
+                  AND NOT attribute.attisdropped
+                """,
+                (table,),
+            ).fetchone()
+            if not column_type or str(column_type[0]).lower() != expected_column_type:
+                actual = None if not column_type else str(column_type[0])
+                raise RuntimeError(
+                    f"pgvector table {table!r} embedding type is {actual!r}; "
+                    f"expected {expected_column_type!r}"
+                )
+            relation_persistence = str(
+                connection.execute(
+                    "SELECT relpersistence FROM pg_class WHERE oid = %s::regclass",
+                    (table,),
+                ).fetchone()[0]
+            )
+            expected_persistence = "u" if config["unlogged"] else "p"
+            if relation_persistence != expected_persistence:
+                raise RuntimeError(
+                    f"pgvector table {table!r} persistence is {relation_persistence!r}; "
+                    f"expected {expected_persistence!r}"
+                )
+            relation_persistence_by_shard.append(relation_persistence)
+            if not completed_batches:
+                connection.execute(
+                    f"DELETE FROM {table} WHERE collection = %s", (collection,)
+                )
+            cursors.append(connection.cursor())
+
+        if not complete_resume:
+            for ids, vectors, captured in iter_vector_batches(
+                count=count,
+                dim=dim,
+                seed=seed + count,
+                batch_size=batch_size,
+                source_ids=source_ids,
+            ):
+                batch_start = int(ids[0]) if len(ids) else 0
+                if batch_start not in completed_batches:
+                    shard_ids = (ids - 1) % shard_count
+                    for shard_index, cursor in enumerate(cursors):
+                        mask = shard_ids == shard_index
+                        _pgvector_insert_batch(
+                            cursor,
+                            table=table,
+                            collection=collection,
+                            ids=ids[mask],
+                            vectors=vectors[mask],
+                            storage_type=storage_type,
+                            insert_mode=insert_mode,
+                        )
+                source_vectors.update(captured)
+                _record_checkpoint_batch(
+                    path=checkpoint_path,
+                    payload=checkpoint,
+                    batch_start=batch_start,
+                    captured=captured,
+                )
+                completed_batches.add(batch_start)
+
+        row_counts: list[int] = []
+        misplaced_rows: list[int] = []
+        for shard_index, connection in enumerate(connections):
+            row_count, misplaced = connection.execute(
+                f"""
+                SELECT count(*), count(*) FILTER (
+                    WHERE mod(memory_id - 1, %s) <> %s
+                )
+                FROM {table}
+                WHERE collection = %s
+                """,
+                (shard_count, shard_index, collection),
+            ).fetchone()
+            row_counts.append(int(row_count))
+            misplaced_rows.append(int(misplaced))
+        if row_counts != expected_counts or any(misplaced_rows):
+            raise RuntimeError(
+                "pgvector shard validation failed: "
+                f"rows={row_counts}, expected={expected_counts}, misplaced={misplaced_rows}"
+            )
+        checkpoint_metadata["remote_row_count"] = sum(row_counts)
+        checkpoint_metadata["shard_row_counts"] = row_counts
+        checkpoint_metadata["storage_type"] = storage_type
+        checkpoint_metadata["insert_mode"] = insert_mode
+        _write_checkpoint(checkpoint_path, checkpoint)
+
+        index_build_workers = min(
+            shard_count,
+            _positive_int_env("WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS", 1),
+        )
+
+        def prepare_shard_index(item: tuple[int, Any]) -> tuple[bool, int]:
+            shard_index, connection = item
+            print(
+                f"pgvector shard {shard_index + 1}/{shard_count}: building {index_type} index",
+                flush=True,
+            )
+            if config["create_hnsw"]:
+                if index_type in {"hnsw", "hnsw-binary"}:
+                    options = []
+                    if config["hnsw_m"] is not None:
+                        options.append(f"m = {int(config['hnsw_m'])}")
+                    if config["hnsw_ef_construction"] is not None:
+                        options.append(
+                            f"ef_construction = {int(config['hnsw_ef_construction'])}"
+                        )
+                    with_options = f" WITH ({', '.join(options)})" if options else ""
+                    if index_type == "hnsw-binary":
+                        connection.execute(
+                            f"CREATE INDEX IF NOT EXISTS {index_name} "
+                            f"ON {table} USING hnsw "
+                            f"((binary_quantize(embedding)::bit({int(dim)})) bit_hamming_ops)"
+                            f"{with_options}"
+                        )
+                    else:
+                        connection.execute(
+                            f"CREATE INDEX IF NOT EXISTS {index_name} "
+                            f"ON {table} USING hnsw "
+                            f"(embedding {_pgvector_operator_class(storage_type)})"
+                            f"{with_options}"
+                        )
+                else:
+                    connection.execute(
+                        f"CREATE INDEX IF NOT EXISTS {index_name} "
+                        f"ON {table} USING ivfflat "
+                        f"(embedding {_pgvector_operator_class(storage_type)}) "
+                        f"WITH (lists = {int(ivfflat_lists)})"
+                    )
+            present = bool(
+                connection.execute("SELECT to_regclass(%s)", (index_name,)).fetchone()[0]
+            )
+            if config["create_hnsw"] and not present:
+                raise RuntimeError(
+                    f"pgvector {index_type} index {index_name!r} is missing"
+                )
+            connection.execute(f"ANALYZE {table}")
+            blocks = 0
+            if config["prewarm_index"] and present:
+                connection.execute("CREATE EXTENSION IF NOT EXISTS pg_prewarm")
+                blocks = int(
+                    connection.execute(
+                        "SELECT pg_prewarm(%s, 'buffer')", (index_name,)
+                    ).fetchone()[0]
+                )
+            print(
+                f"pgvector shard {shard_index + 1}/{shard_count}: index ready; "
+                f"prewarmed_blocks={blocks}",
+                flush=True,
+            )
+            return present, blocks
+
+        if index_build_workers == 1:
+            prepared_indexes = [
+                prepare_shard_index(item) for item in enumerate(connections)
+            ]
+        else:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=index_build_workers
+            ) as index_executor:
+                prepared_indexes = list(
+                    index_executor.map(prepare_shard_index, enumerate(connections))
+                )
+        index_present = [present for present, _ in prepared_indexes]
+        prewarm_blocks = [blocks for _, blocks in prepared_indexes]
+        checkpoint_metadata["index_name"] = index_name
+        checkpoint_metadata["index_type"] = index_type
+        checkpoint_metadata["index_present"] = all(index_present)
+        checkpoint_metadata["index_build_workers"] = index_build_workers
+        _write_checkpoint(checkpoint_path, checkpoint)
+
+        wait_after_build_seconds = float(
+            os.environ.get("WAVEMIND_PGVECTOR_WAIT_AFTER_BUILD_SECONDS", "0")
+        )
+        if wait_after_build_seconds > 0:
+            time.sleep(wait_after_build_seconds)
+        build_ms = (time.perf_counter() - started) * 1000.0
+        for connection in connections:
+            if index_type in {"hnsw", "hnsw-binary"} and config["ef_search"] is not None:
+                connection.execute(f"SET hnsw.ef_search = {int(config['ef_search'])}")
+            if index_type == "ivfflat":
+                connection.execute(f"SET ivfflat.probes = {int(ivfflat_probes)}")
+            if iterative_scan:
+                setting = "ivfflat.iterative_scan" if index_type == "ivfflat" else "hnsw.iterative_scan"
+                connection.execute(f"SET {setting} = '{iterative_scan}'")
+            if config["max_scan_tuples"] is not None and index_type != "ivfflat":
+                connection.execute(
+                    f"SET hnsw.max_scan_tuples = {int(config['max_scan_tuples'])}"
+                )
+            if config["scan_mem_multiplier"] is not None and index_type != "ivfflat":
+                connection.execute(
+                    f"SET hnsw.scan_mem_multiplier = {int(config['scan_mem_multiplier'])}"
+                )
+            if config["exact"]:
+                connection.execute("SET enable_indexscan = off")
+                connection.execute("SET enable_bitmapscan = off")
+
+        if index_type == "hnsw-binary":
+            search_sql = (
+                f"SELECT memory_id, embedding <=> %s::{storage_type} AS distance FROM ("
+                f"SELECT memory_id, embedding FROM {table} WHERE collection = %s "
+                f"ORDER BY binary_quantize(embedding)::bit({int(dim)}) "
+                f"<~> binary_quantize(%s::{storage_type})::bit({int(dim)}) "
+                f"LIMIT {int(binary_candidates)}) AS candidates "
+                f"ORDER BY distance LIMIT {int(top_k)}"
+            )
+
+            def params_for(query: np.ndarray) -> tuple[Any, ...]:
+                literal = _vector_literal(query)
+                return (literal, collection, literal)
+        else:
+            search_sql = (
+                f"SELECT memory_id, embedding <=> %s::{storage_type} AS distance "
+                f"FROM {table} WHERE collection = %s "
+                f"ORDER BY embedding <=> %s::{storage_type} LIMIT {int(top_k)}"
+            )
+
+            def params_for(query: np.ndarray) -> tuple[Any, ...]:
+                literal = _vector_literal(query)
+                return (literal, collection, literal)
+
+        fanout_workers = min(
+            shard_count,
+            _positive_int_env("WAVEMIND_PGVECTOR_FANOUT_WORKERS", shard_count),
+        )
+        query_workers = fanout_workers if query_routing == "fanout" else 1
+
+        def search_shard(shard_index: int, query: np.ndarray) -> list[tuple[int, float]]:
+            rows = connections[shard_index].execute(
+                search_sql, params_for(query)
+            ).fetchall()
+            return [(int(row[0]), float(row[1])) for row in rows]
+
+        def fanout_search(
+            executor: concurrent.futures.ThreadPoolExecutor,
+            query: np.ndarray,
+        ) -> list[int]:
+            futures = [
+                executor.submit(search_shard, shard_index, query)
+                for shard_index in range(shard_count)
+            ]
+            merged = [hit for future in futures for hit in future.result()]
+            merged.sort(key=lambda item: (item[1], item[0]))
+            return [memory_id for memory_id, _ in merged[:top_k]]
+
+        def routed_search(
+            executor: concurrent.futures.ThreadPoolExecutor,
+            source_id: int,
+            query: np.ndarray,
+        ) -> list[int]:
+            if query_routing == "namespace":
+                shard_index = _pgvector_benchmark_namespace_shard(
+                    source_id, shard_count
+                )
+                return [
+                    memory_id
+                    for memory_id, _ in search_shard(shard_index, query)[:top_k]
+                ]
+            return fanout_search(executor, query)
+
+        queries = make_queries(
+            source_ids=source_ids,
+            source_vectors=source_vectors,
+            seed=seed + count,
+            noise=noise,
+        )
+        warmup_queries = int(os.environ.get("WAVEMIND_PGVECTOR_WARMUP_QUERIES", "0"))
+        measured: list[dict[str, Any]] = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=query_workers) as executor:
+            if warmup_queries > 0 and queries:
+                for index in range(warmup_queries):
+                    source_id, query = queries[index % len(queries)]
+                    routed_search(executor, source_id, query)
+            for source_id, query in queries:
+                query_started = time.perf_counter()
+                top = routed_search(executor, source_id, query)
+                measured.append(
+                    {
+                        "source_id": int(source_id),
+                        "target_hit": int(source_id) in top,
+                        "target_hit_at_1": bool(top and top[0] == int(source_id)),
+                        "latency_ms": (time.perf_counter() - query_started) * 1000.0,
+                    }
+                )
+        return _metrics_from_hits(
+            engine=engine,
+            vector_count=count,
+            dim=dim,
+            batch_size=batch_size,
+            top_k=top_k,
+            build_ms=build_ms,
+            query_rows=measured,
+            extra={
+                "table": table,
+                "collection": collection,
+                "storage_type": storage_type,
+                "insert_mode": insert_mode,
+                "table_persistence": (
+                    "unlogged-candidate-index"
+                    if relation_persistence_by_shard
+                    and all(value == "u" for value in relation_persistence_by_shard)
+                    else "logged"
+                ),
+                "table_persistence_by_shard": relation_persistence_by_shard,
+                "index_type": index_type,
+                "remote_row_count": sum(row_counts),
+                "complete_resume": complete_resume,
+                "index_name": index_name,
+                "index_present": all(index_present),
+                "prewarm_index": bool(config["prewarm_index"]),
+                "prewarm_blocks": sum(prewarm_blocks),
+                "prewarm_blocks_by_shard": prewarm_blocks,
+                "index_build_workers": index_build_workers,
+                "warmup_queries": warmup_queries,
+                "wait_after_build_seconds": wait_after_build_seconds,
+                "shard_count": shard_count,
+                "shard_row_counts": row_counts,
+                "shard_expected_counts": expected_counts,
+                "shard_misplaced_rows": misplaced_rows,
+                "query_routing": query_routing,
+                "evidence_topology": os.environ.get(
+                    "WAVEMIND_PGVECTOR_EVIDENCE_TOPOLOGY",
+                    "configured-service-dsns",
+                ),
+                "fanout_workers": fanout_workers if query_routing == "fanout" else 0,
+                "query_workers": query_workers,
+                "per_namespace_vector_capacity": per_shard_count,
+                "global_cross_namespace_search": query_routing == "fanout",
+                "routing_key_source": (
+                    "synthetic benchmark namespace label derived from source id "
+                    "modulo shard count"
+                    if query_routing == "namespace"
+                    else "not applicable; all shards queried"
+                ),
+                "search_params": {
+                    "hnsw_ef": config["ef_search"],
+                    "ivfflat_probes": ivfflat_probes if index_type == "ivfflat" else None,
+                    "binary_candidates": binary_candidates if index_type == "hnsw-binary" else None,
+                    "exact": config["exact"],
+                    "iterative_scan": iterative_scan,
+                },
+                "collection_params": {
+                    "create_hnsw": config["create_hnsw"],
+                    "hnsw_m": config["hnsw_m"],
+                    "hnsw_ef_construction": config["hnsw_ef_construction"],
+                    "index_type": index_type,
+                    "ivfflat_lists": ivfflat_lists if index_type == "ivfflat" else None,
+                },
+                "memory_mode": (
+                    "streaming modulo-sharded PostgreSQL insert; namespace-routed "
+                    "single-service query; query source vectors only"
+                    if query_routing == "namespace"
+                    else "streaming modulo-sharded PostgreSQL insert; parallel "
+                    "multi-service fanout query merge; query source vectors only"
+                ),
+                **_checkpoint_extra(checkpoint_path, checkpoint, completed_batches),
+            },
+        )
+    finally:
+        for cursor in cursors:
+            cursor.close()
+        for connection in connections:
+            try:
+                if not config.get("keep_collection") and checkpoint_path is None:
+                    connection.execute(
+                        f"DELETE FROM {table} WHERE collection = %s", (collection,)
+                    )
+            finally:
+                connection.close()
 
 
 def run_size(

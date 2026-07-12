@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_admission.v1",
-  "generated_at": "2026-07-10T05:23:43Z",
+  "generated_at": "2026-07-12T16:59:10Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",

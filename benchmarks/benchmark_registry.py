@@ -1359,7 +1359,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "category": "production-scale",
             "status": "implemented",
             "source": "benchmarks/production_streaming_load_benchmark.py",
-            "dataset": "Memory-bounded streaming generator for 10M, 50M, and 100M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, a real two-service sharded Qdrant smoke, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, a 50M FAISS IVF-PQ plan-only resource/command preflight, and a 100M sharded Qdrant preflight contract.",
+            "dataset": "Memory-bounded streaming generator for 10M, 50M, and 100M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, strict single-service Qdrant, four-service sharded Qdrant, and four-service pgvector 10M results, a strict 50M FAISS IVF-PQ result, and a 100M sharded Qdrant preflight contract.",
             "competitors": ["FAISS persisted streaming", "FAISS IVF-PQ persisted streaming", "Qdrant service streaming", "Qdrant sharded service streaming", "pgvector streaming"],
             "metrics": [
                 "target_recall@10",
@@ -1374,8 +1374,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "build_ms",
             ],
             "current": production_streaming_results,
-            "target": "Keep strict 10M single-service and four-service sharded Qdrant, 10M/50M compressed FAISS, and service smokes green while completing 10M pgvector and 100M sharded Qdrant evidence.",
-            "next_step": "Run .github/workflows/production-streaming-load.yml with sized pgvector infrastructure for 10M, then execute the 100M sharded Qdrant profile.",
+            "target": "Keep strict 10M single-service and four-service sharded Qdrant, four-service pgvector, 10M/50M compressed FAISS, and service smokes green while completing 100M sharded Qdrant evidence.",
+            "next_step": "Execute the 100M sharded Qdrant profile through production-streaming-load.yml on sized service infrastructure, then repeat pgvector on independent PostgreSQL nodes for HA evidence.",
         },
         {
             "id": "scale_readiness",

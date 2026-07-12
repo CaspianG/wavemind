@@ -5,6 +5,12 @@ import sys
 from pathlib import Path
 
 
+def _assert_github_actions_run_url(value: str) -> None:
+    prefix = "https://github.com/CaspianG/wavemind/actions/runs/"
+    assert value.startswith(prefix)
+    assert value.removeprefix(prefix).isdigit()
+
+
 def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     from benchmarks.benchmark_registry import build_benchmark_matrix
 
@@ -166,7 +172,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     ]
     assert pgvector_plan["status"] == "action_required"
     assert pgvector_plan["estimated_index_gb"] == 0.0
-    assert "WAVEMIND_PGVECTOR_DSN" in pgvector_plan["missing_env"]
+    assert "WAVEMIND_PGVECTOR_DSNS" in pgvector_plan["missing_env"]
     assert "100M" in entries["production_streaming_load_runner"]["dataset"]
     assert "production-streaming-load.yml" in entries["production_streaming_load_runner"]["next_step"]
     assert entries["postgres_pitr_plan"]["status"] == "implemented"
@@ -222,7 +228,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert kubernetes_current["rolling_upgrade_replaced_pods"] == 4
     assert kubernetes_current["api_healthy_after_upgrade"] is True
     assert kubernetes_current["passed_checks"] == kubernetes_current["check_count"] == 14
-    assert kubernetes_current["workflow_run_url"].endswith("/29057247023")
+    _assert_github_actions_run_url(kubernetes_current["workflow_run_url"])
     assert "does not unlock remote production" in kubernetes_current["claim_boundary"]
     network_smoke = entries["kubernetes_cluster_network_failure_smoke"]
     assert network_smoke["status"] == "implemented"
@@ -243,6 +249,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert network_current["failed_nodes_after_recovery"] == []
     assert network_current["passed_checks"] == network_current["check_count"] == 13
     assert network_current["workflow_run_id"].isdigit()
+    _assert_github_actions_run_url(network_current["workflow_run_url"])
     assert network_current["workflow_run_url"].endswith(
         f"/{network_current['workflow_run_id']}"
     )
@@ -269,7 +276,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert region_current["final_noop_records_imported"] == 0
     assert region_current["final_noop_tombstones_imported"] == 0
     assert region_current["passed_checks"] == region_current["check_count"] == 17
-    assert region_current["workflow_run_url"].endswith("/29058433643")
+    _assert_github_actions_run_url(region_current["workflow_run_url"])
     assert "not remote multi-region" in region_current["claim_boundary"]
     serverless_lifecycle = entries["kubernetes_serverless_lifecycle_smoke"]["current"][
         "WaveMind Kubernetes serverless lifecycle"
@@ -286,7 +293,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert serverless_lifecycle["delete_propagation_ms"] <= 2000.0
     assert serverless_lifecycle["burst_p99_ms"] <= 2000.0
     assert serverless_lifecycle["final_restore_rate"] == 1.0
-    assert serverless_lifecycle["workflow_run_url"].endswith("/29064934749")
+    _assert_github_actions_run_url(serverless_lifecycle["workflow_run_url"])
     assert "does not unlock remote managed" in serverless_lifecycle["claim_boundary"]
     kubernetes_dr = entries["kubernetes_postgres_qdrant_dr_smoke"]["current"][
         "WaveMind Kubernetes PostgreSQL/Qdrant DR"
@@ -302,7 +309,7 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
     assert kubernetes_dr["index_vector_records"] == kubernetes_dr["index_expected_records"] == 24
     assert kubernetes_dr["restored_after_api_replacement_rate"] == 1.0
     assert kubernetes_dr["restore_elapsed_ms"] <= 180000.0
-    assert kubernetes_dr["workflow_run_url"].endswith("/29064934749")
+    _assert_github_actions_run_url(kubernetes_dr["workflow_run_url"])
     assert "not managed-cloud PITR" in kubernetes_dr["claim_boundary"]
     external_active_active_loopback = entries["external_http_active_active_loopback"]["current"][
         "WaveMind real HTTP active-active service-region sync"

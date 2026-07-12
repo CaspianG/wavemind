@@ -30,7 +30,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
-        "WAVEMIND_PGVECTOR_DSN": "postgresql://user:pass@postgres.staging.internal:5432/wavemind",
+        "WAVEMIND_PGVECTOR_DSNS": ",".join(
+            f"postgresql://user:pass@postgres-{index}.staging.internal:5432/wavemind"
+            for index in range(4)
+        ),
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
@@ -50,6 +53,10 @@ def test_production_evidence_preflight_reports_missing_env():
     assert by_id["external_http_cluster"]["status"] == "action_required"
     assert "WAVEMIND_CLUSTER_NODES" in by_id["external_http_cluster"]["missing_env"]
     assert by_id["qdrant_10m_service"]["missing_env"] == ["WAVEMIND_QDRANT_URL"]
+    assert by_id["pgvector_10m_service"]["status"] == "ready"
+    assert by_id["pgvector_10m_service"]["missing_env"] == []
+    assert "provision_pgvector_shards=true" in by_id["pgvector_10m_service"]["command"]
+    assert "pgvector_profile=ivfflat-fine-production" in by_id["pgvector_10m_service"]["command"]
     assert by_id["faiss_ivfpq_50m"]["missing_env"] == ["WAVEMIND_FAISS_IVFPQ_PATH"]
 
 
@@ -63,6 +70,8 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
 
     by_id = {row["id"]: row for row in payload["checks"]}
     assert by_id["external_http_active_active"]["missing_env"] == []
+    assert by_id["pgvector_10m_service"]["missing_env"] == []
+    assert "four-service pgvector topology" in by_id["pgvector_10m_service"]["evidence"]
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["hundred_million_remote_load"]["ready"] is True
     assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[

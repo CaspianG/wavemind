@@ -11,7 +11,7 @@ production evidence by itself.
 | readiness status | `action_required` |
 | claim status | `claims_limited` |
 | total requirements | `8` |
-| action required | `4` |
+| action required | `3` |
 | ready for safe dispatch | `0` |
 | can auto-run now | `0` |
 | planned target memories | `180000000` |
@@ -38,7 +38,7 @@ production evidence by itself.
 | Managed/serverless remote telemetry | `missing_env` | `blocked_by_preflight` |  | `deploy/serverless/observed-telemetry.remote.json` | `WAVEMIND_SERVERLESS_NODES` | Hosted/serverless p99, cold-start, error-rate, and scale-out SLO. |
 | 10M Qdrant service load | `complete` | `complete` | 10000000 | `benchmarks/production_streaming_load_qdrant_10m_results.json` | `WAVEMIND_QDRANT_URL` | 10M-100M service-backed production scale |
 | 10M sharded Qdrant service load | `complete` | `complete` | 10000000 | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` | `WAVEMIND_QDRANT_URLS` | 10M-100M service-backed production scale |
-| 10M pgvector service load | `missing_env` | `blocked_by_preflight` | 10000000 | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `WAVEMIND_PGVECTOR_DSN` | 10M-100M service-backed production scale |
+| 10M pgvector service load | `complete` | `complete` | 10000000 | `benchmarks/production_streaming_load_pgvector_10m_results.json` | `` | 10M-100M service-backed production scale |
 | 50M FAISS IVF-PQ streaming load | `complete` | `complete` | 50000000 | `benchmarks/production_streaming_load_ivfpq_50m_results.json` | `WAVEMIND_FAISS_IVFPQ_PATH` | 10M-100M service-backed production scale |
 | 100M remote load result | `missing_env` | `blocked_by_preflight` | 100000000 | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` | `WAVEMIND_QDRANT_URLS` | 10M-100M service-backed production scale |
 
@@ -49,7 +49,7 @@ production evidence by itself.
 - `serverless_remote_telemetry`: `gh workflow run serverless-observed-telemetry.yml -f nodes="$WAVEMIND_SERVERLESS_NODES" -f requests="240" -f workers="4" -f seed_memories="24" -f seed_mode="first" -f max_scale="256" -f target_rps="3200" -f target_p99_ms="500" -f external_cold_start_ms="900" -f estimated_scale_out_seconds="18" -f commit_results="false"`
 - `qdrant_10m_service`: `gh workflow run production-streaming-load.yml -f engine="qdrant-service" -f size="10000000" -f dim="128" -f queries="2000" -f top_k="10" -f batch_size="5000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="100.0" -f replicas="3" -f autoscaling_max_replicas="24" -f capacity_headroom="0.7" -f runner_label="self-hosted-large" -f runner_storage_root="state/production-runs" -f commit_results="false" -f qdrant_url="$WAVEMIND_QDRANT_URL"`
 - `qdrant_sharded_10m_service`: `gh workflow run production-streaming-load.yml -f engine="qdrant-sharded-service" -f size="10000000" -f dim="128" -f queries="2000" -f top_k="10" -f batch_size="5000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="250.0" -f replicas="4" -f autoscaling_max_replicas="48" -f capacity_headroom="0.7" -f runner_label="self-hosted-large" -f runner_storage_root="state/production-runs" -f commit_results="false" -f qdrant_urls="$WAVEMIND_QDRANT_URLS"`
-- `pgvector_10m_service`: `gh workflow run production-streaming-load.yml -f engine="pgvector-service" -f size="10000000" -f dim="128" -f queries="2000" -f top_k="10" -f batch_size="5000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="100.0" -f replicas="3" -f autoscaling_max_replicas="24" -f capacity_headroom="0.7" -f runner_label="self-hosted-large" -f runner_storage_root="state/production-runs" -f commit_results="false" -f pgvector_dsn="$WAVEMIND_PGVECTOR_DSN"`
+- `pgvector_10m_service`: `gh workflow run production-streaming-load.yml -f engine="pgvector-service" -f size="10000000" -f dim="128" -f queries="2000" -f top_k="10" -f batch_size="5000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="100.0" -f replicas="3" -f autoscaling_max_replicas="24" -f capacity_headroom="0.7" -f runner_label="ubuntu-latest" -f runner_storage_root="state/production-runs" -f commit_results="false" -f provision_pgvector_shards="true" -f pgvector_shard_count="4" -f pgvector_profile="ivfflat-fine-production"`
 - `faiss_ivfpq_50m`: `gh workflow run production-streaming-load.yml -f engine="faiss-ivfpq-persisted" -f size="50000000" -f dim="128" -f queries="2000" -f top_k="10" -f batch_size="1000000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="100.0" -f replicas="3" -f autoscaling_max_replicas="24" -f capacity_headroom="0.7" -f runner_label="self-hosted-large" -f runner_storage_root="state/production-runs" -f commit_results="false" -f faiss_ivfpq_path="$WAVEMIND_FAISS_IVFPQ_PATH"`
 - `hundred_million_remote_load`: `gh workflow run production-streaming-load.yml -f engine="qdrant-sharded-service" -f size="100000000" -f dim="128" -f queries="5000" -f top_k="10" -f batch_size="10000" -f target_recall="0.95" -f target_p99_ms="100.0" -f target_qps="500.0" -f replicas="8" -f autoscaling_max_replicas="128" -f capacity_headroom="0.7" -f runner_label="self-hosted-large" -f runner_storage_root="state/production-runs" -f commit_results="false" -f qdrant_urls="$WAVEMIND_QDRANT_URLS"`
 

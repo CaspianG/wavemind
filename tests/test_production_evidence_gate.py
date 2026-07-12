@@ -51,6 +51,11 @@ def _write_100m_streaming_artifact(root: Path, *, engine: str) -> Path:
 def test_production_evidence_gate_tracks_strict_external_claims():
     root = Path(__file__).resolve().parents[1]
     payload = evaluate_production_evidence(root)
+    cluster_load = json.loads(
+        (root / "benchmarks" / "http_cluster_load_results.json").read_text(
+            encoding="utf-8"
+        )
+    )
 
     assert payload["schema"] == "wavemind.production_evidence.v1"
     assert payload["overall_status"] == "action_required"
@@ -60,8 +65,10 @@ def test_production_evidence_gate_tracks_strict_external_claims():
     by_id = {row["id"]: row for row in payload["requirements"]}
     assert by_id["external_http_cluster"]["status"] == "pass"
     assert by_id["external_http_cluster"]["issues"] == []
-    assert "query p99 84.799" in by_id["external_http_cluster"]["evidence"]
-    assert "lifecycle batch p99 6694.757" in by_id["external_http_cluster"]["evidence"]
+    evidence = by_id["external_http_cluster"]["evidence"]
+    metrics = cluster_load["results"][0]
+    assert f"query p99 {metrics['query_p99_ms']}" in evidence
+    assert f"lifecycle batch p99 {metrics['lifecycle_batch_p99_ms']}" in evidence
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["external_http_active_active"]["artifact"] == (
         "benchmarks/external_http_active_active_results.json"

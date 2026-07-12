@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-11T05:56:44Z",
-  "source_ref": "c4f786e131c8",
+  "generated_at": "2026-07-12T17:10:28Z",
+  "source_ref": "baa23bc9a969",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -973,7 +973,7 @@
       "category": "production-scale",
       "status": "implemented",
       "source": "benchmarks/production_streaming_load_benchmark.py",
-      "dataset": "Memory-bounded streaming generator for 10M, 50M, and 100M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, a real two-service sharded Qdrant smoke, single-service Qdrant, sharded Qdrant, and pgvector 10M service preflights, a 50M FAISS IVF-PQ plan-only resource/command preflight, and a 100M sharded Qdrant preflight contract.",
+      "dataset": "Memory-bounded streaming generator for 10M, 50M, and 100M target-recall load profiles. Checked-in artifacts include 10k smoke plus 100k, 1M, and 10M compressed FAISS IVF-PQ profiles, real Qdrant and PostgreSQL/pgvector service smokes, cold and tuned 1M Qdrant streaming profiles, strict single-service Qdrant, four-service sharded Qdrant, and four-service pgvector 10M results, a strict 50M FAISS IVF-PQ result, and a 100M sharded Qdrant preflight contract.",
       "competitors": [
         "FAISS persisted streaming",
         "FAISS IVF-PQ persisted streaming",
@@ -1281,21 +1281,21 @@
           "estimated_application_storage_gb": 23.842,
           "required_local_free_gb": 0.004,
           "disk_free_gb": 0.0,
-          "index_mode": "remote PostgreSQL/pgvector storage; local runner stores only generated batches",
+          "index_mode": "modulo-sharded PostgreSQL/pgvector services; local runner stores only generated batches",
           "required_env": [
-            "WAVEMIND_PGVECTOR_DSN"
+            "WAVEMIND_PGVECTOR_DSNS"
           ],
           "missing_env": [
-            "WAVEMIND_PGVECTOR_DSN"
+            "WAVEMIND_PGVECTOR_DSNS"
           ],
           "blockers": [
-            "missing_env:WAVEMIND_PGVECTOR_DSN",
+            "missing_env:WAVEMIND_PGVECTOR_DSNS",
             "insufficient_local_disk_for_index_and_transient_batches"
           ]
         }
       },
-      "target": "Keep strict 10M single-service and four-service sharded Qdrant, 10M/50M compressed FAISS, and service smokes green while completing 10M pgvector and 100M sharded Qdrant evidence.",
-      "next_step": "Run .github/workflows/production-streaming-load.yml with sized pgvector infrastructure for 10M, then execute the 100M sharded Qdrant profile."
+      "target": "Keep strict 10M single-service and four-service sharded Qdrant, four-service pgvector, 10M/50M compressed FAISS, and service smokes green while completing 100M sharded Qdrant evidence.",
+      "next_step": "Execute the 100M sharded Qdrant profile through production-streaming-load.yml on sized service infrastructure, then repeat pgvector on independent PostgreSQL nodes for HA evidence."
     },
     {
       "id": "scale_readiness",
@@ -2030,7 +2030,7 @@
           "readiness_status": "action_required",
           "claim_status": "claims_limited",
           "total_requirements": 8,
-          "action_required_count": 4,
+          "action_required_count": 3,
           "ready_for_safe_dispatch_count": 0,
           "can_auto_run_now_count": 0,
           "target_memories_total": 180000000
@@ -2165,14 +2165,14 @@
           "failover_hit_rate": 1.0,
           "delete_suppression_rate": 1.0,
           "repair_repaired_total": 1,
-          "p99_operation_ms": 6694.75712100001,
+          "p99_operation_ms": 8351.044338999998,
           "slo_pass": true,
           "batch_query_success": true,
           "batch_query_size": 24,
           "batch_query_http_requests": "24 -> 1",
           "batch_query_request_reduction_ratio": 0.9583333333333334,
-          "batch_query_p99_ms": 148.8199839999993,
-          "batch_query_total_speedup": 1.2556579632494516
+          "batch_query_p99_ms": 186.78031600001077,
+          "batch_query_total_speedup": 1.0791519808749621
         }
       },
       "target": "Keep the service-node workload and external batch recall green against real API processes, then repeat it against remote Kubernetes or serverless nodes before claiming external-cluster production readiness.",
@@ -2201,9 +2201,9 @@
           "status": "pass",
           "environment": "kind-multinode-ci",
           "evidence_source": "github-actions-kind",
-          "source_ref": "9956e3112dc575d0f12ff99ec59326dd8e035f70",
-          "workflow_run_id": "29057247023",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29057247023",
+          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+          "workflow_run_id": "29165761261",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
           "node_count": 4,
           "operator_pod_count": 2,
           "operator_node_count": 2,
@@ -2251,18 +2251,18 @@
           "status": "pass",
           "environment": "kind-multinode-network-ci",
           "evidence_source": "github-actions-kind-physical-node-pause",
-          "source_ref": "3d40e894b493253a7d263fa2bf6d67bbc8f4019a",
-          "workflow_run_id": "29070578441",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29070578441",
+          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+          "workflow_run_id": "29165761261",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
           "service_node_count": 4,
           "zone_count": 3,
           "failure_method": "docker-pause-kind-worker",
-          "target_worker": "wavemind-ci-worker",
-          "target_zone": "zone-a",
+          "target_worker": "wavemind-ci-worker2",
+          "target_zone": "zone-b",
           "target_data_pods": [
             "wavemind-ci-2"
           ],
-          "outage_duration_ms": 8911.648,
+          "outage_duration_ms": 9431.139,
           "seed_memories": 256,
           "outage_hit_rate": 1.0,
           "failed_nodes_during_outage": [
@@ -2305,15 +2305,15 @@
           "status": "pass",
           "environment": "kind-multizone-active-active-ci",
           "evidence_source": "github-actions-kind-physical-region-worker-pause",
-          "source_ref": "b6392353668203196007e1cac695e178752d34d1",
-          "workflow_run_id": "29058433643",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29058433643",
+          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+          "workflow_run_id": "29165761261",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
           "region_count": 3,
           "zone_count": 3,
           "all_regions_use_pvc": true,
           "failure_method": "docker-pause-kind-worker",
           "target_region": "region-b",
-          "outage_duration_ms": 9900.072,
+          "outage_duration_ms": 9658.868,
           "seed_writes": 48,
           "seed_convergence_rate": 1.0,
           "outage_unavailable_regions": [
@@ -2359,22 +2359,22 @@
           "status": "pass",
           "environment": "kind-multizone-serverless-lifecycle-ci",
           "evidence_source": "github-actions-kind-external-state-manual-scale-lifecycle",
-          "source_ref": "880cafdf5ce5f7c9da878bd8e82ada39ca2d02cc",
-          "workflow_run_id": "29064934749",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29064934749",
+          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+          "workflow_run_id": "29165761261",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
           "passed_checks": 13,
           "check_count": 13,
           "persistent_volume_claims": 3,
-          "cold_start_ms": 5086.153,
+          "cold_start_ms": 5055.034,
           "restored_after_zero_rate": 1.0,
           "ready_replicas": 3,
           "zone_count": 3,
           "visible_replicas": 3,
           "suppressed_replicas": 3,
-          "write_propagation_ms": 1130.6929430000991,
-          "delete_propagation_ms": 915.0309450000123,
-          "burst_requests_per_second": 41.39356985869663,
-          "burst_p99_ms": 1461.4564480000354,
+          "write_propagation_ms": 1136.9370459999573,
+          "delete_propagation_ms": 884.7577889999911,
+          "burst_requests_per_second": 40.74436448541339,
+          "burst_p99_ms": 1891.9401950000747,
           "final_restore_rate": 1.0,
           "claim_boundary": "Ephemeral non-loopback Kubernetes lifecycle evidence with external durable state. It proves scale-to-zero state safety and multi-replica behavior, but does not unlock remote managed Knative/KEDA production admission."
         }
@@ -2405,13 +2405,13 @@
           "status": "pass",
           "environment": "kind-independent-namespace-postgres-qdrant-dr-ci",
           "evidence_source": "github-actions-kind-pg-dump-independent-restore",
-          "source_ref": "880cafdf5ce5f7c9da878bd8e82ada39ca2d02cc",
-          "workflow_run_id": "29064934749",
-          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29064934749",
+          "source_ref": "29f84dc226c5fd11ae9696d04fa48ffb1ae371e3",
+          "workflow_run_id": "29165761261",
+          "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29165761261",
           "passed_checks": 10,
           "check_count": 10,
           "backup_format": "pg_dump-custom",
-          "backup_bytes": 1016635,
+          "backup_bytes": 1016642,
           "source_state_stopped": true,
           "recovery_pvcs": 3,
           "restored_rate": 1.0,
@@ -2419,7 +2419,7 @@
           "index_expected_records": 24,
           "index_vector_records": 24,
           "restored_after_api_replacement_rate": 1.0,
-          "restore_elapsed_ms": 20449.092,
+          "restore_elapsed_ms": 23338.114,
           "claim_boundary": "Ephemeral non-loopback Kubernetes disaster-recovery evidence. It proves logical PostgreSQL backup/restore and Qdrant rebuild in an independent namespace, not managed-cloud PITR or multi-region DR."
         }
       },

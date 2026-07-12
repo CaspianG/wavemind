@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-11T05:56:54Z",
+  "generated_at": "2026-07-12T16:59:09Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -9,8 +9,8 @@
     "readiness_status": "action_required",
     "claim_status": "claims_limited",
     "total_requirements": 8,
-    "action_required_count": 4,
-    "complete_count": 4,
+    "action_required_count": 3,
+    "complete_count": 5,
     "ready_for_safe_dispatch_count": 0,
     "can_auto_run_now_count": 0,
     "target_memories_total": 180000000,
@@ -18,12 +18,12 @@
       "pass": 8
     },
     "dispatch_status_counts": {
-      "blocked_by_preflight": 4,
-      "complete": 4
+      "blocked_by_preflight": 3,
+      "complete": 5
     },
     "blocker_counts": {
-      "complete": 4,
-      "missing_env": 4
+      "complete": 5,
+      "missing_env": 3
     }
   },
   "checks": [
@@ -300,14 +300,14 @@
     {
       "id": "pgvector_10m_service",
       "title": "10M pgvector service load",
-      "strict_status": "action_required",
-      "preflight_status": "action_required",
-      "dispatch_status": "blocked_by_preflight",
-      "scale_gap_status": "blocked_by_env",
+      "strict_status": "pass",
+      "preflight_status": "ready",
+      "dispatch_status": "complete",
+      "scale_gap_status": "complete",
       "workflow": "production-streaming-load.yml",
       "wave": "service-scale-10m",
       "artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
-      "artifact_exists": false,
+      "artifact_exists": true,
       "output_artifact": "benchmarks/production_streaming_load_pgvector_10m_results.json",
       "claim_unlocked": "10M PostgreSQL/pgvector service candidate-index SLO.",
       "locked_claim": "10M-100M service-backed production scale",
@@ -315,28 +315,24 @@
       "target_recall_at_k": 0.95,
       "target_p99_ms": 100.0,
       "target_qps": 100.0,
-      "required_env": [
-        "WAVEMIND_PGVECTOR_DSN"
-      ],
-      "missing_env": [
-        "WAVEMIND_PGVECTOR_DSN"
-      ],
+      "required_env": [],
+      "missing_env": [],
       "required_secrets": [],
-      "issues": [
-        "set WAVEMIND_PGVECTOR_DSN"
+      "issues": [],
+      "warnings": [
+        "Ephemeral isolated service processes prove the 10M candidate-index SLO, not PostgreSQL HA or independent-node failure tolerance."
       ],
-      "warnings": [],
       "local_profile_command": "python benchmarks/production_streaming_load_benchmark.py --sizes 10000000 --dim 128 --queries 2000 --top-k 10 --batch-size 5000 --engines pgvector-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 100.0 --replicas 3 --autoscaling-max-replicas 24 --capacity-headroom 0.7 --memory-payload-kb 2.0 --vector-dtype-bytes 4 --output benchmarks/production_streaming_load_pgvector_10m_results.json --checkpoint-path state/production-runs/pgvector-service-10000000.checkpoint.json",
-      "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
-      "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"self-hosted-large\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f pgvector_dsn=\"$WAVEMIND_PGVECTOR_DSN\"",
+      "safe_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"false\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\" -f pgvector_profile=\"ivfflat-fine-production\"",
+      "publish_dispatch_command": "gh workflow run production-streaming-load.yml -f engine=\"pgvector-service\" -f size=\"10000000\" -f dim=\"128\" -f queries=\"2000\" -f top_k=\"10\" -f batch_size=\"5000\" -f target_recall=\"0.95\" -f target_p99_ms=\"100.0\" -f target_qps=\"100.0\" -f replicas=\"3\" -f autoscaling_max_replicas=\"24\" -f capacity_headroom=\"0.7\" -f runner_label=\"ubuntu-latest\" -f runner_storage_root=\"state/production-runs\" -f commit_results=\"true\" -f provision_pgvector_shards=\"true\" -f pgvector_shard_count=\"4\" -f pgvector_profile=\"ivfflat-fine-production\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
       "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh",
       "strict_validation_command": "python benchmarks/production_evidence_gate.py --output benchmarks/production_evidence_results.json --markdown-output benchmarks/PRODUCTION_EVIDENCE.md --strict",
       "post_ingest_refresh_command": "python benchmarks/strict_evidence_readiness_report.py --output benchmarks/strict_evidence_readiness_results.json --markdown-output benchmarks/STRICT_EVIDENCE_READINESS.md",
       "ready_for_safe_dispatch": false,
       "can_auto_run_now": false,
-      "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate.",
-      "blocker_category": "missing_env"
+      "next_action": "Strict result artifact already passes.",
+      "blocker_category": "complete"
     },
     {
       "id": "faiss_ivfpq_50m",

@@ -1125,12 +1125,246 @@ def test_streaming_load_plan_only_supports_pgvector_service(monkeypatch):
     assert row["engine"] == "WaveMind pgvector streaming"
     assert row["vectors"] == 10_000_000
     assert row["estimated_index_gb"] == 0.0
-    assert row["index_mode"].startswith("remote PostgreSQL/pgvector")
-    assert "WAVEMIND_PGVECTOR_DSN" in row["required_env"]
-    assert "missing_env:WAVEMIND_PGVECTOR_DSN" in row["blockers"]
+    assert row["index_mode"].startswith("modulo-sharded PostgreSQL/pgvector")
+    assert "WAVEMIND_PGVECTOR_DSNS" in row["required_env"]
+    assert "missing_env:WAVEMIND_PGVECTOR_DSNS" in row["blockers"]
     assert row["command_env"]["WAVEMIND_PGVECTOR_CREATE_HNSW"] == "1"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_STORAGE_TYPE"] == "halfvec"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INSERT_MODE"] == "copy"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_INDEX_TYPE"] == "ivfflat"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_LISTS"] == "5000"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_IVFFLAT_PROBES"] == "475"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_QUERY_ROUTING"] == "namespace"
+    assert row["command_env"]["WAVEMIND_PGVECTOR_PREWARM_INDEX"] == "1"
     assert "--engines pgvector-service" in row["command"]
     assert "production_streaming_load_pgvector_10m_results.json" in row["command"]
+
+
+def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import _pgvector_config_from_env
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "halfvec")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_INSERT_MODE", "copy")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_INDEX_TYPE", "hnsw-binary")
+    config = _pgvector_config_from_env()
+    assert config["storage_type"] == "halfvec"
+    assert config["insert_mode"] == "copy"
+    assert config["index_type"] == "hnsw-binary"
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_UNLOGGED", "1")
+    config = _pgvector_config_from_env()
+    assert config["query_routing"] == "namespace"
+    assert config["unlogged"] is True
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "broadcast")
+    with pytest.raises(ValueError, match="must be fanout or namespace"):
+        _pgvector_config_from_env()
+
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "fanout")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_STORAGE_TYPE", "binary")
+    with pytest.raises(ValueError, match="must be vector or halfvec"):
+        _pgvector_config_from_env()
+
+
+def test_pgvector_managed_profiles_scale_per_shard():
+    from benchmarks.production_streaming_load_benchmark import pgvector_managed_profile
+
+    one_million = pgvector_managed_profile(
+        "ivfflat-quality", vector_count=1_000_000, shard_count=4
+    )
+    assert one_million["per_shard_vectors"] == 250_000
+    assert one_million["ivfflat_lists"] == 500
+    assert one_million["ivfflat_probes"] == 125
+    assert one_million["index_type"] == "ivfflat"
+
+    ten_million = pgvector_managed_profile(
+        "ivfflat-quality", vector_count=10_000_000, shard_count=4
+    )
+    assert ten_million["per_shard_vectors"] == 2_500_000
+    assert ten_million["ivfflat_lists"] == 2500
+    assert ten_million["ivfflat_probes"] == 625
+
+    fine = pgvector_managed_profile(
+        "ivfflat-fine-balanced", vector_count=1_000_000, shard_count=4
+    )
+    assert fine["ivfflat_lists"] == 1000
+    assert fine["ivfflat_probes"] == 100
+
+    production = pgvector_managed_profile(
+        "ivfflat-fine-production", vector_count=10_000_000, shard_count=4
+    )
+    assert production["ivfflat_lists"] == 5000
+    assert production["ivfflat_probes"] == 475
+
+    fine_slo = pgvector_managed_profile(
+        "ivfflat-fine-slo", vector_count=1_000_000, shard_count=4
+    )
+    assert fine_slo["ivfflat_lists"] == 1000
+    assert fine_slo["ivfflat_probes"] == 105
+
+    binary = pgvector_managed_profile(
+        "hnsw-binary-high-recall", vector_count=1_000_000, shard_count=4
+    )
+    assert binary["index_type"] == "hnsw-binary"
+    assert binary["hnsw_ef_search"] == 1000
+    assert binary["binary_candidates"] == 10000
+
+    hnsw = pgvector_managed_profile(
+        "hnsw-quality", vector_count=10_000_000, shard_count=4
+    )
+    assert hnsw["index_type"] == "hnsw"
+    assert hnsw["hnsw_ef_construction"] == 96
+    assert hnsw["hnsw_ef_search"] == 1600
+
+    with pytest.raises(ValueError, match="unsupported pgvector profile"):
+        pgvector_managed_profile("unknown", vector_count=10, shard_count=1)
+
+
+def test_pgvector_copy_batch_replaces_only_uncheckpointed_range():
+    from benchmarks.production_streaming_load_benchmark import _pgvector_insert_batch
+
+    class FakeCopy:
+        def __init__(self):
+            self.rows = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def write_row(self, row):
+            self.rows.append(row)
+
+    class FakeCursor:
+        def __init__(self):
+            self.executed = []
+            self.copy_sql = None
+            self.copy_stream = FakeCopy()
+
+        def execute(self, sql, params):
+            self.executed.append((sql, params))
+
+        def copy(self, sql):
+            self.copy_sql = sql
+            return self.copy_stream
+
+    cursor = FakeCursor()
+    ids = np.asarray([101, 102], dtype=np.int64)
+    vectors = np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    _pgvector_insert_batch(
+        cursor,
+        table="wavemind_vectors",
+        collection="run-1",
+        ids=ids,
+        vectors=vectors,
+        storage_type="halfvec",
+        insert_mode="copy",
+    )
+
+    assert cursor.executed == [
+        (
+            "DELETE FROM wavemind_vectors WHERE collection = %s AND memory_id BETWEEN %s AND %s",
+            ("run-1", 101, 102),
+        )
+    ]
+    assert cursor.copy_sql == (
+        "COPY wavemind_vectors (collection, memory_id, embedding) FROM STDIN"
+    )
+    assert [row[:2] for row in cursor.copy_stream.rows] == [
+        ("run-1", 101),
+        ("run-1", 102),
+    ]
+
+
+def test_pgvector_checkpoint_migrates_only_index_specific_signature(tmp_path):
+    from benchmarks.production_streaming_load_benchmark import (
+        _checkpoint_signature,
+        _load_pgvector_checkpoint,
+        _new_checkpoint,
+    )
+
+    current = _checkpoint_signature(
+        engine="WaveMind pgvector streaming",
+        count=100,
+        dim=8,
+        query_count=4,
+        top_k=2,
+        seed=42,
+        noise=0.08,
+        batch_size=10,
+        extra={
+            "table": "vectors",
+            "storage_type": "halfvec",
+            "insert_mode": "copy",
+        },
+    )
+    legacy = json.loads(json.dumps(current))
+    legacy["extra"].update(
+        {
+            "create_hnsw": True,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 64,
+            "exact": False,
+            "iterative_scan": None,
+        }
+    )
+    checkpoint = _new_checkpoint(legacy)
+    path = tmp_path / "pgvector-checkpoint.json"
+    path.write_text(json.dumps(checkpoint), encoding="utf-8")
+
+    migrated = _load_pgvector_checkpoint(path, current)
+
+    assert migrated["signature"] == current
+    assert set(migrated["metadata"]["signature_migrated_index_keys"]) == {
+        "create_hnsw",
+        "hnsw_m",
+        "hnsw_ef_construction",
+        "exact",
+        "iterative_scan",
+    }
+
+
+def test_pgvector_shard_counts_cover_every_id_exactly():
+    from benchmarks.production_streaming_load_benchmark import (
+        _pgvector_benchmark_namespace_shard,
+        _pgvector_shard_expected_count,
+    )
+
+    assert [
+        _pgvector_shard_expected_count(10, 4, index) for index in range(4)
+    ] == [3, 3, 2, 2]
+    assert sum(
+        _pgvector_shard_expected_count(10_000_003, 4, index)
+        for index in range(4)
+    ) == 10_000_003
+    assert [
+        _pgvector_benchmark_namespace_shard(source_id, 4)
+        for source_id in range(1, 9)
+    ] == [0, 1, 2, 3, 0, 1, 2, 3]
+    with pytest.raises(ValueError, match="source_id must be positive"):
+        _pgvector_benchmark_namespace_shard(0, 4)
+
+
+def test_pgvector_sharded_mode_requires_multiple_services(monkeypatch):
+    from benchmarks.production_streaming_load_benchmark import run_pgvector_streaming
+
+    monkeypatch.delenv("WAVEMIND_PGVECTOR_DSN", raising=False)
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_DSNS", "postgresql://only-one")
+
+    row = run_pgvector_streaming(
+        count=10,
+        dim=4,
+        query_count=2,
+        top_k=1,
+        seed=42,
+        noise=0.01,
+        batch_size=5,
+    )
+
+    assert row["skipped"] is True
+    assert "at least two service DSNs" in row["reason"]
 
 
 def test_streaming_load_plan_only_supports_qdrant_service(monkeypatch):

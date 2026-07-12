@@ -30,6 +30,7 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
         "benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
         "benchmarks/production_streaming_load_pgvector_smoke_results.json",
         "benchmarks/production_streaming_load_pgvector_10m_plan.json",
+        "benchmarks/production_streaming_load_pgvector_10m_results.json",
         "benchmarks/production_streaming_load_50m_plan.json",
         "benchmarks/production_admission_results.json",
     ]
@@ -79,5 +80,5 @@ def test_public_benchmark_brief_links_checked_in_artifacts_and_commands():
     assert "39/39" in brief
     assert "Qdrant 1M streaming" in brief
     assert "two-service sharded Qdrant smoke" in brief
-    assert "qdrant 10M service profiles are complete" in brief
-    assert "pgvector 10M service profile is complete" in brief
+    assert "four-service 10M sharded Qdrant" in brief
+    assert "completed pgvector 10M candidate-index SLO" in brief

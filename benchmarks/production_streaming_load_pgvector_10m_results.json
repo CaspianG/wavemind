@@ -1,0 +1,253 @@
+{
+  "schema": "wavemind.production_streaming_load.v1",
+  "generated_at": "2026-07-12T15:49:08Z",
+  "source_ref": "baa23bc9a969f928bb8566488b39e8d1583a2546",
+  "execution_id": "29198856925",
+  "execution_environment": "github-actions",
+  "evidence_source": "github-actions",
+  "workflow_run_id": "29198856925",
+  "workflow_run_url": "https://github.com/CaspianG/wavemind/actions/runs/29198856925",
+  "scenario": {
+    "name": "production_streaming_load_profile",
+    "description": "Memory-bounded production load profile for 10M+ vector runs. Vectors are generated and inserted in batches. Quality is measured as target-recall: whether a noisy copy of a known source vector returns that source id in top-k. This is scalable to large N and complements exact-neighbor benchmarks at smaller N. Use persisted FAISS IVF-PQ for memory-bounded 10M+ compressed-index profiles.",
+    "sizes": [
+      10000000
+    ],
+    "vector_dim": 128,
+    "queries_per_size": 2000,
+    "top_k": 10,
+    "seed": 42,
+    "noise": 0.08,
+    "batch_size": 5000,
+    "target_recall_definition": "source id appears in top-k for a noisy copy of that source vector",
+    "memory_model": "streaming batches; stores only selected query source vectors outside the index",
+    "default_target_sizes": [
+      10000000,
+      50000000
+    ],
+    "slo_targets": {
+      "target_recall_at_k": 0.95,
+      "target_p99_ms": 100.0,
+      "target_qps": 100.0,
+      "replicas": 3,
+      "autoscaling_max_replicas": 24,
+      "capacity_headroom": 0.7
+    },
+    "cost_model": {
+      "replica_hourly_cost_usd": 0.25,
+      "storage_gb_monthly_cost_usd": 0.1,
+      "memory_payload_kb": 2.0,
+      "vector_dtype_bytes": 4,
+      "hours_per_month": 730.0,
+      "monthly_budget_usd": null,
+      "max_cost_per_1m_memories_usd": null,
+      "max_compute_cost_per_1m_queries_usd": null
+    }
+  },
+  "preflight": {
+    "python": "3.11.15",
+    "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39",
+    "docker": {
+      "available": true,
+      "server_version": "28.0.4"
+    },
+    "modules": {
+      "faiss": true,
+      "qdrant_client": true,
+      "psycopg": true,
+      "numpy": true
+    },
+    "environment": {
+      "WAVEMIND_FAISS_PATH": false,
+      "WAVEMIND_QDRANT_URL": false,
+      "WAVEMIND_PGVECTOR_DSN": false,
+      "WAVEMIND_PGVECTOR_DSNS": true,
+      "WAVEMIND_PGVECTOR_CREATE_HNSW": null,
+      "WAVEMIND_PGVECTOR_EF_SEARCH": "800",
+      "WAVEMIND_QDRANT_HNSW_EF": null,
+      "WAVEMIND_QDRANT_EXACT": null,
+      "WAVEMIND_QDRANT_WARMUP_QUERIES": null,
+      "WAVEMIND_QDRANT_WAIT_AFTER_BUILD_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_TIMEOUT_SECONDS": null,
+      "WAVEMIND_QDRANT_INDEX_READY_POLL_SECONDS": null,
+      "WAVEMIND_QDRANT_REQUIRE_FULL_INDEX": null,
+      "WAVEMIND_QDRANT_DEFER_INDEXING": null,
+      "WAVEMIND_QDRANT_DEFERRED_INDEXING_THRESHOLD_KB": null,
+      "WAVEMIND_QDRANT_FINAL_INDEXING_THRESHOLD_KB": null,
+      "WAVEMIND_QDRANT_HNSW_M": null,
+      "WAVEMIND_QDRANT_HNSW_EF_CONSTRUCT": null,
+      "WAVEMIND_QDRANT_HNSW_FULL_SCAN_THRESHOLD": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_DEFAULT_SEGMENT_NUMBER": null,
+      "WAVEMIND_QDRANT_OPTIMIZER_INDEXING_THRESHOLD": null,
+      "WAVEMIND_QDRANT_VECTOR_ON_DISK": null,
+      "WAVEMIND_QDRANT_ON_DISK_PAYLOAD": null,
+      "WAVEMIND_QDRANT_SHARD_NUMBER": null
+    },
+    "disk": {
+      "root": "/",
+      "free_gb": 103.83,
+      "total_gb": 144.26
+    }
+  },
+  "results": [
+    {
+      "vectors": 10000000,
+      "vector_dim": 128,
+      "queries": 2000,
+      "top_k": 10,
+      "noise": 0.08,
+      "batch_size": 5000,
+      "results": [
+        {
+          "engine": "WaveMind pgvector streaming",
+          "vectors": 10000000,
+          "vector_dim": 128,
+          "batch_size": 5000,
+          "recall_at_k": 0.975,
+          "target_recall_at_k": 0.975,
+          "target_recall_at_1": 0.975,
+          "avg_latency_ms": 83.6696851059985,
+          "p50_latency_ms": 83.56316500021421,
+          "p95_latency_ms": 85.38482399990244,
+          "p99_latency_ms": 87.65708599958089,
+          "max_latency_ms": 212.491196999963,
+          "build_ms": 3546133.2688349998,
+          "queries": 2000,
+          "recall_definition": "source vector id appears in top_k for a noisy copy of that vector",
+          "table": "wavemind_streaming_vectors",
+          "collection": "streaming_load_1783871349071875314",
+          "storage_type": "halfvec",
+          "insert_mode": "copy",
+          "table_persistence": "unlogged-candidate-index",
+          "table_persistence_by_shard": [
+            "u",
+            "u",
+            "u",
+            "u"
+          ],
+          "index_type": "ivfflat",
+          "remote_row_count": 10000000,
+          "complete_resume": false,
+          "index_name": "wavemind_streaming_vectors_embedding_ivfflat_idx",
+          "index_present": true,
+          "prewarm_index": true,
+          "prewarm_blocks": 355252,
+          "prewarm_blocks_by_shard": [
+            88814,
+            88806,
+            88799,
+            88833
+          ],
+          "index_build_workers": 1,
+          "warmup_queries": 0,
+          "wait_after_build_seconds": 0.0,
+          "shard_count": 4,
+          "shard_row_counts": [
+            2500000,
+            2500000,
+            2500000,
+            2500000
+          ],
+          "shard_expected_counts": [
+            2500000,
+            2500000,
+            2500000,
+            2500000
+          ],
+          "shard_misplaced_rows": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "query_routing": "namespace",
+          "evidence_topology": "github-hosted-isolated-service-processes",
+          "fanout_workers": 0,
+          "query_workers": 1,
+          "per_namespace_vector_capacity": 2500000,
+          "global_cross_namespace_search": false,
+          "routing_key_source": "synthetic benchmark namespace label derived from source id modulo shard count",
+          "search_params": {
+            "hnsw_ef": 800,
+            "ivfflat_probes": 475,
+            "binary_candidates": null,
+            "exact": false,
+            "iterative_scan": null
+          },
+          "collection_params": {
+            "create_hnsw": true,
+            "hnsw_m": 16,
+            "hnsw_ef_construction": 64,
+            "index_type": "ivfflat",
+            "ivfflat_lists": 5000
+          },
+          "memory_mode": "streaming modulo-sharded PostgreSQL insert; namespace-routed single-service query; query source vectors only",
+          "checkpoint_enabled": true,
+          "checkpoint_path": "state/pgvector-service-10000000.checkpoint.json",
+          "checkpoint_completed_batches": 2000,
+          "checkpoint_source_vectors": 2000,
+          "slo_status": "scale_required",
+          "slo_required_replicas": 12,
+          "slo_autoscaled_qps": 200.78956887093108,
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 8.333333333333332,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 2192.3841857910156,
+          "estimated_storage_gb": 23.84185791015625
+        }
+      ],
+      "slo": [
+        {
+          "engine": "WaveMind pgvector streaming",
+          "status": "scale_required",
+          "target_recall_at_k": 0.95,
+          "target_p99_ms": 100.0,
+          "target_qps": 100.0,
+          "recall_at_k": 0.975,
+          "p99_latency_ms": 87.65708599958089,
+          "avg_latency_ms": 83.6696851059985,
+          "per_replica_qps_at_headroom": 8.366232036288794,
+          "current_replicas": 3,
+          "current_capacity_qps": 25.098696108866385,
+          "required_replicas": 12,
+          "autoscaling_max_replicas": 24,
+          "autoscaled_capacity_qps": 200.78956887093108,
+          "blocking_reasons": [],
+          "cost_status": "valid_slo",
+          "compute_cost_per_1m_queries_usd": 8.333333333333332,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_total_cost_at_target_qps_usd": 2192.3841857910156,
+          "estimated_storage_gb": 23.84185791015625
+        }
+      ],
+      "cost": [
+        {
+          "engine": "WaveMind pgvector streaming",
+          "cost_status": "valid_slo",
+          "cost_blocking_reasons": [],
+          "memory_count": 10000000,
+          "vector_dim": 128,
+          "required_replicas": 12,
+          "target_qps": 100.0,
+          "replica_hourly_cost_usd": 0.25,
+          "storage_gb_monthly_cost_usd": 0.1,
+          "monthly_budget_usd": null,
+          "monthly_budget_headroom_usd": null,
+          "max_cost_per_1m_memories_usd": null,
+          "max_compute_cost_per_1m_queries_usd": null,
+          "vector_storage_gb": 4.76837158203125,
+          "payload_storage_gb": 19.073486328125,
+          "total_storage_gb": 23.84185791015625,
+          "monthly_storage_cost_usd": 2.384185791015625,
+          "monthly_storage_cost_per_1m_memories_usd": 0.2384185791015625,
+          "monthly_compute_cost_per_1m_memories_usd": 219.0,
+          "monthly_total_cost_per_1m_memories_usd": 219.23841857910156,
+          "monthly_queries_at_target_qps": 262800000.0,
+          "compute_cost_per_1m_queries_usd": 8.333333333333332,
+          "monthly_compute_cost_at_target_qps_usd": 2190.0,
+          "monthly_total_cost_at_target_qps_usd": 2192.3841857910156
+        }
+      ]
+    }
+  ]
+}

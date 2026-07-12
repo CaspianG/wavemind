@@ -65,6 +65,7 @@ def preflight(output_path: Path | None = None) -> dict[str, Any]:
             "WAVEMIND_FAISS_PATH": bool(os.environ.get("WAVEMIND_FAISS_PATH")),
             "WAVEMIND_QDRANT_URL": bool(os.environ.get("WAVEMIND_QDRANT_URL")),
             "WAVEMIND_PGVECTOR_DSN": bool(os.environ.get("WAVEMIND_PGVECTOR_DSN")),
+            "WAVEMIND_PGVECTOR_DSNS": bool(os.environ.get("WAVEMIND_PGVECTOR_DSNS")),
             "WAVEMIND_PGVECTOR_CREATE_HNSW": os.environ.get("WAVEMIND_PGVECTOR_CREATE_HNSW"),
             "WAVEMIND_PGVECTOR_EF_SEARCH": os.environ.get("WAVEMIND_PGVECTOR_EF_SEARCH"),
             "WAVEMIND_QDRANT_HNSW_EF": os.environ.get("WAVEMIND_QDRANT_HNSW_EF"),

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_env_contract.v1",
-  "generated_at": "2026-07-10T05:23:37Z",
+  "generated_at": "2026-07-12T16:59:05Z",
   "overall_status": "action_required",
   "repo": "CaspianG/wavemind",
   "claim_boundary": "Environment contract only. It stores placeholders and secret names, never credential values, and does not unlock production claims until strict evidence artifacts pass ingestion and validation.",
@@ -22,7 +22,7 @@
       "WAVEMIND_CLUSTER_NODES",
       "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
       "WAVEMIND_FAISS_IVFPQ_PATH",
-      "WAVEMIND_PGVECTOR_DSN",
+      "WAVEMIND_PGVECTOR_DSNS",
       "WAVEMIND_QDRANT_URL",
       "WAVEMIND_QDRANT_URLS",
       "WAVEMIND_SERVERLESS_NODES"
@@ -227,32 +227,28 @@
       "github_secret_command": "printf '%s' \"$WAVEMIND_FAISS_IVFPQ_PATH\" | gh secret set WAVEMIND_FAISS_IVFPQ_PATH --repo CaspianG/wavemind --body-file -"
     },
     {
-      "name": "WAVEMIND_PGVECTOR_DSN",
+      "name": "WAVEMIND_PGVECTOR_DSNS",
       "status": "missing",
       "configured": false,
       "required": true,
       "recommended": false,
-      "kind": "postgres-dsn",
+      "kind": "postgres-dsn-list",
       "sensitivity": "secret_or_internal",
-      "description": "PostgreSQL/pgvector DSN for 10M pgvector service streaming load.",
-      "example": "postgresql://USER:PASSWORD@pgvector.staging.example.com:5432/wavemind",
+      "description": "Comma-separated PostgreSQL/pgvector service DSNs for the namespace-sharded 10M streaming load.",
+      "example": "postgresql://USER:PASSWORD@pgvector-a.staging.example.com:5432/wavemind,postgresql://USER:PASSWORD@pgvector-b.staging.example.com:5432/wavemind",
       "used_by": [
         "pgvector_10m_service"
       ],
-      "workflows": [
-        "production-streaming-load.yml"
-      ],
-      "workflow_inputs": [
-        "pgvector_dsn"
-      ],
+      "workflows": [],
+      "workflow_inputs": [],
       "artifacts": [
         "benchmarks/production_streaming_load_pgvector_10m_results.json"
       ],
       "claims": [
         "10M PostgreSQL/pgvector service candidate-index SLO."
       ],
-      "github_secret": "WAVEMIND_PGVECTOR_DSN",
-      "github_secret_command": "printf '%s' \"$WAVEMIND_PGVECTOR_DSN\" | gh secret set WAVEMIND_PGVECTOR_DSN --repo CaspianG/wavemind --body-file -"
+      "github_secret": "WAVEMIND_PGVECTOR_DSNS",
+      "github_secret_command": "printf '%s' \"$WAVEMIND_PGVECTOR_DSNS\" | gh secret set WAVEMIND_PGVECTOR_DSNS --repo CaspianG/wavemind --body-file -"
     },
     {
       "name": "WAVEMIND_QDRANT_API_KEY",
@@ -407,7 +403,7 @@
       "WAVEMIND_CLUSTER_NODES_MANIFEST_JSON",
       "WAVEMIND_FAISS_IVFPQ_FREE_GB",
       "WAVEMIND_FAISS_IVFPQ_PATH",
-      "WAVEMIND_PGVECTOR_DSN",
+      "WAVEMIND_PGVECTOR_DSNS",
       "WAVEMIND_QDRANT_API_KEY",
       "WAVEMIND_QDRANT_API_KEYS",
       "WAVEMIND_QDRANT_URL",
@@ -422,7 +418,7 @@
       "printf '%s' \"$WAVEMIND_CLUSTER_NODES_MANIFEST_JSON\" | gh secret set WAVEMIND_CLUSTER_NODES_MANIFEST_JSON --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_FAISS_IVFPQ_FREE_GB\" | gh secret set WAVEMIND_FAISS_IVFPQ_FREE_GB --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_FAISS_IVFPQ_PATH\" | gh secret set WAVEMIND_FAISS_IVFPQ_PATH --repo CaspianG/wavemind --body-file -",
-      "printf '%s' \"$WAVEMIND_PGVECTOR_DSN\" | gh secret set WAVEMIND_PGVECTOR_DSN --repo CaspianG/wavemind --body-file -",
+      "printf '%s' \"$WAVEMIND_PGVECTOR_DSNS\" | gh secret set WAVEMIND_PGVECTOR_DSNS --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_QDRANT_API_KEY\" | gh secret set WAVEMIND_QDRANT_API_KEY --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_QDRANT_API_KEYS\" | gh secret set WAVEMIND_QDRANT_API_KEYS --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_QDRANT_URL\" | gh secret set WAVEMIND_QDRANT_URL --repo CaspianG/wavemind --body-file -",
@@ -430,17 +426,17 @@
       "printf '%s' \"$WAVEMIND_SERVERLESS_NODES\" | gh secret set WAVEMIND_SERVERLESS_NODES --repo CaspianG/wavemind --body-file -"
     ]
   },
-  "env_example": "# WaveMind strict production evidence environment\n# Fill these locally or as GitHub Actions environment-scoped secrets.\n# Do not commit real values.\n\n# Remote WaveMind API regions for active-active namespace sync evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS=us=https://wm-us.staging.example.com,eu=https://wm-eu.staging.example.com,ap=https://wm-ap.staging.example.com\n\n# JSON manifest alternative for remote active-active region evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-regions-2026-07\",\"regions\":[{\"id\":\"us\",\"url\":\"https://wm-us.staging.example.com\"},{\"id\":\"eu\",\"url\":\"https://wm-eu.staging.example.com\"},{\"id\":\"ap\",\"url\":\"https://wm-ap.staging.example.com\"}]}\n\n# Optional API key used when remote WaveMind endpoints require authentication.\nWAVEMIND_API_KEY=REDACTED_API_KEY\n\n# Remote WaveMind API nodes for the external service-node cluster workload.\nWAVEMIND_CLUSTER_NODES=node-a=https://wm-a.staging.example.com,node-b=https://wm-b.staging.example.com,node-c=https://wm-c.staging.example.com,node-d=https://wm-d.staging.example.com\n\n# JSON manifest alternative for external service-node cluster evidence.\nWAVEMIND_CLUSTER_NODES_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-staging-2026-07\",\"nodes\":[{\"id\":\"node-a\",\"url\":\"https://wm-a.staging.example.com\"},{\"id\":\"node-b\",\"url\":\"https://wm-b.staging.example.com\"},{\"id\":\"node-c\",\"url\":\"https://wm-c.staging.example.com\"},{\"id\":\"node-d\",\"url\":\"https://wm-d.staging.example.com\"}]}\n\n# Optional deterministic free-disk override for FAISS IVF-PQ preflight.\nWAVEMIND_FAISS_IVFPQ_FREE_GB=8\n\n# Persisted FAISS IVF-PQ index path for the 50M streaming profile.\nWAVEMIND_FAISS_IVFPQ_PATH=/mnt/wavemind/faiss/wavemind-ivfpq-50m.faiss\n\n# PostgreSQL/pgvector DSN for 10M pgvector service streaming load.\nWAVEMIND_PGVECTOR_DSN=postgresql://USER:PASSWORD@pgvector.staging.example.com:5432/wavemind\n\n# Optional Qdrant API key for the single-service Qdrant production load job.\nWAVEMIND_QDRANT_API_KEY=REDACTED_QDRANT_API_KEY\n\n# Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.\nWAVEMIND_QDRANT_API_KEYS=REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B\n\n# Single Qdrant service URL for 10M service-backed streaming load.\nWAVEMIND_QDRANT_URL=https://qdrant-10m.staging.example.com:6333\n\n# Comma-separated Qdrant shard URLs for 10M sharded and 100M sharded service load.\nWAVEMIND_QDRANT_URLS=https://qdrant-a.staging.example.com:6333,https://qdrant-b.staging.example.com:6333\n\n# Deployed serverless/managed WaveMind API nodes for remote telemetry evidence.\nWAVEMIND_SERVERLESS_NODES=https://wm-serverless-a.example.com,https://wm-serverless-b.example.com\n",
+  "env_example": "# WaveMind strict production evidence environment\n# Fill these locally or as GitHub Actions environment-scoped secrets.\n# Do not commit real values.\n\n# Remote WaveMind API regions for active-active namespace sync evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS=us=https://wm-us.staging.example.com,eu=https://wm-eu.staging.example.com,ap=https://wm-ap.staging.example.com\n\n# JSON manifest alternative for remote active-active region evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-regions-2026-07\",\"regions\":[{\"id\":\"us\",\"url\":\"https://wm-us.staging.example.com\"},{\"id\":\"eu\",\"url\":\"https://wm-eu.staging.example.com\"},{\"id\":\"ap\",\"url\":\"https://wm-ap.staging.example.com\"}]}\n\n# Optional API key used when remote WaveMind endpoints require authentication.\nWAVEMIND_API_KEY=REDACTED_API_KEY\n\n# Remote WaveMind API nodes for the external service-node cluster workload.\nWAVEMIND_CLUSTER_NODES=node-a=https://wm-a.staging.example.com,node-b=https://wm-b.staging.example.com,node-c=https://wm-c.staging.example.com,node-d=https://wm-d.staging.example.com\n\n# JSON manifest alternative for external service-node cluster evidence.\nWAVEMIND_CLUSTER_NODES_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-staging-2026-07\",\"nodes\":[{\"id\":\"node-a\",\"url\":\"https://wm-a.staging.example.com\"},{\"id\":\"node-b\",\"url\":\"https://wm-b.staging.example.com\"},{\"id\":\"node-c\",\"url\":\"https://wm-c.staging.example.com\"},{\"id\":\"node-d\",\"url\":\"https://wm-d.staging.example.com\"}]}\n\n# Optional deterministic free-disk override for FAISS IVF-PQ preflight.\nWAVEMIND_FAISS_IVFPQ_FREE_GB=8\n\n# Persisted FAISS IVF-PQ index path for the 50M streaming profile.\nWAVEMIND_FAISS_IVFPQ_PATH=/mnt/wavemind/faiss/wavemind-ivfpq-50m.faiss\n\n# Comma-separated PostgreSQL/pgvector service DSNs for the namespace-sharded 10M streaming load.\nWAVEMIND_PGVECTOR_DSNS=postgresql://USER:PASSWORD@pgvector-a.staging.example.com:5432/wavemind,postgresql://USER:PASSWORD@pgvector-b.staging.example.com:5432/wavemind\n\n# Optional Qdrant API key for the single-service Qdrant production load job.\nWAVEMIND_QDRANT_API_KEY=REDACTED_QDRANT_API_KEY\n\n# Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.\nWAVEMIND_QDRANT_API_KEYS=REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B\n\n# Single Qdrant service URL for 10M service-backed streaming load.\nWAVEMIND_QDRANT_URL=https://qdrant-10m.staging.example.com:6333\n\n# Comma-separated Qdrant shard URLs for 10M sharded and 100M sharded service load.\nWAVEMIND_QDRANT_URLS=https://qdrant-a.staging.example.com:6333,https://qdrant-b.staging.example.com:6333\n\n# Deployed serverless/managed WaveMind API nodes for remote telemetry evidence.\nWAVEMIND_SERVERLESS_NODES=https://wm-serverless-a.example.com,https://wm-serverless-b.example.com\n",
   "checks": [
     {
       "name": "all_preflight_env_represented",
       "pass": true,
-      "detail": "9/9 preflight env vars represented"
+      "detail": "8/8 preflight env vars represented"
     },
     {
       "name": "all_dispatch_env_represented",
       "pass": true,
-      "detail": "12/12 dispatch env vars represented"
+      "detail": "11/11 dispatch env vars represented"
     },
     {
       "name": "all_scale_gap_env_represented",
