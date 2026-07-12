@@ -212,6 +212,12 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet /opt/hostedtoolcache/CodeQL
           docker network create wavemind-pgvector-ci
           : > pgvector-managed-dsns.txt
+          maintenance_work_mem="1536MB"
+          parallel_maintenance_workers="1"
+          if [ "$PGVECTOR_PROFILE" = "ivfflat-ultrafine-balanced" ]; then
+            maintenance_work_mem="7GB"
+            parallel_maintenance_workers="0"
+          fi
           for shard in $(seq 0 $((PGVECTOR_SHARD_COUNT - 1))); do
             name="wavemind-pgvector-${shard}"
             port=$((55432 + shard))
@@ -225,9 +231,9 @@ jobs:
               "pgvector/pgvector:pg16" \
               postgres \
               -c shared_buffers=512MB \
-              -c maintenance_work_mem=1536MB \
+              -c maintenance_work_mem="$maintenance_work_mem" \
               -c effective_cache_size=2GB \
-              -c max_parallel_maintenance_workers=1 \
+              -c max_parallel_maintenance_workers="$parallel_maintenance_workers" \
               -c max_wal_size=4GB \
               -c min_wal_size=1GB \
               -c checkpoint_timeout=30min \
@@ -367,9 +373,11 @@ jobs:
               env.setdefault("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
               env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
               if managed_shards:
-                  env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = os.environ[
-                      "PGVECTOR_SHARD_COUNT"
-                  ]
+                  env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = (
+                      "1"
+                      if profile == "ivfflat-ultrafine-balanced"
+                      else os.environ["PGVECTOR_SHARD_COUNT"]
+                  )
                   env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
@@ -485,9 +493,15 @@ jobs:
                   )
               if row.get("query_routing") != "namespace":
                   raise SystemExit("managed pgvector evidence must use namespace routing")
-              if int(row.get("index_build_workers", 0) or 0) != expected_shards:
+              expected_index_workers = (
+                  1
+                  if os.environ["PGVECTOR_PROFILE"] == "ivfflat-ultrafine-balanced"
+                  else expected_shards
+              )
+              if int(row.get("index_build_workers", 0) or 0) != expected_index_workers:
                   raise SystemExit(
-                      "managed pgvector evidence must build independent shard indexes in parallel"
+                      "managed pgvector evidence used unexpected index build concurrency: "
+                      f"expected {expected_index_workers}, found {row.get('index_build_workers')}"
                   )
               if row.get("table_persistence") != "unlogged-candidate-index":
                   raise SystemExit(
