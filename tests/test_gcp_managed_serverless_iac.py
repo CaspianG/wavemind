@@ -80,6 +80,7 @@ def test_terraform_workflow_formats_initializes_and_validates():
     assert "terraform validate -no-color" in workflow
     assert "deploy/cloud/gcp-managed-serverless" in workflow
     assert "deploy/cloud/gcp-remote-active-active" in workflow
+    assert "deploy/cloud/gcp-qdrant-100m" in workflow
     assert parsed["permissions"]["contents"] == "read"
 
 

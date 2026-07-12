@@ -1,0 +1,12 @@
+project_id    = "wavemind-benchmarks"
+deployment_id = "wavemind-100m-gcp"
+
+ssh_source_ranges = ["203.0.113.10/32"]
+ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIexample replace-me"
+
+machine_type       = "e2-standard-4"
+boot_disk_size_gb  = 100
+qdrant_image       = "qdrant/qdrant:v1.18.2"
+target_vectors     = 100000000
+vector_dim         = 128
+deletion_protection = true
