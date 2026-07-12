@@ -9,9 +9,9 @@ Environment contract only. It stores placeholders and secret names, never creden
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| required env | `9` |
+| required env | `12` |
 | configured required env | `0` |
-| missing required env | `9` |
+| missing required env | `12` |
 | recommended missing env | `3` |
 | workflows | `4` |
 | dispatch jobs | `8` |
@@ -21,9 +21,9 @@ Environment contract only. It stores placeholders and secret names, never creden
 
 | variable | status | kind | used by | workflows | artifacts |
 |---|---|---|---|---|---|
-| `WAVEMIND_ACTIVE_ACTIVE_REGIONS` | `missing` | `api-region-list` | `external_http_active_active` | `external-http-active-active.yml` | `benchmarks/external_http_active_active_results.json` |
-| `WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | `missing` | `api-region-manifest-json` | `external_http_active_active` | `external-http-active-active.yml` | `benchmarks/external_http_active_active_results.json` |
-| `WAVEMIND_API_KEY` | `recommended` | `api-secret` | `external_http_active_active`, `external_http_cluster`, `serverless_remote_telemetry` | `external-http-active-active.yml`, `external-http-cluster-load.yml`, `serverless-observed-telemetry.yml` | `benchmarks/external_http_active_active_results.json`, `benchmarks/http_cluster_load_results.json`, `deploy/serverless/observed-telemetry.remote.json` |
+| `WAVEMIND_ACTIVE_ACTIVE_REGIONS` | `optional` | `api-region-list` |  |  |  |
+| `WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | `optional` | `api-region-manifest-json` |  |  |  |
+| `WAVEMIND_API_KEY` | `recommended` | `api-secret` | `external_http_cluster`, `serverless_remote_telemetry` | `external-http-cluster-load.yml`, `serverless-observed-telemetry.yml` | `benchmarks/http_cluster_load_results.json`, `deploy/serverless/observed-telemetry.remote.json` |
 | `WAVEMIND_CLUSTER_NODES` | `missing` | `api-node-list` | `external_http_cluster` | `external-http-cluster-load.yml` | `benchmarks/http_cluster_load_results.json` |
 | `WAVEMIND_CLUSTER_NODES_MANIFEST_JSON` | `missing` | `api-node-manifest-json` | `external_http_cluster` | `external-http-cluster-load.yml` | `benchmarks/http_cluster_load_results.json` |
 | `WAVEMIND_FAISS_IVFPQ_FREE_GB` | `optional` | `disk-free-override-gb` |  |  |  |
@@ -33,6 +33,11 @@ Environment contract only. It stores placeholders and secret names, never creden
 | `WAVEMIND_QDRANT_API_KEYS` | `recommended` | `qdrant-api-secret-list` | `hundred_million_remote_load`, `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
 | `WAVEMIND_QDRANT_URL` | `missing` | `qdrant-url` | `qdrant_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
 | `WAVEMIND_QDRANT_URLS` | `missing` | `qdrant-url-list` | `hundred_million_remote_load`, `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
+| `WAVEMIND_REMOTE_API_KEY` | `missing` | `api-secret` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
+| `WAVEMIND_REMOTE_LAB_INVENTORY_JSON` | `missing` | `remote-lab-inventory-json` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
+| `WAVEMIND_REMOTE_POSTGRES_PASSWORD` | `missing` | `postgres-password` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
+| `WAVEMIND_REMOTE_SSH_KNOWN_HOSTS` | `missing` | `ssh-known-hosts` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
+| `WAVEMIND_REMOTE_SSH_PRIVATE_KEY` | `missing` | `ssh-private-key` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
 | `WAVEMIND_SERVERLESS_NODES` | `missing` | `serverless-api-node-list` | `serverless_remote_telemetry` | `serverless-observed-telemetry.yml` | `deploy/serverless/observed-telemetry.remote.json` |
 
 ## GitHub Secrets
@@ -53,14 +58,19 @@ the repository.
 - `printf '%s' "$WAVEMIND_QDRANT_API_KEYS" | gh secret set WAVEMIND_QDRANT_API_KEYS --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_QDRANT_URL" | gh secret set WAVEMIND_QDRANT_URL --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_QDRANT_URLS" | gh secret set WAVEMIND_QDRANT_URLS --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_API_KEY" | gh secret set WAVEMIND_REMOTE_API_KEY --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_LAB_INVENTORY_JSON" | gh secret set WAVEMIND_REMOTE_LAB_INVENTORY_JSON --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_POSTGRES_PASSWORD" | gh secret set WAVEMIND_REMOTE_POSTGRES_PASSWORD --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SSH_KNOWN_HOSTS" | gh secret set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SSH_PRIVATE_KEY" | gh secret set WAVEMIND_REMOTE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_SERVERLESS_NODES" | gh secret set WAVEMIND_SERVERLESS_NODES --repo CaspianG/wavemind --body-file -`
 
 ## Checks
 
 | check | status | detail |
 |---|---|---|
-| all_preflight_env_represented | `pass` | 8/8 preflight env vars represented |
-| all_dispatch_env_represented | `pass` | 11/11 dispatch env vars represented |
+| all_preflight_env_represented | `pass` | 11/11 preflight env vars represented |
+| all_dispatch_env_represented | `pass` | 14/14 dispatch env vars represented |
 | all_scale_gap_env_represented | `pass` | 4/4 scale-gap env vars represented |
 | no_missing_contract_rows | `pass` | none |
 | strict_requirements_joined | `pass` | 8 strict requirements |

@@ -12,6 +12,12 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from .remote_lab import (
+    RemoteLabError,
+    RemoteLabInventory,
+    validate_remote_region_failure_drill,
+)
+
 
 PROJECT_ROOT = Path.cwd()
 
@@ -769,24 +775,31 @@ def _external_cluster_requirement(root: Path) -> EvidenceRequirement:
 
 def _external_active_active_requirement(root: Path) -> EvidenceRequirement:
     artifact = "benchmarks/external_http_active_active_results.json"
+    failure_artifact = "benchmarks/remote_active_active_failure_drill_results.json"
     payload = _load_optional_json(root / artifact)
+    failure_payload = _load_optional_json(root / failure_artifact)
     validation = _validate_external_active_active_payload(payload or None)
     issues = list(validation.get("issues", []))
-    missing = not payload
+    failure_validation = validate_remote_region_failure_drill(failure_payload or None)
+    issues.extend(
+        f"failure drill: {issue}"
+        for issue in failure_validation.get("issues", [])
+    )
+    missing = not payload or not failure_payload
     return EvidenceRequirement(
         id="external_http_active_active",
-        title="External HTTP active-active regions",
+        title="External HTTP active-active regions with physical failure recovery",
         status=_status_from_issues(missing=missing, issues=issues),
-        evidence=str(validation.get("evidence") or "missing external active-active artifact"),
+        evidence=(
+            f"transport: {validation.get('evidence') or 'missing external active-active artifact'}; "
+            f"failure recovery: {failure_validation.get('evidence')}"
+        ),
         artifact=artifact,
         command=(
-            "gh workflow run external-http-active-active.yml "
-            "-f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,"
-            "ap-south=https://wm-ap.example.com\" "
-            "-f namespace_count=16 -f p99_slo_ms=1500 "
-            "-f fail_on_slo=true -f commit_results=true"
+            "gh workflow run remote-production-lab.yml "
+            "-f action=evidence -f namespace_count=16"
         ),
-        claim_unlocked="Remote multi-region active-active memory convergence.",
+        claim_unlocked="Remote multi-region active-active convergence and physical region recovery.",
         issues=tuple(dict.fromkeys(issues)),
     )
 
@@ -1055,6 +1068,61 @@ def _endpoint_preflight(
     )
 
 
+_REMOTE_LAB_REQUIRED_ENV = (
+    "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+    "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+    "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+    "WAVEMIND_REMOTE_API_KEY",
+    "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
+)
+
+
+def _remote_lab_active_active_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
+    issues: list[str] = []
+    missing_env = tuple(name for name in _REMOTE_LAB_REQUIRED_ENV if not _env_value(env, name))
+    for name in missing_env:
+        issues.append(f"set {name}")
+
+    inventory: RemoteLabInventory | None = None
+    inventory_value = _env_value(env, "WAVEMIND_REMOTE_LAB_INVENTORY_JSON")
+    if inventory_value:
+        try:
+            payload = json.loads(inventory_value)
+            if not isinstance(payload, dict):
+                raise RemoteLabError("inventory root must be a JSON object")
+            inventory = RemoteLabInventory.from_dict(payload)
+        except (json.JSONDecodeError, RemoteLabError, TypeError, ValueError) as exc:
+            issues.append(f"invalid remote lab inventory: {exc}")
+
+    failed_region = inventory.regions[0].id if inventory else "<inventory-region-id>"
+    command = (
+        "gh workflow run remote-production-lab.yml --ref main "
+        "-f action=evidence -f namespace_count=16"
+    )
+    evidence = (
+        f"{len(inventory.regions)} independently described remote regions; "
+        f"deployment {inventory.deployment_id}; physical failure target {failed_region}"
+        if inventory
+        else "remote production inventory is not configured"
+    )
+    return EvidencePreflightCheck(
+        id="external_http_active_active",
+        title="Remote active-active physical region failure preflight",
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=evidence,
+        required_env=_REMOTE_LAB_REQUIRED_ENV,
+        missing_env=missing_env,
+        command=command,
+        output_artifact="benchmarks/external_http_active_active_results.json",
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=(
+            "The workflow must run against three independently attested machines; "
+            "an inventory declaration alone does not unlock the claim.",
+        ),
+    )
+
+
 def _configured_cluster_nodes(
     env: dict[str, str],
 ) -> tuple[dict[str, str], list[str], list[str]]:
@@ -1282,21 +1350,7 @@ def evaluate_production_evidence_preflight(
             env=environment,
             manifest_kind="cluster",
         ),
-        _endpoint_preflight(
-            check_id="external_http_active_active",
-            title="External HTTP active-active regions preflight",
-            list_env="WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-            manifest_env="WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
-            min_count=3,
-            label="active-active region",
-            command=(
-                "gh workflow run external-http-active-active.yml "
-                "-f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true"
-            ),
-            output_artifact="benchmarks/external_http_active_active_results.json",
-            env=environment,
-            manifest_kind="active-active",
-        ),
+        _remote_lab_active_active_preflight(environment),
         _serverless_preflight(environment),
         _large_run_preflight(
             root,
@@ -1521,17 +1575,14 @@ def _dispatch_config(
         }
     if requirement_id == "external_http_active_active":
         inputs = {
-            "regions": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-            "regions_manifest_json": "$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
+            "action": "evidence",
             "namespace_count": "16",
-            "p99_slo_ms": "1500",
-            "commit_results": commit_results,
         }
         return {
-            "workflow": "external-http-active-active.yml",
+            "workflow": "remote-production-lab.yml",
             "wave": "remote-service",
             "inputs": inputs,
-            "required_secrets": ["WAVEMIND_API_KEY"],
+            "required_secrets": list(_REMOTE_LAB_REQUIRED_ENV),
         }
     if requirement_id == "serverless_remote_telemetry":
         inputs = {
@@ -1694,7 +1745,8 @@ def build_production_evidence_dispatch_plan(
         status = _dispatch_job_status(strict_status, preflight_status)
         launch_command = _gh_workflow_command(workflow, inputs) if workflow else ""
         publish_inputs = dict(inputs)
-        publish_inputs["commit_results"] = True
+        if "commit_results" in publish_inputs:
+            publish_inputs["commit_results"] = True
         publish_command = _gh_workflow_command(workflow, publish_inputs) if workflow else ""
         artifact = str(requirement.get("artifact") or check.get("output_artifact") or "")
         jobs.append(
@@ -2899,8 +2951,8 @@ def evaluate_active_active_admission(
         )
     if preflight_status != "ready":
         warnings.append(
-            "active-active remote preflight is not ready; provide real region URLs "
-            "or a regions manifest before dispatching the workflow."
+            "active-active remote preflight is not ready; configure the attested "
+            "remote-lab inventory, pinned SSH trust, and deployment secrets before dispatch."
         )
     if int(min_regions) < 3:
         issues.append("min_regions must be at least 3 for production active-active.")
@@ -2917,7 +2969,8 @@ def evaluate_active_active_admission(
         )
     elif status == "plan_only":
         next_actions.append(
-            "Do not admit multi-region production traffic yet; run the external active-active workflow against real regions first."
+            "Do not admit multi-region production traffic yet; run the remote production lab "
+            "against three independently attested regions and ingest both evidence artifacts."
         )
     else:
         next_actions.append(
@@ -2998,6 +3051,7 @@ def evaluate_active_active_admission(
             "strict_evidence": "benchmarks/production_evidence_results.json",
             "preflight": "benchmarks/production_evidence_preflight_results.json",
             "required_result": "benchmarks/external_http_active_active_results.json",
+            "failure_drill": "benchmarks/remote_active_active_failure_drill_results.json",
         },
     }
 

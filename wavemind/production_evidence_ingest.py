@@ -42,6 +42,7 @@ EXPECTED_EVIDENCE_ARTIFACTS: dict[str, ExpectedEvidenceArtifact] = {
         destination="benchmarks/external_http_active_active_results.json",
         requirement_id="external_http_active_active",
         description="remote/staging/production active-active API-region result",
+        optional_dependencies=("remote_active_active_failure_drill_results.json",),
     ),
     "observed-telemetry.remote.json": ExpectedEvidenceArtifact(
         filename="observed-telemetry.remote.json",

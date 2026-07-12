@@ -28,6 +28,10 @@ on:
         description: "Namespaces used by the active-active evidence run."
         required: true
         default: "16"
+      failed_region:
+        description: "Inventory region id whose API container is physically stopped during evidence."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -74,6 +78,27 @@ jobs:
             --output state/remote-lab/plan.json \
             --manifest-output state/remote-lab/active-active-regions.json
 
+      - name: Resolve physical failure target
+        id: failure-target
+        if: inputs.action == 'evidence'
+        env:
+          REQUESTED_FAILED_REGION: ${{ inputs.failed_region }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          inventory = json.loads(Path("state/remote-lab/inventory.json").read_text(encoding="utf-8"))
+          region_ids = [str(row["id"]) for row in inventory.get("regions", [])]
+          requested = os.environ.get("REQUESTED_FAILED_REGION", "").strip()
+          selected = requested or (region_ids[0] if region_ids else "")
+          if not selected or selected not in region_ids:
+              raise SystemExit(f"failed_region must be one of: {', '.join(region_ids)}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as sink:
+              sink.write(f"failed_region={selected}\n")
+          PY
+
       - name: Attest independent remote machines
         run: |
           python deploy/remote/remote_lab.py attest \
@@ -113,6 +138,19 @@ jobs:
             --fail-on-slo \
             --output state/remote-lab/external_http_active_active_results.json
 
+      - name: Run physical region failure and recovery drill
+        if: inputs.action == 'evidence'
+        run: |
+          python deploy/remote/remote_lab.py failure-drill \
+            --inventory state/remote-lab/inventory.json \
+            --failed-region "${{ steps.failure-target.outputs.failed_region }}" \
+            --namespace-prefix "remote-region-failure-${{ github.run_id }}" \
+            --namespace-count "${{ inputs.namespace_count }}" \
+            --min-cpu "${{ inputs.min_cpu }}" \
+            --min-memory-gb "${{ inputs.min_memory_gb }}" \
+            --min-disk-free-gb "${{ inputs.min_disk_free_gb }}" \
+            --output state/remote-lab/remote_active_active_failure_drill_results.json
+
       - name: Validate evidence through the ingestion gate
         if: inputs.action == 'evidence'
         run: |
@@ -133,5 +171,6 @@ jobs:
             state/remote-lab/public-probe.json
             state/remote-lab/active-active-regions.json
             state/remote-lab/external_http_active_active_results.json
+            state/remote-lab/remote_active_active_failure_drill_results.json
           if-no-files-found: warn
           retention-days: 30

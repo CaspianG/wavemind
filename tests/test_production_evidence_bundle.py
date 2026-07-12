@@ -24,13 +24,11 @@ def _ready_env(tmp_path):
                 "node-d=https://wm-d.staging.internal",
             ]
         ),
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS": ",".join(
-            [
-                "us=https://wm-us.staging.internal",
-                "eu=https://wm-eu.staging.internal",
-                "ap=https://wm-ap.staging.internal",
-            ]
-        ),
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": json.dumps(_remote_inventory()),
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": "test-private-key",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
+        "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -41,6 +39,27 @@ def _ready_env(tmp_path):
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
+    }
+
+
+def _remote_inventory():
+    return {
+        "schema": "wavemind.remote_production_lab.v1",
+        "deployment_id": "wm-regions-2026-07",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "ghcr.io/caspiang/wavemind:sha-0123456789abcdef",
+        "regions": [
+            {
+                "id": f"region-{index}",
+                "ssh_host": f"wavemind-{index}",
+                "public_url": f"https://wm-{index}.staging.internal",
+                "region": f"region-{index}",
+                "zone": f"zone-{index}",
+                "provider": f"provider-{index}",
+            }
+            for index in range(3)
+        ],
     }
 
 

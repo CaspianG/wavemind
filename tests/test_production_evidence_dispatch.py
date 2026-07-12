@@ -20,13 +20,11 @@ def _ready_env(tmp_path):
                 "node-d=https://wm-d.staging.internal",
             ]
         ),
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS": ",".join(
-            [
-                "us=https://wm-us.staging.internal",
-                "eu=https://wm-eu.staging.internal",
-                "ap=https://wm-ap.staging.internal",
-            ]
-        ),
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": json.dumps(_remote_inventory()),
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": "test-private-key",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
+        "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
         "WAVEMIND_SERVERLESS_NODES": (
             "https://wm-a.staging.internal,https://wm-b.staging.internal"
         ),
@@ -42,6 +40,27 @@ def _ready_env(tmp_path):
         "WAVEMIND_FAISS_IVFPQ_PATH": str(tmp_path / "wavemind-faiss-ivfpq-50m.faiss"),
         "WAVEMIND_FAISS_IVFPQ_FREE_GB": "8",
         "WAVEMIND_API_KEY": "test-key",
+    }
+
+
+def _remote_inventory():
+    return {
+        "schema": "wavemind.remote_production_lab.v1",
+        "deployment_id": "wm-regions-2026-07",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "ghcr.io/caspiang/wavemind:sha-0123456789abcdef",
+        "regions": [
+            {
+                "id": f"region-{index}",
+                "ssh_host": f"wavemind-{index}",
+                "public_url": f"https://wm-{index}.staging.internal",
+                "region": f"region-{index}",
+                "zone": f"zone-{index}",
+                "provider": f"provider-{index}",
+            }
+            for index in range(3)
+        ],
     }
 
 
@@ -73,6 +92,10 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
         "production-streaming-load.yml"
     )
     assert by_id["pgvector_10m_service"]["status"] == "complete"
+    active = by_id["external_http_active_active"]
+    assert active["workflow"] == "remote-production-lab.yml"
+    assert active["inputs"]["action"] == "evidence"
+    assert "WAVEMIND_REMOTE_LAB_INVENTORY_JSON" in active["required_secrets"]
 
 
 def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_values(
@@ -94,6 +117,8 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert payload["summary"]["runner_label"] == "self-hosted-xxl"
 
     assert "test-key" not in serialized
+    assert "test-private-key" not in serialized
+    assert "test-remote-api-key" not in serialized
     assert "postgresql://user:pass@" not in serialized
     assert "qdrant.staging.internal" not in serialized
 

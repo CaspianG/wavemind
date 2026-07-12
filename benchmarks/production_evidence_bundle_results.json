@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-12T16:59:07Z",
+  "generated_at": "2026-07-12T18:39:42Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-12T16:59:07Z",
+    "generated_at": "2026-07-12T18:39:42Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -43,14 +43,15 @@
       },
       {
         "id": "external_http_active_active",
-        "title": "External HTTP active-active regions",
+        "title": "External HTTP active-active regions with physical failure recovery",
         "status": "action_required",
-        "evidence": "no checked-in external HTTP active-active region result",
+        "evidence": "transport: no checked-in external HTTP active-active region result; failure recovery: no remote physical region failure and recovery artifact",
         "artifact": "benchmarks/external_http_active_active_results.json",
-        "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
-        "claim_unlocked": "Remote multi-region active-active memory convergence.",
+        "command": "gh workflow run remote-production-lab.yml -f action=evidence -f namespace_count=16",
+        "claim_unlocked": "Remote multi-region active-active convergence and physical region recovery.",
         "issues": [
-          "missing artifact"
+          "missing artifact",
+          "failure drill: missing remote region failure drill artifact"
         ]
       },
       {
@@ -121,7 +122,7 @@
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-12T16:59:07Z",
+    "generated_at": "2026-07-12T18:39:42Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -156,26 +157,35 @@
       },
       {
         "id": "external_http_active_active",
-        "title": "External HTTP active-active regions preflight",
+        "title": "Remote active-active physical region failure preflight",
         "status": "action_required",
         "ready": false,
-        "evidence": "0 URLs configured",
+        "evidence": "remote production inventory is not configured",
         "required_env": [
-          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+          "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+          "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+          "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+          "WAVEMIND_REMOTE_API_KEY",
+          "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
         ],
         "missing_env": [
-          "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-          "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+          "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+          "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+          "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+          "WAVEMIND_REMOTE_API_KEY",
+          "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
         ],
-        "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+        "command": "gh workflow run remote-production-lab.yml --ref main -f action=evidence -f namespace_count=16",
         "output_artifact": "benchmarks/external_http_active_active_results.json",
         "issues": [
-          "active-active region requires at least 3 URLs",
-          "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+          "set WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+          "set WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+          "set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+          "set WAVEMIND_REMOTE_API_KEY",
+          "set WAVEMIND_REMOTE_POSTGRES_PASSWORD"
         ],
         "warnings": [
-          "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+          "The workflow must run against three independently attested machines; an inventory declaration alone does not unlock the claim."
         ]
       },
       {
@@ -295,7 +305,7 @@
   },
   "production_readiness": {
     "schema": "wavemind.production_readiness.v1",
-    "generated_at": "2026-07-12T16:59:02Z",
+    "generated_at": "2026-07-12T17:28:36Z",
     "overall_status": "pass",
     "readiness_score": 1.0,
     "summary": {
@@ -312,7 +322,7 @@
         "title": "Checked-in benchmark artifacts are synchronized",
         "status": "pass",
         "requirement": "Benchmark matrix, report, and leaderboard must render from the same checked-in JSON.",
-        "evidence": "audit status pass, generated_at 2026-07-12T16:53:49Z",
+        "evidence": "audit status pass, generated_at 2026-07-12T17:10:28Z",
         "next_step": "Keep the benchmark refresh workflow green and block stale artifacts before release."
       },
       {
@@ -647,13 +657,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-12T16:54:02Z",
-    "generated_at": "2026-07-12T16:53:49Z",
-    "source_ref": "baa23bc9a969",
+    "checked_at": "2026-07-12T18:37:58Z",
+    "generated_at": "2026-07-12T18:37:56Z",
+    "source_ref": "a2e6a5ea1e63",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "max_age_days": 8.0,
-    "age_days": 0.00015873438657407408,
+    "age_days": 2.4908831018518518e-05,
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -760,23 +770,27 @@
   "next_actions": [
     {
       "id": "external_http_active_active",
-      "title": "External HTTP active-active regions",
+      "title": "External HTTP active-active regions with physical failure recovery",
       "strict_status": "action_required",
       "preflight_status": "action_required",
       "artifact": "benchmarks/external_http_active_active_results.json",
       "output_artifact": "benchmarks/external_http_active_active_results.json",
       "issues": [
-        "missing artifact"
+        "missing artifact",
+        "failure drill: missing remote region failure drill artifact"
       ],
       "missing_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        "The workflow must run against three independently attested machines; an inventory declaration alone does not unlock the claim."
       ],
-      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
-      "claim_unlocked": "Remote multi-region active-active memory convergence."
+      "command": "gh workflow run remote-production-lab.yml --ref main -f action=evidence -f namespace_count=16",
+      "claim_unlocked": "Remote multi-region active-active convergence and physical region recovery."
     },
     {
       "id": "serverless_remote_telemetry",

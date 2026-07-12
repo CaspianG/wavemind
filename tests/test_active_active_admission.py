@@ -15,22 +15,41 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def _remote_region_env() -> dict[str, str]:
     return {
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS": ",".join(
-            [
-                "us=https://wm-us.staging.internal",
-                "eu=https://wm-eu.staging.internal",
-                "ap=https://wm-ap.staging.internal",
-            ]
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON": json.dumps(
+            {
+                "schema": "wavemind.remote_production_lab.v1",
+                "deployment_id": "wm-regions-2026-07",
+                "environment": "staging",
+                "source": "independent-cloud-vms",
+                "image": "ghcr.io/caspiang/wavemind:sha-0123456789abcdef",
+                "regions": [
+                    {
+                        "id": f"region-{index}",
+                        "ssh_host": f"wavemind-{index}",
+                        "public_url": f"https://wm-{index}.staging.internal",
+                        "region": f"region-{index}",
+                        "zone": f"zone-{index}",
+                        "provider": f"provider-{index}",
+                    }
+                    for index in range(3)
+                ],
+            }
         ),
-        "WAVEMIND_API_KEY": "test-key",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY": "test-private-key",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
+        "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
     }
 
 
 def _clean_env() -> dict[str, str]:
     env = os.environ.copy()
     for key in (
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON",
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
     ):
         env.pop(key, None)
     return env
@@ -88,6 +107,46 @@ def _write_remote_active_active_artifact(
         ],
     }
     artifact.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    failure_artifact = root / "benchmarks" / "remote_active_active_failure_drill_results.json"
+    failure_artifact.write_text(
+        json.dumps(
+            {
+                "schema": "wavemind.remote_region_failure_drill.v1",
+                "status": "pass",
+                "deployment_id": "staging-active-active-001",
+                "environment": "staging",
+                "source": "ssh-remote-production-lab",
+                "failed_region": "region-001",
+                "region_count": regions,
+                "namespace_prefix": "tenant:remote-active-active-failure",
+                "namespace_count": namespaces,
+                "physical_failure": {
+                    "stop": {"ok": True, "error": None},
+                    "start": {"ok": True, "error": None},
+                    "failure_observed": True,
+                    "health_recovered": True,
+                },
+                "phase_statuses": {"seed": "pass", "outage": "pass", "recover": "pass"},
+                "outage": {
+                    "unavailable_regions": ["region-001"],
+                    "surviving_regions": ["region-000", "region-002"],
+                },
+                "recover": {
+                    "sync": {
+                        "final_noop_records_imported": 0,
+                        "final_noop_tombstones_imported": 0,
+                    },
+                    "verification": {
+                        "convergence_rate": 1.0,
+                        "delete_suppression_rate": 1.0,
+                    },
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return artifact
 
 
@@ -107,7 +166,7 @@ def test_active_active_admission_blocks_without_external_region_evidence():
     assert payload["required_evidence"]["artifact"] == (
         "benchmarks/external_http_active_active_results.json"
     )
-    assert "WAVEMIND_ACTIVE_ACTIVE_REGIONS" in payload["summary"]["missing_env"]
+    assert "WAVEMIND_REMOTE_LAB_INVENTORY_JSON" in payload["summary"]["missing_env"]
     assert any("strict_status=action_required" in item for item in payload["issues"])
 
 
@@ -131,6 +190,10 @@ def test_active_active_admission_admits_matching_remote_region_evidence(tmp_path
     assert payload["requested_evidence"]["namespace_count"] == 16
     assert payload["requested_evidence"]["p99_slo_ms"] == 1500.0
     assert payload["issues"] == []
+    assert payload["source_artifacts"]["failure_drill"] == (
+        "benchmarks/remote_active_active_failure_drill_results.json"
+    )
+    assert "failed_region=eu-west" not in payload["required_evidence"]["command"]
 
 
 def test_active_active_admission_blocks_when_artifact_is_too_small_for_rollout(tmp_path):

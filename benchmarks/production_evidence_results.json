@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence.v1",
-  "generated_at": "2026-07-12T17:28:50Z",
+  "generated_at": "2026-07-12T18:39:38Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -22,14 +22,15 @@
     },
     {
       "id": "external_http_active_active",
-      "title": "External HTTP active-active regions",
+      "title": "External HTTP active-active regions with physical failure recovery",
       "status": "action_required",
-      "evidence": "no checked-in external HTTP active-active region result",
+      "evidence": "transport: no checked-in external HTTP active-active region result; failure recovery: no remote physical region failure and recovery artifact",
       "artifact": "benchmarks/external_http_active_active_results.json",
-      "command": "gh workflow run external-http-active-active.yml -f regions=\"us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com\" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true",
-      "claim_unlocked": "Remote multi-region active-active memory convergence.",
+      "command": "gh workflow run remote-production-lab.yml -f action=evidence -f namespace_count=16",
+      "claim_unlocked": "Remote multi-region active-active convergence and physical region recovery.",
       "issues": [
-        "missing artifact"
+        "missing artifact",
+        "failure drill: missing remote region failure drill artifact"
       ]
     },
     {

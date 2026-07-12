@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.release_claims.v1",
-  "generated_at": "2026-07-12T16:59:08Z",
+  "generated_at": "2026-07-12T18:39:42Z",
   "release_status": "core_release_ready",
   "claim_status": "claims_limited",
   "summary": {
@@ -45,16 +45,19 @@
   "next_actions": [
     {
       "id": "external_http_active_active",
-      "title": "External HTTP active-active regions",
+      "title": "External HTTP active-active regions with physical failure recovery",
       "strict_status": "action_required",
       "preflight_status": "action_required",
       "artifact": "benchmarks/external_http_active_active_results.json",
       "missing_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
-      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
-      "claim_unlocked": "Remote multi-region active-active memory convergence."
+      "command": "gh workflow run remote-production-lab.yml --ref main -f action=evidence -f namespace_count=16",
+      "claim_unlocked": "Remote multi-region active-active convergence and physical region recovery."
     },
     {
       "id": "serverless_remote_telemetry",

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-12T16:59:09Z",
+  "generated_at": "2026-07-12T18:39:44Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -119,43 +119,56 @@
     },
     {
       "id": "external_http_active_active",
-      "title": "External HTTP active-active regions",
+      "title": "External HTTP active-active regions with physical failure recovery",
       "strict_status": "action_required",
       "preflight_status": "action_required",
       "dispatch_status": "blocked_by_preflight",
       "scale_gap_status": "",
-      "workflow": "external-http-active-active.yml",
+      "workflow": "remote-production-lab.yml",
       "wave": "remote-service",
       "artifact": "benchmarks/external_http_active_active_results.json",
       "artifact_exists": false,
       "output_artifact": "benchmarks/external_http_active_active_results.json",
-      "claim_unlocked": "Remote multi-region active-active memory convergence.",
+      "claim_unlocked": "Remote multi-region active-active convergence and physical region recovery.",
       "locked_claim": "Remote multi-region active-active convergence",
       "target_memories": 0,
       "target_recall_at_k": null,
       "target_p99_ms": null,
       "target_qps": null,
       "required_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "missing_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "required_secrets": [
-        "WAVEMIND_API_KEY"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "issues": [
-        "active-active region requires at least 3 URLs",
-        "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "set WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "set WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "set WAVEMIND_REMOTE_API_KEY",
+        "set WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        "The workflow must run against three independently attested machines; an inventory declaration alone does not unlock the claim."
       ],
       "local_profile_command": "",
-      "safe_dispatch_command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f regions_manifest_json=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON\" -f namespace_count=\"16\" -f p99_slo_ms=\"1500\" -f commit_results=\"false\"",
-      "publish_dispatch_command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f regions_manifest_json=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON\" -f namespace_count=\"16\" -f p99_slo_ms=\"1500\" -f commit_results=\"true\"",
+      "safe_dispatch_command": "gh workflow run remote-production-lab.yml -f action=\"evidence\" -f namespace_count=\"16\"",
+      "publish_dispatch_command": "gh workflow run remote-production-lab.yml -f action=\"evidence\" -f namespace_count=\"16\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
       "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh",
       "strict_validation_command": "python benchmarks/production_evidence_gate.py --output benchmarks/production_evidence_results.json --markdown-output benchmarks/PRODUCTION_EVIDENCE.md --strict",

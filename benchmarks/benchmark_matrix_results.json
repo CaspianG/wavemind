@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-12T17:10:28Z",
-  "source_ref": "baa23bc9a969",
+  "generated_at": "2026-07-12T18:39:45Z",
+  "source_ref": "a2e6a5ea1e63",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -1995,9 +1995,9 @@
       "current": {
         "WaveMind production evidence env": {
           "overall_status": "action_required",
-          "required_env_count": 9,
+          "required_env_count": 12,
           "configured_required_count": 0,
-          "missing_required_count": 9,
+          "missing_required_count": 12,
           "recommended_missing_count": 3,
           "workflow_count": 4,
           "dispatch_job_count": 8,

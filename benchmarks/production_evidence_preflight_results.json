@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_preflight.v1",
-  "generated_at": "2026-07-12T16:59:04Z",
+  "generated_at": "2026-07-12T18:39:39Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -35,26 +35,35 @@
     },
     {
       "id": "external_http_active_active",
-      "title": "External HTTP active-active regions preflight",
+      "title": "Remote active-active physical region failure preflight",
       "status": "action_required",
       "ready": false,
-      "evidence": "0 URLs configured",
+      "evidence": "remote production inventory is not configured",
       "required_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "missing_env": [
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS",
-        "WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_API_KEY",
+        "WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
-      "command": "gh workflow run external-http-active-active.yml -f regions=\"$WAVEMIND_ACTIVE_ACTIVE_REGIONS\" -f commit_results=true",
+      "command": "gh workflow run remote-production-lab.yml --ref main -f action=evidence -f namespace_count=16",
       "output_artifact": "benchmarks/external_http_active_active_results.json",
       "issues": [
-        "active-active region requires at least 3 URLs",
-        "set WAVEMIND_ACTIVE_ACTIVE_REGIONS or WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON"
+        "set WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
+        "set WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
+        "set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
+        "set WAVEMIND_REMOTE_API_KEY",
+        "set WAVEMIND_REMOTE_POSTGRES_PASSWORD"
       ],
       "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        "The workflow must run against three independently attested machines; an inventory declaration alone does not unlock the claim."
       ]
     },
     {

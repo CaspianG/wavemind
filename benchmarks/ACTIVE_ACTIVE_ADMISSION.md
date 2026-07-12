@@ -23,7 +23,7 @@ not unlock this gate.
 
 | requirement | status | artifact | evidence |
 |---|---|---|---|
-| External HTTP active-active regions | `action_required` | `benchmarks/external_http_active_active_results.json` | no checked-in external HTTP active-active region result |
+| External HTTP active-active regions with physical failure recovery | `action_required` | `benchmarks/external_http_active_active_results.json` | transport: no checked-in external HTTP active-active region result; failure recovery: no remote physical region failure and recovery artifact |
 
 ## Requested Evidence
 
@@ -35,15 +35,16 @@ not unlock this gate.
 
 | status | required env | missing env | evidence |
 |---|---|---|---|
-| `action_required` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | `WAVEMIND_ACTIVE_ACTIVE_REGIONS, WAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON` | 0 URLs configured |
+| `action_required` | `WAVEMIND_REMOTE_LAB_INVENTORY_JSON, WAVEMIND_REMOTE_SSH_PRIVATE_KEY, WAVEMIND_REMOTE_SSH_KNOWN_HOSTS, WAVEMIND_REMOTE_API_KEY, WAVEMIND_REMOTE_POSTGRES_PASSWORD` | `WAVEMIND_REMOTE_LAB_INVENTORY_JSON, WAVEMIND_REMOTE_SSH_PRIVATE_KEY, WAVEMIND_REMOTE_SSH_KNOWN_HOSTS, WAVEMIND_REMOTE_API_KEY, WAVEMIND_REMOTE_POSTGRES_PASSWORD` | remote production inventory is not configured |
 
 ## Issues
 
 - external_http_active_active is not admitted: strict_status=action_required
 - external_http_active_active artifact does not satisfy requested rollout: requested_evidence_status=action_required
 - missing artifact
+- failure drill: missing remote region failure drill artifact
 
 ## Next Actions
 
-- Do not admit multi-region production traffic yet; run the external active-active workflow against real regions first.
-- `gh workflow run external-http-active-active.yml -f regions="us-east=https://wm-us.example.com,eu-west=https://wm-eu.example.com,ap-south=https://wm-ap.example.com" -f namespace_count=16 -f p99_slo_ms=1500 -f fail_on_slo=true -f commit_results=true`
+- Do not admit multi-region production traffic yet; run the remote production lab against three independently attested regions and ingest both evidence artifacts.
+- `gh workflow run remote-production-lab.yml -f action=evidence -f namespace_count=16`
