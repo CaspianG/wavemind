@@ -213,6 +213,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "recursive-include deploy/remote-scale *" in manifest
     assert "recursive-include deploy/cloud *" in manifest
     assert "prune deploy/cloud/gcp-managed-serverless/.terraform" in manifest
+    assert "prune deploy/cloud/gcp-remote-active-active/.terraform" in manifest
     assert "global-exclude *.tfstate *.tfstate.* *.tfplan" in manifest
     assert "global-exclude *.py[cod]" in manifest
     assert "prune benchmarks/data" in manifest

@@ -391,6 +391,13 @@ policy matters more than raw vector-database scale:
   against a real remote machine and correctly rejected by duplicate machine
   identity. Three independent remote hosts are still required before strict
   active-active admission can pass.
+- `deploy/cloud/gcp-remote-active-active` now provides the validated Terraform
+  provisioning root for those three hosts. It creates separate regional GCE
+  machines, zones, static addresses, restricted SSH/API firewalls, Shielded VM
+  settings, Docker bootstrap, and the exact JSON inventory consumed by the
+  remote workflow. Apply remains manual and billable; provisioning is not
+  counted as active-active evidence until attestation, transport load, and the
+  physical stop/recovery drill all pass.
 - The remote workflow now executes a physical region failure drill after the
   transport SLO run. It stops the selected API container over SSH, requires the
   endpoint to become unavailable while two survivors continue writes and

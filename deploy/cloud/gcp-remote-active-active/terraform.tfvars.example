@@ -1,0 +1,17 @@
+project_id   = "wavemind-benchmarks"
+deployment_id = "wavemind-gcp-regions"
+wavemind_image = "ghcr.io/caspiang/wavemind:2.4.30"
+
+# Use the public address of the machine or self-hosted runner performing SSH.
+ssh_source_ranges = ["203.0.113.10/32"]
+ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIexample replace-me"
+
+# GitHub-hosted runner addresses change. For an ephemeral evidence lab this may
+# be widened temporarily to 0.0.0.0/0 because every API call still requires the
+# WaveMind key. Prefer a stable self-hosted runner CIDR and destroy the lab after
+# evidence ingestion.
+api_source_ranges = ["203.0.113.10/32"]
+
+machine_type       = "e2-standard-2"
+boot_disk_size_gb  = 50
+deletion_protection = true
