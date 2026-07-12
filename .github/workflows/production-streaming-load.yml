@@ -119,6 +119,7 @@ on:
           - ivfflat-balanced
           - ivfflat-quality
           - ivfflat-fine-balanced
+          - ivfflat-fine-production
           - ivfflat-fine-slo
           - ivfflat-fine-quality
           - hnsw-binary-quality

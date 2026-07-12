@@ -1192,6 +1192,12 @@ def test_pgvector_managed_profiles_scale_per_shard():
     assert fine["ivfflat_lists"] == 1000
     assert fine["ivfflat_probes"] == 100
 
+    production = pgvector_managed_profile(
+        "ivfflat-fine-production", vector_count=10_000_000, shard_count=4
+    )
+    assert production["ivfflat_lists"] == 5000
+    assert production["ivfflat_probes"] == 475
+
     fine_slo = pgvector_managed_profile(
         "ivfflat-fine-slo", vector_count=1_000_000, shard_count=4
     )
