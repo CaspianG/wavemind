@@ -252,7 +252,10 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "hnsw-quality" in workflow
     assert "ivfflat-balanced" in workflow
     assert "ivfflat-quality" in workflow
+    assert "ivfflat-fine-balanced" in workflow
+    assert "ivfflat-fine-quality" in workflow
     assert "hnsw-binary-quality" in workflow
+    assert "hnsw-binary-high-recall" in workflow
     assert "Provision isolated pgvector services" in workflow
     assert '"pgvector/pgvector:pg16"' in workflow
     assert "--shm-size 2g" in workflow

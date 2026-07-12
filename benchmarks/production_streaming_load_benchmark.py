@@ -715,35 +715,42 @@ def pgvector_managed_profile(
         else per_shard_vectors // 1000,
     )
     profiles = {
-        "hnsw-fast": ("hnsw", 64, 800, 0, 1000),
-        "hnsw-quality": ("hnsw", 96, 1600, 0, 1000),
-        "ivfflat-balanced": (
-            "ivfflat",
+        "hnsw-fast": ("hnsw", 64, 800, 1.0, 0.0, 1000),
+        "hnsw-quality": ("hnsw", 96, 1600, 1.0, 0.0, 1000),
+        "ivfflat-balanced": ("ivfflat", 64, 800, 1.0, 0.10, 1000),
+        "ivfflat-quality": ("ivfflat", 64, 800, 1.0, 0.25, 1000),
+        "ivfflat-fine-balanced": ("ivfflat", 64, 800, 2.0, 0.10, 1000),
+        "ivfflat-fine-quality": ("ivfflat", 64, 800, 2.0, 0.125, 1000),
+        "hnsw-binary-quality": ("hnsw-binary", 64, 800, 1.0, 0.0, 2000),
+        "hnsw-binary-high-recall": (
+            "hnsw-binary",
             64,
-            800,
-            max(1, round(recommended_lists * 0.10)),
-            1000,
+            4000,
+            1.0,
+            0.0,
+            10000,
         ),
-        "ivfflat-quality": (
-            "ivfflat",
-            64,
-            800,
-            max(1, round(recommended_lists * 0.25)),
-            1000,
-        ),
-        "hnsw-binary-quality": ("hnsw-binary", 64, 800, 0, 2000),
     }
     normalized = str(profile).strip().lower()
     if normalized not in profiles:
         raise ValueError(f"unsupported pgvector profile: {profile}")
-    index_type, ef_construction, ef_search, probes, candidates = profiles[normalized]
+    (
+        index_type,
+        ef_construction,
+        ef_search,
+        list_multiplier,
+        probe_ratio,
+        candidates,
+    ) = profiles[normalized]
+    lists = max(1, round(recommended_lists * list_multiplier))
+    probes = max(1, round(lists * probe_ratio)) if probe_ratio else 1
     return {
         "profile": normalized,
         "index_type": index_type,
         "hnsw_ef_construction": ef_construction,
         "hnsw_ef_search": ef_search,
-        "ivfflat_lists": recommended_lists,
-        "ivfflat_probes": probes or 1,
+        "ivfflat_lists": lists,
+        "ivfflat_probes": probes,
         "binary_candidates": candidates,
         "per_shard_vectors": per_shard_vectors,
     }

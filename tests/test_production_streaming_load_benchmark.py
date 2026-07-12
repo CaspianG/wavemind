@@ -1186,6 +1186,19 @@ def test_pgvector_managed_profiles_scale_per_shard():
     assert ten_million["ivfflat_lists"] == 2500
     assert ten_million["ivfflat_probes"] == 625
 
+    fine = pgvector_managed_profile(
+        "ivfflat-fine-balanced", vector_count=1_000_000, shard_count=4
+    )
+    assert fine["ivfflat_lists"] == 1000
+    assert fine["ivfflat_probes"] == 100
+
+    binary = pgvector_managed_profile(
+        "hnsw-binary-high-recall", vector_count=1_000_000, shard_count=4
+    )
+    assert binary["index_type"] == "hnsw-binary"
+    assert binary["hnsw_ef_search"] == 4000
+    assert binary["binary_candidates"] == 10000
+
     hnsw = pgvector_managed_profile(
         "hnsw-quality", vector_count=10_000_000, shard_count=4
     )

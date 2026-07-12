@@ -118,7 +118,10 @@ on:
           - hnsw-quality
           - ivfflat-balanced
           - ivfflat-quality
+          - ivfflat-fine-balanced
+          - ivfflat-fine-quality
           - hnsw-binary-quality
+          - hnsw-binary-high-recall
       faiss_ivfpq_path:
         description: "Optional persisted FAISS IVF-PQ path. Defaults under ./state."
         required: false
