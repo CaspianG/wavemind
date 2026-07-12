@@ -255,7 +255,6 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "ivfflat-fine-balanced" in workflow
     assert "ivfflat-fine-slo" in workflow
     assert "ivfflat-fine-quality" in workflow
-    assert "ivfflat-ultrafine-balanced" in workflow
     assert "hnsw-binary-quality" in workflow
     assert "hnsw-binary-high-recall" in workflow
     assert "Provision isolated pgvector services" in workflow
@@ -265,7 +264,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert 'maintenance_work_mem="7GB"' in workflow
     assert 'parallel_maintenance_workers="0"' in workflow
     assert "WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS" in workflow
-    assert 'profile == "ivfflat-ultrafine-balanced"' in workflow
+    assert 'profile.startswith("ivfflat-fine-")' in workflow
     assert "pgvector_managed_profile" in workflow
     assert 'env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])' in workflow
     assert 'tuning["hnsw_ef_construction"]' in workflow

@@ -121,7 +121,6 @@ on:
           - ivfflat-fine-balanced
           - ivfflat-fine-slo
           - ivfflat-fine-quality
-          - ivfflat-ultrafine-balanced
           - hnsw-binary-quality
           - hnsw-binary-high-recall
       faiss_ivfpq_path:
@@ -214,7 +213,7 @@ jobs:
           : > pgvector-managed-dsns.txt
           maintenance_work_mem="1536MB"
           parallel_maintenance_workers="1"
-          if [ "$PGVECTOR_PROFILE" = "ivfflat-ultrafine-balanced" ]; then
+          if [[ "$PGVECTOR_PROFILE" == ivfflat-fine-* ]]; then
             maintenance_work_mem="7GB"
             parallel_maintenance_workers="0"
           fi
@@ -375,7 +374,7 @@ jobs:
               if managed_shards:
                   env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = (
                       "1"
-                      if profile == "ivfflat-ultrafine-balanced"
+                      if profile.startswith("ivfflat-fine-")
                       else os.environ["PGVECTOR_SHARD_COUNT"]
                   )
                   env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"
@@ -495,7 +494,7 @@ jobs:
                   raise SystemExit("managed pgvector evidence must use namespace routing")
               expected_index_workers = (
                   1
-                  if os.environ["PGVECTOR_PROFILE"] == "ivfflat-ultrafine-balanced"
+                  if os.environ["PGVECTOR_PROFILE"].startswith("ivfflat-fine-")
                   else expected_shards
               )
               if int(row.get("index_build_workers", 0) or 0) != expected_index_workers:

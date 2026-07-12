@@ -722,7 +722,6 @@ def pgvector_managed_profile(
         "ivfflat-fine-balanced": ("ivfflat", 64, 800, 2.0, 0.10, 1000),
         "ivfflat-fine-slo": ("ivfflat", 64, 800, 2.0, 0.105, 1000),
         "ivfflat-fine-quality": ("ivfflat", 64, 800, 2.0, 0.125, 1000),
-        "ivfflat-ultrafine-balanced": ("ivfflat", 64, 800, 5.0, 0.05, 1000),
         "hnsw-binary-quality": ("hnsw-binary", 64, 800, 1.0, 0.0, 2000),
         "hnsw-binary-high-recall": (
             "hnsw-binary",
