@@ -134,6 +134,10 @@ The matching least-privilege Cloud Run and GitHub OIDC infrastructure is
 reproducibly provisioned by `deploy/cloud/gcp-managed-serverless`; applying it
 creates billable resources and requires isolated external PostgreSQL, Qdrant,
 Redis, and Secret Manager inputs.
+The strict eight-host 100M topology is reproducibly provisioned by
+`deploy/cloud/gcp-qdrant-100m`. It creates billable capacity but never exposes
+Qdrant publicly; the measured workflow still requires a durable self-hosted
+runner, pinned SSH tunnels, checkpointed execution, and strict artifact review.
 Large-N streaming service runs can be executed through
 `.github/workflows/production-streaming-load.yml`, which uploads checkpoint and
 result artifacts and can commit refreshed benchmark/evidence reports after a

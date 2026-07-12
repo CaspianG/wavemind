@@ -43,3 +43,4 @@ global-exclude *.tfstate *.tfstate.* *.tfplan
 prune benchmarks/data
 prune deploy/cloud/gcp-managed-serverless/.terraform
 prune deploy/cloud/gcp-remote-active-active/.terraform
+prune deploy/cloud/gcp-qdrant-100m/.terraform

@@ -29,6 +29,8 @@ jobs:
             root: deploy/cloud/gcp-managed-serverless
           - name: remote-active-active
             root: deploy/cloud/gcp-remote-active-active
+          - name: qdrant-100m
+            root: deploy/cloud/gcp-qdrant-100m
     defaults:
       run:
         working-directory: ${{ matrix.root }}

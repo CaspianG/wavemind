@@ -2196,6 +2196,14 @@ attestation, deployment, the external transport workload, and a physical API
 stop/recovery drill. Provisioning alone does not unlock the claim and applying
 the module creates billable resources.
 
+Remote 100M evidence: `deploy/cloud/gcp-qdrant-100m` contains the validated
+Terraform root for eight Qdrant shard hosts in eight zones across four regions.
+It emits the inventory consumed by
+`.github/workflows/remote-qdrant-100m-lab.yml`; Qdrant remains loopback-only and
+the benchmark uses pinned SSH tunnels. Provisioning and attestation do not
+unlock the 100M claim, and applying the module creates substantial billable
+resources for a potentially multi-day run.
+
 ### Current Evidence Status
 
 The compact leaderboard now carries an explicit evidence-status table:

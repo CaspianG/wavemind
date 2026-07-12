@@ -398,6 +398,12 @@ policy matters more than raw vector-database scale:
   remote workflow. Apply remains manual and billable; provisioning is not
   counted as active-active evidence until attestation, transport load, and the
   physical stop/recovery drill all pass.
+- `deploy/cloud/gcp-qdrant-100m` provides the matching eight-host GCE topology
+  for the strict 100M path: eight unique zones across four regions, 16 GB RAM
+  per host, 100 GB disks, restricted SSH, no public Qdrant ingress, Docker
+  bootstrap, and the exact remote-scale inventory output. It still requires a
+  durable self-hosted runner and a measured resumable run before the claim can
+  pass.
 - The remote workflow now executes a physical region failure drill after the
   transport SLO run. It stops the selected API container over SSH, requires the
   endpoint to become unavailable while two survivors continue writes and
