@@ -1192,11 +1192,23 @@ def test_pgvector_managed_profiles_scale_per_shard():
     assert fine["ivfflat_lists"] == 1000
     assert fine["ivfflat_probes"] == 100
 
+    fine_slo = pgvector_managed_profile(
+        "ivfflat-fine-slo", vector_count=1_000_000, shard_count=4
+    )
+    assert fine_slo["ivfflat_lists"] == 1000
+    assert fine_slo["ivfflat_probes"] == 105
+
+    ultrafine = pgvector_managed_profile(
+        "ivfflat-ultrafine-balanced", vector_count=1_000_000, shard_count=4
+    )
+    assert ultrafine["ivfflat_lists"] == 2500
+    assert ultrafine["ivfflat_probes"] == 125
+
     binary = pgvector_managed_profile(
         "hnsw-binary-high-recall", vector_count=1_000_000, shard_count=4
     )
     assert binary["index_type"] == "hnsw-binary"
-    assert binary["hnsw_ef_search"] == 4000
+    assert binary["hnsw_ef_search"] == 1000
     assert binary["binary_candidates"] == 10000
 
     hnsw = pgvector_managed_profile(

@@ -119,7 +119,9 @@ on:
           - ivfflat-balanced
           - ivfflat-quality
           - ivfflat-fine-balanced
+          - ivfflat-fine-slo
           - ivfflat-fine-quality
+          - ivfflat-ultrafine-balanced
           - hnsw-binary-quality
           - hnsw-binary-high-recall
       faiss_ivfpq_path:
