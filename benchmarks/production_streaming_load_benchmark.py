@@ -3079,9 +3079,17 @@ def _run_pgvector_sharded_streaming(
         checkpoint_metadata["insert_mode"] = insert_mode
         _write_checkpoint(checkpoint_path, checkpoint)
 
-        index_present: list[bool] = []
-        prewarm_blocks: list[int] = []
-        for connection in connections:
+        index_build_workers = min(
+            shard_count,
+            _positive_int_env("WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS", 1),
+        )
+
+        def prepare_shard_index(item: tuple[int, Any]) -> tuple[bool, int]:
+            shard_index, connection = item
+            print(
+                f"pgvector shard {shard_index + 1}/{shard_count}: building {index_type} index",
+                flush=True,
+            )
             if config["create_hnsw"]:
                 if index_type in {"hnsw", "hnsw-binary"}:
                     options = []
@@ -3130,10 +3138,30 @@ def _run_pgvector_sharded_streaming(
                         "SELECT pg_prewarm(%s, 'buffer')", (index_name,)
                     ).fetchone()[0]
                 )
-            prewarm_blocks.append(blocks)
+            print(
+                f"pgvector shard {shard_index + 1}/{shard_count}: index ready; "
+                f"prewarmed_blocks={blocks}",
+                flush=True,
+            )
+            return present, blocks
+
+        if index_build_workers == 1:
+            prepared_indexes = [
+                prepare_shard_index(item) for item in enumerate(connections)
+            ]
+        else:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=index_build_workers
+            ) as index_executor:
+                prepared_indexes = list(
+                    index_executor.map(prepare_shard_index, enumerate(connections))
+                )
+        index_present = [present for present, _ in prepared_indexes]
+        prewarm_blocks = [blocks for _, blocks in prepared_indexes]
         checkpoint_metadata["index_name"] = index_name
         checkpoint_metadata["index_type"] = index_type
         checkpoint_metadata["index_present"] = all(index_present)
+        checkpoint_metadata["index_build_workers"] = index_build_workers
         _write_checkpoint(checkpoint_path, checkpoint)
 
         wait_after_build_seconds = float(
@@ -3270,6 +3298,7 @@ def _run_pgvector_sharded_streaming(
                 "prewarm_index": bool(config["prewarm_index"]),
                 "prewarm_blocks": sum(prewarm_blocks),
                 "prewarm_blocks_by_shard": prewarm_blocks,
+                "index_build_workers": index_build_workers,
                 "warmup_queries": warmup_queries,
                 "wait_after_build_seconds": wait_after_build_seconds,
                 "shard_count": shard_count,

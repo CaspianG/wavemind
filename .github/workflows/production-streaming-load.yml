@@ -210,7 +210,12 @@ jobs:
               -c shared_buffers=512MB \
               -c maintenance_work_mem=768MB \
               -c effective_cache_size=2GB \
-              -c max_parallel_maintenance_workers=2
+              -c max_parallel_maintenance_workers=1 \
+              -c max_wal_size=4GB \
+              -c min_wal_size=1GB \
+              -c checkpoint_timeout=30min \
+              -c checkpoint_completion_target=0.9 \
+              -c wal_compression=on
             printf 'postgresql://postgres:wavemind-ci@127.0.0.1:%s/wavemind\n' "$port" \
               >> pgvector-managed-dsns.txt
           done
@@ -323,6 +328,10 @@ jobs:
               env.setdefault("WAVEMIND_PGVECTOR_EF_SEARCH", "800")
               env.setdefault("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
               env.setdefault("WAVEMIND_PGVECTOR_PREWARM_INDEX", "1")
+              if managed_shards:
+                  env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = os.environ[
+                      "PGVECTOR_SHARD_COUNT"
+                  ]
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
               env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or str(runner_storage_root / f"faiss-ivfpq-{size}.faiss")
@@ -427,6 +436,10 @@ jobs:
                   )
               if row.get("query_routing") != "namespace":
                   raise SystemExit("managed pgvector evidence must use namespace routing")
+              if int(row.get("index_build_workers", 0) or 0) != expected_shards:
+                  raise SystemExit(
+                      "managed pgvector evidence must build independent shard indexes in parallel"
+                  )
               if row.get("evidence_topology") != "github-hosted-isolated-service-processes":
                   raise SystemExit(
                       "managed pgvector evidence is missing its isolated-service topology attestation"
