@@ -44,15 +44,24 @@ python benchmarks/serverless_observed_telemetry_benchmark.py \
   --api-key "$WAVEMIND_API_KEY" \
   --seed-mode first \
   --external-cold-start-ms 900 \
-  --output deploy/serverless/observed-telemetry.remote.json
+  --output deploy/serverless/observed-telemetry.remote-candidate.json
 ```
 
-The same remote measurement can be launched from GitHub Actions with
-`.github/workflows/serverless-observed-telemetry.yml`. Paste deployed API node
-URLs into the `nodes` input, set the `WAVEMIND_API_KEY` repository secret when
-auth is enabled, and set `commit_results=true` only when the remote result should
-replace loopback telemetry in the public readiness artifacts. Node URLs are not
-stored in the JSON result.
+The same URL-pool capacity probe can be launched with
+`.github/workflows/serverless-observed-telemetry.yml`. It writes a candidate
+artifact only. Manual cold-start/scale-out numbers and max-scale RPS
+extrapolation are intentionally rejected by strict production admission.
+
+Strict managed evidence uses `.github/workflows/managed-serverless-cloud-run.yml`.
+It authenticates to Google Cloud through OIDC Workload Identity Federation,
+checks the service and revision through Cloud Run control plane, waits for a
+scale-from-zero window, and reads request count, request latency, container
+startup latency, and instance count from Cloud Monitoring. The collector is
+`deploy/serverless/cloud_run_evidence.py`.
+
+The workflow supports IAM-protected Cloud Run services: the short-lived Google
+identity token uses `Authorization`, while the WaveMind application key uses
+`X-API-Key`. No service-account JSON key is required or accepted by the workflow.
 
 The scale-readiness benchmark also runs a deterministic operational profile for
 this serverless shape. It checks:
@@ -71,9 +80,8 @@ Current checked-in profile: 3200 requests/second, 80 ms average request time,
 capacity, and an estimated `$81.76` monthly compute cost at the modeled active
 fraction. The checked-in observed telemetry is a loopback API-replica capacity
 estimate, not a live Knative/KEDA load test. Replace it with a remote
-`observed-telemetry.remote.json` generated from deployed API nodes, or with
-exported k6, Prometheus, or load-generator metrics, before making a live
-serverless SLO claim.
+`observed-telemetry.remote.json` generated from provider-observed Cloud Run
+metrics before making a live serverless SLO claim.
 
 Required secrets:
 

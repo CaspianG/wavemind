@@ -270,12 +270,16 @@ policy matters more than raw vector-database scale:
   next GitHub Actions command, while `--fail-on-blocked` keeps real production
   rollout locked until `benchmarks/external_http_active_active_results.json`
   passes.
-- `.github/workflows/serverless-observed-telemetry.yml` can run the serverless
-  observed-telemetry contract from GitHub Actions against deployed HTTP/HTTPS
-  API node URLs, upload `deploy/serverless/observed-telemetry.remote.json`, and
-  optionally commit refreshed leaderboard/readiness artifacts. The
-  scale-readiness profile prefers this remote artifact over loopback telemetry
-  when it exists.
+- `.github/workflows/serverless-observed-telemetry.yml` is a diagnostic
+  URL-pool capacity probe and writes `observed-telemetry.remote-candidate.json`.
+  It cannot unlock managed-serverless claims because cold-start/scale-out inputs
+  and max-scale RPS extrapolation are not provider evidence.
+- `.github/workflows/managed-serverless-cloud-run.yml` is the strict managed
+  path. It authenticates with GitHub OIDC, verifies Cloud Run service/revision
+  configuration, runs a scale-from-zero burst, and joins the client run with
+  Cloud Monitoring request count, request latency, startup latency, and instance
+  count. Only that provider-observed schema can produce
+  `deploy/serverless/observed-telemetry.remote.json` for admission.
 - `wavemind serverless-admission --allow-plan-only` now publishes the
   deployment-facing managed/serverless admission contract. It joins strict
   serverless telemetry evidence, remote-node preflight state, missing env,

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.strict_evidence_readiness.v1",
-  "generated_at": "2026-07-12T19:58:23Z",
+  "generated_at": "2026-07-12T20:39:53Z",
   "status": "pass",
   "readiness_status": "action_required",
   "claim_status": "claims_limited",
@@ -185,7 +185,7 @@
       "preflight_status": "action_required",
       "dispatch_status": "blocked_by_preflight",
       "scale_gap_status": "",
-      "workflow": "serverless-observed-telemetry.yml",
+      "workflow": "managed-serverless-cloud-run.yml",
       "wave": "remote-service",
       "artifact": "deploy/serverless/observed-telemetry.remote.json",
       "artifact_exists": false,
@@ -197,24 +197,40 @@
       "target_p99_ms": null,
       "target_qps": null,
       "required_env": [
-        "WAVEMIND_SERVERLESS_NODES"
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "WAVEMIND_CLOUD_RUN_REGION",
+        "WAVEMIND_CLOUD_RUN_SERVICE",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "WAVEMIND_API_KEY"
       ],
       "missing_env": [
-        "WAVEMIND_SERVERLESS_NODES"
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "WAVEMIND_CLOUD_RUN_REGION",
+        "WAVEMIND_CLOUD_RUN_SERVICE",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "WAVEMIND_API_KEY"
       ],
       "required_secrets": [
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
         "WAVEMIND_API_KEY"
       ],
       "issues": [
-        "serverless node requires at least 1 URLs",
-        "set WAVEMIND_SERVERLESS_NODES"
+        "set WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "set WAVEMIND_CLOUD_RUN_REGION",
+        "set WAVEMIND_CLOUD_RUN_SERVICE",
+        "set WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "set WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "set WAVEMIND_API_KEY"
       ],
       "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        "The dedicated Cloud Run service must use min instances 0 and external durable state. The workflow queries Cloud Run control plane and Cloud Monitoring before strict admission."
       ],
       "local_profile_command": "",
-      "safe_dispatch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"false\"",
-      "publish_dispatch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"true\"",
+      "safe_dispatch_command": "gh workflow run managed-serverless-cloud-run.yml -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\" -f idle_wait_seconds=\"900\" -f requests=\"2000\" -f workers=\"64\" -f target_rps=\"3200\" -f target_p99_ms=\"500\"",
+      "publish_dispatch_command": "gh workflow run managed-serverless-cloud-run.yml -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\" -f idle_wait_seconds=\"900\" -f requests=\"2000\" -f workers=\"64\" -f target_rps=\"3200\" -f target_p99_ms=\"500\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
       "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh",
       "strict_validation_command": "python benchmarks/production_evidence_gate.py --output benchmarks/production_evidence_results.json --markdown-output benchmarks/PRODUCTION_EVIDENCE.md --strict",

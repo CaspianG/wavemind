@@ -368,7 +368,7 @@ def test_external_http_active_active_workflow_runs_real_region_profile():
     assert "actions/upload-artifact@v7" in workflow
 
 
-def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
+def test_serverless_observed_telemetry_workflow_runs_non_admissible_remote_node_profile():
     workflow = Path(".github/workflows/serverless-observed-telemetry.yml").read_text(
         encoding="utf-8"
     )
@@ -378,7 +378,8 @@ def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
     assert "WAVEMIND_SERVERLESS_NODES" in workflow
     assert "secrets.WAVEMIND_API_KEY" in workflow
     assert "benchmarks/serverless_observed_telemetry_benchmark.py" in workflow
-    assert "deploy/serverless/observed-telemetry.remote.json" in workflow
+    assert "deploy/serverless/observed-telemetry.remote-candidate.json" in workflow
+    assert "deploy/serverless/observed-telemetry.remote.json" not in workflow
     assert r'[\n,;]+' in workflow
     assert "serverless observed telemetry requires at least one node URL" in workflow
     assert "--node" in workflow
@@ -401,7 +402,7 @@ def test_serverless_observed_telemetry_workflow_runs_remote_node_profile():
     assert "python -m wavemind production-evidence-dispatch" in workflow
     assert "if: ${{ inputs.commit_results }}" in workflow
     assert "docs/data/leaderboard-status.json" in workflow
-    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote.json" in workflow
+    assert "git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote-candidate.json" in workflow
     assert "actions/upload-artifact@v7" in workflow
 
 

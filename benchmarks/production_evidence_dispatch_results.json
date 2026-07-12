@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_dispatch.v1",
-  "generated_at": "2026-07-12T19:58:21Z",
+  "generated_at": "2026-07-12T20:39:52Z",
   "overall_status": "action_required",
   "summary": {
     "overall_status": "action_required",
@@ -141,43 +141,58 @@
       "strict_status": "action_required",
       "preflight_status": "action_required",
       "wave": "remote-service",
-      "workflow": "serverless-observed-telemetry.yml",
+      "workflow": "managed-serverless-cloud-run.yml",
       "artifact": "deploy/serverless/observed-telemetry.remote.json",
       "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
       "inputs": {
-        "nodes": "$WAVEMIND_SERVERLESS_NODES",
-        "requests": "240",
-        "workers": "4",
-        "seed_memories": "24",
-        "seed_mode": "first",
-        "max_scale": "256",
+        "project_id": "$WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "region": "$WAVEMIND_CLOUD_RUN_REGION",
+        "service_name": "$WAVEMIND_CLOUD_RUN_SERVICE",
+        "idle_wait_seconds": "900",
+        "requests": "2000",
+        "workers": "64",
         "target_rps": "3200",
-        "target_p99_ms": "500",
-        "external_cold_start_ms": "900",
-        "estimated_scale_out_seconds": "18",
-        "commit_results": false
+        "target_p99_ms": "500"
       },
       "input_bindings": {
-        "nodes": "$WAVEMIND_SERVERLESS_NODES"
+        "project_id": "$WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "region": "$WAVEMIND_CLOUD_RUN_REGION",
+        "service_name": "$WAVEMIND_CLOUD_RUN_SERVICE"
       },
       "required_env": [
-        "WAVEMIND_SERVERLESS_NODES"
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "WAVEMIND_CLOUD_RUN_REGION",
+        "WAVEMIND_CLOUD_RUN_SERVICE",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "WAVEMIND_API_KEY"
       ],
       "missing_env": [
-        "WAVEMIND_SERVERLESS_NODES"
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "WAVEMIND_CLOUD_RUN_REGION",
+        "WAVEMIND_CLOUD_RUN_SERVICE",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "WAVEMIND_API_KEY"
       ],
       "required_secrets": [
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
         "WAVEMIND_API_KEY"
       ],
       "issues": [
-        "serverless node requires at least 1 URLs",
-        "set WAVEMIND_SERVERLESS_NODES"
+        "set WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "set WAVEMIND_CLOUD_RUN_REGION",
+        "set WAVEMIND_CLOUD_RUN_SERVICE",
+        "set WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "set WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "set WAVEMIND_API_KEY"
       ],
       "warnings": [
-        "WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated"
+        "The dedicated Cloud Run service must use min instances 0 and external durable state. The workflow queries Cloud Run control plane and Cloud Monitoring before strict admission."
       ],
-      "safe_launch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"false\"",
-      "publish_launch_command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f requests=\"240\" -f workers=\"4\" -f seed_memories=\"24\" -f seed_mode=\"first\" -f max_scale=\"256\" -f target_rps=\"3200\" -f target_p99_ms=\"500\" -f external_cold_start_ms=\"900\" -f estimated_scale_out_seconds=\"18\" -f commit_results=\"true\"",
+      "safe_launch_command": "gh workflow run managed-serverless-cloud-run.yml -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\" -f idle_wait_seconds=\"900\" -f requests=\"2000\" -f workers=\"64\" -f target_rps=\"3200\" -f target_p99_ms=\"500\"",
+      "publish_launch_command": "gh workflow run managed-serverless-cloud-run.yml -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\" -f idle_wait_seconds=\"900\" -f requests=\"2000\" -f workers=\"64\" -f target_rps=\"3200\" -f target_p99_ms=\"500\"",
       "download_command": "gh run download <run-id> --repo CaspianG/wavemind --dir state/production-evidence-downloads",
       "ingest_command": "wavemind ingest-production-evidence --artifact-dir state/production-evidence-downloads --refresh"
     },

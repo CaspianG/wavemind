@@ -874,6 +874,74 @@ def _validate_serverless_telemetry_payload(
         cold_start_total = None
     node_mode = str(payload.get("node_mode") or "")
     source = str(payload.get("source") or "").lower()
+    evidence_source = str(payload.get("evidence_source") or "").lower()
+    source_ref = str(payload.get("source_ref") or "")
+    execution_id = str(payload.get("execution_id") or "")
+    provider = str(payload.get("provider") or "").lower()
+    metric_types = {
+        str(value)
+        for value in payload.get("provider_metric_types", [])
+        if str(value)
+    }
+    required_metric_types = {
+        "request_count",
+        "request_latency",
+        "container_startup_latency",
+        "container_instance_count",
+    }
+
+    if payload.get("schema") != "wavemind.managed_serverless_telemetry.v1":
+        issues.append("schema must be wavemind.managed_serverless_telemetry.v1")
+    if not payload.get("generated_at"):
+        issues.append("generated_at is required")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_ref):
+        issues.append("source_ref must be a full 40-character Git commit SHA")
+    if not execution_id:
+        issues.append("execution_id is required")
+    if evidence_source in {"", "fixture", "sample", "plan-only", "manual"}:
+        issues.append("evidence_source must identify a provider-observed run")
+    if evidence_source == "github-actions" and (
+        not payload.get("workflow_run_id") or not payload.get("workflow_run_url")
+    ):
+        issues.append("GitHub Actions evidence requires workflow run provenance")
+    if provider not in {"gcp-cloud-run", "aws-app-runner", "azure-container-apps"}:
+        issues.append("provider must identify a supported managed serverless platform")
+    for field in ("service_id", "deployment_revision", "region"):
+        if not str(payload.get(field) or "").strip():
+            issues.append(f"{field} is required")
+    if payload.get("provider_control_plane_observed") is not True:
+        issues.append("provider_control_plane_observed must be true")
+    if _int_payload_value(payload, "min_instances", -1) != 0:
+        issues.append("min_instances must be 0 for scale-from-zero evidence")
+    if payload.get("capacity_method") != "provider-observed":
+        issues.append("capacity_method must be provider-observed")
+    if payload.get("horizontal_capacity_estimate") is not False:
+        issues.append("horizontal_capacity_estimate must be false")
+    if payload.get("cold_start_measured") is not True:
+        issues.append("cold_start_measured must be true")
+    if payload.get("scale_out_measured") is not True:
+        issues.append("scale_out_measured must be true")
+    if payload.get("scale_to_zero_observed") is not True:
+        issues.append("scale_to_zero_observed must be true")
+    if _int_payload_value(payload, "requests", 0) < 1000:
+        issues.append("requests must be >= 1000")
+    if _int_payload_value(payload, "measured_replicas", 0) < 2:
+        issues.append("measured_replicas must be >= 2")
+    if _int_payload_value(payload, "provider_request_count", 0) < _int_payload_value(
+        payload, "successes", 0
+    ):
+        issues.append("provider_request_count must cover all client successes")
+    if not required_metric_types.issubset(metric_types):
+        missing_metrics = ", ".join(sorted(required_metric_types - metric_types))
+        issues.append(f"provider metrics are incomplete: {missing_metrics}")
+    if not payload.get("metric_window_start") or not payload.get("metric_window_end"):
+        issues.append("provider metric window start/end are required")
+    scale_out_seconds = _float_payload_value(payload, "scale_out_seconds", float("inf"))
+    max_scale_out_seconds = _float_payload_value(
+        payload, "max_scale_out_seconds", 60.0
+    )
+    if scale_out_seconds > max_scale_out_seconds:
+        issues.append(f"scale_out_seconds must be <= {max_scale_out_seconds:g}")
 
     if node_mode != "external":
         issues.append("node_mode must be external")
@@ -905,6 +973,8 @@ def _validate_serverless_telemetry_payload(
             f"rps {payload.get('requests_per_second')}, p99 {payload.get('p99_request_ms')} ms, "
             f"cold_start_total {payload.get('cold_start_total_ms', payload.get('cold_start_ms'))} ms, "
             f"configured_max_scale {payload.get('configured_max_scale')}, "
+            f"provider {payload.get('provider')}, revision {payload.get('deployment_revision')}, "
+            f"measured replicas {payload.get('measured_replicas')}, "
             f"errors {payload.get('error_rate')}, slo {payload.get('observed_slo_pass')}"
         ),
         "issues": list(dict.fromkeys(issues)),
@@ -923,9 +993,10 @@ def _serverless_requirement(root: Path) -> EvidenceRequirement:
         evidence=str(validation.get("evidence") or "no checked-in remote serverless telemetry"),
         artifact=artifact,
         command=(
-            "gh workflow run serverless-observed-telemetry.yml "
-            "-f nodes=\"https://wm-a.example.com,https://wm-b.example.com\" "
-            "-f seed_mode=first -f commit_results=true"
+            "gh workflow run managed-serverless-cloud-run.yml --ref main "
+            "-f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" "
+            "-f region=\"$WAVEMIND_CLOUD_RUN_REGION\" "
+            "-f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\""
         ),
         claim_unlocked="Hosted/serverless p99, cold-start, error-rate, and scale-out SLO.",
         issues=tuple(dict.fromkeys(issues)),
@@ -1154,6 +1225,15 @@ _REMOTE_SCALE_REQUIRED_ENV = (
     "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
 )
 
+_MANAGED_SERVERLESS_REQUIRED_ENV = (
+    "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+    "WAVEMIND_CLOUD_RUN_REGION",
+    "WAVEMIND_CLOUD_RUN_SERVICE",
+    "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+    "WAVEMIND_GCP_SERVICE_ACCOUNT",
+    "WAVEMIND_API_KEY",
+)
+
 
 def _remote_lab_active_active_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
     issues: list[str] = []
@@ -1279,35 +1359,54 @@ def _configured_cluster_nodes(
 
 def _serverless_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
     command = (
-        "gh workflow run serverless-observed-telemetry.yml "
-        "-f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first "
-        "-f commit_results=true"
+        "gh workflow run managed-serverless-cloud-run.yml --ref main "
+        "-f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" "
+        "-f region=\"$WAVEMIND_CLOUD_RUN_REGION\" "
+        "-f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\""
     )
-    node_specs = _split_env_list(_env_value(env, "WAVEMIND_SERVERLESS_NODES"))
-    urls, issues = _validate_url_specs(
-        node_specs,
-        min_count=1,
-        label="serverless node",
+    missing_env = tuple(
+        name for name in _MANAGED_SERVERLESS_REQUIRED_ENV if not _env_value(env, name)
     )
-    if not _env_value(env, "WAVEMIND_SERVERLESS_NODES"):
-        issues.append("set WAVEMIND_SERVERLESS_NODES")
-    warnings: list[str] = []
-    if "WAVEMIND_API_KEY" not in env:
-        warnings.append("WAVEMIND_API_KEY is not set; only use this if the target endpoints are intentionally unauthenticated")
+    issues = [f"set {name}" for name in missing_env]
+    project_id = _env_value(env, "WAVEMIND_CLOUD_RUN_PROJECT_ID")
+    region = _env_value(env, "WAVEMIND_CLOUD_RUN_REGION")
+    service = _env_value(env, "WAVEMIND_CLOUD_RUN_SERVICE")
+    identity_provider = _env_value(env, "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER")
+    service_account = _env_value(env, "WAVEMIND_GCP_SERVICE_ACCOUNT")
+    if project_id and not re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project_id):
+        issues.append("WAVEMIND_CLOUD_RUN_PROJECT_ID is invalid")
+    if region and not re.fullmatch(r"[a-z]+-[a-z0-9]+[0-9]", region):
+        issues.append("WAVEMIND_CLOUD_RUN_REGION is invalid")
+    if service and not re.fullmatch(r"[a-z][a-z0-9-]{0,62}", service):
+        issues.append("WAVEMIND_CLOUD_RUN_SERVICE is invalid")
+    if identity_provider and not re.fullmatch(
+        r"projects/[0-9]+/locations/global/workloadIdentityPools/[^/]+/providers/[^/]+",
+        identity_provider,
+    ):
+        issues.append("WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER is invalid")
+    if service_account and not re.fullmatch(
+        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.iam\.gserviceaccount\.com",
+        service_account,
+    ):
+        issues.append("WAVEMIND_GCP_SERVICE_ACCOUNT is invalid")
     return EvidencePreflightCheck(
         id="serverless_remote_telemetry",
-        title="Managed/serverless remote telemetry preflight",
+        title="Provider-observed managed Cloud Run telemetry preflight",
         status=_preflight_status(issues),
         ready=not issues,
-        evidence=f"{len(urls)} node URLs configured",
-        required_env=("WAVEMIND_SERVERLESS_NODES",),
-        missing_env=("WAVEMIND_SERVERLESS_NODES",)
-        if not _env_value(env, "WAVEMIND_SERVERLESS_NODES")
-        else (),
+        evidence=(
+            f"project {project_id or 'missing'}, region {region or 'missing'}, "
+            f"service {service or 'missing'}, OIDC {'configured' if identity_provider and service_account else 'missing'}"
+        ),
+        required_env=_MANAGED_SERVERLESS_REQUIRED_ENV,
+        missing_env=missing_env,
         command=command,
         output_artifact="deploy/serverless/observed-telemetry.remote.json",
         issues=tuple(dict.fromkeys(issues)),
-        warnings=tuple(dict.fromkeys(warnings)),
+        warnings=(
+            "The dedicated Cloud Run service must use min instances 0 and external durable state. "
+            "The workflow queries Cloud Run control plane and Cloud Monitoring before strict admission.",
+        ),
     )
 
 
@@ -1701,23 +1800,24 @@ def _dispatch_config(
         }
     if requirement_id == "serverless_remote_telemetry":
         inputs = {
-            "nodes": "$WAVEMIND_SERVERLESS_NODES",
-            "requests": "240",
-            "workers": "4",
-            "seed_memories": "24",
-            "seed_mode": "first",
-            "max_scale": "256",
+            "project_id": "$WAVEMIND_CLOUD_RUN_PROJECT_ID",
+            "region": "$WAVEMIND_CLOUD_RUN_REGION",
+            "service_name": "$WAVEMIND_CLOUD_RUN_SERVICE",
+            "idle_wait_seconds": "900",
+            "requests": "2000",
+            "workers": "64",
             "target_rps": "3200",
             "target_p99_ms": "500",
-            "external_cold_start_ms": "900",
-            "estimated_scale_out_seconds": "18",
-            "commit_results": commit_results,
         }
         return {
-            "workflow": "serverless-observed-telemetry.yml",
+            "workflow": "managed-serverless-cloud-run.yml",
             "wave": "remote-service",
             "inputs": inputs,
-            "required_secrets": ["WAVEMIND_API_KEY"],
+            "required_secrets": [
+                "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+                "WAVEMIND_GCP_SERVICE_ACCOUNT",
+                "WAVEMIND_API_KEY",
+            ],
         }
     if requirement_id == "qdrant_10m_service":
         return {

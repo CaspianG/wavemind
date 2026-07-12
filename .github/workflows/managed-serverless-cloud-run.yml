@@ -1,0 +1,162 @@
+name: managed-serverless-cloud-run
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: "Google Cloud project containing the dedicated WaveMind benchmark service."
+        required: true
+        type: string
+      region:
+        description: "Managed Cloud Run region."
+        required: true
+        type: string
+      service_name:
+        description: "Existing Cloud Run service configured with min instances 0."
+        required: true
+        type: string
+      idle_wait_seconds:
+        description: "Idle period before the scale-from-zero burst."
+        required: true
+        default: "900"
+        type: string
+      requests:
+        description: "Load requests. Strict evidence requires at least 1000 successes."
+        required: true
+        default: "2000"
+        type: string
+      workers:
+        description: "Concurrent load workers."
+        required: true
+        default: "64"
+        type: string
+      target_rps:
+        description: "Actual measured pool RPS target; no max-scale extrapolation is accepted."
+        required: true
+        default: "3200"
+        type: string
+      target_p99_ms:
+        description: "Client/provider p99 target in milliseconds."
+        required: true
+        default: "500"
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  managed-serverless-cloud-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ inputs.project_id }}
+          workload_identity_provider: ${{ secrets.WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.WAVEMIND_GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ inputs.project_id }}
+          version: ">= 490.0.0"
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark dependencies
+        run: python -m pip install -e ".[bench]"
+
+      - name: Resolve provider-attested service URL
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+          REGION: ${{ inputs.region }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+        run: |
+          url="$(gcloud run services describe "$SERVICE_NAME" \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --platform managed \
+            --format='value(status.url)')"
+          test -n "$url"
+          case "$url" in https://*) ;; *) echo "Cloud Run URL must use HTTPS" >&2; exit 1 ;; esac
+          printf 'WAVEMIND_CLOUD_RUN_URL=%s\n' "$url" >> "$GITHUB_ENV"
+          identity_token="$(gcloud auth print-identity-token --audiences="$url")"
+          test -n "$identity_token"
+          printf '::add-mask::%s\n' "$identity_token"
+          printf 'WAVEMIND_IDENTITY_TOKEN=%s\n' "$identity_token" >> "$GITHUB_ENV"
+
+      - name: Wait for the dedicated service to become idle
+        env:
+          IDLE_WAIT_SECONDS: ${{ inputs.idle_wait_seconds }}
+        run: |
+          case "$IDLE_WAIT_SECONDS" in ''|*[!0-9]*) echo "idle_wait_seconds must be an integer" >&2; exit 1 ;; esac
+          test "$IDLE_WAIT_SECONDS" -ge 600
+          start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf 'WAVEMIND_METRIC_WINDOW_START=%s\n' "$start" >> "$GITHUB_ENV"
+          sleep "$IDLE_WAIT_SECONDS"
+
+      - name: Run scale-from-zero load burst
+        env:
+          WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
+          REQUESTS: ${{ inputs.requests }}
+          WORKERS: ${{ inputs.workers }}
+          TARGET_RPS: ${{ inputs.target_rps }}
+          TARGET_P99_MS: ${{ inputs.target_p99_ms }}
+        run: |
+          python benchmarks/serverless_observed_telemetry_benchmark.py \
+            --node "$WAVEMIND_CLOUD_RUN_URL" \
+            --requests "$REQUESTS" \
+            --workers "$WORKERS" \
+            --seed-memories 24 \
+            --seed-mode first \
+            --target-rps "$TARGET_RPS" \
+            --target-p99-ms "$TARGET_P99_MS" \
+            --max-scale 1000 \
+            --external-cold-start-ms 0 \
+            --estimated-scale-out-seconds 0 \
+            --source gcp-cloud-run-client-load \
+            --output state/cloud-run-load-result.json
+
+      - name: Wait for Cloud Monitoring metric visibility
+        run: |
+          sleep 180
+          end="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf 'WAVEMIND_METRIC_WINDOW_END=%s\n' "$end" >> "$GITHUB_ENV"
+
+      - name: Build provider-observed managed serverless evidence
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+          REGION: ${{ inputs.region }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+        run: |
+          python deploy/serverless/cloud_run_evidence.py \
+            --project-id "$PROJECT_ID" \
+            --region "$REGION" \
+            --service-name "$SERVICE_NAME" \
+            --load-result state/cloud-run-load-result.json \
+            --metric-window-start "$WAVEMIND_METRIC_WINDOW_START" \
+            --metric-window-end "$WAVEMIND_METRIC_WINDOW_END" \
+            --output state/managed-serverless/observed-telemetry.remote.json
+
+      - name: Validate through the strict production evidence gate
+        run: |
+          python -m wavemind ingest-production-evidence \
+            --artifact-dir state/managed-serverless \
+            --root "$GITHUB_WORKSPACE" \
+            --dry-run
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: managed-serverless-cloud-run-${{ github.run_id }}
+          path: |
+            state/cloud-run-load-result.json
+            state/managed-serverless/observed-telemetry.remote.json
+          if-no-files-found: warn
+          retention-days: 30

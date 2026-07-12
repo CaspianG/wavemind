@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.release_claims.v1",
-  "generated_at": "2026-07-12T19:58:25Z",
+  "generated_at": "2026-07-12T20:39:55Z",
   "release_status": "core_release_ready",
   "claim_status": "claims_limited",
   "summary": {
@@ -66,9 +66,14 @@
       "preflight_status": "action_required",
       "artifact": "deploy/serverless/observed-telemetry.remote.json",
       "missing_env": [
-        "WAVEMIND_SERVERLESS_NODES"
+        "WAVEMIND_CLOUD_RUN_PROJECT_ID",
+        "WAVEMIND_CLOUD_RUN_REGION",
+        "WAVEMIND_CLOUD_RUN_SERVICE",
+        "WAVEMIND_GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "WAVEMIND_GCP_SERVICE_ACCOUNT",
+        "WAVEMIND_API_KEY"
       ],
-      "command": "gh workflow run serverless-observed-telemetry.yml -f nodes=\"$WAVEMIND_SERVERLESS_NODES\" -f seed_mode=first -f commit_results=true",
+      "command": "gh workflow run managed-serverless-cloud-run.yml --ref main -f project_id=\"$WAVEMIND_CLOUD_RUN_PROJECT_ID\" -f region=\"$WAVEMIND_CLOUD_RUN_REGION\" -f service_name=\"$WAVEMIND_CLOUD_RUN_SERVICE\"",
       "claim_unlocked": "Hosted/serverless p99, cold-start, error-rate, and scale-out SLO."
     },
     {

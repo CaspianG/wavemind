@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import http.client
 import json
 import math
@@ -40,6 +41,7 @@ def request_json(
     payload: dict[str, Any] | None = None,
     *,
     api_key: str | None = None,
+    identity_token: str | None = None,
     timeout: float = 5.0,
 ) -> dict[str, Any]:
     parsed = urlparse(url)
@@ -48,7 +50,9 @@ def request_json(
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+        headers["X-API-Key"] = api_key
+    if identity_token:
+        headers["Authorization"] = f"Bearer {identity_token}"
     if parsed.scheme == "https":
         connection = http.client.HTTPSConnection(
             parsed.hostname,
@@ -116,6 +120,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--api-key",
         default=os.environ.get("WAVEMIND_API_KEY"),
         help="Bearer token for authenticated WaveMind API nodes. Defaults to WAVEMIND_API_KEY.",
+    )
+    parser.add_argument(
+        "--identity-token",
+        default=os.environ.get("WAVEMIND_IDENTITY_TOKEN"),
+        help="Optional managed-platform OIDC token sent as Authorization Bearer.",
     )
     parser.add_argument(
         "--seed-mode",
@@ -210,6 +219,7 @@ def _seed_worker(
     namespace: str,
     texts: list[str],
     api_key: str | None,
+    identity_token: str | None,
     timeout: float,
 ) -> None:
     for text in texts:
@@ -218,6 +228,7 @@ def _seed_worker(
             f"{base_url}/remember",
             {"text": text, "namespace": namespace, "priority": 2.0},
             api_key=api_key,
+            identity_token=identity_token,
             timeout=timeout,
         )
 
@@ -292,6 +303,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                         namespace=args.namespace,
                         texts=texts,
                         api_key=args.api_key,
+                        identity_token=args.identity_token,
                         timeout=args.request_timeout,
                     )
             warmup_queries = 0
@@ -307,6 +319,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                             f"{node.address}/query",
                             {"text": text, "namespace": args.namespace, "top_k": 1},
                             api_key=args.api_key,
+                            identity_token=args.identity_token,
                             timeout=args.request_timeout,
                         )
                         warmup_queries += 1
@@ -318,6 +331,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                             f"{node.address}/query",
                             {"text": text, "namespace": args.namespace, "top_k": 1},
                             api_key=args.api_key,
+                            identity_token=args.identity_token,
                             timeout=args.request_timeout,
                         )
                         warmup_queries += 1
@@ -333,6 +347,7 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                         f"{node.address}/query",
                         {"text": text, "namespace": args.namespace, "top_k": 1},
                         api_key=args.api_key,
+                        identity_token=args.identity_token,
                         timeout=args.request_timeout,
                     )
                     results = payload.get("results") or []
@@ -420,6 +435,10 @@ def run_from_args(args: argparse.Namespace) -> dict[str, Any]:
                 "warmup_queries": int(warmup_queries),
                 "measured_replicas": int(len(nodes)),
                 "external_node_count": int(len(external_node_urls)),
+                "external_node_url_sha256": [
+                    hashlib.sha256(url.encode()).hexdigest()
+                    for url in external_node_urls
+                ],
                 "cache_capacity": int(args.cache_capacity),
                 "vector_cache_capacity": int(args.vector_cache_capacity),
                 "cache_prewarmed": bool(warmup_queries),

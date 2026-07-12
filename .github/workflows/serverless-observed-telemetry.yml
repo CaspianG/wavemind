@@ -1,4 +1,4 @@
-name: serverless-observed-telemetry
+name: serverless-capacity-probe
 
 on:
   workflow_dispatch:
@@ -43,17 +43,17 @@ on:
         default: "500"
         type: string
       external_cold_start_ms:
-        description: "Measured or exported cold-start p99/maximum in milliseconds."
+        description: "Diagnostic cold-start estimate; never accepted as strict managed evidence."
         required: true
         default: "900"
         type: string
       estimated_scale_out_seconds:
-        description: "Measured or exported scale-out lag in seconds."
+        description: "Diagnostic scale-out estimate; never accepted as strict managed evidence."
         required: true
         default: "18"
         type: string
       commit_results:
-        description: "Commit remote telemetry and refreshed benchmark artifacts to main."
+        description: "Commit the non-admissible capacity candidate and refreshed reports to main."
         required: true
         default: false
         type: boolean
@@ -79,7 +79,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,bench]"
 
-      - name: Run remote serverless observed telemetry
+      - name: Run remote serverless capacity candidate
         env:
           WAVEMIND_SERVERLESS_NODES: ${{ inputs.nodes }}
           WAVEMIND_API_KEY: ${{ secrets.WAVEMIND_API_KEY }}
@@ -131,7 +131,7 @@ jobs:
               "--source",
               "github-actions-serverless-observed-telemetry",
               "--output",
-              "deploy/serverless/observed-telemetry.remote.json",
+              "deploy/serverless/observed-telemetry.remote-candidate.json",
           ]
           for url in node_urls:
               args.extend(["--node", url])
@@ -225,14 +225,14 @@ jobs:
       - name: Commit remote serverless telemetry result
         if: ${{ inputs.commit_results }}
         run: |
-          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote.json; then
+          if git diff --quiet -- benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote-candidate.json; then
             echo "No benchmark changes."
             exit 0
           fi
           git config user.name "CaspianG"
           git config user.email "259116618+CaspianG@users.noreply.github.com"
-          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote.json
-          git commit -m "Refresh remote serverless telemetry"
+          git add benchmarks docs/assets/benchmark-summary.svg docs/benchmark-dashboard.html docs/data/leaderboard-status.json deploy/serverless/observed-telemetry.remote-candidate.json
+          git commit -m "Refresh remote serverless capacity candidate"
           git push
 
       - uses: actions/upload-artifact@v7
@@ -240,7 +240,7 @@ jobs:
         with:
           name: serverless-observed-telemetry
           path: |
-            deploy/serverless/observed-telemetry.remote.json
+            deploy/serverless/observed-telemetry.remote-candidate.json
             benchmarks/BENCHMARK_LEADERBOARD.md
             benchmarks/BENCHMARK_REPORT.md
             benchmarks/PRODUCTION_EVIDENCE.md
