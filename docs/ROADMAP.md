@@ -404,6 +404,10 @@ policy matters more than raw vector-database scale:
   bootstrap, and the exact remote-scale inventory output. It still requires a
   durable self-hosted runner and a measured resumable run before the claim can
   pass.
+  The same module now creates an isolated 32 GB / 250 GB controller by default,
+  pins the GitHub Actions runner archive and checksum, registers the
+  `self-hosted-large` label only with a post-apply short-lived token, and
+  provides explicit deregistration before teardown.
 - The remote workflow now executes a physical region failure drill after the
   transport SLO run. It stops the selected API container over SSH, requires the
   endpoint to become unavailable while two survivors continue writes and

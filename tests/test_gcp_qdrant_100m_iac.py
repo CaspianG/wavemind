@@ -94,3 +94,45 @@ def test_qdrant_100m_docs_preserve_measured_claim_boundary():
     assert "Qdrant is never exposed" in module_readme
     for document in public_docs:
         assert "deploy/cloud/gcp-qdrant-100m" in document
+
+
+def test_qdrant_100m_iac_provisions_dedicated_durable_runner():
+    main = _read("main.tf")
+    variables = _read("variables.tf")
+    outputs = _read("outputs.tf")
+
+    assert 'resource "google_compute_instance" "runner"' in main
+    assert 'resource "google_compute_address" "runner"' in main
+    assert 'default     = "n2-standard-8"' in variables
+    assert "runner_disk_size_gb >= 100" in variables
+    assert "custom_label = \"self-hosted-large\"" in outputs
+    assert "runner_known_hosts_command" in outputs
+    assert "deletion_protection       = var.deletion_protection" in main
+
+
+def test_qdrant_100m_runner_archive_is_pinned_and_verified():
+    variables = _read("variables.tf")
+    startup = _read("runner-startup.sh.tftpl")
+
+    assert 'default     = "2.335.1"' in variables
+    assert "4ef2f25285f0ae4477f1fe1e346db76d2f3ebf03824e2ddd1973a2819bf6c8cf" in variables
+    assert "sha256sum --check --strict" in startup
+    assert "actions-runner-linux-x64-${runner_version}.tar.gz" in startup
+    assert "--disableupdate" in startup
+
+
+def test_qdrant_100m_runner_tokens_are_post_apply_only_and_cleanup_is_explicit():
+    terraform_text = "\n".join(
+        _read(name) for name in ("main.tf", "variables.tf", "outputs.tf", "terraform.tfvars.example")
+    )
+    startup = _read("runner-startup.sh.tftpl")
+    module_readme = _read("README.md")
+
+    assert "GITHUB_RUNNER_TOKEN" not in terraform_text
+    assert "GITHUB_RUNNER_REMOVE_TOKEN" not in terraform_text
+    assert "register-wavemind-runner" in startup
+    assert "remove-wavemind-runner" in startup
+    assert "config.sh\" remove --token" in startup
+    assert "actions/runners/registration-token" in module_readme
+    assert "actions/runners/remove-token" in module_readme
+    assert "stale offline runner" in module_readme

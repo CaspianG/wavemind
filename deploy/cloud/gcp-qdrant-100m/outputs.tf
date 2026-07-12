@@ -42,3 +42,17 @@ output "known_hosts_command" {
     for id in sort(keys(var.shards)) : google_compute_address.shard[id].address
   ])}"
 }
+
+output "runner" {
+  description = "Dedicated controller. Registration is deliberately performed after apply with a short-lived token."
+  value = var.create_runner ? {
+    address      = google_compute_address.runner[0].address
+    ssh_host     = "${var.ssh_user}@${google_compute_address.runner[0].address}"
+    custom_label = "self-hosted-large"
+    repository   = var.runner_repository
+  } : null
+}
+
+output "runner_known_hosts_command" {
+  value = var.create_runner ? "ssh-keyscan -H ${google_compute_address.runner[0].address}" : null
+}
