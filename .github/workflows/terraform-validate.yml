@@ -1,0 +1,42 @@
+name: terraform-validate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deploy/cloud/**/*.tf"
+      - "deploy/cloud/**/*.tfvars.example"
+      - ".github/workflows/terraform-validate.yml"
+  pull_request:
+    paths:
+      - "deploy/cloud/**/*.tf"
+      - "deploy/cloud/**/*.tfvars.example"
+      - ".github/workflows/terraform-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gcp-managed-serverless:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/cloud/gcp-managed-serverless
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.15.3"
+          terraform_wrapper: false
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize providers without a backend
+        run: terraform init -backend=false -input=false
+
+      - name: Validate configuration
+        run: terraform validate -no-color

@@ -37,5 +37,8 @@ recursive-include deploy/operator *
 recursive-include deploy/serverless *
 recursive-include deploy/remote *
 recursive-include deploy/remote-scale *
+recursive-include deploy/cloud *
 global-exclude *.py[cod]
+global-exclude *.tfstate *.tfstate.* *.tfplan
 prune benchmarks/data
+prune deploy/cloud/gcp-managed-serverless/.terraform

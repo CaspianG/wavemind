@@ -280,6 +280,12 @@ policy matters more than raw vector-database scale:
   Cloud Monitoring request count, request latency, startup latency, and instance
   count. Only that provider-observed schema can produce
   `deploy/serverless/observed-telemetry.remote.json` for admission.
+- `deploy/cloud/gcp-managed-serverless` is the validated Terraform provisioning
+  root for that path. It pins the Google provider, requires an immutable image
+  digest, separates runtime and evidence identities, restricts GitHub OIDC to
+  `CaspianG/wavemind` on `main`, keeps Cloud Run at zero minimum instances, and
+  binds the runtime only to the four required external-state secrets. Apply is
+  intentionally manual because it creates billable cloud resources.
 - `wavemind serverless-admission --allow-plan-only` now publishes the
   deployment-facing managed/serverless admission contract. It joins strict
   serverless telemetry evidence, remote-node preflight state, missing env,

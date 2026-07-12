@@ -26,3 +26,13 @@ benchmarks/local_http_cluster_smoke_ci_results.json
 .env
 .env.*
 !.env.example
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json

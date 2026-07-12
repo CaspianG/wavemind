@@ -130,6 +130,10 @@ benchmark artifacts with `benchmarks/validate_benchmark_artifacts.py
 serverless capacity candidates can be refreshed through
 `.github/workflows/serverless-observed-telemetry.yml`; strict managed evidence
 uses `.github/workflows/managed-serverless-cloud-run.yml` and Cloud Monitoring.
+The matching least-privilege Cloud Run and GitHub OIDC infrastructure is
+reproducibly provisioned by `deploy/cloud/gcp-managed-serverless`; applying it
+creates billable resources and requires isolated external PostgreSQL, Qdrant,
+Redis, and Secret Manager inputs.
 Large-N streaming service runs can be executed through
 `.github/workflows/production-streaming-load.yml`, which uploads checkpoint and
 result artifacts and can commit refreshed benchmark/evidence reports after a
