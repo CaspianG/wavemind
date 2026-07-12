@@ -1153,8 +1153,10 @@ def test_pgvector_config_validates_storage_and_insert_modes(monkeypatch):
     assert config["index_type"] == "hnsw-binary"
 
     monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "namespace")
+    monkeypatch.setenv("WAVEMIND_PGVECTOR_UNLOGGED", "1")
     config = _pgvector_config_from_env()
     assert config["query_routing"] == "namespace"
+    assert config["unlogged"] is True
 
     monkeypatch.setenv("WAVEMIND_PGVECTOR_QUERY_ROUTING", "broadcast")
     with pytest.raises(ValueError, match="must be fanout or namespace"):

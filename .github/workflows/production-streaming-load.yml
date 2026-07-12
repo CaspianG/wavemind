@@ -332,6 +332,8 @@ jobs:
                   env["WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS"] = os.environ[
                       "PGVECTOR_SHARD_COUNT"
                   ]
+                  env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = "64"
+                  env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"
           elif engine == "faiss-ivfpq-persisted":
               value = os.environ.get("INPUT_FAISS_IVFPQ_PATH", "").strip()
               env["WAVEMIND_FAISS_IVFPQ_PATH"] = value or str(runner_storage_root / f"faiss-ivfpq-{size}.faiss")
@@ -439,6 +441,10 @@ jobs:
               if int(row.get("index_build_workers", 0) or 0) != expected_shards:
                   raise SystemExit(
                       "managed pgvector evidence must build independent shard indexes in parallel"
+                  )
+              if row.get("table_persistence") != "unlogged-candidate-index":
+                  raise SystemExit(
+                      "managed pgvector evidence must attest a rebuildable unlogged candidate index"
                   )
               if row.get("evidence_topology") != "github-hosted-isolated-service-processes":
                   raise SystemExit(

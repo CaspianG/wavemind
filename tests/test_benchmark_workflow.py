@@ -251,6 +251,8 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert '"pgvector/pgvector:pg16"' in workflow
     assert "--shm-size 1g" in workflow
     assert "WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS" in workflow
+    assert 'env["WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"] = "64"' in workflow
+    assert 'env["WAVEMIND_PGVECTOR_UNLOGGED"] = "1"' in workflow
     assert "max_wal_size=4GB" in workflow
     assert "pg_isready --username postgres --dbname wavemind" in workflow
     assert "pgvector-managed-dsns.txt" in workflow
@@ -258,6 +260,7 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "pgvector shard row counts do not prove an exact balanced layout" in workflow
     assert "managed pgvector evidence must use namespace routing" in workflow
     assert "build independent shard indexes in parallel" in workflow
+    assert "rebuildable unlogged candidate index" in workflow
     assert "isolated-service topology attestation" in workflow
     assert "Capture pgvector service diagnostics" in workflow
     assert "WAVEMIND_FAISS_IVFPQ_PATH" in workflow

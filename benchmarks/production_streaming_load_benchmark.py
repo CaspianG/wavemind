@@ -680,6 +680,7 @@ def _pgvector_config_from_env() -> dict[str, Any]:
         "insert_mode": insert_mode,
         "index_type": index_type,
         "query_routing": query_routing,
+        "unlogged": _bool_env("WAVEMIND_PGVECTOR_UNLOGGED", False),
         "create_hnsw": _bool_env("WAVEMIND_PGVECTOR_CREATE_HNSW", True),
         "hnsw_m": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_M"),
         "hnsw_ef_construction": _optional_int_env("WAVEMIND_PGVECTOR_HNSW_EF_CONSTRUCTION"),
@@ -2636,10 +2637,11 @@ def run_pgvector_streaming(
     conn = psycopg.connect(dsn, autocommit=True)
     try:
         started = time.perf_counter()
+        table_prefix = "UNLOGGED " if config["unlogged"] else ""
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
         conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {table} (
+            CREATE {table_prefix}TABLE IF NOT EXISTS {table} (
                 collection TEXT NOT NULL,
                 memory_id BIGINT NOT NULL,
                 embedding {storage_type}({int(dim)}) NOT NULL,
@@ -2665,6 +2667,18 @@ def run_pgvector_streaming(
             raise RuntimeError(
                 f"pgvector table {table!r} embedding type is {actual!r}; "
                 f"expected {expected_column_type!r}"
+            )
+        relation_persistence = str(
+            conn.execute(
+                "SELECT relpersistence FROM pg_class WHERE oid = %s::regclass",
+                (table,),
+            ).fetchone()[0]
+        )
+        expected_persistence = "u" if config["unlogged"] else "p"
+        if relation_persistence != expected_persistence:
+            raise RuntimeError(
+                f"pgvector table {table!r} persistence is {relation_persistence!r}; "
+                f"expected {expected_persistence!r}"
             )
         if not completed_batches:
             conn.execute(f"DELETE FROM {table} WHERE collection = %s", (collection,))
@@ -2836,6 +2850,11 @@ def run_pgvector_streaming(
                 "collection": collection,
                 "storage_type": storage_type,
                 "insert_mode": insert_mode,
+                "table_persistence": (
+                    "unlogged-candidate-index"
+                    if relation_persistence == "u"
+                    else "logged"
+                ),
                 "index_type": index_type,
                 "remote_row_count": remote_row_count,
                 "complete_resume": complete_resume,
@@ -2981,14 +3000,16 @@ def _run_pgvector_sharded_streaming(
         _pgvector_shard_expected_count(count, shard_count, index)
         for index in range(shard_count)
     ]
+    relation_persistence_by_shard: list[str] = []
     try:
         started = time.perf_counter()
+        table_prefix = "UNLOGGED " if config["unlogged"] else ""
         expected_column_type = f"{storage_type}({int(dim)})"
         for connection in connections:
             connection.execute("CREATE EXTENSION IF NOT EXISTS vector")
             connection.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {table} (
+                CREATE {table_prefix}TABLE IF NOT EXISTS {table} (
                     collection TEXT NOT NULL,
                     memory_id BIGINT NOT NULL,
                     embedding {storage_type}({int(dim)}) NOT NULL,
@@ -3016,6 +3037,19 @@ def _run_pgvector_sharded_streaming(
                     f"pgvector table {table!r} embedding type is {actual!r}; "
                     f"expected {expected_column_type!r}"
                 )
+            relation_persistence = str(
+                connection.execute(
+                    "SELECT relpersistence FROM pg_class WHERE oid = %s::regclass",
+                    (table,),
+                ).fetchone()[0]
+            )
+            expected_persistence = "u" if config["unlogged"] else "p"
+            if relation_persistence != expected_persistence:
+                raise RuntimeError(
+                    f"pgvector table {table!r} persistence is {relation_persistence!r}; "
+                    f"expected {expected_persistence!r}"
+                )
+            relation_persistence_by_shard.append(relation_persistence)
             if not completed_batches:
                 connection.execute(
                     f"DELETE FROM {table} WHERE collection = %s", (collection,)
@@ -3289,6 +3323,13 @@ def _run_pgvector_sharded_streaming(
                 "collection": collection,
                 "storage_type": storage_type,
                 "insert_mode": insert_mode,
+                "table_persistence": (
+                    "unlogged-candidate-index"
+                    if relation_persistence_by_shard
+                    and all(value == "u" for value in relation_persistence_by_shard)
+                    else "logged"
+                ),
+                "table_persistence_by_shard": relation_persistence_by_shard,
                 "index_type": index_type,
                 "remote_row_count": sum(row_counts),
                 "complete_resume": complete_resume,
