@@ -1,17 +1,17 @@
 {
   "schema": "wavemind.production_evidence_env_contract.v1",
-  "generated_at": "2026-07-12T18:39:39Z",
+  "generated_at": "2026-07-12T19:58:19Z",
   "overall_status": "action_required",
   "repo": "CaspianG/wavemind",
   "claim_boundary": "Environment contract only. It stores placeholders and secret names, never credential values, and does not unlock production claims until strict evidence artifacts pass ingestion and validation.",
   "summary": {
     "overall_status": "action_required",
-    "required_env_count": 12,
+    "required_env_count": 16,
     "configured_required_count": 0,
-    "missing_required_count": 12,
-    "recommended_secret_count": 8,
+    "missing_required_count": 16,
+    "recommended_secret_count": 12,
     "recommended_missing_count": 3,
-    "workflow_count": 4,
+    "workflow_count": 5,
     "strict_requirement_count": 8,
     "preflight_check_count": 8,
     "dispatch_job_count": 8,
@@ -26,6 +26,10 @@
       "WAVEMIND_REMOTE_API_KEY",
       "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
       "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
+      "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+      "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
+      "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+      "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
       "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
       "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
       "WAVEMIND_SERVERLESS_NODES"
@@ -266,7 +270,6 @@
       "description": "Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.",
       "example": "REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B",
       "used_by": [
-        "hundred_million_remote_load",
         "qdrant_sharded_10m_service"
       ],
       "workflows": [
@@ -274,11 +277,9 @@
       ],
       "workflow_inputs": [],
       "artifacts": [
-        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json"
       ],
       "claims": [
-        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
         "Horizontally sharded Qdrant service recall/latency SLO."
       ],
       "github_secret": "WAVEMIND_QDRANT_API_KEYS",
@@ -323,7 +324,6 @@
       "description": "Comma-separated Qdrant shard URLs for 10M sharded and 100M sharded service load.",
       "example": "https://qdrant-a.staging.example.com:6333,https://qdrant-b.staging.example.com:6333",
       "used_by": [
-        "hundred_million_remote_load",
         "qdrant_sharded_10m_service"
       ],
       "workflows": [
@@ -333,11 +333,9 @@
         "qdrant_urls"
       ],
       "artifacts": [
-        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         "benchmarks/production_streaming_load_qdrant_sharded_10m_results.json"
       ],
       "claims": [
-        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
         "Horizontally sharded Qdrant service recall/latency SLO."
       ],
       "github_secret": "WAVEMIND_QDRANT_URLS",
@@ -420,6 +418,110 @@
       ],
       "github_secret": "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
       "github_secret_command": "printf '%s' \"$WAVEMIND_REMOTE_POSTGRES_PASSWORD\" | gh secret set WAVEMIND_REMOTE_POSTGRES_PASSWORD --repo CaspianG/wavemind --body-file -"
+    },
+    {
+      "name": "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+      "status": "missing",
+      "configured": false,
+      "required": true,
+      "recommended": true,
+      "kind": "remote-qdrant-scale-inventory-json",
+      "sensitivity": "secret_or_internal",
+      "description": "Validated eight-host inventory for the strict remote 100M Qdrant benchmark.",
+      "example": "See deploy/remote-scale/inventory.example.json",
+      "used_by": [
+        "hundred_million_remote_load"
+      ],
+      "workflows": [
+        "remote-qdrant-100m-lab.yml"
+      ],
+      "workflow_inputs": [],
+      "artifacts": [
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+      ],
+      "claims": [
+        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
+      ],
+      "github_secret": "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+      "github_secret_command": "printf '%s' \"$WAVEMIND_REMOTE_SCALE_INVENTORY_JSON\" | gh secret set WAVEMIND_REMOTE_SCALE_INVENTORY_JSON --repo CaspianG/wavemind --body-file -"
+    },
+    {
+      "name": "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
+      "status": "missing",
+      "configured": false,
+      "required": true,
+      "recommended": true,
+      "kind": "qdrant-api-secret",
+      "sensitivity": "secret_or_internal",
+      "description": "Qdrant API key installed on private shards and used through SSH tunnels.",
+      "example": "REDACTED_REMOTE_QDRANT_API_KEY",
+      "used_by": [
+        "hundred_million_remote_load"
+      ],
+      "workflows": [
+        "remote-qdrant-100m-lab.yml"
+      ],
+      "workflow_inputs": [],
+      "artifacts": [
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+      ],
+      "claims": [
+        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
+      ],
+      "github_secret": "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
+      "github_secret_command": "printf '%s' \"$WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY\" | gh secret set WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY --repo CaspianG/wavemind --body-file -"
+    },
+    {
+      "name": "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+      "status": "missing",
+      "configured": false,
+      "required": true,
+      "recommended": true,
+      "kind": "ssh-known-hosts",
+      "sensitivity": "secret_or_internal",
+      "description": "Pinned SSH host keys for all remote Qdrant shard hosts.",
+      "example": "wm-qdrant-0.example.com ssh-ed25519 REDACTED",
+      "used_by": [
+        "hundred_million_remote_load"
+      ],
+      "workflows": [
+        "remote-qdrant-100m-lab.yml"
+      ],
+      "workflow_inputs": [],
+      "artifacts": [
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+      ],
+      "claims": [
+        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
+      ],
+      "github_secret": "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+      "github_secret_command": "printf '%s' \"$WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS\" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -"
+    },
+    {
+      "name": "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+      "status": "missing",
+      "configured": false,
+      "required": true,
+      "recommended": true,
+      "kind": "ssh-private-key",
+      "sensitivity": "secret_or_internal",
+      "description": "SSH private key used only by the remote Qdrant 100M workflow.",
+      "example": "REDACTED_OPENSSH_PRIVATE_KEY",
+      "used_by": [
+        "hundred_million_remote_load"
+      ],
+      "workflows": [
+        "remote-qdrant-100m-lab.yml"
+      ],
+      "workflow_inputs": [],
+      "artifacts": [
+        "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+      ],
+      "claims": [
+        "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
+      ],
+      "github_secret": "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+      "github_secret_command": "printf '%s' \"$WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY\" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -"
     },
     {
       "name": "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
@@ -520,6 +622,10 @@
       "WAVEMIND_REMOTE_API_KEY",
       "WAVEMIND_REMOTE_LAB_INVENTORY_JSON",
       "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
+      "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+      "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
+      "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+      "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
       "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS",
       "WAVEMIND_REMOTE_SSH_PRIVATE_KEY",
       "WAVEMIND_SERVERLESS_NODES"
@@ -540,27 +646,31 @@
       "printf '%s' \"$WAVEMIND_REMOTE_API_KEY\" | gh secret set WAVEMIND_REMOTE_API_KEY --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_REMOTE_LAB_INVENTORY_JSON\" | gh secret set WAVEMIND_REMOTE_LAB_INVENTORY_JSON --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_REMOTE_POSTGRES_PASSWORD\" | gh secret set WAVEMIND_REMOTE_POSTGRES_PASSWORD --repo CaspianG/wavemind --body-file -",
+      "printf '%s' \"$WAVEMIND_REMOTE_SCALE_INVENTORY_JSON\" | gh secret set WAVEMIND_REMOTE_SCALE_INVENTORY_JSON --repo CaspianG/wavemind --body-file -",
+      "printf '%s' \"$WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY\" | gh secret set WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY --repo CaspianG/wavemind --body-file -",
+      "printf '%s' \"$WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS\" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -",
+      "printf '%s' \"$WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY\" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_REMOTE_SSH_KNOWN_HOSTS\" | gh secret set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_REMOTE_SSH_PRIVATE_KEY\" | gh secret set WAVEMIND_REMOTE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -",
       "printf '%s' \"$WAVEMIND_SERVERLESS_NODES\" | gh secret set WAVEMIND_SERVERLESS_NODES --repo CaspianG/wavemind --body-file -"
     ]
   },
-  "env_example": "# WaveMind strict production evidence environment\n# Fill these locally or as GitHub Actions environment-scoped secrets.\n# Do not commit real values.\n\n# Remote WaveMind API regions for active-active namespace sync evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS=us=https://wm-us.staging.example.com,eu=https://wm-eu.staging.example.com,ap=https://wm-ap.staging.example.com\n\n# JSON manifest alternative for remote active-active region evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-regions-2026-07\",\"regions\":[{\"id\":\"us\",\"url\":\"https://wm-us.staging.example.com\"},{\"id\":\"eu\",\"url\":\"https://wm-eu.staging.example.com\"},{\"id\":\"ap\",\"url\":\"https://wm-ap.staging.example.com\"}]}\n\n# Optional API key used when remote WaveMind endpoints require authentication.\nWAVEMIND_API_KEY=REDACTED_API_KEY\n\n# Remote WaveMind API nodes for the external service-node cluster workload.\nWAVEMIND_CLUSTER_NODES=node-a=https://wm-a.staging.example.com,node-b=https://wm-b.staging.example.com,node-c=https://wm-c.staging.example.com,node-d=https://wm-d.staging.example.com\n\n# JSON manifest alternative for external service-node cluster evidence.\nWAVEMIND_CLUSTER_NODES_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-staging-2026-07\",\"nodes\":[{\"id\":\"node-a\",\"url\":\"https://wm-a.staging.example.com\"},{\"id\":\"node-b\",\"url\":\"https://wm-b.staging.example.com\"},{\"id\":\"node-c\",\"url\":\"https://wm-c.staging.example.com\"},{\"id\":\"node-d\",\"url\":\"https://wm-d.staging.example.com\"}]}\n\n# Optional deterministic free-disk override for FAISS IVF-PQ preflight.\nWAVEMIND_FAISS_IVFPQ_FREE_GB=8\n\n# Persisted FAISS IVF-PQ index path for the 50M streaming profile.\nWAVEMIND_FAISS_IVFPQ_PATH=/mnt/wavemind/faiss/wavemind-ivfpq-50m.faiss\n\n# Comma-separated PostgreSQL/pgvector service DSNs for the namespace-sharded 10M streaming load.\nWAVEMIND_PGVECTOR_DSNS=postgresql://USER:PASSWORD@pgvector-a.staging.example.com:5432/wavemind,postgresql://USER:PASSWORD@pgvector-b.staging.example.com:5432/wavemind\n\n# Optional Qdrant API key for the single-service Qdrant production load job.\nWAVEMIND_QDRANT_API_KEY=REDACTED_QDRANT_API_KEY\n\n# Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.\nWAVEMIND_QDRANT_API_KEYS=REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B\n\n# Single Qdrant service URL for 10M service-backed streaming load.\nWAVEMIND_QDRANT_URL=https://qdrant-10m.staging.example.com:6333\n\n# Comma-separated Qdrant shard URLs for 10M sharded and 100M sharded service load.\nWAVEMIND_QDRANT_URLS=https://qdrant-a.staging.example.com:6333,https://qdrant-b.staging.example.com:6333\n\n# Shared API key installed on and used to probe the remote WaveMind regions.\nWAVEMIND_REMOTE_API_KEY=REDACTED_REMOTE_API_KEY\n\n# Validated inventory for three or more independently hosted remote WaveMind regions.\nWAVEMIND_REMOTE_LAB_INVENTORY_JSON={\"schema\":\"wavemind.remote_production_lab.v1\",\"deployment_id\":\"wm-regions-2026-07\",\"environment\":\"staging\",\"source\":\"independent-cloud-vms\",\"image\":\"ghcr.io/caspiang/wavemind:sha-0123456789abcdef\",\"regions\":[{\"id\":\"us-east\",\"ssh_host\":\"wavemind-us\",\"public_url\":\"https://wm-us.example.com\",\"region\":\"us-east-1\",\"zone\":\"us-east-1a\",\"provider\":\"provider-a\"},{\"id\":\"eu-west\",\"ssh_host\":\"wavemind-eu\",\"public_url\":\"https://wm-eu.example.com\",\"region\":\"eu-west-1\",\"zone\":\"eu-west-1a\",\"provider\":\"provider-b\"},{\"id\":\"ap-south\",\"ssh_host\":\"wavemind-ap\",\"public_url\":\"https://wm-ap.example.com\",\"region\":\"ap-south-1\",\"zone\":\"ap-south-1a\",\"provider\":\"provider-c\"}]}\n\n# PostgreSQL password installed on each isolated remote production stack.\nWAVEMIND_REMOTE_POSTGRES_PASSWORD=REDACTED_REMOTE_POSTGRES_PASSWORD\n\n# Pinned SSH host keys for every host in the remote production lab inventory.\nWAVEMIND_REMOTE_SSH_KNOWN_HOSTS=wm-us.example.com ssh-ed25519 REDACTED\n\n# SSH private key used only by the remote production lab workflow.\nWAVEMIND_REMOTE_SSH_PRIVATE_KEY=REDACTED_OPENSSH_PRIVATE_KEY\n\n# Deployed serverless/managed WaveMind API nodes for remote telemetry evidence.\nWAVEMIND_SERVERLESS_NODES=https://wm-serverless-a.example.com,https://wm-serverless-b.example.com\n",
+  "env_example": "# WaveMind strict production evidence environment\n# Fill these locally or as GitHub Actions environment-scoped secrets.\n# Do not commit real values.\n\n# Remote WaveMind API regions for active-active namespace sync evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS=us=https://wm-us.staging.example.com,eu=https://wm-eu.staging.example.com,ap=https://wm-ap.staging.example.com\n\n# JSON manifest alternative for remote active-active region evidence.\nWAVEMIND_ACTIVE_ACTIVE_REGIONS_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-regions-2026-07\",\"regions\":[{\"id\":\"us\",\"url\":\"https://wm-us.staging.example.com\"},{\"id\":\"eu\",\"url\":\"https://wm-eu.staging.example.com\"},{\"id\":\"ap\",\"url\":\"https://wm-ap.staging.example.com\"}]}\n\n# Optional API key used when remote WaveMind endpoints require authentication.\nWAVEMIND_API_KEY=REDACTED_API_KEY\n\n# Remote WaveMind API nodes for the external service-node cluster workload.\nWAVEMIND_CLUSTER_NODES=node-a=https://wm-a.staging.example.com,node-b=https://wm-b.staging.example.com,node-c=https://wm-c.staging.example.com,node-d=https://wm-d.staging.example.com\n\n# JSON manifest alternative for external service-node cluster evidence.\nWAVEMIND_CLUSTER_NODES_MANIFEST_JSON={\"environment\":\"staging\",\"source\":\"kubernetes\",\"deployment_id\":\"wm-staging-2026-07\",\"nodes\":[{\"id\":\"node-a\",\"url\":\"https://wm-a.staging.example.com\"},{\"id\":\"node-b\",\"url\":\"https://wm-b.staging.example.com\"},{\"id\":\"node-c\",\"url\":\"https://wm-c.staging.example.com\"},{\"id\":\"node-d\",\"url\":\"https://wm-d.staging.example.com\"}]}\n\n# Optional deterministic free-disk override for FAISS IVF-PQ preflight.\nWAVEMIND_FAISS_IVFPQ_FREE_GB=8\n\n# Persisted FAISS IVF-PQ index path for the 50M streaming profile.\nWAVEMIND_FAISS_IVFPQ_PATH=/mnt/wavemind/faiss/wavemind-ivfpq-50m.faiss\n\n# Comma-separated PostgreSQL/pgvector service DSNs for the namespace-sharded 10M streaming load.\nWAVEMIND_PGVECTOR_DSNS=postgresql://USER:PASSWORD@pgvector-a.staging.example.com:5432/wavemind,postgresql://USER:PASSWORD@pgvector-b.staging.example.com:5432/wavemind\n\n# Optional Qdrant API key for the single-service Qdrant production load job.\nWAVEMIND_QDRANT_API_KEY=REDACTED_QDRANT_API_KEY\n\n# Optional comma-separated Qdrant API keys for sharded Qdrant production load jobs.\nWAVEMIND_QDRANT_API_KEYS=REDACTED_QDRANT_API_KEY_A,REDACTED_QDRANT_API_KEY_B\n\n# Single Qdrant service URL for 10M service-backed streaming load.\nWAVEMIND_QDRANT_URL=https://qdrant-10m.staging.example.com:6333\n\n# Comma-separated Qdrant shard URLs for 10M sharded and 100M sharded service load.\nWAVEMIND_QDRANT_URLS=https://qdrant-a.staging.example.com:6333,https://qdrant-b.staging.example.com:6333\n\n# Shared API key installed on and used to probe the remote WaveMind regions.\nWAVEMIND_REMOTE_API_KEY=REDACTED_REMOTE_API_KEY\n\n# Validated inventory for three or more independently hosted remote WaveMind regions.\nWAVEMIND_REMOTE_LAB_INVENTORY_JSON={\"schema\":\"wavemind.remote_production_lab.v1\",\"deployment_id\":\"wm-regions-2026-07\",\"environment\":\"staging\",\"source\":\"independent-cloud-vms\",\"image\":\"ghcr.io/caspiang/wavemind:sha-0123456789abcdef\",\"regions\":[{\"id\":\"us-east\",\"ssh_host\":\"wavemind-us\",\"public_url\":\"https://wm-us.example.com\",\"region\":\"us-east-1\",\"zone\":\"us-east-1a\",\"provider\":\"provider-a\"},{\"id\":\"eu-west\",\"ssh_host\":\"wavemind-eu\",\"public_url\":\"https://wm-eu.example.com\",\"region\":\"eu-west-1\",\"zone\":\"eu-west-1a\",\"provider\":\"provider-b\"},{\"id\":\"ap-south\",\"ssh_host\":\"wavemind-ap\",\"public_url\":\"https://wm-ap.example.com\",\"region\":\"ap-south-1\",\"zone\":\"ap-south-1a\",\"provider\":\"provider-c\"}]}\n\n# PostgreSQL password installed on each isolated remote production stack.\nWAVEMIND_REMOTE_POSTGRES_PASSWORD=REDACTED_REMOTE_POSTGRES_PASSWORD\n\n# Validated eight-host inventory for the strict remote 100M Qdrant benchmark.\nWAVEMIND_REMOTE_SCALE_INVENTORY_JSON=See deploy/remote-scale/inventory.example.json\n\n# Qdrant API key installed on private shards and used through SSH tunnels.\nWAVEMIND_REMOTE_SCALE_QDRANT_API_KEY=REDACTED_REMOTE_QDRANT_API_KEY\n\n# Pinned SSH host keys for all remote Qdrant shard hosts.\nWAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS=wm-qdrant-0.example.com ssh-ed25519 REDACTED\n\n# SSH private key used only by the remote Qdrant 100M workflow.\nWAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY=REDACTED_OPENSSH_PRIVATE_KEY\n\n# Pinned SSH host keys for every host in the remote production lab inventory.\nWAVEMIND_REMOTE_SSH_KNOWN_HOSTS=wm-us.example.com ssh-ed25519 REDACTED\n\n# SSH private key used only by the remote production lab workflow.\nWAVEMIND_REMOTE_SSH_PRIVATE_KEY=REDACTED_OPENSSH_PRIVATE_KEY\n\n# Deployed serverless/managed WaveMind API nodes for remote telemetry evidence.\nWAVEMIND_SERVERLESS_NODES=https://wm-serverless-a.example.com,https://wm-serverless-b.example.com\n",
   "checks": [
     {
       "name": "all_preflight_env_represented",
       "pass": true,
-      "detail": "11/11 preflight env vars represented"
+      "detail": "15/15 preflight env vars represented"
     },
     {
       "name": "all_dispatch_env_represented",
       "pass": true,
-      "detail": "14/14 dispatch env vars represented"
+      "detail": "18/18 dispatch env vars represented"
     },
     {
       "name": "all_scale_gap_env_represented",
       "pass": true,
-      "detail": "4/4 scale-gap env vars represented"
+      "detail": "8/8 scale-gap env vars represented"
     },
     {
       "name": "no_missing_contract_rows",

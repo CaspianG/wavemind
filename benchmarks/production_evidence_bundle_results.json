@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_evidence_bundle.v1",
-  "generated_at": "2026-07-12T18:39:42Z",
+  "generated_at": "2026-07-12T19:58:24Z",
   "claim_status": "claims_limited",
   "summary": {
     "claim_status": "claims_limited",
@@ -21,7 +21,7 @@
   },
   "strict_production_evidence": {
     "schema": "wavemind.production_evidence.v1",
-    "generated_at": "2026-07-12T18:39:42Z",
+    "generated_at": "2026-07-12T19:58:24Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -108,21 +108,22 @@
       },
       {
         "id": "hundred_million_remote_load",
-        "title": "100M remote load result",
+        "title": "100M remote load result with eight-host attestation",
         "status": "action_required",
-        "evidence": "no checked-in 100,000,000-vector result for Qdrant sharded service streaming",
+        "evidence": "benchmark: no checked-in 100,000,000-vector result for Qdrant sharded service streaming; topology: no remote eight-host Qdrant capacity attestation",
         "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+        "command": "gh workflow run remote-qdrant-100m-lab.yml --ref main -f action=evidence -f runner_label=self-hosted-large",
         "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
         "issues": [
-          "missing artifact"
+          "missing artifact",
+          "remote topology: missing remote Qdrant 100M attestation artifact"
         ]
       }
     ]
   },
   "production_evidence_preflight": {
     "schema": "wavemind.production_evidence_preflight.v1",
-    "generated_at": "2026-07-12T18:39:42Z",
+    "generated_at": "2026-07-12T19:58:24Z",
     "overall_status": "action_required",
     "summary": {
       "overall_status": "action_required",
@@ -284,22 +285,33 @@
       },
       {
         "id": "hundred_million_remote_load",
-        "title": "100M sharded Qdrant service load preflight",
+        "title": "Attested remote 100M sharded Qdrant preflight",
         "status": "action_required",
         "ready": false,
-        "evidence": "plan benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json, vectors 100000000, required env 1, missing env 1, required local free 0.009 GB",
+        "evidence": "remote 100M Qdrant inventory is not configured",
         "required_env": [
-          "WAVEMIND_QDRANT_URLS"
+          "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+          "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+          "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+          "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
         ],
         "missing_env": [
-          "WAVEMIND_QDRANT_URLS"
+          "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+          "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+          "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+          "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
         ],
-        "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks\\production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+        "command": "gh workflow run remote-qdrant-100m-lab.yml --ref main -f action=evidence -f runner_label=self-hosted-large",
         "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         "issues": [
-          "set WAVEMIND_QDRANT_URLS"
+          "set WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+          "set WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+          "set WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+          "set WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
         ],
-        "warnings": []
+        "warnings": [
+          "Inventory validation is not capacity proof. The workflow must attest eight unique remote machines and complete the measured 100M run."
+        ]
       }
     ]
   },
@@ -657,13 +669,13 @@
   "artifact_audit": {
     "schema": "wavemind.benchmark_artifact_audit.v1",
     "status": "pass",
-    "checked_at": "2026-07-12T18:37:58Z",
-    "generated_at": "2026-07-12T18:37:56Z",
-    "source_ref": "a2e6a5ea1e63",
+    "checked_at": "2026-07-12T19:29:39Z",
+    "generated_at": "2026-07-12T19:29:37Z",
+    "source_ref": "0be7a3b918a1",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "max_age_days": 8.0,
-    "age_days": 2.4908831018518518e-05,
+    "age_days": 2.332268518518519e-05,
     "implemented_count": 37,
     "runner_ready_count": 3,
     "planned_count": 6,
@@ -813,19 +825,25 @@
     },
     {
       "id": "hundred_million_remote_load",
-      "title": "100M remote load result",
+      "title": "100M remote load result with eight-host attestation",
       "strict_status": "action_required",
       "preflight_status": "action_required",
       "artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "output_artifact": "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
       "issues": [
-        "missing artifact"
+        "missing artifact",
+        "remote topology: missing remote Qdrant 100M attestation artifact"
       ],
       "missing_env": [
-        "WAVEMIND_QDRANT_URLS"
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
       ],
-      "warnings": [],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "warnings": [
+        "Inventory validation is not capacity proof. The workflow must attest eight unique remote machines and complete the measured 100M run."
+      ],
+      "command": "gh workflow run remote-qdrant-100m-lab.yml --ref main -f action=evidence -f runner_label=self-hosted-large",
       "claim_unlocked": "100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO."
     }
   ],

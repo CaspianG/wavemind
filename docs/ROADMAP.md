@@ -615,6 +615,12 @@ memory policy also needs to become cheaper:
   SQLite writes, and feedback updates.
 - keep long 10M/50M/100M streaming benchmark runs checkpointed so interrupted
   service ingest can resume from completed batches.
+- the remote Qdrant 100M lab now turns the remaining scale contract into an
+  executable private topology: eight unique SSH-attested machines across at
+  least three regions, 16 GB RAM and 35 GB free disk per shard, pinned Qdrant,
+  loopback-only service ports, strict-host-key SSH tunnels, resumable workflow
+  checkpoints, automatic tunnel cleanup, and same-run attestation binding. The
+  measured 100M result is still required before the claim can unlock.
 - run `wavemind scale-plan --target-memories <N> --fail-on action_required`
   before import or deployment growth so the index choice is explicit instead of
   accidental.

@@ -169,10 +169,75 @@ def _streaming_payload() -> dict:
                         "target_recall_at_k": 0.97,
                         "p99_latency_ms": 82.5,
                         "cost_status": "valid_slo",
+                        "shard_count": 8,
+                        "collection_names": [
+                            f"wavemind_remote_100m_s{index:03d}" for index in range(8)
+                        ],
+                        "parallel_shard_upsert": True,
+                        "routing": "point_id_minus_one_mod_shard_count",
+                        "index_ready_all": True,
+                        "index_readiness": [
+                            {
+                                "collection_name": f"wavemind_remote_100m_s{index:03d}",
+                                "expected_vectors": 12_500_000,
+                                "points_count": 12_500_000,
+                                "indexed_vectors_count": 12_500_000,
+                                "ready": True,
+                            }
+                            for index in range(8)
+                        ],
+                        "checkpoint_completed_batches": 10_000,
                     }
                 ],
             }
         ],
+    }
+
+
+def _remote_scale_attestation_payload() -> dict:
+    shards = [
+        {
+            "id": f"shard-{index}",
+            "ssh_host": f"wm-qdrant-{index}",
+            "region": ("eu", "us", "ap", "ca")[index % 4],
+            "zone": f"zone-{index}",
+            "provider": f"provider-{index % 4}",
+            "reachable": True,
+            "issues": [],
+            "machine_identity_sha256": f"{index + 1:064x}",
+        }
+        for index in range(8)
+    ]
+    return {
+        "schema": "wavemind.remote_qdrant_scale_attestation.v1",
+        "status": "pass",
+        "generated_at": "2026-07-10T00:00:00Z",
+        "source_ref": "a" * 40,
+        "execution_id": "test-run-1",
+        "workflow_run_id": None,
+        "workflow_run_url": None,
+        "deployment_id": "wavemind-100m-staging",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "target_vectors": 100_000_000,
+        "vector_dim": 128,
+        "thresholds": {
+            "min_shards": 8,
+            "min_regions": 3,
+            "min_memory_gb": 16.0,
+            "min_disk_free_gb_per_shard": 35.0,
+            "required_total_disk_gb": 280.0,
+            "unique_machine_identity_required": True,
+        },
+        "summary": {
+            "shard_count": 8,
+            "region_count": 4,
+            "reachable_count": 8,
+            "ready_count": 8,
+            "unique_machine_count": 8,
+            "total_disk_free_gb": 400.0,
+        },
+        "shards": shards,
     }
 
 
@@ -258,12 +323,23 @@ def test_ingest_accepts_strict_100m_streaming_artifact_dry_run(tmp_path):
         artifact_dir / "benchmarks" / "production_streaming_load_qdrant_sharded_100m_results.json",
         _streaming_payload(),
     )
+    with pytest.raises(ProductionEvidenceIngestError, match="attestation"):
+        ingest_production_evidence_artifacts(
+            artifact_dir, output_root=output_root, dry_run=True
+        )
+    _write_json(
+        artifact_dir / "remote_qdrant_100m_attestation.json",
+        _remote_scale_attestation_payload(),
+    )
 
     manifest = ingest_production_evidence_artifacts(artifact_dir, output_root=output_root, dry_run=True)
 
     assert discover_expected_artifacts(artifact_dir)[0][0] == source
     assert manifest["dry_run"] is True
     assert manifest["ingested"][0]["requirement_id"] == "hundred_million_remote_load"
+    assert manifest["ingested"][0]["dependencies"] == [
+        "remote_qdrant_100m_attestation.json"
+    ]
     assert manifest["ingested"][0]["copied"] is False
     assert not (output_root / "benchmarks" / source.name).exists()
 

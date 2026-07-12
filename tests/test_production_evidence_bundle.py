@@ -29,6 +29,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
         "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
         "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON": json.dumps(_remote_scale_inventory()),
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": "test-scale-private-key",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": "test-scale-known-hosts",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": "test-scale-qdrant-key",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -59,6 +63,22 @@ def _remote_inventory():
                 "provider": f"provider-{index}",
             }
             for index in range(3)
+        ],
+    }
+
+
+def _remote_scale_inventory():
+    return {
+        "schema": "wavemind.remote_qdrant_scale_lab.v1",
+        "deployment_id": "wavemind-100m-staging",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "qdrant/qdrant:v1.18.2",
+        "target_vectors": 100_000_000,
+        "vector_dim": 128,
+        "shards": [
+            {"id": f"shard-{index}", "ssh_host": f"wm-qdrant-{index}", "region": ("eu", "us", "ap", "ca")[index % 4], "zone": f"zone-{index}", "provider": f"provider-{index % 4}"}
+            for index in range(8)
         ],
     }
 

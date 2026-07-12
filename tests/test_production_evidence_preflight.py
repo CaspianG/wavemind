@@ -25,6 +25,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
         "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
         "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON": json.dumps(_remote_scale_inventory()),
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": "test-scale-private-key",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": "test-scale-known-hosts",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": "test-scale-qdrant-key",
         "WAVEMIND_SERVERLESS_NODES": "https://wm-a.staging.internal,https://wm-b.staging.internal",
         "WAVEMIND_QDRANT_URL": "http://qdrant.staging.internal:6333",
         "WAVEMIND_QDRANT_URLS": "http://qdrant-a.staging.internal:6333,http://qdrant-b.staging.internal:6333",
@@ -55,6 +59,28 @@ def _remote_inventory():
                 "provider": f"provider-{index}",
             }
             for index in range(3)
+        ],
+    }
+
+
+def _remote_scale_inventory():
+    return {
+        "schema": "wavemind.remote_qdrant_scale_lab.v1",
+        "deployment_id": "wavemind-100m-staging",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "qdrant/qdrant:v1.18.2",
+        "target_vectors": 100_000_000,
+        "vector_dim": 128,
+        "shards": [
+            {
+                "id": f"shard-{index}",
+                "ssh_host": f"wm-qdrant-{index}",
+                "region": ("eu", "us", "ap", "ca")[index % 4],
+                "zone": f"zone-{index}",
+                "provider": f"provider-{index % 4}",
+            }
+            for index in range(8)
         ],
     }
 
@@ -101,9 +127,25 @@ def test_production_evidence_preflight_can_be_ready_with_real_prerequisites(tmp_
     assert "four-service pgvector topology" in by_id["pgvector_10m_service"]["evidence"]
     assert "-f batch_query_size=24" in by_id["external_http_cluster"]["command"]
     assert by_id["hundred_million_remote_load"]["ready"] is True
-    assert "production_streaming_load_qdrant_sharded_100m_results.json" in by_id[
-        "hundred_million_remote_load"
-    ]["command"]
+    assert "remote-qdrant-100m-lab.yml" in by_id["hundred_million_remote_load"]["command"]
+    assert "8 remote shard hosts" in by_id["hundred_million_remote_load"]["evidence"]
+
+
+def test_remote_100m_preflight_rejects_mutable_or_under_sharded_inventory(tmp_path):
+    env = _ready_env(tmp_path)
+    inventory = _remote_scale_inventory()
+    inventory["image"] = "qdrant/qdrant:latest"
+    inventory["shards"] = inventory["shards"][:4]
+    env["WAVEMIND_REMOTE_SCALE_INVENTORY_JSON"] = json.dumps(inventory)
+
+    payload = evaluate_production_evidence_preflight(
+        Path(__file__).resolve().parents[1], env=env
+    )
+    check = next(row for row in payload["checks"] if row["id"] == "hundred_million_remote_load")
+
+    assert check["status"] == "action_required"
+    assert any("invalid remote scale inventory" in issue for issue in check["issues"])
+    assert "latest" not in json.dumps(check)
 
 
 def test_remote_lab_preflight_rejects_unpinned_or_loopback_inventory(tmp_path):

@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.production_admission.v1",
-  "generated_at": "2026-07-12T16:59:10Z",
+  "generated_at": "2026-07-12T19:58:26Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
@@ -48,16 +48,22 @@
       "baseline_progress_ratio": 0.01,
       "target_gap_multiplier": 100.0,
       "missing_env": [
-        "WAVEMIND_QDRANT_URLS"
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
       ],
       "blockers": [
-        "missing_env:WAVEMIND_QDRANT_URLS",
-        "insufficient_local_disk_for_index_and_transient_batches"
+        "set WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+        "set WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+        "set WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+        "set WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY"
       ],
       "issues": [
-        "missing artifact"
+        "missing artifact",
+        "remote topology: missing remote Qdrant 100M attestation artifact"
       ],
-      "command": "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json",
+      "command": "gh workflow run remote-qdrant-100m-lab.yml --ref main -f action=evidence -f runner_label=self-hosted-large",
       "next_action": "Provision the listed environment, run the command, then promote the result artifact through the ingest gate."
     }
   ],
@@ -67,7 +73,7 @@
   "warnings": [],
   "next_actions": [
     "Do not admit production traffic yet; run the listed strict-evidence job first.",
-    "python benchmarks/production_streaming_load_benchmark.py --sizes 100000000 --dim 128 --queries 5000 --top-k 10 --seed 42 --noise 0.08 --batch-size 10000 --engines qdrant-sharded-service --target-recall 0.95 --target-p99-ms 100.0 --target-qps 500.0 --replicas 8 --autoscaling-max-replicas 128 --capacity-headroom 0.7 --output benchmarks/production_streaming_load_qdrant_sharded_100m_results.json --checkpoint-path state/production-runs/qdrant-sharded-service-100000000.checkpoint.json"
+    "gh workflow run remote-qdrant-100m-lab.yml --ref main -f action=evidence -f runner_label=self-hosted-large"
   ],
   "source_artifacts": {
     "strict_evidence": "benchmarks/production_evidence_results.json",

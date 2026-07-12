@@ -79,6 +79,7 @@ EXPECTED_EVIDENCE_ARTIFACTS: dict[str, ExpectedEvidenceArtifact] = {
         destination="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
         requirement_id="hundred_million_remote_load",
         description="horizontally sharded Qdrant 100M production streaming result",
+        optional_dependencies=("remote_qdrant_100m_attestation.json",),
     ),
 }
 

@@ -17,6 +17,11 @@ from .remote_lab import (
     RemoteLabInventory,
     validate_remote_region_failure_drill,
 )
+from .remote_scale_lab import (
+    RemoteQdrantScaleInventory,
+    RemoteScaleLabError,
+    validate_remote_qdrant_scale_attestation,
+)
 
 
 PROJECT_ROOT = Path.cwd()
@@ -1002,15 +1007,81 @@ def _large_service_requirement(
 
 
 def _hundred_million_requirement(root: Path) -> EvidenceRequirement:
-    return _large_service_requirement(
+    benchmark_artifact = "benchmarks/production_streaming_load_qdrant_sharded_100m_results.json"
+    requirement = _large_service_requirement(
         root,
         requirement_id="hundred_million_remote_load",
         title="100M remote load result",
-        artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        artifact=benchmark_artifact,
         plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
         engine="Qdrant sharded service streaming",
         min_vectors=100_000_000,
         claim_unlocked="100M+ memories with measured sharded-Qdrant recall, p99, and cost SLO.",
+    )
+    attestation_artifact = "benchmarks/remote_qdrant_100m_attestation.json"
+    benchmark_payload = _load_optional_json(root / benchmark_artifact)
+    attestation_payload = _load_optional_json(root / attestation_artifact)
+    attestation = validate_remote_qdrant_scale_attestation(attestation_payload or None)
+    issues = list(requirement.issues)
+    issues.extend(
+        f"remote topology: {issue}" for issue in attestation.get("issues", [])
+    )
+    if benchmark_payload and attestation_payload:
+        if benchmark_payload.get("source_ref") != attestation_payload.get("source_ref"):
+            issues.append("remote topology: source_ref must match benchmark source_ref")
+        if benchmark_payload.get("execution_id") != attestation_payload.get("execution_id"):
+            issues.append("remote topology: execution_id must match benchmark execution_id")
+        if benchmark_payload.get("workflow_run_id") != attestation_payload.get("workflow_run_id"):
+            issues.append("remote topology: workflow_run_id must match benchmark workflow_run_id")
+    benchmark_rows = [
+        row
+        for row in _size_results(benchmark_payload)
+        if row.get("engine") == "Qdrant sharded service streaming" and not row.get("skipped")
+    ]
+    benchmark_row = max(
+        benchmark_rows,
+        key=lambda row: int(row.get("vectors") or 0),
+        default={},
+    )
+    if benchmark_row:
+        shard_count = int(benchmark_row.get("shard_count") or 0)
+        collections = list(benchmark_row.get("collection_names") or [])
+        readiness = [
+            row
+            for row in benchmark_row.get("index_readiness", [])
+            if isinstance(row, dict)
+        ]
+        if shard_count < 8:
+            issues.append("remote topology: benchmark shard_count must be >= 8")
+        if len(collections) != shard_count or len(set(collections)) != shard_count:
+            issues.append("remote topology: benchmark must contain one unique collection per shard")
+        if benchmark_row.get("parallel_shard_upsert") is not True:
+            issues.append("remote topology: parallel_shard_upsert must be true")
+        if benchmark_row.get("routing") != "point_id_minus_one_mod_shard_count":
+            issues.append("remote topology: benchmark routing must use modulo shard placement")
+        if benchmark_row.get("index_ready_all") is not True:
+            issues.append("remote topology: every benchmark shard index must be ready")
+        if len(readiness) != shard_count or not all(row.get("ready") is True for row in readiness):
+            issues.append("remote topology: index readiness must attest every shard")
+        if sum(int(row.get("points_count") or 0) for row in readiness) < 100_000_000:
+            issues.append("remote topology: indexed shard point counts must total at least 100000000")
+        if int(benchmark_row.get("checkpoint_completed_batches") or 0) < 10_000:
+            issues.append("remote topology: checkpoint must record all 10000 ingest batches")
+    missing = not benchmark_payload or not attestation_payload
+    return EvidenceRequirement(
+        id=requirement.id,
+        title="100M remote load result with eight-host attestation",
+        status=_status_from_issues(missing=missing, issues=issues),
+        evidence=(
+            f"benchmark: {requirement.evidence}; topology: {attestation.get('evidence')}"
+        ),
+        artifact=requirement.artifact,
+        command=(
+            "gh workflow run remote-qdrant-100m-lab.yml --ref main "
+            "-f action=evidence -f runner_label=self-hosted-large"
+        ),
+        claim_unlocked=requirement.claim_unlocked,
+        issues=tuple(dict.fromkeys(issues)),
     )
 
 
@@ -1076,6 +1147,13 @@ _REMOTE_LAB_REQUIRED_ENV = (
     "WAVEMIND_REMOTE_POSTGRES_PASSWORD",
 )
 
+_REMOTE_SCALE_REQUIRED_ENV = (
+    "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON",
+    "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY",
+    "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS",
+    "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY",
+)
+
 
 def _remote_lab_active_active_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
     issues: list[str] = []
@@ -1123,6 +1201,50 @@ def _remote_lab_active_active_preflight(env: dict[str, str]) -> EvidencePrefligh
     )
 
 
+def _remote_qdrant_100m_preflight(env: dict[str, str]) -> EvidencePreflightCheck:
+    issues: list[str] = []
+    missing_env = tuple(name for name in _REMOTE_SCALE_REQUIRED_ENV if not _env_value(env, name))
+    for name in missing_env:
+        issues.append(f"set {name}")
+
+    inventory: RemoteQdrantScaleInventory | None = None
+    inventory_value = _env_value(env, "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON")
+    if inventory_value:
+        try:
+            payload = json.loads(inventory_value)
+            if not isinstance(payload, dict):
+                raise RemoteScaleLabError("inventory root must be a JSON object")
+            inventory = RemoteQdrantScaleInventory.from_dict(payload)
+        except (json.JSONDecodeError, RemoteScaleLabError, TypeError, ValueError) as exc:
+            issues.append(f"invalid remote scale inventory: {exc}")
+
+    evidence = (
+        f"{len(inventory.shards)} remote shard hosts across "
+        f"{len({row.region for row in inventory.shards})} regions; target "
+        f"{inventory.target_vectors}; required disk per shard "
+        f"{inventory.required_disk_per_shard_gb()} GB"
+        if inventory
+        else "remote 100M Qdrant inventory is not configured"
+    )
+    return EvidencePreflightCheck(
+        id="hundred_million_remote_load",
+        title="Attested remote 100M sharded Qdrant preflight",
+        status=_preflight_status(issues),
+        ready=not issues,
+        evidence=evidence,
+        required_env=_REMOTE_SCALE_REQUIRED_ENV,
+        missing_env=missing_env,
+        command=(
+            "gh workflow run remote-qdrant-100m-lab.yml --ref main "
+            "-f action=evidence -f runner_label=self-hosted-large"
+        ),
+        output_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
+        issues=tuple(dict.fromkeys(issues)),
+        warnings=(
+            "Inventory validation is not capacity proof. The workflow must attest eight "
+            "unique remote machines and complete the measured 100M run.",
+        ),
+    )
 def _configured_cluster_nodes(
     env: dict[str, str],
 ) -> tuple[dict[str, str], list[str], list[str]]:
@@ -1377,14 +1499,7 @@ def evaluate_production_evidence_preflight(
             output_artifact="benchmarks/production_streaming_load_ivfpq_50m_results.json",
             env=environment,
         ),
-        _large_run_preflight(
-            root,
-            check_id="hundred_million_remote_load",
-            title="100M sharded Qdrant service load preflight",
-            plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
-            output_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_results.json",
-            env=environment,
-        ),
+        _remote_qdrant_100m_preflight(environment),
     ]
     ready_count = sum(1 for item in checks if item.ready)
     action_required_count = len(checks) - ready_count
@@ -1675,19 +1790,14 @@ def _dispatch_config(
         }
     if requirement_id == "hundred_million_remote_load":
         return {
-            "workflow": "production-streaming-load.yml",
+            "workflow": "remote-qdrant-100m-lab.yml",
             "wave": "hundred-million-service",
-            "inputs": _streaming_dispatch_inputs(
-                root,
-                plan_artifact="benchmarks/production_streaming_load_qdrant_sharded_100m_plan.json",
-                engine="qdrant-sharded-service",
-                size=100_000_000,
-                credential_input="qdrant_urls",
-                credential_placeholder="$WAVEMIND_QDRANT_URLS",
-                runner_label=runner_label,
-                commit_results=commit_results,
-            ),
-            "required_secrets": ["WAVEMIND_QDRANT_API_KEYS"],
+            "inputs": {
+                "action": "evidence",
+                "runner_label": runner_label,
+                "resume_run_id": "",
+            },
+            "required_secrets": list(_REMOTE_SCALE_REQUIRED_ENV),
         }
     return {
         "workflow": "",
@@ -2244,7 +2354,7 @@ def build_scale_gap_manifest(
         plan_status = str(plan.get("status") or "missing")
         preflight_status = str(preflight.get("status") or "missing")
         missing_env = list(preflight.get("missing_env") or plan.get("missing_env") or [])
-        blockers = list(plan.get("blockers") or [])
+        blockers = list(preflight.get("issues") or plan.get("blockers") or [])
         baseline = _best_scale_baseline(root, _SCALE_GAP_BASELINES.get(profile, ()))
         baseline_vectors = int(baseline.get("vectors") or 0)
         progress_ratio = (
@@ -2281,7 +2391,7 @@ def build_scale_gap_manifest(
                 "checkpoint_path": plan.get("checkpoint_path"),
                 "missing_env": missing_env,
                 "blockers": blockers,
-                "command": plan.get("command") or preflight.get("command") or requirement.get("command"),
+                "command": preflight.get("command") or plan.get("command") or requirement.get("command"),
                 "claim_unlocked": requirement.get("claim_unlocked"),
                 "nearest_baseline": baseline,
                 "baseline_progress_ratio": progress_ratio,

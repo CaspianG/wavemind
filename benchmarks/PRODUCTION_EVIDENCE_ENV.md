@@ -9,11 +9,11 @@ Environment contract only. It stores placeholders and secret names, never creden
 | metric | value |
 |---|---:|
 | overall status | `action_required` |
-| required env | `12` |
+| required env | `16` |
 | configured required env | `0` |
-| missing required env | `12` |
+| missing required env | `16` |
 | recommended missing env | `3` |
-| workflows | `4` |
+| workflows | `5` |
 | dispatch jobs | `8` |
 | strict requirements | `8` |
 
@@ -30,12 +30,16 @@ Environment contract only. It stores placeholders and secret names, never creden
 | `WAVEMIND_FAISS_IVFPQ_PATH` | `missing` | `filesystem-path` | `faiss_ivfpq_50m` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_ivfpq_50m_results.json` |
 | `WAVEMIND_PGVECTOR_DSNS` | `missing` | `postgres-dsn-list` | `pgvector_10m_service` |  | `benchmarks/production_streaming_load_pgvector_10m_results.json` |
 | `WAVEMIND_QDRANT_API_KEY` | `recommended` | `qdrant-api-secret` | `qdrant_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
-| `WAVEMIND_QDRANT_API_KEYS` | `recommended` | `qdrant-api-secret-list` | `hundred_million_remote_load`, `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
+| `WAVEMIND_QDRANT_API_KEYS` | `recommended` | `qdrant-api-secret-list` | `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
 | `WAVEMIND_QDRANT_URL` | `missing` | `qdrant-url` | `qdrant_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_10m_results.json` |
-| `WAVEMIND_QDRANT_URLS` | `missing` | `qdrant-url-list` | `hundred_million_remote_load`, `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json`, `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
+| `WAVEMIND_QDRANT_URLS` | `missing` | `qdrant-url-list` | `qdrant_sharded_10m_service` | `production-streaming-load.yml` | `benchmarks/production_streaming_load_qdrant_sharded_10m_results.json` |
 | `WAVEMIND_REMOTE_API_KEY` | `missing` | `api-secret` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
 | `WAVEMIND_REMOTE_LAB_INVENTORY_JSON` | `missing` | `remote-lab-inventory-json` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
 | `WAVEMIND_REMOTE_POSTGRES_PASSWORD` | `missing` | `postgres-password` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
+| `WAVEMIND_REMOTE_SCALE_INVENTORY_JSON` | `missing` | `remote-qdrant-scale-inventory-json` | `hundred_million_remote_load` | `remote-qdrant-100m-lab.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
+| `WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY` | `missing` | `qdrant-api-secret` | `hundred_million_remote_load` | `remote-qdrant-100m-lab.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
+| `WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS` | `missing` | `ssh-known-hosts` | `hundred_million_remote_load` | `remote-qdrant-100m-lab.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
+| `WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY` | `missing` | `ssh-private-key` | `hundred_million_remote_load` | `remote-qdrant-100m-lab.yml` | `benchmarks/production_streaming_load_qdrant_sharded_100m_results.json` |
 | `WAVEMIND_REMOTE_SSH_KNOWN_HOSTS` | `missing` | `ssh-known-hosts` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
 | `WAVEMIND_REMOTE_SSH_PRIVATE_KEY` | `missing` | `ssh-private-key` | `external_http_active_active` | `remote-production-lab.yml` | `benchmarks/external_http_active_active_results.json` |
 | `WAVEMIND_SERVERLESS_NODES` | `missing` | `serverless-api-node-list` | `serverless_remote_telemetry` | `serverless-observed-telemetry.yml` | `deploy/serverless/observed-telemetry.remote.json` |
@@ -61,6 +65,10 @@ the repository.
 - `printf '%s' "$WAVEMIND_REMOTE_API_KEY" | gh secret set WAVEMIND_REMOTE_API_KEY --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_REMOTE_LAB_INVENTORY_JSON" | gh secret set WAVEMIND_REMOTE_LAB_INVENTORY_JSON --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_REMOTE_POSTGRES_PASSWORD" | gh secret set WAVEMIND_REMOTE_POSTGRES_PASSWORD --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SCALE_INVENTORY_JSON" | gh secret set WAVEMIND_REMOTE_SCALE_INVENTORY_JSON --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY" | gh secret set WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -`
+- `printf '%s' "$WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY" | gh secret set WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_REMOTE_SSH_KNOWN_HOSTS" | gh secret set WAVEMIND_REMOTE_SSH_KNOWN_HOSTS --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_REMOTE_SSH_PRIVATE_KEY" | gh secret set WAVEMIND_REMOTE_SSH_PRIVATE_KEY --repo CaspianG/wavemind --body-file -`
 - `printf '%s' "$WAVEMIND_SERVERLESS_NODES" | gh secret set WAVEMIND_SERVERLESS_NODES --repo CaspianG/wavemind --body-file -`
@@ -69,9 +77,9 @@ the repository.
 
 | check | status | detail |
 |---|---|---|
-| all_preflight_env_represented | `pass` | 11/11 preflight env vars represented |
-| all_dispatch_env_represented | `pass` | 14/14 dispatch env vars represented |
-| all_scale_gap_env_represented | `pass` | 4/4 scale-gap env vars represented |
+| all_preflight_env_represented | `pass` | 15/15 preflight env vars represented |
+| all_dispatch_env_represented | `pass` | 18/18 dispatch env vars represented |
+| all_scale_gap_env_represented | `pass` | 8/8 scale-gap env vars represented |
 | no_missing_contract_rows | `pass` | none |
 | strict_requirements_joined | `pass` | 8 strict requirements |
 | secret_values_not_serialized | `pass` | contract uses placeholders and secret names only |

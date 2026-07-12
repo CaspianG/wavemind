@@ -36,4 +36,6 @@ recursive-include deploy/cluster *
 recursive-include deploy/operator *
 recursive-include deploy/serverless *
 recursive-include deploy/remote *
+recursive-include deploy/remote-scale *
+global-exclude *.py[cod]
 prune benchmarks/data

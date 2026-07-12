@@ -25,6 +25,10 @@ def _ready_env(tmp_path):
         "WAVEMIND_REMOTE_SSH_KNOWN_HOSTS": "test-known-hosts",
         "WAVEMIND_REMOTE_API_KEY": "test-remote-api-key",
         "WAVEMIND_REMOTE_POSTGRES_PASSWORD": "test-postgres-password",
+        "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON": json.dumps(_remote_scale_inventory()),
+        "WAVEMIND_REMOTE_SCALE_SSH_PRIVATE_KEY": "test-scale-private-key",
+        "WAVEMIND_REMOTE_SCALE_SSH_KNOWN_HOSTS": "test-scale-known-hosts",
+        "WAVEMIND_REMOTE_SCALE_QDRANT_API_KEY": "test-scale-qdrant-key",
         "WAVEMIND_SERVERLESS_NODES": (
             "https://wm-a.staging.internal,https://wm-b.staging.internal"
         ),
@@ -64,6 +68,22 @@ def _remote_inventory():
     }
 
 
+def _remote_scale_inventory():
+    return {
+        "schema": "wavemind.remote_qdrant_scale_lab.v1",
+        "deployment_id": "wavemind-100m-staging",
+        "environment": "staging",
+        "source": "independent-cloud-vms",
+        "image": "qdrant/qdrant:v1.18.2",
+        "target_vectors": 100_000_000,
+        "vector_dim": 128,
+        "shards": [
+            {"id": f"shard-{index}", "ssh_host": f"wm-qdrant-{index}", "region": ("eu", "us", "ap", "ca")[index % 4], "zone": f"zone-{index}", "provider": f"provider-{index % 4}"}
+            for index in range(8)
+        ],
+    }
+
+
 def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     root = Path(__file__).resolve().parents[1]
     payload = build_production_evidence_dispatch_plan(root, env={})
@@ -87,10 +107,8 @@ def test_dispatch_plan_reports_blocked_jobs_without_remote_prerequisites():
     assert '-f commit_results="true"' in by_id["external_http_cluster"][
         "publish_launch_command"
     ]
-    assert by_id["hundred_million_remote_load"]["inputs"]["size"] == "100000000"
-    assert by_id["hundred_million_remote_load"]["workflow"] == (
-        "production-streaming-load.yml"
-    )
+    assert by_id["hundred_million_remote_load"]["inputs"]["action"] == "evidence"
+    assert by_id["hundred_million_remote_load"]["workflow"] == "remote-qdrant-100m-lab.yml"
     assert by_id["pgvector_10m_service"]["status"] == "complete"
     active = by_id["external_http_active_active"]
     assert active["workflow"] == "remote-production-lab.yml"
@@ -119,6 +137,8 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert "test-key" not in serialized
     assert "test-private-key" not in serialized
     assert "test-remote-api-key" not in serialized
+    assert "test-scale-private-key" not in serialized
+    assert "test-scale-qdrant-key" not in serialized
     assert "postgresql://user:pass@" not in serialized
     assert "qdrant.staging.internal" not in serialized
 
@@ -136,6 +156,10 @@ def test_dispatch_plan_becomes_ready_with_prerequisites_without_leaking_secret_v
     assert pgvector["inputs"]["runner_label"] == "ubuntu-latest"
     assert "pgvector_dsns" not in pgvector["input_bindings"]
     assert "pgvector_dsn" not in pgvector["inputs"]
+    remote_100m = by_id["hundred_million_remote_load"]
+    assert remote_100m["inputs"]["action"] == "evidence"
+    assert remote_100m["inputs"]["runner_label"] == "self-hosted-xxl"
+    assert "WAVEMIND_REMOTE_SCALE_INVENTORY_JSON" in remote_100m["required_secrets"]
 
 
 def test_dispatch_markdown_lists_launch_and_promotion_commands(tmp_path):

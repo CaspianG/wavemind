@@ -1,0 +1,20 @@
+services:
+  qdrant:
+    image: ${QDRANT_IMAGE:?QDRANT_IMAGE is required}
+    restart: unless-stopped
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?QDRANT_API_KEY is required}
+    ports:
+      - "127.0.0.1:${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "bash -c '</dev/tcp/127.0.0.1/6333'"
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  qdrant-data:
