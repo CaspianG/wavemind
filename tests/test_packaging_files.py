@@ -12,6 +12,28 @@ def test_package_version_matches_pyproject():
     assert wavemind.__version__ == match.group(1)
 
 
+def test_release_version_matches_deployment_examples():
+    version = wavemind.__version__
+    expected_image = f"ghcr.io/caspiang/wavemind:{version}"
+
+    assert f"wavemind:{version}" in Path("docker-compose.yml").read_text(encoding="utf-8")
+    assert expected_image in Path("deploy/remote/inventory.example.json").read_text(
+        encoding="utf-8"
+    )
+    assert expected_image in Path(
+        "deploy/serverless/wavemind-serverless.sample.json"
+    ).read_text(encoding="utf-8")
+    assert expected_image in Path(
+        "deploy/cloud/gcp-remote-active-active/terraform.tfvars.example"
+    ).read_text(encoding="utf-8")
+    assert f'appVersion: "{version}"' in Path("deploy/helm/wavemind/Chart.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert f'tag: "{version}"' in Path("deploy/helm/wavemind/values.yaml").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_sentence_extra_is_available_for_install_scripts():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 

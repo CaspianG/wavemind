@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavemind"
-version = "2.4.30"
+version = "2.5.0"
 description = "Local-first dynamic memory field with vector search and wave-field re-ranking"
 readme = "README.md"
 license = "MIT"
