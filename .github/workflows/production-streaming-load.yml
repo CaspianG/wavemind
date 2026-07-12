@@ -213,14 +213,14 @@ jobs:
             docker run --detach \
               --name "$name" \
               --network wavemind-pgvector-ci \
-              --shm-size 1g \
+              --shm-size 2g \
               --publish "127.0.0.1:${port}:5432" \
               --env POSTGRES_PASSWORD=wavemind-ci \
               --env POSTGRES_DB=wavemind \
               "pgvector/pgvector:pg16" \
               postgres \
               -c shared_buffers=512MB \
-              -c maintenance_work_mem=768MB \
+              -c maintenance_work_mem=1536MB \
               -c effective_cache_size=2GB \
               -c max_parallel_maintenance_workers=1 \
               -c max_wal_size=4GB \

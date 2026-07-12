@@ -255,7 +255,8 @@ def test_production_streaming_load_workflow_runs_checkpointed_large_n_profiles()
     assert "hnsw-binary-quality" in workflow
     assert "Provision isolated pgvector services" in workflow
     assert '"pgvector/pgvector:pg16"' in workflow
-    assert "--shm-size 1g" in workflow
+    assert "--shm-size 2g" in workflow
+    assert "maintenance_work_mem=1536MB" in workflow
     assert "WAVEMIND_PGVECTOR_INDEX_BUILD_WORKERS" in workflow
     assert "pgvector_managed_profile" in workflow
     assert 'env["WAVEMIND_PGVECTOR_INDEX_TYPE"] = str(tuning["index_type"])' in workflow
