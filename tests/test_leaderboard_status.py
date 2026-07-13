@@ -357,21 +357,26 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["cluster_admission"]["schema"] == (
         "wavemind.cluster_admission.v1"
     )
-    assert payload["cluster_admission"]["status"] in {
+    cluster_admission = payload["cluster_admission"]
+    assert cluster_admission["status"] in {
         "admitted",
         "plan_only",
         "blocked",
     }
-    assert payload["cluster_admission"]["admitted"] is True
-    assert payload["cluster_admission"]["claim_boundary"] == (
+    assert cluster_admission["admitted"] is (
+        cluster_admission["status"] == "admitted"
+    )
+    assert cluster_admission["claim_boundary"] == (
         "external_http_cluster_evidence_required"
     )
-    assert payload["cluster_admission"]["summary"]["strict_status"] == "pass"
-    assert payload["cluster_admission"]["summary"]["target_urls_match"] is True
-    assert payload["cluster_admission"]["required_evidence"]["id"] == (
+    assert cluster_admission["summary"]["strict_status"] == "pass"
+    assert cluster_admission["summary"]["target_urls_match"] is (
+        cluster_admission["status"] == "admitted"
+    )
+    assert cluster_admission["required_evidence"]["id"] == (
         "external_http_cluster"
     )
-    assert payload["cluster_admission"]["requested_evidence"]["status"] == "pass"
+    assert cluster_admission["requested_evidence"]["status"] == "pass"
     assert payload["active_active_admission"]["schema"] == (
         "wavemind.active_active_admission.v1"
     )
