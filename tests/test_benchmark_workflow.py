@@ -14,6 +14,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "environment:" in workflow
     assert "name: github-pages" in workflow
     assert "url: ${{ steps.deployment.outputs.page_url }}" in workflow
+    assert 'python -m pip install -e ".[dev,bench,redis]"' in workflow
+    assert "benchmarks/memory_os_runtime_soak.py" in workflow
+    assert "--redis-url redis://127.0.0.1:6379/0" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
     assert "benchmarks/render_benchmark_leaderboard.py" in workflow
     assert "benchmarks/render_benchmark_dashboard.py" in workflow

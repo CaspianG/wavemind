@@ -42,7 +42,7 @@ jobs:
       - name: Install benchmark dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,bench]"
+          python -m pip install -e ".[dev,bench,redis]"
 
       - name: Refresh fast benchmark artifacts
         run: |
