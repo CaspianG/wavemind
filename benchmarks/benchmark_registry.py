@@ -181,6 +181,24 @@ def _memory_os_policy_bundle_summary(payload: dict[str, Any] | None) -> dict[str
     }
 
 
+def _memory_os_runtime_soak_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "environment": payload.get("environment"),
+        "rounds": (payload.get("config") or {}).get("rounds"),
+        "contenders": (payload.get("config") or {}).get("contenders"),
+        "completed_runs": metrics.get("completed_runs"),
+        "lock_skips": metrics.get("lock_skips"),
+        "duplicate_skips": metrics.get("duplicate_skips"),
+        "retry_mutation_delta_max": metrics.get("retry_mutation_delta_max"),
+        "lease_refresh_count": metrics.get("lease_refresh_count"),
+        "error_count": metrics.get("error_count"),
+    }
+
+
 def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
     if not payload:
         return None
@@ -592,6 +610,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     multimodal_external_payload = _load_json(root / "benchmarks" / "multimodal_external_encoder_results.json")
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     memory_os_policy_bundle_payload = _load_json(root / "benchmarks" / "memory_os_policy_bundle_results.json")
+    memory_os_runtime_soak_payload = _load_json(root / "benchmarks" / "memory_os_runtime_soak_results.json")
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     production_evidence_env_payload = _load_json(
         root / "benchmarks" / "production_evidence_env_contract.json"
@@ -2600,6 +2619,34 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             },
             "target": "Keep multi-cycle policy history passing with full decision coverage, repeated required-policy escalation, stable OK policy detection, scheduler escalation, hot-query prewarm, predictive prefetch, and priority learning.",
             "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior.",
+        },
+        {
+            "id": "memory_os_runtime_soak",
+            "name": "Memory OS Redis concurrency and retry soak",
+            "category": "production-scale",
+            "status": "implemented",
+            "source": "benchmarks/memory_os_runtime_soak.py",
+            "dataset": "Real Redis contention rounds with concurrent Memory OS workers, lease renewal beyond the original TTL, duplicate completed-job retries, failed-job retry, and owner replacement during release.",
+            "competitors": ["unlocked background workers", "fixed-TTL Redis lock"],
+            "metrics": [
+                "completed_runs",
+                "lock_skips",
+                "duplicate_skips",
+                "retry_mutation_delta_max",
+                "lease_refresh_count",
+                "error_count",
+            ],
+            "current": {
+                "WaveMind Memory OS runtime": (
+                    _memory_os_runtime_soak_summary(memory_os_runtime_soak_payload)
+                    or {
+                        "status": "missing",
+                        "requires": "python benchmarks/memory_os_runtime_soak.py --redis-url <redis-url>",
+                    }
+                ),
+            },
+            "target": "Keep every Redis concurrency/retry check passing with zero duplicate mutation and zero errors, then repeat the same artifact against the remote target environment.",
+            "next_step": "Run the exact soak against the remote production-like Redis and worker network; only remote_redis evidence may clear memory-os-admission.",
         },
         {
             "id": "memory_os_policy_bundle",

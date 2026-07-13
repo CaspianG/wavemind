@@ -948,6 +948,80 @@ def test_fastapi_memory_os_required_lock_skips_when_busy(tmp_path, monkeypatch):
         mind.close()
 
 
+def test_fastapi_memory_os_idempotency_skips_completed_retry(tmp_path, monkeypatch):
+    class FakeRedisClient:
+        values = {}
+
+        @classmethod
+        def from_url(cls, url, decode_responses=True):
+            assert url == "redis://memory-os.test/0"
+            assert decode_responses is True
+            return cls()
+
+        def get(self, key):
+            return self.values.get(key)
+
+        def set(self, key, value, ex=None, nx=False):
+            if nx and key in self.values:
+                return False
+            self.values[key] = value
+            return True
+
+        def scan_iter(self, match=None):
+            return iter(())
+
+        def delete(self, *keys):
+            deleted = 0
+            for key in keys:
+                if key in self.values:
+                    deleted += 1
+                self.values.pop(key, None)
+            return deleted
+
+    monkeypatch.setitem(sys.modules, "redis", types.SimpleNamespace(Redis=FakeRedisClient))
+    monkeypatch.setenv("WAVEMIND_MEMORY_OS_LOCK_REDIS_URL", "redis://memory-os.test/0")
+    monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
+    monkeypatch.delenv("WAVEMIND_CACHE_CAPACITY", raising=False)
+
+    mind = WaveMind(
+        db_path=tmp_path / "api-memory-os-idempotency.sqlite3",
+        width=16,
+        height=16,
+        layers=1,
+        encoder=HashingTextEncoder(vector_dim=64),
+        audit_queries=True,
+    )
+    try:
+        id = mind.remember("idempotent api priority mutation", namespace="tenant:os", priority=1.0)
+        mind.query("priority mutation", namespace="tenant:os", top_k=1)
+        mind.query("priority mutation", namespace="tenant:os", top_k=1)
+        request = {
+            "namespace": "tenant:os",
+            "lock_required": True,
+            "consolidate_steps": 0,
+            "consolidate_concepts": False,
+            "adaptive_forgetting": False,
+            "priority_boost_per_hit": 0.5,
+            "idempotency_key": "cronjob:run-123",
+        }
+
+        with TestClient(create_app(mind=mind)) as client:
+            first = client.post("/memory-os/run", json=request)
+            assert first.status_code == 200
+            assert first.json()["idempotency"]["completed"] is True
+            priority_after_first = mind.store.get(id).priority
+
+            second = client.post("/memory-os/run", json=request)
+            assert second.status_code == 200
+            payload = second.json()
+            assert payload["ok"] is True
+            assert payload["actions"] == ["duplicate_job_skipped"]
+            assert payload["idempotency"]["reason"] == "job_already_completed"
+            assert mind.store.get(id).priority == priority_after_first
+    finally:
+        mind.close()
+
+
 def test_fastapi_memory_os_plan_is_read_only_scheduler_preflight(tmp_path, monkeypatch):
     monkeypatch.delenv("WAVEMIND_REDIS_URL", raising=False)
     monkeypatch.setenv("WAVEMIND_CACHE_CAPACITY", "8")

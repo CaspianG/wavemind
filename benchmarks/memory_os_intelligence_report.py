@@ -11,7 +11,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCALE_SOURCE = "benchmarks/scale_readiness_results.json"
-AGENT_SOURCE = "benchmarks/agent_coherence_results.json"
+AGENT_SOURCE = "benchmarks/memory_os_agent_quality_results.json"
 CANARY_SOURCE = "benchmarks/memory_os_canary_results.json"
 ADMISSION_SOURCE = "benchmarks/memory_os_admission_results.json"
 POLICY_BUNDLE_SOURCE = "benchmarks/memory_os_policy_bundle_results.json"

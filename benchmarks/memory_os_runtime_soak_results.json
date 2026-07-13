@@ -1,0 +1,48 @@
+{
+  "schema": "wavemind.memory_os_runtime_soak.v1",
+  "generated_at": "2026-07-13T19:57:21Z",
+  "source_ref": "e9b8896f2e2f",
+  "status": "pass",
+  "environment": "local_redis",
+  "claim_boundary": "This is a real Redis worker concurrency and retry soak. Local Redis results prove runtime semantics but do not by themselves admit a remote production deployment.",
+  "config": {
+    "rounds": 20,
+    "contenders": 4
+  },
+  "metrics": {
+    "duration_seconds": 3.309,
+    "completed_runs": 20,
+    "duplicate_skips": 0,
+    "lock_skips": 60,
+    "retry_mutation_delta_max": 0.0,
+    "lease_refresh_count": 12,
+    "error_count": 0
+  },
+  "checks": [
+    {
+      "id": "real-redis",
+      "passed": true
+    },
+    {
+      "id": "single-flight",
+      "passed": true
+    },
+    {
+      "id": "duplicate-job-no-mutation",
+      "passed": true
+    },
+    {
+      "id": "lease-heartbeat",
+      "passed": true
+    },
+    {
+      "id": "failed-job-retry",
+      "passed": true
+    },
+    {
+      "id": "atomic-owner-release",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

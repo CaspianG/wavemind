@@ -54,7 +54,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | canary_admitted | `pass` | `1` | `is True` |
 | canary_predictive_warmed | `pass` | `15` | `>= 10` |
 | admission_is_strictly_limited | `pass` | `plan_only` | `== plan_only` |
-| admission_has_blockers | `pass` | `5` | `>= 1` |
+| admission_has_blockers | `pass` | `1` | `>= 1` |
 | policy_bundle_staging_ready | `pass` | `staging_ready` | `== staging_ready` |
 | policy_bundle_staging_promotable | `pass` | `1` | `is True` |
 | policy_bundle_production_locked | `pass` | `1` | `is True` |

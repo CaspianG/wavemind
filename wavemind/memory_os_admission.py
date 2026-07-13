@@ -26,6 +26,7 @@ REQUIRED_POLICY_IDS = {
 
 STRICT_MEMORY_OS_TARGET = 1_000_000
 PRODUCTION_DEPLOYMENTS = {"production", "prod", "staging"}
+REMOTE_SOAK_DEPLOYMENTS = {"production", "prod"}
 
 
 def _utc_now() -> str:
@@ -116,6 +117,7 @@ def evaluate_memory_os_admission(
     redis_url: str | None = None,
     lock_redis_url: str | None = None,
     allow_plan_only: bool = False,
+    runtime_evidence: dict[str, Any] | None = None,
     env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Gate a Memory OS worker rollout against production safety requirements.
@@ -130,6 +132,7 @@ def evaluate_memory_os_admission(
     env_payload = os.environ if env is None else env
     deployment_name = str(deployment or plan_payload.get("deployment") or "local").lower()
     production_like = deployment_name in PRODUCTION_DEPLOYMENTS
+    remote_soak_required = deployment_name in REMOTE_SOAK_DEPLOYMENTS
     target_memories = int(plan_payload.get("target_memories") or 0)
     strict_target = production_like and target_memories >= STRICT_MEMORY_OS_TARGET
     execution_plan = dict(plan_payload.get("execution_plan") or {})
@@ -182,6 +185,21 @@ def evaluate_memory_os_admission(
             "OpenTelemetry metrics for worker duration, errors, and warmed queries",
         }.issubset(required_infrastructure)
     )
+    runtime_evidence_payload = dict(runtime_evidence or {})
+    runtime_checks = runtime_evidence_payload.get("checks") or []
+    runtime_checks_pass = bool(runtime_checks) and all(
+        isinstance(item, dict) and bool(item.get("passed")) for item in runtime_checks
+    )
+    runtime_evidence_valid = (
+        runtime_evidence_payload.get("schema") == "wavemind.memory_os_runtime_soak.v1"
+        and runtime_evidence_payload.get("status") == "pass"
+        and runtime_checks_pass
+    )
+    remote_runtime_evidence = (
+        runtime_evidence_valid
+        and runtime_evidence_payload.get("environment") == "remote_redis"
+    )
+    runtime_soak_ok = not remote_soak_required or remote_runtime_evidence
 
     requirements = [
         _requirement(
@@ -262,6 +280,23 @@ def evaluate_memory_os_admission(
             f"missing={required_env_missing}",
             "Provide every required environment variable before scheduling the worker set.",
         ),
+        _requirement(
+            "runtime-soak",
+            "Real remote Redis worker soak proves lease and retry safety",
+            runtime_soak_ok,
+            (
+                f"schema={runtime_evidence_payload.get('schema')}, "
+                f"status={runtime_evidence_payload.get('status')}, "
+                f"environment={runtime_evidence_payload.get('environment')}, "
+                f"checks_pass={runtime_checks_pass}"
+            ),
+            "Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact.",
+            details={
+                "runtime_evidence_valid": runtime_evidence_valid,
+                "remote_runtime_evidence": remote_runtime_evidence,
+                "runtime_evidence": runtime_evidence_payload,
+            },
+        ),
     ]
 
     blocker_ids = [
@@ -326,6 +361,7 @@ def evaluate_memory_os_admission(
         "execution_plan": execution_plan,
         "policy_manifest": policy_manifest,
         "architecture_advice": architecture,
+        "runtime_evidence": runtime_evidence_payload,
         "plan": plan_payload,
         "next_actions": next_actions,
     }

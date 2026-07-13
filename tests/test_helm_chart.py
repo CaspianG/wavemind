@@ -106,6 +106,15 @@ def test_helm_chart_memory_os_cronjob_wires_api_scheduler_and_worker():
     assert "cacheMode: auto" in values
     assert "lockRequired: false" in values
     assert "lockTtlSeconds: 300" in values
+    assert "idempotencyTtlSeconds: 604800" in values
+    assert "backoffLimit: 3" in values
+    assert "activeDeadlineSeconds: 600" in values
+    assert 'emergencyStop: "false"' in values
+    assert "suspend: false" in values
+    assert "WAVEMIND_MEMORY_OS_RUN_ID" in cronjob
+    assert "WAVEMIND_MEMORY_OS_EMERGENCY_STOP" in cronjob
+    assert '"reason": "emergency_stop"' in cronjob
+    assert 'run_payload["idempotency_key"]' in cronjob
     assert "lockPrefix: wavemind:memory-os:lock" in values
     assert "lock_required" in cronjob
     assert "lock_ttl_seconds" in cronjob
