@@ -180,6 +180,26 @@ def test_release_workflow_builds_and_creates_github_release():
     assert "python -m build" in workflow
     assert "python -m twine check dist/*" in workflow
     assert "softprops/action-gh-release" in workflow
+    assert "Validate release identity" in workflow
+    assert "workflow_dispatch:" not in workflow
+
+
+def test_pypi_publish_has_one_guarded_release_trigger():
+    workflow = Path(".github/workflows/publish.yml").read_text(encoding="utf-8")
+
+    assert 'tags:' in workflow
+    assert '"v*"' in workflow
+    assert "types: [published]" not in workflow
+    assert "workflow_dispatch:" not in workflow
+    assert "Validate release identity" in workflow
+    assert "Validate release claims" in workflow
+    assert "benchmarks/validate_benchmark_artifacts.py" in workflow
+    assert "production_readiness_gate.py" in workflow
+    assert "--fail-on-blocked" in workflow
+    assert workflow.index("Validate release claims") < workflow.index(
+        "Publish to PyPI"
+    )
+    assert "skip-existing: true" in workflow
 
 
 def test_container_workflow_builds_and_publishes_ghcr_image():

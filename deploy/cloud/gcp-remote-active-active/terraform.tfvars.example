@@ -1,6 +1,6 @@
 project_id   = "wavemind-benchmarks"
 deployment_id = "wavemind-gcp-regions"
-wavemind_image = "ghcr.io/caspiang/wavemind:2.5.0"
+wavemind_image = "ghcr.io/caspiang/wavemind:2.6.0"
 
 # Use the public address of the machine or self-hosted runner performing SSH.
 ssh_source_ranges = ["203.0.113.10/32"]
