@@ -1,0 +1,83 @@
+{
+  "schema": "wavemind.memory_os_remote_worker_preflight.v1",
+  "generated_at": "2026-07-13T21:53:24Z",
+  "source_ref": "365c5ff4fbe1",
+  "status": "action_required",
+  "claim_boundary": "This preflight only validates a production-like remote topology contract. It does not admit Memory OS until the remote worker soak itself passes.",
+  "topology": {
+    "worker_count": 0,
+    "distinct_worker_count": 0,
+    "worker_fingerprints": [],
+    "redis_fingerprint": null,
+    "worker_https": false,
+    "redis_tls": false
+  },
+  "checks": [
+    {
+      "id": "worker-endpoints",
+      "title": "At least two distinct worker endpoints are declared",
+      "passed": false,
+      "evidence": "workers=0, distinct_netlocs=0",
+      "action": "Set WAVEMIND_REMOTE_WORKER_URLS to at least two direct worker endpoints."
+    },
+    {
+      "id": "non-loopback-workers",
+      "title": "Worker endpoints are outside the benchmark runner",
+      "passed": false,
+      "evidence": "remote=False",
+      "action": "Use routable production-like worker endpoints, not localhost."
+    },
+    {
+      "id": "worker-transport",
+      "title": "Worker transport is encrypted",
+      "passed": false,
+      "evidence": "https=False, allow_insecure=False",
+      "action": "Use HTTPS worker endpoints or explicitly allow insecure transport only in an isolated staging network."
+    },
+    {
+      "id": "remote-redis",
+      "title": "Redis is remote from the benchmark runner",
+      "passed": false,
+      "evidence": "configured=False, environment=missing",
+      "action": "Set WAVEMIND_REMOTE_REDIS_URL to the Redis used by every target worker."
+    },
+    {
+      "id": "redis-transport",
+      "title": "Redis transport is encrypted",
+      "passed": false,
+      "evidence": "rediss=False, allow_insecure=False",
+      "action": "Use rediss:// or explicitly allow insecure Redis only in an isolated staging network."
+    },
+    {
+      "id": "admin-auth",
+      "title": "An admin API key is available for the destructive soak namespace",
+      "passed": false,
+      "evidence": "api_key_present=False",
+      "action": "Set WAVEMIND_API_KEY to an admin-scoped key for the target workers."
+    }
+  ],
+  "missing_check_ids": [
+    "worker-endpoints",
+    "non-loopback-workers",
+    "worker-transport",
+    "remote-redis",
+    "redis-transport",
+    "admin-auth"
+  ],
+  "required_environment": [
+    "WAVEMIND_REMOTE_WORKER_URLS",
+    "WAVEMIND_REMOTE_REDIS_URL",
+    "WAVEMIND_API_KEY"
+  ],
+  "handoff": {
+    "workflow": ".github/workflows/memory-os-remote-soak.yml",
+    "github_environment": "memory-os-production-evidence",
+    "command": "gh workflow run memory-os-remote-soak.yml --ref main",
+    "expected_artifacts": [
+      "memory_os_remote_worker_soak_results.json",
+      "MEMORY_OS_REMOTE_WORKER_SOAK.md",
+      "memory_os_admission_results.json",
+      "MEMORY_OS_ADMISSION.md"
+    ]
+  }
+}

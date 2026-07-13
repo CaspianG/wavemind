@@ -32,6 +32,37 @@ def _seed_hot_memory(tmp_path: Path) -> WaveMind:
 
 def _remote_runtime_evidence() -> dict:
     return {
+        "schema": "wavemind.memory_os_remote_worker_soak.v1",
+        "status": "pass",
+        "environment": "remote_worker_cluster",
+        "preflight": {
+            "status": "pass",
+            "topology": {
+                "worker_count": 2,
+                "distinct_worker_count": 2,
+                "worker_https": True,
+                "redis_tls": True,
+            },
+        },
+        "checks": [
+            {"id": check_id, "passed": True}
+            for check_id in [
+                "remote-topology",
+                "worker-health",
+                "worker-version",
+                "worker-plan",
+                "remote-redis-semantics",
+                "cross-worker-single-flight",
+                "cross-worker-retry",
+                "no-in-doubt-jobs",
+                "cleanup",
+            ]
+        ],
+    }
+
+
+def _legacy_remote_redis_evidence() -> dict:
+    return {
         "schema": "wavemind.memory_os_runtime_soak.v1",
         "status": "pass",
         "environment": "remote_redis",
@@ -122,7 +153,7 @@ def test_memory_os_admission_keeps_local_soak_as_only_runtime_blocker(tmp_path):
             target_qps=50,
             cache_mode="redis",
         )
-        evidence = _remote_runtime_evidence()
+        evidence = _legacy_remote_redis_evidence()
         evidence["environment"] = "local_redis"
         payload = evaluate_memory_os_admission(
             plan,
@@ -135,6 +166,35 @@ def test_memory_os_admission_keeps_local_soak_as_only_runtime_blocker(tmp_path):
 
     assert payload["status"] == "blocked"
     assert payload["summary"]["blocker_ids"] == ["runtime-soak"]
+
+
+def test_memory_os_admission_rejects_legacy_remote_redis_without_workers(tmp_path):
+    mind = _seed_hot_memory(tmp_path)
+    try:
+        plan = MemoryOSScheduler(mind).plan(
+            namespace="tenant:admission",
+            deployment="production",
+            target_memories=50_000,
+            namespace_count=32,
+            node_count=3,
+            target_qps=50,
+            cache_mode="redis",
+        )
+        payload = evaluate_memory_os_admission(
+            plan,
+            redis_url="redis://redis.example.internal:6379/0",
+            lock_redis_url="redis://redis.example.internal:6379/1",
+            runtime_evidence=_legacy_remote_redis_evidence(),
+        )
+    finally:
+        mind.close()
+
+    assert payload["status"] == "blocked"
+    assert payload["summary"]["blocker_ids"] == ["runtime-soak"]
+    runtime_requirement = next(
+        item for item in payload["requirements"] if item["id"] == "runtime-soak"
+    )
+    assert runtime_requirement["details"]["runtime_evidence_valid"] is False
 
 
 def test_render_memory_os_admission_markdown_includes_requirements(tmp_path):

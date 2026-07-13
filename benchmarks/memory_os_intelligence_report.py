@@ -15,6 +15,7 @@ AGENT_SOURCE = "benchmarks/memory_os_agent_quality_results.json"
 CANARY_SOURCE = "benchmarks/memory_os_canary_results.json"
 ADMISSION_SOURCE = "benchmarks/memory_os_admission_results.json"
 POLICY_BUNDLE_SOURCE = "benchmarks/memory_os_policy_bundle_results.json"
+QUALITY_SOURCE = "benchmarks/memory_os_quality_results.json"
 
 REQUIRED_POLICY_IDS = {
     "prefetch-policy",
@@ -33,6 +34,7 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
     canary = _load_json(root / CANARY_SOURCE)
     admission = _load_json(root / ADMISSION_SOURCE)
     policy_bundle = _load_json(root / POLICY_BUNDLE_SOURCE)
+    quality = _load_json(root / QUALITY_SOURCE)
 
     memory_os = _engine_row(scale, "WaveMind Memory OS")
     redis_os = _engine_row(scale, "WaveMind Redis hot cache")
@@ -51,6 +53,7 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         canary,
         admission,
         policy_bundle,
+        quality,
     )
     passed = sum(1 for check in checks if check["pass"])
     summary = {
@@ -105,6 +108,11 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         "policy_bundle_production_locked": (policy_bundle.get("summary") or {}).get("production_locked"),
         "policy_bundle_worker_count": (policy_bundle.get("summary") or {}).get("worker_count"),
         "policy_bundle_enabled_task_ids": (policy_bundle.get("summary") or {}).get("enabled_task_ids", []),
+        "quality_status": quality.get("status"),
+        "quality_passed_count": (quality.get("summary") or {}).get("passed_count"),
+        "quality_check_count": (quality.get("summary") or {}).get("check_count"),
+        "locomo_recall_lift": (quality.get("metrics") or {}).get("locomo_recall_lift"),
+        "longmemeval_recall_lift": (quality.get("metrics") or {}).get("longmemeval_recall_lift"),
     }
 
     return {
@@ -117,10 +125,11 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
             CANARY_SOURCE,
             ADMISSION_SOURCE,
             POLICY_BUNDLE_SOURCE,
+            QUALITY_SOURCE,
         ],
         "claim_boundary": (
             "Memory OS intelligence rows come from checked-in deterministic scale, "
-            "agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove "
+            "agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove "
             "worker behavior, policy generation, cache prewarm, predictive prefetch, "
             "priority learning, adaptive forgetting, consolidation, staging promotion, and rollout "
             "safety on these fixtures. They do not unlock unattended production "
@@ -136,6 +145,8 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
             "canary_summary": canary.get("summary", {}),
             "admission_summary": admission.get("summary", {}),
             "policy_bundle_summary": policy_bundle.get("summary", {}),
+            "quality_summary": quality.get("summary", {}),
+            "quality_metrics": quality.get("metrics", {}),
         },
     }
 
@@ -166,6 +177,7 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
             f"- Execution safe to run: `{summary.get('execution_safe_to_run')}`.",
             f"- Admission status: `{summary.get('admission_status', 'missing')}`.",
             f"- Policy bundle status: `{summary.get('policy_bundle_status', 'missing')}`.",
+            f"- Quality gate: `{summary.get('quality_status', 'missing')}` ({summary.get('quality_passed_count', 0)}/{summary.get('quality_check_count', 0)}).",
             "",
             "## Gate Checks",
             "",
@@ -221,6 +233,11 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
                 f"stale error `{_fmt(summary.get('agent_stale_error_rate'))}`, "
                 f"context saved `{_fmt(summary.get('agent_context_budget_saved'))}`. |"
             ),
+            (
+                "| Public long-memory quality | "
+                f"LoCoMo recall lift `{_fmt(summary.get('locomo_recall_lift'))}`, "
+                f"LongMemEval recall lift `{_fmt(summary.get('longmemeval_recall_lift'))}`. |"
+            ),
             "",
             "## Production Boundary",
             "",
@@ -238,6 +255,7 @@ def _checks(
     canary: dict[str, Any],
     admission: dict[str, Any],
     policy_bundle: dict[str, Any],
+    quality: dict[str, Any],
 ) -> list[dict[str, Any]]:
     policy_ids = set(memory_os.get("policy_decision_ids", []) or [])
     admission_summary = admission.get("summary") if isinstance(admission.get("summary"), dict) else {}
@@ -283,6 +301,7 @@ def _checks(
         _check("policy_bundle_staging_promotable", bundle_summary.get("staging_promotable"), True, "is"),
         _check("policy_bundle_production_locked", bundle_summary.get("production_locked"), True, "is"),
         _check("policy_bundle_production_not_promoted", bundle_summary.get("production_promotable"), False, "is"),
+        _check("quality_gate_pass", quality.get("status"), "pass", "=="),
     ]
 
 

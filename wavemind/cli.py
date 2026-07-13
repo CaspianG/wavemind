@@ -1312,7 +1312,7 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os_admission.add_argument(
         "--runtime-evidence",
         type=Path,
-        help="Passing memory_os_runtime_soak JSON from the target Redis environment.",
+        help="Passing memory_os_remote_worker_soak JSON from the target HTTPS worker cluster.",
     )
     memory_os_admission.add_argument("--allow-plan-only", action="store_true")
     memory_os_admission.add_argument("--write-artifacts", action="store_true")

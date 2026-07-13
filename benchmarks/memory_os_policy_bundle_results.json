@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_policy_bundle.v1",
-  "generated_at": "2026-07-13T20:36:58Z",
-  "bundle_id": "memory-os-policy-20260713T203658Z",
+  "generated_at": "2026-07-13T21:56:18Z",
+  "bundle_id": "memory-os-policy-20260713T215618Z",
   "status": "staging_ready",
   "ok": true,
   "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. It can promote the checked canary/evolution behavior to staging. It does not enable unattended production automation unless memory-os-admission is admitted with real Redis, distributed lock, runtime env, and strict large-scale evidence.",

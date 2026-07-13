@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-13T20:37:48Z",
-  "source_ref": "e9b8896f2e2f",
+  "generated_at": "2026-07-13T21:56:19Z",
+  "source_ref": "365c5ff4fbe1",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2612,7 +2612,84 @@
         }
       },
       "target": "Keep every Redis concurrency/retry check passing with zero duplicate mutation and zero errors, then repeat the same artifact against the remote target environment.",
-      "next_step": "Run the exact soak against the remote production-like Redis and worker network; only remote_redis evidence may clear memory-os-admission."
+      "next_step": "Dispatch memory-os-remote-soak.yml against at least two HTTPS workers and their shared TLS Redis; legacy remote_redis-only evidence cannot clear memory-os-admission."
+    },
+    {
+      "id": "memory_os_quality_gate",
+      "name": "Memory OS agent and long-memory quality gate",
+      "category": "agent-memory",
+      "status": "implemented",
+      "source": "benchmarks/memory_os_quality_gate.py",
+      "dataset": "Checked agent-coherence, LoCoMo sentence-evidence, LongMemEval evidence-retrieval, and LongMemEval Qwen answer-generation artifacts.",
+      "competitors": [
+        "Static vector memory",
+        "Chroma static",
+        "Qdrant static"
+      ],
+      "metrics": [
+        "memory_os_task_success",
+        "memory_os_stale_error_rate",
+        "memory_os_context_budget_saved",
+        "locomo_recall_lift",
+        "longmemeval_recall_lift",
+        "longmemeval_answer_f1_lift"
+      ],
+      "current": {
+        "WaveMind Memory OS quality": {
+          "status": "pass",
+          "passed_count": 7,
+          "check_count": 7,
+          "failed_check_ids": [],
+          "memory_os_task_success": 0.9166666666666666,
+          "memory_os_stale_error_rate": 0,
+          "memory_os_context_budget_saved": 0.9308855291576674,
+          "memory_os_agent_delta": 0.0,
+          "locomo_recall_lift": 0.13804660791323203,
+          "longmemeval_recall_lift": 0.2625177304964539,
+          "longmemeval_answer_f1_lift": 0.16323857402643008,
+          "longmemeval_answer_evidence_lift": 0.32000000000000006
+        }
+      },
+      "target": "Keep every quality gate passing without hiding the boundary between direct Memory OS agent evidence and public-dataset dynamic retrieval evidence.",
+      "next_step": "Rerun the agent, LoCoMo, LongMemEval retrieval, and answer-generation sources before regenerating this gate after retrieval or worker-policy changes."
+    },
+    {
+      "id": "memory_os_remote_worker_soak",
+      "name": "Memory OS remote multi-worker production soak",
+      "category": "production-scale",
+      "status": "runner-ready",
+      "source": "benchmarks/memory_os_remote_worker_soak.py",
+      "dataset": "Direct HTTP concurrency across at least two authenticated HTTPS workers plus the shared TLS Redis used for leases, idempotency receipts, retries, and cleanup.",
+      "competitors": [
+        "single-process soak",
+        "remote Redis label without worker proof"
+      ],
+      "metrics": [
+        "worker_count",
+        "completed_runs",
+        "safe_skips",
+        "duplicate_retries",
+        "error_count"
+      ],
+      "current": {
+        "WaveMind remote worker handoff": {
+          "status": "action_required",
+          "worker_count": 0,
+          "distinct_worker_count": 0,
+          "worker_https": false,
+          "redis_tls": false,
+          "missing_check_ids": [
+            "worker-endpoints",
+            "non-loopback-workers",
+            "worker-transport",
+            "remote-redis",
+            "redis-transport",
+            "admin-auth"
+          ]
+        }
+      },
+      "target": "Pass every remote worker, Redis, single-flight, retry, no-in-doubt, and cleanup check, then produce an admitted production artifact from the same run.",
+      "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml."
     },
     {
       "id": "memory_os_policy_bundle",

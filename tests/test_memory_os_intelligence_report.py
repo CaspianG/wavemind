@@ -57,6 +57,10 @@ def test_memory_os_intelligence_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["policy_bundle_staging_promotable"] is True
     assert payload["summary"]["policy_bundle_production_promotable"] is False
     assert payload["summary"]["policy_bundle_production_locked"] is True
+    assert payload["summary"]["quality_status"] == "pass"
+    assert payload["summary"]["quality_passed_count"] == payload["summary"]["quality_check_count"]
+    assert payload["summary"]["locomo_recall_lift"] > 0.1
+    assert payload["summary"]["longmemeval_recall_lift"] > 0.2
     assert "distributed lock" in payload["claim_boundary"]
     assert "policy-bundle" in payload["claim_boundary"]
     assert all(check["pass"] for check in payload["checks"])
@@ -81,5 +85,6 @@ def test_checked_in_memory_os_intelligence_report_is_machine_readable():
     assert payload["summary"]["admission_status"] == "plan_only"
     assert payload["summary"]["policy_bundle_status"] == "staging_ready"
     assert payload["summary"]["policy_bundle_production_locked"] is True
+    assert payload["summary"]["quality_status"] == "pass"
     assert "shared Redis" in payload["claim_boundary"]
     assert "Memory OS canary passes" in markdown
