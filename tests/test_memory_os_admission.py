@@ -30,6 +30,19 @@ def _seed_hot_memory(tmp_path: Path) -> WaveMind:
     return mind
 
 
+def _remote_runtime_evidence() -> dict:
+    return {
+        "schema": "wavemind.memory_os_runtime_soak.v1",
+        "status": "pass",
+        "environment": "remote_redis",
+        "checks": [
+            {"id": "single-flight", "passed": True},
+            {"id": "duplicate-job-no-mutation", "passed": True},
+            {"id": "lease-heartbeat", "passed": True},
+        ],
+    }
+
+
 def test_memory_os_admission_blocks_without_audit_and_runtime_env(tmp_path):
     mind = WaveMind(
         db_path=tmp_path / "empty.sqlite3",
@@ -82,6 +95,7 @@ def test_memory_os_admission_admits_hot_runtime_plan(tmp_path):
             plan,
             redis_url="redis://redis.example.internal:6379/0",
             lock_redis_url="redis://redis.example.internal:6379/1",
+            runtime_evidence=_remote_runtime_evidence(),
         )
     finally:
         mind.close()
@@ -94,6 +108,33 @@ def test_memory_os_admission_admits_hot_runtime_plan(tmp_path):
     assert "predictive-prefetch" in payload["summary"]["enabled_task_ids"]
     assert "consolidation" in payload["summary"]["enabled_task_ids"]
     assert payload["execution_plan"]["safe_to_run"] is True
+
+
+def test_memory_os_admission_keeps_local_soak_as_only_runtime_blocker(tmp_path):
+    mind = _seed_hot_memory(tmp_path)
+    try:
+        plan = MemoryOSScheduler(mind).plan(
+            namespace="tenant:admission",
+            deployment="production",
+            target_memories=50_000,
+            namespace_count=32,
+            node_count=3,
+            target_qps=50,
+            cache_mode="redis",
+        )
+        evidence = _remote_runtime_evidence()
+        evidence["environment"] = "local_redis"
+        payload = evaluate_memory_os_admission(
+            plan,
+            redis_url="redis://127.0.0.1:6379/0",
+            lock_redis_url="redis://127.0.0.1:6379/1",
+            runtime_evidence=evidence,
+        )
+    finally:
+        mind.close()
+
+    assert payload["status"] == "blocked"
+    assert payload["summary"]["blocker_ids"] == ["runtime-soak"]
 
 
 def test_render_memory_os_admission_markdown_includes_requirements(tmp_path):
@@ -113,6 +154,7 @@ def test_render_memory_os_admission_markdown_includes_requirements(tmp_path):
             plan,
             redis_url="redis://redis.example.internal:6379/0",
             lock_redis_url="redis://redis.example.internal:6379/1",
+            runtime_evidence=_remote_runtime_evidence(),
         )
     finally:
         mind.close()

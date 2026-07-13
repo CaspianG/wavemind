@@ -25,12 +25,19 @@ def test_memory_os_policy_bundle_promotes_staging_but_locks_production():
     assert payload["summary"]["staging_promotable"] is True
     assert payload["summary"]["production_promotable"] is False
     assert payload["summary"]["production_locked"] is True
-    assert "hot-query-signal" in payload["summary"]["production_blocker_ids"]
+    assert payload["summary"]["production_blocker_ids"] == ["runtime-soak"]
     assert payload["runtime_policy"]["production_auto_enable"] is False
     assert payload["runtime_policy"]["safety"]["production_admission_required"] is True
+    assert payload["runtime_policy"]["safety"]["atomic_lease_required"] is True
+    assert payload["runtime_policy"]["safety"]["job_receipt_required"] is True
+    assert payload["runtime_policy"]["rollout"]["mode"] == "shadow_then_canary"
+    assert payload["runtime_policy"]["rollout"]["automatic_promotion"] is False
+    assert payload["runtime_policy"]["rollback"]["automatic_pause"] is True
+    assert payload["runtime_policy"]["rollback"]["recall_path_remains_available"] is True
     assert "WAVEMIND_REDIS_URL" in payload["runtime_policy"]["required_runtime_env"]
     assert "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL" in payload["runtime_policy"]["required_runtime_env"]
     assert payload["kubernetes_patch"]["spec"]["productionAutoEnable"] is False
+    assert any(item["id"] == "rollout-safety" and item["passed"] for item in payload["checks"])
 
 
 def test_memory_os_policy_bundle_allows_production_only_when_admission_is_admitted():

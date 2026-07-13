@@ -90,10 +90,27 @@ helm upgrade --install wavemind ./deploy/helm/wavemind \
   --set memoryOs.lockRequired=true
 ```
 
-The lock is passed to `/memory-os/run` as `lock_required`,
-`lock_ttl_seconds`, and `lock_prefix`. It prevents overlapping consolidation,
-forgetting, and prewarm cycles when CronJobs, retries, or multiple operators
-attempt to run the same namespace at the same time.
+The CronJob passes a pod-scoped idempotency key together with `lock_required`,
+`lock_ttl_seconds`, and `lock_prefix`. The Redis lease is renewed while the
+cycle is active and released with an atomic ownership check. Completed job
+receipts prevent a Kubernetes retry from applying consolidation, forgetting,
+or priority changes twice. A receipt that is still marked `running` is treated
+as in-doubt and fails closed; it is not replayed automatically. The production
+chart retains receipts for seven days so an operator can inspect a hard-crash
+case before manually clearing or replaying it.
+
+Pause Memory OS mutations without disabling recall:
+
+```sh
+helm upgrade wavemind ./deploy/helm/wavemind \
+  --reuse-values \
+  --set memoryOs.emergencyStop=true
+```
+
+Use `memoryOs.suspend=true` to suspend future CronJob schedules. The emergency
+stop exits an already-created job before `/memory-os/plan` or `/memory-os/run`.
+Set both values back to `false` only after the failed canary or admission gate
+has been reviewed.
 
 Enable autoscaling for production clusters:
 

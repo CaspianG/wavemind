@@ -137,12 +137,42 @@ def _runtime_policy(canary: dict[str, Any], evolution: dict[str, Any]) -> dict[s
                 "wavemind.memory_os.idempotency_key",
             ],
         },
+        "rollout": {
+            "mode": "shadow_then_canary",
+            "automatic_promotion": False,
+            "phases": [
+                {"name": "shadow", "mutation_enabled": False, "minimum_minutes": 60},
+                {"name": "canary", "mutation_enabled": True, "traffic_percent": 5, "minimum_minutes": 60},
+                {"name": "staged", "mutation_enabled": True, "traffic_percent": 25, "minimum_minutes": 240},
+                {"name": "production", "mutation_enabled": True, "traffic_percent": 100},
+            ],
+            "promotion_gates": {
+                "worker_error_rate_max": 0.01,
+                "query_p99_regression_max": 0.10,
+                "agent_success_regression_max": 0.0,
+                "stale_error_rate_regression_max": 0.0,
+                "duplicate_mutation_count_max": 0,
+            },
+        },
+        "rollback": {
+            "automatic_pause": True,
+            "action": "suspend_memory_os_cronjob",
+            "manual_override": "memoryOs.emergencyStop=true",
+            "manual_suspend": "memoryOs.suspend=true",
+            "recall_path_remains_available": True,
+            "state_recovery": "restore_last_verified_snapshot_if_semantic_state_revert_is_required",
+            "in_doubt_job_action": "keep_mutations_paused_and_review_the_running_receipt_before_manual_replay",
+        },
         "safety": {
             "state_mutating_tasks": _as_list(execution_plan.get("state_mutating_task_ids")),
             "singleton_task_ids": _as_list(execution_plan.get("singleton_task_ids")),
             "idempotency_required": True,
             "production_admission_required": True,
             "large_scale_evidence_required": True,
+            "atomic_lease_required": True,
+            "lease_heartbeat_required": True,
+            "job_receipt_required": True,
+            "manual_emergency_stop_required": True,
         },
     }
 
@@ -153,6 +183,7 @@ def _kubernetes_patch(runtime_policy: dict[str, Any]) -> dict[str, Any]:
         {"name": "WAVEMIND_MEMORY_OS_POLICY_BUNDLE", "value": "memory_os_policy_bundle_results.json"},
         {"name": "WAVEMIND_MEMORY_OS_CANARY_REQUIRED", "value": "1"},
         {"name": "WAVEMIND_MEMORY_OS_PRODUCTION_ADMISSION_REQUIRED", "value": "1"},
+        {"name": "WAVEMIND_MEMORY_OS_EMERGENCY_STOP", "value": "0"},
         {"name": "WAVEMIND_MEMORY_OS_DEPLOYMENT", "value": str(runtime_policy["target_deployment"])},
         {
             "name": "WAVEMIND_REDIS_URL",
@@ -222,6 +253,14 @@ def build_memory_os_policy_bundle(
         and runtime_policy["production_auto_enable"] is False
         and runtime_policy["safety"]["production_admission_required"] is True
     )
+    rollout_safety = (
+        runtime_policy["rollout"]["mode"] == "shadow_then_canary"
+        and runtime_policy["rollout"]["automatic_promotion"] is False
+        and runtime_policy["rollback"]["automatic_pause"] is True
+        and runtime_policy["rollback"]["recall_path_remains_available"] is True
+        and runtime_policy["safety"]["atomic_lease_required"] is True
+        and runtime_policy["safety"]["job_receipt_required"] is True
+    )
     checks = [
         _check(
             "canary-pass",
@@ -265,6 +304,17 @@ def build_memory_os_policy_bundle(
             no_unattended_production and (production_locked or production_allowed),
             f"production_auto_enable={runtime_policy['production_auto_enable']}, production_locked={production_locked}",
             "Keep production_auto_enable=false unless memory-os-admission returns admitted.",
+        ),
+        _check(
+            "rollout-safety",
+            "Shadow, canary, rollback, and manual stop policy is explicit",
+            rollout_safety,
+            (
+                f"mode={runtime_policy['rollout']['mode']}, "
+                f"automatic_promotion={runtime_policy['rollout']['automatic_promotion']}, "
+                f"automatic_pause={runtime_policy['rollback']['automatic_pause']}"
+            ),
+            "Keep staged promotion, automatic pause, atomic lease, job receipts, and emergency stop enabled.",
         ),
     ]
     failed = [item["id"] for item in checks if not item["passed"]]
@@ -391,6 +441,10 @@ def render_memory_os_policy_bundle_markdown(payload: dict[str, Any]) -> str:
         f"| required env | `{', '.join(runtime.get('required_runtime_env') or [])}` |",
         f"| enabled tasks | `{', '.join(runtime.get('enabled_task_ids') or [])}` |",
         f"| policy escalations | `{', '.join(runtime.get('policy_escalation_ids') or [])}` |",
+        f"| rollout mode | `{_as_dict(runtime.get('rollout')).get('mode')}` |",
+        f"| automatic promotion | `{_as_dict(runtime.get('rollout')).get('automatic_promotion')}` |",
+        f"| rollback action | `{_as_dict(runtime.get('rollback')).get('action')}` |",
+        f"| manual override | `{_as_dict(runtime.get('rollback')).get('manual_override')}` |",
         "",
         "## Checks",
         "",

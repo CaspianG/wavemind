@@ -1,10 +1,10 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "d0e3446be447",
+  "source_ref": "e9b8896f2e2f",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
-    "benchmarks/agent_coherence_results.json",
+    "benchmarks/memory_os_agent_quality_results.json",
     "benchmarks/memory_os_canary_results.json",
     "benchmarks/memory_os_admission_results.json",
     "benchmarks/memory_os_policy_bundle_results.json"
@@ -72,14 +72,10 @@
     "canary_prewarm_warmed": 5,
     "canary_predictive_warmed": 15,
     "admission_status": "plan_only",
-    "admission_passed_count": 5,
-    "admission_blocker_count": 5,
+    "admission_passed_count": 11,
+    "admission_blocker_count": 1,
     "admission_blocker_ids": [
-      "hot-query-signal",
-      "shared-cache-configured",
-      "distributed-lock-configured",
-      "scale-boundary",
-      "runtime-env"
+      "runtime-soak"
     ],
     "policy_bundle_status": "staging_ready",
     "policy_bundle_staging_promotable": true,
@@ -309,7 +305,7 @@
     },
     {
       "name": "admission_has_blockers",
-      "value": 5,
+      "value": 1,
       "target": 1,
       "op": ">=",
       "pass": true
@@ -616,7 +612,7 @@
             "namespace": "agent-a",
             "query": "budget recall",
             "frequency": 2,
-            "last_seen": 1783531451.6108146
+            "last_seen": 1783973104.5681689
           }
         ],
         "expired_purged": 5,
@@ -624,7 +620,7 @@
         "concepts_created": 0,
         "concept_ids": [],
         "priority_predictions": 5,
-        "priority_boost_total": 0.4999984925947998,
+        "priority_boost_total": 0.49999684816212575,
         "priority_boosted_ids": [
           10,
           94,
@@ -668,7 +664,7 @@
               "to_query": "risk limits",
               "count": 1,
               "probability": 1.0,
-              "last_seen": 1783531451.6081438
+              "last_seen": 1783973104.5614846
             }
           ],
           "ok": true
@@ -678,7 +674,7 @@
           "expired_memories": 5,
           "total_memories": 402,
           "audit_events": 407,
-          "field_energy": 271676.6875,
+          "field_energy": 271683.71875,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -716,7 +712,7 @@
           "expired_memories": 0,
           "total_memories": 397,
           "audit_events": 419,
-          "field_energy": 414343.625,
+          "field_energy": 414318.15625,
           "clusters": 1,
           "field_shape": "64x64x3",
           "index": "numpy-exact",
@@ -821,6 +817,19 @@
           "key": null,
           "owner": null,
           "ttl_seconds": null,
+          "reason": null,
+          "heartbeat_started": false,
+          "refresh_count": 0,
+          "lease_lost": false,
+          "released": false,
+          "ok": true
+        },
+        "idempotency": {
+          "key": null,
+          "owner": null,
+          "claimed": false,
+          "duplicate": false,
+          "completed": false,
           "reason": null,
           "ok": true
         },
@@ -1041,30 +1050,24 @@
     "admission_summary": {
       "status": "plan_only",
       "admitted": false,
-      "requirement_count": 11,
-      "passed_count": 5,
-      "blocker_count": 5,
-      "warning_count": 1,
+      "requirement_count": 12,
+      "passed_count": 11,
+      "blocker_count": 1,
+      "warning_count": 0,
       "blocker_ids": [
-        "hot-query-signal",
-        "shared-cache-configured",
-        "distributed-lock-configured",
-        "scale-boundary",
-        "runtime-env"
+        "runtime-soak"
       ],
-      "warning_ids": [
-        "consolidation-enabled"
-      ],
+      "warning_ids": [],
       "enabled_task_ids": [
         "adaptive-forgetting",
         "architecture-advice",
+        "cache-prewarm",
+        "consolidation",
         "maintenance",
-        "memory-os"
+        "memory-os",
+        "predictive-prefetch"
       ],
-      "missing_runtime_env": [
-        "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL",
-        "WAVEMIND_REDIS_URL"
-      ]
+      "missing_runtime_env": []
     },
     "policy_bundle_summary": {
       "status": "staging_ready",
@@ -1072,11 +1075,7 @@
       "production_promotable": false,
       "production_locked": true,
       "production_blocker_ids": [
-        "hot-query-signal",
-        "shared-cache-configured",
-        "distributed-lock-configured",
-        "scale-boundary",
-        "runtime-env"
+        "runtime-soak"
       ],
       "runtime_env_declared": true,
       "enabled_task_ids": [
@@ -1093,8 +1092,8 @@
       "policy_escalation_ids": [
         "scale-policy"
       ],
-      "check_count": 6,
-      "passed_checks": 5,
+      "check_count": 7,
+      "passed_checks": 6,
       "failed_check_ids": [
         "production-admission"
       ]

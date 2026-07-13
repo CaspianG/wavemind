@@ -8,11 +8,16 @@ metadata:
     app.kubernetes.io/component: memory-os
 spec:
   schedule: {{ .Values.memoryOs.schedule | quote }}
+  suspend: {{ .Values.memoryOs.suspend }}
+  startingDeadlineSeconds: {{ .Values.memoryOs.startingDeadlineSeconds }}
   concurrencyPolicy: {{ .Values.memoryOs.concurrencyPolicy }}
   successfulJobsHistoryLimit: {{ .Values.memoryOs.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ .Values.memoryOs.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
+      backoffLimit: {{ .Values.memoryOs.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.memoryOs.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.memoryOs.ttlSecondsAfterFinished }}
       template:
         metadata:
           labels:
@@ -25,8 +30,14 @@ spec:
             - name: memory-os
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              {{- if .Values.auth.enabled }}
               env:
+                - name: WAVEMIND_MEMORY_OS_RUN_ID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+                - name: WAVEMIND_MEMORY_OS_EMERGENCY_STOP
+                  value: {{ .Values.memoryOs.emergencyStop | quote }}
+              {{- if .Values.auth.enabled }}
                 - name: WAVEMIND_API_KEY
                   valueFrom:
                     secretKeyRef:
@@ -48,6 +59,9 @@ spec:
                       {{ printf "http://%s-%d.%s.%s.svc.cluster.local:%v" (include "wavemind.fullname" $) $index (include "wavemind.headlessServiceName" $) $.Release.Namespace $.Values.service.port | quote }},
                   {{- end }}
                   ]
+                  if os.environ.get("WAVEMIND_MEMORY_OS_EMERGENCY_STOP", "false").lower() in {"1", "true", "yes", "on"}:
+                      print(json.dumps({"status": "paused", "reason": "emergency_stop"}))
+                      raise SystemExit(0)
                   timeout = float({{ .Values.memoryOs.timeoutSeconds }})
                   api_key = os.environ.get("WAVEMIND_API_KEY")
                   headers = {"Content-Type": "application/json"}
@@ -76,6 +90,8 @@ spec:
                   run_payload.pop("cache_mode", None)
                   run_payload["lock_ttl_seconds"] = int({{ .Values.memoryOs.lockTtlSeconds }})
                   run_payload["lock_prefix"] = {{ .Values.memoryOs.lockPrefix | quote }}
+                  run_payload["idempotency_ttl_seconds"] = int({{ .Values.memoryOs.idempotencyTtlSeconds }})
+                  run_payload["idempotency_prefix"] = {{ .Values.memoryOs.idempotencyPrefix | quote }}
 
                   def post(node, path, payload):
                       data = json.dumps(payload).encode("utf-8")
@@ -96,6 +112,10 @@ spec:
                       if isinstance(task, dict) and task.get("id")
                   }
                   memory_os_task = plan_tasks.get("memory-os") or {}
+                  idempotency_base = memory_os_task.get("idempotency_key")
+                  run_id = os.environ.get("WAVEMIND_MEMORY_OS_RUN_ID")
+                  if idempotency_base and run_id:
+                      run_payload["idempotency_key"] = f"{idempotency_base}:{run_id}"
                   plan_requires_lock = bool(memory_os_task.get("requires_distributed_lock"))
                   run_payload["lock_required"] = (
                       {{ if .Values.memoryOs.lockRequired }}True{{ else }}False{{ end }}

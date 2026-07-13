@@ -28,6 +28,7 @@ from .jobs import (
     MemoryOSWorker,
     QueryVectorCache,
     RedisHotMemoryCache,
+    RedisMemoryOSJobGuard,
     RedisMemoryOSLock,
     RedisQueryVectorCache,
     query_with_cache,
@@ -286,6 +287,35 @@ def _memory_os_lock(
     if not redis_url:
         return None
     return RedisMemoryOSLock.from_url(redis_url, key=key, ttl_seconds=ttl_seconds)
+
+
+def _memory_os_job_guard(
+    *,
+    idempotency_key: str | None,
+    prefix: str,
+    ttl_seconds: int,
+    lock: RedisMemoryOSLock | None,
+) -> RedisMemoryOSJobGuard | None:
+    if not idempotency_key:
+        return None
+    digest = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
+    key = f"{prefix.rstrip(':')}:{digest}"
+    if lock is not None:
+        return RedisMemoryOSJobGuard(
+            lock.client,
+            key=key,
+            ttl_seconds=ttl_seconds,
+        )
+    redis_url = os.environ.get("WAVEMIND_MEMORY_OS_LOCK_REDIS_URL") or os.environ.get(
+        "WAVEMIND_REDIS_URL"
+    )
+    if not redis_url:
+        return None
+    return RedisMemoryOSJobGuard.from_url(
+        redis_url,
+        key=key,
+        ttl_seconds=ttl_seconds,
+    )
 
 
 def _memory_os_insights_payload(
@@ -897,6 +927,9 @@ class MemoryOSRequest(BaseModel):
     lock_required: bool = False
     lock_ttl_seconds: int = Field(default=300, ge=1, le=86400)
     lock_prefix: str = "wavemind:memory-os:lock"
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=512)
+    idempotency_ttl_seconds: int = Field(default=86400, ge=60, le=604800)
+    idempotency_prefix: str = "wavemind:memory-os:job"
 
 
 class MemoryOSPlanRequest(BaseModel):
@@ -1993,6 +2026,17 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 ttl_seconds=request.lock_ttl_seconds,
                 cache=app.state.cache,
             )
+            job_guard = _memory_os_job_guard(
+                idempotency_key=request.idempotency_key,
+                prefix=request.idempotency_prefix,
+                ttl_seconds=request.idempotency_ttl_seconds,
+                lock=lock,
+            )
+            if request.idempotency_key and job_guard is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Memory OS idempotency requires WAVEMIND_MEMORY_OS_LOCK_REDIS_URL or WAVEMIND_REDIS_URL",
+                )
             report = MemoryOSWorker(app.state.mind, app.state.cache).run_once(
                 namespace=request.namespace,
                 audit_limit=request.audit_limit,
@@ -2037,6 +2081,7 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
                 multimodal=request.multimodal,
                 lock=lock,
                 lock_required=request.lock_required,
+                job_guard=job_guard,
             )
         return report.as_dict()
 

@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-12T20:39:57Z",
-  "source_ref": "b9e5b293a59d",
+  "generated_at": "2026-07-13T20:37:48Z",
+  "source_ref": "e9b8896f2e2f",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2579,6 +2579,42 @@
       "next_step": "Run the same policy-evolution benchmark against a real Redis-backed staging namespace and promote the artifact only after memory-os-admission remains plan-limited by external production evidence rather than local worker behavior."
     },
     {
+      "id": "memory_os_runtime_soak",
+      "name": "Memory OS Redis concurrency and retry soak",
+      "category": "production-scale",
+      "status": "implemented",
+      "source": "benchmarks/memory_os_runtime_soak.py",
+      "dataset": "Real Redis contention rounds with concurrent Memory OS workers, lease renewal beyond the original TTL, duplicate completed-job retries, failed-job retry, and owner replacement during release.",
+      "competitors": [
+        "unlocked background workers",
+        "fixed-TTL Redis lock"
+      ],
+      "metrics": [
+        "completed_runs",
+        "lock_skips",
+        "duplicate_skips",
+        "retry_mutation_delta_max",
+        "lease_refresh_count",
+        "error_count"
+      ],
+      "current": {
+        "WaveMind Memory OS runtime": {
+          "status": "pass",
+          "environment": "local_redis",
+          "rounds": 20,
+          "contenders": 4,
+          "completed_runs": 20,
+          "lock_skips": 60,
+          "duplicate_skips": 0,
+          "retry_mutation_delta_max": 0.0,
+          "lease_refresh_count": 12,
+          "error_count": 0
+        }
+      },
+      "target": "Keep every Redis concurrency/retry check passing with zero duplicate mutation and zero errors, then repeat the same artifact against the remote target environment.",
+      "next_step": "Run the exact soak against the remote production-like Redis and worker network; only remote_redis evidence may clear memory-os-admission."
+    },
+    {
       "id": "memory_os_policy_bundle",
       "name": "Memory OS runtime policy bundle",
       "category": "production-scale",
@@ -2606,11 +2642,7 @@
           "production_promotable": false,
           "production_locked": true,
           "production_blocker_ids": [
-            "hot-query-signal",
-            "shared-cache-configured",
-            "distributed-lock-configured",
-            "scale-boundary",
-            "runtime-env"
+            "runtime-soak"
           ],
           "runtime_env_declared": true,
           "worker_count": 1,
@@ -2627,8 +2659,8 @@
           "policy_escalation_ids": [
             "scale-policy"
           ],
-          "passed_checks": 5,
-          "check_count": 6
+          "passed_checks": 6,
+          "check_count": 7
         }
       },
       "target": "Keep the bundle staging-promotable when canary/evolution pass, keep production locked while memory-os-admission is plan-only, and expose Kubernetes/env policy patches without enabling unattended production automation.",

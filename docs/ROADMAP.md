@@ -345,9 +345,20 @@ policy matters more than raw vector-database scale:
   policy decisions required to explain the worker's strategy.
 - `RedisMemoryOSLock`, `wavemind memory-os --lock-required`, and
   `/memory-os/run` lock fields add a Redis-backed single-flight guard for
-  production Memory OS cycles. This prevents overlapping consolidation,
-  forgetting, and prewarm mutations when CronJobs, retries, or multiple
-  operators target the same namespace.
+  production Memory OS cycles. The lease now uses atomic owner-checked release,
+  automatic heartbeat renewal, and a Redis job receipt. Completed retries are
+  skipped, failed receipts are released for retry, and Kubernetes supplies a
+  pod-scoped run id.
+- `benchmarks/memory_os_runtime_soak.py` exercises those guarantees against a
+  real Redis service. The checked local artifact passes 20 rounds with four
+  contenders, zero duplicate mutation delta, lease renewal beyond the original
+  TTL, owner-safe release, and failed-job retry. Production admission now
+  accepts the runtime contract only when the same artifact comes from a remote
+  Redis environment.
+- The Memory OS policy bundle now defines shadow, canary, staged, and production
+  phases; automatic promotion is disabled. Helm exposes both
+  `memoryOs.emergencyStop=true` and `memoryOs.suspend=true`, so operators can
+  stop adaptive mutations while the normal recall path remains available.
 - Namespace sharding is available for local multi-tenant SQLite deployments.
 - Deterministic cluster placement planning is available through
   `build_cluster_plan()` and `wavemind cluster-plan`, including replica sets,

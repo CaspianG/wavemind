@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_policy_bundle.v1",
-  "generated_at": "2026-07-09T19:29:13Z",
-  "bundle_id": "memory-os-policy-20260709T192913Z",
+  "generated_at": "2026-07-13T20:36:58Z",
+  "bundle_id": "memory-os-policy-20260713T203658Z",
   "status": "staging_ready",
   "ok": true,
   "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. It can promote the checked canary/evolution behavior to staging. It does not enable unattended production automation unless memory-os-admission is admitted with real Redis, distributed lock, runtime env, and strict large-scale evidence.",
@@ -19,11 +19,7 @@
     "production_promotable": false,
     "production_locked": true,
     "production_blocker_ids": [
-      "hot-query-signal",
-      "shared-cache-configured",
-      "distributed-lock-configured",
-      "scale-boundary",
-      "runtime-env"
+      "runtime-soak"
     ],
     "runtime_env_declared": true,
     "enabled_task_ids": [
@@ -40,8 +36,8 @@
     "policy_escalation_ids": [
       "scale-policy"
     ],
-    "check_count": 6,
-    "passed_checks": 5,
+    "check_count": 7,
+    "passed_checks": 6,
     "failed_check_ids": [
       "production-admission"
     ]
@@ -89,7 +85,7 @@
       "status": "action_required",
       "passed": false,
       "severity": "production_blocker",
-      "evidence": "admission_status=plan_only, admitted=False, blockers=['hot-query-signal', 'shared-cache-configured', 'distributed-lock-configured', 'scale-boundary', 'runtime-env']",
+      "evidence": "admission_status=plan_only, admitted=False, blockers=['runtime-soak']",
       "action": "Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence."
     },
     {
@@ -100,6 +96,15 @@
       "severity": "ok",
       "evidence": "production_auto_enable=False, production_locked=True",
       "action": "Keep production_auto_enable=false unless memory-os-admission returns admitted."
+    },
+    {
+      "id": "rollout-safety",
+      "title": "Shadow, canary, rollback, and manual stop policy is explicit",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "mode=shadow_then_canary, automatic_promotion=False, automatic_pause=True",
+      "action": "Keep staged promotion, automatic pause, atomic lease, job receipts, and emergency stop enabled."
     }
   ],
   "runtime_policy": {
@@ -291,6 +296,50 @@
         "wavemind.memory_os.idempotency_key"
       ]
     },
+    "rollout": {
+      "mode": "shadow_then_canary",
+      "automatic_promotion": false,
+      "phases": [
+        {
+          "name": "shadow",
+          "mutation_enabled": false,
+          "minimum_minutes": 60
+        },
+        {
+          "name": "canary",
+          "mutation_enabled": true,
+          "traffic_percent": 5,
+          "minimum_minutes": 60
+        },
+        {
+          "name": "staged",
+          "mutation_enabled": true,
+          "traffic_percent": 25,
+          "minimum_minutes": 240
+        },
+        {
+          "name": "production",
+          "mutation_enabled": true,
+          "traffic_percent": 100
+        }
+      ],
+      "promotion_gates": {
+        "worker_error_rate_max": 0.01,
+        "query_p99_regression_max": 0.1,
+        "agent_success_regression_max": 0.0,
+        "stale_error_rate_regression_max": 0.0,
+        "duplicate_mutation_count_max": 0
+      }
+    },
+    "rollback": {
+      "automatic_pause": true,
+      "action": "suspend_memory_os_cronjob",
+      "manual_override": "memoryOs.emergencyStop=true",
+      "manual_suspend": "memoryOs.suspend=true",
+      "recall_path_remains_available": true,
+      "state_recovery": "restore_last_verified_snapshot_if_semantic_state_revert_is_required",
+      "in_doubt_job_action": "keep_mutations_paused_and_review_the_running_receipt_before_manual_replay"
+    },
     "safety": {
       "state_mutating_tasks": [
         "maintenance",
@@ -309,7 +358,11 @@
       ],
       "idempotency_required": true,
       "production_admission_required": true,
-      "large_scale_evidence_required": true
+      "large_scale_evidence_required": true,
+      "atomic_lease_required": true,
+      "lease_heartbeat_required": true,
+      "job_receipt_required": true,
+      "manual_emergency_stop_required": true
     }
   },
   "kubernetes_patch": {
@@ -337,6 +390,10 @@
         {
           "name": "WAVEMIND_MEMORY_OS_PRODUCTION_ADMISSION_REQUIRED",
           "value": "1"
+        },
+        {
+          "name": "WAVEMIND_MEMORY_OS_EMERGENCY_STOP",
+          "value": "0"
         },
         {
           "name": "WAVEMIND_MEMORY_OS_DEPLOYMENT",
@@ -452,7 +509,11 @@
         ],
         "idempotency_required": true,
         "production_admission_required": true,
-        "large_scale_evidence_required": true
+        "large_scale_evidence_required": true,
+        "atomic_lease_required": true,
+        "lease_heartbeat_required": true,
+        "job_receipt_required": true,
+        "manual_emergency_stop_required": true
       }
     }
   },

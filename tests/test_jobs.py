@@ -1,5 +1,6 @@
 import fnmatch
 import tarfile
+import time
 from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
@@ -20,6 +21,7 @@ from wavemind import (
     QueryVectorCache,
     QueryResult,
     RedisHotMemoryCache,
+    RedisMemoryOSJobGuard,
     RedisMemoryOSLock,
     RedisQueryVectorCache,
     ReplicatedObjectStoreDrillWorker,
@@ -85,9 +87,13 @@ class FakeRedis:
                 yield key
 
     def delete(self, *keys):
+        deleted = 0
         for key in keys:
+            if key in self.items:
+                deleted += 1
             self.items.pop(key, None)
             self.expirations.pop(key, None)
+        return deleted
 
 
 class FakeS3Client:
@@ -955,6 +961,105 @@ def test_redis_memory_os_lock_is_single_flight_and_owner_checked():
     assert redis.items["wavemind:memory-os:lock:agent"] == "one"
     assert first.release() is True
     assert second.acquire() is True
+
+
+def test_redis_memory_os_lock_heartbeat_refreshes_and_releases_owned_lease():
+    redis = FakeRedis()
+    lock = RedisMemoryOSLock(
+        redis,
+        key="wavemind:memory-os:lock:heartbeat",
+        ttl_seconds=1,
+        heartbeat_interval_seconds=0.02,
+        owner="heartbeat-owner",
+    )
+
+    assert lock.acquire() is True
+    assert lock.start_heartbeat() is True
+    time.sleep(0.08)
+    assert lock.refresh_count >= 2
+    assert lock.release() is True
+    report = lock.report(required=True)
+    assert report.acquired is True
+    assert report.released is True
+    assert report.lease_lost is False
+    assert report.ok is True
+
+
+def test_redis_memory_os_job_guard_deduplicates_and_allows_failed_retry():
+    redis = FakeRedis()
+    first = RedisMemoryOSJobGuard(redis, key="wavemind:memory-os:job:one", owner="one")
+    running_duplicate = RedisMemoryOSJobGuard(
+        redis,
+        key="wavemind:memory-os:job:one",
+        owner="running-duplicate",
+    )
+    duplicate = RedisMemoryOSJobGuard(redis, key="wavemind:memory-os:job:one", owner="two")
+
+    assert first.claim() is True
+    assert running_duplicate.claim() is False
+    assert running_duplicate.report().in_doubt is True
+    assert running_duplicate.report().ok is False
+    assert first.complete() is True
+    assert duplicate.claim() is False
+    assert duplicate.report().duplicate is True
+    assert duplicate.report().reason == "job_already_completed"
+    assert duplicate.report().ok is True
+
+    failed = RedisMemoryOSJobGuard(redis, key="wavemind:memory-os:job:retry", owner="failed")
+    retry = RedisMemoryOSJobGuard(redis, key="wavemind:memory-os:job:retry", owner="retry")
+    assert failed.claim() is True
+    assert failed.fail() is True
+    assert retry.claim() is True
+
+
+def test_memory_os_worker_does_not_repeat_completed_job_mutations(tmp_path):
+    redis = FakeRedis()
+    memory = WaveMind(
+        db_path=tmp_path / "memory-os-idempotency.sqlite3",
+        encoder=HashingTextEncoder(vector_dim=64),
+        width=16,
+        height=16,
+        layers=1,
+        audit_queries=True,
+    )
+    try:
+        id = memory.remember("idempotent priority mutation", namespace="agent", priority=1.0)
+        memory.query("priority mutation", namespace="agent", top_k=1)
+        memory.query("priority mutation", namespace="agent", top_k=1)
+        worker = MemoryOSWorker(memory)
+
+        first = worker.run_once(
+            namespace="agent",
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            adaptive_forgetting=False,
+            priority_boost_per_hit=0.5,
+            lock=RedisMemoryOSLock(redis, key="wm:lock:agent", ttl_seconds=30),
+            lock_required=True,
+            job_guard=RedisMemoryOSJobGuard(redis, key="wm:job:run-1"),
+        )
+        after_first = memory.store.get(id).priority
+        second = worker.run_once(
+            namespace="agent",
+            consolidate_steps=0,
+            consolidate_concepts=False,
+            adaptive_forgetting=False,
+            priority_boost_per_hit=0.5,
+            lock=RedisMemoryOSLock(redis, key="wm:lock:agent", ttl_seconds=30),
+            lock_required=True,
+            job_guard=RedisMemoryOSJobGuard(redis, key="wm:job:run-1"),
+        )
+
+        assert first.ok is True
+        assert first.idempotency.completed is True
+        assert after_first > 1.0
+        assert second.ok is True
+        assert second.actions == ("duplicate_job_skipped",)
+        assert second.idempotency.duplicate is True
+        assert second.idempotency.reason == "job_already_completed"
+        assert memory.store.get(id).priority == after_first
+    finally:
+        memory.close()
 
 
 def test_memory_os_worker_required_lock_without_lock_skips_mutation(tmp_path):

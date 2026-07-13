@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -36,6 +37,7 @@ from .jobs import (
     MemoryMaintenanceWorker,
     MemoryOSScheduler,
     MemoryOSWorker,
+    RedisMemoryOSJobGuard,
     RedisMemoryOSLock,
     ReplicatedObjectStoreDrillWorker,
     ReplicatedSnapshotWorker,
@@ -1231,6 +1233,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("WAVEMIND_MEMORY_OS_LOCK_PREFIX", "wavemind:memory-os:lock"),
     )
     memory_os.add_argument("--lock-ttl-seconds", type=int, default=300)
+    memory_os.add_argument("--idempotency-key")
+    memory_os.add_argument("--idempotency-ttl-seconds", type=int, default=86_400)
+    memory_os.add_argument(
+        "--idempotency-prefix",
+        default="wavemind:memory-os:job",
+    )
     memory_os.add_argument("--no-cache", action="store_true")
     memory_os.add_argument("--json", action="store_true")
 
@@ -1301,6 +1309,11 @@ def build_parser() -> argparse.ArgumentParser:
     memory_os_admission.add_argument("--memory-pressure-threshold", type=int, default=50_000)
     memory_os_admission.add_argument("--redis-url")
     memory_os_admission.add_argument("--lock-redis-url")
+    memory_os_admission.add_argument(
+        "--runtime-evidence",
+        type=Path,
+        help="Passing memory_os_runtime_soak JSON from the target Redis environment.",
+    )
     memory_os_admission.add_argument("--allow-plan-only", action="store_true")
     memory_os_admission.add_argument("--write-artifacts", action="store_true")
     memory_os_admission.add_argument("--fail-on-blocked", action="store_true")
@@ -3852,6 +3865,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if plan.ok else 4
 
     if args.command == "memory-os-admission":
+        runtime_evidence = None
+        if args.runtime_evidence is not None:
+            runtime_evidence = json.loads(
+                args.runtime_evidence.read_text(encoding="utf-8")
+            )
         plan = MemoryOSScheduler(mind).plan(
             namespace=args.namespace,
             audit_limit=args.audit_limit,
@@ -3879,6 +3897,7 @@ def main(argv: list[str] | None = None) -> int:
             redis_url=args.redis_url,
             lock_redis_url=args.lock_redis_url,
             allow_plan_only=args.allow_plan_only,
+            runtime_evidence=runtime_evidence,
         )
         if args.write_artifacts:
             args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -3947,6 +3966,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "memory-os":
         cache = None
         lock = None
+        job_guard = None
         if not args.no_cache:
             if args.redis_url:
                 cache = RedisHotMemoryCache.from_url(
@@ -3966,6 +3986,15 @@ def main(argv: list[str] | None = None) -> int:
                 key=lock_key,
                 ttl_seconds=args.lock_ttl_seconds,
             )
+            if args.idempotency_key:
+                digest = hashlib.sha256(args.idempotency_key.encode("utf-8")).hexdigest()
+                job_guard = RedisMemoryOSJobGuard(
+                    lock.client,
+                    key=f"{args.idempotency_prefix.rstrip(':')}:{digest}",
+                    ttl_seconds=args.idempotency_ttl_seconds,
+                )
+        elif args.idempotency_key:
+            parser.error("--idempotency-key requires --redis-url")
         report = MemoryOSWorker(mind, cache).run_once(
             namespace=args.namespace,
             audit_limit=args.audit_limit,
@@ -4010,6 +4039,7 @@ def main(argv: list[str] | None = None) -> int:
             multimodal=args.multimodal,
             lock=lock,
             lock_required=args.lock_required,
+            job_guard=job_guard,
         )
         payload = report.as_dict()
         payload["cache"] = (

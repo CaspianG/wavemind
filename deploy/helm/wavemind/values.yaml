@@ -88,6 +88,8 @@ repair:
 
 memoryOs:
   enabled: false
+  suspend: false
+  emergencyStop: "false"
   schedule: "*/10 * * * *"
   namespace: ""
   auditLimit: 512
@@ -106,8 +108,14 @@ memoryOs:
   lockRequired: false
   lockTtlSeconds: 300
   lockPrefix: wavemind:memory-os:lock
+  idempotencyTtlSeconds: 604800
+  idempotencyPrefix: wavemind:memory-os:job
   runOnAllReplicas: true
   timeoutSeconds: 30
+  startingDeadlineSeconds: 300
+  activeDeadlineSeconds: 600
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   concurrencyPolicy: Forbid

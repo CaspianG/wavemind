@@ -25,6 +25,10 @@ jobs:
         image: qdrant/qdrant:v1.18.2
         ports:
           - 6334:6333
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
     env:
       WAVEMIND_BENCHMARK_REFRESH_PROFILE: weekly-fast
 
@@ -46,6 +50,10 @@ jobs:
             --engines wavemind wavemind-memory-os static chroma \
             --memories 500 \
             --output benchmarks/agent_coherence_results.json
+          python benchmarks/agent_coherence_benchmark.py \
+            --engines wavemind wavemind-memory-os static \
+            --memories 500 \
+            --output benchmarks/memory_os_agent_quality_results.json
           python benchmarks/dynamic_memory_benchmark.py \
             --engines wavemind chroma \
             --memories 200 \
@@ -257,14 +265,24 @@ jobs:
             --markdown-output benchmarks/MEMORY_OS_POLICY_EVOLUTION.md \
             --fail-on-action-required \
             --json
-          python -m wavemind memory-os-admission \
-            --target-memories 10000000 \
-            --namespace-count 4096 \
-            --target-qps 1200 \
-            --target-p99-ms 80 \
+          python benchmarks/memory_os_runtime_soak.py \
+            --redis-url redis://127.0.0.1:6379/0 \
+            --rounds 20 \
+            --contenders 4 \
+            --output benchmarks/memory_os_runtime_soak_results.json \
+            --markdown-output benchmarks/MEMORY_OS_RUNTIME_SOAK.md
+          WAVEMIND_DB=.tmp-memory-os-canary.sqlite3 python -m wavemind memory-os-admission \
+            --namespace canary:memory-os \
+            --target-memories 50000 \
+            --namespace-count 64 \
+            --node-count 3 \
+            --target-qps 50 \
+            --target-p99-ms 100 \
             --deployment production \
-            --cache-mode auto \
-            --multimodal \
+            --cache-mode redis \
+            --redis-url redis://127.0.0.1:6379/0 \
+            --lock-redis-url redis://127.0.0.1:6379/0 \
+            --runtime-evidence benchmarks/memory_os_runtime_soak_results.json \
             --allow-plan-only \
             --write-artifacts \
             --output benchmarks/memory_os_admission_results.json \
@@ -320,6 +338,7 @@ jobs:
             tests/test_structured_memory_report.py \
             tests/test_memory_os_intelligence_report.py \
             tests/test_memory_os_policy_bundle.py \
+            tests/test_memory_os_runtime_soak.py \
             tests/test_cluster_autoscale_report.py \
             tests/test_cost_efficiency_leaderboard.py \
             tests/test_benchmark_artifact_audit.py \
@@ -401,6 +420,8 @@ jobs:
           cp benchmarks/cost_efficiency_results.json site/data/cost_efficiency_results.json
           cp benchmarks/memory_os_canary_results.json site/data/memory_os_canary_results.json
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
+          cp benchmarks/memory_os_runtime_soak_results.json site/data/memory_os_runtime_soak_results.json
+          cp benchmarks/memory_os_agent_quality_results.json site/data/memory_os_agent_quality_results.json
           cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
@@ -475,6 +496,9 @@ jobs:
             benchmarks/MEMORY_OS_CANARY.md
             benchmarks/memory_os_admission_results.json
             benchmarks/MEMORY_OS_ADMISSION.md
+            benchmarks/memory_os_runtime_soak_results.json
+            benchmarks/MEMORY_OS_RUNTIME_SOAK.md
+            benchmarks/memory_os_agent_quality_results.json
             docs/benchmark-dashboard.html
             docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

@@ -5,10 +5,11 @@ import json
 import hashlib
 import math
 import shutil
+import threading
 import uuid
 from collections import Counter, OrderedDict
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
@@ -644,10 +645,14 @@ class MemoryOSLockReport:
     owner: str | None = None
     ttl_seconds: int | None = None
     reason: str | None = None
+    heartbeat_started: bool = False
+    refresh_count: int = 0
+    lease_lost: bool = False
+    released: bool = False
 
     @property
     def ok(self) -> bool:
-        return not self.required or self.acquired
+        return (not self.required or self.acquired) and not self.lease_lost
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -657,12 +662,29 @@ class MemoryOSLockReport:
             "owner": self.owner,
             "ttl_seconds": self.ttl_seconds,
             "reason": self.reason,
+            "heartbeat_started": self.heartbeat_started,
+            "refresh_count": self.refresh_count,
+            "lease_lost": self.lease_lost,
+            "released": self.released,
             "ok": self.ok,
         }
 
 
 class RedisMemoryOSLock:
-    """Small Redis-compatible single-flight lock for Memory OS workers."""
+    """Redis lease with atomic ownership checks and automatic renewal."""
+
+    _RELEASE_SCRIPT = """
+    if redis.call('get', KEYS[1]) == ARGV[1] then
+        return redis.call('del', KEYS[1])
+    end
+    return 0
+    """
+    _REFRESH_SCRIPT = """
+    if redis.call('get', KEYS[1]) == ARGV[1] then
+        return redis.call('expire', KEYS[1], ARGV[2])
+    end
+    return 0
+    """
 
     def __init__(
         self,
@@ -671,6 +693,7 @@ class RedisMemoryOSLock:
         key: str,
         ttl_seconds: int = 300,
         owner: str | None = None,
+        heartbeat_interval_seconds: float | None = None,
     ):
         if ttl_seconds <= 0:
             raise ValueError("ttl_seconds must be positive")
@@ -681,6 +704,20 @@ class RedisMemoryOSLock:
         self.ttl_seconds = int(ttl_seconds)
         self.owner = owner or str(uuid.uuid4())
         self.acquired = False
+        interval = heartbeat_interval_seconds
+        if interval is None:
+            interval = max(0.1, min(float(self.ttl_seconds) / 3.0, 30.0))
+        if interval <= 0:
+            raise ValueError("heartbeat_interval_seconds must be positive")
+        if interval >= self.ttl_seconds:
+            raise ValueError("heartbeat_interval_seconds must be lower than ttl_seconds")
+        self.heartbeat_interval_seconds = float(interval)
+        self.refresh_count = 0
+        self.lease_lost = False
+        self.released = False
+        self.ever_acquired = False
+        self._heartbeat_stop = threading.Event()
+        self._heartbeat_thread: threading.Thread | None = None
 
     @classmethod
     def from_url(
@@ -690,6 +727,7 @@ class RedisMemoryOSLock:
         key: str,
         ttl_seconds: int = 300,
         owner: str | None = None,
+        heartbeat_interval_seconds: float | None = None,
     ) -> "RedisMemoryOSLock":
         try:
             import redis
@@ -702,6 +740,7 @@ class RedisMemoryOSLock:
             key=key,
             ttl_seconds=ttl_seconds,
             owner=owner,
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         )
 
     def acquire(self) -> bool:
@@ -719,29 +758,104 @@ class RedisMemoryOSLock:
                 self.client.set(self.key, self.owner, ex=self.ttl_seconds)
                 acquired = True
         self.acquired = bool(acquired)
+        self.ever_acquired = self.acquired
+        self.refresh_count = 0
+        self.lease_lost = False
+        self.released = False
         return self.acquired
 
-    def release(self) -> bool:
+    @staticmethod
+    def _decode(value: Any) -> Any:
+        return value.decode("utf-8") if isinstance(value, bytes) else value
+
+    def refresh(self) -> bool:
         if not self.acquired:
             return False
-        current = self.client.get(self.key)
-        if isinstance(current, bytes):
-            current = current.decode("utf-8")
-        if current != self.owner:
-            self.acquired = False
-            return False
-        self.client.delete(self.key)
+        evaluator = getattr(self.client, "eval", None)
+        if callable(evaluator):
+            refreshed = evaluator(
+                self._REFRESH_SCRIPT,
+                1,
+                self.key,
+                self.owner,
+                self.ttl_seconds,
+            )
+        else:
+            current = self._decode(self.client.get(self.key))
+            if current != self.owner:
+                refreshed = False
+            elif hasattr(self.client, "expire"):
+                refreshed = self.client.expire(self.key, self.ttl_seconds)
+            else:
+                refreshed = self.client.set(self.key, self.owner, ex=self.ttl_seconds)
+        if bool(refreshed):
+            self.refresh_count += 1
+            return True
         self.acquired = False
+        self.lease_lost = True
+        return False
+
+    def start_heartbeat(self) -> bool:
+        if not self.acquired:
+            return False
+        if self._heartbeat_thread is not None and self._heartbeat_thread.is_alive():
+            return True
+        self._heartbeat_stop.clear()
+
+        def heartbeat() -> None:
+            while not self._heartbeat_stop.wait(self.heartbeat_interval_seconds):
+                if not self.refresh():
+                    break
+
+        self._heartbeat_thread = threading.Thread(
+            target=heartbeat,
+            name="wavemind-memory-os-lock-heartbeat",
+            daemon=True,
+        )
+        self._heartbeat_thread.start()
         return True
+
+    def stop_heartbeat(self) -> None:
+        self._heartbeat_stop.set()
+        thread = self._heartbeat_thread
+        if thread is not None and thread is not threading.current_thread():
+            thread.join(timeout=max(1.0, self.heartbeat_interval_seconds * 2.0))
+        self._heartbeat_thread = None
+
+    def release(self) -> bool:
+        self.stop_heartbeat()
+        if not self.acquired:
+            return False
+        evaluator = getattr(self.client, "eval", None)
+        if callable(evaluator):
+            deleted = evaluator(self._RELEASE_SCRIPT, 1, self.key, self.owner)
+        else:
+            current = self._decode(self.client.get(self.key))
+            if current == self.owner:
+                deleted_result = self.client.delete(self.key)
+                deleted = True if deleted_result is None else deleted_result
+            else:
+                deleted = 0
+        self.acquired = False
+        self.released = bool(deleted)
+        if not deleted:
+            self.lease_lost = True
+        return self.released
 
     def report(self, *, required: bool, reason: str | None = None) -> MemoryOSLockReport:
         return MemoryOSLockReport(
             required=required,
-            acquired=self.acquired,
+            acquired=self.ever_acquired,
             key=self.key,
             owner=self.owner,
             ttl_seconds=self.ttl_seconds,
             reason=reason,
+            heartbeat_started=bool(
+                self._heartbeat_thread is not None and self._heartbeat_thread.is_alive()
+            ),
+            refresh_count=self.refresh_count,
+            lease_lost=self.lease_lost,
+            released=self.released,
         )
 
     @contextmanager
@@ -751,10 +865,169 @@ class RedisMemoryOSLock:
             yield self.report(required=True, reason="lock_already_held")
             return
         try:
+            if acquired:
+                self.start_heartbeat()
             yield self.report(required=required)
         finally:
             if acquired:
                 self.release()
+
+
+@dataclass(frozen=True)
+class MemoryOSIdempotencyReport:
+    key: str | None = None
+    owner: str | None = None
+    claimed: bool = False
+    duplicate: bool = False
+    completed: bool = False
+    reason: str | None = None
+
+    @property
+    def in_doubt(self) -> bool:
+        return self.duplicate and self.reason == "job_already_running"
+
+    @property
+    def ok(self) -> bool:
+        return (
+            self.completed
+            or (self.duplicate and self.reason == "job_already_completed")
+            or self.key is None
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["in_doubt"] = self.in_doubt
+        payload["ok"] = self.ok
+        return payload
+
+
+class RedisMemoryOSJobGuard:
+    """Redis receipt that makes one Memory OS job safe to retry."""
+
+    _COMPLETE_SCRIPT = """
+    if redis.call('get', KEYS[1]) == ARGV[1] then
+        redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3])
+        return 1
+    end
+    return 0
+    """
+    _FAIL_SCRIPT = RedisMemoryOSLock._RELEASE_SCRIPT
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        key: str,
+        ttl_seconds: int = 86_400,
+        owner: str | None = None,
+    ):
+        if not key:
+            raise ValueError("key must not be empty")
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        self.client = client
+        self.key = key
+        self.ttl_seconds = int(ttl_seconds)
+        self.owner = owner or str(uuid.uuid4())
+        self.claimed = False
+        self.duplicate = False
+        self.completed = False
+        self.reason: str | None = None
+
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        *,
+        key: str,
+        ttl_seconds: int = 86_400,
+        owner: str | None = None,
+    ) -> "RedisMemoryOSJobGuard":
+        try:
+            import redis
+        except ImportError as exc:
+            raise RuntimeError(
+                'Install Redis support with: pip install "wavemind[redis]"'
+            ) from exc
+        return cls(
+            redis.Redis.from_url(url, decode_responses=True),
+            key=key,
+            ttl_seconds=ttl_seconds,
+            owner=owner,
+        )
+
+    def claim(self) -> bool:
+        self.completed = False
+        self.reason = None
+        claimed = self.client.set(
+            self.key,
+            self.owner,
+            ex=self.ttl_seconds,
+            nx=True,
+        )
+        self.claimed = bool(claimed)
+        self.duplicate = not self.claimed
+        if self.duplicate:
+            current = RedisMemoryOSLock._decode(self.client.get(self.key))
+            self.reason = (
+                "job_already_completed"
+                if isinstance(current, str) and current.startswith("completed:")
+                else "job_already_running"
+            )
+        return self.claimed
+
+    def complete(self) -> bool:
+        if not self.claimed:
+            return False
+        completed_value = f"completed:{self.owner}"
+        evaluator = getattr(self.client, "eval", None)
+        if callable(evaluator):
+            completed = evaluator(
+                self._COMPLETE_SCRIPT,
+                1,
+                self.key,
+                self.owner,
+                completed_value,
+                self.ttl_seconds,
+            )
+        else:
+            current = RedisMemoryOSLock._decode(self.client.get(self.key))
+            completed = (
+                self.client.set(self.key, completed_value, ex=self.ttl_seconds)
+                if current == self.owner
+                else False
+            )
+        self.completed = bool(completed)
+        if not self.completed:
+            self.reason = "job_receipt_ownership_lost"
+        return self.completed
+
+    def fail(self) -> bool:
+        if not self.claimed or self.completed:
+            return False
+        evaluator = getattr(self.client, "eval", None)
+        if callable(evaluator):
+            deleted = evaluator(self._FAIL_SCRIPT, 1, self.key, self.owner)
+        else:
+            current = RedisMemoryOSLock._decode(self.client.get(self.key))
+            if current == self.owner:
+                deleted_result = self.client.delete(self.key)
+                deleted = True if deleted_result is None else deleted_result
+            else:
+                deleted = 0
+        self.claimed = False
+        self.reason = "job_failed_retry_allowed"
+        return bool(deleted)
+
+    def report(self) -> MemoryOSIdempotencyReport:
+        return MemoryOSIdempotencyReport(
+            key=self.key,
+            owner=self.owner,
+            claimed=self.claimed,
+            duplicate=self.duplicate,
+            completed=self.completed,
+            reason=self.reason,
+        )
 
 
 @dataclass(frozen=True)
@@ -880,6 +1153,9 @@ class MemoryOSReport:
     stats_after: dict[str, object] = field(default_factory=dict)
     architecture_advice: dict[str, object] = field(default_factory=dict)
     lock: MemoryOSLockReport = field(default_factory=MemoryOSLockReport)
+    idempotency: MemoryOSIdempotencyReport = field(
+        default_factory=MemoryOSIdempotencyReport
+    )
     actions: tuple[str, ...] = ()
     recommendations: tuple[str, ...] = ()
     suggestions: tuple[MemoryOSImprovementSuggestion, ...] = ()
@@ -893,7 +1169,13 @@ class MemoryOSReport:
     @property
     def ok(self) -> bool:
         index_healthy = bool(self.stats_after.get("index_healthy", True))
-        return index_healthy and self.prewarm.ok and self.predictive_prefetch.ok and self.lock.ok
+        return (
+            index_healthy
+            and self.prewarm.ok
+            and self.predictive_prefetch.ok
+            and self.lock.ok
+            and self.idempotency.ok
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -919,6 +1201,7 @@ class MemoryOSReport:
             "stats_after": dict(self.stats_after),
             "architecture_advice": dict(self.architecture_advice),
             "lock": self.lock.as_dict(),
+            "idempotency": self.idempotency.as_dict(),
             "actions": list(self.actions),
             "recommendations": list(self.recommendations),
             "suggestions": [suggestion.as_dict() for suggestion in self.suggestions],
@@ -1994,6 +2277,7 @@ class MemoryOSWorker:
         multimodal: bool = False,
         lock: RedisMemoryOSLock | None = None,
         lock_required: bool = False,
+        job_guard: RedisMemoryOSJobGuard | None = None,
     ) -> MemoryOSReport:
         stats_before = self._stats(namespace)
         if lock is None and lock_required:
@@ -2031,10 +2315,33 @@ class MemoryOSWorker:
                 )
                 self._log_report(report)
                 return report
+            lock.start_heartbeat()
             lock_report = lock.report(required=lock_required)
 
+        if job_guard is not None and not job_guard.claim():
+            report = MemoryOSReport(
+                namespace=namespace,
+                scanned_events=0,
+                stats_before=stats_before,
+                stats_after=stats_before,
+                lock=lock_report,
+                idempotency=job_guard.report(),
+                actions=("duplicate_job_skipped",),
+                recommendations=(
+                    "The Memory OS run was already claimed or completed; no state mutation was repeated.",
+                ),
+            )
+            if lock is not None:
+                lock.release()
+                report = replace(
+                    report,
+                    lock=lock.report(required=lock_required),
+                )
+            self._log_report(report)
+            return report
+
         try:
-            return self._run_once_locked(
+            report = self._run_once_locked(
                 namespace=namespace,
                 audit_limit=audit_limit,
                 max_hot_queries=max_hot_queries,
@@ -2079,9 +2386,22 @@ class MemoryOSWorker:
                 stats_before=stats_before,
                 lock_report=lock_report,
             )
-        finally:
+            if job_guard is not None:
+                job_guard.complete()
+                report = replace(report, idempotency=job_guard.report())
+        except Exception:
+            if job_guard is not None:
+                job_guard.fail()
             if lock is not None:
                 lock.release()
+            raise
+        if lock is not None:
+            lock.release()
+            report = replace(
+                report,
+                lock=lock.report(required=lock_required),
+            )
+        return report
 
     def _run_once_locked(
         self,
