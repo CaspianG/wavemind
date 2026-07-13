@@ -5,7 +5,9 @@ WaveMind uses Git tags for releases.
 ## Checklist
 
 1. Make sure `main` is green in GitHub Actions.
-2. Update the version in `pyproject.toml` and `wavemind/__init__.py`.
+2. Update the version in `pyproject.toml`, `wavemind/__init__.py`,
+   `deploy/helm/wavemind/Chart.yaml`, `deploy/helm/wavemind/values.yaml`, and
+   `docker-compose.yml`.
 3. Run local checks:
 
 ```sh
@@ -45,12 +47,26 @@ git push origin main --tags
 ## Automation
 
 - `.github/workflows/release.yml` creates a GitHub Release and uploads built
-  artifacts for tags that match `v*`. It also uploads the release claims
-  manifest and production evidence bundle.
+  artifacts for tags that match `v*`. It verifies that the tag matches the
+  package version and uploads the release claims manifest and production
+  evidence bundle.
 - `.github/release.yml` groups generated release notes into production,
   indexing, integrations, and documentation sections.
-- `.github/workflows/publish.yml` publishes to PyPI through trusted publishing
-  when the `pypi` environment is configured.
+- `.github/workflows/publish.yml` independently verifies the tag, benchmark
+  freshness, production readiness, and release claims before publishing to
+  PyPI through trusted publishing. It has one trigger, the release tag push,
+  so a GitHub Release event cannot start a duplicate upload.
+
+## Cadence
+
+- Publish one release for a coherent user-facing change set, not one release
+  per commit.
+- Use a minor version for backward-compatible features and a patch version for
+  focused fixes to already released behavior.
+- Keep published tags and PyPI versions immutable. Correct mistakes with a new
+  version instead of deleting release history.
+- Prefer release notes that explain user impact, migration concerns, evidence,
+  and known limits over a raw commit list.
 
 ## Rules
 

@@ -3,7 +3,7 @@
   "deployment_id": "wavemind-staging",
   "environment": "staging",
   "source": "ssh-remote-production-lab",
-  "image": "ghcr.io/caspiang/wavemind:2.5.0",
+  "image": "ghcr.io/caspiang/wavemind:2.6.0",
   "regions": [
     {
       "id": "eu-west",
