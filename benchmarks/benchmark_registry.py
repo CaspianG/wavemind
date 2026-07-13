@@ -199,6 +199,34 @@ def _memory_os_runtime_soak_summary(payload: dict[str, Any] | None) -> dict[str,
     }
 
 
+def _memory_os_quality_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "passed_count": summary.get("passed_count"),
+        "check_count": summary.get("check_count"),
+        "failed_check_ids": summary.get("failed_check_ids"),
+        **metrics,
+    }
+
+
+def _memory_os_remote_handoff_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    topology = payload.get("topology") if isinstance(payload.get("topology"), dict) else {}
+    return {
+        "status": payload.get("status"),
+        "worker_count": topology.get("worker_count"),
+        "distinct_worker_count": topology.get("distinct_worker_count"),
+        "worker_https": topology.get("worker_https"),
+        "redis_tls": topology.get("redis_tls"),
+        "missing_check_ids": payload.get("missing_check_ids"),
+    }
+
+
 def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
     if not payload:
         return None
@@ -611,6 +639,10 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     memory_os_evolution_payload = _load_json(root / "benchmarks" / "memory_os_policy_evolution_results.json")
     memory_os_policy_bundle_payload = _load_json(root / "benchmarks" / "memory_os_policy_bundle_results.json")
     memory_os_runtime_soak_payload = _load_json(root / "benchmarks" / "memory_os_runtime_soak_results.json")
+    memory_os_quality_payload = _load_json(root / "benchmarks" / "memory_os_quality_results.json")
+    memory_os_remote_handoff_payload = _load_json(
+        root / "benchmarks" / "memory_os_remote_soak_handoff_results.json"
+    )
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     production_evidence_env_payload = _load_json(
         root / "benchmarks" / "production_evidence_env_contract.json"
@@ -2646,7 +2678,62 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Keep every Redis concurrency/retry check passing with zero duplicate mutation and zero errors, then repeat the same artifact against the remote target environment.",
-            "next_step": "Run the exact soak against the remote production-like Redis and worker network; only remote_redis evidence may clear memory-os-admission.",
+            "next_step": "Dispatch memory-os-remote-soak.yml against at least two HTTPS workers and their shared TLS Redis; legacy remote_redis-only evidence cannot clear memory-os-admission.",
+        },
+        {
+            "id": "memory_os_quality_gate",
+            "name": "Memory OS agent and long-memory quality gate",
+            "category": "agent-memory",
+            "status": "implemented",
+            "source": "benchmarks/memory_os_quality_gate.py",
+            "dataset": "Checked agent-coherence, LoCoMo sentence-evidence, LongMemEval evidence-retrieval, and LongMemEval Qwen answer-generation artifacts.",
+            "competitors": ["Static vector memory", "Chroma static", "Qdrant static"],
+            "metrics": [
+                "memory_os_task_success",
+                "memory_os_stale_error_rate",
+                "memory_os_context_budget_saved",
+                "locomo_recall_lift",
+                "longmemeval_recall_lift",
+                "longmemeval_answer_f1_lift",
+            ],
+            "current": {
+                "WaveMind Memory OS quality": (
+                    _memory_os_quality_summary(memory_os_quality_payload)
+                    or {
+                        "status": "missing",
+                        "requires": "python benchmarks/memory_os_quality_gate.py",
+                    }
+                ),
+            },
+            "target": "Keep every quality gate passing without hiding the boundary between direct Memory OS agent evidence and public-dataset dynamic retrieval evidence.",
+            "next_step": "Rerun the agent, LoCoMo, LongMemEval retrieval, and answer-generation sources before regenerating this gate after retrieval or worker-policy changes.",
+        },
+        {
+            "id": "memory_os_remote_worker_soak",
+            "name": "Memory OS remote multi-worker production soak",
+            "category": "production-scale",
+            "status": "runner-ready",
+            "source": "benchmarks/memory_os_remote_worker_soak.py",
+            "dataset": "Direct HTTP concurrency across at least two authenticated HTTPS workers plus the shared TLS Redis used for leases, idempotency receipts, retries, and cleanup.",
+            "competitors": ["single-process soak", "remote Redis label without worker proof"],
+            "metrics": [
+                "worker_count",
+                "completed_runs",
+                "safe_skips",
+                "duplicate_retries",
+                "error_count",
+            ],
+            "current": {
+                "WaveMind remote worker handoff": (
+                    _memory_os_remote_handoff_summary(memory_os_remote_handoff_payload)
+                    or {
+                        "status": "missing",
+                        "requires": "python benchmarks/memory_os_remote_worker_soak.py --preflight-only",
+                    }
+                ),
+            },
+            "target": "Pass every remote worker, Redis, single-flight, retry, no-in-doubt, and cleanup check, then produce an admitted production artifact from the same run.",
+            "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml.",
         },
         {
             "id": "memory_os_policy_bundle",

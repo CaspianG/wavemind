@@ -27,6 +27,18 @@ REQUIRED_POLICY_IDS = {
 STRICT_MEMORY_OS_TARGET = 1_000_000
 PRODUCTION_DEPLOYMENTS = {"production", "prod", "staging"}
 REMOTE_SOAK_DEPLOYMENTS = {"production", "prod"}
+REMOTE_WORKER_SOAK_SCHEMA = "wavemind.memory_os_remote_worker_soak.v1"
+REMOTE_WORKER_SOAK_CHECK_IDS = {
+    "remote-topology",
+    "worker-health",
+    "worker-version",
+    "worker-plan",
+    "remote-redis-semantics",
+    "cross-worker-single-flight",
+    "cross-worker-retry",
+    "no-in-doubt-jobs",
+    "cleanup",
+}
 
 
 def _utc_now() -> str:
@@ -190,14 +202,27 @@ def evaluate_memory_os_admission(
     runtime_checks_pass = bool(runtime_checks) and all(
         isinstance(item, dict) and bool(item.get("passed")) for item in runtime_checks
     )
+    runtime_check_ids = {
+        str(item.get("id"))
+        for item in runtime_checks
+        if isinstance(item, dict) and item.get("id")
+    }
+    runtime_preflight = dict(runtime_evidence_payload.get("preflight") or {})
+    runtime_topology = dict(runtime_preflight.get("topology") or {})
     runtime_evidence_valid = (
-        runtime_evidence_payload.get("schema") == "wavemind.memory_os_runtime_soak.v1"
+        runtime_evidence_payload.get("schema") == REMOTE_WORKER_SOAK_SCHEMA
         and runtime_evidence_payload.get("status") == "pass"
+        and runtime_evidence_payload.get("environment") == "remote_worker_cluster"
         and runtime_checks_pass
+        and REMOTE_WORKER_SOAK_CHECK_IDS.issubset(runtime_check_ids)
     )
     remote_runtime_evidence = (
         runtime_evidence_valid
-        and runtime_evidence_payload.get("environment") == "remote_redis"
+        and runtime_preflight.get("status") == "pass"
+        and int(runtime_topology.get("worker_count") or 0) >= 2
+        and int(runtime_topology.get("distinct_worker_count") or 0) >= 2
+        and runtime_topology.get("worker_https") is True
+        and runtime_topology.get("redis_tls") is True
     )
     runtime_soak_ok = not remote_soak_required or remote_runtime_evidence
 
@@ -282,7 +307,7 @@ def evaluate_memory_os_admission(
         ),
         _requirement(
             "runtime-soak",
-            "Real remote Redis worker soak proves lease and retry safety",
+            "Remote Redis and multi-worker HTTP soak proves lease and retry safety",
             runtime_soak_ok,
             (
                 f"schema={runtime_evidence_payload.get('schema')}, "
@@ -290,10 +315,12 @@ def evaluate_memory_os_admission(
                 f"environment={runtime_evidence_payload.get('environment')}, "
                 f"checks_pass={runtime_checks_pass}"
             ),
-            "Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact.",
+            "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact.",
             details={
                 "runtime_evidence_valid": runtime_evidence_valid,
                 "remote_runtime_evidence": remote_runtime_evidence,
+                "required_schema": REMOTE_WORKER_SOAK_SCHEMA,
+                "required_check_ids": sorted(REMOTE_WORKER_SOAK_CHECK_IDS),
                 "runtime_evidence": runtime_evidence_payload,
             },
         ),

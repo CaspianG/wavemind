@@ -2,12 +2,12 @@
 
 Generated: `2026-07-09T22:45:10Z`.
 
-Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
+Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
 
 ## Summary
 
 - Status: `pass`.
-- Checks: `35/35`.
+- Checks: `36/36`.
 - Hot queries: `2`.
 - Cache prewarm warmed: `2`.
 - Predictive prefetch warmed: `6`.
@@ -19,6 +19,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 - Execution safe to run: `True`.
 - Admission status: `plan_only`.
 - Policy bundle status: `staging_ready`.
+- Quality gate: `pass` (7/7).
 
 ## Gate Checks
 
@@ -59,6 +60,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | policy_bundle_staging_promotable | `pass` | `1` | `is True` |
 | policy_bundle_production_locked | `pass` | `1` | `is True` |
 | policy_bundle_production_not_promoted | `pass` | `0` | `is False` |
+| quality_gate_pass | `pass` | `pass` | `== pass` |
 
 ## Intelligence Coverage
 
@@ -72,6 +74,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | Rollout safety | shared cache `True`, distributed lock `True`, required env `WAVEMIND_MEMORY_OS_LOCK_REDIS_URL, WAVEMIND_REDIS_URL`. |
 | Policy bundle | status `staging_ready`, staging `True`, production locked `True`. |
 | Agent effect | task success `0.917`, stale error `0`, context saved `0.931`. |
+| Public long-memory quality | LoCoMo recall lift `0.138`, LongMemEval recall lift `0.263`. |
 
 ## Production Boundary
 

@@ -31,12 +31,12 @@ schedule as production automation, or whether it is still only a runbook.
 | Production infrastructure contract is explicit | `pass` | OpenTelemetry metrics for worker duration, errors, and warmed queries, Redis-compatible shared hot-query cache, distributed worker lock or single-flight scheduler, durable queue or Kubernetes CronJobs | Production plans must list Redis, lock/scheduler, queue/CronJob, and OpenTelemetry requirements. |
 | Large target stays behind strict architecture evidence | `pass` | architecture_status=action_required, strict_target=False | Do not admit Memory OS production rollout for million-plus targets until architecture-required evidence is resolved. |
 | Required runtime environment is present | `pass` | missing=[] | Provide every required environment variable before scheduling the worker set. |
-| Real remote Redis worker soak proves lease and retry safety | `action_required` | schema=wavemind.memory_os_runtime_soak.v1, status=pass, environment=local_redis, checks_pass=True | Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact. |
+| Remote Redis and multi-worker HTTP soak proves lease and retry safety | `action_required` | schema=wavemind.memory_os_runtime_soak.v1, status=pass, environment=local_redis, checks_pass=True | Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact. |
 
 ## Next Actions
 
 - Keep this as a runbook until the action_required requirements pass.
-- Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact.
+- Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact.
 
 ## Enabled Tasks
 

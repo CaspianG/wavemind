@@ -1,19 +1,20 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "e9b8896f2e2f",
+  "source_ref": "365c5ff4fbe1",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/memory_os_agent_quality_results.json",
     "benchmarks/memory_os_canary_results.json",
     "benchmarks/memory_os_admission_results.json",
-    "benchmarks/memory_os_policy_bundle_results.json"
+    "benchmarks/memory_os_policy_bundle_results.json",
+    "benchmarks/memory_os_quality_results.json"
   ],
-  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
   "summary": {
     "status": "pass",
-    "check_count": 35,
-    "passed_check_count": 35,
+    "check_count": 36,
+    "passed_check_count": 36,
     "worker_ok": true,
     "hot_queries": 2,
     "prewarm_warmed": 2,
@@ -90,7 +91,12 @@
       "consolidation",
       "maintenance",
       "architecture-advice"
-    ]
+    ],
+    "quality_status": "pass",
+    "quality_passed_count": 7,
+    "quality_check_count": 7,
+    "locomo_recall_lift": 0.13804660791323203,
+    "longmemeval_recall_lift": 0.2625177304964539
   },
   "checks": [
     {
@@ -336,6 +342,13 @@
       "value": false,
       "target": false,
       "op": "is",
+      "pass": true
+    },
+    {
+      "name": "quality_gate_pass",
+      "value": "pass",
+      "target": "pass",
+      "op": "==",
       "pass": true
     }
   ],
@@ -1097,6 +1110,21 @@
       "failed_check_ids": [
         "production-admission"
       ]
+    },
+    "quality_summary": {
+      "passed_count": 7,
+      "check_count": 7,
+      "failed_check_ids": []
+    },
+    "quality_metrics": {
+      "memory_os_task_success": 0.9166666666666666,
+      "memory_os_stale_error_rate": 0,
+      "memory_os_context_budget_saved": 0.9308855291576674,
+      "memory_os_agent_delta": 0.0,
+      "locomo_recall_lift": 0.13804660791323203,
+      "longmemeval_recall_lift": 0.2625177304964539,
+      "longmemeval_answer_f1_lift": 0.16323857402643008,
+      "longmemeval_answer_evidence_lift": 0.32000000000000006
     }
   }
 }

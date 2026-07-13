@@ -1,11 +1,11 @@
 {
   "schema": "wavemind.memory_os_admission.v1",
-  "generated_at": "2026-07-13T19:59:45Z",
+  "generated_at": "2026-07-13T21:53:25Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
   "target_memories": 50000,
-  "namespace_count": 32,
+  "namespace_count": 64,
   "worker_count": 1,
   "effective_cache_mode": "redis",
   "hot_query_count": 1,
@@ -146,15 +146,27 @@
     },
     {
       "id": "runtime-soak",
-      "title": "Real remote Redis worker soak proves lease and retry safety",
+      "title": "Remote Redis and multi-worker HTTP soak proves lease and retry safety",
       "status": "action_required",
       "passed": false,
       "severity": "blocker",
       "evidence": "schema=wavemind.memory_os_runtime_soak.v1, status=pass, environment=local_redis, checks_pass=True",
-      "action": "Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact.",
+      "action": "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact.",
       "details": {
-        "runtime_evidence_valid": true,
+        "runtime_evidence_valid": false,
         "remote_runtime_evidence": false,
+        "required_schema": "wavemind.memory_os_remote_worker_soak.v1",
+        "required_check_ids": [
+          "cleanup",
+          "cross-worker-retry",
+          "cross-worker-single-flight",
+          "no-in-doubt-jobs",
+          "remote-redis-semantics",
+          "remote-topology",
+          "worker-health",
+          "worker-plan",
+          "worker-version"
+        ],
         "runtime_evidence": {
           "schema": "wavemind.memory_os_runtime_soak.v1",
           "generated_at": "2026-07-13T19:57:21Z",
@@ -208,7 +220,7 @@
   ],
   "execution_plan": {
     "status": "ok",
-    "namespace": "tenant:admission",
+    "namespace": "canary:memory-os",
     "deployment": "production",
     "worker_count": 1,
     "max_parallel_workers": 1,
@@ -261,7 +273,7 @@
         "required_environment": [],
         "idempotency_key": null,
         "can_run_on_all_workers": false,
-        "command": "wavemind advise --target-memories 50000 --namespace-count 32 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
+        "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
         "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
       },
       {
@@ -280,9 +292,9 @@
         "required_environment": [
           "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
         ],
-        "idempotency_key": "wavemind:memory-os:tenant:admission:maintenance",
+        "idempotency_key": "wavemind:memory-os:canary:memory-os:maintenance",
         "can_run_on_all_workers": false,
-        "command": "wavemind maintenance --namespace tenant:admission",
+        "command": "wavemind maintenance --namespace canary:memory-os",
         "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
       },
       {
@@ -301,9 +313,9 @@
         "required_environment": [
           "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
         ],
-        "idempotency_key": "wavemind:memory-os:tenant:admission:adaptive-forgetting",
+        "idempotency_key": "wavemind:memory-os:canary:memory-os:adaptive-forgetting",
         "can_run_on_all_workers": false,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Demotes old unused memories before they compete with current context."
       },
       {
@@ -322,9 +334,9 @@
         "required_environment": [
           "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
         ],
-        "idempotency_key": "wavemind:memory-os:tenant:admission:consolidation",
+        "idempotency_key": "wavemind:memory-os:canary:memory-os:consolidation",
         "can_run_on_all_workers": false,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Creates durable higher-level concept memories from active clusters."
       },
       {
@@ -344,9 +356,9 @@
           "WAVEMIND_REDIS_URL",
           "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
         ],
-        "idempotency_key": "wavemind:memory-os:tenant:admission:memory-os",
+        "idempotency_key": "wavemind:memory-os:canary:memory-os:memory-os",
         "can_run_on_all_workers": false,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
       },
       {
@@ -367,7 +379,7 @@
         ],
         "idempotency_key": null,
         "can_run_on_all_workers": false,
-        "command": "wavemind cache-prewarm --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+        "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
         "reason": "Keeps repeated recall paths hot across API workers."
       },
       {
@@ -387,16 +399,16 @@
           "WAVEMIND_REDIS_URL",
           "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
         ],
-        "idempotency_key": "wavemind:memory-os:tenant:admission:predictive-prefetch",
+        "idempotency_key": "wavemind:memory-os:canary:memory-os:predictive-prefetch",
         "can_run_on_all_workers": false,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Warms likely follow-up queries from hot recall paths."
       }
     ]
   },
   "policy_manifest": {
     "status": "action_required",
-    "namespace": "tenant:admission",
+    "namespace": "canary:memory-os",
     "decision_count": 6,
     "decision_ids": [
       "prefetch-policy",
@@ -414,7 +426,7 @@
         "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
         "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "hot_queries": 1,
           "prewarm_warmed": 1,
           "predictive_generated": 1,
@@ -429,7 +441,7 @@
         "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
         "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "priority_predictions": 1
         }
       },
@@ -440,7 +452,7 @@
         "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
         "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "active_memories": 3
         }
       },
@@ -451,7 +463,7 @@
         "rationale": "The field graph produced higher-level concept memories from active clusters.",
         "action": "Review new concept memories in Studio/API before assigning very high priority.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "concepts_created": 1
         }
       },
@@ -462,7 +474,7 @@
         "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
         "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "active_memories": 3,
           "target_memories": 50000,
           "recommendation_ids": [
@@ -478,7 +490,7 @@
         "rationale": "The current run has a safe coordination state for this deployment mode.",
         "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
         "evidence": {
-          "namespace": "tenant:admission",
+          "namespace": "canary:memory-os",
           "deployment": "production",
           "lock_required": true,
           "lock_acquired": true,
@@ -493,14 +505,14 @@
     "status": "action_required",
     "production_ready": false,
     "deployment": "production",
-    "namespace": "tenant:admission",
+    "namespace": "canary:memory-os",
     "current_memories": 3,
     "target_memories": 50000,
     "index": "numpy-exact",
     "vector_dim": 384,
     "target_p99_ms": 100.0,
     "observed_p99_ms": null,
-    "namespace_count": 32,
+    "namespace_count": 64,
     "node_count": 3,
     "replication_factor": 3,
     "read_quorum": 1,
@@ -510,7 +522,7 @@
       "target_memories": 50000,
       "index": "numpy-exact",
       "vector_dim": 384,
-      "namespace": "tenant:admission",
+      "namespace": "canary:memory-os",
       "latency_target_ms": 100.0,
       "tier": "large-local",
       "status": "action_required",
@@ -612,12 +624,12 @@
   },
   "plan": {
     "status": "ok",
-    "namespace": "tenant:admission",
+    "namespace": "canary:memory-os",
     "deployment": "production",
     "cache_mode": "redis",
     "effective_cache_mode": "redis",
     "target_memories": 50000,
-    "namespace_count": 32,
+    "namespace_count": 64,
     "active_memories": 3,
     "hot_query_count": 1,
     "observed_p99_ms": null,
@@ -638,14 +650,14 @@
       "status": "action_required",
       "production_ready": false,
       "deployment": "production",
-      "namespace": "tenant:admission",
+      "namespace": "canary:memory-os",
       "current_memories": 3,
       "target_memories": 50000,
       "index": "numpy-exact",
       "vector_dim": 384,
       "target_p99_ms": 100.0,
       "observed_p99_ms": null,
-      "namespace_count": 32,
+      "namespace_count": 64,
       "node_count": 3,
       "replication_factor": 3,
       "read_quorum": 1,
@@ -655,7 +667,7 @@
         "target_memories": 50000,
         "index": "numpy-exact",
         "vector_dim": 384,
-        "namespace": "tenant:admission",
+        "namespace": "canary:memory-os",
         "latency_target_ms": 100.0,
         "tier": "large-local",
         "status": "action_required",
@@ -709,7 +721,7 @@
     },
     "policy_manifest": {
       "status": "action_required",
-      "namespace": "tenant:admission",
+      "namespace": "canary:memory-os",
       "decision_count": 6,
       "decision_ids": [
         "prefetch-policy",
@@ -727,7 +739,7 @@
           "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "hot_queries": 1,
             "prewarm_warmed": 1,
             "predictive_generated": 1,
@@ -742,7 +754,7 @@
           "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "priority_predictions": 1
           }
         },
@@ -753,7 +765,7 @@
           "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "active_memories": 3
           }
         },
@@ -764,7 +776,7 @@
           "rationale": "The field graph produced higher-level concept memories from active clusters.",
           "action": "Review new concept memories in Studio/API before assigning very high priority.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "concepts_created": 1
           }
         },
@@ -775,7 +787,7 @@
           "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "active_memories": 3,
             "target_memories": 50000,
             "recommendation_ids": [
@@ -791,7 +803,7 @@
           "rationale": "The current run has a safe coordination state for this deployment mode.",
           "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
           "evidence": {
-            "namespace": "tenant:admission",
+            "namespace": "canary:memory-os",
             "deployment": "production",
             "lock_required": true,
             "lock_acquired": true,
@@ -820,7 +832,7 @@
     "policy_auto_adjustments": [],
     "execution_plan": {
       "status": "ok",
-      "namespace": "tenant:admission",
+      "namespace": "canary:memory-os",
       "deployment": "production",
       "worker_count": 1,
       "max_parallel_workers": 1,
@@ -873,7 +885,7 @@
           "required_environment": [],
           "idempotency_key": null,
           "can_run_on_all_workers": false,
-          "command": "wavemind advise --target-memories 50000 --namespace-count 32 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
+          "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
           "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
         },
         {
@@ -892,9 +904,9 @@
           "required_environment": [
             "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
           ],
-          "idempotency_key": "wavemind:memory-os:tenant:admission:maintenance",
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:maintenance",
           "can_run_on_all_workers": false,
-          "command": "wavemind maintenance --namespace tenant:admission",
+          "command": "wavemind maintenance --namespace canary:memory-os",
           "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
         },
         {
@@ -913,9 +925,9 @@
           "required_environment": [
             "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
           ],
-          "idempotency_key": "wavemind:memory-os:tenant:admission:adaptive-forgetting",
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:adaptive-forgetting",
           "can_run_on_all_workers": false,
-          "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
           "reason": "Demotes old unused memories before they compete with current context."
         },
         {
@@ -934,9 +946,9 @@
           "required_environment": [
             "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
           ],
-          "idempotency_key": "wavemind:memory-os:tenant:admission:consolidation",
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:consolidation",
           "can_run_on_all_workers": false,
-          "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
           "reason": "Creates durable higher-level concept memories from active clusters."
         },
         {
@@ -956,9 +968,9 @@
             "WAVEMIND_REDIS_URL",
             "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
           ],
-          "idempotency_key": "wavemind:memory-os:tenant:admission:memory-os",
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:memory-os",
           "can_run_on_all_workers": false,
-          "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
           "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
         },
         {
@@ -979,7 +991,7 @@
           ],
           "idempotency_key": null,
           "can_run_on_all_workers": false,
-          "command": "wavemind cache-prewarm --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+          "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
           "reason": "Keeps repeated recall paths hot across API workers."
         },
         {
@@ -999,9 +1011,9 @@
             "WAVEMIND_REDIS_URL",
             "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
           ],
-          "idempotency_key": "wavemind:memory-os:tenant:admission:predictive-prefetch",
+          "idempotency_key": "wavemind:memory-os:canary:memory-os:predictive-prefetch",
           "can_run_on_all_workers": false,
-          "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+          "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
           "reason": "Warms likely follow-up queries from hot recall paths."
         }
       ]
@@ -1014,7 +1026,7 @@
         "cadence_seconds": 15,
         "worker_count": 1,
         "timeout_seconds": 60,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
         "priority": "critical",
         "requires_shared_cache": true,
@@ -1027,7 +1039,7 @@
         "cadence_seconds": 15,
         "worker_count": 1,
         "timeout_seconds": 30,
-        "command": "wavemind cache-prewarm --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+        "command": "wavemind cache-prewarm --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
         "reason": "Keeps repeated recall paths hot across API workers.",
         "priority": "high",
         "requires_shared_cache": true,
@@ -1040,7 +1052,7 @@
         "cadence_seconds": 60,
         "worker_count": 1,
         "timeout_seconds": 120,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Warms likely follow-up queries from hot recall paths.",
         "priority": "high",
         "requires_shared_cache": true,
@@ -1053,7 +1065,7 @@
         "cadence_seconds": 900,
         "worker_count": 1,
         "timeout_seconds": 300,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Demotes old unused memories before they compete with current context.",
         "priority": "high",
         "requires_shared_cache": false,
@@ -1066,7 +1078,7 @@
         "cadence_seconds": 300,
         "worker_count": 1,
         "timeout_seconds": 300,
-        "command": "wavemind memory-os --namespace tenant:admission --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 32 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
+        "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
         "reason": "Creates durable higher-level concept memories from active clusters.",
         "priority": "high",
         "requires_shared_cache": false,
@@ -1079,7 +1091,7 @@
         "cadence_seconds": 300,
         "worker_count": 1,
         "timeout_seconds": 300,
-        "command": "wavemind maintenance --namespace tenant:admission",
+        "command": "wavemind maintenance --namespace canary:memory-os",
         "reason": "Purges TTL-expired memories and repairs unhealthy local indexes.",
         "priority": "normal",
         "requires_shared_cache": false,
@@ -1092,7 +1104,7 @@
         "cadence_seconds": 1800,
         "worker_count": 1,
         "timeout_seconds": 120,
-        "command": "wavemind advise --target-memories 50000 --namespace-count 32 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
+        "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
         "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
         "priority": "normal",
         "requires_shared_cache": false,
@@ -1112,6 +1124,6 @@
   },
   "next_actions": [
     "Keep this as a runbook until the action_required requirements pass.",
-    "Run benchmarks/memory_os_runtime_soak.py against the production-like remote Redis and attach the passing artifact."
+    "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact."
   ]
 }
