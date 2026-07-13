@@ -1,0 +1,54 @@
+name: package-retention
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Delete package versions after the preview
+        required: true
+        default: false
+        type: boolean
+      max_delete:
+        description: Maximum SHA-only versions to delete in one run
+        required: true
+        default: "500"
+        type: string
+  schedule:
+    - cron: "17 3 * * 0"
+
+concurrency:
+  group: package-retention
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  ghcr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Preview SHA-only package versions
+        if: ${{ github.event_name == 'workflow_dispatch' && ! inputs.apply }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/prune_ghcr_versions.py \
+            --max-delete "${{ inputs.max_delete }}"
+
+      - name: Apply package retention
+        if: ${{ github.event_name == 'schedule' || inputs.apply }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          MAX_DELETE="${{ inputs.max_delete }}"
+          if [ -z "$MAX_DELETE" ]; then MAX_DELETE=500; fi
+          python scripts/prune_ghcr_versions.py \
+            --max-delete "$MAX_DELETE" \
+            --apply
