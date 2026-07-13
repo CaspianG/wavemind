@@ -98,6 +98,12 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "dynamic_memory_benchmark.py" in workflow
     assert "field_memory_dynamics_benchmark.py" in workflow
     assert "scale_readiness_benchmark.py" in workflow
+    assert "external_http_cluster_loopback.py" in workflow
+    assert "--output benchmarks/http_cluster_load_loopback_results.json" in workflow
+    loopback_command = workflow.split("external_http_cluster_loopback.py", 1)[1].split(
+        "local_http_active_active_smoke.py", 1
+    )[0]
+    assert "--output benchmarks/http_cluster_load_results.json" not in loopback_command
     assert "production_streaming_load_benchmark.py" in workflow
     assert "qdrant-0:" in workflow
     assert "qdrant-1:" in workflow

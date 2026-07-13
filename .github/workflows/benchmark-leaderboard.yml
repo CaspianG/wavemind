@@ -61,7 +61,7 @@ jobs:
             --deployment-id "weekly-loopback-${{ github.run_id }}" \
             --namespace-prefix "tenant:external-loopback:weekly-${{ github.run_id }}" \
             --fail-on-slo \
-            --output benchmarks/http_cluster_load_results.json
+            --output benchmarks/http_cluster_load_loopback_results.json
           python benchmarks/local_http_active_active_smoke.py \
             --regions 3 \
             --replicas-per-region 3 \
@@ -435,6 +435,7 @@ jobs:
             benchmarks/dynamic_memory_results.json
             benchmarks/field_memory_dynamics_results.json
             benchmarks/http_cluster_load_results.json
+            benchmarks/http_cluster_load_loopback_results.json
             benchmarks/external_http_active_active_loopback_results.json
             benchmarks/local_http_active_active_smoke_results.json
             benchmarks/scale_readiness_results.json
