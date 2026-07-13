@@ -40,7 +40,6 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
 
       - name: Build and publish image
         uses: docker/build-push-action@v6
