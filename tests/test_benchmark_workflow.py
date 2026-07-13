@@ -174,6 +174,10 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json" in workflow
     assert "cp benchmarks/MEMORY_OS_POLICY_BUNDLE.md site/benchmarks/MEMORY_OS_POLICY_BUNDLE.md" in workflow
     assert "cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json" in workflow
+    assert "cp benchmarks/MEMORY_OS_QUALITY.md site/benchmarks/MEMORY_OS_QUALITY.md" in workflow
+    assert "cp benchmarks/memory_os_quality_results.json site/data/memory_os_quality_results.json" in workflow
+    assert "cp benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md site/benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md" in workflow
+    assert "cp benchmarks/memory_os_remote_soak_handoff_results.json site/data/memory_os_remote_soak_handoff_results.json" in workflow
 
 
 def test_external_http_cluster_workflow_runs_real_node_load_profile():
