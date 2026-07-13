@@ -242,7 +242,7 @@ from .storage import (
     restore_recovery_journal,
 )
 
-__version__ = "2.4.30"
+__version__ = "2.5.0"
 
 __all__ = [
     "FieldProjector",
