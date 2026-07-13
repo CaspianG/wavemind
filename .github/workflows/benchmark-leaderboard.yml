@@ -407,6 +407,8 @@ jobs:
           cp benchmarks/MEMORY_OS_CANARY.md site/benchmarks/MEMORY_OS_CANARY.md
           cp benchmarks/MEMORY_OS_ADMISSION.md site/benchmarks/MEMORY_OS_ADMISSION.md
           cp benchmarks/MEMORY_OS_POLICY_BUNDLE.md site/benchmarks/MEMORY_OS_POLICY_BUNDLE.md
+          cp benchmarks/MEMORY_OS_QUALITY.md site/benchmarks/MEMORY_OS_QUALITY.md
+          cp benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md site/benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md
           cp benchmarks/benchmark_matrix_results.json site/data/benchmark_matrix_results.json
           cp benchmarks/benchmark_artifact_audit.json site/data/benchmark_artifact_audit.json
           cp benchmarks/production_readiness_results.json site/data/production_readiness_results.json
@@ -432,6 +434,8 @@ jobs:
           cp benchmarks/memory_os_runtime_soak_results.json site/data/memory_os_runtime_soak_results.json
           cp benchmarks/memory_os_agent_quality_results.json site/data/memory_os_agent_quality_results.json
           cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json
+          cp benchmarks/memory_os_quality_results.json site/data/memory_os_quality_results.json
+          cp benchmarks/memory_os_remote_soak_handoff_results.json site/data/memory_os_remote_soak_handoff_results.json
           cp docs/data/leaderboard-status.json site/data/leaderboard-status.json
 
       - uses: actions/configure-pages@v5
@@ -508,6 +512,10 @@ jobs:
             benchmarks/memory_os_runtime_soak_results.json
             benchmarks/MEMORY_OS_RUNTIME_SOAK.md
             benchmarks/memory_os_agent_quality_results.json
+            benchmarks/memory_os_quality_results.json
+            benchmarks/MEMORY_OS_QUALITY.md
+            benchmarks/memory_os_remote_soak_handoff_results.json
+            benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md
             docs/benchmark-dashboard.html
             docs/data/leaderboard-status.json
             docs/assets/benchmark-summary.svg

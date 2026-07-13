@@ -160,6 +160,14 @@ def test_benchmark_leaderboard_workflow_reruns_core_artifacts():
     assert "benchmarks/memory_os_admission_results.json" in workflow
     assert "site/benchmarks/MEMORY_OS_ADMISSION.md" in workflow
     assert "site/data/memory_os_admission_results.json" in workflow
+    assert "benchmarks/MEMORY_OS_QUALITY.md" in workflow
+    assert "benchmarks/memory_os_quality_results.json" in workflow
+    assert "site/benchmarks/MEMORY_OS_QUALITY.md" in workflow
+    assert "site/data/memory_os_quality_results.json" in workflow
+    assert "benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md" in workflow
+    assert "benchmarks/memory_os_remote_soak_handoff_results.json" in workflow
+    assert "site/benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md" in workflow
+    assert "site/data/memory_os_remote_soak_handoff_results.json" in workflow
     assert "benchmarks/MULTIMODAL_ADMISSION.md" in workflow
     assert "benchmarks/multimodal_admission_results.json" in workflow
     assert "site/benchmarks/MULTIMODAL_ADMISSION.md" in workflow
