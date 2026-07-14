@@ -144,7 +144,6 @@ class ClusterPlan:
 
     def placement_health_report(self) -> dict[str, object]:
         namespace_count = len(self.placements)
-        zone_by_node = {node.id: node.zone for node in self.nodes}
         failure_domain_by_node = {
             node.id: node.zone or node.id
             for node in self.nodes

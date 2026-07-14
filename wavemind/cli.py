@@ -60,7 +60,6 @@ from .memory_os_canary import (
     run_memory_os_canary,
 )
 from .memory_os_evolution import (
-    render_memory_os_policy_evolution_markdown,
     run_memory_os_policy_evolution,
     write_memory_os_policy_evolution_artifacts,
 )
@@ -102,7 +101,6 @@ from .production_evidence import (
 )
 from .production_evidence_env import (
     build_production_evidence_env_contract,
-    render_production_evidence_env_markdown,
     write_production_evidence_env_artifacts,
 )
 from .production_evidence_ingest import (

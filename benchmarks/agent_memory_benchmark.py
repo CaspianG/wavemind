@@ -15,7 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from wavemind import WaveMind
-from wavemind.encoders import HashingTextEncoder, create_text_encoder
+from wavemind.encoders import create_text_encoder
 
 
 @dataclass(frozen=True)

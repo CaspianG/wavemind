@@ -72,7 +72,9 @@ production = [
 dev = [
   "pytest>=8",
   "httpx>=0.27",
+  "httpx2>=2",
   "langchain-classic>=1.0",
+  "ruff>=0.12",
 ]
 
 [project.scripts]
@@ -85,3 +87,10 @@ Repository = "https://github.com/CaspianG/wavemind"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["wavemind*"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint.per-file-ignores]
+"benchmarks/*.py" = ["E402"]
+"examples/*.py" = ["E402"]

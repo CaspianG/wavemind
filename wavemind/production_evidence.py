@@ -1925,11 +1925,6 @@ def build_production_evidence_dispatch_plan(
     root = Path(root)
     strict = evaluate_production_evidence(root)
     preflight = evaluate_production_evidence_preflight(root, env=env)
-    strict_by_id = {
-        str(row.get("id")): row
-        for row in strict.get("requirements", [])
-        if isinstance(row, dict)
-    }
     preflight_by_id = {
         str(row.get("id")): row
         for row in preflight.get("checks", [])

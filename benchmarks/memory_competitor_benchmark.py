@@ -12,7 +12,7 @@ import tempfile
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -446,7 +446,10 @@ def run_zep(
                 from zep_cloud import Message
             except Exception as exc:
                 return skipped_result("Zep", f"Import zep-cloud failed: {exc}")
-            client_factory = lambda: Zep(base_url=api_url, api_key=api_key, timeout=timeout)
+            def create_zep_cloud_client() -> Any:
+                return Zep(base_url=api_url, api_key=api_key, timeout=timeout)
+
+            client_factory = create_zep_cloud_client
             message_factory = Message
         elif _module_available("zep_python"):
             try:
@@ -454,7 +457,10 @@ def run_zep(
                 from zep_python.types.message import Message
             except Exception as exc:
                 return skipped_result("Zep", f"Import zep-python failed: {exc}")
-            client_factory = lambda: Zep(base_url=api_url, api_key=api_key, timeout=timeout)
+            def create_zep_python_client() -> Any:
+                return Zep(base_url=api_url, api_key=api_key, timeout=timeout)
+
+            client_factory = create_zep_python_client
             message_factory = Message
         else:
             return skipped_result(
@@ -462,7 +468,10 @@ def run_zep(
                 'Install a Zep SDK to run this adapter profile: pip install "zep-cloud" or pip install "zep-python"',
             )
     if message_factory is None:
-        message_factory = lambda **kwargs: kwargs
+        def create_message(**kwargs: Any) -> dict[str, Any]:
+            return kwargs
+
+        message_factory = create_message
 
     client = client_factory()
     if hasattr(client, "memory"):

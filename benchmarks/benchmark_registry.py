@@ -653,8 +653,6 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     postgres_pitr_payload = _load_json(root / "benchmarks" / "postgres_pitr_plan.json")
     memory_competitor_payload = _load_json(root / "benchmarks" / "memory_competitor_results.json")
     answer_payload = _load_json(root / "benchmarks" / "longmemeval_answer_extractive_20_results.json")
-    vectordbbench_payload = _load_json(root / "benchmarks" / "vectordbbench_dataset_manifest.json")
-
     agent_results = _engine_results(agent_payload)
     agent_coherence_results = _engine_results(agent_coherence_payload)
     dynamic_results = _engine_results(dynamic_payload)
@@ -722,19 +720,6 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     )
     postgres_pitr_validation = postgres_pitr_profile.get("validation", {})
     memory_competitor_results = _engine_results(memory_competitor_payload)
-    vectordbbench_summary = (
-        {
-            "WaveMind custom dataset export": {
-                "status": vectordbbench_payload.get("status"),
-                "vectors": vectordbbench_payload.get("dataset", {}).get("vectors"),
-                "queries": vectordbbench_payload.get("dataset", {}).get("queries"),
-                "dim": vectordbbench_payload.get("dataset", {}).get("dim"),
-                "top_k": vectordbbench_payload.get("dataset", {}).get("top_k"),
-            }
-        }
-        if vectordbbench_payload
-        else {}
-    )
     answer_qwen05_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_0_5b_50_results.json")
     answer_qwen15_payload = _load_json(root / "benchmarks" / "longmemeval_answer_qwen25_1_5b_50_results.json")
     answer_results = {
