@@ -67,7 +67,6 @@ from wavemind import (
     operator_status,
     query_with_cache,
     query_with_vector_cache,
-    remember_payload,
     run_control_plane_consensus_profile,
     serverless_sample_bundle,
     sync_namespace_delta,
@@ -1798,8 +1797,6 @@ def run_api_cache_mutation_profile() -> dict[str, object]:
                 second_query.raise_for_status()
                 latencies.append((time.perf_counter() - started) * 1000.0)
                 second_results = second_query.json()["results"]
-                cache_keys_after_second_query = len(client.items)
-
                 feedback_response = api.post(
                     "/feedback",
                     json={

@@ -431,7 +431,6 @@ __all__ = [
     "render_active_active_admission_markdown",
     "render_scale_gap_markdown",
     "render_serverless_admission_markdown",
-    "render_active_active_admission_markdown",
     "render_production_admission_markdown",
     "render_memory_os_canary_markdown",
     "render_memory_os_policy_evolution_markdown",
@@ -454,6 +453,7 @@ __all__ = [
     "validate_precomputed_cross_modal_contract",
     "validate_external_multimodal_evidence",
     "validate_postgres_pitr_commands",
+    "video_payload",
     "write_memory_os_policy_evolution_artifacts",
     "write_production_evidence_env_artifacts",
 ]

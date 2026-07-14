@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import ipaddress
 import json
-import os
 import re
 import socket
 import subprocess
@@ -12,7 +11,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping
 from urllib.parse import quote, urlparse
 
 from .active_active_drill import run_active_active_drill

@@ -75,11 +75,11 @@ def _annotation(service: Mapping[str, Any], *names: str) -> str | None:
         service.get("spec", {}).get("template", {}).get("metadata", {}).get("annotations", {}),
         service.get("template", {}).get("annotations", {}),
     ]
-    for annotations in candidates:
-        if not isinstance(annotations, Mapping):
+    for metadata_annotations in candidates:
+        if not isinstance(metadata_annotations, Mapping):
             continue
         for name in names:
-            value = annotations.get(name)
+            value = metadata_annotations.get(name)
             if value is not None and str(value).strip():
                 return str(value).strip()
     return None
