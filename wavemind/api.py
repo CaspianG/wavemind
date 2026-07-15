@@ -1287,7 +1287,11 @@ def create_app(mind: WaveMind | None = None) -> FastAPI:
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, str]:
-        return {"status": "ok", "version": __version__}
+        return {
+            "status": "ok",
+            "version": __version__,
+            "commit_sha": os.getenv("WAVEMIND_COMMIT_SHA", "unknown"),
+        }
 
     @app.get("/studio", response_class=HTMLResponse, include_in_schema=False)
     def studio() -> HTMLResponse:

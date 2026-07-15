@@ -1,15 +1,21 @@
 # WaveMind Memory OS Quality Gate
 
-Memory OS non-regression is measured directly on the agent-coherence workload. LoCoMo and LongMemEval rows prove the underlying WaveMind dynamic retrieval and answer-context quality; they do not claim that unattended Memory OS workers ran inside those public datasets.
+Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.
 
 Status: `pass`
 
 | check | result | evidence | source |
 |---|---|---|---|
-| Memory OS preserves WaveMind agent task success | `pass` | memory_os=0.9167, base=0.9167, delta=0.0000 | `benchmarks\memory_os_agent_quality_results.json` |
-| Memory OS does not increase stale-memory errors | `pass` | memory_os=0.0000, base=0.0000 | `benchmarks\memory_os_agent_quality_results.json` |
-| Memory OS retains at least 80 percent context savings | `pass` | context_budget_saved=0.9309 | `benchmarks\memory_os_agent_quality_results.json` |
-| Dynamic memory beats static memory on agent task success | `pass` | memory_os=0.9167, static=0.3333 | `benchmarks\memory_os_agent_quality_results.json` |
-| WaveMind improves LoCoMo evidence recall over static retrieval | `pass` | wave=0.5467, static=0.4087, lift=0.1380 | `benchmarks\locomo_sentence_evidence_results.json` |
-| WaveMind improves LongMemEval evidence recall over static retrieval | `pass` | wave=0.7822, static=0.5197, lift=0.2625 | `benchmarks\longmemeval_evidence_results.json` |
-| WaveMind context improves LongMemEval answer F1 and evidence recall | `pass` | f1_lift=0.1632, evidence_lift=0.3200 | `benchmarks\longmemeval_answer_qwen25_1_5b_50_results.json` |
+| Baseline and Memory OS execute the same sequential adaptive protocol | `pass` | protocol_hash=b0236119a09e2b4b538bbdb4073371dfd8a399b9668421de0cf14654bc3ea39f, workload=sequential_adaptive_recall | `benchmarks/memory_os_ab_results.json` |
+| Memory OS improves task success over WaveMind baseline | `pass` | memory_os=1.0000, baseline=0.8750, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
+| Memory OS reduces stale recalls over WaveMind baseline | `pass` | memory_os=0.0000, baseline=0.1250, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
+| Priority learning and adaptive forgetting both changed state | `pass` | priority_predictions=8, forgetting_demotions=8 | `benchmarks/memory_os_ab_results.json` |
+| Both variants return the same context shape | `pass` | memory_os=1, baseline=1 | `benchmarks/memory_os_ab_results.json` |
+| Memory OS p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=0.0287ms, baseline=11.8395ms, delta=-11.8108ms, ratio=-0.9976 | `benchmarks/memory_os_ab_results.json` |
+| Cold p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=6.9555ms, baseline=8.4252ms, delta=-1.4697ms, ratio=-0.1744 | `benchmarks/memory_os_ab_results.json` |
+
+## Supplemental public benchmarks
+
+- `benchmarks/locomo_sentence_evidence_results.json`: WaveMind retrieval without Memory OS worker execution; not eligible for Memory OS uplift.
+- `benchmarks/longmemeval_evidence_results.json`: WaveMind retrieval without Memory OS worker execution; not eligible for Memory OS uplift.
+- `benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json`: WaveMind answer context without Memory OS worker execution; not eligible for Memory OS uplift.

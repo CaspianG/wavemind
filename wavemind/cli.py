@@ -1312,6 +1312,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Passing memory_os_remote_worker_soak JSON from the target HTTPS worker cluster.",
     )
+    memory_os_admission.add_argument(
+        "--quality-evidence",
+        type=Path,
+        help="Passing memory_os_quality_gate.v2 JSON from the direct adaptive A/B benchmark.",
+    )
     memory_os_admission.add_argument("--allow-plan-only", action="store_true")
     memory_os_admission.add_argument("--write-artifacts", action="store_true")
     memory_os_admission.add_argument("--fail-on-blocked", action="store_true")
@@ -3868,6 +3873,11 @@ def main(argv: list[str] | None = None) -> int:
             runtime_evidence = json.loads(
                 args.runtime_evidence.read_text(encoding="utf-8")
             )
+        quality_evidence = None
+        if args.quality_evidence is not None:
+            quality_evidence = json.loads(
+                args.quality_evidence.read_text(encoding="utf-8")
+            )
         plan = MemoryOSScheduler(mind).plan(
             namespace=args.namespace,
             audit_limit=args.audit_limit,
@@ -3896,6 +3906,7 @@ def main(argv: list[str] | None = None) -> int:
             lock_redis_url=args.lock_redis_url,
             allow_plan_only=args.allow_plan_only,
             runtime_evidence=runtime_evidence,
+            quality_evidence=quality_evidence,
         )
         if args.write_artifacts:
             args.output.parent.mkdir(parents=True, exist_ok=True)

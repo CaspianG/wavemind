@@ -11,6 +11,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
@@ -30,6 +31,9 @@ from wavemind.memory_os_admission import (
 JsonRequest = Callable[[str, str, str, dict[str, Any] | None, str | None, float], dict[str, Any]]
 RedisSoak = Callable[..., dict[str, Any]]
 
+PRODUCTION_MIN_DURATION_SECONDS = 6 * 60 * 60
+PRODUCTION_MIN_WORKER_CYCLES = 500
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -38,10 +42,10 @@ def _utc_now() -> str:
 def _source_ref() -> str:
     value = os.getenv("GITHUB_SHA") or os.getenv("WAVEMIND_BENCHMARK_SOURCE_REF")
     if value:
-        return value[:12]
+        return value
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "--short=12", "HEAD"],
+            ["git", "rev-parse", "HEAD"],
             cwd=Path(__file__).resolve().parents[1],
             text=True,
             encoding="utf-8",
@@ -186,10 +190,19 @@ def build_preflight(
             "WAVEMIND_REMOTE_REDIS_URL",
             "WAVEMIND_API_KEY",
         ],
+        "worker_required_environment": ["WAVEMIND_COMMIT_SHA"],
         "handoff": {
             "workflow": ".github/workflows/memory-os-remote-soak.yml",
             "github_environment": "memory-os-production-evidence",
-            "command": "gh workflow run memory-os-remote-soak.yml --ref main",
+            "workflow_runner": ["self-hosted", "linux", "wavemind-evidence"],
+            "command": "gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4",
+            "contract": {
+                "min_duration_seconds": PRODUCTION_MIN_DURATION_SECONDS,
+                "min_worker_cycles": PRODUCTION_MIN_WORKER_CYCLES,
+                "max_evidence_age_seconds": 86_400,
+                "worker_commit_must_match": True,
+                "allowed_error_rate": 0.0,
+            },
             "expected_artifacts": [
                 "memory_os_remote_worker_soak_results.json",
                 "MEMORY_OS_REMOTE_WORKER_SOAK.md",
@@ -233,6 +246,16 @@ def _request_json(
 def _report_summary(report: dict[str, Any]) -> dict[str, Any]:
     lock = report.get("lock") or {}
     idempotency = report.get("idempotency") or {}
+    mutation_count = sum(
+        int(report.get(name) or 0)
+        for name in (
+            "expired_purged",
+            "consolidated_steps",
+            "concepts_created",
+            "priority_predictions",
+            "forgetting_demotions",
+        )
+    ) + int(bool(report.get("index_rebuilt")))
     return {
         "ok": bool(report.get("ok")),
         "actions": list(report.get("actions") or []),
@@ -244,6 +267,7 @@ def _report_summary(report: dict[str, Any]) -> dict[str, Any]:
         "job_completed": bool(idempotency.get("completed")),
         "job_in_doubt": bool(idempotency.get("in_doubt")),
         "job_reason": idempotency.get("reason"),
+        "mutation_count": mutation_count,
     }
 
 
@@ -253,6 +277,8 @@ def run_remote_worker_soak(
     redis_url: str,
     api_key: str,
     rounds: int = 10,
+    min_duration_seconds: float = 0.0,
+    min_worker_cycles: int = 1,
     contenders: int = 4,
     timeout: float = 30.0,
     allow_insecure_http: bool = False,
@@ -264,6 +290,11 @@ def run_remote_worker_soak(
         raise ValueError("rounds must be positive")
     if contenders < 2:
         raise ValueError("contenders must be at least 2")
+    if min_duration_seconds < 0:
+        raise ValueError("min_duration_seconds cannot be negative")
+    if min_worker_cycles <= 0:
+        raise ValueError("min_worker_cycles must be positive")
+    worker_cycles = max(rounds, min_worker_cycles)
     workers = _split_worker_urls(worker_urls)
     request_json = request_json or _request_json
     redis_soak = redis_soak or run_runtime_soak
@@ -287,10 +318,13 @@ def run_remote_worker_soak(
         }
 
     started = time.perf_counter()
+    soak_started = started
+    soak_started_at = _utc_now()
+    source_ref = _source_ref()
     run_id = uuid.uuid4().hex
     namespace = f"evidence:memory-os:{run_id}"
     errors: list[str] = []
-    seeded: list[tuple[str, int]] = []
+    seeded: list[tuple[str, int, str]] = []
     health: list[dict[str, Any]] = []
     plans: list[dict[str, Any]] = []
     round_reports: list[dict[str, Any]] = []
@@ -298,11 +332,17 @@ def run_remote_worker_soak(
     completed_runs = 0
     duplicate_retries = 0
     safe_skips = 0
+    job_request_attempts = 0
+    job_request_failures = 0
+    lock_breach_count = 0
+    duplicate_mutation_count = 0
+    state_corruption_count = 0
+    metrics_lock = Lock()
 
     try:
         redis_semantics = redis_soak(
             redis_url=redis_url,
-            rounds=max(5, min(rounds, 20)),
+            rounds=max(5, min(worker_cycles, 20)),
             contenders=contenders,
         )
     except Exception as exc:
@@ -324,23 +364,29 @@ def run_remote_worker_soak(
                         "worker": preflight["topology"]["worker_fingerprints"][index],
                         "status": health_payload.get("status"),
                         "version": health_payload.get("version"),
+                        "commit_sha": health_payload.get("commit_sha"),
                     }
+                )
+                seed_text = (
+                    f"Remote Memory OS worker {index} sentinel {run_id} "
+                    "prefers concise incident summaries"
                 )
                 remembered = request_json(
                     worker,
                     "/remember",
                     "POST",
                     {
-                        "text": f"Remote Memory OS worker {index} prefers concise incident summaries",
+                        "text": seed_text,
                         "namespace": namespace,
                         "tags": ["memory-os-remote-soak"],
                         "metadata": {"soak_run_id": run_id, "worker_index": index},
+                        "ttl_seconds": max(86_400.0, min_duration_seconds + 3_600.0),
                     },
                     api_key,
                     timeout,
                 )
                 memory_id = int(remembered["id"])
-                seeded.append((worker, memory_id))
+                seeded.append((worker, memory_id, seed_text))
                 for _ in range(2):
                     request_json(
                         worker,
@@ -379,7 +425,9 @@ def run_remote_worker_soak(
             except Exception as exc:
                 errors.append(f"worker {index} setup: {exc}")
 
-        for round_index in range(rounds):
+        soak_started = time.perf_counter()
+        soak_started_at = _utc_now()
+        for round_index in range(worker_cycles):
             idempotency_key = f"remote-soak:{run_id}:{round_index}"
             request_payload = {
                 "namespace": namespace,
@@ -398,15 +446,23 @@ def run_remote_worker_soak(
             }
 
             def attempt(contender_index: int) -> dict[str, Any]:
+                nonlocal job_request_attempts, job_request_failures
                 worker = workers[contender_index % len(workers)]
-                return request_json(
-                    worker,
-                    "/memory-os/run",
-                    "POST",
-                    request_payload,
-                    api_key,
-                    timeout,
-                )
+                with metrics_lock:
+                    job_request_attempts += 1
+                try:
+                    return request_json(
+                        worker,
+                        "/memory-os/run",
+                        "POST",
+                        request_payload,
+                        api_key,
+                        timeout,
+                    )
+                except Exception:
+                    with metrics_lock:
+                        job_request_failures += 1
+                    raise
 
             reports: list[dict[str, Any]] = []
             with ThreadPoolExecutor(max_workers=contenders) as pool:
@@ -426,11 +482,14 @@ def run_remote_worker_soak(
                 if not item["job_completed"]
             )
             if len(completed) != 1:
+                lock_breach_count += 1
                 errors.append(f"round {round_index}: expected one completed job, got {len(completed)}")
             if any(item["job_in_doubt"] or item["lease_lost"] for item in summaries):
+                lock_breach_count += 1
                 errors.append(f"round {round_index}: in-doubt job or lost lease observed")
 
             try:
+                job_request_attempts += 1
                 retry = _report_summary(
                     request_json(
                         workers[(round_index + 1) % len(workers)],
@@ -443,11 +502,42 @@ def run_remote_worker_soak(
                 )
                 if "duplicate_job_skipped" in retry["actions"] and not retry["job_in_doubt"]:
                     duplicate_retries += 1
+                    if retry["mutation_count"]:
+                        duplicate_mutation_count += retry["mutation_count"]
+                        errors.append(
+                            f"round {round_index}: duplicate retry mutated state "
+                            f"({retry['mutation_count']} mutations)"
+                        )
                 else:
                     errors.append(f"round {round_index}: completed retry was not safely skipped")
             except Exception as exc:
+                job_request_failures += 1
                 retry = {"actions": [], "job_in_doubt": True}
                 errors.append(f"round {round_index} retry: {exc}")
+
+            for sentinel_worker, sentinel_id, sentinel_text in seeded:
+                try:
+                    sentinel = request_json(
+                        sentinel_worker,
+                        "/query",
+                        "POST",
+                        {"text": sentinel_text, "namespace": namespace, "top_k": 1},
+                        api_key,
+                        timeout,
+                    )
+                    results = (
+                        sentinel
+                        if isinstance(sentinel, list)
+                        else sentinel.get("results") or []
+                    )
+                    if not results or int(results[0].get("id") or -1) != sentinel_id:
+                        state_corruption_count += 1
+                        errors.append(
+                            f"round {round_index}: sentinel {sentinel_id} was not recalled intact"
+                        )
+                except Exception as exc:
+                    state_corruption_count += 1
+                    errors.append(f"round {round_index}: sentinel {sentinel_id} check failed: {exc}")
             round_reports.append(
                 {
                     "round": round_index,
@@ -458,10 +548,15 @@ def run_remote_worker_soak(
                         if not item["job_completed"]
                     ),
                     "retry_duplicate_skipped": "duplicate_job_skipped" in retry["actions"],
+                    "retry_mutations": int(retry.get("mutation_count") or 0),
                 }
             )
+            target_elapsed = min_duration_seconds * (round_index + 1) / worker_cycles
+            remaining = target_elapsed - (time.perf_counter() - soak_started)
+            if remaining > 0:
+                time.sleep(remaining)
     finally:
-        for worker, memory_id in seeded:
+        for worker, memory_id, _ in seeded:
             try:
                 forgotten = request_json(
                     worker,
@@ -478,6 +573,8 @@ def run_remote_worker_soak(
 
     health_ok = len(health) == len(workers) and all(item["status"] == "ok" for item in health)
     versions = {item["version"] for item in health}
+    commits = {str(item.get("commit_sha") or "") for item in health}
+    worker_commit_ok = len(commits) == 1 and commits == {source_ref}
     plans_ok = len(plans) == len(workers) and all(
         item["safe_to_run"]
         and item["requires_shared_cache"]
@@ -492,22 +589,34 @@ def run_remote_worker_soak(
         and bool(redis_checks)
         and all(item.get("passed") for item in redis_checks)
     )
+    duration_seconds = time.perf_counter() - soak_started
+    error_rate = job_request_failures / job_request_attempts if job_request_attempts else 1.0
+    finished_at = _utc_now()
     checks = [
         _check("remote-topology", "Remote topology preflight passes", True, "preflight=pass", "Fix preflight blockers."),
         _check("worker-health", "Every remote worker is healthy", health_ok, f"healthy={sum(item['status'] == 'ok' for item in health)}/{len(workers)}", "Repair unhealthy workers."),
         _check("worker-version", "Every worker runs one version", len(versions) == 1, f"versions={sorted(str(value) for value in versions)}", "Complete the rolling deployment before the soak."),
+        _check("worker-commit", "Every worker runs the benchmark commit", worker_commit_ok, f"expected={source_ref}, commits={sorted(commits)}", "Deploy the exact commit under test and set WAVEMIND_COMMIT_SHA on every worker."),
         _check("worker-plan", "Every worker emits a safe Redis and lock plan", plans_ok, f"safe={sum(item['safe_to_run'] for item in plans)}/{len(workers)}", "Fix worker plan blockers before mutation."),
         _check("remote-redis-semantics", "Remote Redis passes lease and retry semantics", redis_semantics_ok, f"status={redis_semantics.get('status')}, environment={redis_semantics.get('environment')}", "Run against the Redis used by every worker."),
-        _check("cross-worker-single-flight", "Exactly one worker completes each run id", completed_runs == rounds, f"completed={completed_runs}, rounds={rounds}", "Fix shared lock or idempotency wiring."),
-        _check("cross-worker-retry", "Completed jobs are skipped on another worker", duplicate_retries == rounds, f"duplicate_retries={duplicate_retries}, rounds={rounds}", "Fix shared job receipts."),
+        _check("soak-duration", "The configured soak duration is completed", duration_seconds >= min_duration_seconds, f"duration_seconds={duration_seconds:.3f}, required={min_duration_seconds:.3f}", "Run the soak for the full configured duration."),
+        _check("worker-cycles", "Every configured worker cycle completes", completed_runs == worker_cycles, f"completed={completed_runs}, required={worker_cycles}", "Run every configured worker cycle."),
+        _check("cross-worker-single-flight", "Exactly one worker completes each run id", completed_runs == worker_cycles, f"completed={completed_runs}, cycles={worker_cycles}", "Fix shared lock or idempotency wiring."),
+        _check("cross-worker-retry", "Completed jobs are skipped on another worker", duplicate_retries == worker_cycles, f"duplicate_retries={duplicate_retries}, cycles={worker_cycles}", "Fix shared job receipts."),
+        _check("error-rate", "Worker request error rate stays at zero", error_rate == 0.0, f"failures={job_request_failures}, attempts={job_request_attempts}, rate={error_rate:.6f}", "Repair worker or network errors and restart the soak."),
+        _check("lock-safety", "No lock breach is observed", lock_breach_count == 0, f"lock_breach_count={lock_breach_count}", "Fix cross-worker lease and single-flight semantics."),
+        _check("duplicate-mutation-safety", "Duplicate retries never mutate state", duplicate_mutation_count == 0, f"duplicate_mutation_count={duplicate_mutation_count}", "Make completed-job retries side-effect free."),
+        _check("state-integrity", "Sentinel memories remain intact through every cycle", state_corruption_count == 0, f"state_corruption_count={state_corruption_count}", "Investigate state corruption before production admission."),
         _check("no-in-doubt-jobs", "No lease loss or in-doubt receipt is observed", not any("in-doubt" in item or "lost lease" in item for item in errors), f"errors={len(errors)}", "Inspect lease heartbeat and worker termination behavior."),
         _check("cleanup", "All seeded soak memories are removed", not any(item.startswith("cleanup") for item in errors), f"seeded={len(seeded)}", "Remove the isolated soak namespace manually."),
     ]
     passed = all(item["passed"] for item in checks) and not errors
     return {
         "schema": "wavemind.memory_os_remote_worker_soak.v1",
-        "generated_at": _utc_now(),
-        "source_ref": _source_ref(),
+        "generated_at": finished_at,
+        "started_at": soak_started_at,
+        "finished_at": finished_at,
+        "source_ref": source_ref,
         "workflow_run_id": os.getenv("GITHUB_RUN_ID"),
         "workflow_run_url": (
             f"https://github.com/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
@@ -521,13 +630,27 @@ def run_remote_worker_soak(
             "semantics against the same non-loopback Redis. It admits only this tested worker topology."
         ),
         "preflight": preflight,
-        "config": {"rounds": rounds, "contenders": contenders, "timeout_seconds": timeout},
+        "config": {
+            "requested_rounds": rounds,
+            "worker_cycles": worker_cycles,
+            "min_duration_seconds": min_duration_seconds,
+            "min_worker_cycles": min_worker_cycles,
+            "contenders": contenders,
+            "timeout_seconds": timeout,
+        },
         "metrics": {
-            "duration_seconds": round(time.perf_counter() - started, 3),
+            "duration_seconds": round(duration_seconds, 3),
+            "worker_cycles": worker_cycles,
             "worker_count": len(workers),
             "completed_runs": completed_runs,
             "safe_skips": safe_skips,
             "duplicate_retries": duplicate_retries,
+            "job_request_attempts": job_request_attempts,
+            "job_request_failures": job_request_failures,
+            "error_rate": error_rate,
+            "lock_breach_count": lock_breach_count,
+            "duplicate_mutation_count": duplicate_mutation_count,
+            "state_corruption_count": state_corruption_count,
             "error_count": len(errors),
         },
         "health": health,
@@ -567,6 +690,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
                 f"- GitHub environment: `{handoff['github_environment']}`",
                 f"- Workflow: `{handoff['workflow']}`",
                 f"- Dispatch: `{handoff['command']}`",
+                f"- Minimum duration: `{(handoff.get('contract') or {}).get('min_duration_seconds', PRODUCTION_MIN_DURATION_SECONDS)}` seconds",
+                f"- Minimum worker cycles: `{(handoff.get('contract') or {}).get('min_worker_cycles', PRODUCTION_MIN_WORKER_CYCLES)}`",
+                "- Every worker must expose `WAVEMIND_COMMIT_SHA` matching the tested commit.",
             ]
         )
     return "\n".join(lines) + "\n"
@@ -577,7 +703,17 @@ def main() -> int:
     parser.add_argument("--worker-url", action="append", default=[])
     parser.add_argument("--redis-url", default=os.getenv("WAVEMIND_REMOTE_REDIS_URL"))
     parser.add_argument("--api-key", default=os.getenv("WAVEMIND_API_KEY"))
-    parser.add_argument("--rounds", type=int, default=10)
+    parser.add_argument("--cycles", "--rounds", dest="cycles", type=int, default=PRODUCTION_MIN_WORKER_CYCLES)
+    parser.add_argument(
+        "--min-duration-seconds",
+        type=float,
+        default=PRODUCTION_MIN_DURATION_SECONDS,
+    )
+    parser.add_argument(
+        "--min-worker-cycles",
+        type=int,
+        default=PRODUCTION_MIN_WORKER_CYCLES,
+    )
     parser.add_argument("--contenders", type=int, default=4)
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--allow-insecure-http", action="store_true")
@@ -596,6 +732,11 @@ def main() -> int:
     )
     parser.add_argument("--admission-output", type=Path)
     parser.add_argument("--admission-markdown-output", type=Path)
+    parser.add_argument(
+        "--quality-evidence",
+        type=Path,
+        default=Path("benchmarks/memory_os_quality_results.json"),
+    )
     args = parser.parse_args()
     env_workers = os.getenv("WAVEMIND_REMOTE_WORKER_URLS", "")
     workers = _split_worker_urls([*args.worker_url, env_workers])
@@ -612,19 +753,28 @@ def main() -> int:
             worker_urls=workers,
             redis_url=args.redis_url or "",
             api_key=args.api_key or "",
-            rounds=args.rounds,
+            rounds=args.cycles,
+            min_duration_seconds=args.min_duration_seconds,
+            min_worker_cycles=args.min_worker_cycles,
             contenders=args.contenders,
             timeout=args.timeout,
             allow_insecure_http=args.allow_insecure_http,
             allow_insecure_redis=args.allow_insecure_redis,
         )
     if payload["status"] == "pass" and payload.get("sample_plan") and args.admission_output:
+        quality_evidence = (
+            json.loads(args.quality_evidence.read_text(encoding="utf-8"))
+            if args.quality_evidence.exists()
+            else None
+        )
         admission = evaluate_memory_os_admission(
             payload["sample_plan"],
             deployment="production",
             redis_url=args.redis_url,
             lock_redis_url=args.redis_url,
             runtime_evidence=payload,
+            quality_evidence=quality_evidence,
+            expected_commit_sha=str(payload.get("source_ref") or ""),
         )
         args.admission_output.parent.mkdir(parents=True, exist_ok=True)
         args.admission_output.write_text(json.dumps(admission, indent=2) + "\n", encoding="utf-8")

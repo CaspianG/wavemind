@@ -1,0 +1,51 @@
+{
+  "schema": "wavemind.memory_os_ab_benchmark.v1",
+  "generated_at": "2026-07-15T00:45:01Z",
+  "source_ref": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
+  "protocol": {
+    "hash": "b0236119a09e2b4b538bbdb4073371dfd8a399b9668421de0cf14654bc3ea39f",
+    "workload": "sequential_adaptive_recall",
+    "case_count": 8,
+    "observed_repetitions": 8,
+    "evaluation_repetitions": 25,
+    "same_memories": true,
+    "same_observed_queries": true,
+    "same_evaluation_queries": true,
+    "difference": "Memory OS worker policies and hot-query cache only"
+  },
+  "claim_boundary": "This direct A/B uses identical memories and sequential query histories. It measures the incremental effect of Memory OS adaptation over WaveMind baseline.",
+  "results": [
+    {
+      "engine": "WaveMind baseline",
+      "task_success_rate": 0.875,
+      "stale_error_rate": 0.125,
+      "avg_latency_ms": 6.852126503072213,
+      "p95_latency_ms": 11.8394999881275,
+      "cold_p95_latency_ms": 8.425199950579554,
+      "steady_p95_latency_ms": 11.8394999881275,
+      "query_count": 200,
+      "context_items_per_query": 1,
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "priority_predictions": 0,
+      "forgetting_demotions": 0,
+      "worker_runs": 0
+    },
+    {
+      "engine": "WaveMind + Memory OS",
+      "task_success_rate": 1,
+      "stale_error_rate": 0,
+      "avg_latency_ms": 0.20922900090226904,
+      "p95_latency_ms": 0.02870004391297698,
+      "cold_p95_latency_ms": 6.955499993637204,
+      "steady_p95_latency_ms": 0.00689999433234334,
+      "query_count": 200,
+      "context_items_per_query": 1,
+      "cache_hits": 192,
+      "cache_misses": 35,
+      "priority_predictions": 8,
+      "forgetting_demotions": 8,
+      "worker_runs": 8
+    }
+  ]
+}

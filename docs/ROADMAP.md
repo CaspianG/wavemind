@@ -183,6 +183,8 @@ policy matters more than raw vector-database scale:
   deployment-facing gate for that worker set. It turns the scheduler plan into
   `benchmarks/memory_os_admission_results.json` and
   `benchmarks/MEMORY_OS_ADMISSION.md`, and refuses production admission when
+  the direct sequential/adaptive A/B does not show positive Memory OS uplift,
+  p95 exceeds either the 20 percent or 5 ms regression limit,
   query-audit traffic has not enabled prewarm/predictive workers, Redis/shared
   cache or distributed-lock wiring is missing, mutation tasks are not
   singleton/idempotent, the policy manifest is incomplete, or million-plus
@@ -349,12 +351,16 @@ policy matters more than raw vector-database scale:
   automatic heartbeat renewal, and a Redis job receipt. Completed retries are
   skipped, failed receipts are released for retry, and Kubernetes supplies a
   pod-scoped run id.
-- `benchmarks/memory_os_runtime_soak.py` exercises those guarantees against a
-  real Redis service. The checked local artifact passes 20 rounds with four
-  contenders, zero duplicate mutation delta, lease renewal beyond the original
-  TTL, owner-safe release, and failed-job retry. Production admission now
-  accepts the runtime contract only when the same artifact comes from a remote
-  Redis environment.
+- `benchmarks/memory_os_runtime_soak.py` exercises Redis semantics locally.
+  Production admission accepts only `memory_os_remote_worker_soak.v1` evidence
+  from two or more HTTPS workers and non-loopback TLS Redis. That evidence must
+  span at least six hours and 500 worker cycles, be less than 24 hours old,
+  match the exact 40-character release commit on every worker, and report zero
+  request errors, lock breaches, duplicate mutations, and state corruption.
+  The local 20-round artifact remains a regression test and cannot unlock
+  production. The six-hour workflow targets a Linux self-hosted evidence runner
+  because GitHub-hosted jobs terminate at the six-hour limit before evidence
+  upload; the runner itself can also be executed from any durable operator host.
 - The Memory OS policy bundle now defines shadow, canary, staged, and production
   phases; automatic promotion is disabled. Helm exposes both
   `memoryOs.emergencyStop=true` and `memoryOs.suspend=true`, so operators can
@@ -552,6 +558,10 @@ policy matters more than raw vector-database scale:
   adaptive prewarm, predictive prefetch, priority learning, forgetting,
   consolidation, Redis coordination, agent context savings, canary admission,
   and strict production-admission limits.
+- `benchmarks/memory_os_ab_benchmark.py` is the only current Memory OS uplift
+  source. It compares WaveMind baseline with WaveMind plus Memory OS on the same
+  sequential/adaptive memories and query stream. LoCoMo and LongMemEval remain
+  supplemental until their runners execute Memory OS policies directly.
 - `benchmarks/cluster_autoscale_report.py` now extracts cluster autoscale
   evidence into a dedicated public report with dashboard/status coverage for
   shard placement, node/zone loss availability, autoscale targets, rebalance

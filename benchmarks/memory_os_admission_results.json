@@ -1,6 +1,6 @@
 {
   "schema": "wavemind.memory_os_admission.v1",
-  "generated_at": "2026-07-13T21:53:25Z",
+  "generated_at": "2026-07-15T00:52:30Z",
   "status": "plan_only",
   "admitted": false,
   "deployment": "production",
@@ -8,14 +8,14 @@
   "namespace_count": 64,
   "worker_count": 1,
   "effective_cache_mode": "redis",
-  "hot_query_count": 1,
+  "hot_query_count": 16,
   "allow_plan_only": true,
   "claim_boundary": "memory_os_runtime_gate",
   "summary": {
     "status": "plan_only",
     "admitted": false,
-    "requirement_count": 12,
-    "passed_count": 11,
+    "requirement_count": 13,
+    "passed_count": 12,
     "blocker_count": 1,
     "warning_count": 0,
     "blocker_ids": [
@@ -60,7 +60,7 @@
       "status": "pass",
       "passed": true,
       "severity": "ok",
-      "evidence": "hot_query_count=1, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
+      "evidence": "hot_query_count=16, enabled=['adaptive-forgetting', 'architecture-advice', 'cache-prewarm', 'consolidation', 'maintenance', 'memory-os', 'predictive-prefetch']",
       "action": "Enable audited query traffic in staging, replay representative traffic, then rerun memory-os-admission.",
       "details": {}
     },
@@ -145,24 +145,168 @@
       "details": {}
     },
     {
+      "id": "quality-uplift",
+      "title": "Direct adaptive A/B proves Memory OS quality uplift within latency limits",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "schema=wavemind.memory_os_quality_gate.v2, status=pass, task_uplift=0.125, p95_delta_ms=-11.810799944214523, p95_ratio=-0.9975759074334425",
+      "action": "Run memory_os_ab_benchmark.py and memory_os_quality_gate.py on this release; non-regression and static-retrieval comparisons do not satisfy this requirement.",
+      "details": {
+        "quality_evidence_valid": true,
+        "required_schema": "wavemind.memory_os_quality_gate.v2",
+        "required_check_ids": [
+          "context-shape-equivalent",
+          "direct-comparable-protocol",
+          "memory-os-adaptation-fired",
+          "memory-os-cold-p95-latency",
+          "memory-os-p95-latency",
+          "memory-os-stale-suppression-uplift",
+          "memory-os-task-success-uplift"
+        ],
+        "quality_evidence": {
+          "schema": "wavemind.memory_os_quality_gate.v2",
+          "generated_at": "2026-07-15T00:51:30Z",
+          "source_ref": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
+          "status": "pass",
+          "claim_boundary": "Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.",
+          "thresholds": {
+            "min_task_success_uplift": 0.05,
+            "max_p95_regression_ratio": 0.2,
+            "max_p95_regression_ms": 5.0
+          },
+          "summary": {
+            "passed_count": 7,
+            "check_count": 7,
+            "failed_check_ids": []
+          },
+          "metrics": {
+            "memory_os_task_success": 1,
+            "baseline_task_success": 0.875,
+            "task_success_uplift": 0.125,
+            "memory_os_stale_error_rate": 0,
+            "baseline_stale_error_rate": 0.125,
+            "stale_suppression_uplift": 0.125,
+            "memory_os_p95_latency_ms": 0.02870004391297698,
+            "baseline_p95_latency_ms": 11.8394999881275,
+            "p95_latency_delta_ms": -11.810799944214523,
+            "p95_latency_regression_ratio": -0.9975759074334425,
+            "cold_p95_latency_delta_ms": -1.4696999569423497,
+            "cold_p95_latency_regression_ratio": -0.17444095873846313
+          },
+          "checks": [
+            {
+              "id": "direct-comparable-protocol",
+              "title": "Baseline and Memory OS execute the same sequential adaptive protocol",
+              "passed": true,
+              "evidence": "protocol_hash=b0236119a09e2b4b538bbdb4073371dfd8a399b9668421de0cf14654bc3ea39f, workload=sequential_adaptive_recall",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "memory-os-task-success-uplift",
+              "title": "Memory OS improves task success over WaveMind baseline",
+              "passed": true,
+              "evidence": "memory_os=1.0000, baseline=0.8750, uplift=0.1250",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "memory-os-stale-suppression-uplift",
+              "title": "Memory OS reduces stale recalls over WaveMind baseline",
+              "passed": true,
+              "evidence": "memory_os=0.0000, baseline=0.1250, uplift=0.1250",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "memory-os-adaptation-fired",
+              "title": "Priority learning and adaptive forgetting both changed state",
+              "passed": true,
+              "evidence": "priority_predictions=8, forgetting_demotions=8",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "context-shape-equivalent",
+              "title": "Both variants return the same context shape",
+              "passed": true,
+              "evidence": "memory_os=1, baseline=1",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "memory-os-p95-latency",
+              "title": "Memory OS p95 stays within both the 20 percent and 5 ms regression limits",
+              "passed": true,
+              "evidence": "memory_os=0.0287ms, baseline=11.8395ms, delta=-11.8108ms, ratio=-0.9976",
+              "source": "benchmarks/memory_os_ab_results.json"
+            },
+            {
+              "id": "memory-os-cold-p95-latency",
+              "title": "Cold p95 stays within both the 20 percent and 5 ms regression limits",
+              "passed": true,
+              "evidence": "memory_os=6.9555ms, baseline=8.4252ms, delta=-1.4697ms, ratio=-0.1744",
+              "source": "benchmarks/memory_os_ab_results.json"
+            }
+          ],
+          "sources": [
+            "benchmarks/memory_os_ab_results.json"
+          ],
+          "supplemental_evidence": [
+            {
+              "source": "benchmarks/locomo_sentence_evidence_results.json",
+              "schema": null,
+              "execution_mode": "WaveMind retrieval without Memory OS worker execution",
+              "eligible_for_memory_os_uplift": false,
+              "reason": "The dataset runner does not execute Memory OS background policies."
+            },
+            {
+              "source": "benchmarks/longmemeval_evidence_results.json",
+              "schema": null,
+              "execution_mode": "WaveMind retrieval without Memory OS worker execution",
+              "eligible_for_memory_os_uplift": false,
+              "reason": "The dataset runner does not execute Memory OS background policies."
+            },
+            {
+              "source": "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json",
+              "schema": null,
+              "execution_mode": "WaveMind answer context without Memory OS worker execution",
+              "eligible_for_memory_os_uplift": false,
+              "reason": "The dataset runner does not execute Memory OS background policies."
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "runtime-soak",
-      "title": "Remote Redis and multi-worker HTTP soak proves lease and retry safety",
+      "title": "Fresh six-hour remote soak proves 500-cycle lease, retry, and state safety",
       "status": "action_required",
       "passed": false,
       "severity": "blocker",
-      "evidence": "schema=wavemind.memory_os_runtime_soak.v1, status=pass, environment=local_redis, checks_pass=True",
-      "action": "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact.",
+      "evidence": "schema=wavemind.memory_os_runtime_soak.v1, status=pass, environment=local_redis, duration=3.309, cycles=None, fresh=False, commit_matches=False, checks_pass=True",
+      "action": "Run the six-hour remote soak against two or more HTTPS workers and their TLS Redis, then attach the fresh artifact from the exact release commit.",
       "details": {
         "runtime_evidence_valid": false,
         "remote_runtime_evidence": false,
+        "evidence_age_seconds": null,
+        "evidence_fresh": false,
+        "expected_commit_sha": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
+        "commit_matches": false,
+        "duration_ok": false,
+        "worker_cycles_ok": false,
+        "integrity_metrics_ok": false,
         "required_schema": "wavemind.memory_os_remote_worker_soak.v1",
         "required_check_ids": [
           "cleanup",
           "cross-worker-retry",
           "cross-worker-single-flight",
+          "duplicate-mutation-safety",
+          "error-rate",
+          "lock-safety",
           "no-in-doubt-jobs",
           "remote-redis-semantics",
           "remote-topology",
+          "soak-duration",
+          "state-integrity",
+          "worker-commit",
+          "worker-cycles",
           "worker-health",
           "worker-plan",
           "worker-version"
@@ -219,7 +363,7 @@
     }
   ],
   "execution_plan": {
-    "status": "ok",
+    "status": "action_required",
     "namespace": "canary:memory-os",
     "deployment": "production",
     "worker_count": 1,
@@ -262,8 +406,8 @@
         "task_id": "architecture-advice",
         "title": "Architecture advisor preflight",
         "enabled": true,
-        "priority": "normal",
-        "cadence_seconds": 1800,
+        "priority": "critical",
+        "cadence_seconds": 120,
         "timeout_seconds": 120,
         "worker_count": 1,
         "run_scope": "scheduler-singleton",
@@ -303,7 +447,7 @@
         "title": "Adaptive forgetting",
         "enabled": true,
         "priority": "high",
-        "cadence_seconds": 900,
+        "cadence_seconds": 600,
         "timeout_seconds": 300,
         "worker_count": 1,
         "run_scope": "cluster-singleton",
@@ -427,8 +571,8 @@
         "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "hot_queries": 1,
-          "prewarm_warmed": 1,
+          "hot_queries": 16,
+          "prewarm_warmed": 16,
           "predictive_generated": 1,
           "predictive_warmed": 1,
           "transition_edges": 0
@@ -442,7 +586,7 @@
         "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "priority_predictions": 1
+          "priority_predictions": 16
         }
       },
       {
@@ -453,7 +597,7 @@
         "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "active_memories": 3
+          "active_memories": 13
         }
       },
       {
@@ -475,7 +619,7 @@
         "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
         "evidence": {
           "namespace": "canary:memory-os",
-          "active_memories": 3,
+          "active_memories": 13,
           "target_memories": 50000,
           "recommendation_ids": [
             "scale-plan",
@@ -506,7 +650,7 @@
     "production_ready": false,
     "deployment": "production",
     "namespace": "canary:memory-os",
-    "current_memories": 3,
+    "current_memories": 13,
     "target_memories": 50000,
     "index": "numpy-exact",
     "vector_dim": 384,
@@ -518,7 +662,7 @@
     "read_quorum": 1,
     "read_fanout": 3,
     "scale_plan": {
-      "current_memories": 3,
+      "current_memories": 13,
       "target_memories": 50000,
       "index": "numpy-exact",
       "vector_dim": 384,
@@ -623,15 +767,15 @@
     "errors": []
   },
   "plan": {
-    "status": "ok",
+    "status": "action_required",
     "namespace": "canary:memory-os",
     "deployment": "production",
     "cache_mode": "redis",
     "effective_cache_mode": "redis",
     "target_memories": 50000,
     "namespace_count": 64,
-    "active_memories": 3,
-    "hot_query_count": 1,
+    "active_memories": 13,
+    "hot_query_count": 16,
     "observed_p99_ms": null,
     "target_p99_ms": 100.0,
     "target_qps": 50.0,
@@ -643,6 +787,7 @@
       "OpenTelemetry metrics for worker duration, errors, and warmed queries"
     ],
     "recommendations": [
+      "Escalate repeated Memory OS policy gaps: scale-policy",
       "Architecture advisor: Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
       "Architecture advisor: Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills."
     ],
@@ -651,7 +796,7 @@
       "production_ready": false,
       "deployment": "production",
       "namespace": "canary:memory-os",
-      "current_memories": 3,
+      "current_memories": 13,
       "target_memories": 50000,
       "index": "numpy-exact",
       "vector_dim": 384,
@@ -663,7 +808,7 @@
       "read_quorum": 1,
       "read_fanout": 3,
       "scale_plan": {
-        "current_memories": 3,
+        "current_memories": 13,
         "target_memories": 50000,
         "index": "numpy-exact",
         "vector_dim": 384,
@@ -740,8 +885,8 @@
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "hot_queries": 1,
-            "prewarm_warmed": 1,
+            "hot_queries": 16,
+            "prewarm_warmed": 16,
             "predictive_generated": 1,
             "predictive_warmed": 1,
             "transition_edges": 0
@@ -755,7 +900,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 1
+            "priority_predictions": 16
           }
         },
         {
@@ -766,7 +911,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 3
+            "active_memories": 13
           }
         },
         {
@@ -788,7 +933,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 3,
+            "active_memories": 13,
             "target_memories": 50000,
             "recommendation_ids": [
               "scale-plan",
@@ -815,23 +960,34 @@
       "ok": false
     },
     "policy_history": {
-      "previous_runs": 0,
+      "previous_runs": 2,
       "window": 5,
-      "trend": "first_run",
-      "repeated_action_required_ids": [],
+      "trend": "repeated_action_required",
+      "repeated_action_required_ids": [
+        "scale-policy"
+      ],
       "repeated_architecture_required_ids": [],
-      "repeated_required_ids": [],
-      "stable_ok_ids": [],
+      "repeated_required_ids": [
+        "scale-policy"
+      ],
+      "stable_ok_ids": [
+        "consolidation-policy",
+        "coordination-policy",
+        "prefetch-policy",
+        "priority-policy"
+      ],
       "status_counts": {
-        "action_required": 1,
-        "ok": 4,
-        "watch": 1
+        "action_required": 3,
+        "ok": 12,
+        "watch": 3
       }
     },
-    "policy_escalation_ids": [],
+    "policy_escalation_ids": [
+      "scale-policy"
+    ],
     "policy_auto_adjustments": [],
     "execution_plan": {
-      "status": "ok",
+      "status": "action_required",
       "namespace": "canary:memory-os",
       "deployment": "production",
       "worker_count": 1,
@@ -874,8 +1030,8 @@
           "task_id": "architecture-advice",
           "title": "Architecture advisor preflight",
           "enabled": true,
-          "priority": "normal",
-          "cadence_seconds": 1800,
+          "priority": "critical",
+          "cadence_seconds": 120,
           "timeout_seconds": 120,
           "worker_count": 1,
           "run_scope": "scheduler-singleton",
@@ -915,7 +1071,7 @@
           "title": "Adaptive forgetting",
           "enabled": true,
           "priority": "high",
-          "cadence_seconds": 900,
+          "cadence_seconds": 600,
           "timeout_seconds": 300,
           "worker_count": 1,
           "run_scope": "cluster-singleton",
@@ -1062,7 +1218,7 @@
         "id": "adaptive-forgetting",
         "title": "Adaptive forgetting",
         "enabled": true,
-        "cadence_seconds": 900,
+        "cadence_seconds": 600,
         "worker_count": 1,
         "timeout_seconds": 300,
         "command": "wavemind memory-os --namespace canary:memory-os --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 50 --target-p99-ms 100 --node-count 3",
@@ -1101,12 +1257,12 @@
         "id": "architecture-advice",
         "title": "Architecture advisor preflight",
         "enabled": true,
-        "cadence_seconds": 1800,
+        "cadence_seconds": 120,
         "worker_count": 1,
         "timeout_seconds": 120,
         "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 50 --target-p99-ms 100 --json",
         "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
-        "priority": "normal",
+        "priority": "critical",
         "requires_shared_cache": false,
         "requires_distributed_lock": false
       }
@@ -1120,10 +1276,10 @@
       "maintenance",
       "architecture-advice"
     ],
-    "ok": true
+    "ok": false
   },
   "next_actions": [
     "Keep this as a runbook until the action_required requirements pass.",
-    "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact."
+    "Run the six-hour remote soak against two or more HTTPS workers and their TLS Redis, then attach the fresh artifact from the exact release commit."
   ]
 }

@@ -59,8 +59,9 @@ def test_memory_os_intelligence_report_generates_gate_artifacts(tmp_path):
     assert payload["summary"]["policy_bundle_production_locked"] is True
     assert payload["summary"]["quality_status"] == "pass"
     assert payload["summary"]["quality_passed_count"] == payload["summary"]["quality_check_count"]
-    assert payload["summary"]["locomo_recall_lift"] > 0.1
-    assert payload["summary"]["longmemeval_recall_lift"] > 0.2
+    assert payload["summary"]["memory_os_task_success_uplift"] >= 0.05
+    assert payload["summary"]["memory_os_stale_suppression_uplift"] > 0
+    assert payload["summary"]["memory_os_p95_latency_delta_ms"] <= 5
     assert "distributed lock" in payload["claim_boundary"]
     assert "policy-bundle" in payload["claim_boundary"]
     assert all(check["pass"] for check in payload["checks"])
