@@ -217,12 +217,17 @@ def _memory_os_remote_handoff_summary(payload: dict[str, Any] | None) -> dict[st
     if not payload:
         return None
     topology = payload.get("topology") if isinstance(payload.get("topology"), dict) else {}
+    contract = (payload.get("handoff") or {}).get("contract") or {}
     return {
         "status": payload.get("status"),
         "worker_count": topology.get("worker_count"),
         "distinct_worker_count": topology.get("distinct_worker_count"),
         "worker_https": topology.get("worker_https"),
         "redis_tls": topology.get("redis_tls"),
+        "min_duration_seconds": contract.get("min_duration_seconds"),
+        "min_worker_cycles": contract.get("min_worker_cycles"),
+        "worker_commit_must_match": contract.get("worker_commit_must_match"),
+        "allowed_error_rate": contract.get("allowed_error_rate"),
         "missing_check_ids": payload.get("missing_check_ids"),
     }
 
@@ -2667,19 +2672,23 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
         },
         {
             "id": "memory_os_quality_gate",
-            "name": "Memory OS agent and long-memory quality gate",
+            "name": "Memory OS direct adaptive A/B quality gate",
             "category": "agent-memory",
             "status": "implemented",
             "source": "benchmarks/memory_os_quality_gate.py",
-            "dataset": "Checked agent-coherence, LoCoMo sentence-evidence, LongMemEval evidence-retrieval, and LongMemEval Qwen answer-generation artifacts.",
-            "competitors": ["Static vector memory", "Chroma static", "Qdrant static"],
+            "dataset": "Identical sequential/adaptive memories, observed queries, evaluation queries, and context shape for WaveMind baseline and WaveMind plus Memory OS.",
+            "competitors": ["WaveMind baseline"],
             "metrics": [
                 "memory_os_task_success",
+                "baseline_task_success",
+                "task_success_uplift",
                 "memory_os_stale_error_rate",
-                "memory_os_context_budget_saved",
-                "locomo_recall_lift",
-                "longmemeval_recall_lift",
-                "longmemeval_answer_f1_lift",
+                "baseline_stale_error_rate",
+                "stale_suppression_uplift",
+                "memory_os_p95_latency_ms",
+                "baseline_p95_latency_ms",
+                "p95_latency_delta_ms",
+                "p95_latency_regression_ratio",
             ],
             "current": {
                 "WaveMind Memory OS quality": (
@@ -2690,8 +2699,8 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     }
                 ),
             },
-            "target": "Keep every quality gate passing without hiding the boundary between direct Memory OS agent evidence and public-dataset dynamic retrieval evidence.",
-            "next_step": "Rerun the agent, LoCoMo, LongMemEval retrieval, and answer-generation sources before regenerating this gate after retrieval or worker-policy changes.",
+            "target": "Require positive Memory OS uplift over WaveMind baseline while p95 stays within both the 20 percent and 5 ms regression limits.",
+            "next_step": "Rerun the direct A/B after retrieval, cache, or worker-policy changes. Keep LoCoMo and LongMemEval supplemental until they execute Memory OS policies.",
         },
         {
             "id": "memory_os_remote_worker_soak",
@@ -2702,11 +2711,16 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "dataset": "Direct HTTP concurrency across at least two authenticated HTTPS workers plus the shared TLS Redis used for leases, idempotency receipts, retries, and cleanup.",
             "competitors": ["single-process soak", "remote Redis label without worker proof"],
             "metrics": [
+                "duration_seconds",
+                "worker_cycles",
                 "worker_count",
                 "completed_runs",
                 "safe_skips",
                 "duplicate_retries",
-                "error_count",
+                "error_rate",
+                "lock_breach_count",
+                "duplicate_mutation_count",
+                "state_corruption_count",
             ],
             "current": {
                 "WaveMind remote worker handoff": (
@@ -2717,7 +2731,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                     }
                 ),
             },
-            "target": "Pass every remote worker, Redis, single-flight, retry, no-in-doubt, and cleanup check, then produce an admitted production artifact from the same run.",
+            "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
             "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml.",
         },
         {

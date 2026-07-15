@@ -54,6 +54,8 @@ jobs:
             --engines wavemind wavemind-memory-os static \
             --memories 500 \
             --output benchmarks/memory_os_agent_quality_results.json
+          python benchmarks/memory_os_ab_benchmark.py \
+            --output benchmarks/memory_os_ab_results.json
           python benchmarks/dynamic_memory_benchmark.py \
             --engines wavemind chroma \
             --memories 200 \
@@ -275,6 +277,9 @@ jobs:
             --preflight-only \
             --output benchmarks/memory_os_remote_soak_handoff_results.json \
             --markdown-output benchmarks/MEMORY_OS_REMOTE_SOAK_HANDOFF.md
+          python benchmarks/memory_os_quality_gate.py \
+            --output benchmarks/memory_os_quality_results.json \
+            --markdown-output benchmarks/MEMORY_OS_QUALITY.md
           WAVEMIND_DB=.tmp-memory-os-canary.sqlite3 python -m wavemind memory-os-admission \
             --namespace canary:memory-os \
             --target-memories 50000 \
@@ -287,6 +292,7 @@ jobs:
             --redis-url redis://127.0.0.1:6379/0 \
             --lock-redis-url redis://127.0.0.1:6379/0 \
             --runtime-evidence benchmarks/memory_os_runtime_soak_results.json \
+            --quality-evidence benchmarks/memory_os_quality_results.json \
             --allow-plan-only \
             --write-artifacts \
             --output benchmarks/memory_os_admission_results.json \
@@ -313,9 +319,6 @@ jobs:
           python benchmarks/memory_os_intelligence_report.py \
             --output benchmarks/memory_os_intelligence_results.json \
             --markdown-output benchmarks/MEMORY_OS_INTELLIGENCE.md
-          python benchmarks/memory_os_quality_gate.py \
-            --output benchmarks/memory_os_quality_results.json \
-            --markdown-output benchmarks/MEMORY_OS_QUALITY.md
           python benchmarks/cluster_autoscale_report.py \
             --output benchmarks/cluster_autoscale_results.json \
             --markdown-output benchmarks/CLUSTER_AUTOSCALE.md
@@ -433,6 +436,7 @@ jobs:
           cp benchmarks/memory_os_admission_results.json site/data/memory_os_admission_results.json
           cp benchmarks/memory_os_runtime_soak_results.json site/data/memory_os_runtime_soak_results.json
           cp benchmarks/memory_os_agent_quality_results.json site/data/memory_os_agent_quality_results.json
+          cp benchmarks/memory_os_ab_results.json site/data/memory_os_ab_results.json
           cp benchmarks/memory_os_policy_bundle_results.json site/data/memory_os_policy_bundle_results.json
           cp benchmarks/memory_os_quality_results.json site/data/memory_os_quality_results.json
           cp benchmarks/memory_os_remote_soak_handoff_results.json site/data/memory_os_remote_soak_handoff_results.json
@@ -512,6 +516,7 @@ jobs:
             benchmarks/memory_os_runtime_soak_results.json
             benchmarks/MEMORY_OS_RUNTIME_SOAK.md
             benchmarks/memory_os_agent_quality_results.json
+            benchmarks/memory_os_ab_results.json
             benchmarks/memory_os_quality_results.json
             benchmarks/MEMORY_OS_QUALITY.md
             benchmarks/memory_os_remote_soak_handoff_results.json

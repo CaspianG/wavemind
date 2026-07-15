@@ -3,10 +3,10 @@ name: Memory OS remote worker soak
 on:
   workflow_dispatch:
     inputs:
-      rounds:
-        description: Cross-worker concurrency rounds
+      cycles:
+        description: Worker cycles (production admission requires at least 500)
         required: true
-        default: "20"
+        default: "500"
       contenders:
         description: Concurrent requests per round
         required: true
@@ -21,9 +21,10 @@ concurrency:
 
 jobs:
   remote-soak:
-    runs-on: ubuntu-latest
+    # GitHub-hosted jobs stop after six hours, before a six-hour soak can upload evidence.
+    runs-on: [self-hosted, linux, wavemind-evidence]
     environment: memory-os-production-evidence
-    timeout-minutes: 45
+    timeout-minutes: 480
     env:
       WAVEMIND_REMOTE_WORKER_URLS: ${{ secrets.WAVEMIND_REMOTE_WORKER_URLS }}
       WAVEMIND_REMOTE_REDIS_URL: ${{ secrets.WAVEMIND_REMOTE_REDIS_URL }}
@@ -49,16 +50,28 @@ jobs:
             --output evidence/memory_os_remote_worker_preflight.json \
             --markdown-output evidence/MEMORY_OS_REMOTE_WORKER_PREFLIGHT.md
 
+      - name: Prove direct Memory OS uplift and latency safety
+        run: |
+          python benchmarks/memory_os_ab_benchmark.py \
+            --output evidence/memory_os_ab_results.json
+          python benchmarks/memory_os_quality_gate.py \
+            --agent evidence/memory_os_ab_results.json \
+            --output evidence/memory_os_quality_results.json \
+            --markdown-output evidence/MEMORY_OS_QUALITY.md
+
       - name: Run remote Redis and multi-worker soak
         run: |
           python benchmarks/memory_os_remote_worker_soak.py \
-            --rounds "${{ inputs.rounds }}" \
+            --cycles "${{ inputs.cycles }}" \
+            --min-worker-cycles 500 \
+            --min-duration-seconds 21600 \
             --contenders "${{ inputs.contenders }}" \
             --fail-on-action-required \
             --output evidence/memory_os_remote_worker_soak_results.json \
             --markdown-output evidence/MEMORY_OS_REMOTE_WORKER_SOAK.md \
             --admission-output evidence/memory_os_admission_results.json \
-            --admission-markdown-output evidence/MEMORY_OS_ADMISSION.md
+            --admission-markdown-output evidence/MEMORY_OS_ADMISSION.md \
+            --quality-evidence evidence/memory_os_quality_results.json
 
       - name: Verify production admission
         run: |

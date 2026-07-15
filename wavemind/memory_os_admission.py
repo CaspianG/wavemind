@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
+import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 
@@ -28,16 +31,36 @@ STRICT_MEMORY_OS_TARGET = 1_000_000
 PRODUCTION_DEPLOYMENTS = {"production", "prod", "staging"}
 REMOTE_SOAK_DEPLOYMENTS = {"production", "prod"}
 REMOTE_WORKER_SOAK_SCHEMA = "wavemind.memory_os_remote_worker_soak.v1"
+MEMORY_OS_QUALITY_SCHEMA = "wavemind.memory_os_quality_gate.v2"
+REMOTE_SOAK_MIN_DURATION_SECONDS = 6 * 60 * 60
+REMOTE_SOAK_MIN_WORKER_CYCLES = 500
+REMOTE_SOAK_MAX_AGE_SECONDS = 24 * 60 * 60
 REMOTE_WORKER_SOAK_CHECK_IDS = {
     "remote-topology",
     "worker-health",
     "worker-version",
+    "worker-commit",
     "worker-plan",
     "remote-redis-semantics",
+    "soak-duration",
+    "worker-cycles",
     "cross-worker-single-flight",
     "cross-worker-retry",
+    "error-rate",
+    "lock-safety",
+    "duplicate-mutation-safety",
+    "state-integrity",
     "no-in-doubt-jobs",
     "cleanup",
+}
+QUALITY_CHECK_IDS = {
+    "direct-comparable-protocol",
+    "memory-os-task-success-uplift",
+    "memory-os-stale-suppression-uplift",
+    "memory-os-adaptation-fired",
+    "context-shape-equivalent",
+    "memory-os-p95-latency",
+    "memory-os-cold-p95-latency",
 }
 
 
@@ -48,6 +71,32 @@ def _utc_now() -> str:
         .isoformat()
         .replace("+00:00", "Z")
     )
+
+
+def _parse_utc(value: object) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _repository_commit() -> str | None:
+    try:
+        value = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[1],
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except Exception:
+        return None
+    return value if re.fullmatch(r"[0-9a-f]{40}", value) else None
 
 
 def _as_dict(plan: Any) -> dict[str, Any]:
@@ -130,6 +179,9 @@ def evaluate_memory_os_admission(
     lock_redis_url: str | None = None,
     allow_plan_only: bool = False,
     runtime_evidence: dict[str, Any] | None = None,
+    quality_evidence: dict[str, Any] | None = None,
+    expected_commit_sha: str | None = None,
+    now: datetime | None = None,
     env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Gate a Memory OS worker rollout against production safety requirements.
@@ -209,12 +261,71 @@ def evaluate_memory_os_admission(
     }
     runtime_preflight = dict(runtime_evidence_payload.get("preflight") or {})
     runtime_topology = dict(runtime_preflight.get("topology") or {})
+    runtime_config = dict(runtime_evidence_payload.get("config") or {})
+    runtime_metrics = dict(runtime_evidence_payload.get("metrics") or {})
+    required_runtime_metric_ids = {
+        "duration_seconds",
+        "worker_cycles",
+        "completed_runs",
+        "duplicate_retries",
+        "job_request_attempts",
+        "job_request_failures",
+        "error_rate",
+        "lock_breach_count",
+        "duplicate_mutation_count",
+        "state_corruption_count",
+    }
+    runtime_metrics_complete = required_runtime_metric_ids.issubset(runtime_metrics)
+    current_time = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    finished_at = _parse_utc(runtime_evidence_payload.get("finished_at"))
+    evidence_age_seconds = (
+        (current_time - finished_at).total_seconds() if finished_at is not None else None
+    )
+    evidence_fresh = (
+        evidence_age_seconds is not None
+        and -300.0 <= evidence_age_seconds <= REMOTE_SOAK_MAX_AGE_SECONDS
+    )
+    expected_source_ref = (
+        expected_commit_sha
+        or env_payload.get("GITHUB_SHA")
+        or env_payload.get("WAVEMIND_COMMIT_SHA")
+        or _repository_commit()
+    )
+    runtime_source_ref = str(runtime_evidence_payload.get("source_ref") or "")
+    commit_matches = (
+        bool(expected_source_ref)
+        and bool(re.fullmatch(r"[0-9a-f]{40}", runtime_source_ref))
+        and runtime_source_ref == expected_source_ref
+    )
+    duration_ok = float(runtime_metrics.get("duration_seconds") or 0.0) >= REMOTE_SOAK_MIN_DURATION_SECONDS
+    worker_cycles_ok = int(runtime_metrics.get("worker_cycles") or 0) >= REMOTE_SOAK_MIN_WORKER_CYCLES
+    configured_duration_ok = float(runtime_config.get("min_duration_seconds") or 0.0) >= REMOTE_SOAK_MIN_DURATION_SECONDS
+    configured_cycles_ok = int(runtime_config.get("min_worker_cycles") or 0) >= REMOTE_SOAK_MIN_WORKER_CYCLES
+    integrity_metrics_ok = (
+        float(runtime_metrics.get("error_rate") or 0.0) == 0.0
+        and int(runtime_metrics.get("job_request_failures") or 0) == 0
+        and int(runtime_metrics.get("lock_breach_count") or 0) == 0
+        and int(runtime_metrics.get("duplicate_mutation_count") or 0) == 0
+        and int(runtime_metrics.get("state_corruption_count") or 0) == 0
+        and int(runtime_metrics.get("completed_runs") or 0)
+        == int(runtime_metrics.get("worker_cycles") or -1)
+        and int(runtime_metrics.get("duplicate_retries") or 0)
+        == int(runtime_metrics.get("worker_cycles") or -1)
+    )
     runtime_evidence_valid = (
         runtime_evidence_payload.get("schema") == REMOTE_WORKER_SOAK_SCHEMA
         and runtime_evidence_payload.get("status") == "pass"
         and runtime_evidence_payload.get("environment") == "remote_worker_cluster"
         and runtime_checks_pass
         and REMOTE_WORKER_SOAK_CHECK_IDS.issubset(runtime_check_ids)
+        and evidence_fresh
+        and commit_matches
+        and duration_ok
+        and worker_cycles_ok
+        and configured_duration_ok
+        and configured_cycles_ok
+        and runtime_metrics_complete
+        and integrity_metrics_ok
     )
     remote_runtime_evidence = (
         runtime_evidence_valid
@@ -225,6 +336,36 @@ def evaluate_memory_os_admission(
         and runtime_topology.get("redis_tls") is True
     )
     runtime_soak_ok = not remote_soak_required or remote_runtime_evidence
+
+    quality_evidence_payload = dict(quality_evidence or {})
+    quality_checks = quality_evidence_payload.get("checks") or []
+    quality_check_ids = {
+        str(item.get("id"))
+        for item in quality_checks
+        if isinstance(item, dict) and item.get("id")
+    }
+    quality_checks_pass = bool(quality_checks) and all(
+        isinstance(item, dict) and bool(item.get("passed")) for item in quality_checks
+    )
+    quality_metrics = dict(quality_evidence_payload.get("metrics") or {})
+    required_quality_metric_ids = {
+        "task_success_uplift",
+        "stale_suppression_uplift",
+        "p95_latency_delta_ms",
+        "p95_latency_regression_ratio",
+    }
+    quality_evidence_valid = (
+        quality_evidence_payload.get("schema") == MEMORY_OS_QUALITY_SCHEMA
+        and quality_evidence_payload.get("status") == "pass"
+        and quality_checks_pass
+        and QUALITY_CHECK_IDS.issubset(quality_check_ids)
+        and required_quality_metric_ids.issubset(quality_metrics)
+        and float(quality_metrics.get("task_success_uplift") or 0.0) > 0.0
+        and float(quality_metrics.get("stale_suppression_uplift") or 0.0) > 0.0
+        and float(quality_metrics.get("p95_latency_delta_ms") or 0.0) <= 5.0
+        and float(quality_metrics.get("p95_latency_regression_ratio") or 0.0) <= 0.20
+    )
+    quality_uplift_ok = not remote_soak_required or quality_evidence_valid
 
     requirements = [
         _requirement(
@@ -306,19 +447,48 @@ def evaluate_memory_os_admission(
             "Provide every required environment variable before scheduling the worker set.",
         ),
         _requirement(
+            "quality-uplift",
+            "Direct adaptive A/B proves Memory OS quality uplift within latency limits",
+            quality_uplift_ok,
+            (
+                f"schema={quality_evidence_payload.get('schema')}, "
+                f"status={quality_evidence_payload.get('status')}, "
+                f"task_uplift={quality_metrics.get('task_success_uplift')}, "
+                f"p95_delta_ms={quality_metrics.get('p95_latency_delta_ms')}, "
+                f"p95_ratio={quality_metrics.get('p95_latency_regression_ratio')}"
+            ),
+            "Run memory_os_ab_benchmark.py and memory_os_quality_gate.py on this release; non-regression and static-retrieval comparisons do not satisfy this requirement.",
+            details={
+                "quality_evidence_valid": quality_evidence_valid,
+                "required_schema": MEMORY_OS_QUALITY_SCHEMA,
+                "required_check_ids": sorted(QUALITY_CHECK_IDS),
+                "quality_evidence": quality_evidence_payload,
+            },
+        ),
+        _requirement(
             "runtime-soak",
-            "Remote Redis and multi-worker HTTP soak proves lease and retry safety",
+            "Fresh six-hour remote soak proves 500-cycle lease, retry, and state safety",
             runtime_soak_ok,
             (
                 f"schema={runtime_evidence_payload.get('schema')}, "
                 f"status={runtime_evidence_payload.get('status')}, "
                 f"environment={runtime_evidence_payload.get('environment')}, "
+                f"duration={runtime_metrics.get('duration_seconds')}, "
+                f"cycles={runtime_metrics.get('worker_cycles')}, "
+                f"fresh={evidence_fresh}, commit_matches={commit_matches}, "
                 f"checks_pass={runtime_checks_pass}"
             ),
-            "Dispatch .github/workflows/memory-os-remote-soak.yml against two or more HTTPS workers and their TLS Redis, then attach the passing artifact.",
+            "Run the six-hour remote soak against two or more HTTPS workers and their TLS Redis, then attach the fresh artifact from the exact release commit.",
             details={
                 "runtime_evidence_valid": runtime_evidence_valid,
                 "remote_runtime_evidence": remote_runtime_evidence,
+                "evidence_age_seconds": evidence_age_seconds,
+                "evidence_fresh": evidence_fresh,
+                "expected_commit_sha": expected_source_ref,
+                "commit_matches": commit_matches,
+                "duration_ok": duration_ok,
+                "worker_cycles_ok": worker_cycles_ok,
+                "integrity_metrics_ok": integrity_metrics_ok,
                 "required_schema": REMOTE_WORKER_SOAK_SCHEMA,
                 "required_check_ids": sorted(REMOTE_WORKER_SOAK_CHECK_IDS),
                 "runtime_evidence": runtime_evidence_payload,

@@ -1609,6 +1609,7 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
     monkeypatch.setenv("WAVEMIND_READ_KEYS", "read-key")
     monkeypatch.setenv("WAVEMIND_WRITE_KEYS", "write-key")
     monkeypatch.setenv("WAVEMIND_ADMIN_KEYS", "admin-key")
+    monkeypatch.setenv("WAVEMIND_COMMIT_SHA", "a" * 40)
     mind = WaveMind(
         db_path=tmp_path / "auth.sqlite3",
         width=32,
@@ -1622,6 +1623,7 @@ def test_fastapi_api_keys_enforce_roles(tmp_path, monkeypatch):
             health = client.get("/healthz")
             assert health.status_code == 200
             assert health.json()["status"] == "ok"
+            assert health.json()["commit_sha"] == "a" * 40
 
             missing = client.get("/stats", params={"namespace": "auth"})
             assert missing.status_code == 401

@@ -111,8 +111,10 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         "quality_status": quality.get("status"),
         "quality_passed_count": (quality.get("summary") or {}).get("passed_count"),
         "quality_check_count": (quality.get("summary") or {}).get("check_count"),
-        "locomo_recall_lift": (quality.get("metrics") or {}).get("locomo_recall_lift"),
-        "longmemeval_recall_lift": (quality.get("metrics") or {}).get("longmemeval_recall_lift"),
+        "memory_os_task_success_uplift": (quality.get("metrics") or {}).get("task_success_uplift"),
+        "memory_os_stale_suppression_uplift": (quality.get("metrics") or {}).get("stale_suppression_uplift"),
+        "memory_os_p95_latency_delta_ms": (quality.get("metrics") or {}).get("p95_latency_delta_ms"),
+        "memory_os_p95_latency_regression_ratio": (quality.get("metrics") or {}).get("p95_latency_regression_ratio"),
     }
 
     return {
@@ -129,7 +131,7 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         ],
         "claim_boundary": (
             "Memory OS intelligence rows come from checked-in deterministic scale, "
-            "agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove "
+            "agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove "
             "worker behavior, policy generation, cache prewarm, predictive prefetch, "
             "priority learning, adaptive forgetting, consolidation, staging promotion, and rollout "
             "safety on these fixtures. They do not unlock unattended production "
@@ -234,9 +236,10 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
                 f"context saved `{_fmt(summary.get('agent_context_budget_saved'))}`. |"
             ),
             (
-                "| Public long-memory quality | "
-                f"LoCoMo recall lift `{_fmt(summary.get('locomo_recall_lift'))}`, "
-                f"LongMemEval recall lift `{_fmt(summary.get('longmemeval_recall_lift'))}`. |"
+                "| Direct Memory OS A/B | "
+                f"task-success uplift `{_fmt(summary.get('memory_os_task_success_uplift'))}`, "
+                f"stale-suppression uplift `{_fmt(summary.get('memory_os_stale_suppression_uplift'))}`, "
+                f"p95 delta `{_fmt(summary.get('memory_os_p95_latency_delta_ms'))}` ms. |"
             ),
             "",
             "## Production Boundary",
@@ -302,6 +305,9 @@ def _checks(
         _check("policy_bundle_production_locked", bundle_summary.get("production_locked"), True, "is"),
         _check("policy_bundle_production_not_promoted", bundle_summary.get("production_promotable"), False, "is"),
         _check("quality_gate_pass", quality.get("status"), "pass", "=="),
+        _check("quality_task_uplift", (quality.get("metrics") or {}).get("task_success_uplift"), 0.05, ">="),
+        _check("quality_p95_delta", (quality.get("metrics") or {}).get("p95_latency_delta_ms"), 5.0, "<="),
+        _check("quality_p95_ratio", (quality.get("metrics") or {}).get("p95_latency_regression_ratio"), 0.20, "<="),
     ]
 
 

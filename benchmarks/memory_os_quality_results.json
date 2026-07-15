@@ -1,78 +1,108 @@
 {
-  "schema": "wavemind.memory_os_quality_gate.v1",
-  "generated_at": "2026-07-13T21:52:40Z",
+  "schema": "wavemind.memory_os_quality_gate.v2",
+  "generated_at": "2026-07-15T00:51:30Z",
+  "source_ref": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
   "status": "pass",
-  "claim_boundary": "Memory OS non-regression is measured directly on the agent-coherence workload. LoCoMo and LongMemEval rows prove the underlying WaveMind dynamic retrieval and answer-context quality; they do not claim that unattended Memory OS workers ran inside those public datasets.",
+  "claim_boundary": "Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.",
+  "thresholds": {
+    "min_task_success_uplift": 0.05,
+    "max_p95_regression_ratio": 0.2,
+    "max_p95_regression_ms": 5.0
+  },
   "summary": {
     "passed_count": 7,
     "check_count": 7,
     "failed_check_ids": []
   },
   "metrics": {
-    "memory_os_task_success": 0.9166666666666666,
+    "memory_os_task_success": 1,
+    "baseline_task_success": 0.875,
+    "task_success_uplift": 0.125,
     "memory_os_stale_error_rate": 0,
-    "memory_os_context_budget_saved": 0.9308855291576674,
-    "memory_os_agent_delta": 0.0,
-    "locomo_recall_lift": 0.13804660791323203,
-    "longmemeval_recall_lift": 0.2625177304964539,
-    "longmemeval_answer_f1_lift": 0.16323857402643008,
-    "longmemeval_answer_evidence_lift": 0.32000000000000006
+    "baseline_stale_error_rate": 0.125,
+    "stale_suppression_uplift": 0.125,
+    "memory_os_p95_latency_ms": 0.02870004391297698,
+    "baseline_p95_latency_ms": 11.8394999881275,
+    "p95_latency_delta_ms": -11.810799944214523,
+    "p95_latency_regression_ratio": -0.9975759074334425,
+    "cold_p95_latency_delta_ms": -1.4696999569423497,
+    "cold_p95_latency_regression_ratio": -0.17444095873846313
   },
   "checks": [
     {
-      "id": "memory-os-agent-non-regression",
-      "title": "Memory OS preserves WaveMind agent task success",
+      "id": "direct-comparable-protocol",
+      "title": "Baseline and Memory OS execute the same sequential adaptive protocol",
       "passed": true,
-      "evidence": "memory_os=0.9167, base=0.9167, delta=0.0000",
-      "source": "benchmarks\\memory_os_agent_quality_results.json"
+      "evidence": "protocol_hash=b0236119a09e2b4b538bbdb4073371dfd8a399b9668421de0cf14654bc3ea39f, workload=sequential_adaptive_recall",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "memory-os-stale-safety",
-      "title": "Memory OS does not increase stale-memory errors",
+      "id": "memory-os-task-success-uplift",
+      "title": "Memory OS improves task success over WaveMind baseline",
       "passed": true,
-      "evidence": "memory_os=0.0000, base=0.0000",
-      "source": "benchmarks\\memory_os_agent_quality_results.json"
+      "evidence": "memory_os=1.0000, baseline=0.8750, uplift=0.1250",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "memory-os-context-efficiency",
-      "title": "Memory OS retains at least 80 percent context savings",
+      "id": "memory-os-stale-suppression-uplift",
+      "title": "Memory OS reduces stale recalls over WaveMind baseline",
       "passed": true,
-      "evidence": "context_budget_saved=0.9309",
-      "source": "benchmarks\\memory_os_agent_quality_results.json"
+      "evidence": "memory_os=0.0000, baseline=0.1250, uplift=0.1250",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "agent-static-lift",
-      "title": "Dynamic memory beats static memory on agent task success",
+      "id": "memory-os-adaptation-fired",
+      "title": "Priority learning and adaptive forgetting both changed state",
       "passed": true,
-      "evidence": "memory_os=0.9167, static=0.3333",
-      "source": "benchmarks\\memory_os_agent_quality_results.json"
+      "evidence": "priority_predictions=8, forgetting_demotions=8",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "locomo-retrieval-lift",
-      "title": "WaveMind improves LoCoMo evidence recall over static retrieval",
+      "id": "context-shape-equivalent",
+      "title": "Both variants return the same context shape",
       "passed": true,
-      "evidence": "wave=0.5467, static=0.4087, lift=0.1380",
-      "source": "benchmarks\\locomo_sentence_evidence_results.json"
+      "evidence": "memory_os=1, baseline=1",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "longmemeval-retrieval-lift",
-      "title": "WaveMind improves LongMemEval evidence recall over static retrieval",
+      "id": "memory-os-p95-latency",
+      "title": "Memory OS p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "wave=0.7822, static=0.5197, lift=0.2625",
-      "source": "benchmarks\\longmemeval_evidence_results.json"
+      "evidence": "memory_os=0.0287ms, baseline=11.8395ms, delta=-11.8108ms, ratio=-0.9976",
+      "source": "benchmarks/memory_os_ab_results.json"
     },
     {
-      "id": "longmemeval-answer-lift",
-      "title": "WaveMind context improves LongMemEval answer F1 and evidence recall",
+      "id": "memory-os-cold-p95-latency",
+      "title": "Cold p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "f1_lift=0.1632, evidence_lift=0.3200",
-      "source": "benchmarks\\longmemeval_answer_qwen25_1_5b_50_results.json"
+      "evidence": "memory_os=6.9555ms, baseline=8.4252ms, delta=-1.4697ms, ratio=-0.1744",
+      "source": "benchmarks/memory_os_ab_results.json"
     }
   ],
   "sources": [
-    "benchmarks\\memory_os_agent_quality_results.json",
-    "benchmarks\\locomo_sentence_evidence_results.json",
-    "benchmarks\\longmemeval_evidence_results.json",
-    "benchmarks\\longmemeval_answer_qwen25_1_5b_50_results.json"
+    "benchmarks/memory_os_ab_results.json"
+  ],
+  "supplemental_evidence": [
+    {
+      "source": "benchmarks/locomo_sentence_evidence_results.json",
+      "schema": null,
+      "execution_mode": "WaveMind retrieval without Memory OS worker execution",
+      "eligible_for_memory_os_uplift": false,
+      "reason": "The dataset runner does not execute Memory OS background policies."
+    },
+    {
+      "source": "benchmarks/longmemeval_evidence_results.json",
+      "schema": null,
+      "execution_mode": "WaveMind retrieval without Memory OS worker execution",
+      "eligible_for_memory_os_uplift": false,
+      "reason": "The dataset runner does not execute Memory OS background policies."
+    },
+    {
+      "source": "benchmarks/longmemeval_answer_qwen25_1_5b_50_results.json",
+      "schema": null,
+      "execution_mode": "WaveMind answer context without Memory OS worker execution",
+      "eligible_for_memory_os_uplift": false,
+      "reason": "The dataset runner does not execute Memory OS background policies."
+    }
   ]
 }

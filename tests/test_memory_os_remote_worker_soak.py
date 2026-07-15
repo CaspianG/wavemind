@@ -53,20 +53,26 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
     lock = threading.Lock()
     completed_keys: set[str] = set()
     next_memory_id = 0
+    memory_by_worker: dict[str, int] = {}
 
     def request_json(base_url, path, method, payload, api_key, timeout):
         nonlocal next_memory_id
         assert base_url.startswith("https://worker-")
         assert timeout == 5.0
         if path == "/healthz":
-            return {"status": "ok", "version": "2.6.0"}
+            return {
+                "status": "ok",
+                "version": "2.6.0",
+                "commit_sha": module._source_ref(),
+            }
         assert api_key == "test-key"
         if path == "/remember":
             with lock:
                 next_memory_id += 1
+                memory_by_worker[base_url] = next_memory_id
                 return {"id": next_memory_id}
         if path == "/query":
-            return {"results": [{"id": 1, "score": 1.0}]}
+            return {"results": [{"id": memory_by_worker[base_url], "score": 1.0}]}
         if path == "/memory-os/plan":
             return {
                 "deployment": "production",
@@ -179,6 +185,8 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
         redis_url="rediss://redis.example:6380/0",
         api_key="test-key",
         rounds=3,
+        min_duration_seconds=0,
+        min_worker_cycles=1,
         contenders=4,
         timeout=5.0,
         request_json=request_json,
@@ -189,5 +197,9 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
     assert payload["metrics"]["completed_runs"] == 3
     assert payload["metrics"]["duplicate_retries"] == 3
     assert payload["metrics"]["error_count"] == 0
+    assert payload["metrics"]["worker_cycles"] == 3
+    assert payload["metrics"]["lock_breach_count"] == 0
+    assert payload["metrics"]["duplicate_mutation_count"] == 0
+    assert payload["metrics"]["state_corruption_count"] == 0
     assert payload["sample_plan"]["hot_query_count"] == 4
     assert all(item["passed"] for item in payload["checks"])

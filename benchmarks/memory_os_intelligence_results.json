@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "365c5ff4fbe1",
+  "source_ref": "025b8285cbf2",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/memory_os_agent_quality_results.json",
@@ -10,11 +10,11 @@
     "benchmarks/memory_os_policy_bundle_results.json",
     "benchmarks/memory_os_quality_results.json"
   ],
-  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
   "summary": {
     "status": "pass",
-    "check_count": 36,
-    "passed_check_count": 36,
+    "check_count": 39,
+    "passed_check_count": 39,
     "worker_ok": true,
     "hot_queries": 2,
     "prewarm_warmed": 2,
@@ -73,7 +73,7 @@
     "canary_prewarm_warmed": 5,
     "canary_predictive_warmed": 15,
     "admission_status": "plan_only",
-    "admission_passed_count": 11,
+    "admission_passed_count": 12,
     "admission_blocker_count": 1,
     "admission_blocker_ids": [
       "runtime-soak"
@@ -95,8 +95,10 @@
     "quality_status": "pass",
     "quality_passed_count": 7,
     "quality_check_count": 7,
-    "locomo_recall_lift": 0.13804660791323203,
-    "longmemeval_recall_lift": 0.2625177304964539
+    "memory_os_task_success_uplift": 0.125,
+    "memory_os_stale_suppression_uplift": 0.125,
+    "memory_os_p95_latency_delta_ms": -11.810799944214523,
+    "memory_os_p95_latency_regression_ratio": -0.9975759074334425
   },
   "checks": [
     {
@@ -349,6 +351,27 @@
       "value": "pass",
       "target": "pass",
       "op": "==",
+      "pass": true
+    },
+    {
+      "name": "quality_task_uplift",
+      "value": 0.125,
+      "target": 0.05,
+      "op": ">=",
+      "pass": true
+    },
+    {
+      "name": "quality_p95_delta",
+      "value": -11.810799944214523,
+      "target": 5.0,
+      "op": "<=",
+      "pass": true
+    },
+    {
+      "name": "quality_p95_ratio",
+      "value": -0.9975759074334425,
+      "target": 0.2,
+      "op": "<=",
       "pass": true
     }
   ],
@@ -1043,7 +1066,7 @@
       "passed_checks": 6,
       "check_count": 6,
       "failed_check_ids": [],
-      "hot_query_count": 5,
+      "hot_query_count": 16,
       "worker_actions": [
         "purge_expired",
         "consolidate_field",
@@ -1051,11 +1074,12 @@
         "predict_priority",
         "prewarm_cache",
         "predictive_prefetch",
-        "advise_architecture"
+        "advise_architecture",
+        "escalate_policy_history"
       ],
       "prewarm_warmed": 5,
       "predictive_warmed": 15,
-      "priority_predictions": 6,
+      "priority_predictions": 8,
       "expired_purged": 1,
       "admission_status": "admitted",
       "admitted": true
@@ -1063,8 +1087,8 @@
     "admission_summary": {
       "status": "plan_only",
       "admitted": false,
-      "requirement_count": 12,
-      "passed_count": 11,
+      "requirement_count": 13,
+      "passed_count": 12,
       "blocker_count": 1,
       "warning_count": 0,
       "blocker_ids": [
@@ -1117,14 +1141,18 @@
       "failed_check_ids": []
     },
     "quality_metrics": {
-      "memory_os_task_success": 0.9166666666666666,
+      "memory_os_task_success": 1,
+      "baseline_task_success": 0.875,
+      "task_success_uplift": 0.125,
       "memory_os_stale_error_rate": 0,
-      "memory_os_context_budget_saved": 0.9308855291576674,
-      "memory_os_agent_delta": 0.0,
-      "locomo_recall_lift": 0.13804660791323203,
-      "longmemeval_recall_lift": 0.2625177304964539,
-      "longmemeval_answer_f1_lift": 0.16323857402643008,
-      "longmemeval_answer_evidence_lift": 0.32000000000000006
+      "baseline_stale_error_rate": 0.125,
+      "stale_suppression_uplift": 0.125,
+      "memory_os_p95_latency_ms": 0.02870004391297698,
+      "baseline_p95_latency_ms": 11.8394999881275,
+      "p95_latency_delta_ms": -11.810799944214523,
+      "p95_latency_regression_ratio": -0.9975759074334425,
+      "cold_p95_latency_delta_ms": -1.4696999569423497,
+      "cold_p95_latency_regression_ratio": -0.17444095873846313
     }
   }
 }

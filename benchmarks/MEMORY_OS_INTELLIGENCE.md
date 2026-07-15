@@ -2,12 +2,12 @@
 
 Generated: `2026-07-09T22:45:10Z`.
 
-Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, LoCoMo, LongMemEval, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
+Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
 
 ## Summary
 
 - Status: `pass`.
-- Checks: `36/36`.
+- Checks: `39/39`.
 - Hot queries: `2`.
 - Cache prewarm warmed: `2`.
 - Predictive prefetch warmed: `6`.
@@ -61,6 +61,9 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | policy_bundle_production_locked | `pass` | `1` | `is True` |
 | policy_bundle_production_not_promoted | `pass` | `0` | `is False` |
 | quality_gate_pass | `pass` | `pass` | `== pass` |
+| quality_task_uplift | `pass` | `0.125` | `>= 0.05` |
+| quality_p95_delta | `pass` | `-11.811` | `<= 5.0` |
+| quality_p95_ratio | `pass` | `-0.998` | `<= 0.2` |
 
 ## Intelligence Coverage
 
@@ -74,7 +77,7 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | Rollout safety | shared cache `True`, distributed lock `True`, required env `WAVEMIND_MEMORY_OS_LOCK_REDIS_URL, WAVEMIND_REDIS_URL`. |
 | Policy bundle | status `staging_ready`, staging `True`, production locked `True`. |
 | Agent effect | task success `0.917`, stale error `0`, context saved `0.931`. |
-| Public long-memory quality | LoCoMo recall lift `0.138`, LongMemEval recall lift `0.263`. |
+| Direct Memory OS A/B | task-success uplift `0.125`, stale-suppression uplift `0.125`, p95 delta `-11.811` ms. |
 
 ## Production Boundary
 

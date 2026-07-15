@@ -19,4 +19,7 @@ Status: `action_required`
 
 - GitHub environment: `memory-os-production-evidence`
 - Workflow: `.github/workflows/memory-os-remote-soak.yml`
-- Dispatch: `gh workflow run memory-os-remote-soak.yml --ref main`
+- Dispatch: `gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4`
+- Minimum duration: `21600` seconds
+- Minimum worker cycles: `500`
+- Every worker must expose `WAVEMIND_COMMIT_SHA` matching the tested commit.

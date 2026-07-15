@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_remote_worker_preflight.v1",
-  "generated_at": "2026-07-13T21:53:24Z",
-  "source_ref": "365c5ff4fbe1",
+  "generated_at": "2026-07-15T00:57:52Z",
+  "source_ref": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
   "status": "action_required",
   "claim_boundary": "This preflight only validates a production-like remote topology contract. It does not admit Memory OS until the remote worker soak itself passes.",
   "topology": {
@@ -69,10 +69,25 @@
     "WAVEMIND_REMOTE_REDIS_URL",
     "WAVEMIND_API_KEY"
   ],
+  "worker_required_environment": [
+    "WAVEMIND_COMMIT_SHA"
+  ],
   "handoff": {
     "workflow": ".github/workflows/memory-os-remote-soak.yml",
     "github_environment": "memory-os-production-evidence",
-    "command": "gh workflow run memory-os-remote-soak.yml --ref main",
+    "workflow_runner": [
+      "self-hosted",
+      "linux",
+      "wavemind-evidence"
+    ],
+    "command": "gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4",
+    "contract": {
+      "min_duration_seconds": 21600,
+      "min_worker_cycles": 500,
+      "max_evidence_age_seconds": 86400,
+      "worker_commit_must_match": true,
+      "allowed_error_rate": 0.0
+    },
     "expected_artifacts": [
       "memory_os_remote_worker_soak_results.json",
       "MEMORY_OS_REMOTE_WORKER_SOAK.md",

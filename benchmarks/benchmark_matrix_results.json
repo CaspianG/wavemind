@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-13T21:56:19Z",
-  "source_ref": "365c5ff4fbe1",
+  "generated_at": "2026-07-15T00:57:04Z",
+  "source_ref": "025b8285cbf2",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2616,23 +2616,25 @@
     },
     {
       "id": "memory_os_quality_gate",
-      "name": "Memory OS agent and long-memory quality gate",
+      "name": "Memory OS direct adaptive A/B quality gate",
       "category": "agent-memory",
       "status": "implemented",
       "source": "benchmarks/memory_os_quality_gate.py",
-      "dataset": "Checked agent-coherence, LoCoMo sentence-evidence, LongMemEval evidence-retrieval, and LongMemEval Qwen answer-generation artifacts.",
+      "dataset": "Identical sequential/adaptive memories, observed queries, evaluation queries, and context shape for WaveMind baseline and WaveMind plus Memory OS.",
       "competitors": [
-        "Static vector memory",
-        "Chroma static",
-        "Qdrant static"
+        "WaveMind baseline"
       ],
       "metrics": [
         "memory_os_task_success",
+        "baseline_task_success",
+        "task_success_uplift",
         "memory_os_stale_error_rate",
-        "memory_os_context_budget_saved",
-        "locomo_recall_lift",
-        "longmemeval_recall_lift",
-        "longmemeval_answer_f1_lift"
+        "baseline_stale_error_rate",
+        "stale_suppression_uplift",
+        "memory_os_p95_latency_ms",
+        "baseline_p95_latency_ms",
+        "p95_latency_delta_ms",
+        "p95_latency_regression_ratio"
       ],
       "current": {
         "WaveMind Memory OS quality": {
@@ -2640,18 +2642,22 @@
           "passed_count": 7,
           "check_count": 7,
           "failed_check_ids": [],
-          "memory_os_task_success": 0.9166666666666666,
+          "memory_os_task_success": 1,
+          "baseline_task_success": 0.875,
+          "task_success_uplift": 0.125,
           "memory_os_stale_error_rate": 0,
-          "memory_os_context_budget_saved": 0.9308855291576674,
-          "memory_os_agent_delta": 0.0,
-          "locomo_recall_lift": 0.13804660791323203,
-          "longmemeval_recall_lift": 0.2625177304964539,
-          "longmemeval_answer_f1_lift": 0.16323857402643008,
-          "longmemeval_answer_evidence_lift": 0.32000000000000006
+          "baseline_stale_error_rate": 0.125,
+          "stale_suppression_uplift": 0.125,
+          "memory_os_p95_latency_ms": 0.02870004391297698,
+          "baseline_p95_latency_ms": 11.8394999881275,
+          "p95_latency_delta_ms": -11.810799944214523,
+          "p95_latency_regression_ratio": -0.9975759074334425,
+          "cold_p95_latency_delta_ms": -1.4696999569423497,
+          "cold_p95_latency_regression_ratio": -0.17444095873846313
         }
       },
-      "target": "Keep every quality gate passing without hiding the boundary between direct Memory OS agent evidence and public-dataset dynamic retrieval evidence.",
-      "next_step": "Rerun the agent, LoCoMo, LongMemEval retrieval, and answer-generation sources before regenerating this gate after retrieval or worker-policy changes."
+      "target": "Require positive Memory OS uplift over WaveMind baseline while p95 stays within both the 20 percent and 5 ms regression limits.",
+      "next_step": "Rerun the direct A/B after retrieval, cache, or worker-policy changes. Keep LoCoMo and LongMemEval supplemental until they execute Memory OS policies."
     },
     {
       "id": "memory_os_remote_worker_soak",
@@ -2665,11 +2671,16 @@
         "remote Redis label without worker proof"
       ],
       "metrics": [
+        "duration_seconds",
+        "worker_cycles",
         "worker_count",
         "completed_runs",
         "safe_skips",
         "duplicate_retries",
-        "error_count"
+        "error_rate",
+        "lock_breach_count",
+        "duplicate_mutation_count",
+        "state_corruption_count"
       ],
       "current": {
         "WaveMind remote worker handoff": {
@@ -2678,6 +2689,10 @@
           "distinct_worker_count": 0,
           "worker_https": false,
           "redis_tls": false,
+          "min_duration_seconds": 21600,
+          "min_worker_cycles": 500,
+          "worker_commit_must_match": true,
+          "allowed_error_rate": 0.0,
           "missing_check_ids": [
             "worker-endpoints",
             "non-loopback-workers",
@@ -2688,7 +2703,7 @@
           ]
         }
       },
-      "target": "Pass every remote worker, Redis, single-flight, retry, no-in-doubt, and cleanup check, then produce an admitted production artifact from the same run.",
+      "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
       "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml."
     },
     {
