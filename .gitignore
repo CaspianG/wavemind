@@ -19,6 +19,10 @@ backups/
 logs/
 state/
 
+# Reproducible crypto benchmark intermediates; commit compact reports only.
+benchmarks/results/crypto/*_events.jsonl
+benchmarks/results/crypto/eight_asset_engine_sweep.*
+
 .env
 .env.*
 !.env.example

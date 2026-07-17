@@ -45,6 +45,8 @@ Full reports:
 
 - [Core assets 4h target benchmark](benchmarks/results/crypto/core_assets_4h_price_target.md)
 - [Holdout assets 4h target benchmark](benchmarks/results/crypto/holdout_assets_4h_price_target.md)
+- [Eight-asset 80% admission gate](benchmarks/results/crypto/accuracy_gate.md)
+- [Long-history 80% admission gate](benchmarks/results/crypto/long_history_accuracy_gate.md)
 - [Current 24h forecast](benchmarks/results/crypto/current_24h.md)
 - [Current 7d forecast](benchmarks/results/crypto/current_7d.md)
 - [Live forecast audit](benchmarks/results/crypto/forecast_audit.md)
@@ -62,6 +64,24 @@ It is not yet a predictive breakthrough:
 - evidence strength is not a calibrated probability.
 
 This branch treats those limitations as test failures to improve, not as marketing footnotes.
+
+### The 80% accuracy rule
+
+WaveMind does not count an isolated 80% result as a breakthrough. A candidate is
+admitted only when it reaches at least 80% direction accuracy on non-overlapping
+forecasts, has at least 40 effective signals and 5% coverage, clears a 70% lower
+Wilson bound, and remains at or above 70% in every time fold and every
+symbol/timeframe slice.
+
+| real walk-forward set | best mandatory-signal result | selective 80% result | gate verdict |
+|---|---:|---:|---|
+| 8 assets, 1,200 x 4h bars | 52.0% | 90.9% on only 11 independent signals / 2.3% coverage | rejected |
+| BTC/ETH/SOL, 2,000 x 4h bars | 54.2% | 100% on only 10 independent signals / 3.2% coverage | rejected |
+
+These results show that OHLCV-only direction is still close to noise at useful
+coverage. The next research layer therefore adds exchange-derived funding rate,
+open interest, and long/short ratio instead of continuing to tune the same candle
+features. Probability remains disabled until the admission gate passes.
 
 The guarded price-target head is branch-specific research code built over WaveMind's market-memory representation. Trade validation uses the actual WaveMind field engine, but this experimental target head is not part of the stable core library yet.
 
@@ -91,6 +111,8 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | path | purpose |
 |---|---|
 | `benchmarks/crypto_ohlcv.py` | CSV/CCXT import, completed-candle handling, feature windows |
+| `benchmarks/crypto_derivatives.py` | strict CCXT funding/open-interest/long-short import and causal alignment |
+| `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
 | `benchmarks/crypto_current_forecast.py` | fresh 24h/7d forecasts and ledger recording |
@@ -129,10 +151,11 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 ## Next Work
 
 1. Expand the independent holdout across exchanges and market regimes.
-2. Add multi-timeframe and cross-asset context without lookahead.
-3. Improve target magnitude and publish calibrated prediction intervals.
-4. Validate the 1d/7d policy before allowing trade signals.
-5. Connect the audited signal layer to the Freqtrade adapter in dry-run mode.
+2. Populate real derivatives caches and benchmark funding, open interest, and long/short evidence.
+3. Add multi-timeframe and cross-asset context without lookahead.
+4. Improve target magnitude and publish calibrated prediction intervals.
+5. Validate the 1d/7d policy before allowing trade signals.
+6. Connect the audited signal layer to the Freqtrade adapter in dry-run mode.
 
 ## Development
 

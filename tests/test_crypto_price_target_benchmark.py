@@ -12,6 +12,7 @@ from benchmarks.crypto_price_target_benchmark import (
     _default_directional_policy,
     _directional_candidate_values,
     _directional_head_feature_values,
+    _independent_expert_candidate_stats,
     _perp_field_value_from_features,
     _market_field_value_from_features,
     _regime_policy_bucket_keys,
@@ -19,11 +20,43 @@ from benchmarks.crypto_price_target_benchmark import (
     _relationship_tokens,
     _robust_1h_target_value,
     _robust_1d_target_value,
+    ReturnCalibration,
     load_markets,
     render_markdown,
     run_price_target_benchmark,
     sampled_event_payload,
 )
+
+
+def test_independent_expert_uses_horizon_separated_evidence():
+    bars = generate_synthetic_ohlcv(symbol="BTC/USDT", timeframe="4h", bars=280, seed=91)
+    windows = make_ohlcv_windows(
+        bars,
+        symbol="BTC/USDT",
+        timeframe="4h",
+        window=32,
+        horizon=6,
+        direction_threshold_bps=0.0,
+    )
+    stats = _independent_expert_candidate_stats(
+        windows[:-1],
+        windows[-1],
+        horizon=6,
+        calibration=ReturnCalibration(
+            slope=1.0,
+            intercept_bps=0.0,
+            cap_abs_bps=1000.0,
+            samples=100,
+            raw_mae_bps=100.0,
+            calibrated_mae_bps=100.0,
+            note="test",
+        ),
+    )
+
+    assert "robust" in stats
+    assert 12 <= stats["robust"]["count"] <= 32
+    assert 0.0 <= stats["robust"]["early_hit"] <= 1.0
+    assert 0.0 <= stats["robust"]["late_hit"] <= 1.0
 
 
 def test_price_target_benchmark_scores_future_price():
@@ -51,6 +84,7 @@ def test_price_target_benchmark_scores_future_price():
             "wavemind-market-field-target",
             "wavemind-state-field-target",
             "online-expert",
+            "independent-expert",
             "directional-head",
             "regime-policy",
             "relationship-field",
@@ -73,6 +107,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind market-field target"]["queries"] == 24
     assert result_by_engine["WaveMind guarded state-field target"]["queries"] == 24
     assert result_by_engine["WaveMind online-expert target"]["queries"] == 24
+    assert result_by_engine["WaveMind independent-expert target"]["queries"] == 24
     assert result_by_engine["WaveMind directional-head target"]["queries"] == 24
     assert result_by_engine["WaveMind regime-policy target"]["queries"] == 24
     assert result_by_engine["WaveMind relationship-field target"]["queries"] == 24
@@ -82,6 +117,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind price target"]["queries"] == 24
     assert result_by_engine["WaveMind robust target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind online-expert target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind independent-expert target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind directional-head target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind regime-policy target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind relationship-field target"]["mean_abs_return_error_bps"] >= 0.0

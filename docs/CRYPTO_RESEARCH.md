@@ -278,6 +278,48 @@ and symbol/timeframe stability checks are still false. The score is useful as
 a research signal, but the current forecast output still reports
 `probability_kind=none` unless all stability checks pass.
 
+### 80% admission gate
+
+Headline accuracy is now audited by `benchmarks/crypto_accuracy_gate.py`. It
+first collapses overlapping 24h forecasts into one independent observation per
+horizon, engine, symbol, and fold. This prevents six highly correlated 4h
+predictions about the same 24h move from being counted as six independent wins.
+
+A candidate passes only if all of the following hold:
+
+- direction accuracy is at least 80%;
+- at least 40 non-overlapping signals and 5% effective coverage remain;
+- the 95% Wilson lower bound is at least 70%;
+- every time fold has at least five signals and at least 70% accuracy;
+- every symbol/timeframe slice has at least five signals and at least 70% accuracy.
+
+The current eight-asset and long-history reports admit no engine. The old
+online-expert result reaches 90.9% on one threshold, but only 11 independent
+signals and 2.3% coverage remain. It is therefore rejected rather than marketed
+as an 80% edge.
+
+### Derivatives evidence
+
+`benchmarks/crypto_derivatives.py` adds a strict CCXT importer for funding-rate,
+open-interest-value, and long/short-ratio histories. It fails closed if an
+exchange lacks any requested stream. Its backward as-of join attaches only
+values whose publication timestamp is at or before the OHLCV candle close;
+missing, future, or optionally stale evidence is rejected.
+
+```sh
+python benchmarks/crypto_derivatives.py \
+  --exchange okx \
+  --symbol BTC/USDT:USDT \
+  --timeframe 1h \
+  --since 2025-01-01T00:00:00Z \
+  --limit 1000 \
+  --output data/okx/BTC_USDT_USDT_derivatives_1h.csv
+```
+
+This is the next feature family to test. It is not yet included in the reported
+accuracy numbers, and no uplift is claimed until a real walk-forward run passes
+the same admission gate.
+
 ## First Benchmark
 
 Runner:
@@ -779,14 +821,21 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     profit factor from `1.353` to `1.572`, worst-slice loss from `-70.39` to
     `-27.06` bps, and large false positives from `0.418` to `0.270` versus raw
     trend persistence.
-21. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+21. Done: non-overlapping, coverage-aware 80% admission gate with Wilson,
+    per-fold, and per-symbol/timeframe requirements. No current engine passes.
+22. Done: strict CCXT derivatives importer plus causal backward as-of alignment
+    for funding, open-interest value, and long/short ratio. Real derivatives
+    uplift remains unmeasured until exchange history is cached.
+23. Next: populate real derivatives caches and evaluate them with the same
+    walk-forward admission gate.
+24. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-22. Next: validate the market-field target on more exchanges, date ranges,
+25. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-23. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+26. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-24. Add signal construction only after retrieval quality is stable.
-25. Publish results separately from the main README to avoid confusing memory
+27. Add signal construction only after retrieval quality is stable.
+28. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

@@ -1,0 +1,4206 @@
+{
+  "gate": {
+    "target_accuracy": 0.8,
+    "min_effective_signals": 40,
+    "min_effective_coverage": 0.05,
+    "min_wilson_low_95": 0.7,
+    "min_fold_accuracy": 0.7,
+    "min_fold_signals": 5,
+    "min_slice_accuracy": 0.7,
+    "min_slice_signals": 5,
+    "overlap_policy": "one observation per forecast horizon, engine, symbol, timeframe, and fold"
+  },
+  "raw_events": 17280,
+  "effective_events": 2880,
+  "engines": [
+    {
+      "engine": "Momentum baseline",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1382,
+            "accuracy": 0.4798611111111111,
+            "wilson_low_95": 0.4616540062175485
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 246,
+            "accuracy": 0.5125,
+            "wilson_low_95": 0.46786263692070545
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 75,
+              "accuracy": 0.625,
+              "wilson_low_95": 0.5357695062597921
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 43,
+              "accuracy": 0.35833333333333334,
+              "wilson_low_95": 0.27816079050320064
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 64,
+              "accuracy": 0.5333333333333333,
+              "wilson_low_95": 0.444427892696743
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 64,
+              "accuracy": 0.5333333333333333,
+              "wilson_low_95": 0.444427892696743
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 27,
+              "accuracy": 0.45,
+              "wilson_low_95": 0.3309365440675524
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 38,
+              "accuracy": 0.6333333333333333,
+              "wilson_low_95": 0.5068300063010303
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 33,
+              "accuracy": 0.55,
+              "wilson_low_95": 0.4249193588533434
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 28,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.34627906041438494
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 1668,
+            "hits": 771,
+            "accuracy": 0.46223021582733814,
+            "wilson_low_95": 0.4384179435588557
+          },
+          "effective": {
+            "signals": 279,
+            "hits": 136,
+            "accuracy": 0.4874551971326165,
+            "wilson_low_95": 0.4293734633816984
+          },
+          "effective_coverage": 0.58125,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 72,
+              "hits": 44,
+              "accuracy": 0.6111111111111112,
+              "wilson_low_95": 0.495623549942154
+            },
+            {
+              "fold_index": 1,
+              "signals": 63,
+              "hits": 18,
+              "accuracy": 0.2857142857142857,
+              "wilson_low_95": 0.18903191986400805
+            },
+            {
+              "fold_index": 2,
+              "signals": 63,
+              "hits": 29,
+              "accuracy": 0.4603174603174603,
+              "wilson_low_95": 0.3430886457604498
+            },
+            {
+              "fold_index": 3,
+              "signals": 81,
+              "hits": 45,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.44727573776431023
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 45,
+              "hits": 20,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.30938930034997586
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 40,
+              "hits": 20,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.35199526933465386
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 25,
+              "hits": 14,
+              "accuracy": 0.56,
+              "wilson_low_95": 0.37067331869798775
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 32,
+              "hits": 13,
+              "accuracy": 0.40625,
+              "wilson_low_95": 0.25519634842665434
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 30,
+              "hits": 15,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.33154125640533766
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 38,
+              "hits": 18,
+              "accuracy": 0.47368421052631576,
+              "wilson_low_95": 0.32479023322526057
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 41,
+              "hits": 21,
+              "accuracy": 0.5121951219512195,
+              "wilson_low_95": 0.36484508651543807
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 28,
+              "hits": 15,
+              "accuracy": 0.5357142857142857,
+              "wilson_low_95": 0.35812689234467904
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 812,
+            "hits": 379,
+            "accuracy": 0.4667487684729064,
+            "wilson_low_95": 0.4326713642859753
+          },
+          "effective": {
+            "signals": 136,
+            "hits": 70,
+            "accuracy": 0.5147058823529411,
+            "wilson_low_95": 0.43146624550741874
+          },
+          "effective_coverage": 0.2833333333333333,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 35,
+              "hits": 20,
+              "accuracy": 0.5714285714285714,
+              "wilson_low_95": 0.40857411143974914
+            },
+            {
+              "fold_index": 1,
+              "signals": 32,
+              "hits": 6,
+              "accuracy": 0.1875,
+              "wilson_low_95": 0.08889544689565954
+            },
+            {
+              "fold_index": 2,
+              "signals": 28,
+              "hits": 16,
+              "accuracy": 0.5714285714285714,
+              "wilson_low_95": 0.3907078562746876
+            },
+            {
+              "fold_index": 3,
+              "signals": 41,
+              "hits": 28,
+              "accuracy": 0.6829268292682927,
+              "wilson_low_95": 0.5301580035565572
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 21,
+              "hits": 8,
+              "accuracy": 0.38095238095238093,
+              "wilson_low_95": 0.20751011368564493
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 19,
+              "hits": 11,
+              "accuracy": 0.5789473684210527,
+              "wilson_low_95": 0.3627590353425504
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 5,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.26665129349549305
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 14,
+              "hits": 6,
+              "accuracy": 0.42857142857142855,
+              "wilson_low_95": 0.2138079890447412
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 17,
+              "hits": 9,
+              "accuracy": 0.5294117647058824,
+              "wilson_low_95": 0.3096323506000443
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 19,
+              "hits": 10,
+              "accuracy": 0.5263157894736842,
+              "wilson_low_95": 0.31707809245113167
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 23,
+              "hits": 14,
+              "accuracy": 0.6086956521739131,
+              "wilson_low_95": 0.4078552239138171
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 14,
+              "hits": 7,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.26799202452413634
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 409,
+            "hits": 191,
+            "accuracy": 0.4669926650366748,
+            "wilson_low_95": 0.41917300476530184
+          },
+          "effective": {
+            "signals": 68,
+            "hits": 29,
+            "accuracy": 0.4264705882352941,
+            "wilson_low_95": 0.3159724314773308
+          },
+          "effective_coverage": 0.14166666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 15,
+              "hits": 4,
+              "accuracy": 0.26666666666666666,
+              "wilson_low_95": 0.10897453325692374
+            },
+            {
+              "fold_index": 1,
+              "signals": 14,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 2.1779500349382702e-17
+            },
+            {
+              "fold_index": 2,
+              "signals": 8,
+              "hits": 3,
+              "accuracy": 0.375,
+              "wilson_low_95": 0.13684428582359737
+            },
+            {
+              "fold_index": 3,
+              "signals": 31,
+              "hits": 22,
+              "accuracy": 0.7096774193548387,
+              "wilson_low_95": 0.5340767066925007
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 12,
+              "hits": 3,
+              "accuracy": 0.25,
+              "wilson_low_95": 0.08894166839405473
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 5,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.26665129349549305
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 3,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.23072428127601285
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 3,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.23072428127601285
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 3,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.1205838183869109
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 4,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.18877852109766458
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 11,
+              "hits": 5,
+              "accuracy": 0.45454545454545453,
+              "wilson_low_95": 0.21271271622459764
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 8,
+              "hits": 3,
+              "accuracy": 0.375,
+              "wilson_low_95": 0.13684428582359737
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 214,
+            "hits": 103,
+            "accuracy": 0.48130841121495327,
+            "wilson_low_95": 0.4152867111032806
+          },
+          "effective": {
+            "signals": 38,
+            "hits": 19,
+            "accuracy": 0.5,
+            "wilson_low_95": 0.34849928364395105
+          },
+          "effective_coverage": 0.07916666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 7,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 3.584186086443356e-17
+            },
+            {
+              "fold_index": 1,
+              "signals": 6,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 3.384324554477539e-17
+            },
+            {
+              "fold_index": 2,
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "fold_index": 3,
+              "signals": 24,
+              "hits": 18,
+              "accuracy": 0.75,
+              "wilson_low_95": 0.55100555994846
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 3,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.23072428127601285
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 2,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.11762077423264786
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 4,
+              "hits": 2,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.15003898915214947
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 101,
+            "hits": 51,
+            "accuracy": 0.504950495049505,
+            "wilson_low_95": 0.4090648919320129
+          },
+          "effective": {
+            "signals": 17,
+            "hits": 7,
+            "accuracy": 0.4117647058823529,
+            "wilson_low_95": 0.21611056790214814
+          },
+          "effective_coverage": 0.035416666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 5,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 1,
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 10,
+              "hits": 7,
+              "accuracy": 0.7,
+              "wilson_low_95": 0.3967781474611453
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind guarded state-field target",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1479,
+            "accuracy": 0.5135416666666667,
+            "wilson_low_95": 0.4952815935201166
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 253,
+            "accuracy": 0.5270833333333333,
+            "wilson_low_95": 0.4823812584532602
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 71,
+              "accuracy": 0.5916666666666667,
+              "wilson_low_95": 0.5022078316314156
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 40,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.2553174050125844
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 72,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.5105602479246307
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 70,
+              "accuracy": 0.5833333333333334,
+              "wilson_low_95": 0.4938803270016424
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 34,
+              "accuracy": 0.5666666666666667,
+              "wilson_low_95": 0.44103438776125564
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 25,
+              "accuracy": 0.4166666666666667,
+              "wilson_low_95": 0.30064278558341617
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 37,
+              "accuracy": 0.6166666666666667,
+              "wilson_low_95": 0.4901759582409993
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 36,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.47366053492040755
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 34,
+              "accuracy": 0.5666666666666667,
+              "wilson_low_95": 0.44103438776125564
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 26,
+              "accuracy": 0.43333333333333335,
+              "wilson_low_95": 0.31572396804686764
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 30,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.3773502424155577
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 1222,
+            "hits": 628,
+            "accuracy": 0.513911620294599,
+            "wilson_low_95": 0.48588895312552716
+          },
+          "effective": {
+            "signals": 188,
+            "hits": 99,
+            "accuracy": 0.526595744680851,
+            "wilson_low_95": 0.4554080180260428
+          },
+          "effective_coverage": 0.39166666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 48,
+              "hits": 33,
+              "accuracy": 0.6875,
+              "wilson_low_95": 0.5466692858410841
+            },
+            {
+              "fold_index": 1,
+              "signals": 49,
+              "hits": 16,
+              "accuracy": 0.32653061224489793,
+              "wilson_low_95": 0.21207497001811862
+            },
+            {
+              "fold_index": 2,
+              "signals": 44,
+              "hits": 25,
+              "accuracy": 0.5681818181818182,
+              "wilson_low_95": 0.4222414699362943
+            },
+            {
+              "fold_index": 3,
+              "signals": 47,
+              "hits": 25,
+              "accuracy": 0.5319148936170213,
+              "wilson_low_95": 0.3923238322019481
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 27,
+              "hits": 14,
+              "accuracy": 0.5185185185185185,
+              "wilson_low_95": 0.3398561575495229
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 24,
+              "hits": 11,
+              "accuracy": 0.4583333333333333,
+              "wilson_low_95": 0.27891333731210977
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 11,
+              "hits": 9,
+              "accuracy": 0.8181818181818182,
+              "wilson_low_95": 0.5230194380391558
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 30,
+              "hits": 18,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.4232036025332248
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 23,
+              "hits": 13,
+              "accuracy": 0.5652173913043478,
+              "wilson_low_95": 0.3681137508501646
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 25,
+              "hits": 10,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.2340330237774797
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 28,
+              "hits": 12,
+              "accuracy": 0.42857142857142855,
+              "wilson_low_95": 0.265085471241237
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 20,
+              "hits": 12,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.38658150076225317
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 371,
+            "hits": 200,
+            "accuracy": 0.5390835579514824,
+            "wilson_low_95": 0.48821955155325775
+          },
+          "effective": {
+            "signals": 56,
+            "hits": 29,
+            "accuracy": 0.5178571428571429,
+            "wilson_low_95": 0.3901038392417699
+          },
+          "effective_coverage": 0.11666666666666667,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 14,
+              "hits": 12,
+              "accuracy": 0.8571428571428571,
+              "wilson_low_95": 0.6005862050302965
+            },
+            {
+              "fold_index": 1,
+              "signals": 16,
+              "hits": 7,
+              "accuracy": 0.4375,
+              "wilson_low_95": 0.2309865240549235
+            },
+            {
+              "fold_index": 2,
+              "signals": 12,
+              "hits": 3,
+              "accuracy": 0.25,
+              "wilson_low_95": 0.08894166839405473
+            },
+            {
+              "fold_index": 3,
+              "signals": 14,
+              "hits": 7,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.26799202452413634
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 14,
+              "hits": 7,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.26799202452413634
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 8,
+              "hits": 1,
+              "accuracy": 0.125,
+              "wilson_low_95": 0.022417491450056667
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 8,
+              "accuracy": 0.8888888888888888,
+              "wilson_low_95": 0.5650002944233439
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 4,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.299993315138392
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 1,
+              "accuracy": 0.2,
+              "wilson_low_95": 0.03622410863243013
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 4,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.18877852109766458
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 94,
+            "hits": 57,
+            "accuracy": 0.6063829787234043,
+            "wilson_low_95": 0.5053112567832916
+          },
+          "effective": {
+            "signals": 11,
+            "hits": 6,
+            "accuracy": 0.5454545454545454,
+            "wilson_low_95": 0.28009153740932197
+          },
+          "effective_coverage": 0.022916666666666665,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "fold_index": 1,
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "fold_index": 2,
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 3,
+              "signals": 5,
+              "hits": 4,
+              "accuracy": 0.8,
+              "wilson_low_95": 0.37553462976252533
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 26,
+            "hits": 18,
+            "accuracy": 0.6923076923076923,
+            "wilson_low_95": 0.5001174167780164
+          },
+          "effective": {
+            "signals": 1,
+            "hits": 1,
+            "accuracy": 1.0,
+            "wilson_low_95": 0.20654931437723742
+          },
+          "effective_coverage": 0.0020833333333333333,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 9,
+            "hits": 6,
+            "accuracy": 0.6666666666666666,
+            "wilson_low_95": 0.35420213558039626
+          },
+          "effective": {
+            "signals": 0,
+            "hits": 0,
+            "accuracy": null,
+            "wilson_low_95": null
+          },
+          "effective_coverage": 0.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind independent-expert target",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1435,
+            "accuracy": 0.4982638888888889,
+            "wilson_low_95": 0.4800175914759196
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 238,
+            "accuracy": 0.49583333333333335,
+            "wilson_low_95": 0.45131601584211706
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 58,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.3958364430105443
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 53,
+              "accuracy": 0.44166666666666665,
+              "wilson_low_95": 0.35599746699537865
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 59,
+              "accuracy": 0.49166666666666664,
+              "wilson_low_95": 0.4038757172769723
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 68,
+              "accuracy": 0.5666666666666667,
+              "wilson_low_95": 0.47729920885539046
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 28,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.34627906041438494
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 32,
+              "accuracy": 0.5333333333333333,
+              "wilson_low_95": 0.40893427027157897
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 866,
+            "hits": 432,
+            "accuracy": 0.49884526558891457,
+            "wilson_low_95": 0.4656229245909569
+          },
+          "effective": {
+            "signals": 140,
+            "hits": 66,
+            "accuracy": 0.4714285714285714,
+            "wilson_low_95": 0.3906113916175145
+          },
+          "effective_coverage": 0.2916666666666667,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 34,
+              "hits": 16,
+              "accuracy": 0.47058823529411764,
+              "wilson_low_95": 0.31451504475088476
+            },
+            {
+              "fold_index": 1,
+              "signals": 32,
+              "hits": 15,
+              "accuracy": 0.46875,
+              "wilson_low_95": 0.30869387108068835
+            },
+            {
+              "fold_index": 2,
+              "signals": 25,
+              "hits": 11,
+              "accuracy": 0.44,
+              "wilson_low_95": 0.2666563888106735
+            },
+            {
+              "fold_index": 3,
+              "signals": 49,
+              "hits": 24,
+              "accuracy": 0.4897959183673469,
+              "wilson_low_95": 0.3557511031030578
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 30,
+              "hits": 16,
+              "accuracy": 0.5333333333333333,
+              "wilson_low_95": 0.3614229961987329
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 15,
+              "hits": 7,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.24809535365737387
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 7,
+              "hits": 5,
+              "accuracy": 0.7142857142857143,
+              "wilson_low_95": 0.35893445183261935
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 9,
+              "accuracy": 0.4090909090909091,
+              "wilson_low_95": 0.23255816196471868
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 18,
+              "hits": 10,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.33716415642042774
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 16,
+              "hits": 4,
+              "accuracy": 0.25,
+              "wilson_low_95": 0.10182067491213048
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 10,
+              "accuracy": 0.45454545454545453,
+              "wilson_low_95": 0.26920294180813314
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 10,
+              "hits": 5,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.236593090512564
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 126,
+            "hits": 75,
+            "accuracy": 0.5952380952380952,
+            "wilson_low_95": 0.5079453839824656
+          },
+          "effective": {
+            "signals": 17,
+            "hits": 11,
+            "accuracy": 0.6470588235294118,
+            "wilson_low_95": 0.4130036348521869
+          },
+          "effective_coverage": 0.035416666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "fold_index": 1,
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "fold_index": 2,
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 3,
+              "signals": 10,
+              "hits": 8,
+              "accuracy": 0.8,
+              "wilson_low_95": 0.4901624715366418
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 4,
+              "hits": 4,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.5101091635454027
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 23,
+            "hits": 16,
+            "accuracy": 0.6956521739130435,
+            "wilson_low_95": 0.49134243731240795
+          },
+          "effective": {
+            "signals": 3,
+            "hits": 3,
+            "accuracy": 1.0,
+            "wilson_low_95": 0.4385029682449545
+          },
+          "effective_coverage": 0.00625,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 11,
+            "hits": 10,
+            "accuracy": 0.9090909090909091,
+            "wilson_low_95": 0.6226415635484044
+          },
+          "effective": {
+            "signals": 2,
+            "hits": 2,
+            "accuracy": 1.0,
+            "wilson_low_95": 0.3423802275066531
+          },
+          "effective_coverage": 0.004166666666666667,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 2,
+            "hits": 1,
+            "accuracy": 0.5,
+            "wilson_low_95": 0.09453120573423071
+          },
+          "effective": {
+            "signals": 0,
+            "hits": 0,
+            "accuracy": null,
+            "wilson_low_95": null
+          },
+          "effective_coverage": 0.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind market-field target",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1498,
+            "accuracy": 0.5201388888888889,
+            "wilson_low_95": 0.5018781314534192
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 234,
+            "accuracy": 0.4875,
+            "wilson_low_95": 0.44306112439788753
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 45,
+              "accuracy": 0.375,
+              "wilson_low_95": 0.29352429786446804
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 77,
+              "accuracy": 0.6416666666666667,
+              "wilson_low_95": 0.5527053600179013
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 56,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.37982917045799003
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 56,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.37982917045799003
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 33,
+              "accuracy": 0.55,
+              "wilson_low_95": 0.4249193588533434
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 22,
+              "accuracy": 0.36666666666666664,
+              "wilson_low_95": 0.2562091668722543
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 27,
+              "accuracy": 0.45,
+              "wilson_low_95": 0.3309365440675524
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 32,
+              "accuracy": 0.5333333333333333,
+              "wilson_low_95": 0.40893427027157897
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 1668,
+            "hits": 897,
+            "accuracy": 0.5377697841726619,
+            "wilson_low_95": 0.5137839415338549
+          },
+          "effective": {
+            "signals": 279,
+            "hits": 143,
+            "accuracy": 0.5125448028673835,
+            "wilson_low_95": 0.4541223104184322
+          },
+          "effective_coverage": 0.58125,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 72,
+              "hits": 28,
+              "accuracy": 0.3888888888888889,
+              "wilson_low_95": 0.28465714385247787
+            },
+            {
+              "fold_index": 1,
+              "signals": 63,
+              "hits": 45,
+              "accuracy": 0.7142857142857143,
+              "wilson_low_95": 0.5929728343259287
+            },
+            {
+              "fold_index": 2,
+              "signals": 63,
+              "hits": 34,
+              "accuracy": 0.5396825396825397,
+              "wilson_low_95": 0.4178925188089536
+            },
+            {
+              "fold_index": 3,
+              "signals": 81,
+              "hits": 36,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.3411955250345785
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 45,
+              "hits": 25,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.41176134493521055
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 40,
+              "hits": 20,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.35199526933465386
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 25,
+              "hits": 11,
+              "accuracy": 0.44,
+              "wilson_low_95": 0.2666563888106735
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 32,
+              "hits": 19,
+              "accuracy": 0.59375,
+              "wilson_low_95": 0.4226002487538286
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 30,
+              "hits": 15,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.33154125640533766
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 38,
+              "hits": 20,
+              "accuracy": 0.5263157894736842,
+              "wilson_low_95": 0.37258971384496675
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 41,
+              "hits": 20,
+              "accuracy": 0.4878048780487805,
+              "wilson_low_95": 0.34254429554432664
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 28,
+              "hits": 13,
+              "accuracy": 0.4642857142857143,
+              "wilson_low_95": 0.29531569982795375
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 812,
+            "hits": 433,
+            "accuracy": 0.5332512315270936,
+            "wilson_low_95": 0.49886069484298995
+          },
+          "effective": {
+            "signals": 136,
+            "hits": 66,
+            "accuracy": 0.4852941176470588,
+            "wilson_low_95": 0.4028624249113476
+          },
+          "effective_coverage": 0.2833333333333333,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 35,
+              "hits": 15,
+              "accuracy": 0.42857142857142855,
+              "wilson_low_95": 0.27984568177180685
+            },
+            {
+              "fold_index": 1,
+              "signals": 32,
+              "hits": 26,
+              "accuracy": 0.8125,
+              "wilson_low_95": 0.6469084479862404
+            },
+            {
+              "fold_index": 2,
+              "signals": 28,
+              "hits": 12,
+              "accuracy": 0.42857142857142855,
+              "wilson_low_95": 0.265085471241237
+            },
+            {
+              "fold_index": 3,
+              "signals": 41,
+              "hits": 13,
+              "accuracy": 0.3170731707317073,
+              "wilson_low_95": 0.19564613898988575
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 21,
+              "hits": 13,
+              "accuracy": 0.6190476190476191,
+              "wilson_low_95": 0.4087865377511576
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 19,
+              "hits": 8,
+              "accuracy": 0.42105263157894735,
+              "wilson_low_95": 0.23141891282454238
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 4,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.18877852109766458
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 14,
+              "hits": 8,
+              "accuracy": 0.5714285714285714,
+              "wilson_low_95": 0.32590644579650746
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 17,
+              "hits": 8,
+              "accuracy": 0.47058823529411764,
+              "wilson_low_95": 0.26165106442409436
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 19,
+              "hits": 9,
+              "accuracy": 0.47368421052631576,
+              "wilson_low_95": 0.2732980516117956
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 23,
+              "hits": 9,
+              "accuracy": 0.391304347826087,
+              "wilson_low_95": 0.2215762279247795
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 14,
+              "hits": 7,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.26799202452413634
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 409,
+            "hits": 218,
+            "accuracy": 0.5330073349633252,
+            "wilson_low_95": 0.4845734131378696
+          },
+          "effective": {
+            "signals": 68,
+            "hits": 39,
+            "accuracy": 0.5735294117647058,
+            "wilson_low_95": 0.4551678231655556
+          },
+          "effective_coverage": 0.14166666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 15,
+              "hits": 11,
+              "accuracy": 0.7333333333333333,
+              "wilson_low_95": 0.48049565944019434
+            },
+            {
+              "fold_index": 1,
+              "signals": 14,
+              "hits": 14,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.7846891972623642
+            },
+            {
+              "fold_index": 2,
+              "signals": 8,
+              "hits": 5,
+              "accuracy": 0.625,
+              "wilson_low_95": 0.3057423946026273
+            },
+            {
+              "fold_index": 3,
+              "signals": 31,
+              "hits": 9,
+              "accuracy": 0.2903225806451613,
+              "wilson_low_95": 0.16095800156300616
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 12,
+              "hits": 9,
+              "accuracy": 0.75,
+              "wilson_low_95": 0.46769466506643437
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 4,
+              "accuracy": 0.4444444444444444,
+              "wilson_low_95": 0.18877852109766458
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 2,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.11762077423264786
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 2,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.11762077423264786
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 6,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.35420213558039626
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 5,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.26665129349549305
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 11,
+              "hits": 6,
+              "accuracy": 0.5454545454545454,
+              "wilson_low_95": 0.28009153740932197
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 8,
+              "hits": 5,
+              "accuracy": 0.625,
+              "wilson_low_95": 0.3057423946026273
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 214,
+            "hits": 111,
+            "accuracy": 0.5186915887850467,
+            "wilson_low_95": 0.452010666420642
+          },
+          "effective": {
+            "signals": 38,
+            "hits": 19,
+            "accuracy": 0.5,
+            "wilson_low_95": 0.34849928364395105
+          },
+          "effective_coverage": 0.07916666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 7,
+              "hits": 7,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.6456695649333126
+            },
+            {
+              "fold_index": 1,
+              "signals": 6,
+              "hits": 6,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.6096657120978346
+            },
+            {
+              "fold_index": 2,
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 3,
+              "signals": 24,
+              "hits": 6,
+              "accuracy": 0.25,
+              "wilson_low_95": 0.11999366228595006
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 2,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.11762077423264786
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 5,
+              "hits": 3,
+              "accuracy": 0.6,
+              "wilson_low_95": 0.23072428127601285
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 3,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.1876163064826505
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 4,
+              "hits": 2,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.15003898915214947
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 101,
+            "hits": 50,
+            "accuracy": 0.49504950495049505,
+            "wilson_low_95": 0.3995266805102293
+          },
+          "effective": {
+            "signals": 17,
+            "hits": 10,
+            "accuracy": 0.5882352941176471,
+            "wilson_low_95": 0.36005442642999785
+          },
+          "effective_coverage": 0.035416666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 5,
+              "hits": 5,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.5655175352168252
+            },
+            {
+              "fold_index": 1,
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 10,
+              "hits": 3,
+              "accuracy": 0.3,
+              "wilson_low_95": 0.10779126740630099
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind online-expert target",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1414,
+            "accuracy": 0.4909722222222222,
+            "wilson_low_95": 0.4727384987583736
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 237,
+            "accuracy": 0.49375,
+            "wilson_low_95": 0.4492511415645051
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 42,
+              "accuracy": 0.35,
+              "wilson_low_95": 0.27051899590285405
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 67,
+              "accuracy": 0.5583333333333333,
+              "wilson_low_95": 0.46904523091319655
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 58,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.3958364430105443
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 70,
+              "accuracy": 0.5833333333333334,
+              "wilson_low_95": 0.4938803270016424
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 33,
+              "accuracy": 0.55,
+              "wilson_low_95": 0.4249193588533434
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 25,
+              "accuracy": 0.4166666666666667,
+              "wilson_low_95": 0.30064278558341617
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 27,
+              "accuracy": 0.45,
+              "wilson_low_95": 0.3309365440675524
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 30,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.3773502424155577
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 978,
+            "hits": 518,
+            "accuracy": 0.5296523517382413,
+            "wilson_low_95": 0.4983161607692154
+          },
+          "effective": {
+            "signals": 147,
+            "hits": 80,
+            "accuracy": 0.54421768707483,
+            "wilson_low_95": 0.46360455202210754
+          },
+          "effective_coverage": 0.30625,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 34,
+              "hits": 15,
+              "accuracy": 0.4411764705882353,
+              "wilson_low_95": 0.2888348224624216
+            },
+            {
+              "fold_index": 1,
+              "signals": 46,
+              "hits": 31,
+              "accuracy": 0.6739130434782609,
+              "wilson_low_95": 0.5296773241932242
+            },
+            {
+              "fold_index": 2,
+              "signals": 15,
+              "hits": 6,
+              "accuracy": 0.4,
+              "wilson_low_95": 0.1982449614134158
+            },
+            {
+              "fold_index": 3,
+              "signals": 52,
+              "hits": 28,
+              "accuracy": 0.5384615384615384,
+              "wilson_low_95": 0.4050361132695787
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 13,
+              "accuracy": 0.5909090909090909,
+              "wilson_low_95": 0.3873481847631513
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 19,
+              "hits": 11,
+              "accuracy": 0.5789473684210527,
+              "wilson_low_95": 0.3627590353425504
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 12,
+              "hits": 8,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.39062208887279953
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 10,
+              "accuracy": 0.45454545454545453,
+              "wilson_low_95": 0.26920294180813314
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 12,
+              "hits": 6,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.2537815976337061
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 18,
+              "hits": 9,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.29031021505169974
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 29,
+              "hits": 18,
+              "accuracy": 0.6206896551724138,
+              "wilson_low_95": 0.44002544205988514
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 13,
+              "hits": 5,
+              "accuracy": 0.38461538461538464,
+              "wilson_low_95": 0.17709707797762572
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 281,
+            "hits": 163,
+            "accuracy": 0.5800711743772242,
+            "wilson_low_95": 0.5216652568337943
+          },
+          "effective": {
+            "signals": 48,
+            "hits": 28,
+            "accuracy": 0.5833333333333334,
+            "wilson_low_95": 0.44281332283976277
+          },
+          "effective_coverage": 0.1,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 14,
+              "hits": 7,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.26799202452413634
+            },
+            {
+              "fold_index": 1,
+              "signals": 19,
+              "hits": 13,
+              "accuracy": 0.6842105263157895,
+              "wilson_low_95": 0.4601040767532747
+            },
+            {
+              "fold_index": 2,
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "fold_index": 3,
+              "signals": 12,
+              "hits": 7,
+              "accuracy": 0.5833333333333334,
+              "wilson_low_95": 0.3195113125495498
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 4,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.299993315138392
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 9,
+              "hits": 5,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.26665129349549305
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 2,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.09677141110578043
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 4,
+              "hits": 2,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.15003898915214947
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 7,
+              "hits": 3,
+              "accuracy": 0.42857142857142855,
+              "wilson_low_95": 0.15821985525146973
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 10,
+              "hits": 7,
+              "accuracy": 0.7,
+              "wilson_low_95": 0.3967781474611453
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 2,
+              "accuracy": 0.6666666666666666,
+              "wilson_low_95": 0.20765960080204768
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 93,
+            "hits": 67,
+            "accuracy": 0.7204301075268817,
+            "wilson_low_95": 0.6218757830417118
+          },
+          "effective": {
+            "signals": 16,
+            "hits": 14,
+            "accuracy": 0.875,
+            "wilson_low_95": 0.6397717273424132
+          },
+          "effective_coverage": 0.03333333333333333,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 6,
+              "hits": 6,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.6096657120978346
+            },
+            {
+              "fold_index": 1,
+              "signals": 8,
+              "hits": 8,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.6755924351161198
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 3,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.4385029682449545
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 41,
+            "hits": 34,
+            "accuracy": 0.8292682926829268,
+            "wilson_low_95": 0.6873738759959582
+          },
+          "effective": {
+            "signals": 11,
+            "hits": 10,
+            "accuracy": 0.9090909090909091,
+            "wilson_low_95": 0.6226415635484044
+          },
+          "effective_coverage": 0.022916666666666665,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 5,
+              "hits": 5,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.5655175352168252
+            },
+            {
+              "fold_index": 1,
+              "signals": 5,
+              "hits": 5,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.5655175352168252
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 13,
+            "hits": 12,
+            "accuracy": 0.9230769230769231,
+            "wilson_low_95": 0.6668604907890041
+          },
+          "effective": {
+            "signals": 5,
+            "hits": 5,
+            "accuracy": 1.0,
+            "wilson_low_95": 0.5655175352168252
+          },
+          "effective_coverage": 0.010416666666666666,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 4,
+              "hits": 4,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.5101091635454027
+            },
+            {
+              "fold_index": 1,
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    },
+    {
+      "engine": "WaveMind robust target",
+      "raw_events": 2880,
+      "effective_events": 480,
+      "admitted": false,
+      "frontier": [
+        {
+          "threshold_bps": 0.0,
+          "raw": {
+            "signals": 2880,
+            "hits": 1423,
+            "accuracy": 0.49409722222222224,
+            "wilson_low_95": 0.4758576352348554
+          },
+          "effective": {
+            "signals": 480,
+            "hits": 238,
+            "accuracy": 0.49583333333333335,
+            "wilson_low_95": 0.45131601584211706
+          },
+          "effective_coverage": 1.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 120,
+              "hits": 58,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.3958364430105443
+            },
+            {
+              "fold_index": 1,
+              "signals": 120,
+              "hits": 54,
+              "accuracy": 0.45,
+              "wilson_low_95": 0.36391735083874616
+            },
+            {
+              "fold_index": 2,
+              "signals": 120,
+              "hits": 57,
+              "accuracy": 0.475,
+              "wilson_low_95": 0.3878209113791835
+            },
+            {
+              "fold_index": 3,
+              "signals": 120,
+              "hits": 69,
+              "accuracy": 0.575,
+              "wilson_low_95": 0.4855775172299302
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 30,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.3773502424155577
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 30,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.3773502424155577
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 31,
+              "accuracy": 0.5166666666666667,
+              "wilson_low_95": 0.39307810032592494
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 30,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.3773502424155577
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 29,
+              "accuracy": 0.48333333333333334,
+              "wilson_low_95": 0.36175049539732784
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 60,
+              "hits": 28,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.34627906041438494
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 50.0,
+          "raw": {
+            "signals": 807,
+            "hits": 397,
+            "accuracy": 0.4919454770755886,
+            "wilson_low_95": 0.45757289478300456
+          },
+          "effective": {
+            "signals": 132,
+            "hits": 61,
+            "accuracy": 0.4621212121212121,
+            "wilson_low_95": 0.3793453862161911
+          },
+          "effective_coverage": 0.275,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 33,
+              "hits": 15,
+              "accuracy": 0.45454545454545453,
+              "wilson_low_95": 0.29842938513876116
+            },
+            {
+              "fold_index": 1,
+              "signals": 32,
+              "hits": 15,
+              "accuracy": 0.46875,
+              "wilson_low_95": 0.30869387108068835
+            },
+            {
+              "fold_index": 2,
+              "signals": 19,
+              "hits": 7,
+              "accuracy": 0.3684210526315789,
+              "wilson_low_95": 0.19149512745135075
+            },
+            {
+              "fold_index": 3,
+              "signals": 48,
+              "hits": 24,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.36389330502679385
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 27,
+              "hits": 14,
+              "accuracy": 0.5185185185185185,
+              "wilson_low_95": 0.3398561575495229
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 15,
+              "hits": 7,
+              "accuracy": 0.4666666666666667,
+              "wilson_low_95": 0.24809535365737387
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 6,
+              "hits": 5,
+              "accuracy": 0.8333333333333334,
+              "wilson_low_95": 0.4364971778135299
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 9,
+              "accuracy": 0.4090909090909091,
+              "wilson_low_95": 0.23255816196471868
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 18,
+              "hits": 10,
+              "accuracy": 0.5555555555555556,
+              "wilson_low_95": 0.33716415642042774
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 15,
+              "hits": 4,
+              "accuracy": 0.26666666666666666,
+              "wilson_low_95": 0.10897453325692374
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 22,
+              "hits": 10,
+              "accuracy": 0.45454545454545453,
+              "wilson_low_95": 0.26920294180813314
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 7,
+              "hits": 2,
+              "accuracy": 0.2857142857142857,
+              "wilson_low_95": 0.0822189240040568
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 100.0,
+          "raw": {
+            "signals": 102,
+            "hits": 61,
+            "accuracy": 0.5980392156862745,
+            "wilson_low_95": 0.5010067361944007
+          },
+          "effective": {
+            "signals": 13,
+            "hits": 8,
+            "accuracy": 0.6153846153846154,
+            "wilson_low_95": 0.3552289151266569
+          },
+          "effective_coverage": 0.027083333333333334,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "fold_index": 1,
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "fold_index": 2,
+              "signals": 1,
+              "hits": 0,
+              "accuracy": 0.0,
+              "wilson_low_95": 0.0
+            },
+            {
+              "fold_index": 3,
+              "signals": 7,
+              "hits": 5,
+              "accuracy": 0.7142857142857143,
+              "wilson_low_95": 0.35893445183261935
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 3,
+              "hits": 1,
+              "accuracy": 0.3333333333333333,
+              "wilson_low_95": 0.061491944720396215
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 2,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.3423802275066531
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 2,
+              "hits": 1,
+              "accuracy": 0.5,
+              "wilson_low_95": 0.09453120573423071
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 1,
+              "hits": 1,
+              "accuracy": 1.0,
+              "wilson_low_95": 0.20654931437723742
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 150.0,
+          "raw": {
+            "signals": 12,
+            "hits": 6,
+            "accuracy": 0.5,
+            "wilson_low_95": 0.2537815976337061
+          },
+          "effective": {
+            "signals": 0,
+            "hits": 0,
+            "accuracy": null,
+            "wilson_low_95": null
+          },
+          "effective_coverage": 0.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 200.0,
+          "raw": {
+            "signals": 5,
+            "hits": 4,
+            "accuracy": 0.8,
+            "wilson_low_95": 0.37553462976252533
+          },
+          "effective": {
+            "signals": 0,
+            "hits": 0,
+            "accuracy": null,
+            "wilson_low_95": null
+          },
+          "effective_coverage": 0.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        },
+        {
+          "threshold_bps": 250.0,
+          "raw": {
+            "signals": 1,
+            "hits": 0,
+            "accuracy": 0.0,
+            "wilson_low_95": 0.0
+          },
+          "effective": {
+            "signals": 0,
+            "hits": 0,
+            "accuracy": null,
+            "wilson_low_95": null
+          },
+          "effective_coverage": 0.0,
+          "by_fold": [
+            {
+              "fold_index": 0,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 1,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 2,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "fold_index": 3,
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "by_slice": [
+            {
+              "symbol": "ADA/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "AVAX/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "BTC/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "DOGE/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "ETH/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "LINK/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "SOL/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            },
+            {
+              "symbol": "XRP/USDT",
+              "timeframe": "4h",
+              "signals": 0,
+              "hits": 0,
+              "accuracy": null,
+              "wilson_low_95": null
+            }
+          ],
+          "fold_ready": false,
+          "slice_ready": false,
+          "admitted": false
+        }
+      ]
+    }
+  ],
+  "admitted_engines": []
+}

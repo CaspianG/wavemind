@@ -509,6 +509,8 @@ def _predict_return(
         )
     if engine_key == "wavemind-online-expert-target":
         return _online_expert_target_return(history, query, horizon=horizon, calibration=calibration)
+    if engine_key == "wavemind-independent-expert-target":
+        return _independent_expert_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-learned-target":
         features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
         robust_value, robust_suffix = _robust_value_from_features(features, query.timeframe)
@@ -1247,6 +1249,129 @@ def _online_expert_candidate_stats(
             "mae": float(bucket["mae_weight"] / weight),
         }
     return stats
+
+
+def _independent_expert_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> tuple[float, int, str]:
+    """Select a recent expert using non-overlapping outcome windows only."""
+    features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+    candidates = _directional_candidate_values(features, query.timeframe)
+    robust, robust_suffix = _robust_value_from_features(features, query.timeframe)
+    support = int(max(0.0, round(features.get("support_count", 0.0))))
+    stats = _independent_expert_candidate_stats(
+        history,
+        query,
+        horizon=horizon,
+        calibration=calibration,
+    )
+    robust_stats = stats.get("robust")
+    if not stats or robust_stats is None or robust_stats["count"] < 12.0:
+        return robust, support, f"{robust_suffix}+independent_expert_disabled:insufficient_samples"
+
+    robust_hit = robust_stats["hit"]
+    robust_mae = robust_stats["mae"]
+    eligible = []
+    for name, candidate_stats in stats.items():
+        if name not in candidates or name in {"naive", "inv_naive"}:
+            continue
+        count = candidate_stats["count"]
+        hit = candidate_stats["hit"]
+        mae = candidate_stats["mae"]
+        stable_hit = min(candidate_stats["early_hit"], candidate_stats["late_hit"])
+        if count < 12.0 or stable_hit < 0.55:
+            continue
+        if hit >= max(0.68, robust_hit + 0.12) and mae <= robust_mae * 0.95:
+            eligible.append((stable_hit, hit, -mae / max(robust_mae, 1e-9), count, name))
+    if not eligible:
+        return robust, support, f"{robust_suffix}+independent_expert_kept_robust:recent_hit={robust_hit:.3f}"
+
+    _, _, _, _, selected = max(eligible)
+    selected_stats = stats[selected]
+    value = _force_nonzero(candidates[selected], fallback=robust)
+    method = (
+        "independent_expert_selector:"
+        f"{selected}:hit={selected_stats['hit']:.3f}:"
+        f"stable_hit={min(selected_stats['early_hit'], selected_stats['late_hit']):.3f}:"
+        f"n={int(selected_stats['count'])}:{robust_suffix}"
+    )
+    return value, support, method
+
+
+def _independent_expert_candidate_stats(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> dict[str, dict[str, float]]:
+    lookback = {"1h": 240, "4h": 192, "1d": 84}.get(query.timeframe, 192)
+    start = max(32, len(history) - lookback)
+    step = max(1, int(horizon))
+    indices = list(range(len(history) - 1, start - 1, -step))
+    indices.reverse()
+    query_signature = set(_regime_signature_from_window(query))
+    observations: dict[str, list[tuple[float, bool, float]]] = {}
+    for index in indices:
+        window = history[index]
+        weight = _online_expert_similarity_weight(
+            query_signature,
+            query,
+            window,
+            index=index,
+            start=start,
+            end=len(history),
+        )
+        if weight <= 0.0:
+            continue
+        candidates = _online_expert_cached_candidates(
+            history,
+            window,
+            horizon=horizon,
+            calibration=calibration,
+        )
+        if candidates is None:
+            continue
+        actual = float(window.future_return_bps)
+        for name, prediction in candidates.items():
+            observations.setdefault(name, []).append(
+                (
+                    float(weight),
+                    _signed_direction(prediction) == _signed_direction(actual),
+                    abs(float(prediction) - actual),
+                )
+            )
+
+    stats: dict[str, dict[str, float]] = {}
+    for name, values in observations.items():
+        if not values:
+            continue
+        split = max(1, len(values) // 2)
+        early = values[:split]
+        late = values[split:]
+        if not late:
+            late = early
+        total_weight = sum(value[0] for value in values)
+        stats[name] = {
+            "count": float(len(values)),
+            "weight": float(total_weight),
+            "hit": _weighted_hit(values),
+            "mae": float(sum(weight * error for weight, _, error in values) / max(total_weight, 1e-9)),
+            "early_hit": _weighted_hit(early),
+            "late_hit": _weighted_hit(late),
+        }
+    return stats
+
+
+def _weighted_hit(values: list[tuple[float, bool, float]]) -> float:
+    total_weight = sum(value[0] for value in values)
+    if total_weight <= 0.0:
+        return 0.0
+    return float(sum(weight for weight, hit, _ in values if hit) / total_weight)
 
 
 def _online_expert_cached_candidates(
@@ -2810,6 +2935,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-online-expert-target": "wavemind-online-expert-target",
         "online-expert": "wavemind-online-expert-target",
         "online-expert-target": "wavemind-online-expert-target",
+        "wavemind-independent-expert": "wavemind-independent-expert-target",
+        "wavemind-independent-expert-target": "wavemind-independent-expert-target",
+        "independent-expert": "wavemind-independent-expert-target",
+        "independent-expert-target": "wavemind-independent-expert-target",
         "wavemind-robust": "wavemind-robust-target",
         "wavemind-robust-target": "wavemind-robust-target",
         "robust": "wavemind-robust-target",
@@ -2844,6 +2973,7 @@ def _engine_name(key: str) -> str:
         "wavemind-regime-policy-target": "WaveMind regime-policy target",
         "wavemind-relationship-field-target": "WaveMind relationship-field target",
         "wavemind-online-expert-target": "WaveMind online-expert target",
+        "wavemind-independent-expert-target": "WaveMind independent-expert target",
         "wavemind-robust-target": "WaveMind robust target",
         "wavemind-learned-target": "WaveMind learned target",
         "wavemind-calibrated": "WaveMind calibrated target",
