@@ -1,3 +1,6 @@
+import sys
+import types
+
 import pytest
 
 
@@ -69,3 +72,28 @@ def test_make_ohlcv_windows_requires_enough_bars():
 
     with pytest.raises(ValueError, match="not enough bars"):
         make_ohlcv_windows(bars, symbol="BTC", timeframe="1h", window=16, horizon=4)
+
+
+def test_fetch_ohlcv_ccxt_latest_mode_consumes_freshness_slack(monkeypatch):
+    from benchmarks.crypto_ohlcv import fetch_ohlcv_ccxt
+
+    calls = []
+
+    class FakeExchange:
+        def __init__(self, config):
+            self.config = config
+
+        def fetch_ohlcv(self, symbol, *, timeframe, since, limit, params):
+            calls.append({"symbol": symbol, "timeframe": timeframe, "since": since, "limit": limit})
+            return [
+                [since + index * 3_600_000, 100.0, 101.0, 99.0, 100.0 + index, 10.0]
+                for index in range(limit)
+            ]
+
+    monkeypatch.setitem(sys.modules, "ccxt", types.SimpleNamespace(okx=FakeExchange))
+
+    bars = fetch_ohlcv_ccxt(exchange_id="okx", symbol="BTC/USDT", timeframe="1h", limit=3)
+
+    assert calls[0]["limit"] == 8
+    assert len(bars) == 3
+    assert bars[-1].timestamp > bars[0].timestamp

@@ -19,6 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from benchmarks.crypto_current_forecast import (  # noqa: E402
     _momentum_directional_return,
     forced_directional_forecast,
+    guarded_state_field_forecast,
 )
 from benchmarks.crypto_ohlcv import (  # noqa: E402
     OHLCVBar,
@@ -472,6 +473,8 @@ def _predict_return(
         return _robust_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-market-field-target":
         return _market_field_target_return(history, query, horizon=horizon, calibration=calibration)
+    if engine_key == "wavemind-state-field-target":
+        return _state_field_target_return(history, query, horizon=horizon, calibration=calibration)
     if engine_key == "wavemind-perp-field-target":
         return _perp_field_target_return(
             history,
@@ -597,6 +600,23 @@ def _market_field_target_return(
     value, suffix = _market_field_value_from_features(features, query.timeframe)
     support = int(max(0.0, round(features.get("support_count", 0.0))))
     return value, support, f"timeframe_market_field_v1:{suffix}"
+
+
+def _state_field_target_return(
+    history: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+    calibration: ReturnCalibration,
+) -> tuple[float, int, str]:
+    """Use observable state for direction and wave memory for target magnitude."""
+    if query.timeframe != "4h":
+        features = _target_model_features(history, query, horizon=horizon, calibration=calibration)
+        robust, suffix = _robust_value_from_features(features, query.timeframe)
+        support = int(max(0.0, round(features.get("support_count", 0.0))))
+        return robust, support, f"guarded_state_field_v1:fallback:{suffix}"
+    forecast = guarded_state_field_forecast(history, query, horizon=horizon)
+    return forecast.expected_return_bps, forecast.support, forecast.method
 
 
 def _perp_field_target_return(
@@ -2766,6 +2786,10 @@ def _normalize_engine_key(value: str) -> str:
         "wavemind-market-field-target": "wavemind-market-field-target",
         "market-field": "wavemind-market-field-target",
         "market-field-target": "wavemind-market-field-target",
+        "wavemind-state-field": "wavemind-state-field-target",
+        "wavemind-state-field-target": "wavemind-state-field-target",
+        "state-field": "wavemind-state-field-target",
+        "state-field-target": "wavemind-state-field-target",
         "wavemind-perp-field": "wavemind-perp-field-target",
         "wavemind-perp-field-target": "wavemind-perp-field-target",
         "perp-field": "wavemind-perp-field-target",
@@ -2814,6 +2838,7 @@ def _engine_name(key: str) -> str:
         "wavemind-target": "WaveMind price target",
         "wavemind-ensemble": "WaveMind ensemble target",
         "wavemind-market-field-target": "WaveMind market-field target",
+        "wavemind-state-field-target": "WaveMind guarded state-field target",
         "wavemind-perp-field-target": "WaveMind perp field target",
         "wavemind-directional-head-target": "WaveMind directional-head target",
         "wavemind-regime-policy-target": "WaveMind regime-policy target",

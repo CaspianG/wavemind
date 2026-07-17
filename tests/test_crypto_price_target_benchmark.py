@@ -49,6 +49,7 @@ def test_price_target_benchmark_scores_future_price():
         ],
         engines=[
             "wavemind-market-field-target",
+            "wavemind-state-field-target",
             "online-expert",
             "directional-head",
             "regime-policy",
@@ -70,6 +71,7 @@ def test_price_target_benchmark_scores_future_price():
     result_by_engine = {result["engine"]: result for result in payload["results"]}
     assert payload["scenario"]["target"] == "predict future close price, not only up/down direction"
     assert result_by_engine["WaveMind market-field target"]["queries"] == 24
+    assert result_by_engine["WaveMind guarded state-field target"]["queries"] == 24
     assert result_by_engine["WaveMind online-expert target"]["queries"] == 24
     assert result_by_engine["WaveMind directional-head target"]["queries"] == 24
     assert result_by_engine["WaveMind regime-policy target"]["queries"] == 24
@@ -84,6 +86,7 @@ def test_price_target_benchmark_scores_future_price():
     assert result_by_engine["WaveMind regime-policy target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind relationship-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind market-field target"]["mean_abs_return_error_bps"] >= 0.0
+    assert result_by_engine["WaveMind guarded state-field target"]["mean_abs_return_error_bps"] >= 0.0
     assert result_by_engine["WaveMind ensemble target"]["mean_abs_return_error_bps"] >= 0.0
     assert 0.0 <= result_by_engine["WaveMind calibrated target"]["direction_hit_rate"] <= 1.0
     assert result_by_engine["WaveMind calibrated target"]["mean_abs_return_error_bps"] >= 0.0

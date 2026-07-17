@@ -5,8 +5,10 @@ import math
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import pytest
 
 
 def test_completed_bars_excludes_incomplete_candle():
@@ -79,7 +81,9 @@ def test_forecast_from_bars_computes_expected_price():
     assert math.isclose(result.directional_expected_price, directional_expected_price)
     assert math.isclose(result.evidence_strength, result.confidence)
     assert result.confidence_is_probability is False
-    assert datetime.fromisoformat(result.forecast_until_utc) > datetime.fromisoformat(result.data_end_utc)
+    forecast_until = datetime.fromisoformat(result.forecast_until_utc)
+    data_end = datetime.fromisoformat(result.data_end_utc)
+    assert forecast_until - data_end == timedelta(hours=24)
     assert result.validation["active_direction_accuracy"] == 0.6
     assert result.calibration_bucket is not None
     assert result.calibration_bucket["direction_hit_rate"] == 0.65
@@ -155,6 +159,23 @@ def test_calibrated_probability_prefers_ready_monotonic_blocks():
     assert kind == "monotonic"
 
 
+def test_guarded_state_direction_uses_downtrend_and_rsi_extremes():
+    from benchmarks.crypto_current_forecast import guarded_state_direction
+
+    assert guarded_state_direction({"trend": "down", "rsi": 20.0}, fallback_direction="up") == (
+        "down",
+        "established_downtrend",
+    )
+    assert guarded_state_direction({"trend": "up", "rsi": 72.0}, fallback_direction="up") == (
+        "down",
+        "overbought_reversion",
+    )
+    assert guarded_state_direction(
+        {"trend": "up", "recent_trend": "up", "rsi": 50.0},
+        fallback_direction="down",
+    ) == ("up", "recent_state_direction")
+
+
 def test_fetch_latest_completed_bars_uses_since_slack(monkeypatch):
     from benchmarks import crypto_current_forecast as forecast
     from benchmarks.crypto_ohlcv import OHLCVBar
@@ -184,6 +205,36 @@ def test_fetch_latest_completed_bars_uses_since_slack(monkeypatch):
     assert calls[0]["since"] is not None
     assert calls[0]["limit"] > 5
     assert bars[-1].timestamp > bars[0].timestamp
+
+
+def test_fetch_latest_completed_bars_rejects_stale_exchange_data(monkeypatch):
+    from benchmarks import crypto_current_forecast as forecast
+    from benchmarks.crypto_ohlcv import OHLCVBar
+
+    now = int(datetime.now(timezone.utc).timestamp())
+
+    def fake_fetch_ohlcv_ccxt(**kwargs):
+        return [
+            OHLCVBar(
+                timestamp=now - (20 - index) * 3600,
+                open=100.0,
+                high=101.0,
+                low=99.0,
+                close=100.0,
+                volume=10.0,
+            )
+            for index in range(8)
+        ]
+
+    monkeypatch.setattr(forecast, "fetch_ohlcv_ccxt", fake_fetch_ohlcv_ccxt)
+
+    with pytest.raises(RuntimeError, match="Stale market data"):
+        forecast.fetch_latest_completed_bars(
+            exchange_id="okx",
+            symbol="BTC/USDT",
+            timeframe="1h",
+            limit=5,
+        )
 
 
 def test_render_markdown_contains_price_target():

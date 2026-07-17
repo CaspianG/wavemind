@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -113,6 +114,7 @@ def fetch_latest_completed_bars(
     symbol: str,
     timeframe: str,
     limit: int,
+    max_data_age_bars: int = 2,
 ) -> list[OHLCVBar]:
     seconds = timeframe_to_seconds(timeframe)
     now = int(datetime.now(timezone.utc).timestamp())
@@ -127,7 +129,14 @@ def fetch_latest_completed_bars(
     bars = [bar for bar in fetched if bar.timestamp + seconds <= now]
     if len(bars) < limit:
         raise ValueError(f"Only {len(bars)} completed bars fetched for {symbol} {timeframe}; need {limit}")
-    return bars[-limit:]
+    selected = bars[-limit:]
+    data_age_seconds = now - (selected[-1].timestamp + seconds)
+    if data_age_seconds > seconds * int(max_data_age_bars):
+        raise RuntimeError(
+            f"Stale market data for {symbol} {timeframe}: latest completed candle is "
+            f"{data_age_seconds} seconds old"
+        )
+    return selected
 
 
 def make_latest_query_window(
@@ -206,6 +215,45 @@ def forced_directional_forecast(
         method=method,
         support=len(selected),
         note=note,
+    )
+
+
+def guarded_state_direction(features: Mapping[str, Any], *, fallback_direction: str) -> tuple[str, str]:
+    """Choose a 4h direction from observable state without future information."""
+    trend = str(features.get("trend", ""))
+    recent_trend = str(features.get("recent_trend", ""))
+    rsi = float(features.get("rsi", 50.0))
+    if trend == "down":
+        return "down", "established_downtrend"
+    if rsi > 65.0:
+        return "down", "overbought_reversion"
+    if rsi < 35.0:
+        return "up", "oversold_reversion"
+    if recent_trend in {"up", "down"}:
+        return recent_trend, "recent_state_direction"
+    return fallback_direction, "wave_fallback"
+
+
+def guarded_state_field_forecast(
+    windows: list[OHLCVWindow],
+    query: OHLCVWindow,
+    *,
+    horizon: int,
+) -> DirectionalForecast:
+    base = forced_directional_forecast(windows, query, horizon=horizon)
+    if query.timeframe != "4h":
+        return base
+    direction, reason = guarded_state_direction(query.features, fallback_direction=base.direction)
+    expected_return = math.copysign(abs(base.expected_return_bps), 1.0 if direction == "up" else -1.0)
+    return DirectionalForecast(
+        direction=direction,
+        expected_return_bps=float(expected_return),
+        method=f"guarded_state_field_v1:{reason}+{base.method}",
+        support=base.support,
+        note=(
+            "4h observable-state direction with WaveMind analogue magnitude; "
+            "trade validation remains a separate safety decision"
+        ),
     )
 
 
@@ -299,7 +347,7 @@ def forecast_from_bars(
         finally:
             engine.close()
     last_close = float(query.bars[-1].close)
-    directional = forced_directional_forecast(windows, query, horizon=horizon)
+    directional = guarded_state_field_forecast(windows, query, horizon=horizon)
     decision = "abstain" if prediction.filtered or prediction.direction == "flat" else "signal"
     candidate_direction = prediction.candidate_direction or prediction.raw_direction or prediction.direction
     candidate_expected_return_bps = (
@@ -325,8 +373,8 @@ def forecast_from_bars(
         horizon_label=horizon_label,
         horizon_bars=int(horizon),
         engine=engine.name,
-        data_end_utc=query.end_time,
-        forecast_until_utc=datetime.fromtimestamp(query.future_end_ts, tz=timezone.utc).isoformat(),
+        data_end_utc=query.observed_until_time,
+        forecast_until_utc=query.target_until_time,
         last_close=last_close,
         direction=prediction.direction,
         decision=decision,
@@ -485,7 +533,7 @@ def calibrated_probability_for_evidence(
 
 def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
     trade_decision = "trade" if result.decision == "signal" else "no_trade"
-    return {
+    payload = {
         "symbol": result.symbol,
         "exchange": result.exchange,
         "timeframe": result.timeframe,
@@ -530,6 +578,60 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "validation": dict(result.validation),
         "calibration_bucket": dict(result.calibration_bucket or {}),
     }
+    payload["forecast_id"] = forecast_id(payload)
+    return payload
+
+
+def forecast_id(result: Mapping[str, Any]) -> str:
+    """Return a stable ID for one symbol, horizon, and information cutoff."""
+    identity = "|".join(
+        [
+            str(result.get("exchange", "")),
+            str(result.get("symbol", "")),
+            str(result.get("timeframe", "")),
+            str(result.get("horizon_label", "")),
+            str(result.get("data_end_utc", "")),
+            str(result.get("engine", "")),
+            str(result.get("directional_method", "")),
+        ]
+    )
+    return hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
+
+
+def append_forecast_ledger(path: str | Path, payload: Mapping[str, Any]) -> int:
+    """Append unseen forecast rows to JSONL and return the number added."""
+    ledger_path = Path(path)
+    existing_ids: set[str] = set()
+    if ledger_path.exists():
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if row.get("forecast_id"):
+                existing_ids.add(str(row["forecast_id"]))
+
+    generated_utc = str(payload.get("generated_utc", ""))
+    rows = []
+    for raw_result in payload.get("results", []):
+        result = dict(raw_result)
+        result_id = str(result.get("forecast_id") or forecast_id(result))
+        if result_id in existing_ids:
+            continue
+        result["forecast_id"] = result_id
+        result["generated_utc"] = generated_utc
+        rows.append(result)
+        existing_ids.add(result_id)
+
+    if not rows:
+        return 0
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    with ledger_path.open("a", encoding="utf-8", newline="\n") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+    return len(rows)
 
 
 def render_markdown(results: list[ForecastResult]) -> str:
@@ -597,6 +699,12 @@ def main() -> int:
     parser.add_argument("--calibration-json", type=Path, default=Path("benchmarks/crypto_confidence_calibration_okx_timeframe_policy_results.json"))
     parser.add_argument("--output", type=Path, default=Path("benchmarks/crypto_current_forecast.json"))
     parser.add_argument("--report", type=Path, default=Path("benchmarks/crypto_current_forecast.md"))
+    parser.add_argument(
+        "--ledger",
+        type=Path,
+        default=None,
+        help="Optional JSONL ledger. Unseen forecasts are appended for later outcome auditing.",
+    )
     args = parser.parse_args()
 
     preset = HORIZON_PRESETS[args.horizon]
@@ -637,9 +745,12 @@ def main() -> int:
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.report.write_text(render_markdown(results), encoding="utf-8")
+    ledger_rows = append_forecast_ledger(args.ledger, payload) if args.ledger is not None else 0
     print(render_markdown(results))
     print(f"Wrote {args.output}")
     print(f"Wrote {args.report}")
+    if args.ledger is not None:
+        print(f"Appended {ledger_rows} new forecast(s) to {args.ledger}")
     return 0
 
 

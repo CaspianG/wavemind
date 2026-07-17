@@ -61,6 +61,24 @@ class OHLCVWindow:
     def end_time(self) -> str:
         return datetime.fromtimestamp(self.end_ts, tz=timezone.utc).isoformat()
 
+    @property
+    def observed_until_ts(self) -> int:
+        """UTC timestamp when the last input candle is fully known."""
+        return int(self.end_ts) + timeframe_to_seconds(self.timeframe)
+
+    @property
+    def observed_until_time(self) -> str:
+        return datetime.fromtimestamp(self.observed_until_ts, tz=timezone.utc).isoformat()
+
+    @property
+    def target_until_ts(self) -> int:
+        """UTC timestamp when the future target candle has closed."""
+        return int(self.future_end_ts) + timeframe_to_seconds(self.timeframe)
+
+    @property
+    def target_until_time(self) -> str:
+        return datetime.fromtimestamp(self.target_until_ts, tz=timezone.utc).isoformat()
+
 
 def timeframe_to_seconds(timeframe: str) -> int:
     key = timeframe.strip().lower()
@@ -174,16 +192,19 @@ def fetch_ohlcv_ccxt(
     exchange_cls = getattr(ccxt, exchange_id)
     exchange = exchange_cls({"enableRateLimit": True})
     timeframe_ms = timeframe_to_seconds(timeframe) * 1000
-    if since is None:
+    latest_mode = since is None
+    if latest_mode:
         since_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000) - timeframe_ms * (limit + 5)
+        fetch_limit = int(limit) + 5
     else:
         since_ms = int(since)
         if since_ms < 10_000_000_000:
             since_ms *= 1000
+        fetch_limit = int(limit)
     rows: list[list[Any]] = []
     seen_timestamps: set[int] = set()
-    while len(rows) < limit:
-        remaining = limit - len(rows)
+    while len(rows) < fetch_limit:
+        remaining = fetch_limit - len(rows)
         batch_limit = min(remaining, 1000)
         batch = exchange.fetch_ohlcv(
             symbol,
@@ -202,14 +223,14 @@ def fetch_ohlcv_ccxt(
             rows.append(row)
             seen_timestamps.add(timestamp)
             added += 1
-            if len(rows) >= limit:
+            if len(rows) >= fetch_limit:
                 break
         last_timestamp = int(batch[-1][0])
         next_since = last_timestamp + timeframe_ms
         if added == 0 or next_since <= since_ms:
             break
         since_ms = next_since
-    return [
+    bars = [
         OHLCVBar(
             timestamp=int(row[0] // 1000),
             open=float(row[1]),
@@ -220,6 +241,11 @@ def fetch_ohlcv_ccxt(
         )
         for row in rows
     ]
+    if latest_mode:
+        now_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+        completed = [bar for bar in bars if (bar.timestamp * 1000) + timeframe_ms <= now_ms]
+        return completed[-int(limit) :]
+    return bars[: int(limit)]
 
 
 def generate_synthetic_ohlcv(

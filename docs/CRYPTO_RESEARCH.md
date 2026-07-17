@@ -1,11 +1,15 @@
 # WaveMind Crypto Pattern Research
 
+> Historical research log: this document preserves earlier experiments for reproducibility. The canonical current evidence is the repository [README](../README.md) plus the reports under [`benchmarks/results/crypto/`](../benchmarks/results/crypto/). Older tables below must not be read as the latest model result.
+
 This branch explores whether WaveMind can be useful for market-pattern memory:
 remembering historical OHLCV patterns, retrieving similar regimes, and using the
 retrieved evidence for research-grade analysis.
 
-This is not financial advice and not a trading system. The first goal is a
-reproducible benchmark layer, not live prediction.
+This is not financial advice and not a production trading system. Live research
+forecasts are allowed only when they are recorded in the forecast ledger and
+evaluated after maturity; the reproducible benchmark layer remains the source
+of truth for model adoption.
 
 ## Scope
 
