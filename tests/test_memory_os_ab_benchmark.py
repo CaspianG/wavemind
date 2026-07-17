@@ -2,7 +2,11 @@ from benchmarks.memory_os_ab_benchmark import run_benchmark
 
 
 def test_memory_os_ab_uses_identical_protocol_and_proves_uplift():
-    payload = run_benchmark(observed_repetitions=8, evaluation_repetitions=8)
+    payload = run_benchmark(
+        observed_repetitions=8,
+        evaluation_repetitions=8,
+        cold_repetitions=5,
+    )
     results = {item["engine"]: item for item in payload["results"]}
     baseline = results["WaveMind baseline"]
     memory_os = results["WaveMind + Memory OS"]
@@ -11,6 +15,7 @@ def test_memory_os_ab_uses_identical_protocol_and_proves_uplift():
     assert payload["protocol"]["same_memories"] is True
     assert payload["protocol"]["same_observed_queries"] is True
     assert payload["protocol"]["same_evaluation_queries"] is True
+    assert payload["protocol"]["cold_repetitions"] == 5
     assert memory_os["task_success_rate"] > baseline["task_success_rate"]
     assert memory_os["stale_error_rate"] < baseline["stale_error_rate"]
     assert memory_os["priority_predictions"] >= payload["protocol"]["case_count"]

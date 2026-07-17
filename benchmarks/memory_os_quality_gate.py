@@ -101,6 +101,7 @@ def build_quality_gate(
         and protocol.get("same_memories") is True
         and protocol.get("same_observed_queries") is True
         and protocol.get("same_evaluation_queries") is True
+        and int(protocol.get("cold_repetitions") or 0) >= 5
     )
     latency_ok = (
         p95_delta_ms <= MAX_P95_REGRESSION_MS

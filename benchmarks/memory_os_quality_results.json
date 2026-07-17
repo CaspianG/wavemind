@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_quality_gate.v2",
-  "generated_at": "2026-07-15T00:51:30Z",
-  "source_ref": "025b8285cbf28670d3bf712cf25d408ae8080eb3",
+  "generated_at": "2026-07-17T22:40:58Z",
+  "source_ref": "81a2f3e95fd5fedad72c87f7348d3e52de16bf2a",
   "status": "pass",
   "claim_boundary": "Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.",
   "thresholds": {
@@ -21,19 +21,19 @@
     "memory_os_stale_error_rate": 0,
     "baseline_stale_error_rate": 0.125,
     "stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_ms": 0.02870004391297698,
-    "baseline_p95_latency_ms": 11.8394999881275,
-    "p95_latency_delta_ms": -11.810799944214523,
-    "p95_latency_regression_ratio": -0.9975759074334425,
-    "cold_p95_latency_delta_ms": -1.4696999569423497,
-    "cold_p95_latency_regression_ratio": -0.17444095873846313
+    "memory_os_p95_latency_ms": 3.369300000485964,
+    "baseline_p95_latency_ms": 4.734800008009188,
+    "p95_latency_delta_ms": -1.3655000075232238,
+    "p95_latency_regression_ratio": -0.28839655428178623,
+    "cold_p95_latency_delta_ms": -0.03169999399688095,
+    "cold_p95_latency_regression_ratio": -0.00804690916290335
   },
   "checks": [
     {
       "id": "direct-comparable-protocol",
       "title": "Baseline and Memory OS execute the same sequential adaptive protocol",
       "passed": true,
-      "evidence": "protocol_hash=b0236119a09e2b4b538bbdb4073371dfd8a399b9668421de0cf14654bc3ea39f, workload=sequential_adaptive_recall",
+      "evidence": "protocol_hash=3e0cb4781fa976ecb0d4c742ca6e32b5cdb66964a2c9c1f573236329b9d9411c, workload=sequential_adaptive_recall",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
@@ -68,14 +68,14 @@
       "id": "memory-os-p95-latency",
       "title": "Memory OS p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=0.0287ms, baseline=11.8395ms, delta=-11.8108ms, ratio=-0.9976",
+      "evidence": "memory_os=3.3693ms, baseline=4.7348ms, delta=-1.3655ms, ratio=-0.2884",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-cold-p95-latency",
       "title": "Cold p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=6.9555ms, baseline=8.4252ms, delta=-1.4697ms, ratio=-0.1744",
+      "evidence": "memory_os=3.9077ms, baseline=3.9394ms, delta=-0.0317ms, ratio=-0.0080",
       "source": "benchmarks/memory_os_ab_results.json"
     }
   ],

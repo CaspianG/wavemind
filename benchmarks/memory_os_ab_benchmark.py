@@ -67,11 +67,17 @@ def _percentile(values: list[float], percentile: float) -> float:
     return float(ordered[index])
 
 
-def _protocol_hash(*, observed_repetitions: int, evaluation_repetitions: int) -> str:
+def _protocol_hash(
+    *,
+    observed_repetitions: int,
+    evaluation_repetitions: int,
+    cold_repetitions: int,
+) -> str:
     payload = {
         "cases": [asdict(case) for case in CASES],
         "observed_repetitions": observed_repetitions,
         "evaluation_repetitions": evaluation_repetitions,
+        "cold_repetitions": cold_repetitions,
         "top_k": 1,
         "priority_weight": 0.7,
     }
@@ -103,6 +109,7 @@ def _run_variant(
     use_memory_os: bool,
     observed_repetitions: int,
     evaluation_repetitions: int,
+    cold_repetitions: int,
 ) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as temporary_directory:
         memory = _create_memory(Path(temporary_directory) / "adaptive.sqlite3")
@@ -141,6 +148,8 @@ def _run_variant(
             stale_errors: list[bool] = []
             for repetition in range(evaluation_repetitions):
                 for case in CASES:
+                    if use_memory_os and repetition < cold_repetitions:
+                        cache.invalidate_namespace(case.namespace)
                     started = time.perf_counter()
                     if use_memory_os:
                         results = query_with_cache(
@@ -158,7 +167,7 @@ def _run_variant(
                         )
                     latency = (time.perf_counter() - started) * 1000.0
                     latencies.append(latency)
-                    if repetition == 0:
+                    if repetition < cold_repetitions:
                         cold_latencies.append(latency)
                     selected_id = results[0].id if results else None
                     successes.append(selected_id == current_ids[case.namespace])
@@ -172,7 +181,10 @@ def _run_variant(
                 "avg_latency_ms": statistics.mean(latencies),
                 "p95_latency_ms": _percentile(latencies, 0.95),
                 "cold_p95_latency_ms": _percentile(cold_latencies, 0.95),
-                "steady_p95_latency_ms": _percentile(latencies[len(CASES) :], 0.95),
+                "steady_p95_latency_ms": _percentile(
+                    latencies[cold_repetitions * len(CASES) :],
+                    0.95,
+                ),
                 "query_count": len(latencies),
                 "context_items_per_query": 1,
                 "cache_hits": cache_stats.hits,
@@ -189,25 +201,33 @@ def run_benchmark(
     *,
     observed_repetitions: int = 8,
     evaluation_repetitions: int = 25,
+    cold_repetitions: int = 5,
 ) -> dict[str, Any]:
     if observed_repetitions < 2:
         raise ValueError("observed_repetitions must be at least 2")
     if evaluation_repetitions < 2:
         raise ValueError("evaluation_repetitions must be at least 2")
+    if cold_repetitions < 1:
+        raise ValueError("cold_repetitions must be positive")
+    if cold_repetitions >= evaluation_repetitions:
+        raise ValueError("cold_repetitions must be lower than evaluation_repetitions")
     protocol_hash = _protocol_hash(
         observed_repetitions=observed_repetitions,
         evaluation_repetitions=evaluation_repetitions,
+        cold_repetitions=cold_repetitions,
     )
     results = [
         _run_variant(
             use_memory_os=False,
             observed_repetitions=observed_repetitions,
             evaluation_repetitions=evaluation_repetitions,
+            cold_repetitions=cold_repetitions,
         ),
         _run_variant(
             use_memory_os=True,
             observed_repetitions=observed_repetitions,
             evaluation_repetitions=evaluation_repetitions,
+            cold_repetitions=cold_repetitions,
         ),
     ]
     return {
@@ -220,6 +240,7 @@ def run_benchmark(
             "case_count": len(CASES),
             "observed_repetitions": observed_repetitions,
             "evaluation_repetitions": evaluation_repetitions,
+            "cold_repetitions": cold_repetitions,
             "same_memories": True,
             "same_observed_queries": True,
             "same_evaluation_queries": True,
@@ -237,6 +258,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--observed-repetitions", type=int, default=8)
     parser.add_argument("--evaluation-repetitions", type=int, default=25)
+    parser.add_argument("--cold-repetitions", type=int, default=5)
     parser.add_argument(
         "--output",
         type=Path,
@@ -246,6 +268,7 @@ def main() -> int:
     payload = run_benchmark(
         observed_repetitions=args.observed_repetitions,
         evaluation_repetitions=args.evaluation_repetitions,
+        cold_repetitions=args.cold_repetitions,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
