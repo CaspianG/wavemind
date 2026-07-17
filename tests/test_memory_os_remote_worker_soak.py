@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "benchmarks" / "memory_os_remote_worker_soak.py"
+WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "memory-os-remote-soak.yml"
 
 
 def _module():
@@ -46,6 +47,14 @@ def test_remote_worker_preflight_accepts_secure_distinct_workers():
     assert payload["topology"]["distinct_worker_count"] == 2
     assert payload["topology"]["worker_https"] is True
     assert payload["topology"]["redis_tls"] is True
+    assert payload["handoff"]["github_secret_scope"] == "repository_actions_secrets"
+
+
+def test_remote_soak_is_evidence_not_a_github_deployment():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "environment: memory-os-production-evidence" not in workflow
+    assert "${{ secrets.WAVEMIND_REMOTE_WORKER_URLS }}" in workflow
 
 
 def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():

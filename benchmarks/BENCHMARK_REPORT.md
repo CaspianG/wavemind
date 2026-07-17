@@ -1,7 +1,7 @@
 # WaveMind Benchmark Report
 
 This report is generated from `benchmarks/benchmark_matrix_results.json`.
-Last refresh: `2026-07-15T00:57:04Z` from `025b8285cbf2`.
+Last refresh: `2026-07-17T17:49:43Z` from `0cf970423511`.
 It separates completed local runs from runner-ready public benchmarks and planned external evaluations.
 
 Planned rows are not claimed wins. They are the public proof path WaveMind must complete before stronger production claims.
@@ -55,7 +55,7 @@ Planned rows are not claimed wins. They are the public proof path WaveMind must 
 | benchmark | category | status | current result | next step |
 |---|---|---|---|---|
 | External multimodal evidence runner | production-scale | runner-ready | WaveMind external multimodal evidence: runner ready True, checked in result False, requires wavemind multimodal-external-evidence --manifest external_multimodal_manifest.json --write-artifacts --output benchmarks/multimodal_external_encoder_results.json | Run the external multimodal manifest path against real s3-backed assets and then let wavemind multimodal-admission evaluate the produced artifact. |
-| Memory OS remote multi-worker production soak | production-scale | runner-ready | WaveMind remote worker handoff: status action_required, worker count 0, distinct worker count 0, worker https False, redis tls False, min duration seconds 21600, min worker cycles 500, worker commit must match True, allowed error rate 0.00, missing check ids worker-endpoints, non-loopback-workers, worker-transport, remote-redis, redis-transport, admin-auth | Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml. |
+| Memory OS remote multi-worker production soak | production-scale | runner-ready | WaveMind remote worker handoff: status action_required, worker count 0, distinct worker count 0, worker https False, redis tls False, min duration seconds 21600, min worker cycles 500, worker commit must match True, allowed error rate 0.00, missing check ids worker-endpoints, non-loopback-workers, worker-transport, remote-redis, redis-transport, admin-auth | Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml. |
 | [MIRACL Russian](https://miracl.ai/) | multilingual-retrieval | runner-ready | No checked-in result yet. | Extend the NoMIRACL loader to full MIRACL Russian corpus once disk/service capacity is available. |
 | [VectorDBBench](https://github.com/zilliztech/VectorDBBench) | vector-db | runner-ready | WaveMind custom dataset export: status ready, vectors 10000, queries 100, dim 128, top k 10 | Run the generated custom dataset through official VectorDBBench targets for Qdrant, Milvus, pgvector, and WaveMind-backed FAISS/Qdrant profiles. |
 

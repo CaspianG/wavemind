@@ -17,7 +17,7 @@ Status: `action_required`
 
 ## Handoff
 
-- GitHub environment: `memory-os-production-evidence`
+- Secret scope: `repository_actions_secrets`
 - Workflow: `.github/workflows/memory-os-remote-soak.yml`
 - Dispatch: `gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4`
 - Minimum duration: `21600` seconds

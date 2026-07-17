@@ -193,7 +193,7 @@ def build_preflight(
         "worker_required_environment": ["WAVEMIND_COMMIT_SHA"],
         "handoff": {
             "workflow": ".github/workflows/memory-os-remote-soak.yml",
-            "github_environment": "memory-os-production-evidence",
+            "github_secret_scope": "repository_actions_secrets",
             "workflow_runner": ["self-hosted", "linux", "wavemind-evidence"],
             "command": "gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4",
             "contract": {
@@ -687,7 +687,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
                 "",
                 "## Handoff",
                 "",
-                f"- GitHub environment: `{handoff['github_environment']}`",
+                f"- Secret scope: `{handoff['github_secret_scope']}`",
                 f"- Workflow: `{handoff['workflow']}`",
                 f"- Dispatch: `{handoff['command']}`",
                 f"- Minimum duration: `{(handoff.get('contract') or {}).get('min_duration_seconds', PRODUCTION_MIN_DURATION_SECONDS)}` seconds",
