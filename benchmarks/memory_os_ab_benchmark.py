@@ -201,7 +201,7 @@ def run_benchmark(
     *,
     observed_repetitions: int = 8,
     evaluation_repetitions: int = 25,
-    cold_repetitions: int = 5,
+    cold_repetitions: int = 10,
 ) -> dict[str, Any]:
     if observed_repetitions < 2:
         raise ValueError("observed_repetitions must be at least 2")
@@ -258,7 +258,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--observed-repetitions", type=int, default=8)
     parser.add_argument("--evaluation-repetitions", type=int, default=25)
-    parser.add_argument("--cold-repetitions", type=int, default=5)
+    parser.add_argument("--cold-repetitions", type=int, default=10)
     parser.add_argument(
         "--output",
         type=Path,

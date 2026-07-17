@@ -6,13 +6,13 @@ Status: `pass`
 
 | check | result | evidence | source |
 |---|---|---|---|
-| Baseline and Memory OS execute the same sequential adaptive protocol | `pass` | protocol_hash=3e0cb4781fa976ecb0d4c742ca6e32b5cdb66964a2c9c1f573236329b9d9411c, workload=sequential_adaptive_recall | `benchmarks/memory_os_ab_results.json` |
+| Baseline and Memory OS execute the same sequential adaptive protocol | `pass` | protocol_hash=a65065309bb14e692cd3b0b53478745696515ff33fb2f6219398b031d6821530, workload=sequential_adaptive_recall | `benchmarks/memory_os_ab_results.json` |
 | Memory OS improves task success over WaveMind baseline | `pass` | memory_os=1.0000, baseline=0.8750, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
 | Memory OS reduces stale recalls over WaveMind baseline | `pass` | memory_os=0.0000, baseline=0.1250, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
 | Priority learning and adaptive forgetting both changed state | `pass` | priority_predictions=8, forgetting_demotions=8 | `benchmarks/memory_os_ab_results.json` |
 | Both variants return the same context shape | `pass` | memory_os=1, baseline=1 | `benchmarks/memory_os_ab_results.json` |
-| Memory OS p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=3.3693ms, baseline=4.7348ms, delta=-1.3655ms, ratio=-0.2884 | `benchmarks/memory_os_ab_results.json` |
-| Cold p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=3.9077ms, baseline=3.9394ms, delta=-0.0317ms, ratio=-0.0080 | `benchmarks/memory_os_ab_results.json` |
+| Memory OS p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=4.4554ms, baseline=4.8836ms, delta=-0.4282ms, ratio=-0.0877 | `benchmarks/memory_os_ab_results.json` |
+| Cold p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=4.7644ms, baseline=4.8750ms, delta=-0.1106ms, ratio=-0.0227 | `benchmarks/memory_os_ab_results.json` |
 
 ## Supplemental public benchmarks
 

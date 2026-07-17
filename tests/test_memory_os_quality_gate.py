@@ -52,7 +52,7 @@ def test_memory_os_quality_gate_rejects_non_regression_without_improvement():
 
 def test_memory_os_quality_gate_rejects_under_sampled_cold_latency():
     direct_ab = copy.deepcopy(_load("memory_os_ab_results.json"))
-    direct_ab["protocol"]["cold_repetitions"] = 1
+    direct_ab["protocol"]["cold_repetitions"] = 5
     payload = build_quality_gate(agent_payload=direct_ab)
 
     assert payload["status"] == "fail"

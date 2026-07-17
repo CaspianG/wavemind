@@ -62,6 +62,7 @@ jobs:
       - name: Prove direct Memory OS uplift and latency safety
         run: |
           python benchmarks/memory_os_ab_benchmark.py \
+            --cold-repetitions 10 \
             --output evidence/memory_os_ab_results.json
           python benchmarks/memory_os_quality_gate.py \
             --agent evidence/memory_os_ab_results.json \

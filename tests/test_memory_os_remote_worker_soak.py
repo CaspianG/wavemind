@@ -60,6 +60,7 @@ def test_remote_soak_is_evidence_not_a_github_deployment():
     assert "shell: bash" in workflow
     assert "actions/setup-python" not in workflow
     assert "Python 3.10+ is required" in workflow
+    assert "--cold-repetitions 10" in workflow
 
 
 def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
