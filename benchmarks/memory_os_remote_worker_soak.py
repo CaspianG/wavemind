@@ -194,7 +194,7 @@ def build_preflight(
         "handoff": {
             "workflow": ".github/workflows/memory-os-remote-soak.yml",
             "github_secret_scope": "repository_actions_secrets",
-            "workflow_runner": ["self-hosted", "linux", "wavemind-evidence"],
+            "workflow_runner": ["self-hosted", "wavemind-evidence"],
             "command": "gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4",
             "contract": {
                 "min_duration_seconds": PRODUCTION_MIN_DURATION_SECONDS,

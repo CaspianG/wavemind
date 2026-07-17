@@ -358,7 +358,7 @@ policy matters more than raw vector-database scale:
   match the exact 40-character release commit on every worker, and report zero
   request errors, lock breaches, duplicate mutations, and state corruption.
   The local 20-round artifact remains a regression test and cannot unlock
-  production. The six-hour workflow targets a Linux self-hosted evidence runner
+  production. The six-hour workflow targets a durable self-hosted evidence runner
   because GitHub-hosted jobs terminate at the six-hour limit before evidence
   upload; the runner itself can also be executed from any durable operator host.
 - The Memory OS policy bundle now defines shadow, canary, staged, and production

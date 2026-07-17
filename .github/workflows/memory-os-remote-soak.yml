@@ -22,8 +22,12 @@ concurrency:
 jobs:
   remote-soak:
     # GitHub-hosted jobs stop after six hours, before a six-hour soak can upload evidence.
-    runs-on: [self-hosted, linux, wavemind-evidence]
+    # The evidence runner may use any OS that provides Bash and Python 3.11.
+    runs-on: [self-hosted, wavemind-evidence]
     timeout-minutes: 480
+    defaults:
+      run:
+        shell: bash
     env:
       WAVEMIND_REMOTE_WORKER_URLS: ${{ secrets.WAVEMIND_REMOTE_WORKER_URLS }}
       WAVEMIND_REMOTE_REDIS_URL: ${{ secrets.WAVEMIND_REMOTE_REDIS_URL }}

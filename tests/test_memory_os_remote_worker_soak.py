@@ -55,6 +55,9 @@ def test_remote_soak_is_evidence_not_a_github_deployment():
 
     assert "environment: memory-os-production-evidence" not in workflow
     assert "${{ secrets.WAVEMIND_REMOTE_WORKER_URLS }}" in workflow
+    assert "runs-on: [self-hosted, wavemind-evidence]" in workflow
+    assert "runs-on: [self-hosted, linux, wavemind-evidence]" not in workflow
+    assert "shell: bash" in workflow
 
 
 def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
