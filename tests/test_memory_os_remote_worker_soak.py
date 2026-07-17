@@ -58,6 +58,8 @@ def test_remote_soak_is_evidence_not_a_github_deployment():
     assert "runs-on: [self-hosted, wavemind-evidence]" in workflow
     assert "runs-on: [self-hosted, linux, wavemind-evidence]" not in workflow
     assert "shell: bash" in workflow
+    assert "actions/setup-python" not in workflow
+    assert "Python 3.10+ is required" in workflow
 
 
 def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():

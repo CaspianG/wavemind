@@ -22,7 +22,7 @@ concurrency:
 jobs:
   remote-soak:
     # GitHub-hosted jobs stop after six hours, before a six-hour soak can upload evidence.
-    # The evidence runner may use any OS that provides Bash and Python 3.11.
+    # The evidence runner may use any OS that provides Bash and Python 3.10+.
     runs-on: [self-hosted, wavemind-evidence]
     timeout-minutes: 480
     defaults:
@@ -36,9 +36,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
+      - name: Verify evidence runtime
+        run: |
+          python - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python 3.10+ is required, found {sys.version}")
+          print(sys.version)
+          PY
 
       - name: Install evidence runner
         run: |
