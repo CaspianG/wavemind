@@ -2732,7 +2732,7 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 ),
             },
             "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
-            "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml.",
+            "next_step": "Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml.",
         },
         {
             "id": "memory_os_policy_bundle",

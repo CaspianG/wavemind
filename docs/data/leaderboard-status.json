@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.leaderboard_status.v1",
   "generated_at": "2026-07-15T00:57:52Z",
-  "source_ref": "025b8285cbf2",
+  "source_ref": "f9d073469f74",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "public_url": "https://caspiang.github.io/wavemind/",
@@ -14,7 +14,7 @@
     "timezone": "UTC",
     "public_url": "https://caspiang.github.io/wavemind/",
     "publishing_status": "publishable_with_claim_limits",
-    "source_ref": "025b8285cbf2",
+    "source_ref": "f9d073469f74",
     "workflow_run_id": null,
     "refresh_profile": "local",
     "expected_scheduled_refresh_profile": "weekly-fast",
@@ -55,8 +55,8 @@
         "path": "benchmarks/benchmark_matrix_results.json",
         "schema": "wavemind.benchmark_matrix.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-15T00:57:04Z",
-        "age_days": 0.0005555555555555556,
+        "timestamp": "2026-07-17T18:08:53Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
@@ -71,8 +71,8 @@
         "path": "benchmarks/production_readiness_results.json",
         "schema": "wavemind.production_readiness.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-12T17:28:36Z",
-        "age_days": 2.311990740740741,
+        "timestamp": "2026-07-17T18:05:08Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
@@ -111,16 +111,16 @@
         "path": "benchmarks/release_claims_results.json",
         "schema": "wavemind.release_claims.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-12T20:39:55Z",
-        "age_days": 2.1791319444444444,
+        "timestamp": "2026-07-17T18:05:08Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
         "path": "benchmarks/scale_gap_results.json",
         "schema": "wavemind.scale_gap.v1",
         "timestamp_key": "generated_at",
-        "timestamp": "2026-07-12T20:39:53Z",
-        "age_days": 2.1791550925925924,
+        "timestamp": "2026-07-17T18:05:09Z",
+        "age_days": 0.0,
         "status": "pass"
       },
       {
@@ -311,7 +311,7 @@
   },
   "benchmark_matrix": {
     "schema": "wavemind.benchmark_matrix.v1",
-    "generated_at": "2026-07-15T00:57:04Z",
+    "generated_at": "2026-07-17T18:08:53Z",
     "implemented_count": 39,
     "runner_ready_count": 4,
     "planned_count": 6,

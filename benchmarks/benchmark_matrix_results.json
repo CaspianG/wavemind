@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-15T00:57:04Z",
-  "source_ref": "025b8285cbf2",
+  "generated_at": "2026-07-17T18:08:53Z",
+  "source_ref": "f9d073469f74",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2704,7 +2704,7 @@
         }
       },
       "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
-      "next_step": "Configure the memory-os-production-evidence GitHub Environment and dispatch .github/workflows/memory-os-remote-soak.yml."
+      "next_step": "Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml."
     },
     {
       "id": "memory_os_policy_bundle",

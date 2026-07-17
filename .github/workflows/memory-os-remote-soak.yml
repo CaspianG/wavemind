@@ -23,7 +23,6 @@ jobs:
   remote-soak:
     # GitHub-hosted jobs stop after six hours, before a six-hour soak can upload evidence.
     runs-on: [self-hosted, linux, wavemind-evidence]
-    environment: memory-os-production-evidence
     timeout-minutes: 480
     env:
       WAVEMIND_REMOTE_WORKER_URLS: ${{ secrets.WAVEMIND_REMOTE_WORKER_URLS }}
