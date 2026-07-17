@@ -27,6 +27,10 @@ benchmarks/results/crypto/binance_*
 !benchmarks/results/crypto/binance_futures_8asset_24h.md
 !benchmarks/results/crypto/binance_futures_8asset_7d.json
 !benchmarks/results/crypto/binance_futures_8asset_7d.md
+!benchmarks/results/crypto/binance_wavefield_ablation_24h.json
+!benchmarks/results/crypto/binance_wavefield_ablation_24h.md
+!benchmarks/results/crypto/binance_wavefield_ablation_7d.json
+!benchmarks/results/crypto/binance_wavefield_ablation_7d.md
 
 .env
 .env.*

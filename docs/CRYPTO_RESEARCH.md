@@ -322,12 +322,17 @@ Reports:
 
 - `benchmarks/results/crypto/binance_futures_8asset_24h.md`
 - `benchmarks/results/crypto/binance_futures_8asset_7d.md`
+- `benchmarks/results/crypto/binance_wavefield_ablation_24h.md`
+- `benchmarks/results/crypto/binance_wavefield_ablation_7d.md`
 
 This experiment also tested order-book depth, continuous-return heads,
 large-move classification, LightGBM, direct signed/unsigned WaveField outcome
 states, and validated regime relationships. None passed the admission gate.
 The checked-in benchmark therefore labels its sklearn models as baselines and
-ensembles. Their accuracy is not attributed to WaveMind core.
+ensembles. Their accuracy is not attributed to WaveMind core. The reproducible
+direct-core ablation reaches `0.520` full-coverage / `0.559` selective on 24h
+and `0.516` full-coverage / `0.584` selective on 7d, below the best statistical
+baseline on both horizons.
 
 ### Derivatives evidence
 

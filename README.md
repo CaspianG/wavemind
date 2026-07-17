@@ -52,6 +52,8 @@ Full reports:
 - [Live forecast audit](benchmarks/results/crypto/forecast_audit.md)
 - [Official Binance futures 24h stress test](benchmarks/results/crypto/binance_futures_8asset_24h.md)
 - [Official Binance futures 7d stress test](benchmarks/results/crypto/binance_futures_8asset_7d.md)
+- [Direct WaveField 24h ablation](benchmarks/results/crypto/binance_wavefield_ablation_24h.md)
+- [Direct WaveField 7d ablation](benchmarks/results/crypto/binance_wavefield_ablation_7d.md)
 
 ### Official Binance futures stress test
 
@@ -67,9 +69,11 @@ premium index, cross-asset context, and 5-minute order-book depth snapshots.
 | 7d | return regression ensemble | 56.0% | 48.4% | 44.3% | 62.9% / 124 independent signals | rejected |
 
 These are statistical baselines for the market-memory research, not accuracy
-credited to the WaveMind core. Direct WaveField and relationship-memory
-ablations did not beat them. No tested Binance candidate passes the 75% or 80%
-gate, so the branch does not expose these scores as probability.
+credited to the WaveMind core. A direct reproducible core ablation reaches
+52.0% full-coverage / 55.9% selective on 24h and 51.6% full-coverage / 58.4%
+selective on 7d. It does not beat the best statistical baselines. No tested
+Binance candidate passes the 75% or 80% gate, so the branch does not expose
+these scores as probability.
 
 ## Honest Interpretation
 
@@ -134,6 +138,7 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_derivatives.py` | strict CCXT funding/open-interest/long-short import and causal alignment |
 | `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, derivatives metrics, and book depth |
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
+| `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |

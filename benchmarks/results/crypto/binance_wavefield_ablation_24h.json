@@ -1,0 +1,3006 @@
+{
+  "methodology": {
+    "data": "Binance USD-M official archive",
+    "horizon": "24h from completed 4h candles",
+    "training": "rolling 720-timestamp window; target must mature before fold start",
+    "model_scope": "Direct wavemind.core.WaveField ablation. Unsigned uses separate up/down fields; signed uses one outcome-weighted field.",
+    "features": [
+      "return_1",
+      "return_3",
+      "return_6",
+      "return_12",
+      "return_18",
+      "return_36",
+      "volatility_6",
+      "volatility_18",
+      "volatility_36",
+      "range_bps",
+      "quote_volume_z18",
+      "trades_z18",
+      "taker_imbalance",
+      "taker_imbalance_mean6",
+      "taker_imbalance_change6",
+      "oi_change_1",
+      "oi_change_3",
+      "oi_change_6",
+      "oi_change_18",
+      "top_account_log",
+      "top_account_change6",
+      "top_position_log",
+      "top_position_change6",
+      "global_ratio_log",
+      "global_ratio_change6",
+      "taker_ratio_log",
+      "taker_ratio_change6",
+      "funding_rate_bps",
+      "funding_mean6_bps",
+      "premium_bps",
+      "premium_mean6_bps",
+      "premium_change6_bps",
+      "oi_intrabar_change_bps",
+      "oi_intrabar_range_bps",
+      "global_ratio_intrabar_mean_log",
+      "global_ratio_intrabar_std",
+      "taker_ratio_intrabar_mean_log",
+      "taker_ratio_intrabar_std",
+      "top_account_intrabar_mean_log",
+      "top_position_intrabar_mean_log",
+      "premium_range_bps",
+      "hour_sin",
+      "hour_cos",
+      "weekday_sin",
+      "weekday_cos",
+      "depth_imbalance_1pct",
+      "depth_imbalance_5pct",
+      "depth_imbalance_1pct_mean",
+      "depth_imbalance_5pct_mean",
+      "depth_imbalance_1pct_std",
+      "depth_imbalance_5pct_std",
+      "depth_imbalance_1pct_change",
+      "depth_imbalance_5pct_change",
+      "depth_total_1pct_z",
+      "depth_total_5pct_z",
+      "btc_return_6",
+      "btc_oi_change_6",
+      "btc_global_ratio_log",
+      "market_return_6_mean",
+      "market_oi_change_6_mean"
+    ]
+  },
+  "summary": [
+    {
+      "engine": "WaveMind signed outcome field ablation",
+      "signals": 5760,
+      "accuracy": 0.5081597222222223,
+      "avg_probability_margin": 0.8729407743570401,
+      "worst_fold_accuracy": 0.4798611111111111,
+      "worst_symbol_accuracy": 0.4888888888888889,
+      "by_fold": {
+        "0": 0.4986111111111111,
+        "1": 0.5381944444444444,
+        "2": 0.5159722222222223,
+        "3": 0.4798611111111111
+      },
+      "by_symbol": {
+        "ADAUSDT": 0.5194444444444445,
+        "BNBUSDT": 0.49444444444444446,
+        "BTCUSDT": 0.4888888888888889,
+        "DOGEUSDT": 0.5222222222222223,
+        "ETHUSDT": 0.5111111111111111,
+        "LINKUSDT": 0.5263888888888889,
+        "SOLUSDT": 0.49166666666666664,
+        "XRPUSDT": 0.5111111111111111
+      }
+    },
+    {
+      "engine": "WaveMind unsigned outcome field ablation",
+      "signals": 5760,
+      "accuracy": 0.5201388888888889,
+      "avg_probability_margin": 0.7019368137475087,
+      "worst_fold_accuracy": 0.4930555555555556,
+      "worst_symbol_accuracy": 0.4930555555555556,
+      "by_fold": {
+        "0": 0.4930555555555556,
+        "1": 0.5222222222222223,
+        "2": 0.5409722222222222,
+        "3": 0.5243055555555556
+      },
+      "by_symbol": {
+        "ADAUSDT": 0.5083333333333333,
+        "BNBUSDT": 0.5027777777777778,
+        "BTCUSDT": 0.5041666666666667,
+        "DOGEUSDT": 0.4930555555555556,
+        "ETHUSDT": 0.5680555555555555,
+        "LINKUSDT": 0.5222222222222223,
+        "SOLUSDT": 0.55,
+        "XRPUSDT": 0.5125
+      }
+    }
+  ],
+  "gate_75": {
+    "gate": {
+      "target_accuracy": 0.75,
+      "min_effective_signals": 40,
+      "min_effective_coverage": 0.05,
+      "min_wilson_low_95": 0.65,
+      "min_fold_accuracy": 0.65,
+      "min_fold_signals": 5,
+      "min_slice_accuracy": 0.65,
+      "min_slice_signals": 5,
+      "overlap_policy": "one observation per forecast horizon, engine, symbol, timeframe, and fold"
+    },
+    "raw_events": 11520,
+    "effective_events": 1920,
+    "engines": [
+      {
+        "engine": "WaveMind signed outcome field ablation",
+        "raw_events": 5760,
+        "effective_events": 960,
+        "admitted": false,
+        "frontier": [
+          {
+            "threshold_bps": 0.0,
+            "raw": {
+              "signals": 5760,
+              "hits": 2927,
+              "accuracy": 0.5081597222222223,
+              "wilson_low_95": 0.49524790891407044
+            },
+            "effective": {
+              "signals": 960,
+              "hits": 476,
+              "accuracy": 0.49583333333333335,
+              "wilson_low_95": 0.4642853410761045
+            },
+            "effective_coverage": 1.0,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 240,
+                "hits": 121,
+                "accuracy": 0.5041666666666667,
+                "wilson_low_95": 0.4413458598998074
+              },
+              {
+                "fold_index": 1,
+                "signals": 240,
+                "hits": 119,
+                "accuracy": 0.49583333333333335,
+                "wilson_low_95": 0.4331438092326537
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 62,
+                "accuracy": 0.5166666666666667,
+                "wilson_low_95": 0.4281358041299209
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 25.0,
+            "raw": {
+              "signals": 5730,
+              "hits": 2911,
+              "accuracy": 0.5080279232111693,
+              "wilson_low_95": 0.4950823949125543
+            },
+            "effective": {
+              "signals": 958,
+              "hits": 475,
+              "accuracy": 0.49582463465553234,
+              "wilson_low_95": 0.46424391642900903
+            },
+            "effective_coverage": 0.9979166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 239,
+                "hits": 121,
+                "accuracy": 0.5062761506276151,
+                "wilson_low_95": 0.4432953534805101
+              },
+              {
+                "fold_index": 1,
+                "signals": 239,
+                "hits": 118,
+                "accuracy": 0.49372384937238495,
+                "wilson_low_95": 0.43094161448318713
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 62,
+                "accuracy": 0.5210084033613446,
+                "wilson_low_95": 0.4320080721128783
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 50.0,
+            "raw": {
+              "signals": 5701,
+              "hits": 2897,
+              "accuracy": 0.5081564637782845,
+              "wilson_low_95": 0.49517802723591314
+            },
+            "effective": {
+              "signals": 952,
+              "hits": 472,
+              "accuracy": 0.4957983193277311,
+              "wilson_low_95": 0.46411880912402087
+            },
+            "effective_coverage": 0.9916666666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 236,
+                "hits": 120,
+                "accuracy": 0.5084745762711864,
+                "wilson_low_95": 0.4450693164978045
+              },
+              {
+                "fold_index": 1,
+                "signals": 238,
+                "hits": 118,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.4328509757154024
+              },
+              {
+                "fold_index": 2,
+                "signals": 238,
+                "hits": 125,
+                "accuracy": 0.5252100840336135,
+                "wilson_low_95": 0.4618722451105508
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 59,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.41121889415183216
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 61,
+                "accuracy": 0.5169491525423728,
+                "wilson_low_95": 0.42768308255677795
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 58,
+                "accuracy": 0.4915254237288136,
+                "wilson_low_95": 0.4030238582381012
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 100.0,
+            "raw": {
+              "signals": 5655,
+              "hits": 2870,
+              "accuracy": 0.5075154730327144,
+              "wilson_low_95": 0.49448454439522255
+            },
+            "effective": {
+              "signals": 946,
+              "hits": 471,
+              "accuracy": 0.4978858350951374,
+              "wilson_low_95": 0.46609720087537787
+            },
+            "effective_coverage": 0.9854166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 234,
+                "hits": 119,
+                "accuracy": 0.5085470085470085,
+                "wilson_low_95": 0.44487413180405094
+              },
+              {
+                "fold_index": 1,
+                "signals": 236,
+                "hits": 118,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4367215304464782
+              },
+              {
+                "fold_index": 2,
+                "signals": 238,
+                "hits": 125,
+                "accuracy": 0.5252100840336135,
+                "wilson_low_95": 0.4618722451105508
+              },
+              {
+                "fold_index": 3,
+                "signals": 238,
+                "hits": 109,
+                "accuracy": 0.4579831932773109,
+                "wilson_low_95": 0.3958536700164583
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 60,
+                "accuracy": 0.5042016806722689,
+                "wilson_low_95": 0.4156543085767855
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 59,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.41121889415183216
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 60,
+                "accuracy": 0.5128205128205128,
+                "wilson_low_95": 0.42329364252821805
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 150.0,
+            "raw": {
+              "signals": 5598,
+              "hits": 2841,
+              "accuracy": 0.507502679528403,
+              "wilson_low_95": 0.4944056000773495
+            },
+            "effective": {
+              "signals": 936,
+              "hits": 464,
+              "accuracy": 0.49572649572649574,
+              "wilson_low_95": 0.4637789417922316
+            },
+            "effective_coverage": 0.975,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 231,
+                "hits": 118,
+                "accuracy": 0.5108225108225108,
+                "wilson_low_95": 0.4467116652669613
+              },
+              {
+                "fold_index": 1,
+                "signals": 234,
+                "hits": 116,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.4322538363612875
+              },
+              {
+                "fold_index": 2,
+                "signals": 235,
+                "hits": 123,
+                "accuracy": 0.5234042553191489,
+                "wilson_low_95": 0.45968541434100935
+              },
+              {
+                "fold_index": 3,
+                "signals": 236,
+                "hits": 107,
+                "accuracy": 0.4533898305084746,
+                "wilson_low_95": 0.39112902319974324
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 58,
+                "accuracy": 0.4915254237288136,
+                "wilson_low_95": 0.4030238582381012
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 60,
+                "accuracy": 0.5042016806722689,
+                "wilson_low_95": 0.4156543085767855
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 61,
+                "accuracy": 0.5213675213675214,
+                "wilson_low_95": 0.43161942117123564
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 58,
+                "accuracy": 0.5043478260869565,
+                "wilson_low_95": 0.4143158705103379
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 57,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.409724679232304
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 200.0,
+            "raw": {
+              "signals": 5536,
+              "hits": 2811,
+              "accuracy": 0.5077673410404624,
+              "wilson_low_95": 0.4945970704580174
+            },
+            "effective": {
+              "signals": 920,
+              "hits": 458,
+              "accuracy": 0.49782608695652175,
+              "wilson_low_95": 0.4655936230533298
+            },
+            "effective_coverage": 0.9583333333333334,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 223,
+                "hits": 115,
+                "accuracy": 0.515695067264574,
+                "wilson_low_95": 0.450394384262639
+              },
+              {
+                "fold_index": 1,
+                "signals": 232,
+                "hits": 115,
+                "accuracy": 0.4956896551724138,
+                "wilson_low_95": 0.43194936397349715
+              },
+              {
+                "fold_index": 2,
+                "signals": 232,
+                "hits": 122,
+                "accuracy": 0.5258620689655172,
+                "wilson_low_95": 0.46171201445922444
+              },
+              {
+                "fold_index": 3,
+                "signals": 233,
+                "hits": 106,
+                "accuracy": 0.45493562231759654,
+                "wilson_low_95": 0.3922435221577156
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 54,
+                "accuracy": 0.46153846153846156,
+                "wilson_low_95": 0.37386916338626497
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 59,
+                "accuracy": 0.5042735042735043,
+                "wilson_low_95": 0.4149931111269609
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 116,
+                "hits": 60,
+                "accuracy": 0.5172413793103449,
+                "wilson_low_95": 0.42722138408093696
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 111,
+                "hits": 58,
+                "accuracy": 0.5225225225225225,
+                "wilson_low_95": 0.4304120089432602
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 56,
+                "accuracy": 0.48695652173913045,
+                "wilson_low_95": 0.39751304197444515
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 110,
+                "hits": 55,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.40815238803027565
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          }
+        ]
+      },
+      {
+        "engine": "WaveMind unsigned outcome field ablation",
+        "raw_events": 5760,
+        "effective_events": 960,
+        "admitted": false,
+        "frontier": [
+          {
+            "threshold_bps": 0.0,
+            "raw": {
+              "signals": 5760,
+              "hits": 2996,
+              "accuracy": 0.5201388888888889,
+              "wilson_low_95": 0.5072278415839654
+            },
+            "effective": {
+              "signals": 960,
+              "hits": 523,
+              "accuracy": 0.5447916666666667,
+              "wilson_low_95": 0.5131738641702053
+            },
+            "effective_coverage": 1.0,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 240,
+                "hits": 120,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.43724268978525527
+              },
+              {
+                "fold_index": 1,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 142,
+                "accuracy": 0.5916666666666667,
+                "wilson_low_95": 0.5285120335299993
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 134,
+                "accuracy": 0.5583333333333333,
+                "wilson_low_95": 0.49507883174387257
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 61,
+                "accuracy": 0.5083333333333333,
+                "wilson_low_95": 0.42002539783666054
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 61,
+                "accuracy": 0.5083333333333333,
+                "wilson_low_95": 0.42002539783666054
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 65,
+                "accuracy": 0.5416666666666666,
+                "wilson_low_95": 0.4526096906236999
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 74,
+                "accuracy": 0.6166666666666667,
+                "wilson_low_95": 0.5273408053842048
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 72,
+                "accuracy": 0.6,
+                "wilson_low_95": 0.5105602479246307
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 66,
+                "accuracy": 0.55,
+                "wilson_low_95": 0.46081543419687576
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 69,
+                "accuracy": 0.575,
+                "wilson_low_95": 0.4855775172299302
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 25.0,
+            "raw": {
+              "signals": 5320,
+              "hits": 2764,
+              "accuracy": 0.5195488721804511,
+              "wilson_low_95": 0.5061141154508989
+            },
+            "effective": {
+              "signals": 894,
+              "hits": 489,
+              "accuracy": 0.5469798657718121,
+              "wilson_low_95": 0.5142176182007032
+            },
+            "effective_coverage": 0.93125,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 231,
+                "hits": 117,
+                "accuracy": 0.5064935064935064,
+                "wilson_low_95": 0.44244404139605675
+              },
+              {
+                "fold_index": 1,
+                "signals": 232,
+                "hits": 123,
+                "accuracy": 0.5301724137931034,
+                "wilson_low_95": 0.4659825213455602
+              },
+              {
+                "fold_index": 2,
+                "signals": 237,
+                "hits": 141,
+                "accuracy": 0.5949367088607594,
+                "wilson_low_95": 0.5314057337557697
+              },
+              {
+                "fold_index": 3,
+                "signals": 194,
+                "hits": 108,
+                "accuracy": 0.5567010309278351,
+                "wilson_low_95": 0.4863685765914585
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 102,
+                "hits": 52,
+                "accuracy": 0.5098039215686274,
+                "wilson_low_95": 0.4142102142804601
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 94,
+                "hits": 50,
+                "accuracy": 0.5319148936170213,
+                "wilson_low_95": 0.4317826374815637
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 112,
+                "hits": 62,
+                "accuracy": 0.5535714285714286,
+                "wilson_low_95": 0.46125033639408536
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 53,
+                "accuracy": 0.452991452991453,
+                "wilson_low_95": 0.3657204174214863
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 74,
+                "accuracy": 0.6166666666666667,
+                "wilson_low_95": 0.5273408053842048
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 116,
+                "hits": 68,
+                "accuracy": 0.5862068965517241,
+                "wilson_low_95": 0.49522200733225846
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 62,
+                "accuracy": 0.543859649122807,
+                "wilson_low_95": 0.45249119322970244
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 68,
+                "accuracy": 0.5714285714285714,
+                "wilson_low_95": 0.4816542605596721
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 50.0,
+            "raw": {
+              "signals": 5142,
+              "hits": 2678,
+              "accuracy": 0.5208090237261765,
+              "wilson_low_95": 0.5071440838974418
+            },
+            "effective": {
+              "signals": 861,
+              "hits": 475,
+              "accuracy": 0.5516840882694541,
+              "wilson_low_95": 0.5183087894311674
+            },
+            "effective_coverage": 0.896875,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 228,
+                "hits": 117,
+                "accuracy": 0.5131578947368421,
+                "wilson_low_95": 0.4486008326179807
+              },
+              {
+                "fold_index": 1,
+                "signals": 221,
+                "hits": 120,
+                "accuracy": 0.5429864253393665,
+                "wilson_low_95": 0.4771346687237058
+              },
+              {
+                "fold_index": 2,
+                "signals": 233,
+                "hits": 139,
+                "accuracy": 0.5965665236051502,
+                "wilson_low_95": 0.5325015492963145
+              },
+              {
+                "fold_index": 3,
+                "signals": 179,
+                "hits": 99,
+                "accuracy": 0.553072625698324,
+                "wilson_low_95": 0.479884632387179
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 96,
+                "hits": 48,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.401924024529863
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 86,
+                "hits": 47,
+                "accuracy": 0.5465116279069767,
+                "wilson_low_95": 0.4415616959142949
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 108,
+                "hits": 60,
+                "accuracy": 0.5555555555555556,
+                "wilson_low_95": 0.46153618205059904
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 113,
+                "hits": 52,
+                "accuracy": 0.46017699115044247,
+                "wilson_low_95": 0.3711039869616077
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 73,
+                "accuracy": 0.6134453781512605,
+                "wilson_low_95": 0.5237116509364024
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 68,
+                "accuracy": 0.5964912280701754,
+                "wilson_low_95": 0.5047115802156263
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 112,
+                "hits": 60,
+                "accuracy": 0.5357142857142857,
+                "wilson_low_95": 0.4437035142372299
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 113,
+                "hits": 67,
+                "accuracy": 0.5929203539823009,
+                "wilson_low_95": 0.5007315015651076
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 100.0,
+            "raw": {
+              "signals": 4958,
+              "hits": 2576,
+              "accuracy": 0.5195643404598629,
+              "wilson_low_95": 0.5056476128073859
+            },
+            "effective": {
+              "signals": 826,
+              "hits": 457,
+              "accuracy": 0.5532687651331719,
+              "wilson_low_95": 0.5191959691079145
+            },
+            "effective_coverage": 0.8604166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 224,
+                "hits": 116,
+                "accuracy": 0.5178571428571429,
+                "wilson_low_95": 0.4526733180139364
+              },
+              {
+                "fold_index": 1,
+                "signals": 215,
+                "hits": 119,
+                "accuracy": 0.5534883720930233,
+                "wilson_low_95": 0.48667788246917915
+              },
+              {
+                "fold_index": 2,
+                "signals": 224,
+                "hits": 132,
+                "accuracy": 0.5892857142857143,
+                "wilson_low_95": 0.5238826504486055
+              },
+              {
+                "fold_index": 3,
+                "signals": 163,
+                "hits": 90,
+                "accuracy": 0.5521472392638037,
+                "wilson_low_95": 0.4754814687511472
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 90,
+                "hits": 45,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.3988372282354734
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 82,
+                "hits": 45,
+                "accuracy": 0.5487804878048781,
+                "wilson_low_95": 0.44130776131828087
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 59,
+                "accuracy": 0.5566037735849056,
+                "wilson_low_95": 0.46169918065155957
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 108,
+                "hits": 52,
+                "accuracy": 0.48148148148148145,
+                "wilson_low_95": 0.38951373394028815
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 72,
+                "accuracy": 0.6153846153846154,
+                "wilson_low_95": 0.5248976416118191
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 109,
+                "hits": 64,
+                "accuracy": 0.5871559633027523,
+                "wilson_low_95": 0.49329914193823055
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 104,
+                "hits": 55,
+                "accuracy": 0.5288461538461539,
+                "wilson_low_95": 0.43360208820409
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 110,
+                "hits": 65,
+                "accuracy": 0.5909090909090909,
+                "wilson_low_95": 0.49747266778871363
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 150.0,
+            "raw": {
+              "signals": 4822,
+              "hits": 2513,
+              "accuracy": 0.5211530485275819,
+              "wilson_low_95": 0.5070419307792728
+            },
+            "effective": {
+              "signals": 799,
+              "hits": 443,
+              "accuracy": 0.5544430538172715,
+              "wilson_low_95": 0.5198009799789195
+            },
+            "effective_coverage": 0.8322916666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 214,
+                "hits": 110,
+                "accuracy": 0.514018691588785,
+                "wilson_low_95": 0.44740022146929637
+              },
+              {
+                "fold_index": 1,
+                "signals": 208,
+                "hits": 115,
+                "accuracy": 0.5528846153846154,
+                "wilson_low_95": 0.4849658137261397
+              },
+              {
+                "fold_index": 2,
+                "signals": 216,
+                "hits": 129,
+                "accuracy": 0.5972222222222222,
+                "wilson_low_95": 0.5306684425152922
+              },
+              {
+                "fold_index": 3,
+                "signals": 161,
+                "hits": 89,
+                "accuracy": 0.5527950310559007,
+                "wilson_low_95": 0.47565324720812185
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 87,
+                "hits": 44,
+                "accuracy": 0.5057471264367817,
+                "wilson_low_95": 0.4026909678689955
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 75,
+                "hits": 40,
+                "accuracy": 0.5333333333333333,
+                "wilson_low_95": 0.4215753738908497
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 59,
+                "accuracy": 0.5566037735849056,
+                "wilson_low_95": 0.46169918065155957
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 52,
+                "accuracy": 0.49056603773584906,
+                "wilson_low_95": 0.397407007851655
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 72,
+                "accuracy": 0.6260869565217392,
+                "wilson_low_95": 0.5349263866662735
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 107,
+                "hits": 63,
+                "accuracy": 0.5887850467289719,
+                "wilson_low_95": 0.494053312400684
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 102,
+                "hits": 54,
+                "accuracy": 0.5294117647058824,
+                "wilson_low_95": 0.4332477061097251
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 101,
+                "hits": 59,
+                "accuracy": 0.5841584158415841,
+                "wilson_low_95": 0.48668116469928946
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 200.0,
+            "raw": {
+              "signals": 4711,
+              "hits": 2451,
+              "accuracy": 0.5202717045213331,
+              "wilson_low_95": 0.5059949226330752
+            },
+            "effective": {
+              "signals": 782,
+              "hits": 437,
+              "accuracy": 0.5588235294117647,
+              "wilson_low_95": 0.5238192324321707
+            },
+            "effective_coverage": 0.8145833333333333,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 212,
+                "hits": 109,
+                "accuracy": 0.5141509433962265,
+                "wilson_low_95": 0.4472215219186986
+              },
+              {
+                "fold_index": 1,
+                "signals": 202,
+                "hits": 113,
+                "accuracy": 0.5594059405940595,
+                "wilson_low_95": 0.49046718121589516
+              },
+              {
+                "fold_index": 2,
+                "signals": 211,
+                "hits": 127,
+                "accuracy": 0.6018957345971564,
+                "wilson_low_95": 0.5345926492341022
+              },
+              {
+                "fold_index": 3,
+                "signals": 157,
+                "hits": 88,
+                "accuracy": 0.5605095541401274,
+                "wilson_low_95": 0.48234723611809394
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 86,
+                "hits": 44,
+                "accuracy": 0.5116279069767442,
+                "wilson_low_95": 0.4077672083537732
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 73,
+                "hits": 40,
+                "accuracy": 0.547945205479452,
+                "wilson_low_95": 0.434243215098083
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 105,
+                "hits": 58,
+                "accuracy": 0.5523809523809524,
+                "wilson_low_95": 0.4570972192276587
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 103,
+                "hits": 50,
+                "accuracy": 0.4854368932038835,
+                "wilson_low_95": 0.391190583237978
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 72,
+                "accuracy": 0.6260869565217392,
+                "wilson_low_95": 0.5349263866662735
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 101,
+                "hits": 62,
+                "accuracy": 0.6138613861386139,
+                "wilson_low_95": 0.5164020139158059
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 99,
+                "hits": 53,
+                "accuracy": 0.5353535353535354,
+                "wilson_low_95": 0.4376308917229791
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 100,
+                "hits": 58,
+                "accuracy": 0.58,
+                "wilson_low_95": 0.4820648670304296
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          }
+        ]
+      }
+    ],
+    "admitted_engines": []
+  },
+  "gate_80": {
+    "gate": {
+      "target_accuracy": 0.8,
+      "min_effective_signals": 40,
+      "min_effective_coverage": 0.05,
+      "min_wilson_low_95": 0.7,
+      "min_fold_accuracy": 0.7,
+      "min_fold_signals": 5,
+      "min_slice_accuracy": 0.7,
+      "min_slice_signals": 5,
+      "overlap_policy": "one observation per forecast horizon, engine, symbol, timeframe, and fold"
+    },
+    "raw_events": 11520,
+    "effective_events": 1920,
+    "engines": [
+      {
+        "engine": "WaveMind signed outcome field ablation",
+        "raw_events": 5760,
+        "effective_events": 960,
+        "admitted": false,
+        "frontier": [
+          {
+            "threshold_bps": 0.0,
+            "raw": {
+              "signals": 5760,
+              "hits": 2927,
+              "accuracy": 0.5081597222222223,
+              "wilson_low_95": 0.49524790891407044
+            },
+            "effective": {
+              "signals": 960,
+              "hits": 476,
+              "accuracy": 0.49583333333333335,
+              "wilson_low_95": 0.4642853410761045
+            },
+            "effective_coverage": 1.0,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 240,
+                "hits": 121,
+                "accuracy": 0.5041666666666667,
+                "wilson_low_95": 0.4413458598998074
+              },
+              {
+                "fold_index": 1,
+                "signals": 240,
+                "hits": 119,
+                "accuracy": 0.49583333333333335,
+                "wilson_low_95": 0.4331438092326537
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 62,
+                "accuracy": 0.5166666666666667,
+                "wilson_low_95": 0.4281358041299209
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 25.0,
+            "raw": {
+              "signals": 5730,
+              "hits": 2911,
+              "accuracy": 0.5080279232111693,
+              "wilson_low_95": 0.4950823949125543
+            },
+            "effective": {
+              "signals": 958,
+              "hits": 475,
+              "accuracy": 0.49582463465553234,
+              "wilson_low_95": 0.46424391642900903
+            },
+            "effective_coverage": 0.9979166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 239,
+                "hits": 121,
+                "accuracy": 0.5062761506276151,
+                "wilson_low_95": 0.4432953534805101
+              },
+              {
+                "fold_index": 1,
+                "signals": 239,
+                "hits": 118,
+                "accuracy": 0.49372384937238495,
+                "wilson_low_95": 0.43094161448318713
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 62,
+                "accuracy": 0.5210084033613446,
+                "wilson_low_95": 0.4320080721128783
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 59,
+                "accuracy": 0.49166666666666664,
+                "wilson_low_95": 0.4038757172769723
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 50.0,
+            "raw": {
+              "signals": 5701,
+              "hits": 2897,
+              "accuracy": 0.5081564637782845,
+              "wilson_low_95": 0.49517802723591314
+            },
+            "effective": {
+              "signals": 952,
+              "hits": 472,
+              "accuracy": 0.4957983193277311,
+              "wilson_low_95": 0.46411880912402087
+            },
+            "effective_coverage": 0.9916666666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 236,
+                "hits": 120,
+                "accuracy": 0.5084745762711864,
+                "wilson_low_95": 0.4450693164978045
+              },
+              {
+                "fold_index": 1,
+                "signals": 238,
+                "hits": 118,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.4328509757154024
+              },
+              {
+                "fold_index": 2,
+                "signals": 238,
+                "hits": 125,
+                "accuracy": 0.5252100840336135,
+                "wilson_low_95": 0.4618722451105508
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 109,
+                "accuracy": 0.45416666666666666,
+                "wilson_low_95": 0.3923914639810075
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 60,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4119387054110839
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 59,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.41121889415183216
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 61,
+                "accuracy": 0.5169491525423728,
+                "wilson_low_95": 0.42768308255677795
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 58,
+                "accuracy": 0.48333333333333334,
+                "wilson_low_95": 0.3958364430105443
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 58,
+                "accuracy": 0.4915254237288136,
+                "wilson_low_95": 0.4030238582381012
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 100.0,
+            "raw": {
+              "signals": 5655,
+              "hits": 2870,
+              "accuracy": 0.5075154730327144,
+              "wilson_low_95": 0.49448454439522255
+            },
+            "effective": {
+              "signals": 946,
+              "hits": 471,
+              "accuracy": 0.4978858350951374,
+              "wilson_low_95": 0.46609720087537787
+            },
+            "effective_coverage": 0.9854166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 234,
+                "hits": 119,
+                "accuracy": 0.5085470085470085,
+                "wilson_low_95": 0.44487413180405094
+              },
+              {
+                "fold_index": 1,
+                "signals": 236,
+                "hits": 118,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.4367215304464782
+              },
+              {
+                "fold_index": 2,
+                "signals": 238,
+                "hits": 125,
+                "accuracy": 0.5252100840336135,
+                "wilson_low_95": 0.4618722451105508
+              },
+              {
+                "fold_index": 3,
+                "signals": 238,
+                "hits": 109,
+                "accuracy": 0.4579831932773109,
+                "wilson_low_95": 0.3958536700164583
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 59,
+                "accuracy": 0.4957983193277311,
+                "wilson_low_95": 0.40751373446117156
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 60,
+                "accuracy": 0.5042016806722689,
+                "wilson_low_95": 0.4156543085767855
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 59,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.41121889415183216
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 63,
+                "accuracy": 0.525,
+                "wilson_low_95": 0.43626995305824834
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 60,
+                "accuracy": 0.5128205128205128,
+                "wilson_low_95": 0.42329364252821805
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 150.0,
+            "raw": {
+              "signals": 5598,
+              "hits": 2841,
+              "accuracy": 0.507502679528403,
+              "wilson_low_95": 0.4944056000773495
+            },
+            "effective": {
+              "signals": 936,
+              "hits": 464,
+              "accuracy": 0.49572649572649574,
+              "wilson_low_95": 0.4637789417922316
+            },
+            "effective_coverage": 0.975,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 231,
+                "hits": 118,
+                "accuracy": 0.5108225108225108,
+                "wilson_low_95": 0.4467116652669613
+              },
+              {
+                "fold_index": 1,
+                "signals": 234,
+                "hits": 116,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.4322538363612875
+              },
+              {
+                "fold_index": 2,
+                "signals": 235,
+                "hits": 123,
+                "accuracy": 0.5234042553191489,
+                "wilson_low_95": 0.45968541434100935
+              },
+              {
+                "fold_index": 3,
+                "signals": 236,
+                "hits": 107,
+                "accuracy": 0.4533898305084746,
+                "wilson_low_95": 0.39112902319974324
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 118,
+                "hits": 58,
+                "accuracy": 0.4915254237288136,
+                "wilson_low_95": 0.4030238582381012
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 54,
+                "accuracy": 0.453781512605042,
+                "wilson_low_95": 0.3671745392520201
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 60,
+                "accuracy": 0.5042016806722689,
+                "wilson_low_95": 0.4156543085767855
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 61,
+                "accuracy": 0.5213675213675214,
+                "wilson_low_95": 0.43161942117123564
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 58,
+                "accuracy": 0.5043478260869565,
+                "wilson_low_95": 0.4143158705103379
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 57,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.409724679232304
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 200.0,
+            "raw": {
+              "signals": 5536,
+              "hits": 2811,
+              "accuracy": 0.5077673410404624,
+              "wilson_low_95": 0.4945970704580174
+            },
+            "effective": {
+              "signals": 920,
+              "hits": 458,
+              "accuracy": 0.49782608695652175,
+              "wilson_low_95": 0.4655936230533298
+            },
+            "effective_coverage": 0.9583333333333334,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 223,
+                "hits": 115,
+                "accuracy": 0.515695067264574,
+                "wilson_low_95": 0.450394384262639
+              },
+              {
+                "fold_index": 1,
+                "signals": 232,
+                "hits": 115,
+                "accuracy": 0.4956896551724138,
+                "wilson_low_95": 0.43194936397349715
+              },
+              {
+                "fold_index": 2,
+                "signals": 232,
+                "hits": 122,
+                "accuracy": 0.5258620689655172,
+                "wilson_low_95": 0.46171201445922444
+              },
+              {
+                "fold_index": 3,
+                "signals": 233,
+                "hits": 106,
+                "accuracy": 0.45493562231759654,
+                "wilson_low_95": 0.3922435221577156
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 54,
+                "accuracy": 0.46153846153846156,
+                "wilson_low_95": 0.37386916338626497
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 59,
+                "accuracy": 0.5042735042735043,
+                "wilson_low_95": 0.4149931111269609
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 58,
+                "accuracy": 0.49572649572649574,
+                "wilson_low_95": 0.40671780553433473
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 116,
+                "hits": 60,
+                "accuracy": 0.5172413793103449,
+                "wilson_low_95": 0.42722138408093696
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 111,
+                "hits": 58,
+                "accuracy": 0.5225225225225225,
+                "wilson_low_95": 0.4304120089432602
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 56,
+                "accuracy": 0.48695652173913045,
+                "wilson_low_95": 0.39751304197444515
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 110,
+                "hits": 55,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.40815238803027565
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          }
+        ]
+      },
+      {
+        "engine": "WaveMind unsigned outcome field ablation",
+        "raw_events": 5760,
+        "effective_events": 960,
+        "admitted": false,
+        "frontier": [
+          {
+            "threshold_bps": 0.0,
+            "raw": {
+              "signals": 5760,
+              "hits": 2996,
+              "accuracy": 0.5201388888888889,
+              "wilson_low_95": 0.5072278415839654
+            },
+            "effective": {
+              "signals": 960,
+              "hits": 523,
+              "accuracy": 0.5447916666666667,
+              "wilson_low_95": 0.5131738641702053
+            },
+            "effective_coverage": 1.0,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 240,
+                "hits": 120,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.43724268978525527
+              },
+              {
+                "fold_index": 1,
+                "signals": 240,
+                "hits": 127,
+                "accuracy": 0.5291666666666667,
+                "wilson_low_95": 0.46605504773305967
+              },
+              {
+                "fold_index": 2,
+                "signals": 240,
+                "hits": 142,
+                "accuracy": 0.5916666666666667,
+                "wilson_low_95": 0.5285120335299993
+              },
+              {
+                "fold_index": 3,
+                "signals": 240,
+                "hits": 134,
+                "accuracy": 0.5583333333333333,
+                "wilson_low_95": 0.49507883174387257
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 61,
+                "accuracy": 0.5083333333333333,
+                "wilson_low_95": 0.42002539783666054
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 61,
+                "accuracy": 0.5083333333333333,
+                "wilson_low_95": 0.42002539783666054
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 65,
+                "accuracy": 0.5416666666666666,
+                "wilson_low_95": 0.4526096906236999
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 55,
+                "accuracy": 0.4583333333333333,
+                "wilson_low_95": 0.3718612878252585
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 74,
+                "accuracy": 0.6166666666666667,
+                "wilson_low_95": 0.5273408053842048
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 72,
+                "accuracy": 0.6,
+                "wilson_low_95": 0.5105602479246307
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 66,
+                "accuracy": 0.55,
+                "wilson_low_95": 0.46081543419687576
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 69,
+                "accuracy": 0.575,
+                "wilson_low_95": 0.4855775172299302
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 25.0,
+            "raw": {
+              "signals": 5320,
+              "hits": 2764,
+              "accuracy": 0.5195488721804511,
+              "wilson_low_95": 0.5061141154508989
+            },
+            "effective": {
+              "signals": 894,
+              "hits": 489,
+              "accuracy": 0.5469798657718121,
+              "wilson_low_95": 0.5142176182007032
+            },
+            "effective_coverage": 0.93125,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 231,
+                "hits": 117,
+                "accuracy": 0.5064935064935064,
+                "wilson_low_95": 0.44244404139605675
+              },
+              {
+                "fold_index": 1,
+                "signals": 232,
+                "hits": 123,
+                "accuracy": 0.5301724137931034,
+                "wilson_low_95": 0.4659825213455602
+              },
+              {
+                "fold_index": 2,
+                "signals": 237,
+                "hits": 141,
+                "accuracy": 0.5949367088607594,
+                "wilson_low_95": 0.5314057337557697
+              },
+              {
+                "fold_index": 3,
+                "signals": 194,
+                "hits": 108,
+                "accuracy": 0.5567010309278351,
+                "wilson_low_95": 0.4863685765914585
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 102,
+                "hits": 52,
+                "accuracy": 0.5098039215686274,
+                "wilson_low_95": 0.4142102142804601
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 94,
+                "hits": 50,
+                "accuracy": 0.5319148936170213,
+                "wilson_low_95": 0.4317826374815637
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 112,
+                "hits": 62,
+                "accuracy": 0.5535714285714286,
+                "wilson_low_95": 0.46125033639408536
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 53,
+                "accuracy": 0.452991452991453,
+                "wilson_low_95": 0.3657204174214863
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 120,
+                "hits": 74,
+                "accuracy": 0.6166666666666667,
+                "wilson_low_95": 0.5273408053842048
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 116,
+                "hits": 68,
+                "accuracy": 0.5862068965517241,
+                "wilson_low_95": 0.49522200733225846
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 62,
+                "accuracy": 0.543859649122807,
+                "wilson_low_95": 0.45249119322970244
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 68,
+                "accuracy": 0.5714285714285714,
+                "wilson_low_95": 0.4816542605596721
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 50.0,
+            "raw": {
+              "signals": 5142,
+              "hits": 2678,
+              "accuracy": 0.5208090237261765,
+              "wilson_low_95": 0.5071440838974418
+            },
+            "effective": {
+              "signals": 861,
+              "hits": 475,
+              "accuracy": 0.5516840882694541,
+              "wilson_low_95": 0.5183087894311674
+            },
+            "effective_coverage": 0.896875,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 228,
+                "hits": 117,
+                "accuracy": 0.5131578947368421,
+                "wilson_low_95": 0.4486008326179807
+              },
+              {
+                "fold_index": 1,
+                "signals": 221,
+                "hits": 120,
+                "accuracy": 0.5429864253393665,
+                "wilson_low_95": 0.4771346687237058
+              },
+              {
+                "fold_index": 2,
+                "signals": 233,
+                "hits": 139,
+                "accuracy": 0.5965665236051502,
+                "wilson_low_95": 0.5325015492963145
+              },
+              {
+                "fold_index": 3,
+                "signals": 179,
+                "hits": 99,
+                "accuracy": 0.553072625698324,
+                "wilson_low_95": 0.479884632387179
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 96,
+                "hits": 48,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.401924024529863
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 86,
+                "hits": 47,
+                "accuracy": 0.5465116279069767,
+                "wilson_low_95": 0.4415616959142949
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 108,
+                "hits": 60,
+                "accuracy": 0.5555555555555556,
+                "wilson_low_95": 0.46153618205059904
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 113,
+                "hits": 52,
+                "accuracy": 0.46017699115044247,
+                "wilson_low_95": 0.3711039869616077
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 119,
+                "hits": 73,
+                "accuracy": 0.6134453781512605,
+                "wilson_low_95": 0.5237116509364024
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 114,
+                "hits": 68,
+                "accuracy": 0.5964912280701754,
+                "wilson_low_95": 0.5047115802156263
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 112,
+                "hits": 60,
+                "accuracy": 0.5357142857142857,
+                "wilson_low_95": 0.4437035142372299
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 113,
+                "hits": 67,
+                "accuracy": 0.5929203539823009,
+                "wilson_low_95": 0.5007315015651076
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 100.0,
+            "raw": {
+              "signals": 4958,
+              "hits": 2576,
+              "accuracy": 0.5195643404598629,
+              "wilson_low_95": 0.5056476128073859
+            },
+            "effective": {
+              "signals": 826,
+              "hits": 457,
+              "accuracy": 0.5532687651331719,
+              "wilson_low_95": 0.5191959691079145
+            },
+            "effective_coverage": 0.8604166666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 224,
+                "hits": 116,
+                "accuracy": 0.5178571428571429,
+                "wilson_low_95": 0.4526733180139364
+              },
+              {
+                "fold_index": 1,
+                "signals": 215,
+                "hits": 119,
+                "accuracy": 0.5534883720930233,
+                "wilson_low_95": 0.48667788246917915
+              },
+              {
+                "fold_index": 2,
+                "signals": 224,
+                "hits": 132,
+                "accuracy": 0.5892857142857143,
+                "wilson_low_95": 0.5238826504486055
+              },
+              {
+                "fold_index": 3,
+                "signals": 163,
+                "hits": 90,
+                "accuracy": 0.5521472392638037,
+                "wilson_low_95": 0.4754814687511472
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 90,
+                "hits": 45,
+                "accuracy": 0.5,
+                "wilson_low_95": 0.3988372282354734
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 82,
+                "hits": 45,
+                "accuracy": 0.5487804878048781,
+                "wilson_low_95": 0.44130776131828087
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 59,
+                "accuracy": 0.5566037735849056,
+                "wilson_low_95": 0.46169918065155957
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 108,
+                "hits": 52,
+                "accuracy": 0.48148148148148145,
+                "wilson_low_95": 0.38951373394028815
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 117,
+                "hits": 72,
+                "accuracy": 0.6153846153846154,
+                "wilson_low_95": 0.5248976416118191
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 109,
+                "hits": 64,
+                "accuracy": 0.5871559633027523,
+                "wilson_low_95": 0.49329914193823055
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 104,
+                "hits": 55,
+                "accuracy": 0.5288461538461539,
+                "wilson_low_95": 0.43360208820409
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 110,
+                "hits": 65,
+                "accuracy": 0.5909090909090909,
+                "wilson_low_95": 0.49747266778871363
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 150.0,
+            "raw": {
+              "signals": 4822,
+              "hits": 2513,
+              "accuracy": 0.5211530485275819,
+              "wilson_low_95": 0.5070419307792728
+            },
+            "effective": {
+              "signals": 799,
+              "hits": 443,
+              "accuracy": 0.5544430538172715,
+              "wilson_low_95": 0.5198009799789195
+            },
+            "effective_coverage": 0.8322916666666667,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 214,
+                "hits": 110,
+                "accuracy": 0.514018691588785,
+                "wilson_low_95": 0.44740022146929637
+              },
+              {
+                "fold_index": 1,
+                "signals": 208,
+                "hits": 115,
+                "accuracy": 0.5528846153846154,
+                "wilson_low_95": 0.4849658137261397
+              },
+              {
+                "fold_index": 2,
+                "signals": 216,
+                "hits": 129,
+                "accuracy": 0.5972222222222222,
+                "wilson_low_95": 0.5306684425152922
+              },
+              {
+                "fold_index": 3,
+                "signals": 161,
+                "hits": 89,
+                "accuracy": 0.5527950310559007,
+                "wilson_low_95": 0.47565324720812185
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 87,
+                "hits": 44,
+                "accuracy": 0.5057471264367817,
+                "wilson_low_95": 0.4026909678689955
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 75,
+                "hits": 40,
+                "accuracy": 0.5333333333333333,
+                "wilson_low_95": 0.4215753738908497
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 59,
+                "accuracy": 0.5566037735849056,
+                "wilson_low_95": 0.46169918065155957
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 106,
+                "hits": 52,
+                "accuracy": 0.49056603773584906,
+                "wilson_low_95": 0.397407007851655
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 72,
+                "accuracy": 0.6260869565217392,
+                "wilson_low_95": 0.5349263866662735
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 107,
+                "hits": 63,
+                "accuracy": 0.5887850467289719,
+                "wilson_low_95": 0.494053312400684
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 102,
+                "hits": 54,
+                "accuracy": 0.5294117647058824,
+                "wilson_low_95": 0.4332477061097251
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 101,
+                "hits": 59,
+                "accuracy": 0.5841584158415841,
+                "wilson_low_95": 0.48668116469928946
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          },
+          {
+            "threshold_bps": 200.0,
+            "raw": {
+              "signals": 4711,
+              "hits": 2451,
+              "accuracy": 0.5202717045213331,
+              "wilson_low_95": 0.5059949226330752
+            },
+            "effective": {
+              "signals": 782,
+              "hits": 437,
+              "accuracy": 0.5588235294117647,
+              "wilson_low_95": 0.5238192324321707
+            },
+            "effective_coverage": 0.8145833333333333,
+            "by_fold": [
+              {
+                "fold_index": 0,
+                "signals": 212,
+                "hits": 109,
+                "accuracy": 0.5141509433962265,
+                "wilson_low_95": 0.4472215219186986
+              },
+              {
+                "fold_index": 1,
+                "signals": 202,
+                "hits": 113,
+                "accuracy": 0.5594059405940595,
+                "wilson_low_95": 0.49046718121589516
+              },
+              {
+                "fold_index": 2,
+                "signals": 211,
+                "hits": 127,
+                "accuracy": 0.6018957345971564,
+                "wilson_low_95": 0.5345926492341022
+              },
+              {
+                "fold_index": 3,
+                "signals": 157,
+                "hits": 88,
+                "accuracy": 0.5605095541401274,
+                "wilson_low_95": 0.48234723611809394
+              }
+            ],
+            "by_slice": [
+              {
+                "symbol": "ADAUSDT",
+                "timeframe": "4h",
+                "signals": 86,
+                "hits": 44,
+                "accuracy": 0.5116279069767442,
+                "wilson_low_95": 0.4077672083537732
+              },
+              {
+                "symbol": "BNBUSDT",
+                "timeframe": "4h",
+                "signals": 73,
+                "hits": 40,
+                "accuracy": 0.547945205479452,
+                "wilson_low_95": 0.434243215098083
+              },
+              {
+                "symbol": "BTCUSDT",
+                "timeframe": "4h",
+                "signals": 105,
+                "hits": 58,
+                "accuracy": 0.5523809523809524,
+                "wilson_low_95": 0.4570972192276587
+              },
+              {
+                "symbol": "DOGEUSDT",
+                "timeframe": "4h",
+                "signals": 103,
+                "hits": 50,
+                "accuracy": 0.4854368932038835,
+                "wilson_low_95": 0.391190583237978
+              },
+              {
+                "symbol": "ETHUSDT",
+                "timeframe": "4h",
+                "signals": 115,
+                "hits": 72,
+                "accuracy": 0.6260869565217392,
+                "wilson_low_95": 0.5349263866662735
+              },
+              {
+                "symbol": "LINKUSDT",
+                "timeframe": "4h",
+                "signals": 101,
+                "hits": 62,
+                "accuracy": 0.6138613861386139,
+                "wilson_low_95": 0.5164020139158059
+              },
+              {
+                "symbol": "SOLUSDT",
+                "timeframe": "4h",
+                "signals": 99,
+                "hits": 53,
+                "accuracy": 0.5353535353535354,
+                "wilson_low_95": 0.4376308917229791
+              },
+              {
+                "symbol": "XRPUSDT",
+                "timeframe": "4h",
+                "signals": 100,
+                "hits": 58,
+                "accuracy": 0.58,
+                "wilson_low_95": 0.4820648670304296
+              }
+            ],
+            "fold_ready": false,
+            "slice_ready": false,
+            "admitted": false
+          }
+        ]
+      }
+    ],
+    "admitted_engines": []
+  },
+  "data_audit": [
+    {
+      "symbol": "ADAUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105096,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "BNBUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105096,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105096,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "DOGEUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105063,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105096,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "LINKUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 105096,
+      "missing_source_files": 0
+    },
+    {
+      "symbol": "SOLUSDT",
+      "bars": 2190,
+      "metrics": 105116,
+      "book_depth": 104808,
+      "missing_source_files": 1
+    },
+    {
+      "symbol": "XRPUSDT",
+      "bars": 2190,
+      "metrics": 105117,
+      "book_depth": 104808,
+      "missing_source_files": 1
+    }
+  ]
+}
