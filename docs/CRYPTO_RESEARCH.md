@@ -298,6 +298,37 @@ online-expert result reaches 90.9% on one threshold, but only 11 independent
 signals and 2.3% coverage remain. It is therefore rejected rather than marketed
 as an 80% edge.
 
+### Official Binance USD-M derivatives benchmark
+
+The derivatives-cache milestone is now complete on official Binance Data
+Vision archives. `benchmarks/crypto_binance_archive.py` downloads monthly 4h
+klines, premium-index klines, funding history, daily futures metrics, and daily
+book-depth snapshots. Every archive is verified against Binance's published
+SHA-256 checksum before parsing. Missing optional book-depth archives are
+recorded explicitly and their affected feature windows are excluded; required
+price or derivatives archives still fail the run.
+
+Checked range: 2025-07-01 through 2026-06-30. Checked universe: BTCUSDT,
+ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT, ADAUSDT, and LINKUSDT. The test
+uses four 180-timestamp walk-forward folds, a rolling 720-timestamp training
+window, completed 4h candles, and only targets mature before each fold starts.
+
+| horizon | best full-coverage engine | direction hit | worst fold | worst symbol | best selective frontier | gate |
+|---|---|---:|---:|---:|---:|---|
+| 24h | ExtraTrees baseline | 0.531 | 0.508 | 0.501 | 0.580 on 226 independent signals | rejected |
+| 7d | return regression ensemble | 0.560 | 0.484 | 0.443 | 0.629 on 124 independent signals | rejected |
+
+Reports:
+
+- `benchmarks/results/crypto/binance_futures_8asset_24h.md`
+- `benchmarks/results/crypto/binance_futures_8asset_7d.md`
+
+This experiment also tested order-book depth, continuous-return heads,
+large-move classification, LightGBM, direct signed/unsigned WaveField outcome
+states, and validated regime relationships. None passed the admission gate.
+The checked-in benchmark therefore labels its sklearn models as baselines and
+ensembles. Their accuracy is not attributed to WaveMind core.
+
 ### Derivatives evidence
 
 `benchmarks/crypto_derivatives.py` adds a strict CCXT importer for funding-rate,
@@ -826,16 +857,21 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
 22. Done: strict CCXT derivatives importer plus causal backward as-of alignment
     for funding, open-interest value, and long/short ratio. Real derivatives
     uplift remains unmeasured until exchange history is cached.
-23. Next: populate real derivatives caches and evaluate them with the same
-    walk-forward admission gate.
-24. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+23. Done: checksum-verified Binance USD-M archive importer and causal
+    derivatives benchmark across eight assets, 24h and 7d. Best full-coverage
+    results are `0.531` and `0.560`; best selective results are `0.580` and
+    `0.629`. No candidate passes the 75% or 80% admission gate.
+24. Next: build a WaveMind-native market-state memory model that beats these
+    statistical baselines on aggregate, fold, and symbol robustness. Direct
+    WaveField outcome and relationship-memory ablations have not done so.
+25. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-25. Next: validate the market-field target on more exchanges, date ranges,
+26. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-26. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+27. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-27. Add signal construction only after retrieval quality is stable.
-28. Publish results separately from the main README to avoid confusing memory
+28. Add signal construction only after retrieval quality is stable.
+29. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

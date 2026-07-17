@@ -52,6 +52,11 @@ crypto = [
   "ccxt>=4",
   "pandas>=2",
 ]
+crypto-ml = [
+  "ccxt>=4",
+  "pandas>=2",
+  "scikit-learn>=1.6",
+]
 langchain = [
   "langchain-classic>=1.0",
 ]

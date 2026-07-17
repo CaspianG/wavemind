@@ -50,6 +50,26 @@ Full reports:
 - [Current 24h forecast](benchmarks/results/crypto/current_24h.md)
 - [Current 7d forecast](benchmarks/results/crypto/current_7d.md)
 - [Live forecast audit](benchmarks/results/crypto/forecast_audit.md)
+- [Official Binance futures 24h stress test](benchmarks/results/crypto/binance_futures_8asset_24h.md)
+- [Official Binance futures 7d stress test](benchmarks/results/crypto/binance_futures_8asset_7d.md)
+
+### Official Binance futures stress test
+
+The derivatives layer is now tested on the official Binance USD-M archive from
+2025-07-01 through 2026-06-30: BTC, ETH, SOL, XRP, DOGE, BNB, ADA, and LINK.
+Every downloaded ZIP is checked against Binance's published SHA-256 checksum.
+Features include completed 4h candles, funding, open interest, trader ratios,
+premium index, cross-asset context, and 5-minute order-book depth snapshots.
+
+| horizon | best full-coverage engine | direction hit | worst fold | worst coin | best selective result | admission |
+|---|---|---:|---:|---:|---:|---|
+| 24h | ExtraTrees baseline | 53.1% | 50.8% | 50.1% | 58.0% / 226 independent signals | rejected |
+| 7d | return regression ensemble | 56.0% | 48.4% | 44.3% | 62.9% / 124 independent signals | rejected |
+
+These are statistical baselines for the market-memory research, not accuracy
+credited to the WaveMind core. Direct WaveField and relationship-memory
+ablations did not beat them. No tested Binance candidate passes the 75% or 80%
+gate, so the branch does not expose these scores as probability.
 
 ## Honest Interpretation
 
@@ -112,6 +132,8 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 |---|---|
 | `benchmarks/crypto_ohlcv.py` | CSV/CCXT import, completed-candle handling, feature windows |
 | `benchmarks/crypto_derivatives.py` | strict CCXT funding/open-interest/long-short import and causal alignment |
+| `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, derivatives metrics, and book depth |
+| `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
@@ -151,11 +173,13 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 ## Next Work
 
 1. Expand the independent holdout across exchanges and market regimes.
-2. Populate real derivatives caches and benchmark funding, open interest, and long/short evidence.
-3. Add multi-timeframe and cross-asset context without lookahead.
+2. Add a WaveMind-native market-state memory model that must beat the new
+   Binance statistical baselines; do not relabel a classifier as a field.
+3. Expand the checksum-verified futures stress test to a second exchange and a
+   longer regime history.
 4. Improve target magnitude and publish calibrated prediction intervals.
 5. Validate the 1d/7d policy before allowing trade signals.
-6. Connect the audited signal layer to the Freqtrade adapter in dry-run mode.
+6. Connect only an admitted signal layer to the Freqtrade adapter in dry-run mode.
 
 ## Development
 
