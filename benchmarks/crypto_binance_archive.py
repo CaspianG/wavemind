@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
 import io
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
+from itertools import chain
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
@@ -23,6 +26,21 @@ from benchmarks.crypto_ohlcv import OHLCVBar  # noqa: E402
 
 
 BINANCE_ARCHIVE = "https://data.binance.vision/data/futures/um"
+ARCHIVE_SOURCES = ("klines", "premium", "funding", "metrics", "book_depth")
+KLINE_COLUMNS = (
+    "open_time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "close_time",
+    "quote_volume",
+    "count",
+    "taker_buy_volume",
+    "taker_buy_quote_volume",
+    "ignore",
+)
 
 
 @dataclass(frozen=True)
@@ -111,12 +129,19 @@ def download_archive_bundle(
     cache_dir: str | Path,
     workers: int = 12,
     base_url: str = BINANCE_ARCHIVE,
+    sources: Sequence[str] = ARCHIVE_SOURCES,
 ) -> ArchiveBundle:
     if start > end:
         raise ValueError("start must be on or before end")
     if workers <= 0:
         raise ValueError("workers must be positive")
     normalized_symbol = symbol.upper().replace("/", "").replace(":USDT", "")
+    requested_sources = tuple(dict.fromkeys(str(source) for source in sources))
+    unknown_sources = sorted(set(requested_sources) - set(ARCHIVE_SOURCES))
+    if unknown_sources:
+        raise ValueError("Unknown archive sources: " + ", ".join(unknown_sources))
+    if "klines" not in requested_sources:
+        raise ValueError("klines source is required")
     root = Path(cache_dir)
     specifications = _archive_specs(
         symbol=normalized_symbol,
@@ -124,6 +149,7 @@ def download_archive_bundle(
         start=start,
         end=end,
         base_url=base_url.rstrip("/"),
+        sources=requested_sources,
     )
     downloaded: dict[str, Path] = {}
     missing: list[str] = []
@@ -194,11 +220,21 @@ def save_bundle(path: str | Path, bundle: ArchiveBundle) -> None:
         "source_files": list(bundle.source_files),
         "missing_source_files": list(bundle.missing_source_files),
     }
-    output.write_text(json.dumps(payload, separators=(",", ":")) + "\n", encoding="utf-8")
+    content = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
+    if output.suffix == ".gz":
+        with gzip.open(output, "wb", compresslevel=6) as handle:
+            handle.write(content)
+    else:
+        output.write_bytes(content)
 
 
 def load_bundle(path: str | Path) -> ArchiveBundle:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    source = Path(path)
+    if source.suffix == ".gz":
+        with gzip.open(source, "rt", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    else:
+        payload = json.loads(source.read_text(encoding="utf-8"))
     return ArchiveBundle(
         symbol=str(payload["symbol"]),
         timeframe=str(payload["timeframe"]),
@@ -229,7 +265,7 @@ def load_futures_bars(path: str | Path) -> list[FuturesBar]:
             taker_buy_volume=float(row["taker_buy_volume"]),
             taker_buy_quote_volume=float(row["taker_buy_quote_volume"]),
         )
-        for row in _zip_csv_rows(path)
+        for row in _zip_csv_rows(path, fieldnames=KLINE_COLUMNS)
     ]
 
 
@@ -244,7 +280,19 @@ def load_futures_metrics(path: str | Path) -> list[FuturesMetric]:
             global_long_short_ratio=_optional_float(row["count_long_short_ratio"]),
             taker_long_short_ratio=_optional_float(row["sum_taker_long_short_vol_ratio"]),
         )
-        for row in _zip_csv_rows(path)
+        for row in _zip_csv_rows(
+            path,
+            fieldnames=(
+                "create_time",
+                "symbol",
+                "sum_open_interest",
+                "sum_open_interest_value",
+                "count_toptrader_long_short_ratio",
+                "sum_toptrader_long_short_ratio",
+                "count_long_short_ratio",
+                "sum_taker_long_short_vol_ratio",
+            ),
+        )
     ]
 
 
@@ -255,7 +303,10 @@ def load_funding_points(path: str | Path) -> list[FundingPoint]:
             interval_hours=int(row["funding_interval_hours"]),
             funding_rate=float(row["last_funding_rate"]),
         )
-        for row in _zip_csv_rows(path)
+        for row in _zip_csv_rows(
+            path,
+            fieldnames=("calc_time", "funding_interval_hours", "last_funding_rate"),
+        )
     ]
 
 
@@ -269,7 +320,7 @@ def load_premium_points(path: str | Path) -> list[PremiumPoint]:
             low=float(row["low"]),
             close=float(row["close"]),
         )
-        for row in _zip_csv_rows(path)
+        for row in _zip_csv_rows(path, fieldnames=KLINE_COLUMNS)
     ]
 
 
@@ -303,7 +354,9 @@ def _archive_specs(
     start: date,
     end: date,
     base_url: str,
+    sources: Sequence[str] = ARCHIVE_SOURCES,
 ) -> list[tuple[str, Path, str]]:
+    requested = set(sources)
     specs: list[tuple[str, Path, str]] = []
     for month in _months(start, end):
         suffix = month.strftime("%Y-%m")
@@ -311,15 +364,20 @@ def _archive_specs(
             ("klines", "klines"),
             ("premium", "premiumIndexKlines"),
         ):
+            if kind not in requested:
+                continue
             filename = f"{symbol}-{timeframe}-{suffix}.zip"
             relative = Path("monthly") / archive_name / symbol / timeframe / filename
             specs.append((kind, relative, f"{base_url}/{relative.as_posix()}"))
-        funding_name = f"{symbol}-fundingRate-{suffix}.zip"
-        funding_relative = Path("monthly") / "fundingRate" / symbol / funding_name
-        specs.append(("funding", funding_relative, f"{base_url}/{funding_relative.as_posix()}"))
+        if "funding" in requested:
+            funding_name = f"{symbol}-fundingRate-{suffix}.zip"
+            funding_relative = Path("monthly") / "fundingRate" / symbol / funding_name
+            specs.append(("funding", funding_relative, f"{base_url}/{funding_relative.as_posix()}"))
     for day in _days(start, end):
         suffix = day.isoformat()
         for kind, archive_name in (("metrics", "metrics"), ("book_depth", "bookDepth")):
+            if kind not in requested:
+                continue
             filename = f"{symbol}-{archive_name}-{suffix}.zip"
             relative = Path("daily") / archive_name / symbol / filename
             specs.append((kind, relative, f"{base_url}/{relative.as_posix()}"))
@@ -353,16 +411,28 @@ def _download_optional_checked(*, url: str, destination: Path) -> Path | None:
         raise
 
 
-def _read_url(url: str) -> bytes:
+def _read_url(url: str, *, attempts: int = 8) -> bytes:
+    if attempts <= 0:
+        raise ValueError("attempts must be positive")
     request = urllib.request.Request(url, headers={"User-Agent": "WaveMind-Research/1.0"})
-    try:
-        with urllib.request.urlopen(request, timeout=45) as response:
-            return response.read()
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"Archive request failed ({exc.code}): {url}") from exc
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(request, timeout=45) as response:
+                return response.read()
+        except urllib.error.HTTPError as exc:
+            if exc.code < 500 and exc.code != 429:
+                raise RuntimeError(f"Archive request failed ({exc.code}): {url}") from exc
+            error: Exception = exc
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            error = exc
+        if attempt + 1 < attempts:
+            time.sleep(min(8.0, 0.5 * (2**attempt)))
+    raise RuntimeError(f"Archive request failed after {attempts} attempts: {url}") from error
 
 
-def _zip_csv_rows(path: str | Path) -> list[dict[str, str]]:
+def _zip_csv_rows(
+    path: str | Path, *, fieldnames: Sequence[str] | None = None
+) -> list[dict[str, str]]:
     archive = Path(path)
     with zipfile.ZipFile(archive) as bundle:
         csv_names = [name for name in bundle.namelist() if name.lower().endswith(".csv")]
@@ -370,7 +440,23 @@ def _zip_csv_rows(path: str | Path) -> list[dict[str, str]]:
             raise ValueError(f"Expected one CSV in {archive}, found {len(csv_names)}")
         with bundle.open(csv_names[0]) as raw:
             text = io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")
-            return [dict(row) for row in csv.DictReader(text)]
+            reader = csv.reader(text)
+            try:
+                first = next(reader)
+            except StopIteration:
+                return []
+            if fieldnames is None:
+                names = first
+                data = reader
+            elif first and first[0].strip() == fieldnames[0]:
+                names = first
+                data = reader
+            else:
+                names = list(fieldnames)
+                data = chain((first,), reader)
+            if len(names) != len(set(names)):
+                raise ValueError(f"Duplicate CSV columns in {archive}")
+            return [dict(zip(names, row, strict=True)) for row in data]
 
 
 def _checksum_value(text: str) -> str:
@@ -434,6 +520,13 @@ def main() -> int:
     parser.add_argument("--cache-dir", type=Path, default=Path("data/binance-archive"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument(
+        "--source",
+        action="append",
+        choices=ARCHIVE_SOURCES,
+        dest="sources",
+        help="Explicit source to include; repeat as needed (default: all sources).",
+    )
     args = parser.parse_args()
 
     bundle = download_archive_bundle(
@@ -443,6 +536,7 @@ def main() -> int:
         end=args.end,
         cache_dir=args.cache_dir,
         workers=args.workers,
+        sources=tuple(args.sources) if args.sources else ARCHIVE_SOURCES,
     )
     save_bundle(args.output, bundle)
     print(

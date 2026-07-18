@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import hashlib
 import io
+import urllib.error
 import zipfile
 from datetime import date
 
@@ -149,6 +151,34 @@ def test_optional_archive_only_tolerates_explicit_404(tmp_path, monkeypatch):
         )
 
 
+def test_read_url_retries_transient_network_failure(monkeypatch):
+    from benchmarks import crypto_binance_archive as archive
+
+    calls = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b"verified"
+
+    def flaky_open(_request, timeout):
+        calls.append(timeout)
+        if len(calls) < 3:
+            raise urllib.error.URLError("temporary TLS failure")
+        return Response()
+
+    monkeypatch.setattr(archive.urllib.request, "urlopen", flaky_open)
+    monkeypatch.setattr(archive.time, "sleep", lambda _seconds: None)
+
+    assert archive._read_url("https://example/archive.zip") == b"verified"
+    assert calls == [45, 45, 45]
+
+
 def test_archive_spec_has_monthly_and_daily_sources():
     from benchmarks.crypto_binance_archive import _archive_specs
 
@@ -166,6 +196,45 @@ def test_archive_spec_has_monthly_and_daily_sources():
     assert kinds.count("funding") == 2
     assert kinds.count("metrics") == 3
     assert kinds.count("book_depth") == 3
+
+
+def test_archive_spec_can_explicitly_exclude_book_depth():
+    from benchmarks.crypto_binance_archive import _archive_specs
+
+    specs = _archive_specs(
+        symbol="BTCUSDT",
+        timeframe="4h",
+        start=date(2022, 1, 1),
+        end=date(2022, 1, 2),
+        base_url="https://data.example",
+        sources=("klines", "premium", "funding", "metrics"),
+    )
+
+    assert {kind for kind, _, _ in specs} == {"klines", "premium", "funding", "metrics"}
+
+
+def test_bundle_gzip_round_trip(tmp_path):
+    from benchmarks.crypto_binance_archive import ArchiveBundle, FuturesBar, load_bundle, save_bundle
+
+    bundle = ArchiveBundle(
+        symbol="BTCUSDT",
+        timeframe="4h",
+        start_date="2022-01-01",
+        end_date="2022-01-02",
+        bars=(FuturesBar(1, 2, 1.0, 2.0, 0.5, 1.5, 10.0, 15.0, 3, 6.0, 9.0),),
+        metrics=(),
+        funding=(),
+        premium=(),
+        book_depth=(),
+        source_files=("fixture.zip",),
+        missing_source_files=(),
+    )
+    path = tmp_path / "bundle.json.gz"
+
+    save_bundle(path, bundle)
+
+    assert gzip.open(path, "rt", encoding="utf-8").read().startswith('{"symbol":"BTCUSDT"')
+    assert load_bundle(path) == bundle
 
 
 def test_metrics_parser_preserves_missing_values(tmp_path):
@@ -193,3 +262,21 @@ def test_metrics_parser_preserves_missing_values(tmp_path):
     row = load_futures_metrics(path)[0]
     assert row.top_trader_account_ratio is None
     assert row.taker_long_short_ratio is None
+
+
+def test_premium_parser_supports_legacy_headerless_archives(tmp_path):
+    from benchmarks.crypto_binance_archive import load_premium_points
+
+    path = tmp_path / "legacy-premium.zip"
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "legacy.csv",
+            "1640995200000,-0.0001,0.0007,-0.0008,-0.0004,0,1641009599999,0,2880,0,0,0\n",
+        )
+    path.write_bytes(output.getvalue())
+
+    point = load_premium_points(path)[0]
+
+    assert point.timestamp == 1_640_995_200
+    assert point.close == -0.0004

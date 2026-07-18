@@ -65,3 +65,50 @@ def test_horizon_label_is_explicit():
 
     assert _horizon_label(24 * 60 * 60) == "24h"
     assert _horizon_label(7 * 24 * 60 * 60) == "7d"
+
+
+def test_extended_features_do_not_require_microstructure_fields():
+    from benchmarks.crypto_derivatives_field_benchmark import _features_from_history
+
+    history = []
+    for index in range(181):
+        history.append(
+            {
+                "close": 100.0 + index,
+                "high": 101.0 + index,
+                "low": 99.0 + index,
+                "quote_volume": 1_000.0 + index,
+                "trades": 100.0 + index,
+                "taker_imbalance": 0.01 * ((index % 5) - 2),
+                "open_interest_value": 10_000.0 + index * 3,
+                "top_trader_account_ratio": 1.1 + index / 10_000,
+                "top_trader_position_ratio": 1.2 + index / 10_000,
+                "global_long_short_ratio": 1.0 + index / 10_000,
+                "taker_long_short_ratio": 0.9 + index / 10_000,
+                "funding_rate": 0.0001,
+                "premium": 0.0002,
+                "oi_intrabar_change_bps": 1.0,
+                "oi_intrabar_range_bps": 2.0,
+                "global_ratio_intrabar_mean_log": 0.1,
+                "global_ratio_intrabar_std": 0.01,
+                "taker_ratio_intrabar_mean_log": 0.1,
+                "taker_ratio_intrabar_std": 0.01,
+                "top_account_intrabar_mean_log": 0.1,
+                "top_position_intrabar_mean_log": 0.1,
+                "premium_range_bps": 1.0,
+                "hour_sin": 0.0,
+                "hour_cos": 1.0,
+                "weekday_sin": 0.0,
+                "weekday_cos": 1.0,
+            }
+        )
+
+    features = _features_from_history(
+        history,
+        include_microstructure=False,
+        extended_features=True,
+    )
+
+    assert "return_180" in features
+    assert "oi_change_180" in features
+    assert "depth_imbalance_1pct" not in features

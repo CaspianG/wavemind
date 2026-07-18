@@ -54,6 +54,27 @@ Full reports:
 - [Official Binance futures 7d stress test](benchmarks/results/crypto/binance_futures_8asset_7d.md)
 - [Direct WaveField 24h ablation](benchmarks/results/crypto/binance_wavefield_ablation_24h.md)
 - [Direct WaveField 7d ablation](benchmarks/results/crypto/binance_wavefield_ablation_7d.md)
+- [Multi-year Binance 24h event benchmark](benchmarks/results/crypto/binance_multiyear_event_24h.md)
+- [Multi-year Binance 7d event benchmark](benchmarks/results/crypto/binance_multiyear_event_7d.md)
+
+### Multi-year Binance regime holdout
+
+The primary robustness test now covers 2022-01-01 through 2026-06-30 on eight
+Binance USD-M contracts. Five fixed half-year test folds begin in 2024. Before
+each fold, three disjoint past-only blocks train the reliability model,
+calibrate its score, and select its threshold. Forecasts are collapsed to
+non-overlapping horizons before accuracy is counted.
+
+| horizon | full-coverage baseline | best tested gate | gate worst fold | 2026-H1 | verdict |
+|---|---:|---:|---:|---:|---|
+| 24h | 52.3% | 53.3% calibrated WaveField meta | 50.6% | 51.7% | rejected |
+| 7d | 48.5% | 50.8% direction-margin | 48.3% | 48.3% | rejected |
+
+The multi-year result supersedes the smaller datasets for admission decisions.
+It also exposes an important measurement trap: the best 24h logistic head was
+53.9% on overlapping 4h rows but only 52.3% after forecasts were made
+independent. No current engine passes either the 75% or 80% gate, so these
+scores are not exposed as probabilities and must not drive live trades.
 
 ### Official Binance futures stress test
 
@@ -139,6 +160,7 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, derivatives metrics, and book depth |
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
+| `benchmarks/crypto_multiyear_event_benchmark.py` | nested 2022-2026 regime/event benchmark with a direct WaveField reliability ablation |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
@@ -177,12 +199,14 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 
 ## Next Work
 
-1. Expand the independent holdout across exchanges and market regimes.
-2. Add a WaveMind-native market-state memory model that must beat the new
-   Binance statistical baselines; do not relabel a classifier as a field.
-3. Expand the checksum-verified futures stress test to a second exchange and a
-   longer regime history.
-4. Improve target magnitude and publish calibrated prediction intervals.
+1. Add a second checksum-verifiable exchange holdout; the Binance history now
+   spans 4.5 years, but cross-venue transfer is still unproven.
+2. Replace the current projected outcome map with a WaveMind-native temporal
+   field whose state update is trained and ablated against the static head.
+3. Add archived options, liquidation, on-chain, and macro features one source
+   at a time; each source must improve the untouched folds to remain.
+4. Improve target magnitude and publish prediction intervals only after their
+   empirical coverage is stable by fold and asset.
 5. Validate the 1d/7d policy before allowing trade signals.
 6. Connect only an admitted signal layer to the Freqtrade adapter in dry-run mode.
 

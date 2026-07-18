@@ -42,6 +42,29 @@ PRICE_FEATURES = (
     "taker_imbalance_change6",
 )
 
+EXTENDED_PRICE_FEATURES = (
+    "return_72",
+    "return_126",
+    "return_180",
+    "volatility_72",
+    "volatility_126",
+    "volatility_180",
+    "distance_high_36_bps",
+    "distance_high_126_bps",
+    "distance_high_180_bps",
+    "distance_low_36_bps",
+    "distance_low_126_bps",
+    "distance_low_180_bps",
+    "downside_volatility_36",
+    "downside_volatility_126",
+    "upside_volatility_36",
+    "upside_volatility_126",
+    "quote_volume_z72",
+    "trades_z72",
+    "taker_imbalance_mean18",
+    "taker_imbalance_mean36",
+)
+
 DERIVATIVE_FEATURES = (
     "oi_change_1",
     "oi_change_3",
@@ -73,6 +96,25 @@ DERIVATIVE_FEATURES = (
     "hour_cos",
     "weekday_sin",
     "weekday_cos",
+)
+
+EXTENDED_DERIVATIVE_FEATURES = (
+    "oi_change_36",
+    "oi_change_72",
+    "oi_change_126",
+    "oi_change_180",
+    "top_account_change18",
+    "top_account_change36",
+    "top_position_change18",
+    "top_position_change36",
+    "global_ratio_change18",
+    "global_ratio_change36",
+    "taker_ratio_change18",
+    "taker_ratio_change36",
+    "funding_mean18_bps",
+    "funding_mean36_bps",
+    "premium_mean18_bps",
+    "premium_mean36_bps",
 )
 
 MICROSTRUCTURE_FEATURES = (
@@ -107,7 +149,16 @@ class FeatureRow:
     future_return_bps: float
 
 
-def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int = 36) -> list[FeatureRow]:
+def build_feature_rows(
+    bundle: ArchiveBundle,
+    *,
+    horizon: int = 6,
+    lookback: int = 36,
+    include_microstructure: bool = True,
+    extended_features: bool = False,
+) -> list[FeatureRow]:
+    if extended_features and lookback < 180:
+        raise ValueError("extended_features requires lookback >= 180")
     bars = list(bundle.bars)
     metrics = list(bundle.metrics)
     funding = list(bundle.funding)
@@ -153,12 +204,16 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
             or latest_funding is None
             or any(field not in latest_metric for field in required_metric_fields)
             or not interval_metrics
-            or not interval_depth
+            or (include_microstructure and not interval_depth)
         ):
             states.append(None)
             continue
         funding_age = cutoff - int(funding[max(0, funding_cursor - 1)].timestamp)
-        depth_age = cutoff - int(book_depth[max(0, depth_cursor - 1)].timestamp)
+        depth_age = (
+            cutoff - int(book_depth[max(0, depth_cursor - 1)].timestamp)
+            if include_microstructure
+            else 0
+        )
         if (
             not _metric_fields_are_fresh(
                 cutoff,
@@ -167,7 +222,7 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
                 max_age_seconds=15 * 60,
             )
             or funding_age > 12 * 60 * 60
-            or depth_age > 15 * 60
+            or (include_microstructure and depth_age > 15 * 60)
         ):
             states.append(None)
             continue
@@ -181,12 +236,6 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
         top_position_interval = _metric_values(interval_metrics, "top_trader_position_ratio")
         depth_1 = np.asarray([_depth_imbalance(row, 1) for row in interval_depth], dtype=float)
         depth_5 = np.asarray([_depth_imbalance(row, 5) for row in interval_depth], dtype=float)
-        depth_total_1 = np.asarray(
-            [row.bid_notional_1pct + row.ask_notional_1pct for row in interval_depth], dtype=float
-        )
-        depth_total_5 = np.asarray(
-            [row.bid_notional_5pct + row.ask_notional_5pct for row in interval_depth], dtype=float
-        )
         if any(
             len(values) < 2
             for values in (
@@ -195,15 +244,13 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
                 taker_interval,
                 top_account_interval,
                 top_position_interval,
-                depth_1,
-                depth_5,
+                *(values for values in (depth_1, depth_5) if include_microstructure),
             )
         ):
             states.append(None)
             continue
         opened = datetime.fromtimestamp(bar.timestamp, tz=timezone.utc)
-        states.append(
-            {
+        state = {
                 "close": float(bar.close),
                 "high": float(bar.high),
                 "low": float(bar.low),
@@ -237,18 +284,29 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
                 "hour_cos": math.cos(2.0 * math.pi * opened.hour / 24.0),
                 "weekday_sin": math.sin(2.0 * math.pi * opened.weekday() / 7.0),
                 "weekday_cos": math.cos(2.0 * math.pi * opened.weekday() / 7.0),
-                "depth_imbalance_1pct": float(depth_1[-1]),
-                "depth_imbalance_5pct": float(depth_5[-1]),
-                "depth_imbalance_1pct_mean": float(np.mean(depth_1)),
-                "depth_imbalance_5pct_mean": float(np.mean(depth_5)),
-                "depth_imbalance_1pct_std": float(np.std(depth_1)),
-                "depth_imbalance_5pct_std": float(np.std(depth_5)),
-                "depth_imbalance_1pct_change": float(depth_1[-1] - depth_1[0]),
-                "depth_imbalance_5pct_change": float(depth_5[-1] - depth_5[0]),
-                "depth_total_1pct": float(depth_total_1[-1]),
-                "depth_total_5pct": float(depth_total_5[-1]),
             }
-        )
+        if include_microstructure:
+            depth_total_1 = np.asarray(
+                [row.bid_notional_1pct + row.ask_notional_1pct for row in interval_depth], dtype=float
+            )
+            depth_total_5 = np.asarray(
+                [row.bid_notional_5pct + row.ask_notional_5pct for row in interval_depth], dtype=float
+            )
+            state.update(
+                {
+                    "depth_imbalance_1pct": float(depth_1[-1]),
+                    "depth_imbalance_5pct": float(depth_5[-1]),
+                    "depth_imbalance_1pct_mean": float(np.mean(depth_1)),
+                    "depth_imbalance_5pct_mean": float(np.mean(depth_5)),
+                    "depth_imbalance_1pct_std": float(np.std(depth_1)),
+                    "depth_imbalance_5pct_std": float(np.std(depth_5)),
+                    "depth_imbalance_1pct_change": float(depth_1[-1] - depth_1[0]),
+                    "depth_imbalance_5pct_change": float(depth_5[-1] - depth_5[0]),
+                    "depth_total_1pct": float(depth_total_1[-1]),
+                    "depth_total_5pct": float(depth_total_5[-1]),
+                }
+            )
+        states.append(state)
 
     rows: list[FeatureRow] = []
     for index in range(lookback, len(bars) - horizon):
@@ -257,7 +315,11 @@ def build_feature_rows(bundle: ArchiveBundle, *, horizon: int = 6, lookback: int
             continue
         current = history[-1]
         assert current is not None
-        features = _features_from_history([item for item in history if item is not None])
+        features = _features_from_history(
+            [item for item in history if item is not None],
+            include_microstructure=include_microstructure,
+            extended_features=extended_features,
+        )
         future_return = (float(bars[index + horizon].close) / float(bars[index].close) - 1.0) * 10_000.0
         rows.append(
             FeatureRow(
@@ -638,7 +700,12 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _features_from_history(history: Sequence[Mapping[str, float]]) -> dict[str, float]:
+def _features_from_history(
+    history: Sequence[Mapping[str, float]],
+    *,
+    include_microstructure: bool = True,
+    extended_features: bool = False,
+) -> dict[str, float]:
     close = np.asarray([row["close"] for row in history], dtype=float)
     returns = np.diff(np.log(close)) * 10_000.0
     quote_volume = np.asarray([row["quote_volume"] for row in history], dtype=float)
@@ -675,6 +742,46 @@ def _features_from_history(history: Sequence[Mapping[str, float]]) -> dict[str, 
     features["premium_bps"] = float(premium[-1])
     features["premium_mean6_bps"] = float(np.mean(premium[-6:]))
     features["premium_change6_bps"] = float(premium[-1] - premium[-7])
+    if extended_features:
+        high = np.asarray([row["high"] for row in history], dtype=float)
+        low = np.asarray([row["low"] for row in history], dtype=float)
+        for period in (72, 126, 180):
+            features[f"return_{period}"] = _log_change(close, period) * 10_000.0
+            features[f"volatility_{period}"] = float(np.std(returns[-period:]))
+        for period in (36, 126, 180):
+            features[f"distance_high_{period}_bps"] = (
+                close[-1] / max(float(np.max(high[-period:])), 1e-12) - 1.0
+            ) * 10_000.0
+            features[f"distance_low_{period}_bps"] = (
+                close[-1] / max(float(np.min(low[-period:])), 1e-12) - 1.0
+            ) * 10_000.0
+        for period in (36, 126):
+            recent_returns = returns[-period:]
+            features[f"downside_volatility_{period}"] = float(
+                np.std(np.minimum(recent_returns, 0.0))
+            )
+            features[f"upside_volatility_{period}"] = float(
+                np.std(np.maximum(recent_returns, 0.0))
+            )
+        features["quote_volume_z72"] = _robust_z(quote_volume[-72:])
+        features["trades_z72"] = _robust_z(trades[-72:])
+        features["taker_imbalance_mean18"] = float(np.mean(imbalance[-18:]))
+        features["taker_imbalance_mean36"] = float(np.mean(imbalance[-36:]))
+        for period in (36, 72, 126, 180):
+            features[f"oi_change_{period}"] = _log_change(oi, period) * 10_000.0
+        for prefix, source in (
+            ("top_account", "top_trader_account_ratio"),
+            ("top_position", "top_trader_position_ratio"),
+            ("global_ratio", "global_long_short_ratio"),
+            ("taker_ratio", "taker_long_short_ratio"),
+        ):
+            values = np.asarray([max(row[source], 1e-12) for row in history], dtype=float)
+            for period in (18, 36):
+                features[f"{prefix}_change{period}"] = _log_change(values, period)
+        features["funding_mean18_bps"] = float(np.mean(funding[-18:]))
+        features["funding_mean36_bps"] = float(np.mean(funding[-36:]))
+        features["premium_mean18_bps"] = float(np.mean(premium[-18:]))
+        features["premium_mean36_bps"] = float(np.mean(premium[-36:]))
     for name in (
         "oi_intrabar_change_bps",
         "oi_intrabar_range_bps",
@@ -691,15 +798,16 @@ def _features_from_history(history: Sequence[Mapping[str, float]]) -> dict[str, 
         "weekday_cos",
     ):
         features[name] = float(current[name])
-    for name in MICROSTRUCTURE_FEATURES:
-        if name == "depth_total_1pct_z":
-            values = np.asarray([row["depth_total_1pct"] for row in history[-18:]], dtype=float)
-            features[name] = _robust_z(values)
-        elif name == "depth_total_5pct_z":
-            values = np.asarray([row["depth_total_5pct"] for row in history[-18:]], dtype=float)
-            features[name] = _robust_z(values)
-        else:
-            features[name] = float(current[name])
+    if include_microstructure:
+        for name in MICROSTRUCTURE_FEATURES:
+            if name == "depth_total_1pct_z":
+                values = np.asarray([row["depth_total_1pct"] for row in history[-18:]], dtype=float)
+                features[name] = _robust_z(values)
+            elif name == "depth_total_5pct_z":
+                values = np.asarray([row["depth_total_5pct"] for row in history[-18:]], dtype=float)
+                features[name] = _robust_z(values)
+            else:
+                features[name] = float(current[name])
     return features
 
 
