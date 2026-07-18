@@ -93,6 +93,9 @@ def test_policy_threshold_requires_non_overlapping_evidence():
 
 def test_nested_benchmark_runs_train_field_policy_and_future_test():
     import numpy as np
+    import pytest
+
+    pytest.importorskip("sklearn")
 
     from benchmarks.crypto_derivatives_field_benchmark import FeatureRow
     from benchmarks.crypto_multiyear_event_benchmark import BASE_FEATURES, run_multiyear_benchmark

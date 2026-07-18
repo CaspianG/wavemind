@@ -193,12 +193,19 @@ def run_multiyear_benchmark(
     calibration_timestamps: int = 1620,
     random_state: int = 2027,
 ) -> dict[str, Any]:
-    from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor, HistGradientBoostingClassifier
-    from sklearn.impute import SimpleImputer
-    from sklearn.isotonic import IsotonicRegression
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import StandardScaler
+    try:
+        from sklearn.ensemble import (
+            ExtraTreesClassifier,
+            ExtraTreesRegressor,
+            HistGradientBoostingClassifier,
+        )
+        from sklearn.impute import SimpleImputer
+        from sklearn.isotonic import IsotonicRegression
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+    except ImportError as exc:
+        raise RuntimeError('Install the research extra: pip install -e ".[crypto-ml]"') from exc
 
     symbols = sorted({row.symbol for row in rows})
     feature_names = BASE_FEATURES
