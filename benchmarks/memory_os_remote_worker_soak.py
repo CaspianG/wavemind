@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -33,6 +34,8 @@ RedisSoak = Callable[..., dict[str, Any]]
 
 PRODUCTION_MIN_DURATION_SECONDS = 6 * 60 * 60
 PRODUCTION_MIN_WORKER_CYCLES = 500
+DNS_REQUEST_MAX_ATTEMPTS = 5
+DNS_RETRY_BASE_SECONDS = 0.25
 
 
 def _utc_now() -> str:
@@ -71,6 +74,33 @@ def _is_loopback(host: str | None) -> bool:
 
 def _fingerprint(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def _is_dns_resolution_error(exc: URLError) -> bool:
+    reason = exc.reason
+    error_number = getattr(reason, "errno", None)
+    dns_error_numbers = {
+        value
+        for value in (
+            getattr(socket, "EAI_AGAIN", None),
+            getattr(socket, "EAI_NONAME", None),
+            11001,  # WSAHOST_NOT_FOUND
+            11002,  # WSATRY_AGAIN
+        )
+        if value is not None
+    }
+    if error_number in dns_error_numbers:
+        return True
+    message = str(reason).lower()
+    return any(
+        marker in message
+        for marker in (
+            "getaddrinfo failed",
+            "name or service not known",
+            "nodename nor servname provided",
+            "temporary failure in name resolution",
+        )
+    )
 
 
 def _check(
@@ -227,20 +257,26 @@ def _request_json(
         headers["Content-Type"] = "application/json"
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = Request(
-        urljoin(base_url.rstrip("/") + "/", path.lstrip("/")),
-        data=body,
-        headers=headers,
-        method=method,
-    )
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:500]
-        raise RuntimeError(f"{method} {path} returned HTTP {exc.code}: {detail}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"{method} {path} failed: {exc.reason}") from exc
+    for attempt in range(DNS_REQUEST_MAX_ATTEMPTS):
+        request = Request(
+            urljoin(base_url.rstrip("/") + "/", path.lstrip("/")),
+            data=body,
+            headers=headers,
+            method=method,
+        )
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")[:500]
+            raise RuntimeError(f"{method} {path} returned HTTP {exc.code}: {detail}") from exc
+        except URLError as exc:
+            has_retry = attempt + 1 < DNS_REQUEST_MAX_ATTEMPTS
+            if has_retry and _is_dns_resolution_error(exc):
+                time.sleep(DNS_RETRY_BASE_SECONDS * (2**attempt))
+                continue
+            raise RuntimeError(f"{method} {path} failed: {exc.reason}") from exc
+    raise AssertionError("DNS retry loop exhausted without returning or raising")
 
 
 def _report_summary(report: dict[str, Any]) -> dict[str, Any]:

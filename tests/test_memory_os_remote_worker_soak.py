@@ -1,6 +1,8 @@
 import importlib.util
+import io
 import threading
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "benchmarks" / "memory_os_remote_worker_soak.py"
@@ -61,6 +63,75 @@ def test_remote_soak_is_evidence_not_a_github_deployment():
     assert "actions/setup-python" not in workflow
     assert "Python 3.10+ is required" in workflow
     assert "--cold-repetitions 10" in workflow
+
+
+def test_request_json_retries_transient_dns_resolution(monkeypatch):
+    module = _module()
+    calls = 0
+    sleeps: list[float] = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        @staticmethod
+        def read():
+            return b'{"status":"ok"}'
+
+    def fake_urlopen(_request, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout == 5.0
+        if calls < 3:
+            raise URLError(OSError(11001, "getaddrinfo failed"))
+        return Response()
+
+    monkeypatch.setattr(module, "urlopen", fake_urlopen)
+    monkeypatch.setattr(module.time, "sleep", sleeps.append)
+
+    payload = module._request_json(
+        "https://worker.example",
+        "/healthz",
+        "GET",
+        None,
+        None,
+        5.0,
+    )
+
+    assert payload == {"status": "ok"}
+    assert calls == 3
+    assert sleeps == [0.25, 0.5]
+
+
+def test_request_json_does_not_retry_http_failures(monkeypatch):
+    module = _module()
+    calls = 0
+
+    def fake_urlopen(request, timeout):
+        nonlocal calls
+        calls += 1
+        raise HTTPError(request.full_url, 503, "unavailable", {}, io.BytesIO(b"down"))
+
+    monkeypatch.setattr(module, "urlopen", fake_urlopen)
+
+    try:
+        module._request_json(
+            "https://worker.example",
+            "/healthz",
+            "GET",
+            None,
+            None,
+            5.0,
+        )
+    except RuntimeError as exc:
+        assert "HTTP 503" in str(exc)
+    else:
+        raise AssertionError("HTTP failure must fail without retry")
+
+    assert calls == 1
 
 
 def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
