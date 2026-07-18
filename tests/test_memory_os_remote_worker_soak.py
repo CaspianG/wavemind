@@ -69,6 +69,7 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
     completed_keys: set[str] = set()
     next_memory_id = 0
     memory_by_worker: dict[str, int] = {}
+    query_top_ks: dict[str, set[int]] = {}
 
     def request_json(base_url, path, method, payload, api_key, timeout):
         nonlocal next_memory_id
@@ -87,6 +88,7 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
                 memory_by_worker[base_url] = next_memory_id
                 return {"id": next_memory_id}
         if path == "/query":
+            query_top_ks.setdefault(base_url, set()).add(int(payload["top_k"]))
             return {"results": [{"id": memory_by_worker[base_url], "score": 1.0}]}
         if path == "/memory-os/plan":
             return {
@@ -217,4 +219,5 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
     assert payload["metrics"]["duplicate_mutation_count"] == 0
     assert payload["metrics"]["state_corruption_count"] == 0
     assert payload["sample_plan"]["hot_query_count"] == 4
+    assert all({1, 2}.issubset(values) for values in query_top_ks.values())
     assert all(item["passed"] for item in payload["checks"])

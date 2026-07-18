@@ -387,12 +387,16 @@ def run_remote_worker_soak(
                 )
                 memory_id = int(remembered["id"])
                 seeded.append((worker, memory_id, seed_text))
-                for _ in range(2):
+                for query_top_k in (1, 2):
                     request_json(
                         worker,
                         "/query",
                         "POST",
-                        {"text": "concise incident summaries", "namespace": namespace, "top_k": 1},
+                        {
+                            "text": "concise incident summaries",
+                            "namespace": namespace,
+                            "top_k": query_top_k,
+                        },
                         api_key,
                         timeout,
                     )
@@ -420,14 +424,30 @@ def run_remote_worker_soak(
                         "requires_shared_cache": bool(execution.get("requires_shared_cache")),
                         "requires_distributed_lock": bool(execution.get("requires_distributed_lock")),
                         "blocked_task_ids": list(execution.get("blocked_task_ids") or []),
+                        "hot_query_count": int(plan.get("hot_query_count") or 0),
+                        "enabled_task_ids": list(plan.get("enabled_task_ids") or []),
                     }
                 )
             except Exception as exc:
                 errors.append(f"worker {index} setup: {exc}")
 
+        setup_ready = not errors and len(plans) == len(workers) and all(
+            item["safe_to_run"]
+            and item["requires_shared_cache"]
+            and item["requires_distributed_lock"]
+            and not item["blocked_task_ids"]
+            and item["hot_query_count"] > 0
+            and {"cache-prewarm", "predictive-prefetch"}.issubset(item["enabled_task_ids"])
+            for item in plans
+        )
+        if not setup_ready:
+            errors.append(
+                "remote worker setup did not satisfy Memory OS admission prerequisites; "
+                "the long soak was not started"
+            )
         soak_started = time.perf_counter()
         soak_started_at = _utc_now()
-        for round_index in range(worker_cycles):
+        for round_index in range(worker_cycles if setup_ready else 0):
             idempotency_key = f"remote-soak:{run_id}:{round_index}"
             request_payload = {
                 "namespace": namespace,
@@ -584,6 +604,8 @@ def run_remote_worker_soak(
         and item["requires_shared_cache"]
         and item["requires_distributed_lock"]
         and not item["blocked_task_ids"]
+        and item["hot_query_count"] > 0
+        and {"cache-prewarm", "predictive-prefetch"}.issubset(item["enabled_task_ids"])
         for item in plans
     )
     redis_checks = redis_semantics.get("checks") or []
@@ -601,7 +623,16 @@ def run_remote_worker_soak(
         _check("worker-health", "Every remote worker is healthy", health_ok, f"healthy={sum(item['status'] == 'ok' for item in health)}/{len(workers)}", "Repair unhealthy workers."),
         _check("worker-version", "Every worker runs one version", len(versions) == 1, f"versions={sorted(str(value) for value in versions)}", "Complete the rolling deployment before the soak."),
         _check("worker-commit", "Every worker runs the benchmark commit", worker_commit_ok, f"expected={source_ref}, commits={sorted(commits)}", "Deploy the exact commit under test and set WAVEMIND_COMMIT_SHA on every worker."),
-        _check("worker-plan", "Every worker emits a safe Redis and lock plan", plans_ok, f"safe={sum(item['safe_to_run'] for item in plans)}/{len(workers)}", "Fix worker plan blockers before mutation."),
+        _check(
+            "worker-plan",
+            "Every worker emits a safe Redis, lock, and hot-query plan",
+            plans_ok,
+            (
+                f"safe={sum(item['safe_to_run'] for item in plans)}/{len(workers)}, "
+                f"hot={sum(item['hot_query_count'] > 0 for item in plans)}/{len(workers)}"
+            ),
+            "Fix worker plan or query-audit blockers before mutation.",
+        ),
         _check("remote-redis-semantics", "Remote Redis passes lease and retry semantics", redis_semantics_ok, f"status={redis_semantics.get('status')}, environment={redis_semantics.get('environment')}", "Run against the Redis used by every worker."),
         _check("soak-duration", "The configured soak duration is completed", duration_seconds >= min_duration_seconds, f"duration_seconds={duration_seconds:.3f}, required={min_duration_seconds:.3f}", "Run the soak for the full configured duration."),
         _check("worker-cycles", "Every configured worker cycle completes", completed_runs == worker_cycles, f"completed={completed_runs}, required={worker_cycles}", "Run every configured worker cycle."),
