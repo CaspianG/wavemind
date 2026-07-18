@@ -26,7 +26,15 @@ from benchmarks.crypto_ohlcv import OHLCVBar  # noqa: E402
 
 
 BINANCE_ARCHIVE = "https://data.binance.vision/data/futures/um"
-ARCHIVE_SOURCES = ("klines", "premium", "funding", "metrics", "book_depth")
+ARCHIVE_SOURCES = (
+    "klines",
+    "intraday",
+    "premium",
+    "funding",
+    "metrics",
+    "book_depth",
+)
+INTRADAY_TIMEFRAME = "5m"
 KLINE_COLUMNS = (
     "open_time",
     "open",
@@ -112,6 +120,7 @@ class ArchiveBundle:
     start_date: str
     end_date: str
     bars: tuple[FuturesBar, ...]
+    intraday_bars: tuple[FuturesBar, ...]
     metrics: tuple[FuturesMetric, ...]
     funding: tuple[FundingPoint, ...]
     premium: tuple[PremiumPoint, ...]
@@ -171,6 +180,7 @@ def download_archive_bundle(
             downloaded[str(path)] = path
 
     bars: list[FuturesBar] = []
+    intraday_bars: list[FuturesBar] = []
     metrics: list[FuturesMetric] = []
     funding: list[FundingPoint] = []
     premium: list[PremiumPoint] = []
@@ -181,6 +191,8 @@ def download_archive_bundle(
             continue
         if kind == "klines":
             bars.extend(load_futures_bars(path))
+        elif kind == "intraday":
+            intraday_bars.extend(load_futures_bars(path))
         elif kind == "metrics":
             metrics.extend(load_futures_metrics(path))
         elif kind == "funding":
@@ -195,6 +207,7 @@ def download_archive_bundle(
         start_date=start.isoformat(),
         end_date=end.isoformat(),
         bars=tuple(_dedupe(bars, key=lambda row: row.timestamp)),
+        intraday_bars=tuple(_dedupe(intraday_bars, key=lambda row: row.timestamp)),
         metrics=tuple(_dedupe(metrics, key=lambda row: row.timestamp)),
         funding=tuple(_dedupe(funding, key=lambda row: row.timestamp)),
         premium=tuple(_dedupe(premium, key=lambda row: row.timestamp)),
@@ -213,6 +226,7 @@ def save_bundle(path: str | Path, bundle: ArchiveBundle) -> None:
         "start_date": bundle.start_date,
         "end_date": bundle.end_date,
         "bars": [asdict(row) for row in bundle.bars],
+        "intraday_bars": [asdict(row) for row in bundle.intraday_bars],
         "metrics": [asdict(row) for row in bundle.metrics],
         "funding": [asdict(row) for row in bundle.funding],
         "premium": [asdict(row) for row in bundle.premium],
@@ -241,6 +255,7 @@ def load_bundle(path: str | Path) -> ArchiveBundle:
         start_date=str(payload["start_date"]),
         end_date=str(payload["end_date"]),
         bars=tuple(FuturesBar(**row) for row in payload["bars"]),
+        intraday_bars=tuple(FuturesBar(**row) for row in payload.get("intraday_bars", [])),
         metrics=tuple(FuturesMetric(**row) for row in payload["metrics"]),
         funding=tuple(FundingPoint(**row) for row in payload["funding"]),
         premium=tuple(PremiumPoint(**row) for row in payload["premium"]),
@@ -369,6 +384,16 @@ def _archive_specs(
             filename = f"{symbol}-{timeframe}-{suffix}.zip"
             relative = Path("monthly") / archive_name / symbol / timeframe / filename
             specs.append((kind, relative, f"{base_url}/{relative.as_posix()}"))
+        if "intraday" in requested:
+            filename = f"{symbol}-{INTRADAY_TIMEFRAME}-{suffix}.zip"
+            relative = (
+                Path("monthly")
+                / "klines"
+                / symbol
+                / INTRADAY_TIMEFRAME
+                / filename
+            )
+            specs.append(("intraday", relative, f"{base_url}/{relative.as_posix()}"))
         if "funding" in requested:
             funding_name = f"{symbol}-fundingRate-{suffix}.zip"
             funding_relative = Path("monthly") / "fundingRate" / symbol / funding_name
@@ -540,7 +565,8 @@ def main() -> int:
     )
     save_bundle(args.output, bundle)
     print(
-        f"Wrote {args.output}: bars={len(bundle.bars)}, metrics={len(bundle.metrics)}, "
+        f"Wrote {args.output}: bars={len(bundle.bars)}, "
+        f"intraday_bars={len(bundle.intraday_bars)}, metrics={len(bundle.metrics)}, "
         f"funding={len(bundle.funding)}, premium={len(bundle.premium)}, "
         f"book_depth={len(bundle.book_depth)}, missing={len(bundle.missing_source_files)}"
     )

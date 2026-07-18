@@ -35,6 +35,10 @@ benchmarks/results/crypto/binance_*
 !benchmarks/results/crypto/binance_multiyear_event_24h.md
 !benchmarks/results/crypto/binance_multiyear_event_7d.json
 !benchmarks/results/crypto/binance_multiyear_event_7d.md
+!benchmarks/results/crypto/binance_multiyear_intraday_24h.json
+!benchmarks/results/crypto/binance_multiyear_intraday_24h.md
+!benchmarks/results/crypto/binance_multiyear_intraday_7d.json
+!benchmarks/results/crypto/binance_multiyear_intraday_7d.md
 
 .env
 .env.*

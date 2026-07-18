@@ -123,6 +123,7 @@ def test_nested_benchmark_runs_train_field_policy_and_future_test():
         calibration_timestamps=90,
     )
 
-    assert len(payload["summaries"]) == 5
-    assert len(payload["policies"]) == 5
+    assert len(payload["summaries"]) == 13
+    assert len(payload["policies"]) == 13
+    assert payload["admitted_70"] == []
     assert payload["admitted_80"] == []

@@ -192,10 +192,15 @@ def test_archive_spec_has_monthly_and_daily_sources():
 
     kinds = [kind for kind, _, _ in specs]
     assert kinds.count("klines") == 2
+    assert kinds.count("intraday") == 2
     assert kinds.count("premium") == 2
     assert kinds.count("funding") == 2
     assert kinds.count("metrics") == 3
     assert kinds.count("book_depth") == 3
+    assert any(
+        kind == "intraday" and "/klines/BTCUSDT/5m/" in url
+        for kind, _, url in specs
+    )
 
 
 def test_archive_spec_can_explicitly_exclude_book_depth():
@@ -216,12 +221,14 @@ def test_archive_spec_can_explicitly_exclude_book_depth():
 def test_bundle_gzip_round_trip(tmp_path):
     from benchmarks.crypto_binance_archive import ArchiveBundle, FuturesBar, load_bundle, save_bundle
 
+    bar = FuturesBar(1, 2, 1.0, 2.0, 0.5, 1.5, 10.0, 15.0, 3, 6.0, 9.0)
     bundle = ArchiveBundle(
         symbol="BTCUSDT",
         timeframe="4h",
         start_date="2022-01-01",
         end_date="2022-01-02",
-        bars=(FuturesBar(1, 2, 1.0, 2.0, 0.5, 1.5, 10.0, 15.0, 3, 6.0, 9.0),),
+        bars=(bar,),
+        intraday_bars=(bar,),
         metrics=(),
         funding=(),
         premium=(),

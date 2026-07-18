@@ -112,3 +112,67 @@ def test_extended_features_do_not_require_microstructure_fields():
     assert "return_180" in features
     assert "oi_change_180" in features
     assert "depth_imbalance_1pct" not in features
+
+
+def test_intraday_path_features_preserve_completed_bar_order_flow():
+    import math
+
+    import numpy as np
+    import pytest
+
+    from benchmarks.crypto_binance_archive import FuturesBar
+    from benchmarks.crypto_derivatives_field_benchmark import _intraday_path_features
+
+    bars = tuple(
+        FuturesBar(
+            timestamp=index * 300,
+            close_timestamp=index * 300 + 299,
+            open=100.0 + index,
+            high=101.5 + index,
+            low=99.5 + index,
+            close=101.0 + index,
+            volume=10.0,
+            quote_volume=1_000.0 + index,
+            trades=100 + index,
+            taker_buy_volume=6.0,
+            taker_buy_quote_volume=600.0,
+        )
+        for index in range(48)
+    )
+
+    features = _intraday_path_features(bars)
+
+    assert set(features) == {
+        "intraday_return_first_hour_bps",
+        "intraday_return_last_hour_bps",
+        "intraday_realized_volatility_bps",
+        "intraday_path_efficiency",
+        "intraday_return_autocorrelation",
+        "intraday_max_drawdown_bps",
+        "intraday_close_position",
+        "intraday_last_hour_volume_share",
+        "intraday_last_hour_trade_share",
+        "intraday_taker_imbalance_mean",
+        "intraday_taker_imbalance_std",
+        "intraday_taker_imbalance_first_hour",
+        "intraday_taker_imbalance_last_hour",
+        "intraday_taker_imbalance_shift",
+        "intraday_taker_buy_persistence",
+        "intraday_flow_return_interaction",
+    }
+    assert features["intraday_taker_buy_persistence"] == 1.0
+    assert features["intraday_taker_imbalance_shift"] == 0.0
+    assert features["intraday_return_last_hour_bps"] == pytest.approx(
+        math.log(148.0 / 136.0) * 10_000.0
+    )
+    assert 0.0 < features["intraday_path_efficiency"] <= 1.0
+    assert np.isfinite(list(features.values())).all()
+
+
+def test_intraday_path_rejects_incomplete_observation():
+    import pytest
+
+    from benchmarks.crypto_derivatives_field_benchmark import _intraday_path_features
+
+    with pytest.raises(ValueError, match="at least 40"):
+        _intraday_path_features(())

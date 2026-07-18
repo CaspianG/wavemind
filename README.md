@@ -56,6 +56,8 @@ Full reports:
 - [Direct WaveField 7d ablation](benchmarks/results/crypto/binance_wavefield_ablation_7d.md)
 - [Multi-year Binance 24h event benchmark](benchmarks/results/crypto/binance_multiyear_event_24h.md)
 - [Multi-year Binance 7d event benchmark](benchmarks/results/crypto/binance_multiyear_event_7d.md)
+- [Multi-year Binance 24h intraday-path benchmark](benchmarks/results/crypto/binance_multiyear_intraday_24h.md)
+- [Multi-year Binance 7d intraday-path benchmark](benchmarks/results/crypto/binance_multiyear_intraday_7d.md)
 
 ### Multi-year Binance regime holdout
 
@@ -67,8 +69,14 @@ non-overlapping horizons before accuracy is counted.
 
 | horizon | full-coverage baseline | best tested gate | gate worst fold | 2026-H1 | verdict |
 |---|---:|---:|---:|---:|---|
-| 24h | 52.3% | 53.3% calibrated WaveField meta | 50.6% | 51.7% | rejected |
-| 7d | 48.5% | 50.8% direction-margin | 48.3% | 48.3% | rejected |
+| 24h | 52.0% | 54.6% ExtraTrees | 51.8% | 52.8% | rejected |
+| 7d | 48.7% | 53.3% direction-margin | 48.0% | 53.5% | rejected |
+
+The latest run adds 3.78 million checksum-verified 5-minute candles and derives
+causal intraday path, realized-volatility, volume, trade-count, and taker-flow
+features before each completed 4h decision point. The best field-backed 24h
+gate reaches 53.1%; the strongest statistical head reaches 54.6%. Neither is
+close to the strict 70% admission gate, and the 7d result remains unstable.
 
 The multi-year result supersedes the smaller datasets for admission decisions.
 It also exposes an important measurement trap: the best 24h logistic head was
@@ -157,7 +165,7 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 |---|---|
 | `benchmarks/crypto_ohlcv.py` | CSV/CCXT import, completed-candle handling, feature windows |
 | `benchmarks/crypto_derivatives.py` | strict CCXT funding/open-interest/long-short import and causal alignment |
-| `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, derivatives metrics, and book depth |
+| `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, 5m intraday paths, derivatives metrics, and book depth |
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
 | `benchmarks/crypto_multiyear_event_benchmark.py` | nested 2022-2026 regime/event benchmark with a direct WaveField reliability ablation |
@@ -202,8 +210,9 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 1. Add a second checksum-verifiable exchange holdout; the Binance history now
    spans 4.5 years, but cross-venue transfer is still unproven.
 2. Replace the current projected outcome map with a WaveMind-native temporal
-   field whose state update is trained and ablated against the static head.
-3. Add archived options, liquidation, on-chain, and macro features one source
+   field whose state update is trained and ablated against the static head;
+   the first online expert-memory and error-correction variants were rejected.
+3. Add archived options, liquidation, on-chain, news, and macro features one source
    at a time; each source must improve the untouched folds to remain.
 4. Improve target magnitude and publish prediction intervals only after their
    empirical coverage is stable by fold and asset.

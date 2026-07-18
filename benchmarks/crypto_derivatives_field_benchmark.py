@@ -19,6 +19,7 @@ from benchmarks.crypto_accuracy_gate import evaluate_accuracy_gate  # noqa: E402
 from benchmarks.crypto_binance_archive import (  # noqa: E402
     ArchiveBundle,
     BookDepthPoint,
+    FuturesBar,
     FuturesMetric,
     load_bundle,
 )
@@ -130,6 +131,25 @@ MICROSTRUCTURE_FEATURES = (
     "depth_total_5pct_z",
 )
 
+INTRADAY_PATH_FEATURES = (
+    "intraday_return_first_hour_bps",
+    "intraday_return_last_hour_bps",
+    "intraday_realized_volatility_bps",
+    "intraday_path_efficiency",
+    "intraday_return_autocorrelation",
+    "intraday_max_drawdown_bps",
+    "intraday_close_position",
+    "intraday_last_hour_volume_share",
+    "intraday_last_hour_trade_share",
+    "intraday_taker_imbalance_mean",
+    "intraday_taker_imbalance_std",
+    "intraday_taker_imbalance_first_hour",
+    "intraday_taker_imbalance_last_hour",
+    "intraday_taker_imbalance_shift",
+    "intraday_taker_buy_persistence",
+    "intraday_flow_return_interaction",
+)
+
 CROSS_ASSET_FEATURES = (
     "btc_return_6",
     "btc_oi_change_6",
@@ -155,6 +175,7 @@ def build_feature_rows(
     horizon: int = 6,
     lookback: int = 36,
     include_microstructure: bool = True,
+    include_intraday: bool = False,
     extended_features: bool = False,
 ) -> list[FeatureRow]:
     if extended_features and lookback < 180:
@@ -163,10 +184,16 @@ def build_feature_rows(
     metrics = list(bundle.metrics)
     funding = list(bundle.funding)
     book_depth = list(bundle.book_depth)
+    intraday_bars = list(bundle.intraday_bars)
+    if include_intraday and not intraday_bars:
+        raise ValueError(
+            f"{bundle.symbol}: include_intraday=True requires verified 5m kline archives"
+        )
     premium_by_open = {row.timestamp: row for row in bundle.premium}
     metric_cursor = 0
     funding_cursor = 0
     depth_cursor = 0
+    intraday_cursor = 0
     latest_metric: dict[str, float] = {}
     latest_metric_timestamp: dict[str, int] = {}
     latest_funding: float | None = None
@@ -181,6 +208,15 @@ def build_feature_rows(
     )
     for bar in bars:
         cutoff = int(bar.close_timestamp)
+        interval_intraday: list[FuturesBar] = []
+        while (
+            intraday_cursor < len(intraday_bars)
+            and intraday_bars[intraday_cursor].timestamp <= cutoff
+        ):
+            intraday_bar = intraday_bars[intraday_cursor]
+            if intraday_bar.timestamp >= bar.timestamp:
+                interval_intraday.append(intraday_bar)
+            intraday_cursor += 1
         interval_metrics: list[FuturesMetric] = []
         while metric_cursor < len(metrics) and metrics[metric_cursor].timestamp <= cutoff:
             metric = metrics[metric_cursor]
@@ -205,6 +241,7 @@ def build_feature_rows(
             or any(field not in latest_metric for field in required_metric_fields)
             or not interval_metrics
             or (include_microstructure and not interval_depth)
+            or (include_intraday and len(interval_intraday) < 40)
         ):
             states.append(None)
             continue
@@ -306,6 +343,8 @@ def build_feature_rows(
                     "depth_total_5pct": float(depth_total_5[-1]),
                 }
             )
+        if include_intraday:
+            state.update(_intraday_path_features(interval_intraday))
         states.append(state)
 
     rows: list[FeatureRow] = []
@@ -318,6 +357,7 @@ def build_feature_rows(
         features = _features_from_history(
             [item for item in history if item is not None],
             include_microstructure=include_microstructure,
+            include_intraday=include_intraday,
             extended_features=extended_features,
         )
         future_return = (float(bars[index + horizon].close) / float(bars[index].close) - 1.0) * 10_000.0
@@ -700,10 +740,78 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _intraday_path_features(bars: Sequence[FuturesBar]) -> dict[str, float]:
+    if len(bars) < 40:
+        raise ValueError("intraday path requires at least 40 completed bars")
+    close = np.asarray([bar.close for bar in bars], dtype=float)
+    high = np.asarray([bar.high for bar in bars], dtype=float)
+    low = np.asarray([bar.low for bar in bars], dtype=float)
+    quote_volume = np.asarray([bar.quote_volume for bar in bars], dtype=float)
+    trades = np.asarray([bar.trades for bar in bars], dtype=float)
+    imbalance = np.asarray(
+        [
+            2.0 * bar.taker_buy_volume / bar.volume - 1.0
+            if bar.volume > 0.0
+            else 0.0
+            for bar in bars
+        ],
+        dtype=float,
+    )
+    path_prices = np.concatenate(([float(bars[0].open)], close))
+    returns = np.diff(np.log(np.maximum(path_prices, 1e-12))) * 10_000.0
+    first_hour_end = min(11, len(bars) - 1)
+    last_hour_start = max(0, len(bars) - 12)
+    total_path = float(np.sum(np.abs(returns)))
+    return_autocorrelation = 0.0
+    if len(returns) >= 3 and np.std(returns[:-1]) > 1e-12 and np.std(returns[1:]) > 1e-12:
+        return_autocorrelation = float(np.corrcoef(returns[:-1], returns[1:])[0, 1])
+    running_high = np.maximum.accumulate(high)
+    drawdown = close / np.maximum(running_high, 1e-12) - 1.0
+    intraday_range = max(float(np.max(high) - np.min(low)), 1e-12)
+    first_imbalance = float(np.mean(imbalance[:12]))
+    last_imbalance = float(np.mean(imbalance[-12:]))
+    total_return = float(math.log(max(close[-1], 1e-12) / max(float(bars[0].open), 1e-12)))
+    return {
+        "intraday_return_first_hour_bps": float(
+            math.log(max(close[first_hour_end], 1e-12) / max(float(bars[0].open), 1e-12))
+            * 10_000.0
+        ),
+        "intraday_return_last_hour_bps": float(
+            math.log(
+                max(close[-1], 1e-12)
+                / max(float(bars[last_hour_start].open), 1e-12)
+            )
+            * 10_000.0
+        ),
+        "intraday_realized_volatility_bps": float(np.sqrt(np.sum(returns**2))),
+        "intraday_path_efficiency": min(
+            1.0,
+            abs(total_return * 10_000.0) / max(total_path, 1e-12),
+        ),
+        "intraday_return_autocorrelation": return_autocorrelation,
+        "intraday_max_drawdown_bps": float(np.min(drawdown) * 10_000.0),
+        "intraday_close_position": float((close[-1] - np.min(low)) / intraday_range),
+        "intraday_last_hour_volume_share": float(
+            np.sum(quote_volume[-12:]) / max(np.sum(quote_volume), 1e-12)
+        ),
+        "intraday_last_hour_trade_share": float(
+            np.sum(trades[-12:]) / max(np.sum(trades), 1e-12)
+        ),
+        "intraday_taker_imbalance_mean": float(np.mean(imbalance)),
+        "intraday_taker_imbalance_std": float(np.std(imbalance)),
+        "intraday_taker_imbalance_first_hour": first_imbalance,
+        "intraday_taker_imbalance_last_hour": last_imbalance,
+        "intraday_taker_imbalance_shift": last_imbalance - first_imbalance,
+        "intraday_taker_buy_persistence": float(np.mean(imbalance > 0.0)),
+        "intraday_flow_return_interaction": float(last_imbalance * returns[-1]),
+    }
+
+
 def _features_from_history(
     history: Sequence[Mapping[str, float]],
     *,
     include_microstructure: bool = True,
+    include_intraday: bool = False,
     extended_features: bool = False,
 ) -> dict[str, float]:
     close = np.asarray([row["close"] for row in history], dtype=float)
@@ -808,6 +916,9 @@ def _features_from_history(
                 features[name] = _robust_z(values)
             else:
                 features[name] = float(current[name])
+    if include_intraday:
+        for name in INTRADAY_PATH_FEATURES:
+            features[name] = float(current[name])
     return features
 
 

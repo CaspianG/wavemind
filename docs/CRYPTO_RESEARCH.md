@@ -874,17 +874,25 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     tested gate reaches `0.533`; the 7d static head reaches `0.485` and the best
     gate reaches `0.508`. No engine passes admission. This multi-year result
     supersedes the one-year figures for robustness decisions.
-25. Next: build a WaveMind-native market-state memory model that beats these
+25. Done: added checksum-verified Binance 5m candles to the multi-year source
+    profile and derived causal intraday path, realized-volatility, volume,
+    trade-count, and taker-flow features. The primary 24h run now compares all
+    nine directional heads: ExtraTrees reaches `0.546`, while the best
+    field-backed gate reaches `0.531`. The 7d best reaches `0.533`. Online
+    WaveField expert selection, error correction, and direct stacking failed
+    transfer tests and were rejected. No engine passes the 70%, 75%, or 80%
+    admission gate.
+26. Next: build a WaveMind-native market-state memory model that beats these
     statistical baselines on aggregate, fold, and symbol robustness. Direct
     WaveField outcome and relationship-memory ablations have not done so.
-26. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+27. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-27. Next: validate the market-field target on more exchanges, date ranges,
+28. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-28. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+29. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-29. Add signal construction only after retrieval quality is stable.
-30. Publish results separately from the main README to avoid confusing memory
+30. Add signal construction only after retrieval quality is stable.
+31. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

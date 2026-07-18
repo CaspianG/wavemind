@@ -21,6 +21,7 @@ from benchmarks.crypto_derivatives_field_benchmark import (  # noqa: E402
     DERIVATIVE_FEATURES,
     EXTENDED_DERIVATIVE_FEATURES,
     EXTENDED_PRICE_FEATURES,
+    INTRADAY_PATH_FEATURES,
     PRICE_FEATURES,
     FeatureRow,
     _matrix,
@@ -192,6 +193,7 @@ def run_multiyear_benchmark(
     horizon_seconds: int,
     calibration_timestamps: int = 1620,
     random_state: int = 2027,
+    feature_names: Sequence[str] = BASE_FEATURES,
 ) -> dict[str, Any]:
     try:
         from sklearn.ensemble import (
@@ -208,7 +210,6 @@ def run_multiyear_benchmark(
         raise RuntimeError('Install the research extra: pip install -e ".[crypto-ml]"') from exc
 
     symbols = sorted({row.symbol for row in rows})
-    feature_names = BASE_FEATURES
     events: list[dict[str, Any]] = []
     policies: list[dict[str, Any]] = []
 
@@ -381,24 +382,74 @@ def run_multiyear_benchmark(
         )
         policy_margin = np.abs(np.asarray(prediction_sets["policy"]["direction"]) - 0.5) * 2.0
         test_margin = np.abs(np.asarray(prediction_sets["test"]["direction"]) - 0.5) * 2.0
+        policy_prediction = prediction_sets["policy"]
+        test_prediction = prediction_sets["test"]
         score_sets = {
             "Static directional baseline": (
+                policy_prediction,
+                test_prediction,
                 np.ones(len(policy_rows), dtype=float),
                 np.ones(len(test_rows), dtype=float),
             ),
             "Event-probability gate": (
+                policy_prediction,
+                test_prediction,
                 np.asarray(prediction_sets["policy"]["event"], dtype=float),
                 np.asarray(prediction_sets["test"]["event"], dtype=float),
             ),
-            "Direction-margin gate": (policy_margin, test_margin),
-            "Direct WaveField regime gate": (field_scores[2], field_scores[3]),
-            "Calibrated WaveField meta gate": (policy_quality, test_quality),
+            "Direction-margin gate": (
+                policy_prediction,
+                test_prediction,
+                policy_margin,
+                test_margin,
+            ),
+            "Direct WaveField regime gate": (
+                policy_prediction,
+                test_prediction,
+                field_scores[2],
+                field_scores[3],
+            ),
+            "Calibrated WaveField meta gate": (
+                policy_prediction,
+                test_prediction,
+                policy_quality,
+                test_quality,
+            ),
         }
-        for engine, (policy_score, test_score) in score_sets.items():
+        candidate_names = (
+            "Logistic direction",
+            "Histogram direction",
+            "ExtraTrees direction",
+            "Tabular ensemble direction",
+            "Return-regression direction",
+            "24h momentum direction",
+            "6d momentum direction",
+            "24h mean-reversion direction",
+            "6d mean-reversion direction",
+        )
+        for candidate_index, candidate_name in enumerate(candidate_names[1:], start=1):
+            policy_direction = np.asarray(
+                policy_prediction["candidates"][:, candidate_index], dtype=float
+            )
+            test_direction = np.asarray(
+                test_prediction["candidates"][:, candidate_index], dtype=float
+            )
+            score_sets[candidate_name] = (
+                dict(policy_prediction) | {"direction": policy_direction},
+                dict(test_prediction) | {"direction": test_direction},
+                np.abs(policy_direction - 0.5) * 2.0,
+                np.abs(test_direction - 0.5) * 2.0,
+            )
+        for engine, (
+            engine_policy_prediction,
+            engine_test_prediction,
+            policy_score,
+            test_score,
+        ) in score_sets.items():
             policy_events = _events_for_set(
                 engine,
                 fold,
-                prediction_sets["policy"],
+                engine_policy_prediction,
                 policy_score,
                 horizon_seconds=horizon_seconds,
             )
@@ -411,7 +462,7 @@ def run_multiyear_benchmark(
             fold_events = _events_for_set(
                 engine,
                 fold,
-                prediction_sets["test"],
+                engine_test_prediction,
                 test_score,
                 horizon_seconds=horizon_seconds,
             )
@@ -466,6 +517,7 @@ def run_multiyear_benchmark(
         "policies": policies,
         "summaries": summaries,
         "final_holdout_2026_h1": holdout,
+        "admitted_70": [summary["engine"] for summary in summaries if _admitted(summary, target=0.70)],
         "admitted_75": [summary["engine"] for summary in summaries if _admitted(summary, target=0.75)],
         "admitted_80": [summary["engine"] for summary in summaries if _admitted(summary, target=0.80)],
         "events": events,
@@ -676,6 +728,7 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         f"- assets: {', '.join(payload['methodology']['assets'])};",
         f"- horizon: {payload['methodology']['horizon']};",
         f"- field: {payload['methodology']['field']};",
+        f"- admitted at 70%: {', '.join(payload['admitted_70']) or 'none'};",
         f"- admitted at 75%: {', '.join(payload['admitted_75']) or 'none'};",
         f"- admitted at 80%: {', '.join(payload['admitted_80']) or 'none'}.",
         "",
@@ -736,6 +789,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Nested multi-year Binance futures event benchmark.")
     parser.add_argument("--bundles", type=Path, nargs="+", required=True)
     parser.add_argument("--horizon-bars", type=int, default=6)
+    parser.add_argument("--include-intraday", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--events", type=Path)
@@ -750,6 +804,7 @@ def main() -> int:
             horizon=args.horizon_bars,
             lookback=180,
             include_microstructure=False,
+            include_intraday=args.include_intraday,
             extended_features=True,
         )
         data_audit.append(
@@ -759,6 +814,7 @@ def main() -> int:
                 "metrics": len(bundle.metrics),
                 "funding": len(bundle.funding),
                 "premium": len(bundle.premium),
+                "intraday_bars": len(bundle.intraday_bars),
                 "missing_required_sources": len(bundle.missing_source_files),
             }
         )
@@ -767,6 +823,11 @@ def main() -> int:
     payload = run_multiyear_benchmark(
         rows,
         horizon_seconds=args.horizon_bars * 4 * 60 * 60,
+        feature_names=(
+            BASE_FEATURES + INTRADAY_PATH_FEATURES
+            if args.include_intraday
+            else BASE_FEATURES
+        ),
     )
     payload["data_audit"] = data_audit
     events = payload.pop("events")
