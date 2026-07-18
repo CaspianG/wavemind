@@ -481,9 +481,14 @@ def run_remote_worker_soak(
                 for item in summaries
                 if not item["job_completed"]
             )
-            if len(completed) != 1:
+            if len(completed) > 1:
                 lock_breach_count += 1
-                errors.append(f"round {round_index}: expected one completed job, got {len(completed)}")
+                errors.append(
+                    f"round {round_index}: multiple workers completed one run id "
+                    f"({len(completed)} completions)"
+                )
+            elif not completed:
+                errors.append(f"round {round_index}: expected one completed job, got 0")
             if any(item["job_in_doubt"] or item["lease_lost"] for item in summaries):
                 lock_breach_count += 1
                 errors.append(f"round {round_index}: in-doubt job or lost lease observed")
@@ -536,7 +541,6 @@ def run_remote_worker_soak(
                             f"round {round_index}: sentinel {sentinel_id} was not recalled intact"
                         )
                 except Exception as exc:
-                    state_corruption_count += 1
                     errors.append(f"round {round_index}: sentinel {sentinel_id} check failed: {exc}")
             round_reports.append(
                 {

@@ -1,5 +1,8 @@
 import json
+import threading
+import time
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +21,37 @@ def make_mind(db_path: Path, **kwargs) -> WaveMind:
     }
     params.update(kwargs)
     return WaveMind(**params)
+
+
+def test_sqlite_store_serializes_shared_connection_access(tmp_path):
+    store = SQLiteMemoryStore(tmp_path / "concurrent.sqlite3")
+    entered = threading.Event()
+    try:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            with store._connection_lock:
+                blocked = pool.submit(
+                    lambda: (entered.set(), store.audit_count(namespace="concurrent"))[1]
+                )
+                assert entered.wait(timeout=1.0)
+                time.sleep(0.02)
+                assert not blocked.done()
+            assert blocked.result(timeout=1.0) == 0
+
+            def exercise(index: int) -> int:
+                store.log_audit_event(
+                    "concurrent",
+                    namespace="concurrent",
+                    metadata={"index": index},
+                )
+                return store.audit_count(namespace="concurrent")
+
+            counts = list(pool.map(exercise, range(200)))
+
+        assert len(counts) == 200
+        assert store.audit_count(namespace="concurrent") == 200
+        assert len(store.list_audit_events(namespace="concurrent", limit=250)) == 200
+    finally:
+        store.close()
 
 
 def test_wave_field_evolve_remains_finite_after_repeated_strong_feedback():

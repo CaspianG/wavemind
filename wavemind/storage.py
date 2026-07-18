@@ -9,7 +9,9 @@ import sqlite3
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
+from threading import RLock
 from typing import Any, Iterable
 
 import numpy as np
@@ -252,11 +254,21 @@ def _row_get(row: Any, key: str) -> Any:
         return getattr(row, key)
 
 
+def _serialized_sqlite(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self._connection_lock:
+            return method(self, *args, **kwargs)
+
+    return wrapped
+
+
 class SQLiteMemoryStore:
     def __init__(self, path: str | Path | None = None):
         self.path = str(path or ":memory:")
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
+        self._connection_lock = RLock()
         self.conn = sqlite3.connect(self.path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._closed = False
@@ -275,6 +287,7 @@ class SQLiteMemoryStore:
         except Exception:
             pass
 
+    @_serialized_sqlite
     def _configure_connection(self) -> None:
         self.conn.execute("PRAGMA busy_timeout = 5000")
         self.conn.execute("PRAGMA temp_store = MEMORY")
@@ -282,6 +295,7 @@ class SQLiteMemoryStore:
             self.conn.execute("PRAGMA journal_mode = WAL")
             self.conn.execute("PRAGMA synchronous = NORMAL")
 
+    @_serialized_sqlite
     def ensure_schema(self) -> None:
         self.conn.execute(
             """
@@ -322,6 +336,7 @@ class SQLiteMemoryStore:
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at)")
         self.conn.commit()
 
+    @_serialized_sqlite
     def insert(self, record: MemoryRecord) -> int:
         now = time.time()
         record.created_at = record.created_at or now
@@ -353,6 +368,7 @@ class SQLiteMemoryStore:
         record.id = int(cur.lastrowid)
         return record.id
 
+    @_serialized_sqlite
     def insert_recovered(self, record: MemoryRecord) -> int:
         if record.id is None:
             raise ValueError("Recovered records require an explicit id")
@@ -383,10 +399,12 @@ class SQLiteMemoryStore:
         self.conn.commit()
         return int(record.id)
 
+    @_serialized_sqlite
     def get(self, id: int) -> MemoryRecord | None:
         row = self.conn.execute("SELECT * FROM memories WHERE id = ?", (int(id),)).fetchone()
         return self._row_to_record(row) if row else None
 
+    @_serialized_sqlite
     def list(
         self,
         namespace: str | None = None,
@@ -415,6 +433,7 @@ class SQLiteMemoryStore:
             ]
         return records
 
+    @_serialized_sqlite
     def delete(
         self,
         id: int | None = None,
@@ -442,6 +461,7 @@ class SQLiteMemoryStore:
         self.conn.commit()
         return records
 
+    @_serialized_sqlite
     def purge_expired(self) -> int:
         rows = self.conn.execute(
             "SELECT * FROM memories WHERE expires_at IS NOT NULL AND expires_at <= ?",
@@ -454,6 +474,7 @@ class SQLiteMemoryStore:
             self.conn.commit()
         return len(ids)
 
+    @_serialized_sqlite
     def touch(self, id: int, priority_delta: float = 0.05) -> None:
         self.conn.execute(
             """
@@ -467,6 +488,7 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
 
+    @_serialized_sqlite
     def update_memory_state(
         self,
         id: int,
@@ -493,6 +515,7 @@ class SQLiteMemoryStore:
         )
         self.conn.commit()
 
+    @_serialized_sqlite
     def log_audit_event(
         self,
         action: str,
@@ -517,6 +540,7 @@ class SQLiteMemoryStore:
         self.conn.commit()
         return int(cur.lastrowid)
 
+    @_serialized_sqlite
     def apply_feedback_batch(self, updates: Iterable[dict[str, Any]]) -> None:
         rows = list(updates)
         if not rows:
@@ -559,6 +583,7 @@ class SQLiteMemoryStore:
                 ],
             )
 
+    @_serialized_sqlite
     def list_audit_events(
         self,
         namespace: str | None = None,
@@ -581,6 +606,7 @@ class SQLiteMemoryStore:
         rows = self.conn.execute(sql, params).fetchall()
         return [self._row_to_audit_event(row) for row in rows]
 
+    @_serialized_sqlite
     def audit_count(
         self,
         namespace: str | None = None,
@@ -599,9 +625,11 @@ class SQLiteMemoryStore:
             sql += " WHERE " + " AND ".join(where)
         return int(self.conn.execute(sql, params).fetchone()[0])
 
+    @_serialized_sqlite
     def count(self, namespace: str | None = None, include_expired: bool = False) -> int:
         return len(self.list(namespace=namespace, include_expired=include_expired))
 
+    @_serialized_sqlite
     def backup(self, destination: str | Path) -> Path:
         destination = Path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -673,9 +701,11 @@ class SQLiteMemoryStore:
 
     restore_recovery_journal = staticmethod(restore_recovery_journal)
 
+    @_serialized_sqlite
     def commit(self) -> None:
         self.conn.commit()
 
+    @_serialized_sqlite
     def close(self) -> None:
         if self._closed:
             return
