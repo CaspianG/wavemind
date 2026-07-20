@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_quality_gate.v2",
-  "generated_at": "2026-07-17T22:44:55Z",
-  "source_ref": "6e63a559b353db11e1fc1b1cdbb1b56feb11a27b",
+  "generated_at": "2026-07-20T08:26:51Z",
+  "source_ref": "edade872efde8f8d63d4115cf677a74a5650b9fd",
   "status": "pass",
   "claim_boundary": "Only the direct WaveMind baseline versus WaveMind plus Memory OS A/B controls this gate. LoCoMo and LongMemEval are supplemental because their current runners do not execute Memory OS policies.",
   "thresholds": {
@@ -15,25 +15,25 @@
     "failed_check_ids": []
   },
   "metrics": {
-    "memory_os_task_success": 1,
+    "memory_os_task_success": 1.0,
     "baseline_task_success": 0.875,
     "task_success_uplift": 0.125,
-    "memory_os_stale_error_rate": 0,
+    "memory_os_stale_error_rate": 0.0,
     "baseline_stale_error_rate": 0.125,
     "stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_ms": 4.455400005099364,
-    "baseline_p95_latency_ms": 4.883599991444498,
-    "p95_latency_delta_ms": -0.4281999863451347,
-    "p95_latency_regression_ratio": -0.08768121613057815,
-    "cold_p95_latency_delta_ms": -0.11059999815188348,
-    "cold_p95_latency_regression_ratio": -0.02268717911403815
+    "memory_os_p95_latency_ms": 3.2509000011486933,
+    "baseline_p95_latency_ms": 3.3573000036994927,
+    "p95_latency_delta_ms": -0.1064000025507994,
+    "p95_latency_regression_ratio": -0.031692134284560386,
+    "cold_p95_latency_delta_ms": 0.02510000194888562,
+    "cold_p95_latency_regression_ratio": 0.007497237661467624
   },
   "checks": [
     {
       "id": "direct-comparable-protocol",
       "title": "Baseline and Memory OS execute the same sequential adaptive protocol",
       "passed": true,
-      "evidence": "protocol_hash=a65065309bb14e692cd3b0b53478745696515ff33fb2f6219398b031d6821530, workload=sequential_adaptive_recall",
+      "evidence": "protocol_hash=0e684ccabc796c7d1d7ea00805e2e64208900f847b6253170bd026e72e326730, workload=sequential_adaptive_recall",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
@@ -54,7 +54,7 @@
       "id": "memory-os-adaptation-fired",
       "title": "Priority learning and adaptive forgetting both changed state",
       "passed": true,
-      "evidence": "priority_predictions=8, forgetting_demotions=8",
+      "evidence": "priority_predictions=40, forgetting_demotions=40",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
@@ -68,14 +68,14 @@
       "id": "memory-os-p95-latency",
       "title": "Memory OS p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=4.4554ms, baseline=4.8836ms, delta=-0.4282ms, ratio=-0.0877",
+      "evidence": "memory_os=3.2509ms, baseline=3.3573ms, delta=-0.1064ms, ratio=-0.0317",
       "source": "benchmarks/memory_os_ab_results.json"
     },
     {
       "id": "memory-os-cold-p95-latency",
       "title": "Cold p95 stays within both the 20 percent and 5 ms regression limits",
       "passed": true,
-      "evidence": "memory_os=4.7644ms, baseline=4.8750ms, delta=-0.1106ms, ratio=-0.0227",
+      "evidence": "memory_os=3.3730ms, baseline=3.3479ms, delta=0.0251ms, ratio=0.0075",
       "source": "benchmarks/memory_os_ab_results.json"
     }
   ],

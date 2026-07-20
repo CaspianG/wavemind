@@ -53,6 +53,23 @@ def _latency_delta(memory_os: dict[str, Any], baseline: dict[str, Any], key: str
     return delta_ms, ratio
 
 
+def _has_complete_latency_trials(result: dict[str, Any], expected_trials: int) -> bool:
+    trials = dict(result.get("latency_trials_ms") or {})
+    return (
+        int(result.get("measurement_trials") or 0) == expected_trials
+        and expected_trials >= 5
+        and all(
+            len(list(trials.get(key) or [])) == expected_trials
+            for key in (
+                "avg_latency_ms",
+                "p95_latency_ms",
+                "cold_p95_latency_ms",
+                "steady_p95_latency_ms",
+            )
+        )
+    )
+
+
 def _supplemental_evidence(
     locomo_payload: dict[str, Any] | None,
     longmemeval_payload: dict[str, Any] | None,
@@ -96,12 +113,18 @@ def build_quality_gate(
     stale_suppression_uplift = float(baseline["stale_error_rate"]) - float(memory_os["stale_error_rate"])
     p95_delta_ms, p95_regression_ratio = _latency_delta(memory_os, baseline, "p95_latency_ms")
     cold_delta_ms, cold_regression_ratio = _latency_delta(memory_os, baseline, "cold_p95_latency_ms")
+    measurement_trials = int(protocol.get("measurement_trials") or 0)
     comparable_protocol = (
         bool(protocol.get("hash"))
         and protocol.get("same_memories") is True
         and protocol.get("same_observed_queries") is True
         and protocol.get("same_evaluation_queries") is True
         and int(protocol.get("cold_repetitions") or 0) >= 10
+        and measurement_trials >= 5
+        and protocol.get("latency_aggregation") == "median_of_trial_p95"
+        and protocol.get("execution_order") == "alternating_baseline_memory_os"
+        and _has_complete_latency_trials(baseline, measurement_trials)
+        and _has_complete_latency_trials(memory_os, measurement_trials)
     )
     latency_ok = (
         p95_delta_ms <= MAX_P95_REGRESSION_MS

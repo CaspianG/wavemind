@@ -59,6 +59,24 @@ def test_memory_os_quality_gate_rejects_under_sampled_cold_latency():
     assert "direct-comparable-protocol" in payload["summary"]["failed_check_ids"]
 
 
+def test_memory_os_quality_gate_rejects_under_sampled_measurement_trials():
+    direct_ab = copy.deepcopy(_load("memory_os_ab_results.json"))
+    direct_ab["protocol"]["measurement_trials"] = 4
+    payload = build_quality_gate(agent_payload=direct_ab)
+
+    assert payload["status"] == "fail"
+    assert "direct-comparable-protocol" in payload["summary"]["failed_check_ids"]
+
+
+def test_memory_os_quality_gate_rejects_missing_trial_measurements():
+    direct_ab = copy.deepcopy(_load("memory_os_ab_results.json"))
+    direct_ab["results"][0]["latency_trials_ms"]["cold_p95_latency_ms"].pop()
+    payload = build_quality_gate(agent_payload=direct_ab)
+
+    assert payload["status"] == "fail"
+    assert "direct-comparable-protocol" in payload["summary"]["failed_check_ids"]
+
+
 def test_memory_os_quality_gate_rejects_either_latency_limit():
     direct_ab = copy.deepcopy(_load("memory_os_ab_results.json"))
     results = {item["engine"]: item for item in direct_ab["results"]}

@@ -72,12 +72,16 @@ def _protocol_hash(
     observed_repetitions: int,
     evaluation_repetitions: int,
     cold_repetitions: int,
+    measurement_trials: int,
 ) -> str:
     payload = {
         "cases": [asdict(case) for case in CASES],
         "observed_repetitions": observed_repetitions,
         "evaluation_repetitions": evaluation_repetitions,
         "cold_repetitions": cold_repetitions,
+        "measurement_trials": measurement_trials,
+        "latency_aggregation": "median_of_trial_p95",
+        "execution_order": "alternating_baseline_memory_os",
         "top_k": 1,
         "priority_weight": 0.7,
     }
@@ -197,11 +201,52 @@ def _run_variant(
             memory.close()
 
 
+def _aggregate_variant(trials: list[dict[str, Any]]) -> dict[str, Any]:
+    if not trials:
+        raise ValueError("at least one benchmark trial is required")
+    total_queries = sum(int(trial["query_count"]) for trial in trials)
+    latency_keys = (
+        "avg_latency_ms",
+        "p95_latency_ms",
+        "cold_p95_latency_ms",
+        "steady_p95_latency_ms",
+    )
+    payload: dict[str, Any] = {
+        "engine": trials[0]["engine"],
+        "task_success_rate": sum(
+            float(trial["task_success_rate"]) * int(trial["query_count"])
+            for trial in trials
+        )
+        / total_queries,
+        "stale_error_rate": sum(
+            float(trial["stale_error_rate"]) * int(trial["query_count"])
+            for trial in trials
+        )
+        / total_queries,
+        "query_count": total_queries,
+        "queries_per_trial": int(trials[0]["query_count"]),
+        "measurement_trials": len(trials),
+        "context_items_per_query": int(trials[0]["context_items_per_query"]),
+        "cache_hits": sum(int(trial["cache_hits"]) for trial in trials),
+        "cache_misses": sum(int(trial["cache_misses"]) for trial in trials),
+        "priority_predictions": sum(int(trial["priority_predictions"]) for trial in trials),
+        "forgetting_demotions": sum(int(trial["forgetting_demotions"]) for trial in trials),
+        "worker_runs": sum(int(trial["worker_runs"]) for trial in trials),
+        "latency_trials_ms": {
+            key: [float(trial[key]) for trial in trials] for key in latency_keys
+        },
+    }
+    for key in latency_keys:
+        payload[key] = statistics.median(float(trial[key]) for trial in trials)
+    return payload
+
+
 def run_benchmark(
     *,
     observed_repetitions: int = 8,
     evaluation_repetitions: int = 25,
     cold_repetitions: int = 10,
+    measurement_trials: int = 5,
 ) -> dict[str, Any]:
     if observed_repetitions < 2:
         raise ValueError("observed_repetitions must be at least 2")
@@ -211,25 +256,29 @@ def run_benchmark(
         raise ValueError("cold_repetitions must be positive")
     if cold_repetitions >= evaluation_repetitions:
         raise ValueError("cold_repetitions must be lower than evaluation_repetitions")
+    if measurement_trials < 1:
+        raise ValueError("measurement_trials must be positive")
     protocol_hash = _protocol_hash(
         observed_repetitions=observed_repetitions,
         evaluation_repetitions=evaluation_repetitions,
         cold_repetitions=cold_repetitions,
+        measurement_trials=measurement_trials,
     )
-    results = [
-        _run_variant(
-            use_memory_os=False,
-            observed_repetitions=observed_repetitions,
-            evaluation_repetitions=evaluation_repetitions,
-            cold_repetitions=cold_repetitions,
-        ),
-        _run_variant(
-            use_memory_os=True,
-            observed_repetitions=observed_repetitions,
-            evaluation_repetitions=evaluation_repetitions,
-            cold_repetitions=cold_repetitions,
-        ),
-    ]
+    trials: dict[bool, list[dict[str, Any]]] = {False: [], True: []}
+    for trial_index in range(measurement_trials):
+        # Alternate execution order so machine warm-up or temporary load cannot
+        # systematically favor either side of the A/B comparison.
+        order = (False, True) if trial_index % 2 == 0 else (True, False)
+        for use_memory_os in order:
+            trials[use_memory_os].append(
+                _run_variant(
+                    use_memory_os=use_memory_os,
+                    observed_repetitions=observed_repetitions,
+                    evaluation_repetitions=evaluation_repetitions,
+                    cold_repetitions=cold_repetitions,
+                )
+            )
+    results = [_aggregate_variant(trials[False]), _aggregate_variant(trials[True])]
     return {
         "schema": "wavemind.memory_os_ab_benchmark.v1",
         "generated_at": _utc_now(),
@@ -241,6 +290,9 @@ def run_benchmark(
             "observed_repetitions": observed_repetitions,
             "evaluation_repetitions": evaluation_repetitions,
             "cold_repetitions": cold_repetitions,
+            "measurement_trials": measurement_trials,
+            "latency_aggregation": "median_of_trial_p95",
+            "execution_order": "alternating_baseline_memory_os",
             "same_memories": True,
             "same_observed_queries": True,
             "same_evaluation_queries": True,
@@ -259,6 +311,7 @@ def main() -> int:
     parser.add_argument("--observed-repetitions", type=int, default=8)
     parser.add_argument("--evaluation-repetitions", type=int, default=25)
     parser.add_argument("--cold-repetitions", type=int, default=10)
+    parser.add_argument("--measurement-trials", type=int, default=5)
     parser.add_argument(
         "--output",
         type=Path,
@@ -269,6 +322,7 @@ def main() -> int:
         observed_repetitions=args.observed_repetitions,
         evaluation_repetitions=args.evaluation_repetitions,
         cold_repetitions=args.cold_repetitions,
+        measurement_trials=args.measurement_trials,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

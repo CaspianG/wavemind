@@ -1,14 +1,17 @@
 {
   "schema": "wavemind.memory_os_ab_benchmark.v1",
-  "generated_at": "2026-07-17T22:44:55Z",
-  "source_ref": "6e63a559b353db11e1fc1b1cdbb1b56feb11a27b",
+  "generated_at": "2026-07-20T08:26:51Z",
+  "source_ref": "edade872efde8f8d63d4115cf677a74a5650b9fd",
   "protocol": {
-    "hash": "a65065309bb14e692cd3b0b53478745696515ff33fb2f6219398b031d6821530",
+    "hash": "0e684ccabc796c7d1d7ea00805e2e64208900f847b6253170bd026e72e326730",
     "workload": "sequential_adaptive_recall",
     "case_count": 8,
     "observed_repetitions": 8,
     "evaluation_repetitions": 25,
     "cold_repetitions": 10,
+    "measurement_trials": 5,
+    "latency_aggregation": "median_of_trial_p95",
+    "execution_order": "alternating_baseline_memory_os",
     "same_memories": true,
     "same_observed_queries": true,
     "same_evaluation_queries": true,
@@ -20,33 +23,97 @@
       "engine": "WaveMind baseline",
       "task_success_rate": 0.875,
       "stale_error_rate": 0.125,
-      "avg_latency_ms": 3.8898579999658978,
-      "p95_latency_ms": 4.883599991444498,
-      "cold_p95_latency_ms": 4.8749999987194315,
-      "steady_p95_latency_ms": 5.004699996788986,
-      "query_count": 200,
+      "query_count": 1000,
+      "queries_per_trial": 200,
+      "measurement_trials": 5,
       "context_items_per_query": 1,
       "cache_hits": 0,
       "cache_misses": 0,
       "priority_predictions": 0,
       "forgetting_demotions": 0,
-      "worker_runs": 0
+      "worker_runs": 0,
+      "latency_trials_ms": {
+        "avg_latency_ms": [
+          3.1590249999862863,
+          3.1023044997709803,
+          2.9383600001528976,
+          2.872303499971167,
+          2.892839999876742
+        ],
+        "p95_latency_ms": [
+          3.7937999950372614,
+          3.3573000036994927,
+          3.3936000036192127,
+          3.29030000284547,
+          3.25140000495594
+        ],
+        "cold_p95_latency_ms": [
+          3.7360999995144084,
+          3.3478999976068735,
+          3.137400002742652,
+          3.4836000049836002,
+          3.092899998591747
+        ],
+        "steady_p95_latency_ms": [
+          3.7948000026517548,
+          3.3764999971026555,
+          3.415099999983795,
+          3.29030000284547,
+          3.2807000025059097
+        ]
+      },
+      "avg_latency_ms": 2.9383600001528976,
+      "p95_latency_ms": 3.3573000036994927,
+      "cold_p95_latency_ms": 3.3478999976068735,
+      "steady_p95_latency_ms": 3.3764999971026555
     },
     {
       "engine": "WaveMind + Memory OS",
-      "task_success_rate": 1,
-      "stale_error_rate": 0,
-      "avg_latency_ms": 1.527665999965393,
-      "p95_latency_ms": 4.455400005099364,
-      "cold_p95_latency_ms": 4.764400000567548,
-      "steady_p95_latency_ms": 0.0039000005926936865,
-      "query_count": 200,
+      "task_success_rate": 1.0,
+      "stale_error_rate": 0.0,
+      "query_count": 1000,
+      "queries_per_trial": 200,
+      "measurement_trials": 5,
       "context_items_per_query": 1,
-      "cache_hits": 120,
-      "cache_misses": 107,
-      "priority_predictions": 8,
-      "forgetting_demotions": 8,
-      "worker_runs": 8
+      "cache_hits": 600,
+      "cache_misses": 535,
+      "priority_predictions": 40,
+      "forgetting_demotions": 40,
+      "worker_runs": 40,
+      "latency_trials_ms": {
+        "avg_latency_ms": [
+          1.149717000007513,
+          1.3787164999666857,
+          1.1290364996966673,
+          1.1557210002865759,
+          1.0724855001899414
+        ],
+        "p95_latency_ms": [
+          3.3088999989558943,
+          3.8161999982548878,
+          3.1308999969041906,
+          3.2509000011486933,
+          2.9352999990805984
+        ],
+        "cold_p95_latency_ms": [
+          3.4446999998181127,
+          4.342200001701713,
+          3.221400002075825,
+          3.372999999555759,
+          3.015800000866875
+        ],
+        "steady_p95_latency_ms": [
+          0.0018999999156221747,
+          0.0029000002541579306,
+          0.001500004145782441,
+          0.001600004907231778,
+          0.001800006430130452
+        ]
+      },
+      "avg_latency_ms": 1.149717000007513,
+      "p95_latency_ms": 3.2509000011486933,
+      "cold_p95_latency_ms": 3.372999999555759,
+      "steady_p95_latency_ms": 0.001800006430130452
     }
   ]
 }

@@ -6,13 +6,13 @@ Status: `pass`
 
 | check | result | evidence | source |
 |---|---|---|---|
-| Baseline and Memory OS execute the same sequential adaptive protocol | `pass` | protocol_hash=a65065309bb14e692cd3b0b53478745696515ff33fb2f6219398b031d6821530, workload=sequential_adaptive_recall | `benchmarks/memory_os_ab_results.json` |
+| Baseline and Memory OS execute the same sequential adaptive protocol | `pass` | protocol_hash=0e684ccabc796c7d1d7ea00805e2e64208900f847b6253170bd026e72e326730, workload=sequential_adaptive_recall | `benchmarks/memory_os_ab_results.json` |
 | Memory OS improves task success over WaveMind baseline | `pass` | memory_os=1.0000, baseline=0.8750, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
 | Memory OS reduces stale recalls over WaveMind baseline | `pass` | memory_os=0.0000, baseline=0.1250, uplift=0.1250 | `benchmarks/memory_os_ab_results.json` |
-| Priority learning and adaptive forgetting both changed state | `pass` | priority_predictions=8, forgetting_demotions=8 | `benchmarks/memory_os_ab_results.json` |
+| Priority learning and adaptive forgetting both changed state | `pass` | priority_predictions=40, forgetting_demotions=40 | `benchmarks/memory_os_ab_results.json` |
 | Both variants return the same context shape | `pass` | memory_os=1, baseline=1 | `benchmarks/memory_os_ab_results.json` |
-| Memory OS p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=4.4554ms, baseline=4.8836ms, delta=-0.4282ms, ratio=-0.0877 | `benchmarks/memory_os_ab_results.json` |
-| Cold p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=4.7644ms, baseline=4.8750ms, delta=-0.1106ms, ratio=-0.0227 | `benchmarks/memory_os_ab_results.json` |
+| Memory OS p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=3.2509ms, baseline=3.3573ms, delta=-0.1064ms, ratio=-0.0317 | `benchmarks/memory_os_ab_results.json` |
+| Cold p95 stays within both the 20 percent and 5 ms regression limits | `pass` | memory_os=3.3730ms, baseline=3.3479ms, delta=0.0251ms, ratio=0.0075 | `benchmarks/memory_os_ab_results.json` |
 
 ## Supplemental public benchmarks
 
