@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.benchmark_matrix.v1",
-  "generated_at": "2026-07-17T18:08:53Z",
-  "source_ref": "f9d073469f74",
+  "generated_at": "2026-07-20T07:09:38Z",
+  "source_ref": "23edad3b172f",
   "workflow_run_id": null,
   "refresh_profile": "local",
   "note": "Implemented entries are runnable from this repository. Planned entries are public benchmarks that require optional datasets, services, or heavier dependencies.",
@@ -2648,12 +2648,12 @@
           "memory_os_stale_error_rate": 0,
           "baseline_stale_error_rate": 0.125,
           "stale_suppression_uplift": 0.125,
-          "memory_os_p95_latency_ms": 0.02870004391297698,
-          "baseline_p95_latency_ms": 11.8394999881275,
-          "p95_latency_delta_ms": -11.810799944214523,
-          "p95_latency_regression_ratio": -0.9975759074334425,
-          "cold_p95_latency_delta_ms": -1.4696999569423497,
-          "cold_p95_latency_regression_ratio": -0.17444095873846313
+          "memory_os_p95_latency_ms": 4.455400005099364,
+          "baseline_p95_latency_ms": 4.883599991444498,
+          "p95_latency_delta_ms": -0.4281999863451347,
+          "p95_latency_regression_ratio": -0.08768121613057815,
+          "cold_p95_latency_delta_ms": -0.11059999815188348,
+          "cold_p95_latency_regression_ratio": -0.02268717911403815
         }
       },
       "target": "Require positive Memory OS uplift over WaveMind baseline while p95 stays within both the 20 percent and 5 ms regression limits.",
@@ -2663,7 +2663,7 @@
       "id": "memory_os_remote_worker_soak",
       "name": "Memory OS remote multi-worker production soak",
       "category": "production-scale",
-      "status": "runner-ready",
+      "status": "implemented",
       "source": "benchmarks/memory_os_remote_worker_soak.py",
       "dataset": "Direct HTTP concurrency across at least two authenticated HTTPS workers plus the shared TLS Redis used for leases, idempotency receipts, retries, and cleanup.",
       "competitors": [
@@ -2683,28 +2683,26 @@
         "state_corruption_count"
       ],
       "current": {
-        "WaveMind remote worker handoff": {
-          "status": "action_required",
-          "worker_count": 0,
-          "distinct_worker_count": 0,
-          "worker_https": false,
-          "redis_tls": false,
-          "min_duration_seconds": 21600,
-          "min_worker_cycles": 500,
-          "worker_commit_must_match": true,
-          "allowed_error_rate": 0.0,
-          "missing_check_ids": [
-            "worker-endpoints",
-            "non-loopback-workers",
-            "worker-transport",
-            "remote-redis",
-            "redis-transport",
-            "admin-auth"
-          ]
+        "WaveMind verified remote worker soak": {
+          "status": "pass",
+          "source_ref": "23edad3b172fe0480e3b49640071c1930304c665",
+          "started_at": "2026-07-19T23:40:39Z",
+          "finished_at": "2026-07-20T05:40:39Z",
+          "duration_seconds": 21600.119,
+          "worker_cycles": 500,
+          "worker_count": 2,
+          "completed_runs": 500,
+          "job_request_attempts": 2500,
+          "job_request_failures": 0,
+          "error_rate": 0.0,
+          "lock_breach_count": 0,
+          "duplicate_mutation_count": 0,
+          "state_corruption_count": 0,
+          "error_count": 0
         }
       },
       "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
-      "next_step": "Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml."
+      "next_step": "Repeat the strict soak for every release commit or production topology change."
     },
     {
       "id": "memory_os_policy_bundle",
@@ -2729,13 +2727,11 @@
       ],
       "current": {
         "WaveMind Memory OS policy bundle": {
-          "status": "staging_ready",
+          "status": "production_ready",
           "staging_promotable": true,
-          "production_promotable": false,
-          "production_locked": true,
-          "production_blocker_ids": [
-            "runtime-soak"
-          ],
+          "production_promotable": true,
+          "production_locked": false,
+          "production_blocker_ids": [],
           "runtime_env_declared": true,
           "worker_count": 1,
           "effective_cache_mode": "redis",
@@ -2751,7 +2747,7 @@
           "policy_escalation_ids": [
             "scale-policy"
           ],
-          "passed_checks": 6,
+          "passed_checks": 7,
           "check_count": 7
         }
       },

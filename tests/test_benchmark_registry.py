@@ -34,8 +34,15 @@ def test_benchmark_matrix_contains_implemented_and_public_benchmarks():
         entries["memory_os_policy_bundle"]["current"][
             "WaveMind Memory OS policy bundle"
         ]["status"]
-        == "staging_ready"
+        == "production_ready"
     )
+    assert entries["memory_os_remote_worker_soak"]["status"] == "implemented"
+    remote_soak = entries["memory_os_remote_worker_soak"]["current"][
+        "WaveMind verified remote worker soak"
+    ]
+    assert remote_soak["duration_seconds"] >= 21_600
+    assert remote_soak["worker_cycles"] >= 500
+    assert remote_soak["error_rate"] == 0.0
     assert entries["long_memory_evidence_synthetic"]["status"] == "implemented"
     assert "Static vector" in entries["long_memory_evidence_synthetic"]["competitors"]
     assert entries["beir_style_open_retrieval"]["status"] == "implemented"

@@ -1,26 +1,24 @@
 {
   "schema": "wavemind.memory_os_policy_bundle.v1",
-  "generated_at": "2026-07-13T21:56:18Z",
-  "bundle_id": "memory-os-policy-20260713T215618Z",
-  "status": "staging_ready",
+  "generated_at": "2026-07-20T07:09:38Z",
+  "bundle_id": "memory-os-policy-20260720T070938Z",
+  "status": "production_ready",
   "ok": true,
-  "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. It can promote the checked canary/evolution behavior to staging. It does not enable unattended production automation unless memory-os-admission is admitted with real Redis, distributed lock, runtime env, and strict large-scale evidence.",
+  "claim_boundary": "This is an operator-applied Memory OS runtime policy bundle. Production promotion is allowed only when memory-os-admission is admitted with real Redis, distributed locks, runtime environment, and strict large-scale evidence. Automatic promotion remains disabled, and the admission applies only to the exact tested release and topology.",
   "source_artifacts": {
     "canary_schema": "wavemind.memory_os_canary.v1",
     "canary_status": "pass",
     "evolution_schema": "wavemind.memory_os_policy_evolution.v1",
     "evolution_status": "pass",
     "admission_schema": "wavemind.memory_os_admission.v1",
-    "admission_status": "plan_only"
+    "admission_status": "admitted"
   },
   "summary": {
-    "status": "staging_ready",
+    "status": "production_ready",
     "staging_promotable": true,
-    "production_promotable": false,
-    "production_locked": true,
-    "production_blocker_ids": [
-      "runtime-soak"
-    ],
+    "production_promotable": true,
+    "production_locked": false,
+    "production_blocker_ids": [],
     "runtime_env_declared": true,
     "enabled_task_ids": [
       "memory-os",
@@ -37,10 +35,8 @@
       "scale-policy"
     ],
     "check_count": 7,
-    "passed_checks": 6,
-    "failed_check_ids": [
-      "production-admission"
-    ]
+    "passed_checks": 7,
+    "failed_check_ids": []
   },
   "checks": [
     {
@@ -82,10 +78,10 @@
     {
       "id": "production-admission",
       "title": "Production promotion remains behind strict admission",
-      "status": "action_required",
-      "passed": false,
-      "severity": "production_blocker",
-      "evidence": "admission_status=plan_only, admitted=False, blockers=['runtime-soak']",
+      "status": "pass",
+      "passed": true,
+      "severity": "ok",
+      "evidence": "admission_status=admitted, admitted=True, blockers=[]",
       "action": "Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence."
     },
     {
@@ -94,7 +90,7 @@
       "status": "pass",
       "passed": true,
       "severity": "ok",
-      "evidence": "production_auto_enable=False, production_locked=True",
+      "evidence": "production_auto_enable=False, production_locked=False",
       "action": "Keep production_auto_enable=false unless memory-os-admission returns admitted."
     },
     {
@@ -173,8 +169,8 @@
           "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "hot_queries": 5,
-            "prewarm_warmed": 5,
+            "hot_queries": 16,
+            "prewarm_warmed": 16,
             "predictive_generated": 1,
             "predictive_warmed": 1,
             "transition_edges": 0
@@ -188,7 +184,7 @@
           "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "priority_predictions": 5
+            "priority_predictions": 16
           }
         },
         {
@@ -199,7 +195,7 @@
           "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 7
+            "active_memories": 13
           }
         },
         {
@@ -221,7 +217,7 @@
           "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
           "evidence": {
             "namespace": "canary:memory-os",
-            "active_memories": 7,
+            "active_memories": 13,
             "target_memories": 100000,
             "recommendation_ids": [
               "scale-plan",
@@ -518,8 +514,8 @@
     }
   },
   "next_actions": [
-    "Apply the bundle only to staging CronJobs/workers.",
-    "Replay representative tenant traffic and rerun memory-os-canary.",
-    "Keep production blocked until memory-os-admission returns admitted with external evidence."
+    "Apply the production bundle through the controlled shadow and canary rollout.",
+    "Keep the same policy bundle id in deployment annotations for auditability.",
+    "Rerun admission for every release commit or production topology change."
   ]
 }

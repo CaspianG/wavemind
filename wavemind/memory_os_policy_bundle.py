@@ -337,11 +337,11 @@ def build_memory_os_policy_bundle(
         "status": status,
         "ok": status in {"staging_ready", "production_ready"},
         "claim_boundary": (
-            "This is an operator-applied Memory OS runtime policy bundle. It can "
-            "promote the checked canary/evolution behavior to staging. It does not "
-            "enable unattended production automation unless memory-os-admission is "
-            "admitted with real Redis, distributed lock, runtime env, and strict "
-            "large-scale evidence."
+            "This is an operator-applied Memory OS runtime policy bundle. Production "
+            "promotion is allowed only when memory-os-admission is admitted with real "
+            "Redis, distributed locks, runtime environment, and strict large-scale "
+            "evidence. Automatic promotion remains disabled, and the admission applies "
+            "only to the exact tested release and topology."
         ),
         "source_artifacts": {
             "canary_schema": canary.get("schema"),
@@ -377,8 +377,9 @@ def build_memory_os_policy_bundle(
             ]
             if status == "staging_ready"
             else [
-                "Apply the production bundle only after memory-os-admission is admitted.",
+                "Apply the production bundle through the controlled shadow and canary rollout.",
                 "Keep the same policy bundle id in deployment annotations for auditability.",
+                "Rerun admission for every release commit or production topology change.",
             ]
             if status == "production_ready"
             else [

@@ -116,6 +116,13 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
         "memory_os_p95_latency_delta_ms": (quality.get("metrics") or {}).get("p95_latency_delta_ms"),
         "memory_os_p95_latency_regression_ratio": (quality.get("metrics") or {}).get("p95_latency_regression_ratio"),
     }
+    production_admitted = (
+        admission.get("status") == "admitted"
+        and summary["admission_blocker_count"] == 0
+        and policy_bundle.get("status") == "production_ready"
+        and summary["policy_bundle_production_promotable"] is True
+        and summary["policy_bundle_production_locked"] is False
+    )
 
     return {
         "schema": "wavemind.memory_os_intelligence_report.v1",
@@ -133,10 +140,16 @@ def build_memory_os_intelligence_report(root: Path = PROJECT_ROOT) -> dict[str, 
             "Memory OS intelligence rows come from checked-in deterministic scale, "
             "agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove "
             "worker behavior, policy generation, cache prewarm, predictive prefetch, "
-            "priority learning, adaptive forgetting, consolidation, staging promotion, and rollout "
-            "safety on these fixtures. They do not unlock unattended production "
-            "Memory OS automation until the admission gate is admitted with real "
-            "shared Redis, distributed lock, runtime env, and large-scale evidence."
+            "priority learning, adaptive forgetting, consolidation, and rollout safety. "
+            + (
+                "Production admission is backed by the checked six-hour multi-worker "
+                "shared Redis and distributed lock artifact for the exact tested release "
+                "and topology; automatic promotion remains disabled."
+                if production_admitted
+                else "Unattended production automation remains locked until admission "
+                "passes with shared Redis, distributed locks, runtime environment, and "
+                "strict remote evidence."
+            )
         ),
         "summary": summary,
         "checks": checks,
@@ -244,7 +257,15 @@ def render_memory_os_intelligence_markdown(payload: dict[str, Any]) -> str:
             "",
             "## Production Boundary",
             "",
-            "The checked-in Memory OS canary passes, but production admission remains plan-only until shared Redis, distributed lock, runtime environment, and strict large-scale evidence are present.",
+            (
+                "Production admission is `admitted` for the exact checked release and tested "
+                "multi-worker topology. Rollout remains operator-controlled, with automatic "
+                "promotion disabled and fresh admission required after release or topology changes."
+                if summary.get("admission_status") == "admitted"
+                else "The checked-in Memory OS canary passes, but production admission remains "
+                "plan-only until shared Redis, distributed locks, runtime environment, and "
+                "strict remote evidence are present."
+            ),
             "",
         ]
     )
@@ -268,7 +289,7 @@ def _checks(
         if isinstance(policy_bundle.get("summary"), dict)
         else {}
     )
-    return [
+    checks = [
         _check("worker_ok", memory_os.get("ok"), True, "is"),
         _check("hot_queries", memory_os.get("hot_queries"), 2, ">="),
         _check("prewarm_warmed", memory_os.get("prewarm_warmed"), 2, ">="),
@@ -298,17 +319,34 @@ def _checks(
         _check("canary_pass", canary.get("status"), "pass", "=="),
         _check("canary_admitted", canary_summary.get("admitted"), True, "is"),
         _check("canary_predictive_warmed", canary_summary.get("predictive_warmed"), 10, ">="),
-        _check("admission_is_strictly_limited", admission.get("status"), "plan_only", "=="),
-        _check("admission_has_blockers", admission_summary.get("blocker_count"), 1, ">="),
-        _check("policy_bundle_staging_ready", policy_bundle.get("status"), "staging_ready", "=="),
-        _check("policy_bundle_staging_promotable", bundle_summary.get("staging_promotable"), True, "is"),
-        _check("policy_bundle_production_locked", bundle_summary.get("production_locked"), True, "is"),
-        _check("policy_bundle_production_not_promoted", bundle_summary.get("production_promotable"), False, "is"),
         _check("quality_gate_pass", quality.get("status"), "pass", "=="),
         _check("quality_task_uplift", (quality.get("metrics") or {}).get("task_success_uplift"), 0.05, ">="),
         _check("quality_p95_delta", (quality.get("metrics") or {}).get("p95_latency_delta_ms"), 5.0, "<="),
         _check("quality_p95_ratio", (quality.get("metrics") or {}).get("p95_latency_regression_ratio"), 0.20, "<="),
     ]
+    if admission.get("status") == "admitted":
+        checks.extend(
+            [
+                _check("admission_is_admitted", admission.get("admitted"), True, "is"),
+                _check("admission_has_no_blockers", admission_summary.get("blocker_count"), 0, "=="),
+                _check("policy_bundle_production_ready", policy_bundle.get("status"), "production_ready", "=="),
+                _check("policy_bundle_staging_promotable", bundle_summary.get("staging_promotable"), True, "is"),
+                _check("policy_bundle_production_unlocked", bundle_summary.get("production_locked"), False, "is"),
+                _check("policy_bundle_production_promotable", bundle_summary.get("production_promotable"), True, "is"),
+            ]
+        )
+    else:
+        checks.extend(
+            [
+                _check("admission_is_strictly_limited", admission.get("status"), "plan_only", "=="),
+                _check("admission_has_blockers", admission_summary.get("blocker_count"), 1, ">="),
+                _check("policy_bundle_staging_ready", policy_bundle.get("status"), "staging_ready", "=="),
+                _check("policy_bundle_staging_promotable", bundle_summary.get("staging_promotable"), True, "is"),
+                _check("policy_bundle_production_locked", bundle_summary.get("production_locked"), True, "is"),
+                _check("policy_bundle_production_not_promoted", bundle_summary.get("production_promotable"), False, "is"),
+            ]
+        )
+    return checks
 
 
 def _check(name: str, value: Any, target: Any, op: str) -> dict[str, Any]:

@@ -521,6 +521,8 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert Path("wavemind/multimodal_external.py").exists()
     assert Path("benchmarks/memory_os_admission_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_ADMISSION.md").exists()
+    assert Path("benchmarks/memory_os_remote_worker_soak_results.json").exists()
+    assert Path("benchmarks/MEMORY_OS_REMOTE_WORKER_SOAK.md").exists()
     assert Path("benchmarks/memory_os_canary_results.json").exists()
     assert Path("benchmarks/MEMORY_OS_CANARY.md").exists()
     assert Path("benchmarks/memory_os_policy_evolution_results.json").exists()

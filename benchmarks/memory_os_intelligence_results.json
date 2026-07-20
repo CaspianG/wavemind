@@ -1,7 +1,7 @@
 {
   "schema": "wavemind.memory_os_intelligence_report.v1",
   "generated_at": "2026-07-09T22:45:10Z",
-  "source_ref": "025b8285cbf2",
+  "source_ref": "23edad3b172f",
   "source_files": [
     "benchmarks/scale_readiness_results.json",
     "benchmarks/memory_os_agent_quality_results.json",
@@ -10,7 +10,7 @@
     "benchmarks/memory_os_policy_bundle_results.json",
     "benchmarks/memory_os_quality_results.json"
   ],
-  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.",
+  "claim_boundary": "Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety. Production admission is backed by the checked six-hour multi-worker shared Redis and distributed lock artifact for the exact tested release and topology; automatic promotion remains disabled.",
   "summary": {
     "status": "pass",
     "check_count": 39,
@@ -72,16 +72,14 @@
     "canary_admitted": true,
     "canary_prewarm_warmed": 5,
     "canary_predictive_warmed": 15,
-    "admission_status": "plan_only",
-    "admission_passed_count": 12,
-    "admission_blocker_count": 1,
-    "admission_blocker_ids": [
-      "runtime-soak"
-    ],
-    "policy_bundle_status": "staging_ready",
+    "admission_status": "admitted",
+    "admission_passed_count": 13,
+    "admission_blocker_count": 0,
+    "admission_blocker_ids": [],
+    "policy_bundle_status": "production_ready",
     "policy_bundle_staging_promotable": true,
-    "policy_bundle_production_promotable": false,
-    "policy_bundle_production_locked": true,
+    "policy_bundle_production_promotable": true,
+    "policy_bundle_production_locked": false,
     "policy_bundle_worker_count": 1,
     "policy_bundle_enabled_task_ids": [
       "memory-os",
@@ -97,8 +95,8 @@
     "quality_check_count": 7,
     "memory_os_task_success_uplift": 0.125,
     "memory_os_stale_suppression_uplift": 0.125,
-    "memory_os_p95_latency_delta_ms": -11.810799944214523,
-    "memory_os_p95_latency_regression_ratio": -0.9975759074334425
+    "memory_os_p95_latency_delta_ms": -0.4281999863451347,
+    "memory_os_p95_latency_regression_ratio": -0.08768121613057815
   },
   "checks": [
     {
@@ -305,48 +303,6 @@
       "pass": true
     },
     {
-      "name": "admission_is_strictly_limited",
-      "value": "plan_only",
-      "target": "plan_only",
-      "op": "==",
-      "pass": true
-    },
-    {
-      "name": "admission_has_blockers",
-      "value": 1,
-      "target": 1,
-      "op": ">=",
-      "pass": true
-    },
-    {
-      "name": "policy_bundle_staging_ready",
-      "value": "staging_ready",
-      "target": "staging_ready",
-      "op": "==",
-      "pass": true
-    },
-    {
-      "name": "policy_bundle_staging_promotable",
-      "value": true,
-      "target": true,
-      "op": "is",
-      "pass": true
-    },
-    {
-      "name": "policy_bundle_production_locked",
-      "value": true,
-      "target": true,
-      "op": "is",
-      "pass": true
-    },
-    {
-      "name": "policy_bundle_production_not_promoted",
-      "value": false,
-      "target": false,
-      "op": "is",
-      "pass": true
-    },
-    {
       "name": "quality_gate_pass",
       "value": "pass",
       "target": "pass",
@@ -362,16 +318,58 @@
     },
     {
       "name": "quality_p95_delta",
-      "value": -11.810799944214523,
+      "value": -0.4281999863451347,
       "target": 5.0,
       "op": "<=",
       "pass": true
     },
     {
       "name": "quality_p95_ratio",
-      "value": -0.9975759074334425,
+      "value": -0.08768121613057815,
       "target": 0.2,
       "op": "<=",
+      "pass": true
+    },
+    {
+      "name": "admission_is_admitted",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "admission_has_no_blockers",
+      "value": 0,
+      "target": 0,
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_production_ready",
+      "value": "production_ready",
+      "target": "production_ready",
+      "op": "==",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_staging_promotable",
+      "value": true,
+      "target": true,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_production_unlocked",
+      "value": false,
+      "target": false,
+      "op": "is",
+      "pass": true
+    },
+    {
+      "name": "policy_bundle_production_promotable",
+      "value": true,
+      "target": true,
+      "op": "is",
       "pass": true
     }
   ],
@@ -1085,15 +1083,13 @@
       "admitted": true
     },
     "admission_summary": {
-      "status": "plan_only",
-      "admitted": false,
+      "status": "admitted",
+      "admitted": true,
       "requirement_count": 13,
-      "passed_count": 12,
-      "blocker_count": 1,
+      "passed_count": 13,
+      "blocker_count": 0,
       "warning_count": 0,
-      "blocker_ids": [
-        "runtime-soak"
-      ],
+      "blocker_ids": [],
       "warning_ids": [],
       "enabled_task_ids": [
         "adaptive-forgetting",
@@ -1107,13 +1103,11 @@
       "missing_runtime_env": []
     },
     "policy_bundle_summary": {
-      "status": "staging_ready",
+      "status": "production_ready",
       "staging_promotable": true,
-      "production_promotable": false,
-      "production_locked": true,
-      "production_blocker_ids": [
-        "runtime-soak"
-      ],
+      "production_promotable": true,
+      "production_locked": false,
+      "production_blocker_ids": [],
       "runtime_env_declared": true,
       "enabled_task_ids": [
         "memory-os",
@@ -1130,10 +1124,8 @@
         "scale-policy"
       ],
       "check_count": 7,
-      "passed_checks": 6,
-      "failed_check_ids": [
-        "production-admission"
-      ]
+      "passed_checks": 7,
+      "failed_check_ids": []
     },
     "quality_summary": {
       "passed_count": 7,
@@ -1147,12 +1139,12 @@
       "memory_os_stale_error_rate": 0,
       "baseline_stale_error_rate": 0.125,
       "stale_suppression_uplift": 0.125,
-      "memory_os_p95_latency_ms": 0.02870004391297698,
-      "baseline_p95_latency_ms": 11.8394999881275,
-      "p95_latency_delta_ms": -11.810799944214523,
-      "p95_latency_regression_ratio": -0.9975759074334425,
-      "cold_p95_latency_delta_ms": -1.4696999569423497,
-      "cold_p95_latency_regression_ratio": -0.17444095873846313
+      "memory_os_p95_latency_ms": 4.455400005099364,
+      "baseline_p95_latency_ms": 4.883599991444498,
+      "p95_latency_delta_ms": -0.4281999863451347,
+      "p95_latency_regression_ratio": -0.08768121613057815,
+      "cold_p95_latency_delta_ms": -0.11059999815188348,
+      "cold_p95_latency_regression_ratio": -0.02268717911403815
     }
   }
 }

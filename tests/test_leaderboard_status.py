@@ -163,8 +163,8 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["memory_os_intelligence"]["agent_task_success_rate"] >= 0.9
     assert payload["memory_os_intelligence"]["agent_context_budget_saved"] >= 0.9
     assert payload["memory_os_intelligence"]["canary_status"] == "pass"
-    assert payload["memory_os_intelligence"]["admission_status"] == "plan_only"
-    assert "unattended production Memory OS automation" in (
+    assert payload["memory_os_intelligence"]["admission_status"] == "admitted"
+    assert "exact tested release" in (
         payload["memory_os_intelligence"]["claim_boundary"]
     )
     assert payload["cluster_autoscale"]["schema"] == (
@@ -275,13 +275,17 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["memory_os_policy_bundle"]["schema"] == (
         "wavemind.memory_os_policy_bundle.v1"
     )
-    assert payload["memory_os_policy_bundle"]["status"] == "staging_ready"
+    assert payload["memory_os_policy_bundle"]["status"] == "production_ready"
     assert payload["memory_os_policy_bundle"]["ok"] is True
     assert payload["memory_os_policy_bundle"]["summary"]["staging_promotable"] is True
-    assert payload["memory_os_policy_bundle"]["summary"]["production_promotable"] is False
-    assert payload["memory_os_policy_bundle"]["summary"]["production_locked"] is True
+    assert payload["memory_os_policy_bundle"]["summary"]["production_promotable"] is True
+    assert payload["memory_os_policy_bundle"]["summary"]["production_locked"] is False
     assert payload["memory_os_policy_bundle"]["runtime_policy"]["production_auto_enable"] is False
     assert payload["memory_os_policy_bundle"]["kubernetes_patch"]["spec"]["productionAutoEnable"] is False
+    assert payload["memory_os_remote_worker_soak"]["status"] == "pass"
+    assert payload["memory_os_remote_worker_soak"]["metrics"]["duration_seconds"] >= 21_600
+    assert payload["memory_os_remote_worker_soak"]["metrics"]["worker_cycles"] >= 500
+    assert payload["memory_os_remote_worker_soak"]["metrics"]["error_rate"] == 0.0
     assert payload["strict_production_evidence"]["overall_status"] == "action_required"
     assert payload["strict_production_evidence"]["summary"]["total_requirements"] == 8
     assert payload["strict_production_evidence"]["action_required"]
@@ -522,7 +526,7 @@ def test_checked_in_leaderboard_status_is_present_and_machine_readable():
     assert payload["structured_memory"]["status"] == "pass"
     assert payload["memory_os_intelligence"]["status"] == "pass"
     assert payload["memory_os_policy_evolution"]["status"] == "pass"
-    assert payload["memory_os_policy_bundle"]["status"] == "staging_ready"
+    assert payload["memory_os_policy_bundle"]["status"] == "production_ready"
     assert payload["cluster_autoscale"]["status"] == "pass"
     assert payload["kubernetes_operator_failover"]["status"] == "pass"
     assert payload["memory_os_policy"]["status"] == "pass"

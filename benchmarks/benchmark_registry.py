@@ -232,6 +232,30 @@ def _memory_os_remote_handoff_summary(payload: dict[str, Any] | None) -> dict[st
     }
 
 
+def _memory_os_remote_worker_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not payload:
+        return None
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    health = payload.get("health") if isinstance(payload.get("health"), list) else []
+    return {
+        "status": payload.get("status"),
+        "source_ref": payload.get("source_ref"),
+        "started_at": payload.get("started_at"),
+        "finished_at": payload.get("finished_at"),
+        "duration_seconds": metrics.get("duration_seconds"),
+        "worker_cycles": metrics.get("worker_cycles"),
+        "worker_count": len(health),
+        "completed_runs": metrics.get("completed_runs"),
+        "job_request_attempts": metrics.get("job_request_attempts"),
+        "job_request_failures": metrics.get("job_request_failures"),
+        "error_rate": metrics.get("error_rate"),
+        "lock_breach_count": metrics.get("lock_breach_count"),
+        "duplicate_mutation_count": metrics.get("duplicate_mutation_count"),
+        "state_corruption_count": metrics.get("state_corruption_count"),
+        "error_count": metrics.get("error_count"),
+    }
+
+
 def _kubernetes_operator_smoke_summary(payload: dict[str, Any] | None) -> dict[str, Any] | None:
     if not payload:
         return None
@@ -647,6 +671,9 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
     memory_os_quality_payload = _load_json(root / "benchmarks" / "memory_os_quality_results.json")
     memory_os_remote_handoff_payload = _load_json(
         root / "benchmarks" / "memory_os_remote_soak_handoff_results.json"
+    )
+    memory_os_remote_worker_payload = _load_json(
+        root / "benchmarks" / "memory_os_remote_worker_soak_results.json"
     )
     production_readiness_payload = _load_json(root / "benchmarks" / "production_readiness_results.json")
     production_evidence_env_payload = _load_json(
@@ -2706,7 +2733,11 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
             "id": "memory_os_remote_worker_soak",
             "name": "Memory OS remote multi-worker production soak",
             "category": "production-scale",
-            "status": "runner-ready",
+            "status": (
+                "implemented"
+                if (memory_os_remote_worker_payload or {}).get("status") == "pass"
+                else "runner-ready"
+            ),
             "source": "benchmarks/memory_os_remote_worker_soak.py",
             "dataset": "Direct HTTP concurrency across at least two authenticated HTTPS workers plus the shared TLS Redis used for leases, idempotency receipts, retries, and cleanup.",
             "competitors": ["single-process soak", "remote Redis label without worker proof"],
@@ -2723,16 +2754,25 @@ def _implemented_entries(root: Path) -> list[dict[str, Any]]:
                 "state_corruption_count",
             ],
             "current": {
-                "WaveMind remote worker handoff": (
-                    _memory_os_remote_handoff_summary(memory_os_remote_handoff_payload)
+                (
+                    "WaveMind verified remote worker soak"
+                    if (memory_os_remote_worker_payload or {}).get("status") == "pass"
+                    else "WaveMind remote worker handoff"
+                ): (
+                    _memory_os_remote_worker_summary(memory_os_remote_worker_payload)
+                    or _memory_os_remote_handoff_summary(memory_os_remote_handoff_payload)
                     or {
                         "status": "missing",
                         "requires": "python benchmarks/memory_os_remote_worker_soak.py --preflight-only",
                     }
-                ),
+                )
             },
             "target": "Pass a fresh six-hour, 500-cycle, exact-commit remote worker soak with zero request errors, lock breaches, duplicate mutations, or state corruption.",
-            "next_step": "Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml.",
+            "next_step": (
+                "Repeat the strict soak for every release commit or production topology change."
+                if (memory_os_remote_worker_payload or {}).get("status") == "pass"
+                else "Configure the workflow's repository Actions secrets, register a wavemind-evidence runner, and dispatch .github/workflows/memory-os-remote-soak.yml."
+            ),
         },
         {
             "id": "memory_os_policy_bundle",

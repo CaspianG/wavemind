@@ -2,7 +2,7 @@
 
 Generated: `2026-07-09T22:45:10Z`.
 
-Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, staging promotion, and rollout safety on these fixtures. They do not unlock unattended production Memory OS automation until the admission gate is admitted with real shared Redis, distributed lock, runtime env, and large-scale evidence.
+Memory OS intelligence rows come from checked-in deterministic scale, agent-coherence, direct adaptive A/B, staging canary, admission, and policy-bundle artifacts. They prove worker behavior, policy generation, cache prewarm, predictive prefetch, priority learning, adaptive forgetting, consolidation, and rollout safety. Production admission is backed by the checked six-hour multi-worker shared Redis and distributed lock artifact for the exact tested release and topology; automatic promotion remains disabled.
 
 ## Summary
 
@@ -17,8 +17,8 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 - Concepts created: `1`.
 - Policy decisions: `6`.
 - Execution safe to run: `True`.
-- Admission status: `plan_only`.
-- Policy bundle status: `staging_ready`.
+- Admission status: `admitted`.
+- Policy bundle status: `production_ready`.
 - Quality gate: `pass` (7/7).
 
 ## Gate Checks
@@ -54,16 +54,16 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | canary_pass | `pass` | `pass` | `== pass` |
 | canary_admitted | `pass` | `1` | `is True` |
 | canary_predictive_warmed | `pass` | `15` | `>= 10` |
-| admission_is_strictly_limited | `pass` | `plan_only` | `== plan_only` |
-| admission_has_blockers | `pass` | `1` | `>= 1` |
-| policy_bundle_staging_ready | `pass` | `staging_ready` | `== staging_ready` |
-| policy_bundle_staging_promotable | `pass` | `1` | `is True` |
-| policy_bundle_production_locked | `pass` | `1` | `is True` |
-| policy_bundle_production_not_promoted | `pass` | `0` | `is False` |
 | quality_gate_pass | `pass` | `pass` | `== pass` |
 | quality_task_uplift | `pass` | `0.125` | `>= 0.05` |
-| quality_p95_delta | `pass` | `-11.811` | `<= 5.0` |
-| quality_p95_ratio | `pass` | `-0.998` | `<= 0.2` |
+| quality_p95_delta | `pass` | `-0.428` | `<= 5.0` |
+| quality_p95_ratio | `pass` | `-0.088` | `<= 0.2` |
+| admission_is_admitted | `pass` | `1` | `is True` |
+| admission_has_no_blockers | `pass` | `0` | `== 0` |
+| policy_bundle_production_ready | `pass` | `production_ready` | `== production_ready` |
+| policy_bundle_staging_promotable | `pass` | `1` | `is True` |
+| policy_bundle_production_unlocked | `pass` | `0` | `is False` |
+| policy_bundle_production_promotable | `pass` | `1` | `is True` |
 
 ## Intelligence Coverage
 
@@ -75,10 +75,10 @@ Memory OS intelligence rows come from checked-in deterministic scale, agent-cohe
 | Adaptive forgetting | `4` demotions, decay total `0.4`. |
 | Consolidation | `1` concepts created, recall `True`. |
 | Rollout safety | shared cache `True`, distributed lock `True`, required env `WAVEMIND_MEMORY_OS_LOCK_REDIS_URL, WAVEMIND_REDIS_URL`. |
-| Policy bundle | status `staging_ready`, staging `True`, production locked `True`. |
+| Policy bundle | status `production_ready`, staging `True`, production locked `False`. |
 | Agent effect | task success `0.917`, stale error `0`, context saved `0.931`. |
-| Direct Memory OS A/B | task-success uplift `0.125`, stale-suppression uplift `0.125`, p95 delta `-11.811` ms. |
+| Direct Memory OS A/B | task-success uplift `0.125`, stale-suppression uplift `0.125`, p95 delta `-0.428` ms. |
 
 ## Production Boundary
 
-The checked-in Memory OS canary passes, but production admission remains plan-only until shared Redis, distributed lock, runtime environment, and strict large-scale evidence are present.
+Production admission is `admitted` for the exact checked release and tested multi-worker topology. Rollout remains operator-controlled, with automatic promotion disabled and fresh admission required after release or topology changes.

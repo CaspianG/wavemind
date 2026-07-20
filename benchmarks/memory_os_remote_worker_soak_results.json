@@ -1,0 +1,4377 @@
+{
+  "schema": "wavemind.memory_os_remote_worker_soak.v1",
+  "generated_at": "2026-07-20T05:40:39Z",
+  "started_at": "2026-07-19T23:40:39Z",
+  "finished_at": "2026-07-20T05:40:39Z",
+  "source_ref": "23edad3b172fe0480e3b49640071c1930304c665",
+  "workflow_run_id": null,
+  "workflow_run_url": null,
+  "status": "pass",
+  "environment": "remote_worker_cluster",
+  "claim_boundary": "This evidence combines direct remote worker HTTP concurrency with lease and job-receipt semantics against the same non-loopback Redis. It admits only this tested worker topology.",
+  "preflight": {
+    "schema": "wavemind.memory_os_remote_worker_preflight.v1",
+    "generated_at": "2026-07-19T23:40:35Z",
+    "source_ref": "23edad3b172fe0480e3b49640071c1930304c665",
+    "status": "pass",
+    "claim_boundary": "This preflight only validates a production-like remote topology contract. It does not admit Memory OS until the remote worker soak itself passes.",
+    "topology": {
+      "worker_count": 2,
+      "distinct_worker_count": 2,
+      "worker_fingerprints": [
+        "f66181eb98288063",
+        "3a8d0d45dc3ba443"
+      ],
+      "redis_fingerprint": "c8b242974b1f203e",
+      "worker_https": true,
+      "redis_tls": true
+    },
+    "checks": [
+      {
+        "id": "worker-endpoints",
+        "title": "At least two distinct worker endpoints are declared",
+        "passed": true,
+        "evidence": "workers=2, distinct_netlocs=2",
+        "action": "Set WAVEMIND_REMOTE_WORKER_URLS to at least two direct worker endpoints."
+      },
+      {
+        "id": "non-loopback-workers",
+        "title": "Worker endpoints are outside the benchmark runner",
+        "passed": true,
+        "evidence": "remote=True",
+        "action": "Use routable production-like worker endpoints, not localhost."
+      },
+      {
+        "id": "worker-transport",
+        "title": "Worker transport is encrypted",
+        "passed": true,
+        "evidence": "https=True, allow_insecure=False",
+        "action": "Use HTTPS worker endpoints or explicitly allow insecure transport only in an isolated staging network."
+      },
+      {
+        "id": "remote-redis",
+        "title": "Redis is remote from the benchmark runner",
+        "passed": true,
+        "evidence": "configured=True, environment=remote_redis",
+        "action": "Set WAVEMIND_REMOTE_REDIS_URL to the Redis used by every target worker."
+      },
+      {
+        "id": "redis-transport",
+        "title": "Redis transport is encrypted",
+        "passed": true,
+        "evidence": "rediss=True, allow_insecure=False",
+        "action": "Use rediss:// or explicitly allow insecure Redis only in an isolated staging network."
+      },
+      {
+        "id": "admin-auth",
+        "title": "An admin API key is available for the destructive soak namespace",
+        "passed": true,
+        "evidence": "api_key_present=True",
+        "action": "Set WAVEMIND_API_KEY to an admin-scoped key for the target workers."
+      }
+    ],
+    "missing_check_ids": [],
+    "required_environment": [
+      "WAVEMIND_REMOTE_WORKER_URLS",
+      "WAVEMIND_REMOTE_REDIS_URL",
+      "WAVEMIND_API_KEY"
+    ],
+    "worker_required_environment": [
+      "WAVEMIND_COMMIT_SHA"
+    ],
+    "handoff": {
+      "workflow": ".github/workflows/memory-os-remote-soak.yml",
+      "github_secret_scope": "repository_actions_secrets",
+      "workflow_runner": [
+        "self-hosted",
+        "wavemind-evidence"
+      ],
+      "command": "gh workflow run memory-os-remote-soak.yml --ref main -f cycles=500 -f contenders=4",
+      "contract": {
+        "min_duration_seconds": 21600,
+        "min_worker_cycles": 500,
+        "max_evidence_age_seconds": 86400,
+        "worker_commit_must_match": true,
+        "allowed_error_rate": 0.0
+      },
+      "expected_artifacts": [
+        "memory_os_remote_worker_soak_results.json",
+        "MEMORY_OS_REMOTE_WORKER_SOAK.md",
+        "memory_os_admission_results.json",
+        "MEMORY_OS_ADMISSION.md"
+      ]
+    }
+  },
+  "config": {
+    "requested_rounds": 500,
+    "worker_cycles": 500,
+    "min_duration_seconds": 21600.0,
+    "min_worker_cycles": 500,
+    "contenders": 4,
+    "timeout_seconds": 30.0
+  },
+  "metrics": {
+    "duration_seconds": 21600.119,
+    "worker_cycles": 500,
+    "worker_count": 2,
+    "completed_runs": 500,
+    "safe_skips": 1500,
+    "duplicate_retries": 500,
+    "job_request_attempts": 2500,
+    "job_request_failures": 0,
+    "error_rate": 0.0,
+    "lock_breach_count": 0,
+    "duplicate_mutation_count": 0,
+    "state_corruption_count": 0,
+    "error_count": 0
+  },
+  "health": [
+    {
+      "worker": "f66181eb98288063",
+      "status": "ok",
+      "version": "2.6.2",
+      "commit_sha": "23edad3b172fe0480e3b49640071c1930304c665"
+    },
+    {
+      "worker": "3a8d0d45dc3ba443",
+      "status": "ok",
+      "version": "2.6.2",
+      "commit_sha": "23edad3b172fe0480e3b49640071c1930304c665"
+    }
+  ],
+  "plans": [
+    {
+      "worker": "f66181eb98288063",
+      "safe_to_run": true,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "blocked_task_ids": [],
+      "hot_query_count": 1,
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ]
+    },
+    {
+      "worker": "3a8d0d45dc3ba443",
+      "safe_to_run": true,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "blocked_task_ids": [],
+      "hot_query_count": 1,
+      "enabled_task_ids": [
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch",
+        "adaptive-forgetting",
+        "consolidation",
+        "maintenance",
+        "architecture-advice"
+      ]
+    }
+  ],
+  "sample_plan": {
+    "status": "ok",
+    "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+    "deployment": "production",
+    "cache_mode": "redis",
+    "effective_cache_mode": "redis",
+    "target_memories": 50000,
+    "namespace_count": 64,
+    "active_memories": 1,
+    "hot_query_count": 1,
+    "observed_p99_ms": null,
+    "target_p99_ms": 100.0,
+    "target_qps": 100.0,
+    "worker_count": 1,
+    "required_infrastructure": [
+      "Redis-compatible shared hot-query cache",
+      "distributed worker lock or single-flight scheduler",
+      "durable queue or Kubernetes CronJobs",
+      "OpenTelemetry metrics for worker duration, errors, and warmed queries"
+    ],
+    "recommendations": [
+      "Architecture advisor: Scale plan requires attention - Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+      "Architecture advisor: Bound read fanout for the hot path - Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+      "Architecture advisor: Enable production controls - Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+      "Architecture advisor: Run a sustained production load profile - Run the external HTTP cluster load workflow against real API nodes before publishing the SLO."
+    ],
+    "architecture_advice": {
+      "status": "action_required",
+      "production_ready": false,
+      "deployment": "production",
+      "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+      "current_memories": 1,
+      "target_memories": 50000,
+      "index": "numpy-exact",
+      "vector_dim": 384,
+      "target_p99_ms": 100.0,
+      "observed_p99_ms": null,
+      "namespace_count": 64,
+      "node_count": 3,
+      "replication_factor": 3,
+      "read_quorum": 1,
+      "read_fanout": 3,
+      "scale_plan": {
+        "current_memories": 1,
+        "target_memories": 50000,
+        "index": "numpy-exact",
+        "vector_dim": 384,
+        "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+        "latency_target_ms": 100.0,
+        "tier": "large-local",
+        "status": "action_required",
+        "recommended_index": "faiss-persisted or qdrant",
+        "warnings": [
+          "At this size, validate recall, p95 latency, rebuild time, and index-health on real data."
+        ],
+        "actions": [
+          "Install index extras with `pip install \"wavemind[indexes]\"`.",
+          "For local single-node deployments, set `WAVEMIND_FAISS_PATH` and use `--index faiss-persisted`.",
+          "For service deployments, run Qdrant as a service and use `--index qdrant`.",
+          "Run `wavemind rebuild-index` and then `wavemind index-health --json`."
+        ]
+      },
+      "recommendations": [
+        {
+          "id": "scale-plan",
+          "severity": "action_required",
+          "title": "Scale plan requires attention",
+          "rationale": "The current scale tier is large-local for target 50,000 memories.",
+          "action": "Treat the scale-plan output as the deployment preflight and resolve its warnings before growth.",
+          "commands": [
+            "wavemind scale-plan --target-memories 50000 --fail-on action_required --json"
+          ],
+          "docs": [
+            "README.md#scale-readiness",
+            "docs/ROADMAP.md"
+          ]
+        },
+        {
+          "id": "bounded-read-fanout",
+          "severity": "action_required",
+          "title": "Bound read fanout for the hot path",
+          "rationale": "Read fanout 3 queries more replicas than read quorum 1, increasing p99 latency under load.",
+          "action": "Use quorum-sized read fanout for normal queries and reserve wider fanout for repair or audit workflows.",
+          "commands": [
+            "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+            "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo"
+          ],
+          "docs": [
+            "docs/BENCHMARK_BRIEF.md"
+          ]
+        },
+        {
+          "id": "production-controls",
+          "severity": "action_required",
+          "title": "Enable production controls",
+          "rationale": "Production deployments need auth, rate limiting, metrics, backup, restore drills, and auditability.",
+          "action": "Set API keys, shared Redis rate limiting, OpenTelemetry/Prometheus, and object-store DR drills.",
+          "commands": [
+            "python benchmarks/production_readiness_gate.py --json",
+            "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json"
+          ],
+          "docs": [
+            "benchmarks/PRODUCTION_READINESS.md",
+            "docs/OBSERVABILITY.md"
+          ]
+        },
+        {
+          "id": "load-test",
+          "severity": "action_required",
+          "title": "Run a sustained production load profile",
+          "rationale": "Target QPS 100.0 needs p99, failover, delete suppression, and repair evidence.",
+          "action": "Run the external HTTP cluster load workflow against real API nodes before publishing the SLO.",
+          "commands": [
+            "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+          ],
+          "docs": [
+            ".github/workflows/external-http-cluster-load.yml"
+          ]
+        }
+      ],
+      "next_commands": [
+        "wavemind scale-plan --target-memories 50000 --fail-on action_required --json",
+        "python benchmarks/local_http_cluster_smoke.py --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/http_cluster_load_benchmark.py --node node-a=https://wm-a.example.com --node node-b=https://wm-b.example.com --node node-c=https://wm-c.example.com --node node-d=https://wm-d.example.com --replication-factor 3 --read-quorum 1 --read-fanout 1 --fail-on-slo",
+        "python benchmarks/production_readiness_gate.py --json",
+        "wavemind replicated-drill --from s3://bucket/wavemind --to ./restore-test --latest --json",
+        "gh workflow run external-http-cluster-load.yml -f nodes=\"node-a=https://wm-a.example.com,node-b=https://wm-b.example.com,node-c=https://wm-c.example.com,node-d=https://wm-d.example.com\" -f replication_factor=3 -f read_quorum=1 -f read_fanout=1 -f fail_on_slo=true"
+      ]
+    },
+    "policy_manifest": {
+      "status": "action_required",
+      "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+      "decision_count": 6,
+      "decision_ids": [
+        "prefetch-policy",
+        "priority-policy",
+        "forgetting-policy",
+        "consolidation-policy",
+        "scale-policy",
+        "coordination-policy"
+      ],
+      "decisions": [
+        {
+          "id": "prefetch-policy",
+          "status": "ok",
+          "strategy": "hot-query-and-transition-prefetch",
+          "rationale": "Audited hot queries are being converted into warm cache entries and predicted follow-up recalls.",
+          "action": "Keep collecting prewarm hit rate, predictive hit rate, and transition edges in readiness artifacts.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "hot_queries": 1,
+            "prewarm_warmed": 1,
+            "predictive_generated": 1,
+            "predictive_warmed": 1,
+            "transition_edges": 0
+          }
+        },
+        {
+          "id": "priority-policy",
+          "status": "ok",
+          "strategy": "usage-pattern-priority-boost",
+          "rationale": "Repeated recalls deterministically boosted memories that are likely to stay useful.",
+          "action": "Keep priority deltas in release evidence and cap per-run boosts to prevent runaway reinforcement.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "priority_predictions": 1
+          }
+        },
+        {
+          "id": "forgetting-policy",
+          "status": "watch",
+          "strategy": "observe-before-demoting",
+          "rationale": "Memory pressure is below threshold and no cold demotions were necessary.",
+          "action": "Keep adaptive forgetting scheduled and validate stale suppression in dynamic benchmarks.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "active_memories": 1
+          }
+        },
+        {
+          "id": "consolidation-policy",
+          "status": "watch",
+          "strategy": "wait-for-stable-clusters",
+          "rationale": "No concept memories were created in this run.",
+          "action": "Keep consolidation enabled and require enough cluster energy before promoting abstractions.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "concepts_created": 0
+          }
+        },
+        {
+          "id": "scale-policy",
+          "status": "action_required",
+          "strategy": "fix-production-gaps-before-growth",
+          "rationale": "Architecture advisor converted target load, namespace count, backend health, and deployment mode into scale guidance.",
+          "action": "Follow next_commands and keep scale-readiness artifacts current before raising release claims.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "active_memories": 1,
+            "target_memories": 50000,
+            "recommendation_ids": [
+              "scale-plan",
+              "bounded-read-fanout",
+              "production-controls",
+              "load-test"
+            ]
+          }
+        },
+        {
+          "id": "coordination-policy",
+          "status": "ok",
+          "strategy": "single-writer-memory-os-cycle",
+          "rationale": "The current run has a safe coordination state for this deployment mode.",
+          "action": "Keep one Memory OS writer per namespace window and use a shared lock for production workers.",
+          "evidence": {
+            "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+            "deployment": "production",
+            "lock_required": true,
+            "lock_acquired": true,
+            "lock_key": "scheduler-preflight",
+            "cache_enabled": true
+          }
+        }
+      ],
+      "ok": false
+    },
+    "policy_history": {
+      "previous_runs": 0,
+      "window": 5,
+      "trend": "first_run",
+      "repeated_action_required_ids": [],
+      "repeated_architecture_required_ids": [],
+      "repeated_required_ids": [],
+      "stable_ok_ids": [],
+      "status_counts": {
+        "action_required": 1,
+        "ok": 3,
+        "watch": 2
+      }
+    },
+    "policy_escalation_ids": [],
+    "policy_auto_adjustments": [],
+    "execution_plan": {
+      "status": "ok",
+      "namespace": "evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+      "deployment": "production",
+      "worker_count": 1,
+      "max_parallel_workers": 1,
+      "requires_shared_cache": true,
+      "requires_distributed_lock": true,
+      "safe_to_run": true,
+      "enabled_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "singleton_task_ids": [
+        "architecture-advice",
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os",
+        "cache-prewarm",
+        "predictive-prefetch"
+      ],
+      "worker_pool_task_ids": [],
+      "state_mutating_task_ids": [
+        "maintenance",
+        "adaptive-forgetting",
+        "consolidation",
+        "memory-os"
+      ],
+      "blocked_task_ids": [],
+      "warnings": [
+        "distributed-lock-required"
+      ],
+      "steps": [
+        {
+          "order": 10,
+          "task_id": "architecture-advice",
+          "title": "Architecture advisor preflight",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 1800,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": false,
+          "required_environment": [],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+          "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible."
+        },
+        {
+          "order": 20,
+          "task_id": "maintenance",
+          "title": "Expired memory and index maintenance",
+          "enabled": true,
+          "priority": "normal",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c:maintenance",
+          "can_run_on_all_workers": false,
+          "command": "wavemind maintenance --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+          "reason": "Purges TTL-expired memories and repairs unhealthy local indexes."
+        },
+        {
+          "order": 30,
+          "task_id": "adaptive-forgetting",
+          "title": "Adaptive forgetting",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 900,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c:adaptive-forgetting",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Demotes old unused memories before they compete with current context."
+        },
+        {
+          "order": 40,
+          "task_id": "consolidation",
+          "title": "Field and concept consolidation",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 300,
+          "timeout_seconds": 300,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": false,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c:consolidation",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Creates durable higher-level concept memories from active clusters."
+        },
+        {
+          "order": 50,
+          "task_id": "memory-os",
+          "title": "Adaptive Memory OS cycle",
+          "enabled": true,
+          "priority": "critical",
+          "cadence_seconds": 15,
+          "timeout_seconds": 60,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": true,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c:memory-os",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks."
+        },
+        {
+          "order": 60,
+          "task_id": "cache-prewarm",
+          "title": "Hot query cache prewarm",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 15,
+          "timeout_seconds": 30,
+          "worker_count": 1,
+          "run_scope": "scheduler-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": false,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL"
+          ],
+          "idempotency_key": null,
+          "can_run_on_all_workers": false,
+          "command": "wavemind cache-prewarm --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+          "reason": "Keeps repeated recall paths hot across API workers."
+        },
+        {
+          "order": 70,
+          "task_id": "predictive-prefetch",
+          "title": "Predictive neighbor prefetch",
+          "enabled": true,
+          "priority": "high",
+          "cadence_seconds": 60,
+          "timeout_seconds": 120,
+          "worker_count": 1,
+          "run_scope": "cluster-singleton",
+          "state_mutation": false,
+          "requires_shared_cache": true,
+          "requires_distributed_lock": true,
+          "required_environment": [
+            "WAVEMIND_REDIS_URL",
+            "WAVEMIND_MEMORY_OS_LOCK_REDIS_URL"
+          ],
+          "idempotency_key": "wavemind:memory-os:evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c:predictive-prefetch",
+          "can_run_on_all_workers": false,
+          "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+          "reason": "Warms likely follow-up queries from hot recall paths."
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "memory-os",
+        "title": "Adaptive Memory OS cycle",
+        "enabled": true,
+        "cadence_seconds": 15,
+        "worker_count": 1,
+        "timeout_seconds": 60,
+        "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Runs decay, hot-query learning, cache warming, predictive prefetch, consolidation, and advisor checks.",
+        "priority": "critical",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "cache-prewarm",
+        "title": "Hot query cache prewarm",
+        "enabled": true,
+        "cadence_seconds": 15,
+        "worker_count": 1,
+        "timeout_seconds": 30,
+        "command": "wavemind cache-prewarm --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --audit-limit 512 --max-queries 32 --min-frequency 2 --top-k 3",
+        "reason": "Keeps repeated recall paths hot across API workers.",
+        "priority": "high",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": false
+      },
+      {
+        "id": "predictive-prefetch",
+        "title": "Predictive neighbor prefetch",
+        "enabled": true,
+        "cadence_seconds": 60,
+        "worker_count": 1,
+        "timeout_seconds": 120,
+        "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --consolidate-steps 0 --no-consolidate-concepts --no-adaptive-forgetting --audit-limit 512 --max-hot-queries 32 --min-frequency 2 --top-k 3 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Warms likely follow-up queries from hot recall paths.",
+        "priority": "high",
+        "requires_shared_cache": true,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "adaptive-forgetting",
+        "title": "Adaptive forgetting",
+        "enabled": true,
+        "cadence_seconds": 900,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-predict-priorities --consolidate-steps 0 --no-consolidate-concepts --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Demotes old unused memories before they compete with current context.",
+        "priority": "high",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "consolidation",
+        "title": "Field and concept consolidation",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind memory-os --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c --redis-url $WAVEMIND_REDIS_URL --lock-required --no-predictive-prefetch --no-adaptive-forgetting --audit-limit 512 --min-frequency 2 --target-memories 50000 --namespace-count 64 --deployment production --target-qps 100 --target-p99-ms 100 --node-count 3",
+        "reason": "Creates durable higher-level concept memories from active clusters.",
+        "priority": "high",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "maintenance",
+        "title": "Expired memory and index maintenance",
+        "enabled": true,
+        "cadence_seconds": 300,
+        "worker_count": 1,
+        "timeout_seconds": 300,
+        "command": "wavemind maintenance --namespace evidence:memory-os:60a9ba069e824826b8d1be4e383ccf0c",
+        "reason": "Purges TTL-expired memories and repairs unhealthy local indexes.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": true
+      },
+      {
+        "id": "architecture-advice",
+        "title": "Architecture advisor preflight",
+        "enabled": true,
+        "cadence_seconds": 1800,
+        "worker_count": 1,
+        "timeout_seconds": 120,
+        "command": "wavemind advise --target-memories 50000 --namespace-count 64 --deployment production --replication-factor 3 --read-quorum 1 --target-qps 100 --target-p99-ms 100 --json",
+        "reason": "Keeps scale, sharding, cache, DR, observability, and multimodal readiness visible.",
+        "priority": "normal",
+        "requires_shared_cache": false,
+        "requires_distributed_lock": false
+      }
+    ],
+    "enabled_task_ids": [
+      "memory-os",
+      "cache-prewarm",
+      "predictive-prefetch",
+      "adaptive-forgetting",
+      "consolidation",
+      "maintenance",
+      "architecture-advice"
+    ],
+    "ok": true
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 1,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 2,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 3,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 4,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 5,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 6,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 7,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 8,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 9,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 10,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 11,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 12,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 13,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 14,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 15,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 16,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 17,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 18,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 19,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 20,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 21,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 22,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 23,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 24,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 25,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 26,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 27,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 28,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 29,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 30,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 31,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 32,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 33,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 34,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 35,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 36,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 37,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 38,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 39,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 40,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 41,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 42,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 43,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 44,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 45,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 46,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 47,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 48,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 49,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 50,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 51,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 52,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 53,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 54,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 55,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 56,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 57,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 58,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 59,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 60,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 61,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 62,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 63,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 64,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 65,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 66,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 67,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 68,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 69,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 70,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 71,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 72,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 73,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 74,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 75,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 76,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 77,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 78,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 79,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 80,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 81,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 82,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 83,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 84,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 85,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 86,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 87,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 88,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 89,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 90,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 91,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 92,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 93,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 94,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 95,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 96,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 97,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 98,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 99,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 100,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 101,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 102,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 103,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 104,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 105,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 106,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 107,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 108,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 109,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 110,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 111,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 112,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 113,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 114,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 115,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 116,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 117,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 118,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 119,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 120,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 121,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 122,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 123,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 124,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 125,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 126,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 127,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 128,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 129,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 130,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 131,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 132,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 133,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 134,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 135,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 136,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 137,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 138,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 139,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 140,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 141,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 142,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 143,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 144,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 145,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 146,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 147,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 148,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 149,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 150,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 151,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 152,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 153,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 154,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 155,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 156,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 157,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 158,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 159,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 160,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 161,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 162,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 163,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 164,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 165,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 166,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 167,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 168,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 169,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 170,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 171,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 172,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 173,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 174,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 175,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 176,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 177,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 178,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 179,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 180,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 181,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 182,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 183,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 184,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 185,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 186,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 187,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 188,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 189,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 190,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 191,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 192,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 193,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 194,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 195,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 196,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 197,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 198,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 199,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 200,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 201,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 202,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 203,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 204,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 205,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 206,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 207,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 208,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 209,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 210,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 211,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 212,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 213,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 214,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 215,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 216,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 217,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 218,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 219,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 220,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 221,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 222,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 223,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 224,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 225,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 226,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 227,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 228,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 229,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 230,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 231,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 232,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 233,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 234,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 235,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 236,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 237,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 238,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 239,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 240,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 241,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 242,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 243,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 244,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 245,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 246,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 247,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 248,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 249,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 250,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 251,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 252,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 253,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 254,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 255,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 256,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 257,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 258,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 259,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 260,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 261,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 262,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 263,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 264,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 265,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 266,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 267,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 268,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 269,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 270,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 271,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 272,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 273,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 274,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 275,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 276,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 277,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 278,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 279,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 280,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 281,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 282,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 283,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 284,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 285,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 286,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 287,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 288,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 289,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 290,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 291,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 292,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 293,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 294,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 295,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 296,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 297,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 298,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 299,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 300,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 301,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 302,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 303,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 304,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 305,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 306,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 307,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 308,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 309,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 310,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 311,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 312,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 313,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 314,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 315,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 316,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 317,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 318,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 319,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 320,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 321,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 322,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 323,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 324,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 325,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 326,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 327,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 328,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 329,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 330,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 331,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 332,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 333,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 334,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 335,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 336,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 337,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 338,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 339,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 340,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 341,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 342,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 343,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 344,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 345,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 346,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 347,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 348,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 349,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 350,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 351,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 352,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 353,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 354,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 355,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 356,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 357,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 358,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 359,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 360,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 361,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 362,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 363,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 364,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 365,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 366,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 367,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 368,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 369,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 370,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 371,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 372,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 373,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 374,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 375,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 376,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 377,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 378,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 379,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 380,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 381,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 382,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 383,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 384,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 385,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 386,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 387,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 388,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 389,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 390,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 391,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 392,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 393,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 394,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 395,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 396,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 397,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 398,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 399,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 400,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 401,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 402,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 403,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 404,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 405,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 406,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 407,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 408,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 409,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 410,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 411,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 412,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 413,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 414,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 415,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 416,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 417,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 418,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 419,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 420,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 421,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 422,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 423,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 424,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 425,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 426,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 427,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 428,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 429,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 430,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 431,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 432,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 433,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 434,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 435,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 436,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 437,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 438,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 439,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 440,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 441,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 442,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 443,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 444,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 445,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 446,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 447,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 448,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 449,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 450,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 451,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 452,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 453,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 454,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 455,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 456,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 457,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 458,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 459,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 460,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 461,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 462,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 463,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 464,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 465,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 466,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 467,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 468,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 469,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 470,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 471,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 472,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 473,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 474,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 475,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 476,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 477,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 478,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 479,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 480,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 481,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 482,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 483,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 484,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 485,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 486,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 487,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 488,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 489,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 490,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 491,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 492,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 493,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 494,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 495,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 496,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 497,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 498,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    },
+    {
+      "round": 499,
+      "completed": 1,
+      "safe_skips": 3,
+      "retry_duplicate_skipped": true,
+      "retry_mutations": 0
+    }
+  ],
+  "redis_semantics": {
+    "schema": "wavemind.memory_os_runtime_soak.v1",
+    "generated_at": "2026-07-19T23:40:38Z",
+    "source_ref": "23edad3b172f",
+    "status": "pass",
+    "environment": "remote_redis",
+    "claim_boundary": "This is a real Redis worker concurrency and retry soak. Local Redis results prove runtime semantics but do not by themselves admit a remote production deployment.",
+    "config": {
+      "rounds": 20,
+      "contenders": 4
+    },
+    "metrics": {
+      "duration_seconds": 2.738,
+      "completed_runs": 20,
+      "duplicate_skips": 0,
+      "lock_skips": 60,
+      "retry_mutation_delta_max": 0.0,
+      "lease_refresh_count": 12,
+      "error_count": 0
+    },
+    "checks": [
+      {
+        "id": "real-redis",
+        "passed": true
+      },
+      {
+        "id": "single-flight",
+        "passed": true
+      },
+      {
+        "id": "duplicate-job-no-mutation",
+        "passed": true
+      },
+      {
+        "id": "lease-heartbeat",
+        "passed": true
+      },
+      {
+        "id": "failed-job-retry",
+        "passed": true
+      },
+      {
+        "id": "atomic-owner-release",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  "checks": [
+    {
+      "id": "remote-topology",
+      "title": "Remote topology preflight passes",
+      "passed": true,
+      "evidence": "preflight=pass",
+      "action": "Fix preflight blockers."
+    },
+    {
+      "id": "worker-health",
+      "title": "Every remote worker is healthy",
+      "passed": true,
+      "evidence": "healthy=2/2",
+      "action": "Repair unhealthy workers."
+    },
+    {
+      "id": "worker-version",
+      "title": "Every worker runs one version",
+      "passed": true,
+      "evidence": "versions=['2.6.2']",
+      "action": "Complete the rolling deployment before the soak."
+    },
+    {
+      "id": "worker-commit",
+      "title": "Every worker runs the benchmark commit",
+      "passed": true,
+      "evidence": "expected=23edad3b172fe0480e3b49640071c1930304c665, commits=['23edad3b172fe0480e3b49640071c1930304c665']",
+      "action": "Deploy the exact commit under test and set WAVEMIND_COMMIT_SHA on every worker."
+    },
+    {
+      "id": "worker-plan",
+      "title": "Every worker emits a safe Redis, lock, and hot-query plan",
+      "passed": true,
+      "evidence": "safe=2/2, hot=2/2",
+      "action": "Fix worker plan or query-audit blockers before mutation."
+    },
+    {
+      "id": "remote-redis-semantics",
+      "title": "Remote Redis passes lease and retry semantics",
+      "passed": true,
+      "evidence": "status=pass, environment=remote_redis",
+      "action": "Run against the Redis used by every worker."
+    },
+    {
+      "id": "soak-duration",
+      "title": "The configured soak duration is completed",
+      "passed": true,
+      "evidence": "duration_seconds=21600.119, required=21600.000",
+      "action": "Run the soak for the full configured duration."
+    },
+    {
+      "id": "worker-cycles",
+      "title": "Every configured worker cycle completes",
+      "passed": true,
+      "evidence": "completed=500, required=500",
+      "action": "Run every configured worker cycle."
+    },
+    {
+      "id": "cross-worker-single-flight",
+      "title": "Exactly one worker completes each run id",
+      "passed": true,
+      "evidence": "completed=500, cycles=500",
+      "action": "Fix shared lock or idempotency wiring."
+    },
+    {
+      "id": "cross-worker-retry",
+      "title": "Completed jobs are skipped on another worker",
+      "passed": true,
+      "evidence": "duplicate_retries=500, cycles=500",
+      "action": "Fix shared job receipts."
+    },
+    {
+      "id": "error-rate",
+      "title": "Worker request error rate stays at zero",
+      "passed": true,
+      "evidence": "failures=0, attempts=2500, rate=0.000000",
+      "action": "Repair worker or network errors and restart the soak."
+    },
+    {
+      "id": "lock-safety",
+      "title": "No lock breach is observed",
+      "passed": true,
+      "evidence": "lock_breach_count=0",
+      "action": "Fix cross-worker lease and single-flight semantics."
+    },
+    {
+      "id": "duplicate-mutation-safety",
+      "title": "Duplicate retries never mutate state",
+      "passed": true,
+      "evidence": "duplicate_mutation_count=0",
+      "action": "Make completed-job retries side-effect free."
+    },
+    {
+      "id": "state-integrity",
+      "title": "Sentinel memories remain intact through every cycle",
+      "passed": true,
+      "evidence": "state_corruption_count=0",
+      "action": "Investigate state corruption before production admission."
+    },
+    {
+      "id": "no-in-doubt-jobs",
+      "title": "No lease loss or in-doubt receipt is observed",
+      "passed": true,
+      "evidence": "errors=0",
+      "action": "Inspect lease heartbeat and worker termination behavior."
+    },
+    {
+      "id": "cleanup",
+      "title": "All seeded soak memories are removed",
+      "passed": true,
+      "evidence": "seeded=2",
+      "action": "Remove the isolated soak namespace manually."
+    }
+  ],
+  "errors": []
+}

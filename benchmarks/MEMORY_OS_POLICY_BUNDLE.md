@@ -7,13 +7,13 @@ blocked until `memory-os-admission` is admitted with external evidence.
 
 | metric | value |
 |---|---:|
-| status | `staging_ready` |
+| status | `production_ready` |
 | staging promotable | `True` |
-| production promotable | `False` |
-| production locked | `True` |
+| production promotable | `True` |
+| production locked | `False` |
 | worker count | `1` |
 | cache mode | `redis` |
-| passed checks | `6/7` |
+| passed checks | `7/7` |
 
 ## Runtime Policy
 
@@ -37,8 +37,8 @@ blocked until `memory-os-admission` is admitted with external evidence.
 | Memory OS policy evolution passed | `pass` | status=pass, ok=True | Run wavemind memory-os-evolution and fix repeated-policy checks. |
 | Runtime env contract declares Redis and lock wiring | `pass` | WAVEMIND_REDIS_URL, WAVEMIND_MEMORY_OS_LOCK_REDIS_URL | Declare WAVEMIND_REDIS_URL and WAVEMIND_MEMORY_OS_LOCK_REDIS_URL in the runtime bundle. |
 | Bundle can be promoted to staging | `pass` | canary=True, evolution=True, env=True | Do not deploy the Memory OS policy bundle until canary, evolution, and runtime env contract pass. |
-| Production promotion remains behind strict admission | `action_required` | admission_status=plan_only, admitted=False, blockers=['runtime-soak'] | Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence. |
-| Bundle does not enable unattended production automation | `pass` | production_auto_enable=False, production_locked=True | Keep production_auto_enable=false unless memory-os-admission returns admitted. |
+| Production promotion remains behind strict admission | `pass` | admission_status=admitted, admitted=True, blockers=[] | Resolve memory-os-admission blockers with real Redis, distributed lock, runtime env, and large-scale evidence. |
+| Bundle does not enable unattended production automation | `pass` | production_auto_enable=False, production_locked=False | Keep production_auto_enable=false unless memory-os-admission returns admitted. |
 | Shadow, canary, rollback, and manual stop policy is explicit | `pass` | mode=shadow_then_canary, automatic_promotion=False, automatic_pause=True | Keep staged promotion, automatic pause, atomic lease, job receipts, and emergency stop enabled. |
 
 ## Kubernetes Runtime Patch
@@ -200,6 +200,6 @@ blocked until `memory-os-admission` is admitted with external evidence.
 
 ## Next Actions
 
-- Apply the bundle only to staging CronJobs/workers.
-- Replay representative tenant traffic and rerun memory-os-canary.
-- Keep production blocked until memory-os-admission returns admitted with external evidence.
+- Apply the production bundle through the controlled shadow and canary rollout.
+- Keep the same policy bundle id in deployment annotations for auditability.
+- Rerun admission for every release commit or production topology change.

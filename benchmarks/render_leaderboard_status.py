@@ -79,6 +79,11 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         load_errors,
         required=False,
     )
+    memory_os_remote_worker_soak = _load_json(
+        root / "benchmarks" / "memory_os_remote_worker_soak_results.json",
+        load_errors,
+        required=False,
+    )
     memory_os_canary = _load_json(
         root / "benchmarks" / "memory_os_canary_results.json",
         load_errors,
@@ -192,6 +197,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "benchmarks/serverless_admission_results.json": serverless_admission,
         "benchmarks/multimodal_admission_results.json": multimodal_admission,
         "benchmarks/memory_os_admission_results.json": memory_os_admission,
+        "benchmarks/memory_os_remote_worker_soak_results.json": memory_os_remote_worker_soak,
         "benchmarks/memory_os_canary_results.json": memory_os_canary,
         "benchmarks/memory_os_policy_evolution_results.json": memory_os_evolution,
         "benchmarks/memory_os_policy_bundle_results.json": memory_os_policy_bundle,
@@ -477,6 +483,17 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "admitted": memory_os_admission.get("admitted", False),
             "summary": memory_os_admission.get("summary", {}),
             "requirements": memory_os_admission.get("requirements", []),
+        },
+        "memory_os_remote_worker_soak": {
+            "schema": memory_os_remote_worker_soak.get("schema"),
+            "status": memory_os_remote_worker_soak.get("status", "missing"),
+            "source_ref": memory_os_remote_worker_soak.get("source_ref"),
+            "started_at": memory_os_remote_worker_soak.get("started_at"),
+            "finished_at": memory_os_remote_worker_soak.get("finished_at"),
+            "claim_boundary": memory_os_remote_worker_soak.get("claim_boundary", ""),
+            "metrics": memory_os_remote_worker_soak.get("metrics", {}),
+            "health": memory_os_remote_worker_soak.get("health", []),
+            "checks": memory_os_remote_worker_soak.get("checks", []),
         },
         "memory_os_canary": {
             "schema": memory_os_canary.get("schema"),

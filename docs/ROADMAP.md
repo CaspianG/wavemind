@@ -361,6 +361,11 @@ policy matters more than raw vector-database scale:
   production. The six-hour workflow targets a durable self-hosted evidence runner
   because GitHub-hosted jobs terminate at the six-hour limit before evidence
   upload; the runner itself can also be executed from any durable operator host.
+  The checked evidence for commit `23edad3b172fe0480e3b49640071c1930304c665`
+  passes all 500 cycles over 21,600.119 seconds with two remote workers and zero
+  request failures, lock breaches, duplicate mutations, state corruption, or
+  worker errors. This closes Memory OS admission for that exact release and
+  topology; subsequent releases and topology changes require a fresh soak.
 - The Memory OS policy bundle now defines shadow, canary, staged, and production
   phases; automatic promotion is disabled. Helm exposes both
   `memoryOs.emergencyStop=true` and `memoryOs.suspend=true`, so operators can

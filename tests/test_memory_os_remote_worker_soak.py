@@ -1,5 +1,6 @@
 import importlib.util
 import io
+import json
 import threading
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -292,3 +293,43 @@ def test_remote_worker_soak_proves_cross_worker_single_flight_and_retry():
     assert payload["sample_plan"]["hot_query_count"] == 4
     assert all({1, 2}.issubset(values) for values in query_top_ks.values())
     assert all(item["passed"] for item in payload["checks"])
+
+
+def test_checked_in_remote_worker_evidence_satisfies_production_contract():
+    root = Path(__file__).resolve().parents[1]
+    payload = json.loads(
+        (root / "benchmarks" / "memory_os_remote_worker_soak_results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    admission = json.loads(
+        (root / "benchmarks" / "memory_os_admission_results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    metrics = payload["metrics"]
+
+    assert payload["schema"] == "wavemind.memory_os_remote_worker_soak.v1"
+    assert payload["status"] == "pass"
+    assert len(payload["source_ref"]) == 40
+    assert metrics["duration_seconds"] >= 21_600
+    assert metrics["worker_cycles"] >= 500
+    assert metrics["completed_runs"] >= 500
+    assert metrics["job_request_attempts"] >= 2_500
+    assert metrics["job_request_failures"] == 0
+    assert metrics["error_rate"] == 0.0
+    assert metrics["lock_breach_count"] == 0
+    assert metrics["duplicate_mutation_count"] == 0
+    assert metrics["state_corruption_count"] == 0
+    assert metrics["error_count"] == 0
+    assert len(payload["health"]) >= 2
+    assert {item["commit_sha"] for item in payload["health"]} == {
+        payload["source_ref"]
+    }
+    assert all(item["passed"] for item in payload["checks"])
+    assert admission["status"] == "admitted"
+    assert admission["admitted"] is True
+    assert admission["summary"]["blocker_count"] == 0
+    assert admission["summary"]["passed_count"] == admission["summary"][
+        "requirement_count"
+    ]

@@ -17,7 +17,19 @@ def _load_fixture(name: str) -> dict:
 
 
 def test_memory_os_policy_bundle_promotes_staging_but_locks_production():
-    payload = run_memory_os_policy_bundle(root=Path(__file__).resolve().parents[1])
+    canary = _load_fixture("memory_os_canary_results.json")
+    evolution = _load_fixture("memory_os_policy_evolution_results.json")
+    admission = _load_fixture("memory_os_admission_results.json")
+    admission["status"] = "plan_only"
+    admission["admitted"] = False
+    admission["summary"]["blocker_ids"] = ["runtime-soak"]
+    admission["summary"]["blocker_count"] = 1
+
+    payload = build_memory_os_policy_bundle(
+        canary=canary,
+        evolution=evolution,
+        admission=admission,
+    )
 
     assert payload["schema"] == MEMORY_OS_POLICY_BUNDLE_SCHEMA
     assert payload["status"] == "staging_ready"
@@ -103,12 +115,12 @@ def test_memory_os_policy_bundle_cli_writes_artifacts(tmp_path):
     assert result.returncode == 0
     stdout_payload = json.loads(result.stdout)
     file_payload = json.loads(output.read_text(encoding="utf-8"))
-    assert stdout_payload["status"] == "staging_ready"
+    assert stdout_payload["status"] == "production_ready"
     assert file_payload["schema"] == MEMORY_OS_POLICY_BUNDLE_SCHEMA
     assert "WaveMind Memory OS Policy Bundle" in markdown.read_text(encoding="utf-8")
 
 
-def test_memory_os_policy_bundle_cli_fail_gate_passes_when_staging_ready():
+def test_memory_os_policy_bundle_cli_fail_gate_passes_when_production_ready():
     project_root = Path(__file__).resolve().parents[1]
 
     result = subprocess.run(
@@ -127,4 +139,4 @@ def test_memory_os_policy_bundle_cli_fail_gate_passes_when_staging_ready():
     )
 
     assert result.returncode == 0
-    assert json.loads(result.stdout)["status"] == "staging_ready"
+    assert json.loads(result.stdout)["status"] == "production_ready"
