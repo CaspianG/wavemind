@@ -478,9 +478,7 @@ def test_manifest_includes_docs_without_large_benchmark_data():
     assert "wavemind multimodal-admission" in leaderboard_workflow
     assert "benchmarks/multimodal_admission_results.json" in leaderboard_workflow
     assert "benchmarks/MULTIMODAL_ADMISSION.md" in leaderboard_workflow
-    assert "wavemind memory-os-admission" in leaderboard_workflow
-    assert "benchmarks/memory_os_admission_results.json" in leaderboard_workflow
-    assert "benchmarks/MEMORY_OS_ADMISSION.md" in leaderboard_workflow
+    assert "benchmarks/validate_memory_os_admission_artifacts.py" in leaderboard_workflow
     assert "wavemind \\\n            --db .tmp-memory-os-canary.sqlite3" in leaderboard_workflow
     assert "memory-os-canary" in leaderboard_workflow
     assert "benchmarks/memory_os_canary_results.json" in leaderboard_workflow

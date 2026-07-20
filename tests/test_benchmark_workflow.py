@@ -9,12 +9,26 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "cron: \"17 4 * * 1\"" in workflow
     assert "workflow_dispatch" in workflow
     assert "contents: read" in workflow
+    assert "actions: read" in workflow
     assert "pages: write" in workflow
     assert "id-token: write" in workflow
     assert "environment:" in workflow
     assert "name: github-pages" in workflow
     assert "url: ${{ steps.deployment.outputs.page_url }}" in workflow
     assert 'python -m pip install -e ".[dev,bench,redis]"' in workflow
+    assert "Import latest Kubernetes production evidence" in workflow
+    assert "gh run list" in workflow
+    assert "--workflow kubernetes-operator-smoke.yml" in workflow
+    assert "gh run download" in workflow
+    assert "--name kubernetes-operator-smoke" in workflow
+    assert "stale evidence" in workflow
+    assert "benchmarks/kubernetes_operator_smoke_results.json" in workflow
+    assert "benchmarks/kubernetes_cluster_network_smoke_results.json" in workflow
+    assert "benchmarks/kubernetes_active_active_region_smoke_results.json" in workflow
+    assert "benchmarks/kubernetes_serverless_lifecycle_smoke_results.json" in workflow
+    assert "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json" in workflow
+    assert "benchmarks/http_cluster_load_results.json" in workflow
+    assert "network_evidence_sha256" in workflow
     assert "benchmarks/memory_os_runtime_soak.py" in workflow
     assert "--redis-url redis://127.0.0.1:6379/0" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
@@ -77,9 +91,9 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "--output benchmarks/memory_os_canary_results.json" in workflow
     assert "--markdown-output benchmarks/MEMORY_OS_CANARY.md" in workflow
     assert "--fail-on-action-required" in workflow
-    assert "python -m wavemind memory-os-admission" in workflow
-    assert "--output benchmarks/memory_os_admission_results.json" in workflow
-    assert "--markdown-output benchmarks/MEMORY_OS_ADMISSION.md" in workflow
+    assert "benchmarks/validate_memory_os_admission_artifacts.py" in workflow
+    assert "tests/test_memory_os_admission_artifacts.py" in workflow
+    assert "python -m wavemind memory-os-admission" not in workflow
     assert "python -m wavemind memory-os-policy-bundle" in workflow
     assert "--output benchmarks/memory_os_policy_bundle_results.json" in workflow
     assert "--markdown-output benchmarks/MEMORY_OS_POLICY_BUNDLE.md" in workflow
@@ -97,8 +111,12 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert workflow.index("serverless-admission") < workflow.index("memory-os-canary")
     assert workflow.index("serverless-admission") < workflow.index("multimodal-admission")
     assert workflow.index("multimodal-admission") < workflow.index("memory-os-canary")
-    assert workflow.index("memory-os-canary") < workflow.index("memory-os-admission")
-    assert workflow.index("memory-os-admission") < workflow.index("memory-os-policy-bundle")
+    assert workflow.index("memory-os-canary") < workflow.index(
+        "validate_memory_os_admission_artifacts.py"
+    )
+    assert workflow.index("validate_memory_os_admission_artifacts.py") < workflow.index(
+        "memory-os-policy-bundle"
+    )
     assert workflow.count("benchmarks/benchmark_registry.py") == 2
     assert workflow.count("benchmarks/validate_benchmark_artifacts.py") == 2
     assert workflow.index("benchmarks/validate_benchmark_artifacts.py") < workflow.index(

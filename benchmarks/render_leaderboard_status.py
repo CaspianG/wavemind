@@ -9,6 +9,10 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+IMMUTABLE_ADMISSION_SNAPSHOTS = {
+    "benchmarks/memory_os_admission_results.json",
+    "benchmarks/memory_os_remote_worker_soak_results.json",
+}
 
 
 def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
@@ -264,6 +268,7 @@ def render_leaderboard_status(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             checked_at=str(audit.get("checked_at") or ""),
             max_age_days=audit.get("max_age_days"),
             load_errors=load_errors,
+            immutable_snapshots=IMMUTABLE_ADMISSION_SNAPSHOTS,
         ),
         "benchmark_matrix": {
             "schema": matrix.get("schema"),
@@ -1174,9 +1179,11 @@ def _freshness_gate(
     checked_at: str,
     max_age_days: Any,
     load_errors: list[str],
+    immutable_snapshots: set[str] | None = None,
 ) -> dict[str, Any]:
     reference_time = _parse_iso_timestamp(checked_at)
     max_age = _safe_float(max_age_days)
+    snapshot_paths = immutable_snapshots or set()
     sources: list[dict[str, Any]] = []
 
     for path, payload in source_payloads.items():
@@ -1188,6 +1195,8 @@ def _freshness_gate(
             status = "missing"
         elif parsed is None:
             status = "no_timestamp"
+        elif path in snapshot_paths:
+            status = "snapshot"
         elif reference_time is not None:
             age_days = max(0.0, (reference_time - parsed).total_seconds() / 86400.0)
             if max_age is not None and age_days > max_age:
@@ -1207,6 +1216,7 @@ def _freshness_gate(
     stale = [row["path"] for row in sources if row["status"] == "stale"]
     missing = [row["path"] for row in sources if row["status"] == "missing"]
     no_timestamp = [row["path"] for row in sources if row["status"] == "no_timestamp"]
+    snapshots = [row["path"] for row in sources if row["status"] == "snapshot"]
     status = "pass"
     if load_errors or stale or missing or no_timestamp:
         status = "action_required"
@@ -1218,6 +1228,7 @@ def _freshness_gate(
         "max_age_days": max_age,
         "source_count": len(sources),
         "fresh_count": sum(1 for row in sources if row["status"] == "pass"),
+        "snapshot_count": len(snapshots),
         "stale_count": len(stale),
         "missing_count": len(missing),
         "no_timestamp_count": len(no_timestamp),
@@ -1225,6 +1236,7 @@ def _freshness_gate(
         "stale_sources": stale,
         "missing_sources": missing,
         "no_timestamp_sources": no_timestamp,
+        "snapshot_sources": snapshots,
         "sources": sources,
     }
 

@@ -1,6 +1,8 @@
 name: kubernetes-operator-smoke
 
 on:
+  schedule:
+    - cron: "17 2 * * 1"
   push:
     branches: [main]
     paths:

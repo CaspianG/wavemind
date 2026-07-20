@@ -84,6 +84,7 @@ def test_kubernetes_operator_smoke_workflow_runs_real_kind_failure_drill():
         / "kubernetes-operator-smoke.yml"
     ).read_text(encoding="utf-8")
 
+    assert 'cron: "17 2 * * 1"' in workflow
     assert "kind create cluster" in workflow
     assert "KIND_SHA256: eb244cbafcc157dff60cf68693c14c9a75c4e6e6fedaf9cd71c58117cb93e3fa" in workflow
     assert "github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}" in workflow

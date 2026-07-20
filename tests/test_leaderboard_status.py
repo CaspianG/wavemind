@@ -56,7 +56,12 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["freshness_gate"]["schema"] == "wavemind.leaderboard_freshness.v1"
     assert payload["freshness_gate"]["status"] == "pass"
     assert payload["freshness_gate"]["source_count"] == len(payload["source_files"])
-    assert payload["freshness_gate"]["fresh_count"] == payload["freshness_gate"]["source_count"]
+    assert (
+        payload["freshness_gate"]["fresh_count"]
+        + payload["freshness_gate"]["snapshot_count"]
+        == payload["freshness_gate"]["source_count"]
+    )
+    assert payload["freshness_gate"]["snapshot_count"] == 2
     assert payload["freshness_gate"]["stale_count"] == 0
     assert payload["freshness_gate"]["missing_count"] == 0
     assert payload["freshness_gate"]["no_timestamp_count"] == 0
@@ -64,6 +69,10 @@ def test_leaderboard_status_renderer_writes_public_contract(tmp_path):
     assert payload["freshness_gate"]["stale_sources"] == []
     assert payload["freshness_gate"]["missing_sources"] == []
     assert payload["freshness_gate"]["no_timestamp_sources"] == []
+    assert set(payload["freshness_gate"]["snapshot_sources"]) == {
+        "benchmarks/memory_os_admission_results.json",
+        "benchmarks/memory_os_remote_worker_soak_results.json",
+    }
     assert {
         "benchmarks/production_scale_run_plan.json",
         "benchmarks/agent_coherence_results.json",

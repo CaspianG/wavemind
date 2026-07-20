@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   id-token: write
   pages: write
@@ -34,6 +35,83 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Import latest Kubernetes production evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          evidence_run_id="$(gh run list \
+            --workflow kubernetes-operator-smoke.yml \
+            --branch main \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId')"
+          test -n "$evidence_run_id"
+          mkdir -p .benchmark-k8s-evidence
+          gh run download "$evidence_run_id" \
+            --name kubernetes-operator-smoke \
+            --dir .benchmark-k8s-evidence
+          cp .benchmark-k8s-evidence/kubernetes_operator_smoke_ci_results.json \
+            benchmarks/kubernetes_operator_smoke_results.json
+          cp .benchmark-k8s-evidence/kubernetes_cluster_network_smoke_results.json \
+            benchmarks/kubernetes_cluster_network_smoke_results.json
+          cp .benchmark-k8s-evidence/kubernetes_active_active_region_smoke_ci_results.json \
+            benchmarks/kubernetes_active_active_region_smoke_results.json
+          cp .benchmark-k8s-evidence/kubernetes_serverless_lifecycle_smoke_ci_results.json \
+            benchmarks/kubernetes_serverless_lifecycle_smoke_results.json
+          cp .benchmark-k8s-evidence/kubernetes_postgres_qdrant_dr_smoke_ci_results.json \
+            benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json
+          cp .benchmark-k8s-evidence/http_cluster_load_results.json \
+            benchmarks/http_cluster_load_results.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          expected = {
+              "kubernetes_operator_smoke_results.json": "wavemind.kubernetes_operator_smoke.v1",
+              "kubernetes_cluster_network_smoke_results.json": "wavemind.kubernetes_cluster_network_smoke.v1",
+              "kubernetes_active_active_region_smoke_results.json": "wavemind.kubernetes_active_active_region_smoke.v1",
+              "kubernetes_serverless_lifecycle_smoke_results.json": "wavemind.kubernetes_serverless_lifecycle_smoke.v1",
+              "kubernetes_postgres_qdrant_dr_smoke_results.json": "wavemind.kubernetes_postgres_qdrant_dr_smoke.v1",
+          }
+          now = datetime.now(timezone.utc)
+          for filename, schema in expected.items():
+              payload = json.loads((Path("benchmarks") / filename).read_text())
+              generated_at = datetime.fromisoformat(
+                  payload["generated_at"].replace("Z", "+00:00")
+              )
+              age_days = (now - generated_at).total_seconds() / 86400
+              if payload.get("schema") != schema:
+                  raise SystemExit(f"{filename}: unexpected schema")
+              if payload.get("status") != "pass":
+                  raise SystemExit(f"{filename}: evidence did not pass")
+              if not payload.get("source_ref") or not payload.get("workflow_run_id"):
+                  raise SystemExit(f"{filename}: missing GitHub provenance")
+              if age_days < 0 or age_days > 8:
+                  raise SystemExit(f"{filename}: stale evidence ({age_days:.2f} days)")
+
+          cluster_path = Path("benchmarks/http_cluster_load_results.json")
+          network_path = Path("benchmarks/kubernetes_cluster_network_smoke_results.json")
+          cluster = json.loads(cluster_path.read_text())
+          scenario = cluster.get("scenario", {})
+          attestation = scenario.get("kubernetes_attestation", {})
+          network_sha256 = hashlib.sha256(network_path.read_bytes()).hexdigest()
+          if cluster.get("schema") != "wavemind.external_http_cluster.v2":
+              raise SystemExit("http_cluster_load_results.json: unexpected schema")
+          if scenario.get("source_ref") != attestation.get("source_ref"):
+              raise SystemExit("HTTP cluster source_ref differs from its attestation")
+          if scenario.get("workflow_run_id") != attestation.get("workflow_run_id"):
+              raise SystemExit("HTTP cluster workflow run differs from its attestation")
+          if attestation.get("network_evidence_sha256") != network_sha256:
+              raise SystemExit("HTTP cluster network evidence digest mismatch")
+          if attestation.get("status") != "pass" or not all(
+              check.get("passed") for check in attestation.get("checks", [])
+          ):
+              raise SystemExit("HTTP cluster Kubernetes attestation did not pass")
+          PY
 
       - uses: actions/setup-python@v6
         with:
@@ -280,24 +358,7 @@ jobs:
           python benchmarks/memory_os_quality_gate.py \
             --output benchmarks/memory_os_quality_results.json \
             --markdown-output benchmarks/MEMORY_OS_QUALITY.md
-          WAVEMIND_DB=.tmp-memory-os-canary.sqlite3 python -m wavemind memory-os-admission \
-            --namespace canary:memory-os \
-            --target-memories 50000 \
-            --namespace-count 64 \
-            --node-count 3 \
-            --target-qps 50 \
-            --target-p99-ms 100 \
-            --deployment production \
-            --cache-mode redis \
-            --redis-url redis://127.0.0.1:6379/0 \
-            --lock-redis-url redis://127.0.0.1:6379/0 \
-            --runtime-evidence benchmarks/memory_os_runtime_soak_results.json \
-            --quality-evidence benchmarks/memory_os_quality_results.json \
-            --allow-plan-only \
-            --write-artifacts \
-            --output benchmarks/memory_os_admission_results.json \
-            --markdown-output benchmarks/MEMORY_OS_ADMISSION.md \
-            --json
+          python benchmarks/validate_memory_os_admission_artifacts.py
           python -m wavemind memory-os-policy-bundle \
             --write-artifacts \
             --output benchmarks/memory_os_policy_bundle_results.json \
@@ -350,6 +411,7 @@ jobs:
             tests/test_memory_os_policy_bundle.py \
             tests/test_memory_os_runtime_soak.py \
             tests/test_memory_os_remote_worker_soak.py \
+            tests/test_memory_os_admission_artifacts.py \
             tests/test_memory_os_quality_gate.py \
             tests/test_cluster_autoscale_report.py \
             tests/test_cost_efficiency_leaderboard.py \
