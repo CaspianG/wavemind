@@ -65,10 +65,13 @@ jobs:
           cp .benchmark-k8s-evidence/http_cluster_load_results.json \
             benchmarks/http_cluster_load_results.json
           python - <<'PY'
-          import hashlib
           import json
           from datetime import datetime, timezone
           from pathlib import Path
+
+          from benchmarks.kubernetes_external_http_cluster_evidence import (
+              canonical_payload_sha256,
+          )
 
           expected = {
               "kubernetes_operator_smoke_results.json": "wavemind.kubernetes_operator_smoke.v1",
@@ -98,7 +101,8 @@ jobs:
           cluster = json.loads(cluster_path.read_text())
           scenario = cluster.get("scenario", {})
           attestation = scenario.get("kubernetes_attestation", {})
-          network_sha256 = hashlib.sha256(network_path.read_bytes()).hexdigest()
+          network = json.loads(network_path.read_text())
+          network_sha256 = canonical_payload_sha256(network)
           if cluster.get("schema") != "wavemind.external_http_cluster.v2":
               raise SystemExit("http_cluster_load_results.json: unexpected schema")
           if scenario.get("source_ref") != attestation.get("source_ref"):

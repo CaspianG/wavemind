@@ -29,6 +29,7 @@ def test_weekly_benchmark_workflow_refreshes_visual_leaderboard():
     assert "benchmarks/kubernetes_postgres_qdrant_dr_smoke_results.json" in workflow
     assert "benchmarks/http_cluster_load_results.json" in workflow
     assert "network_evidence_sha256" in workflow
+    assert "canonical_payload_sha256" in workflow
     assert "benchmarks/memory_os_runtime_soak.py" in workflow
     assert "--redis-url redis://127.0.0.1:6379/0" in workflow
     assert "benchmarks/render_benchmark_report.py" in workflow
