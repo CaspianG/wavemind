@@ -7,6 +7,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import NormalDist
 from typing import Any, Iterable, Mapping
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from benchmarks.crypto_ohlcv import OHLCVBar, fetch_ohlcv_ccxt, timeframe_to_seconds  # noqa: E402
+from benchmarks.crypto_forecast_ledger import read_ledger  # noqa: E402
 
 
 def parse_utc(value: str) -> int:
@@ -24,22 +26,8 @@ def parse_utc(value: str) -> int:
 
 
 def load_ledger(path: str | Path) -> list[dict[str, Any]]:
-    ledger_path = Path(path)
-    if not ledger_path.exists():
-        raise FileNotFoundError(f"Forecast ledger does not exist: {ledger_path}")
-    rows_by_id: dict[str, dict[str, Any]] = {}
-    for line_number, line in enumerate(ledger_path.read_text(encoding="utf-8").splitlines(), start=1):
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"Invalid JSONL at {ledger_path}:{line_number}") from exc
-        result_id = str(row.get("forecast_id", "")).strip()
-        if not result_id:
-            raise ValueError(f"Missing forecast_id at {ledger_path}:{line_number}")
-        rows_by_id[result_id] = dict(row)
-    return list(rows_by_id.values())
+    rows, _ = read_ledger(path)
+    return rows
 
 
 def evaluate_forecast(
@@ -134,12 +122,22 @@ def summarize_outcomes(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     trades = [row for row in evaluated if row.get("trade_decision") == "trade"]
     pending = [row for row in selected if row.get("outcome_status") == "pending"]
     missing = [row for row in selected if row.get("outcome_status") == "missing_market_data"]
+    by_symbol = summarize_symbol_accuracy(evaluated)
+    direction_hits = sum(bool(row.get("direction_correct")) for row in evaluated)
+    direction_accuracy = _ratio(direction_hits, len(evaluated))
     return {
         "forecasts": len(selected),
         "evaluated": len(evaluated),
         "pending": len(pending),
         "missing_market_data": len(missing),
-        "market_direction_accuracy": _ratio(sum(bool(row.get("direction_correct")) for row in evaluated), len(evaluated)),
+        "market_direction_accuracy": direction_accuracy,
+        "direction_wilson_low_95": wilson_lower_bound(direction_hits, len(evaluated)),
+        "symbols_evaluated": len(by_symbol),
+        "worst_symbol_accuracy": (
+            min(float(row["accuracy"]) for row in by_symbol)
+            if by_symbol
+            else None
+        ),
         "trade_forecasts": len(trades),
         "trade_direction_accuracy": _ratio(sum(bool(row.get("trade_direction_correct")) for row in trades), len(trades)),
         "target_touch_rate": _ratio(sum(bool(row.get("target_touched")) for row in evaluated), len(evaluated)),
@@ -148,6 +146,7 @@ def summarize_outcomes(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             if evaluated
             else None
         ),
+        "admitted_70": live_admission_70(evaluated, by_symbol=by_symbol),
     }
 
 
@@ -169,12 +168,75 @@ def summarize_by_model(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]
     return [{"model": model} | summarize_outcomes(group) for model, group in sorted(grouped.items())]
 
 
+def summarize_symbol_accuracy(
+    rows: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row.get("symbol", ""))].append(row)
+    output = []
+    for symbol, selected in sorted(grouped.items()):
+        hits = sum(bool(row.get("direction_correct")) for row in selected)
+        output.append(
+            {
+                "symbol": symbol,
+                "evaluated": len(selected),
+                "accuracy": _ratio(hits, len(selected)),
+                "wilson_low_95": wilson_lower_bound(hits, len(selected)),
+            }
+        )
+    return output
+
+
+def wilson_lower_bound(hits: int, total: int, *, confidence: float = 0.95) -> float | None:
+    if total <= 0:
+        return None
+    z = NormalDist().inv_cdf(0.5 + confidence / 2.0)
+    p = float(hits) / float(total)
+    denominator = 1.0 + z * z / total
+    centre = p + z * z / (2.0 * total)
+    radius = z * math.sqrt((p * (1.0 - p) + z * z / (4.0 * total)) / total)
+    return float((centre - radius) / denominator)
+
+
+def live_admission_70(
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    by_symbol: Iterable[Mapping[str, Any]] | None = None,
+) -> bool:
+    evaluated = list(rows)
+    symbols = list(by_symbol) if by_symbol is not None else summarize_symbol_accuracy(evaluated)
+    hits = sum(bool(row.get("direction_correct")) for row in evaluated)
+    accuracy = _ratio(hits, len(evaluated))
+    wilson = wilson_lower_bound(hits, len(evaluated))
+    sufficiently_sampled = [
+        row for row in symbols if int(row.get("evaluated", 0)) >= 10
+    ]
+    worst_symbol = (
+        min(float(row["accuracy"]) for row in sufficiently_sampled)
+        if sufficiently_sampled
+        else None
+    )
+    return bool(
+        len(evaluated) >= 100
+        and len(symbols) >= 5
+        and len(sufficiently_sampled) == len(symbols)
+        and accuracy is not None
+        and accuracy >= 0.70
+        and wilson is not None
+        and wilson >= 0.65
+        and worst_symbol is not None
+        and worst_symbol >= 0.60
+    )
+
+
 def _ratio(numerator: int, denominator: int) -> float | None:
     return float(numerator) / float(denominator) if denominator else None
 
 
 def render_markdown(payload: Mapping[str, Any]) -> str:
     summary = dict(payload["summary"])
+    integrity = dict(payload["ledger_integrity"])
     lines = [
         "# WaveMind Forecast Audit",
         "",
@@ -189,19 +251,34 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         f"| evaluated | {summary['evaluated']} |",
         f"| pending | {summary['pending']} |",
         f"| market direction accuracy | {_format_rate(summary['market_direction_accuracy'])} |",
+        f"| direction Wilson low 95% | {_format_rate(summary['direction_wilson_low_95'])} |",
+        f"| worst symbol accuracy | {_format_rate(summary['worst_symbol_accuracy'])} |",
+        f"| strict 70% admission | {'yes' if summary['admitted_70'] else 'no'} |",
         f"| trade direction accuracy | {_format_rate(summary['trade_direction_accuracy'])} |",
         f"| target touch rate | {_format_rate(summary['target_touch_rate'])} |",
         f"| mean absolute target error | {_format_bps(summary['mean_abs_target_error_bps'])} |",
         "",
+        "## Ledger Integrity",
+        "",
+        "| status | records | legacy | hashed | anchored legacy | tip hash |",
+        "|---|---:|---:|---:|---:|---|",
+        f"| {integrity['status']} | {integrity['records']} | "
+        f"{integrity['legacy_records']} | {integrity['hashed_records']} | "
+        f"{integrity['anchored_legacy_records']} | `{integrity['tip_hash'][:16]}...` |",
+        "",
         "## By Model",
         "",
-        "| model | forecasts | evaluated | direction accuracy | target MAE |",
-        "|---|---:|---:|---:|---:|",
+        "| model | forecasts | evaluated | direction accuracy | Wilson low | worst symbol | admitted 70% | target MAE |",
+        "|---|---:|---:|---:|---:|---:|---|---:|",
     ]
     for row in payload.get("by_model", []):
         lines.append(
             f"| {row['model']} | {row['forecasts']} | {row['evaluated']} | "
-            f"{_format_rate(row['market_direction_accuracy'])} | {_format_bps(row['mean_abs_target_error_bps'])} |"
+            f"{_format_rate(row['market_direction_accuracy'])} | "
+            f"{_format_rate(row['direction_wilson_low_95'])} | "
+            f"{_format_rate(row['worst_symbol_accuracy'])} | "
+            f"{'yes' if row['admitted_70'] else 'no'} | "
+            f"{_format_bps(row['mean_abs_target_error_bps'])} |"
         )
     lines.extend(
         [
@@ -277,7 +354,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, default=Path("benchmarks/results/crypto/forecast_audit.md"))
     args = parser.parse_args()
 
-    forecasts = load_ledger(args.ledger)
+    forecasts, ledger_integrity = read_ledger(args.ledger)
     now = int(datetime.now(timezone.utc).timestamp())
     mature_forecasts = [
         forecast
@@ -296,6 +373,14 @@ def main() -> int:
     payload = {
         "generated_utc": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
         "exchange": args.exchange,
+        "ledger_integrity": {
+            "status": ledger_integrity.status,
+            "records": ledger_integrity.records,
+            "legacy_records": ledger_integrity.legacy_records,
+            "hashed_records": ledger_integrity.hashed_records,
+            "anchored_legacy_records": ledger_integrity.anchored_legacy_records,
+            "tip_hash": ledger_integrity.tip_hash,
+        },
         "summary": summarize_outcomes(results),
         "by_model": summarize_by_model(results),
         "results": results,

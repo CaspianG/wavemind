@@ -55,7 +55,9 @@ def test_evaluate_forecast_keeps_unmatured_row_pending():
     assert result["seconds_until_maturity"] == 3600
 
 
-def test_load_ledger_deduplicates_forecast_ids(tmp_path):
+def test_load_ledger_rejects_duplicate_forecast_ids(tmp_path):
+    import pytest
+
     from benchmarks.crypto_forecast_audit import load_ledger
 
     path = tmp_path / "ledger.jsonl"
@@ -63,14 +65,13 @@ def test_load_ledger_deduplicates_forecast_ids(tmp_path):
     second = _forecast(market_forecast_target_price=102.0)
     path.write_text(json.dumps(first) + "\n" + json.dumps(second) + "\n", encoding="utf-8")
 
-    rows = load_ledger(path)
-
-    assert len(rows) == 1
-    assert rows[0]["market_forecast_target_price"] == 102.0
+    with pytest.raises(ValueError, match="Duplicate forecast_id"):
+        load_ledger(path)
 
 
 def test_append_forecast_ledger_is_idempotent(tmp_path):
     from benchmarks.crypto_current_forecast import append_forecast_ledger
+    from benchmarks.crypto_forecast_ledger import read_ledger
 
     path = tmp_path / "ledger.jsonl"
     payload = {"generated_utc": "2026-07-01T00:01:00+00:00", "results": [_forecast()]}
@@ -78,6 +79,62 @@ def test_append_forecast_ledger_is_idempotent(tmp_path):
     assert append_forecast_ledger(path, payload) == 1
     assert append_forecast_ledger(path, payload) == 0
     assert len(path.read_text(encoding="utf-8").splitlines()) == 1
+    rows, integrity = read_ledger(path)
+    assert rows[0]["ledger_schema_version"] == 2
+    assert integrity.status == "verified"
+    assert integrity.hashed_records == 1
+
+
+def test_hash_chain_detects_legacy_prefix_tampering(tmp_path):
+    import pytest
+
+    from benchmarks.crypto_current_forecast import append_forecast_ledger
+    from benchmarks.crypto_forecast_ledger import read_ledger
+
+    path = tmp_path / "ledger.jsonl"
+    legacy = _forecast()
+    path.write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+    new_forecast = _forecast(
+        forecast_id="forecast-2",
+        data_end_utc="2026-07-02T00:00:00+00:00",
+        forecast_until_utc="2026-07-02T02:00:00+00:00",
+    )
+
+    assert append_forecast_ledger(
+        path,
+        {
+            "generated_utc": "2026-07-02T00:01:00+00:00",
+            "results": [new_forecast],
+        },
+    ) == 1
+    _, integrity = read_ledger(path)
+    assert integrity.anchored_legacy_records == 1
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    tampered = json.loads(lines[0])
+    tampered["market_forecast_target_price"] = 999.0
+    lines[0] = json.dumps(tampered)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="previous_record_hash is invalid"):
+        read_ledger(path)
+
+
+def test_live_admission_requires_sample_size_wilson_and_symbol_robustness():
+    from benchmarks.crypto_forecast_audit import live_admission_70
+
+    rows = []
+    for symbol_index in range(5):
+        for sample_index in range(20):
+            rows.append(
+                {
+                    "symbol": f"COIN{symbol_index}",
+                    "direction_correct": sample_index < 16,
+                }
+            )
+
+    assert live_admission_70(rows) is True
+    assert live_admission_70(rows[:50]) is False
 
 
 def test_summarize_by_model_keeps_model_versions_separate():

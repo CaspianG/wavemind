@@ -11,6 +11,12 @@ forecasts are allowed only when they are recorded in the forecast ledger and
 evaluated after maturity; the reproducible benchmark layer remains the source
 of truth for model adoption.
 
+The ledger is append-only by policy and tamper-evident by construction. New
+records contain fingerprints of the completed-candle input and model sources,
+and extend a SHA-256 chain over the complete file. The first chained record
+anchors legacy rows without rewriting them. Duplicate forecast IDs, malformed
+JSONL, or a broken chain fail the audit.
+
 ## Scope
 
 WaveMind is not positioned as a replacement for a backtesting engine or exchange
@@ -614,22 +620,40 @@ The forecast has two layers:
   policy does not find a validated trade-quality signal.
 
 Checked-in OKX 24h snapshot generated from completed 4h candles through
-`2026-07-05T08:00:00+00:00`:
+`2026-07-24T20:00:00+00:00`:
 
 | symbol | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason |
 |---|---|---|---:|---:|---|---:|---:|---|
-| BTC/USDT | 2026-07-05T08:00:00+00:00 | up | 0.20% | 62781.1 | no_trade | 62656.2 | 0.630 | flat_candidate |
-| ETH/USDT | 2026-07-05T08:00:00+00:00 | down | -0.53% | 1751 | no_trade | 1760.32 | 0.939 | flat_candidate |
-| SOL/USDT | 2026-07-05T08:00:00+00:00 | up | 1.19% | 81.5183 | no_trade | 80.56 | 1.000 | adaptive_trend_mismatch |
+| BTC/USDT | 2026-07-24T20:00:00+00:00 | down | -0.20% | 64064.6 | no_trade | 64196.2 | 0.958 | adaptive_field_opposition |
+| ETH/USDT | 2026-07-24T20:00:00+00:00 | down | -0.13% | 1860.35 | no_trade | 1862.71 | 0.544 | low_expected_edge |
+| SOL/USDT | 2026-07-24T20:00:00+00:00 | down | -0.20% | 73.7736 | no_trade | 73.92 | 0.456 | ta_conflict |
+| XRP/USDT | 2026-07-24T20:00:00+00:00 | down | -0.03% | 1.08828 | no_trade | 1.0886 | 0.736 | low_expected_edge |
+| HYPE/USDT | 2026-07-24T20:00:00+00:00 | down | -0.54% | 57.8254 | no_trade | 58.14 | 0.886 | adaptive_trend_mismatch |
 
 The 24h snapshot has a forced directional estimate, but it is still an
 `no_trade` result at the trade-signal layer. The current market did not produce a
 validated trade-quality signal.
 
 The 7d runner currently produces forced directional estimates but returns
-`no_trade` on BTC/ETH/SOL with `unsupported_timeframe:1d`. That is intentional.
+`no_trade` on BTC/ETH/SOL/XRP/HYPE with `unsupported_timeframe:1d`. That is intentional.
 The policy refuses to produce trade-quality daily/weekly signals until a
 separate 1d profile passes walk-forward validation.
+
+### Live ledger result
+
+The first settlement is negative evidence. All 15 forecasts recorded on
+2026-07-17 have matured:
+
+- market direction accuracy: `0.267`;
+- 95% Wilson lower bound: `0.109`;
+- target touch rate: `0.533`;
+- mean absolute target return error: `216.1 bps`;
+- strict 70% live admission: rejected.
+
+The ledger now contains 25 rows: 15 evaluated legacy rows and 10 pending
+hash-chained rows. The first new record anchors the legacy prefix, so later
+modification of any earlier prediction breaks verification. This live result
+overrules any implication that the current model is deployment-ready.
 
 The metrics are retrieval/research metrics, not a live trading claim:
 
@@ -882,17 +906,22 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     WaveField expert selection, error correction, and direct stacking failed
     transfer tests and were rejected. No engine passes the 70%, 75%, or 80%
     admission gate.
-26. Next: build a WaveMind-native market-state memory model that beats these
+26. Done: added a tamper-evident live forecast journal. New rows contain input
+    and model SHA-256 fingerprints and extend a chain that anchors the 15
+    historical rows. The first complete settlement is only `0.267` direction
+    accuracy on 15 forecasts, with Wilson low `0.109`; the strict live 70% gate
+    rejects it. Ten fresh 24h/7d rows are pending.
+27. Next: build a WaveMind-native market-state memory model that beats these
     statistical baselines on aggregate, fold, and symbol robustness. Direct
     WaveField outcome and relationship-memory ablations have not done so.
-27. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+28. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-28. Next: validate the market-field target on more exchanges, date ranges,
+29. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-29. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+30. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-30. Add signal construction only after retrieval quality is stable.
-31. Publish results separately from the main README to avoid confusing memory
+31. Add signal construction only after retrieval quality is stable.
+32. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

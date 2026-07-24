@@ -237,6 +237,38 @@ def test_fetch_latest_completed_bars_rejects_stale_exchange_data(monkeypatch):
         )
 
 
+def test_market_snapshot_hash_changes_with_input_candle():
+    from benchmarks.crypto_current_forecast import market_snapshot_sha256
+    from benchmarks.crypto_ohlcv import OHLCVBar
+
+    first = [
+        OHLCVBar(
+            timestamp=1,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.5,
+            volume=10.0,
+        )
+    ]
+    second = [
+        OHLCVBar(
+            timestamp=1,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.6,
+            volume=10.0,
+        )
+    ]
+
+    first_hash = market_snapshot_sha256(first, symbol="BTC/USDT", timeframe="4h")
+    second_hash = market_snapshot_sha256(second, symbol="BTC/USDT", timeframe="4h")
+
+    assert len(first_hash) == 64
+    assert first_hash != second_hash
+
+
 def test_render_markdown_contains_price_target():
     from benchmarks.crypto_current_forecast import ForecastResult, render_markdown
 
@@ -339,5 +371,8 @@ def test_crypto_current_forecast_cli_writes_json_and_markdown(tmp_path):
     assert payload["results"][0]["evidence_strength"] == payload["results"][0]["confidence"]
     assert payload["results"][0]["probability_kind"] == "none"
     assert payload["results"][0]["calibrated_probability"] is None
+    assert len(payload["results"][0]["input_snapshot_sha256"]) == 64
+    assert len(payload["results"][0]["model_source_sha256"]) == 64
+    assert payload["results"][0]["forecast_schema_version"] == 2
     assert "ETH/USDT" in report.read_text(encoding="utf-8")
     assert not bars_path.exists()

@@ -37,6 +37,7 @@ HORIZON_PRESETS = {
 }
 
 CONFIDENCE_NOTE = "evidence strength from analogue/regime agreement; not a calibrated probability"
+FORECAST_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,9 @@ class ForecastResult:
     calibration_bucket: Mapping[str, Any] | None = None
     calibrated_probability: float | None = None
     probability_kind: str = "none"
+    input_snapshot_sha256: str = ""
+    model_source_sha256: str = ""
+    forecast_schema_version: int = FORECAST_SCHEMA_VERSION
 
 
 @dataclass(frozen=True)
@@ -137,6 +141,51 @@ def fetch_latest_completed_bars(
             f"{data_age_seconds} seconds old"
         )
     return selected
+
+
+def market_snapshot_sha256(
+    bars: Iterable[OHLCVBar],
+    *,
+    symbol: str,
+    timeframe: str,
+) -> str:
+    payload = {
+        "symbol": str(symbol),
+        "timeframe": str(timeframe),
+        "bars": [
+            [
+                int(bar.timestamp),
+                float(bar.open),
+                float(bar.high),
+                float(bar.low),
+                float(bar.close),
+                float(bar.volume),
+            ]
+            for bar in sorted(bars, key=lambda item: item.timestamp)
+        ],
+    }
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def forecast_model_sha256() -> str:
+    source_paths = (
+        Path(__file__).resolve(),
+        PROJECT_ROOT / "benchmarks" / "crypto_walk_forward_benchmark.py",
+        PROJECT_ROOT / "wavemind" / "core.py",
+    )
+    digest = hashlib.sha256()
+    for path in source_paths:
+        digest.update(path.relative_to(PROJECT_ROOT).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def make_latest_query_window(
@@ -318,6 +367,12 @@ def forecast_from_bars(
     calibration_profile: Mapping[str, Any] | None = None,
 ) -> ForecastResult:
     ordered = sorted(list(bars), key=lambda item: item.timestamp)
+    input_snapshot_sha256 = market_snapshot_sha256(
+        ordered,
+        symbol=symbol,
+        timeframe=timeframe,
+    )
+    model_source_sha256 = forecast_model_sha256()
     direction_threshold = max(15.0, 2.0 * (float(fee_bps) + float(slippage_bps)))
     windows = make_ohlcv_windows(
         ordered,
@@ -409,6 +464,8 @@ def forecast_from_bars(
         ),
         calibrated_probability=calibrated_probability,
         probability_kind=probability_kind,
+        input_snapshot_sha256=input_snapshot_sha256,
+        model_source_sha256=model_source_sha256,
     )
 
 
@@ -577,6 +634,9 @@ def forecast_to_dict(result: ForecastResult) -> dict[str, Any]:
         "latency_ms": result.latency_ms,
         "validation": dict(result.validation),
         "calibration_bucket": dict(result.calibration_bucket or {}),
+        "forecast_schema_version": result.forecast_schema_version,
+        "input_snapshot_sha256": result.input_snapshot_sha256,
+        "model_source_sha256": result.model_source_sha256,
     }
     payload["forecast_id"] = forecast_id(payload)
     return payload
@@ -593,6 +653,10 @@ def forecast_id(result: Mapping[str, Any]) -> str:
             str(result.get("data_end_utc", "")),
             str(result.get("engine", "")),
             str(result.get("directional_method", "")),
+            str(result.get("input_snapshot_sha256", "")),
+            str(result.get("model_source_sha256", "")),
+            str(result.get("market_forecast_direction", "")),
+            str(result.get("market_forecast_target_price", "")),
         ]
     )
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
@@ -600,18 +664,19 @@ def forecast_id(result: Mapping[str, Any]) -> str:
 
 def append_forecast_ledger(path: str | Path, payload: Mapping[str, Any]) -> int:
     """Append unseen forecast rows to JSONL and return the number added."""
+    from benchmarks.crypto_forecast_ledger import (
+        GENESIS_HASH,
+        read_ledger,
+        seal_record,
+    )
+
     ledger_path = Path(path)
     existing_ids: set[str] = set()
+    previous_hash = GENESIS_HASH
     if ledger_path.exists():
-        for line in ledger_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if row.get("forecast_id"):
-                existing_ids.add(str(row["forecast_id"]))
+        existing_rows, integrity = read_ledger(ledger_path)
+        existing_ids = {str(row["forecast_id"]) for row in existing_rows}
+        previous_hash = integrity.tip_hash
 
     generated_utc = str(payload.get("generated_utc", ""))
     rows = []
@@ -622,7 +687,10 @@ def append_forecast_ledger(path: str | Path, payload: Mapping[str, Any]) -> int:
             continue
         result["forecast_id"] = result_id
         result["generated_utc"] = generated_utc
-        rows.append(result)
+        result["recorded_at_utc"] = generated_utc
+        sealed = seal_record(result, previous_hash=previous_hash)
+        rows.append(sealed)
+        previous_hash = str(sealed["record_hash"])
         existing_ids.add(result_id)
 
     if not rows:

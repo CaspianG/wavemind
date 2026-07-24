@@ -14,7 +14,8 @@ WaveMind turns completed OHLCV candles into memories of market states. Each memo
 - an expected percentage move and target price;
 - a separate `trade` or `no_trade` validation decision;
 - an evidence score that is explicitly not presented as probability;
-- an immutable forecast ID that can be evaluated after the horizon closes.
+- a stable forecast ID plus a tamper-evident ledger record that can be
+  evaluated after the horizon closes.
 
 The current 24h model uses a guarded 4h state-field: observable trend and RSI state choose direction, while WaveMind analogue memory supplies target magnitude. The rule was accepted only after a separate holdout-asset check.
 
@@ -26,7 +27,33 @@ python benchmarks/crypto_current_forecast.py --exchange okx --symbols BTC/USDT:U
 python benchmarks/crypto_forecast_audit.py --ledger benchmarks/results/crypto/forecast_ledger.jsonl --exchange okx
 ```
 
-The forecast runner accepts only completed candles and fails if exchange data is stale. The audit runner keeps pending forecasts separate from mature outcomes and measures direction accuracy, target error, and whether the target was touched inside the horizon.
+The forecast runner accepts only completed candles and fails if exchange data
+is stale. Every new ledger row includes SHA-256 fingerprints for its input
+candles and model sources, then extends a hash chain over the complete JSONL
+history. The audit runner rejects duplicate IDs or a broken chain, keeps pending
+forecasts separate from mature outcomes, and measures direction accuracy,
+target error, and whether the target was touched inside the horizon.
+
+## Live Forecast Evidence
+
+The live ledger is the non-selective reality check. As of the latest settlement:
+
+| metric | result |
+|---|---:|
+| physical forecasts | 25 |
+| evaluated / pending | 15 / 10 |
+| evaluated direction accuracy | **26.7%** |
+| 95% Wilson lower bound | 10.9% |
+| target touch rate | 53.3% |
+| target return MAE | 216.1 bps |
+| strict 70% live admission | **rejected** |
+| ledger integrity | verified, 15 legacy rows anchored + 10 hashed rows |
+
+The first live sample is small and materially worse than the historical
+walk-forward tests. It is therefore evidence against deployment, not a
+breakthrough claim. All 15 failed or successful matured forecasts remain in
+[`forecast_ledger.jsonl`](benchmarks/results/crypto/forecast_ledger.jsonl);
+the next ten are pending and will be settled from completed OKX candles.
 
 ## Current Evidence
 
@@ -78,7 +105,9 @@ features before each completed 4h decision point. The best field-backed 24h
 gate reaches 53.1%; the strongest statistical head reaches 54.6%. Neither is
 close to the strict 70% admission gate, and the 7d result remains unstable.
 
-The multi-year result supersedes the smaller datasets for admission decisions.
+The multi-year result supersedes the smaller historical datasets for benchmark
+admission decisions. The live ledger remains a separate and stricter deployment
+check.
 It also exposes an important measurement trap: the best 24h logistic head was
 53.9% on overlapping 4h rows but only 52.3% after forecasts were made
 independent. No current engine passes either the 75% or 80% gate, so these
@@ -154,7 +183,10 @@ WaveMind analogue memory + dynamic field priority
         +--> trade-quality policy
         |
         v
-forecast ID --> JSONL ledger --> outcome audit at maturity
+input/model SHA-256 --> forecast ID --> hash-chained JSONL ledger
+                                             |
+                                             v
+                                   outcome audit at maturity
 ```
 
 SQLite remains the source of truth for WaveMind memory. Market benchmarks compare against market and time-series baselines; Chroma and Qdrant are storage controls, not the primary competitors for prediction quality.
@@ -173,6 +205,7 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
 | `benchmarks/crypto_current_forecast.py` | fresh 24h/7d forecasts and ledger recording |
+| `benchmarks/crypto_forecast_ledger.py` | duplicate rejection, legacy anchoring, and tamper-evident hash-chain verification |
 | `benchmarks/crypto_forecast_audit.py` | automatic evaluation of matured forecasts |
 | `benchmarks/results/crypto/` | current compact evidence and live forecast ledger |
 | `examples/freqtrade_wavemind_strategy.py` | dry-run-first Freqtrade adapter |
@@ -204,6 +237,9 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 - Market forecasts and trade validation reported separately.
 - No probability until calibration is stable across folds, symbols, and timeframes.
 - Failed live forecasts stay in the ledger and count against the model.
+- A live 70% claim requires at least 100 evaluated forecasts, five symbols,
+  ten forecasts per symbol, a 65% Wilson lower bound, and at least 60% on the
+  worst sufficiently sampled symbol.
 
 ## Next Work
 
