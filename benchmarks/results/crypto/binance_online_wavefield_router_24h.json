@@ -1,0 +1,686 @@
+{
+  "methodology": {
+    "protocol": "All base predictions are out-of-sample. Router state is updated only after target_end_utc. Configuration is selected on fold 3; fold 4 is the final test.",
+    "overlap_policy": "one non-overlapping forecast per symbol and horizon",
+    "experts": [
+      "24h mean-reversion direction",
+      "24h momentum direction",
+      "6d mean-reversion direction",
+      "6d momentum direction",
+      "Calibrated WaveField meta gate",
+      "Direct WaveField regime gate",
+      "Direction-margin gate",
+      "Event-probability gate",
+      "ExtraTrees direction",
+      "Histogram direction",
+      "LightGBM direction",
+      "Return-regression direction",
+      "Static directional baseline",
+      "Tabular ensemble direction"
+    ],
+    "panels": 6797,
+    "validation_fold": 3,
+    "test_fold": 4
+  },
+  "candidates": [
+    {
+      "config": "statistical_fast",
+      "parameters": {
+        "half_life_days": 30.0,
+        "prior_strength": 20.0,
+        "symbol_shrinkage": 20.0,
+        "field_weight": 0.0
+      },
+      "validation": {
+        "signals": 1240,
+        "hits": 691,
+        "accuracy": 0.557258064516129,
+        "wilson_low_95": 0.5294768495741493,
+        "by_fold": [
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "hits": 691,
+            "accuracy": 0.557258064516129
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 155,
+            "hits": 81,
+            "accuracy": 0.5225806451612903
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 155,
+            "hits": 96,
+            "accuracy": 0.6193548387096774
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 155,
+            "hits": 81,
+            "accuracy": 0.5225806451612903
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 155,
+            "hits": 90,
+            "accuracy": 0.5806451612903226
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 155,
+            "hits": 88,
+            "accuracy": 0.567741935483871
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "hits": 87,
+            "accuracy": 0.5612903225806452
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 155,
+            "hits": 84,
+            "accuracy": 0.5419354838709678
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 155,
+            "hits": 84,
+            "accuracy": 0.5419354838709678
+          }
+        ],
+        "worst_fold_accuracy": 0.557258064516129,
+        "worst_symbol_accuracy": 0.5225806451612903
+      }
+    },
+    {
+      "config": "statistical_slow",
+      "parameters": {
+        "half_life_days": 180.0,
+        "prior_strength": 40.0,
+        "symbol_shrinkage": 50.0,
+        "field_weight": 0.0
+      },
+      "validation": {
+        "signals": 1240,
+        "hits": 716,
+        "accuracy": 0.5774193548387097,
+        "wilson_low_95": 0.5497277150958445,
+        "by_fold": [
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "hits": 716,
+            "accuracy": 0.5774193548387097
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 155,
+            "hits": 86,
+            "accuracy": 0.5548387096774193
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 155,
+            "hits": 98,
+            "accuracy": 0.632258064516129
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 155,
+            "hits": 85,
+            "accuracy": 0.5483870967741935
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 155,
+            "hits": 93,
+            "accuracy": 0.6
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 155,
+            "hits": 90,
+            "accuracy": 0.5806451612903226
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "hits": 95,
+            "accuracy": 0.6129032258064516
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 155,
+            "hits": 81,
+            "accuracy": 0.5225806451612903
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 155,
+            "hits": 88,
+            "accuracy": 0.567741935483871
+          }
+        ],
+        "worst_fold_accuracy": 0.5774193548387097,
+        "worst_symbol_accuracy": 0.5225806451612903
+      }
+    },
+    {
+      "config": "wavefield_fast",
+      "parameters": {
+        "half_life_days": 30.0,
+        "prior_strength": 20.0,
+        "symbol_shrinkage": 20.0,
+        "field_weight": 0.35
+      },
+      "validation": {
+        "signals": 1240,
+        "hits": 667,
+        "accuracy": 0.5379032258064517,
+        "wilson_low_95": 0.5100792623951476,
+        "by_fold": [
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "hits": 667,
+            "accuracy": 0.5379032258064517
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 155,
+            "hits": 82,
+            "accuracy": 0.5290322580645161
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 155,
+            "hits": 79,
+            "accuracy": 0.5096774193548387
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 155,
+            "hits": 70,
+            "accuracy": 0.45161290322580644
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 155,
+            "hits": 93,
+            "accuracy": 0.6
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 155,
+            "hits": 79,
+            "accuracy": 0.5096774193548387
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "hits": 84,
+            "accuracy": 0.5419354838709678
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 155,
+            "hits": 90,
+            "accuracy": 0.5806451612903226
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 155,
+            "hits": 90,
+            "accuracy": 0.5806451612903226
+          }
+        ],
+        "worst_fold_accuracy": 0.5379032258064517,
+        "worst_symbol_accuracy": 0.45161290322580644
+      }
+    },
+    {
+      "config": "wavefield_slow",
+      "parameters": {
+        "half_life_days": 180.0,
+        "prior_strength": 40.0,
+        "symbol_shrinkage": 50.0,
+        "field_weight": 0.35
+      },
+      "validation": {
+        "signals": 1240,
+        "hits": 674,
+        "accuracy": 0.5435483870967742,
+        "wilson_low_95": 0.5157325484044987,
+        "by_fold": [
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "hits": 674,
+            "accuracy": 0.5435483870967742
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 155,
+            "hits": 82,
+            "accuracy": 0.5290322580645161
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 155,
+            "hits": 81,
+            "accuracy": 0.5225806451612903
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 155,
+            "hits": 73,
+            "accuracy": 0.47096774193548385
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 155,
+            "hits": 97,
+            "accuracy": 0.6258064516129033
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 155,
+            "hits": 75,
+            "accuracy": 0.4838709677419355
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "hits": 87,
+            "accuracy": 0.5612903225806452
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 155,
+            "hits": 88,
+            "accuracy": 0.567741935483871
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 155,
+            "hits": 91,
+            "accuracy": 0.5870967741935483
+          }
+        ],
+        "worst_fold_accuracy": 0.5435483870967742,
+        "worst_symbol_accuracy": 0.47096774193548385
+      }
+    }
+  ],
+  "selected_config": "statistical_slow",
+  "selected_validation": {
+    "signals": 1240,
+    "hits": 716,
+    "accuracy": 0.5774193548387097,
+    "wilson_low_95": 0.5497277150958445,
+    "by_fold": [
+      {
+        "fold_index": "3",
+        "signals": 1240,
+        "hits": 716,
+        "accuracy": 0.5774193548387097
+      }
+    ],
+    "by_symbol": [
+      {
+        "symbol": "ADAUSDT",
+        "signals": 155,
+        "hits": 86,
+        "accuracy": 0.5548387096774193
+      },
+      {
+        "symbol": "BNBUSDT",
+        "signals": 155,
+        "hits": 98,
+        "accuracy": 0.632258064516129
+      },
+      {
+        "symbol": "BTCUSDT",
+        "signals": 155,
+        "hits": 85,
+        "accuracy": 0.5483870967741935
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "signals": 155,
+        "hits": 93,
+        "accuracy": 0.6
+      },
+      {
+        "symbol": "ETHUSDT",
+        "signals": 155,
+        "hits": 90,
+        "accuracy": 0.5806451612903226
+      },
+      {
+        "symbol": "LINKUSDT",
+        "signals": 155,
+        "hits": 95,
+        "accuracy": 0.6129032258064516
+      },
+      {
+        "symbol": "SOLUSDT",
+        "signals": 155,
+        "hits": 81,
+        "accuracy": 0.5225806451612903
+      },
+      {
+        "symbol": "XRPUSDT",
+        "signals": 155,
+        "hits": 88,
+        "accuracy": 0.567741935483871
+      }
+    ],
+    "worst_fold_accuracy": 0.5774193548387097,
+    "worst_symbol_accuracy": 0.5225806451612903
+  },
+  "final_test": {
+    "signals": 1432,
+    "hits": 738,
+    "accuracy": 0.5153631284916201,
+    "wilson_low_95": 0.48947204099192826,
+    "by_fold": [
+      {
+        "fold_index": "4",
+        "signals": 1432,
+        "hits": 738,
+        "accuracy": 0.5153631284916201
+      }
+    ],
+    "by_symbol": [
+      {
+        "symbol": "ADAUSDT",
+        "signals": 179,
+        "hits": 95,
+        "accuracy": 0.5307262569832403
+      },
+      {
+        "symbol": "BNBUSDT",
+        "signals": 179,
+        "hits": 89,
+        "accuracy": 0.4972067039106145
+      },
+      {
+        "symbol": "BTCUSDT",
+        "signals": 179,
+        "hits": 85,
+        "accuracy": 0.4748603351955307
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "signals": 179,
+        "hits": 99,
+        "accuracy": 0.553072625698324
+      },
+      {
+        "symbol": "ETHUSDT",
+        "signals": 179,
+        "hits": 96,
+        "accuracy": 0.5363128491620112
+      },
+      {
+        "symbol": "LINKUSDT",
+        "signals": 179,
+        "hits": 92,
+        "accuracy": 0.5139664804469274
+      },
+      {
+        "symbol": "SOLUSDT",
+        "signals": 179,
+        "hits": 89,
+        "accuracy": 0.4972067039106145
+      },
+      {
+        "symbol": "XRPUSDT",
+        "signals": 179,
+        "hits": 93,
+        "accuracy": 0.5195530726256983
+      }
+    ],
+    "worst_fold_accuracy": 0.5153631284916201,
+    "worst_symbol_accuracy": 0.4748603351955307
+  },
+  "all_periods": {
+    "signals": 6797,
+    "hits": 3445,
+    "accuracy": 0.5068412534941886,
+    "wilson_low_95": 0.4949552089427771,
+    "by_fold": [
+      {
+        "fold_index": "0",
+        "signals": 1205,
+        "hits": 573,
+        "accuracy": 0.4755186721991701
+      },
+      {
+        "fold_index": "1",
+        "signals": 1472,
+        "hits": 707,
+        "accuracy": 0.48029891304347827
+      },
+      {
+        "fold_index": "2",
+        "signals": 1448,
+        "hits": 711,
+        "accuracy": 0.4910220994475138
+      },
+      {
+        "fold_index": "3",
+        "signals": 1240,
+        "hits": 716,
+        "accuracy": 0.5774193548387097
+      },
+      {
+        "fold_index": "4",
+        "signals": 1432,
+        "hits": 738,
+        "accuracy": 0.5153631284916201
+      }
+    ],
+    "by_symbol": [
+      {
+        "symbol": "ADAUSDT",
+        "signals": 851,
+        "hits": 432,
+        "accuracy": 0.5076380728554641
+      },
+      {
+        "symbol": "BNBUSDT",
+        "signals": 851,
+        "hits": 444,
+        "accuracy": 0.5217391304347826
+      },
+      {
+        "symbol": "BTCUSDT",
+        "signals": 851,
+        "hits": 431,
+        "accuracy": 0.5064629847238543
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "signals": 851,
+        "hits": 438,
+        "accuracy": 0.5146886016451234
+      },
+      {
+        "symbol": "ETHUSDT",
+        "signals": 851,
+        "hits": 441,
+        "accuracy": 0.518213866039953
+      },
+      {
+        "symbol": "LINKUSDT",
+        "signals": 851,
+        "hits": 419,
+        "accuracy": 0.49236192714453586
+      },
+      {
+        "symbol": "SOLUSDT",
+        "signals": 840,
+        "hits": 414,
+        "accuracy": 0.4928571428571429
+      },
+      {
+        "symbol": "XRPUSDT",
+        "signals": 851,
+        "hits": 426,
+        "accuracy": 0.500587544065805
+      }
+    ],
+    "worst_fold_accuracy": 0.4755186721991701,
+    "worst_symbol_accuracy": 0.49236192714453586
+  },
+  "baselines": {
+    "development_selected_expert": "6d mean-reversion direction",
+    "single_expert_test": {
+      "signals": 1432,
+      "hits": 737,
+      "accuracy": 0.5146648044692738,
+      "wilson_low_95": 0.48877450306552955,
+      "by_fold": [
+        {
+          "fold_index": "4",
+          "signals": 1432,
+          "hits": 737,
+          "accuracy": 0.5146648044692738
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "ADAUSDT",
+          "signals": 179,
+          "hits": 90,
+          "accuracy": 0.5027932960893855
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 179,
+          "hits": 94,
+          "accuracy": 0.5251396648044693
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 179,
+          "hits": 96,
+          "accuracy": 0.5363128491620112
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 179,
+          "hits": 87,
+          "accuracy": 0.4860335195530726
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 179,
+          "hits": 95,
+          "accuracy": 0.5307262569832403
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 179,
+          "hits": 92,
+          "accuracy": 0.5139664804469274
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 179,
+          "hits": 95,
+          "accuracy": 0.5307262569832403
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 179,
+          "hits": 88,
+          "accuracy": 0.49162011173184356
+        }
+      ],
+      "worst_fold_accuracy": 0.5146648044692738,
+      "worst_symbol_accuracy": 0.4860335195530726
+    },
+    "majority_vote_test": {
+      "signals": 1432,
+      "hits": 707,
+      "accuracy": 0.4937150837988827,
+      "wilson_low_95": 0.4678717728645926,
+      "by_fold": [
+        {
+          "fold_index": "4",
+          "signals": 1432,
+          "hits": 707,
+          "accuracy": 0.4937150837988827
+        }
+      ],
+      "by_symbol": [
+        {
+          "symbol": "ADAUSDT",
+          "signals": 179,
+          "hits": 86,
+          "accuracy": 0.48044692737430167
+        },
+        {
+          "symbol": "BNBUSDT",
+          "signals": 179,
+          "hits": 89,
+          "accuracy": 0.4972067039106145
+        },
+        {
+          "symbol": "BTCUSDT",
+          "signals": 179,
+          "hits": 81,
+          "accuracy": 0.45251396648044695
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "signals": 179,
+          "hits": 98,
+          "accuracy": 0.547486033519553
+        },
+        {
+          "symbol": "ETHUSDT",
+          "signals": 179,
+          "hits": 86,
+          "accuracy": 0.48044692737430167
+        },
+        {
+          "symbol": "LINKUSDT",
+          "signals": 179,
+          "hits": 92,
+          "accuracy": 0.5139664804469274
+        },
+        {
+          "symbol": "SOLUSDT",
+          "signals": 179,
+          "hits": 93,
+          "accuracy": 0.5195530726256983
+        },
+        {
+          "symbol": "XRPUSDT",
+          "signals": 179,
+          "hits": 82,
+          "accuracy": 0.4581005586592179
+        }
+      ],
+      "worst_fold_accuracy": 0.4937150837988827,
+      "worst_symbol_accuracy": 0.45251396648044695
+    }
+  },
+  "admitted_70": false
+}

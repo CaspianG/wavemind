@@ -85,6 +85,10 @@ Full reports:
 - [Multi-year Binance 7d event benchmark](benchmarks/results/crypto/binance_multiyear_event_7d.md)
 - [Multi-year Binance 24h intraday-path benchmark](benchmarks/results/crypto/binance_multiyear_intraday_24h.md)
 - [Multi-year Binance 7d intraday-path benchmark](benchmarks/results/crypto/binance_multiyear_intraday_7d.md)
+- [Multi-year Binance 24h LightGBM benchmark](benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_24h.md)
+- [Multi-year Binance 7d LightGBM benchmark](benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_7d.md)
+- [Causal online router benchmark](benchmarks/results/crypto/binance_online_wavefield_router_24h.md)
+- [Strict OOS stacking benchmark](benchmarks/results/crypto/binance_oos_stacking_24h.md)
 
 ### Multi-year Binance regime holdout
 
@@ -112,6 +116,27 @@ It also exposes an important measurement trap: the best 24h logistic head was
 53.9% on overlapping 4h rows but only 52.3% after forecasts were made
 independent. No current engine passes either the 75% or 80% gate, so these
 scores are not exposed as probabilities and must not drive live trades.
+
+### Stronger-model transfer test
+
+The latest round adds a fixed-parameter LightGBM expert, a causal online
+reliability router, and a strict out-of-sample stacker. Base models are trained
+without future labels; router state changes only after a target has matured;
+the stacker trains on folds 0-2, selects on fold 3, and is evaluated once on
+2026-H1.
+
+| experiment | development / all-period result | 2026-H1 | worst 2026-H1 asset | verdict |
+|---|---:|---:|---:|---|
+| 24h LightGBM-weighted ensemble | 53.4% / 4,561 signals | 52.9% / 1,122 | 47.5% | small robust uplift, rejected at 70% |
+| causal online router | 57.7% validation | 51.5% / 1,432 | 47.5% | no test uplift over best expert |
+| strict OOS stacker | 51.8% validation | 50.9% / 1,432 | 46.4% | rejected |
+| 7d LightGBM expert | 47.4% / 909 signals | 46.0% / 200 | 36.0% | rejected |
+
+The 24h ensemble improves robustness over the previous tabular ensemble, but
+the gain is nowhere near deployment quality. The 7d transfer fails. These
+tests narrow the next work to genuinely new causal information such as options,
+liquidations, macro, and timestamped news rather than more wrappers around the
+same OHLCV and derivatives features.
 
 ### Official Binance futures stress test
 
@@ -201,6 +226,8 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
 | `benchmarks/crypto_multiyear_event_benchmark.py` | nested 2022-2026 regime/event benchmark with a direct WaveField reliability ablation |
+| `benchmarks/crypto_online_wavefield_router.py` | target-maturity-safe online reliability and WaveField routing over OOS experts |
+| `benchmarks/crypto_oos_stacking_benchmark.py` | strict fold-separated meta-model and confidence-frontier evaluation |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |

@@ -127,3 +127,42 @@ def test_nested_benchmark_runs_train_field_policy_and_future_test():
     assert len(payload["policies"]) == 13
     assert payload["admitted_70"] == []
     assert payload["admitted_80"] == []
+
+
+def test_nested_benchmark_supports_optional_lightgbm_expert():
+    import numpy as np
+    import pytest
+
+    pytest.importorskip("sklearn")
+    pytest.importorskip("lightgbm")
+
+    from benchmarks.crypto_derivatives_field_benchmark import FeatureRow
+    from benchmarks.crypto_multiyear_event_benchmark import BASE_FEATURES, run_multiyear_benchmark
+
+    rng = np.random.default_rng(23)
+    rows = []
+    for timestamp in range(400):
+        for symbol in ("BTCUSDT", "ETHUSDT"):
+            features = {name: float(rng.normal()) for name in BASE_FEATURES}
+            rows.append(
+                FeatureRow(
+                    symbol=symbol,
+                    timestamp=timestamp * 10,
+                    target_timestamp=timestamp * 10 + 1,
+                    fold_index=0 if timestamp >= 300 else -1,
+                    features=features,
+                    future_return_bps=float(rng.normal() * 100.0),
+                )
+            )
+
+    payload = run_multiyear_benchmark(
+        rows,
+        horizon_seconds=1,
+        calibration_timestamps=90,
+        include_lightgbm=True,
+    )
+
+    assert payload["methodology"]["lightgbm_expert"] is True
+    assert len(payload["summaries"]) == 14
+    assert len(payload["policies"]) == 14
+    assert any(row["engine"] == "LightGBM direction" for row in payload["summaries"])

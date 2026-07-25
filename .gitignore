@@ -39,6 +39,14 @@ benchmarks/results/crypto/binance_*
 !benchmarks/results/crypto/binance_multiyear_intraday_24h.md
 !benchmarks/results/crypto/binance_multiyear_intraday_7d.json
 !benchmarks/results/crypto/binance_multiyear_intraday_7d.md
+!benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_24h.json
+!benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_24h.md
+!benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_7d.json
+!benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_7d.md
+!benchmarks/results/crypto/binance_online_wavefield_router_24h.json
+!benchmarks/results/crypto/binance_online_wavefield_router_24h.md
+!benchmarks/results/crypto/binance_oos_stacking_24h.json
+!benchmarks/results/crypto/binance_oos_stacking_24h.md
 
 .env
 .env.*

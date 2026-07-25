@@ -194,6 +194,7 @@ def run_multiyear_benchmark(
     calibration_timestamps: int = 1620,
     random_state: int = 2027,
     feature_names: Sequence[str] = BASE_FEATURES,
+    include_lightgbm: bool = False,
 ) -> dict[str, Any]:
     try:
         from sklearn.ensemble import (
@@ -208,6 +209,11 @@ def run_multiyear_benchmark(
         from sklearn.preprocessing import StandardScaler
     except ImportError as exc:
         raise RuntimeError('Install the research extra: pip install -e ".[crypto-ml]"') from exc
+    if include_lightgbm:
+        try:
+            from lightgbm import LGBMClassifier
+        except ImportError as exc:
+            raise RuntimeError('LightGBM research requires: pip install -e ".[crypto-ml]"') from exc
 
     symbols = sorted({row.symbol for row in rows})
     events: list[dict[str, Any]] = []
@@ -233,7 +239,7 @@ def run_multiyear_benchmark(
         x_base = _matrix(base_rows, feature_names)
         y_base_return = np.asarray([row.future_return_bps for row in base_rows], dtype=float)
         y_base = np.asarray(y_base_return > 0.0, dtype=int)
-        models = (
+        models = [
             make_pipeline(
                 SimpleImputer(strategy="median"),
                 StandardScaler(),
@@ -262,7 +268,31 @@ def run_multiyear_benchmark(
                     random_state=random_state,
                 ),
             ),
-        )
+        ]
+        model_names = ["Logistic", "Histogram", "ExtraTrees"]
+        if include_lightgbm:
+            models.append(
+                make_pipeline(
+                    SimpleImputer(strategy="median"),
+                    LGBMClassifier(
+                        n_estimators=300,
+                        learning_rate=0.03,
+                        num_leaves=15,
+                        min_child_samples=80,
+                        subsample=0.8,
+                        colsample_bytree=0.8,
+                        reg_alpha=1.0,
+                        reg_lambda=5.0,
+                        class_weight="balanced",
+                        deterministic=True,
+                        force_col_wise=True,
+                        verbosity=-1,
+                        n_jobs=-1,
+                        random_state=random_state + 7,
+                    ),
+                )
+            )
+            model_names.append("LightGBM")
         for model in models:
             model.fit(x_base, y_base)
         move_threshold = float(np.quantile(np.abs(y_base_return), 0.70))
@@ -296,7 +326,6 @@ def run_multiyear_benchmark(
                 np.quantile(y_base_return, 0.99),
             ),
         )
-
         prediction_sets = {}
         return_scale = max(float(np.median(np.abs(y_base_return))), 1.0)
         for name, selected in (
@@ -307,25 +336,29 @@ def run_multiyear_benchmark(
         ):
             x = _matrix(selected, feature_names)
             expert = np.column_stack([model.predict_proba(x)[:, 1] for model in models])
-            ensemble = expert @ np.asarray([0.20, 0.35, 0.45])
+            ensemble_weights = (
+                np.asarray([0.10, 0.20, 0.25, 0.45])
+                if include_lightgbm
+                else np.asarray([0.20, 0.35, 0.45])
+            )
+            ensemble = expert @ ensemble_weights
             event_probability = event_model.predict_proba(x)[:, 1]
             return_prediction = np.asarray(return_model.predict(x), dtype=float)
             return_probability = 1.0 / (
                 1.0 + np.exp(-np.clip(return_prediction / return_scale, -30.0, 30.0))
             )
+            candidate_columns = [*expert.T, ensemble, return_probability]
             momentum_6 = _heuristic_probability(selected, "return_6", scale=500.0)
             momentum_36 = _heuristic_probability(selected, "return_36", scale=1000.0)
-            candidates = np.column_stack(
+            candidate_columns.extend(
                 (
-                    expert,
-                    ensemble,
-                    return_probability,
                     momentum_6,
                     momentum_36,
                     1.0 - momentum_6,
                     1.0 - momentum_36,
                 )
             )
+            candidates = np.column_stack(candidate_columns)
             prediction_sets[name] = {
                 "rows": selected,
                 "x": x,
@@ -416,10 +449,7 @@ def run_multiyear_benchmark(
                 test_quality,
             ),
         }
-        candidate_names = (
-            "Logistic direction",
-            "Histogram direction",
-            "ExtraTrees direction",
+        candidate_names = tuple(f"{name} direction" for name in model_names) + (
             "Tabular ensemble direction",
             "Return-regression direction",
             "24h momentum direction",
@@ -513,6 +543,7 @@ def run_multiyear_benchmark(
             ),
             "field": "Actual wavemind.core.WaveField correct-vs-wrong regime memory",
             "feature_count": len(feature_names),
+            "lightgbm_expert": bool(include_lightgbm),
         },
         "policies": policies,
         "summaries": summaries,
@@ -790,6 +821,7 @@ def main() -> int:
     parser.add_argument("--bundles", type=Path, nargs="+", required=True)
     parser.add_argument("--horizon-bars", type=int, default=6)
     parser.add_argument("--include-intraday", action="store_true")
+    parser.add_argument("--include-lightgbm", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--events", type=Path)
@@ -828,6 +860,7 @@ def main() -> int:
             if args.include_intraday
             else BASE_FEATURES
         ),
+        include_lightgbm=args.include_lightgbm,
     )
     payload["data_audit"] = data_audit
     events = payload.pop("events")

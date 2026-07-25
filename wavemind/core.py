@@ -40,7 +40,10 @@ class WaveField:
         nonlin: float = 0.04,
         threshold_nl: float = 3e-4,
         stable_threshold: float = 8e-5,
+        max_amplitude: float = 12.0,
     ):
+        if max_amplitude <= 0.0:
+            raise ValueError("max_amplitude must be positive")
         self.W = width
         self.H = height
         self.L = layers
@@ -50,6 +53,7 @@ class WaveField:
         self.nonlin = nonlin
         self.threshold_nl = threshold_nl
         self.stable_threshold = stable_threshold
+        self.max_amplitude = float(max_amplitude)
         self.state = np.zeros((height, width, layers), dtype=np.float32)
 
     def feed(self, pattern: np.ndarray, strength: float = 1.0) -> None:
@@ -57,17 +61,19 @@ class WaveField:
         w = min(self.W, pattern.shape[1])
         noise = np.random.uniform(0.94, 1.06, (h, w, self.L)).astype(np.float32)
         self.state[:h, :w] += pattern[:h, :w, np.newaxis] * noise * strength
+        np.clip(self.state, -self.max_amplitude, self.max_amplitude, out=self.state)
 
     def forget(self, pattern: np.ndarray, strength: float = 0.5) -> None:
         h = min(self.H, pattern.shape[0])
         w = min(self.W, pattern.shape[1])
         self.state[:h, :w] -= pattern[:h, :w, np.newaxis] * strength
-        np.clip(self.state, -12.0, 12.0, out=self.state)
+        np.clip(self.state, -self.max_amplitude, self.max_amplitude, out=self.state)
 
     def evolve(self, steps: int = 1) -> None:
         rad = self.radius
         for _ in range(steps):
             state = self.state
+            np.clip(state, -self.max_amplitude, self.max_amplitude, out=state)
             neighbours = np.zeros_like(state)
             count = 0
             for dy in range(-rad, rad + 1):
@@ -81,6 +87,7 @@ class WaveField:
             diff = np.where(np.abs(diff) < self.threshold_nl, 0.0, diff)
             diff = diff * self.speed - self.nonlin * (state ** 2) * diff
             self.state = (state + diff) * self.decay
+            np.clip(self.state, -self.max_amplitude, self.max_amplitude, out=self.state)
 
     def field_resonance(self, pattern: np.ndarray) -> float:
         h = min(self.H, pattern.shape[0])

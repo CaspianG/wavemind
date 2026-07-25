@@ -54,6 +54,7 @@ crypto = [
 ]
 crypto-ml = [
   "ccxt>=4",
+  "lightgbm>=4.6",
   "pandas>=2",
   "scikit-learn>=1.6",
 ]

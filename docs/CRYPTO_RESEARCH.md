@@ -911,17 +911,30 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     historical rows. The first complete settlement is only `0.267` direction
     accuracy on 15 forecasts, with Wilson low `0.109`; the strict live 70% gate
     rejects it. Ten fresh 24h/7d rows are pending.
-27. Next: build a WaveMind-native market-state memory model that beats these
+27. Done: added a fixed-parameter LightGBM expert, causal online router, and
+    strict OOS stacker. The 24h LightGBM-weighted ensemble improves to `0.534`
+    across 4,561 independent signals and `0.529` on 1,122 selected 2026-H1
+    signals, but its worst 2026-H1 asset is only `0.475`. The online router
+    reaches `0.515` on 1,432 final-test signals and the stacker reaches `0.509`;
+    neither beats the best preselected expert. The 7d LightGBM head falls to
+    `0.460` on the final period. All 70% gates remain rejected. Repeated online
+    updates also exposed numeric overflow in `WaveField`; bounded feed/evolution
+    amplitude and a repeated-strong-update stress test now keep the core finite.
+28. Next: add genuinely new, timestamp-verifiable information such as options
+    skew, liquidations, macro risk state, and archived news sentiment. The
+    current OHLCV, funding, open-interest, premium, trader-ratio, and intraday
+    flow feature family has not supported a universal 70% daily edge.
+29. Next: build a WaveMind-native market-state memory model that beats these
     statistical baselines on aggregate, fold, and symbol robustness. Direct
     WaveField outcome and relationship-memory ablations have not done so.
-28. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+30. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-29. Next: validate the market-field target on more exchanges, date ranges,
+31. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-30. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+32. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-31. Add signal construction only after retrieval quality is stable.
-32. Publish results separately from the main README to avoid confusing memory
+33. Add signal construction only after retrieval quality is stable.
+34. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.
