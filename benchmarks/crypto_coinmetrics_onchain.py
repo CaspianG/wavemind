@@ -5,6 +5,7 @@ import gzip
 import hashlib
 import json
 import math
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -385,7 +386,12 @@ def _midnight(day: date) -> int:
 
 
 def _iso_timestamp(value: str) -> int:
-    normalized = value.replace("Z", "+00:00")
+    normalized = value.strip().replace("Z", "+00:00")
+    normalized = re.sub(
+        r"(\.\d{6})\d+(?=(?:[+-]\d{2}:\d{2})?$)",
+        r"\1",
+        normalized,
+    )
     return int(datetime.fromisoformat(normalized).timestamp())
 
 
