@@ -93,6 +93,33 @@ Full reports:
 - [Causal source fusion 7d benchmark](benchmarks/results/crypto/binance_evidence_fusion_7d.md)
 - [Deribit options evidence 24h benchmark](benchmarks/results/crypto/deribit_options_24h.md)
 - [Deribit options evidence 7d benchmark](benchmarks/results/crypto/deribit_options_7d.md)
+- [Causal temporal-state 24h benchmark](benchmarks/results/crypto/temporal_wavefield_24h.md)
+- [Causal temporal-state 7d benchmark](benchmarks/results/crypto/temporal_state_7d.md)
+- [Fear & Greed 24h source ablation](benchmarks/results/crypto/fear_greed_24h.md)
+- [Fear & Greed 7d source ablation](benchmarks/results/crypto/fear_greed_7d.md)
+- [Nested OKX perpetual signal transfer](benchmarks/results/crypto/okx_perp_signal_transfer.md)
+
+### Latest causal ablations
+
+The newest experiments deliberately target earlier weak points: temporal field
+state, external sentiment, and threshold transfer. All three are reproducible,
+and all three are rejected for production use.
+
+| experiment | independent result | final-period or transfer result | verdict |
+|---|---:|---:|---|
+| lagged causal state LightGBM, 24h | 53.8% / 2,260 selected | 51.7% in 2026-H1; worst fold 51.7% | rejected |
+| lagged causal state Logistic, 7d | 52.0% / 839 selected | 53.6% in 2026-H1; worst fold 46.8% | rejected |
+| multi-timescale temporal WaveField, 24h | 52.1% best selected | best final 52.1%; best worst fold 50.8% | rejected |
+| Fear & Greed, 24h WaveField gate | 53.2% vs 53.8% control | 51.4% vs 52.5% control | rejected |
+| Fear & Greed, 7d LightGBM | 54.0% vs 53.2% control | 43.0% vs 52.5% control | rejected |
+| past-selected OKX perp policy | 148 transferred signals | 48.6%, Wilson low 40.7% | rejected |
+
+The OKX transfer check is especially important. The older `80.6%` frontier was
+a same-event diagnostic over overlapping forecasts. After collapsing 2,880 raw
+rows to 304 independent horizons and freezing each threshold before the next
+fold, the transferred accuracy is only `48.6%`. The old number remains in the
+historical report for reproducibility, but it is not evidence of a transferable
+edge.
 
 ### Multi-year Binance regime holdout
 
@@ -290,13 +317,17 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_binance_spot.py` | checksum-verified Binance spot 5m flow history |
 | `benchmarks/crypto_fred_macro.py` | fingerprinted FRED market-risk series with publication lag |
 | `benchmarks/crypto_coinmetrics_onchain.py` | fingerprinted Coin Metrics on-chain and exchange-flow history |
+| `benchmarks/crypto_fear_greed.py` | fingerprinted daily Fear & Greed history with a conservative publication lag |
 | `benchmarks/crypto_evidence_fusion_benchmark.py` | equal-row causal source ablation and fusion benchmark |
+| `benchmarks/crypto_sentiment_benchmark.py` | equal-row 24h/7d Fear & Greed control-vs-treatment benchmark |
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
+| `benchmarks/crypto_temporal_field_benchmark.py` | raw-vs-lagged-vs-WaveField causal temporal-state ablation |
 | `benchmarks/crypto_multiyear_event_benchmark.py` | nested 2022-2026 regime/event benchmark with a direct WaveField reliability ablation |
 | `benchmarks/crypto_online_wavefield_router.py` | target-maturity-safe online reliability and WaveField routing over OOS experts |
 | `benchmarks/crypto_oos_stacking_benchmark.py` | strict fold-separated meta-model and confidence-frontier evaluation |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
+| `benchmarks/crypto_signal_transfer_benchmark.py` | past-only threshold selection followed by frozen next-fold transfer |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
 | `benchmarks/crypto_current_forecast.py` | fresh 24h/7d forecasts and ledger recording |
@@ -340,13 +371,14 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 
 1. Add a second checksum-verifiable exchange holdout; the Binance history now
    spans 4.5 years, but cross-venue transfer is still unproven.
-2. Replace the current projected outcome map with a WaveMind-native temporal
-   field whose state update is trained and ablated against the static head;
-   the first online expert-memory and error-correction variants were rejected.
+2. Train a WaveMind-native temporal state transition against past outcomes.
+   The first causal lagged-state and multi-timescale reservoir arms are
+   complete. The best selected scores are `53.8%` on 24h and `52.0%` on 7d,
+   so neither explicit lags nor random projected field state are sufficient.
 3. Add liquidation history and timestamped news sentiment one source at a
    time. BVOL, book depth, spot flow, macro, on-chain, and sampled Deribit
-   options ablations are complete; options and naive all-source fusion were
-   rejected.
+   options ablations are complete. Daily Fear & Greed is also complete and
+   rejected; genuinely timestamped news and liquidation history remain.
 4. Improve target magnitude and publish prediction intervals only after their
    empirical coverage is stable by fold and asset.
 5. Validate the 1d/7d policy before allowing trade signals.

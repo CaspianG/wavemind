@@ -1,0 +1,257 @@
+{
+  "methodology": {
+    "protocol": "Forecasts are collapsed to one independent observation per horizon. A threshold policy is selected from earlier folds only and then frozen for the next fold.",
+    "raw_events": 2880,
+    "independent_events": 304,
+    "target_accuracy": 0.7,
+    "min_training_signals": 20,
+    "min_test_signals": 40,
+    "min_wilson_low_95": 0.65,
+    "min_fold_accuracy": 0.6,
+    "min_slice_accuracy": 0.6
+  },
+  "by_timeframe": [
+    {
+      "timeframe": "1h",
+      "independent_events": 64,
+      "folds": [
+        {
+          "test_fold": 1,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.0,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": null
+          },
+          "selection_status": "insufficient_history",
+          "training": {
+            "signals": 16,
+            "hits": 14,
+            "accuracy": 0.875,
+            "wilson_low_95": 0.6397717273424132
+          },
+          "test": {
+            "signals": 16,
+            "hits": 10,
+            "accuracy": 0.625,
+            "wilson_low_95": 0.38641040545502725
+          }
+        },
+        {
+          "test_fold": 2,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.0,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": null
+          },
+          "selection_status": "target_reached",
+          "training": {
+            "signals": 32,
+            "hits": 24,
+            "accuracy": 0.75,
+            "wilson_low_95": 0.5789344100575552
+          },
+          "test": {
+            "signals": 16,
+            "hits": 6,
+            "accuracy": 0.375,
+            "wilson_low_95": 0.18481232558863636
+          }
+        },
+        {
+          "test_fold": 3,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.0,
+            "min_magnitude_bps": 50.0,
+            "max_volatility_bps": null
+          },
+          "selection_status": "target_reached",
+          "training": {
+            "signals": 38,
+            "hits": 28,
+            "accuracy": 0.7368421052631579,
+            "wilson_low_95": 0.5799115381253364
+          },
+          "test": {
+            "signals": 13,
+            "hits": 9,
+            "accuracy": 0.6923076923076923,
+            "wilson_low_95": 0.42369343180549035
+          }
+        }
+      ]
+    },
+    {
+      "timeframe": "4h",
+      "independent_events": 240,
+      "folds": [
+        {
+          "test_fold": 1,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.25,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": null
+          },
+          "selection_status": "target_reached",
+          "training": {
+            "signals": 27,
+            "hits": 20,
+            "accuracy": 0.7407407407407407,
+            "wilson_low_95": 0.5532142868544693
+          },
+          "test": {
+            "signals": 29,
+            "hits": 12,
+            "accuracy": 0.41379310344827586,
+            "wilson_low_95": 0.255131773413224
+          }
+        },
+        {
+          "test_fold": 2,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.25,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": 250.0
+          },
+          "selection_status": "best_available",
+          "training": {
+            "signals": 47,
+            "hits": 30,
+            "accuracy": 0.6382978723404256,
+            "wilson_low_95": 0.4953589653479511
+          },
+          "test": {
+            "signals": 17,
+            "hits": 7,
+            "accuracy": 0.4117647058823529,
+            "wilson_low_95": 0.21611056790214814
+          }
+        },
+        {
+          "test_fold": 3,
+          "policy": {
+            "min_agreement": 0.0,
+            "min_strength": 0.0,
+            "min_magnitude_bps": 0.0,
+            "max_volatility_bps": 250.0
+          },
+          "selection_status": "best_available",
+          "training": {
+            "signals": 153,
+            "hits": 83,
+            "accuracy": 0.5424836601307189,
+            "wilson_low_95": 0.4634685585360417
+          },
+          "test": {
+            "signals": 57,
+            "hits": 28,
+            "accuracy": 0.49122807017543857,
+            "wilson_low_95": 0.36616282418407425
+          }
+        }
+      ]
+    }
+  ],
+  "transferred_summary": {
+    "signals": 148,
+    "hits": 72,
+    "accuracy": 0.4864864864864865,
+    "wilson_low_95": 0.40732816117321685
+  },
+  "transferred_by_fold": [
+    {
+      "fold_index": 1,
+      "signals": 45,
+      "hits": 22,
+      "accuracy": 0.4888888888888889,
+      "wilson_low_95": 0.349570237528785
+    },
+    {
+      "fold_index": 2,
+      "signals": 33,
+      "hits": 13,
+      "accuracy": 0.3939393939393939,
+      "wilson_low_95": 0.2468310743447709
+    },
+    {
+      "fold_index": 3,
+      "signals": 70,
+      "hits": 37,
+      "accuracy": 0.5285714285714286,
+      "wilson_low_95": 0.4132188746832562
+    }
+  ],
+  "transferred_by_slice": [
+    {
+      "symbol": "HYPE/USDT:USDT",
+      "timeframe": "1h",
+      "signals": 11,
+      "hits": 7,
+      "accuracy": 0.6363636363636364,
+      "wilson_low_95": 0.35380117450784887
+    },
+    {
+      "symbol": "HYPE/USDT:USDT",
+      "timeframe": "4h",
+      "signals": 27,
+      "hits": 12,
+      "accuracy": 0.4444444444444444,
+      "wilson_low_95": 0.27585858177023004
+    },
+    {
+      "symbol": "SOL/USDT:USDT",
+      "timeframe": "1h",
+      "signals": 12,
+      "hits": 6,
+      "accuracy": 0.5,
+      "wilson_low_95": 0.2537815976337061
+    },
+    {
+      "symbol": "SOL/USDT:USDT",
+      "timeframe": "4h",
+      "signals": 23,
+      "hits": 9,
+      "accuracy": 0.391304347826087,
+      "wilson_low_95": 0.2215762279247795
+    },
+    {
+      "symbol": "XRP/USDT:USDT",
+      "timeframe": "1h",
+      "signals": 11,
+      "hits": 6,
+      "accuracy": 0.5454545454545454,
+      "wilson_low_95": 0.28009153740932197
+    },
+    {
+      "symbol": "XRP/USDT:USDT",
+      "timeframe": "4h",
+      "signals": 25,
+      "hits": 13,
+      "accuracy": 0.52,
+      "wilson_low_95": 0.33498516950356777
+    },
+    {
+      "symbol": "ZEC/USDT:USDT",
+      "timeframe": "1h",
+      "signals": 11,
+      "hits": 6,
+      "accuracy": 0.5454545454545454,
+      "wilson_low_95": 0.28009153740932197
+    },
+    {
+      "symbol": "ZEC/USDT:USDT",
+      "timeframe": "4h",
+      "signals": 28,
+      "hits": 13,
+      "accuracy": 0.4642857142857143,
+      "wilson_low_95": 0.29531569982795375
+    }
+  ],
+  "fold_ready": false,
+  "slice_ready": false,
+  "admitted_70": false
+}

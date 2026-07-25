@@ -145,11 +145,11 @@ Checked-in OKX result:
 | consensus_edge | 328 | 0.038 | 0.738 | 228.9 bps | 2.25% |
 | strict_consensus_edge | 216 | 0.025 | 0.750 | 213.1 bps | 2.11% |
 
-The consensus edge is the strongest current result: all policy components agree
-inside a calm-volatility regime, producing 75% historical direction hit on 216
-walk-forward events. Coverage is low, so this is a research signal-quality
-breakthrough, not a standalone trading system. The next task is to expand
-coverage while preserving hit-rate and improving worst-slice behavior.
+The consensus edge is a retrospective diagnostic: all policy components agree
+inside a calm-volatility regime, producing 75% direction hit on 216 overlapping
+walk-forward rows. It is not a transferable edge. The later nested benchmark
+collapses overlap and freezes policy thresholds before the next fold; under
+that stricter protocol no 70% signal tier survives.
 
 ## Perpetual Futures Stress Check
 
@@ -218,16 +218,20 @@ Signal-quality frontier result:
 | 0.80 | 273 | 0.095 | 0.806 | 0.000 | 2.79% |
 | 0.85 | 34 | 0.012 | 0.882 | 0.000 | 4.59% |
 
-Interpretation: the 80.6% result is real walk-forward evidence for selective
-high-hit regimes, but it still fails the broad robustness test. The
-slice-stable frontier, which requires at least 75% market-slice coverage and
-worst-slice direction hit >= 0.50, currently finds no valid 60%+ tier. The
-weakness is concentrated in 4h: 1h high-conviction perps reach `0.724`
-direction hit at `0.781` coverage, while 4h high-conviction perps reach only
-`0.391` hit at `0.032` coverage. The 7d perpetual check remains weak: 240
-daily walk-forward predictions, direction hit `0.533`, MAPE `8.45%`. The
-regime-policy overlay falls back to robust on this horizon until a dedicated
-daily policy proves itself.
+Interpretation: the 80.6% row is a retrospective threshold diagnostic, not
+transfer evidence. It was selected on the same 2,880 overlapping forecast rows
+that it summarizes. The strict nested follow-up first collapses those rows to
+304 independent horizons, selects each policy from earlier folds only, freezes
+it, and applies it to the next fold. That produces 148 transferred signals at
+only `0.486` direction accuracy with a `0.407` Wilson lower bound. The result
+is rejected.
+
+The slice-stable retrospective frontier also finds no valid 60%+ tier. The
+weakness is concentrated in 4h, but 1h does not survive the stricter transfer
+protocol either. The 7d perpetual check remains weak: 240 daily walk-forward
+predictions, direction hit `0.533`, MAPE `8.45%`. The regime-policy overlay
+falls back to robust on this horizon until a dedicated daily policy proves
+itself.
 
 ## Confidence And Calibration
 
@@ -870,8 +874,9 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     overlay keeps 1h/4h perpetual direction hit at `0.591` and lowers MAE from
     `392.4` to `392.0` bps. The layer is disabled on 1d.
 18. Done: perp signal-quality coverage frontier. The observed `0.80` target
-    tier reaches `0.806` direction hit at `0.095` coverage, but the stricter
-    slice-stable frontier currently finds no valid 60%+ tier.
+    tier reaches `0.806` direction hit at `0.095` raw-row coverage, but it is a
+    same-event diagnostic. The later nested transfer benchmark supersedes it
+    for evidence decisions and rejects the policy.
 19. Done: experimental 4h relationship-field repair. Direct sign-flips were
     rejected after smoke failure; sign-anchored relationship magnitude was safe
     but did not beat the current regime-policy winner.
@@ -946,16 +951,24 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     direct WaveField moves final accuracy from `0.494` to `0.506`. On 7d, the
     direct WaveField repairs `0.300` to `0.420`, but remains unusable and its
     worst final asset is `0.320`. No options arm passes admission.
-31. Next: add genuinely new, timestamp-verifiable liquidation history and
-    archived news sentiment. Current market, derivatives, volatility, macro,
-    on-chain, and sampled options features have not supported a universal 70%
-    daily edge.
-32. Next: build a WaveMind-native temporal market-state model that beats the
-    WaveField-gated statistical direction on aggregate, fold, and symbol
-    robustness.
-33. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
-    perp layer is risk-adjusted progress, but 4h high-conviction perps still
-    block broad robustness.
+31. Partial: added 3,093 fingerprinted Alternative.me Fear & Greed daily
+    observations with a conservative 24-hour publication lag. Equal-row 24h
+    and 7d ablations reject the source: the 24h WaveField gate falls from
+    `0.525` to `0.514` on 2026-H1, while 7d LightGBM falls from `0.525` to
+    `0.430`. Genuinely timestamp-verifiable liquidation history and archived
+    news remain next.
+32. Done, negative: added a causal temporal-state benchmark comparing raw
+    snapshots, six explicit past-state lags, and a WaveMind-native
+    three-timescale reservoir. The lagged LightGBM arm reaches `0.538` selected
+    on 24h but only `0.517` on 2026-H1. The lagged Logistic arm reaches `0.520`
+    selected on 7d and `0.536` on 2026-H1, but its worst fold is `0.468`.
+    Temporal WaveField arms are no better. The next temporal model must learn
+    its state transition from past outcomes instead of using fixed lags or a
+    random projection.
+33. Done, negative: added nested OKX perpetual signal-policy transfer. After
+    overlap collapse and past-only policy selection, the old retrospective
+    `0.806` frontier transfers at only `0.486` across 148 signals. A dedicated
+    4h/slice-stable policy is still required.
 34. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
 35. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,

@@ -1,5 +1,10 @@
 # WaveMind Crypto Signal Quality Benchmark
 
+> Historical same-event diagnostic. Thresholds in this report were selected
+> on the rows they summarize and forecasts overlap. Use
+> [`results/crypto/okx_perp_signal_transfer.md`](results/crypto/okx_perp_signal_transfer.md)
+> for the independent, past-selected transfer verdict.
+
 Walk-forward benchmark for separating always-on price forecasts from trade-quality subsets. This is not financial advice.
 
 The price forecast always exists. The signal tier is a historical evidence filter, not a calibrated probability.

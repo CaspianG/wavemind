@@ -1,0 +1,6714 @@
+{
+  "methodology": {
+    "protocol": "Control and sentiment treatment use identical rows and calendar folds. Each daily Fear & Greed observation becomes visible only after the configured publication lag.",
+    "selection": "Model thresholds use past folds only; 2026-H1 remains the final holdout.",
+    "features": [
+      "fng_value",
+      "fng_z_30d",
+      "fng_z_90d",
+      "fng_change_1d",
+      "fng_change_7d",
+      "fng_change_30d",
+      "fng_mean_7d",
+      "fng_mean_30d",
+      "fng_volatility_30d",
+      "fng_extreme_fear",
+      "fng_extreme_greed",
+      "fng_return_6_interaction",
+      "fng_return_36_interaction",
+      "fng_age_hours"
+    ],
+    "rows": 53436,
+    "assets": [
+      "ADAUSDT",
+      "BNBUSDT",
+      "BTCUSDT",
+      "DOGEUSDT",
+      "ETHUSDT",
+      "LINKUSDT",
+      "SOLUSDT",
+      "XRPUSDT"
+    ]
+  },
+  "full_coverage_comparison": [
+    {
+      "engine": "LightGBM direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5103722230395763,
+      "treatment_all": 0.5109607179638076,
+      "delta_all": 0.0005884949242312976,
+      "final_signals": 1432,
+      "baseline_final": 0.5083798882681564,
+      "treatment_final": 0.4965083798882682,
+      "delta_final": -0.011871508379888207,
+      "treatment_worst_final_asset": 0.4581005586592179,
+      "treatment_final_wilson_low_95": 0.4706561869321188
+    },
+    {
+      "engine": "Tabular ensemble direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5152273061644843,
+      "treatment_all": 0.5152273061644843,
+      "delta_all": 0.0,
+      "final_signals": 1432,
+      "baseline_final": 0.4909217877094972,
+      "treatment_final": 0.4860335195530726,
+      "delta_final": -0.004888268156424569,
+      "treatment_worst_final_asset": 0.43575418994413406,
+      "treatment_final_wilson_low_95": 0.4602187866330772
+    },
+    {
+      "engine": "WaveField-gated Logistic direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5377372370163307,
+      "treatment_all": 0.5321465352361335,
+      "delta_all": -0.00559070178019716,
+      "final_signals": 1432,
+      "baseline_final": 0.5251396648044693,
+      "treatment_final": 0.5139664804469274,
+      "delta_final": -0.011173184357541888,
+      "treatment_worst_final_asset": 0.4748603351955307,
+      "treatment_final_wilson_low_95": 0.4880770155164062
+    },
+    {
+      "engine": "Calibrated WaveField-gated Logistic direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5377372370163307,
+      "treatment_all": 0.5321465352361335,
+      "delta_all": -0.00559070178019716,
+      "final_signals": 1432,
+      "baseline_final": 0.5251396648044693,
+      "treatment_final": 0.5139664804469274,
+      "delta_final": -0.011173184357541888,
+      "treatment_worst_final_asset": 0.4748603351955307,
+      "treatment_final_wilson_low_95": 0.4880770155164062
+    },
+    {
+      "engine": "WaveField outcome direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5149330587023687,
+      "treatment_all": 0.5059585111078417,
+      "delta_all": -0.008974547594526983,
+      "final_signals": 1432,
+      "baseline_final": 0.5195530726256983,
+      "treatment_final": 0.4965083798882682,
+      "delta_final": -0.023044692737430095,
+      "treatment_worst_final_asset": 0.4692737430167598,
+      "treatment_final_wilson_low_95": 0.4706561869321188
+    },
+    {
+      "engine": "WaveField regime memory direction",
+      "all_signals": 6797,
+      "baseline_all": 0.5119905840812123,
+      "treatment_all": 0.4956598499337943,
+      "delta_all": -0.016330734147418036,
+      "final_signals": 1432,
+      "baseline_final": 0.5460893854748603,
+      "treatment_final": 0.46997206703910616,
+      "delta_final": -0.07611731843575414,
+      "treatment_worst_final_asset": 0.4245810055865922,
+      "treatment_final_wilson_low_95": 0.44423679632950835
+    }
+  ],
+  "policy_comparison": [
+    {
+      "engine": "LightGBM direction",
+      "baseline_all": 0.5266476810414972,
+      "treatment_all": 0.5114776019612213,
+      "delta_all": -0.0151700790802759,
+      "baseline_final": 0.5117845117845118,
+      "treatment_final": 0.473970473970474,
+      "delta_final": -0.037814037814037804
+    },
+    {
+      "engine": "Tabular ensemble direction",
+      "baseline_all": 0.5336322869955157,
+      "treatment_all": 0.5287769784172662,
+      "delta_all": -0.004855308578249451,
+      "baseline_final": 0.5083798882681564,
+      "treatment_final": 0.5280728376327769,
+      "delta_final": 0.019692949364620516
+    },
+    {
+      "engine": "WaveField-gated Logistic direction",
+      "baseline_all": 0.5219471947194719,
+      "treatment_all": 0.5101822079314041,
+      "delta_all": -0.01176498678806781,
+      "baseline_final": 0.49924585218702866,
+      "treatment_final": 0.49279538904899134,
+      "delta_final": -0.006450463138037321
+    },
+    {
+      "engine": "Calibrated WaveField-gated Logistic direction",
+      "baseline_all": 0.5278482902792295,
+      "treatment_all": 0.5259339862169025,
+      "delta_all": -0.0019143040623270657,
+      "baseline_final": 0.5251396648044693,
+      "treatment_final": 0.5075471698113208,
+      "delta_final": -0.017592494993148522
+    },
+    {
+      "engine": "WaveField outcome direction",
+      "baseline_all": 0.5238563698967044,
+      "treatment_all": 0.5066964285714286,
+      "delta_all": -0.017159941325275763,
+      "baseline_final": 0.5,
+      "treatment_final": 0.5100671140939598,
+      "delta_final": 0.010067114093959773
+    },
+    {
+      "engine": "WaveField regime memory direction",
+      "baseline_all": 0.5076923076923077,
+      "treatment_all": 0.5228346456692914,
+      "delta_all": 0.015142337976983722,
+      "baseline_final": 0.5,
+      "treatment_final": 0.5193621867881549,
+      "delta_final": 0.019362186788154934
+    }
+  ],
+  "baseline": {
+    "methodology": {
+      "data": "Verified Binance USD-M archive, 2022-01-01 through 2026-06-30",
+      "assets": [
+        "ADAUSDT",
+        "BNBUSDT",
+        "BTCUSDT",
+        "DOGEUSDT",
+        "ETHUSDT",
+        "LINKUSDT",
+        "SOLUSDT",
+        "XRPUSDT"
+      ],
+      "horizon": "24h",
+      "folds": "Five fixed calendar half-years from 2024-H1 through 2026-H1",
+      "nested_policy": "For each fold, the preceding 180 days are split chronologically into reliability training, probability calibration, and policy selection. Test labels never select the threshold.",
+      "field": "Actual wavemind.core.WaveField correct-vs-wrong regime memory",
+      "feature_count": 117,
+      "lightgbm_expert": true
+    },
+    "policies": [
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 140,
+        "policy_accuracy": 0.6285714285714286
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.42499999999999993,
+        "policy_effective_signals": 113,
+        "policy_accuracy": 0.6460176991150443
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.5499999999999999,
+        "policy_effective_signals": 91,
+        "policy_accuracy": 0.6813186813186813
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.125,
+        "policy_effective_signals": 135,
+        "policy_accuracy": 0.6296296296296297
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 140,
+        "policy_accuracy": 0.6285714285714286
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 124,
+        "policy_accuracy": 0.6370967741935484
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.125,
+        "policy_effective_signals": 131,
+        "policy_accuracy": 0.5801526717557252
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 104,
+        "policy_accuracy": 0.6153846153846154
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 134,
+        "policy_accuracy": 0.6119402985074627
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.29999999999999993,
+        "policy_effective_signals": 69,
+        "policy_accuracy": 0.6811594202898551
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 130,
+        "policy_accuracy": 0.45384615384615384
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 81,
+        "policy_accuracy": 0.37037037037037035
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 42,
+        "policy_accuracy": 0.7142857142857143
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.125,
+        "policy_effective_signals": 115,
+        "policy_accuracy": 0.6956521739130435
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.3749999999999999,
+        "policy_effective_signals": 65,
+        "policy_accuracy": 0.7076923076923077
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 71,
+        "policy_accuracy": 0.5070422535211268
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.53125
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5999999999999999,
+        "policy_effective_signals": 41,
+        "policy_accuracy": 0.6341463414634146
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 52,
+        "policy_accuracy": 0.75
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 159,
+        "policy_accuracy": 0.5723270440251572
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.53125
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 117,
+        "policy_accuracy": 0.6495726495726496
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 48,
+        "policy_accuracy": 0.8333333333333334
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 106,
+        "policy_accuracy": 0.5943396226415094
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 106,
+        "policy_accuracy": 0.6320754716981132
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 56,
+        "policy_accuracy": 0.6428571428571429
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 141,
+        "policy_accuracy": 0.40425531914893614
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 109,
+        "policy_accuracy": 0.5963302752293578
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.44999999999999996,
+        "policy_effective_signals": 48,
+        "policy_accuracy": 0.7291666666666666
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 49,
+        "policy_accuracy": 0.5306122448979592
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.6499999999999998,
+        "policy_effective_signals": 42,
+        "policy_accuracy": 0.6904761904761905
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 115,
+        "policy_accuracy": 0.45217391304347826
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.46875
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.7249999999999999,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.65
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 151,
+        "policy_accuracy": 0.543046357615894
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 155,
+        "policy_accuracy": 0.5161290322580645
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5249999999999999,
+        "policy_effective_signals": 148,
+        "policy_accuracy": 0.4864864864864865
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 140,
+        "policy_accuracy": 0.5642857142857143
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.27499999999999997,
+        "policy_effective_signals": 41,
+        "policy_accuracy": 0.6829268292682927
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 151,
+        "policy_accuracy": 0.5298013245033113
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.42499999999999993,
+        "policy_effective_signals": 44,
+        "policy_accuracy": 0.5681818181818182
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 137,
+        "policy_accuracy": 0.5182481751824818
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 122,
+        "policy_accuracy": 0.47540983606557374
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 144,
+        "policy_accuracy": 0.4861111111111111
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 155,
+        "policy_accuracy": 0.5870967741935483
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 125,
+        "policy_accuracy": 0.56
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 156,
+        "policy_accuracy": 0.6025641025641025
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 69,
+        "policy_accuracy": 0.5217391304347826
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.41875
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 114,
+        "policy_accuracy": 0.4824561403508772
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.27499999999999997,
+        "policy_effective_signals": 123,
+        "policy_accuracy": 0.4878048780487805
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 119,
+        "policy_accuracy": 0.47058823529411764
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.42499999999999993,
+        "policy_effective_signals": 158,
+        "policy_accuracy": 0.4240506329113924
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 69,
+        "policy_accuracy": 0.5217391304347826
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 57,
+        "policy_accuracy": 0.40350877192982454
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 78,
+        "policy_accuracy": 0.3974358974358974
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 81,
+        "policy_accuracy": 0.4074074074074074
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 53,
+        "policy_accuracy": 0.5849056603773585
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 41,
+        "policy_accuracy": 0.7073170731707317
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 125,
+        "policy_accuracy": 0.576
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 118,
+        "policy_accuracy": 0.4915254237288136
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 64,
+        "policy_accuracy": 0.59375
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 155,
+        "policy_accuracy": 0.5032258064516129
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 53,
+        "policy_accuracy": 0.5849056603773585
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.59375
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5249999999999999,
+        "policy_effective_signals": 78,
+        "policy_accuracy": 0.6666666666666666
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 109,
+        "policy_accuracy": 0.7064220183486238
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 106,
+        "policy_accuracy": 0.5754716981132075
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.59375
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 109,
+        "policy_accuracy": 0.7064220183486238
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 53,
+        "policy_accuracy": 0.7735849056603774
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 65,
+        "policy_accuracy": 0.7384615384615385
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 74,
+        "policy_accuracy": 0.7297297297297297
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 58,
+        "policy_accuracy": 0.3448275862068966
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 128,
+        "policy_accuracy": 0.484375
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 137,
+        "policy_accuracy": 0.7372262773722628
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 112,
+        "policy_accuracy": 0.5982142857142857
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5999999999999999,
+        "policy_effective_signals": 46,
+        "policy_accuracy": 0.717391304347826
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 41,
+        "policy_accuracy": 0.5365853658536586
+      }
+    ],
+    "summaries": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4304,
+        "coverage": 0.6332205384728556,
+        "hits": 2234,
+        "accuracy": 0.5190520446096655,
+        "wilson_low_95": 0.50411491132809,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.5296052631578947
+          },
+          {
+            "fold_index": "1",
+            "signals": 505,
+            "accuracy": 0.5287128712871287
+          },
+          {
+            "fold_index": "2",
+            "signals": 1297,
+            "accuracy": 0.5242868157286045
+          },
+          {
+            "fold_index": "3",
+            "signals": 943,
+            "accuracy": 0.5206786850477201
+          },
+          {
+            "fold_index": "4",
+            "signals": 1255,
+            "accuracy": 0.5059760956175299
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 579,
+            "accuracy": 0.5284974093264249
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 453,
+            "accuracy": 0.5165562913907285
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 426,
+            "accuracy": 0.5070422535211268
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 608,
+            "accuracy": 0.5180921052631579
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 504,
+            "accuracy": 0.5476190476190477
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 598,
+            "accuracy": 0.5117056856187291
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 601,
+            "accuracy": 0.5074875207986689
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 535,
+            "accuracy": 0.5158878504672897
+          }
+        ],
+        "worst_fold_accuracy": 0.5059760956175299,
+        "worst_symbol_accuracy": 0.5070422535211268
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4345,
+        "coverage": 0.6392526114462262,
+        "hits": 2072,
+        "accuracy": 0.4768699654775604,
+        "wilson_low_95": 0.4620458643297132,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1069,
+            "accuracy": 0.4593077642656688
+          },
+          {
+            "fold_index": "1",
+            "signals": 1355,
+            "accuracy": 0.4907749077490775
+          },
+          {
+            "fold_index": "2",
+            "signals": 1000,
+            "accuracy": 0.483
+          },
+          {
+            "fold_index": "3",
+            "signals": 320,
+            "accuracy": 0.459375
+          },
+          {
+            "fold_index": "4",
+            "signals": 601,
+            "accuracy": 0.47587354409317806
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 607,
+            "accuracy": 0.4728171334431631
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 439,
+            "accuracy": 0.5034168564920274
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 426,
+            "accuracy": 0.47183098591549294
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 604,
+            "accuracy": 0.48344370860927155
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 535,
+            "accuracy": 0.44672897196261685
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 605,
+            "accuracy": 0.46942148760330576
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 587,
+            "accuracy": 0.49233390119250425
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 542,
+            "accuracy": 0.477859778597786
+          }
+        ],
+        "worst_fold_accuracy": 0.4593077642656688,
+        "worst_symbol_accuracy": 0.44672897196261685
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4410,
+        "coverage": 0.6488156539649845,
+        "hits": 2329,
+        "accuracy": 0.5281179138321995,
+        "wilson_low_95": 0.5133661630080594,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1036,
+            "accuracy": 0.5125482625482626
+          },
+          {
+            "fold_index": "1",
+            "signals": 644,
+            "accuracy": 0.5295031055900621
+          },
+          {
+            "fold_index": "2",
+            "signals": 952,
+            "accuracy": 0.5493697478991597
+          },
+          {
+            "fold_index": "3",
+            "signals": 603,
+            "accuracy": 0.5174129353233831
+          },
+          {
+            "fold_index": "4",
+            "signals": 1175,
+            "accuracy": 0.5293617021276595
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 624,
+            "accuracy": 0.5336538461538461
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 443,
+            "accuracy": 0.5530474040632054
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 427,
+            "accuracy": 0.5128805620608899
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 617,
+            "accuracy": 0.5299837925445705
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 532,
+            "accuracy": 0.5488721804511278
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 620,
+            "accuracy": 0.5306451612903226
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 598,
+            "accuracy": 0.4983277591973244
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 549,
+            "accuracy": 0.5209471766848816
+          }
+        ],
+        "worst_fold_accuracy": 0.5125482625482626,
+        "worst_symbol_accuracy": 0.4983277591973244
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 5458,
+        "coverage": 0.8030013241135795,
+        "hits": 2605,
+        "accuracy": 0.4772810553316233,
+        "wilson_low_95": 0.4640505666054969,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 844,
+            "accuracy": 0.471563981042654
+          },
+          {
+            "fold_index": "1",
+            "signals": 1106,
+            "accuracy": 0.4656419529837251
+          },
+          {
+            "fold_index": "2",
+            "signals": 1221,
+            "accuracy": 0.4799344799344799
+          },
+          {
+            "fold_index": "3",
+            "signals": 1019,
+            "accuracy": 0.4946025515210991
+          },
+          {
+            "fold_index": "4",
+            "signals": 1268,
+            "accuracy": 0.4747634069400631
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 725,
+            "accuracy": 0.4689655172413793
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 607,
+            "accuracy": 0.4612850082372323
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 592,
+            "accuracy": 0.4831081081081081
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 724,
+            "accuracy": 0.468232044198895
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 672,
+            "accuracy": 0.49255952380952384
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 750,
+            "accuracy": 0.45866666666666667
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 723,
+            "accuracy": 0.48686030428769017
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 665,
+            "accuracy": 0.5007518796992482
+          }
+        ],
+        "worst_fold_accuracy": 0.4656419529837251,
+        "worst_symbol_accuracy": 0.45866666666666667
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 6697,
+        "coverage": 0.985287626894218,
+        "hits": 3535,
+        "accuracy": 0.5278482902792295,
+        "wilson_low_95": 0.5158792640207528,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1205,
+            "accuracy": 0.5336099585062241
+          },
+          {
+            "fold_index": "1",
+            "signals": 1472,
+            "accuracy": 0.514266304347826
+          },
+          {
+            "fold_index": "2",
+            "signals": 1437,
+            "accuracy": 0.5024356297842728
+          },
+          {
+            "fold_index": "3",
+            "signals": 1151,
+            "accuracy": 0.5742832319721981
+          },
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5251396648044693
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 840,
+            "accuracy": 0.5202380952380953
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 841,
+            "accuracy": 0.5303210463733651
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 840,
+            "accuracy": 0.5333333333333333
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 840,
+            "accuracy": 0.5547619047619048
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 834,
+            "accuracy": 0.5191846522781774
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 839,
+            "accuracy": 0.5363528009535161
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 827,
+            "accuracy": 0.5199516324062878
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 836,
+            "accuracy": 0.5083732057416268
+          }
+        ],
+        "worst_fold_accuracy": 0.5024356297842728,
+        "worst_symbol_accuracy": 0.5083732057416268
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4137,
+        "coverage": 0.6086508753861998,
+        "hits": 2264,
+        "accuracy": 0.5472564660381919,
+        "wilson_low_95": 0.5320516493729418,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 634,
+            "accuracy": 0.580441640378549
+          },
+          {
+            "fold_index": "1",
+            "signals": 755,
+            "accuracy": 0.5231788079470199
+          },
+          {
+            "fold_index": "2",
+            "signals": 1377,
+            "accuracy": 0.5257806826434277
+          },
+          {
+            "fold_index": "3",
+            "signals": 594,
+            "accuracy": 0.6245791245791246
+          },
+          {
+            "fold_index": "4",
+            "signals": 777,
+            "accuracy": 0.5225225225225225
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 546,
+            "accuracy": 0.521978021978022
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 531,
+            "accuracy": 0.5499058380414312
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 465,
+            "accuracy": 0.5397849462365591
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 534,
+            "accuracy": 0.5561797752808989
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 489,
+            "accuracy": 0.5603271983640081
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 547,
+            "accuracy": 0.546617915904936
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 499,
+            "accuracy": 0.5571142284569138
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 526,
+            "accuracy": 0.5475285171102662
+          }
+        ],
+        "worst_fold_accuracy": 0.5225225225225225,
+        "worst_symbol_accuracy": 0.521978021978022
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3197,
+        "coverage": 0.47035456819184934,
+        "hits": 1783,
+        "accuracy": 0.5577103534563653,
+        "wilson_low_95": 0.5404351979497228,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 979,
+            "accuracy": 0.5587334014300307
+          },
+          {
+            "fold_index": "1",
+            "signals": 616,
+            "accuracy": 0.5487012987012987
+          },
+          {
+            "fold_index": "2",
+            "signals": 122,
+            "accuracy": 0.6721311475409836
+          },
+          {
+            "fold_index": "3",
+            "signals": 1011,
+            "accuracy": 0.5746785361028685
+          },
+          {
+            "fold_index": "4",
+            "signals": 469,
+            "accuracy": 0.5010660980810234
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 492,
+            "accuracy": 0.5386178861788617
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 244,
+            "accuracy": 0.5655737704918032
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 169,
+            "accuracy": 0.5562130177514792
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 532,
+            "accuracy": 0.5620300751879699
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 369,
+            "accuracy": 0.5636856368563685
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 515,
+            "accuracy": 0.5805825242718446
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 490,
+            "accuracy": 0.5530612244897959
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 386,
+            "accuracy": 0.5414507772020726
+          }
+        ],
+        "worst_fold_accuracy": 0.5010660980810234,
+        "worst_symbol_accuracy": 0.5386178861788617
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3075,
+        "coverage": 0.4524054730027954,
+        "hits": 1651,
+        "accuracy": 0.536910569105691,
+        "wilson_low_95": 0.5192512730549096,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 986,
+            "accuracy": 0.5669371196754563
+          },
+          {
+            "fold_index": "1",
+            "signals": 649,
+            "accuracy": 0.514637904468413
+          },
+          {
+            "fold_index": "2",
+            "signals": 267,
+            "accuracy": 0.5430711610486891
+          },
+          {
+            "fold_index": "3",
+            "signals": 588,
+            "accuracy": 0.5578231292517006
+          },
+          {
+            "fold_index": "4",
+            "signals": 585,
+            "accuracy": 0.48717948717948717
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 400,
+            "accuracy": 0.52
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 375,
+            "accuracy": 0.552
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 371,
+            "accuracy": 0.5148247978436657
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 394,
+            "accuracy": 0.5431472081218274
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 374,
+            "accuracy": 0.5561497326203209
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 380,
+            "accuracy": 0.49736842105263157
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 384,
+            "accuracy": 0.5546875
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 397,
+            "accuracy": 0.5566750629722922
+          }
+        ],
+        "worst_fold_accuracy": 0.48717948717948717,
+        "worst_symbol_accuracy": 0.49736842105263157
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 5195,
+        "coverage": 0.7643077828453729,
+        "hits": 2675,
+        "accuracy": 0.5149181905678537,
+        "wilson_low_95": 0.5013217946687845,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1071,
+            "accuracy": 0.5247432306255836
+          },
+          {
+            "fold_index": "1",
+            "signals": 1109,
+            "accuracy": 0.5157799819657349
+          },
+          {
+            "fold_index": "2",
+            "signals": 1229,
+            "accuracy": 0.5134255492270138
+          },
+          {
+            "fold_index": "3",
+            "signals": 597,
+            "accuracy": 0.5577889447236181
+          },
+          {
+            "fold_index": "4",
+            "signals": 1189,
+            "accuracy": 0.4852817493692178
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 656,
+            "accuracy": 0.5228658536585366
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 651,
+            "accuracy": 0.522273425499232
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 634,
+            "accuracy": 0.48738170347003157
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 650,
+            "accuracy": 0.5307692307692308
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 643,
+            "accuracy": 0.5116640746500778
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 654,
+            "accuracy": 0.5061162079510704
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 645,
+            "accuracy": 0.5302325581395348
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 662,
+            "accuracy": 0.5075528700906344
+          }
+        ],
+        "worst_fold_accuracy": 0.4852817493692178,
+        "worst_symbol_accuracy": 0.48738170347003157
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4916,
+        "coverage": 0.7232602618802413,
+        "hits": 2589,
+        "accuracy": 0.5266476810414972,
+        "wilson_low_95": 0.5126752310280193,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 956,
+            "accuracy": 0.5502092050209205
+          },
+          {
+            "fold_index": "1",
+            "signals": 1036,
+            "accuracy": 0.5231660231660231
+          },
+          {
+            "fold_index": "2",
+            "signals": 1286,
+            "accuracy": 0.5171073094867807
+          },
+          {
+            "fold_index": "3",
+            "signals": 747,
+            "accuracy": 0.535475234270415
+          },
+          {
+            "fold_index": "4",
+            "signals": 891,
+            "accuracy": 0.5117845117845118
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 613,
+            "accuracy": 0.48450244698205547
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 608,
+            "accuracy": 0.5164473684210527
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 605,
+            "accuracy": 0.5256198347107438
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 617,
+            "accuracy": 0.5413290113452188
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 621,
+            "accuracy": 0.5426731078904992
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 620,
+            "accuracy": 0.5177419354838709
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 605,
+            "accuracy": 0.5553719008264463
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 627,
+            "accuracy": 0.529505582137161
+          }
+        ],
+        "worst_fold_accuracy": 0.5117845117845118,
+        "worst_symbol_accuracy": 0.48450244698205547
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 2599,
+        "coverage": 0.3823745770192732,
+        "hits": 1354,
+        "accuracy": 0.5209696036937284,
+        "wilson_low_95": 0.5017469959130709,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 388,
+            "accuracy": 0.5592783505154639
+          },
+          {
+            "fold_index": "1",
+            "signals": 852,
+            "accuracy": 0.5140845070422535
+          },
+          {
+            "fold_index": "2",
+            "signals": 1137,
+            "accuracy": 0.5004397537379067
+          },
+          {
+            "fold_index": "3",
+            "signals": 222,
+            "accuracy": 0.5855855855855856
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 351,
+            "accuracy": 0.5042735042735043
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 289,
+            "accuracy": 0.5536332179930796
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 283,
+            "accuracy": 0.558303886925795
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 350,
+            "accuracy": 0.5228571428571429
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 314,
+            "accuracy": 0.5191082802547771
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 356,
+            "accuracy": 0.49157303370786515
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 329,
+            "accuracy": 0.5227963525835866
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 327,
+            "accuracy": 0.5076452599388379
+          }
+        ],
+        "worst_fold_accuracy": 0.5004397537379067,
+        "worst_symbol_accuracy": 0.49157303370786515
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 6797,
+        "coverage": 1.0,
+        "hits": 3655,
+        "accuracy": 0.5377372370163307,
+        "wilson_low_95": 0.5258665042226159,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1205,
+            "accuracy": 0.5327800829875519
+          },
+          {
+            "fold_index": "1",
+            "signals": 1472,
+            "accuracy": 0.514266304347826
+          },
+          {
+            "fold_index": "2",
+            "signals": 1448,
+            "accuracy": 0.5200276243093923
+          },
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "accuracy": 0.6056451612903225
+          },
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5251396648044693
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 851,
+            "accuracy": 0.5287896592244419
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 851,
+            "accuracy": 0.5487661574618097
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 851,
+            "accuracy": 0.5252643948296122
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 851,
+            "accuracy": 0.5616921269095182
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.535840188014101
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 851,
+            "accuracy": 0.5381903642773208
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 840,
+            "accuracy": 0.5404761904761904
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 851,
+            "accuracy": 0.5229142185663925
+          }
+        ],
+        "worst_fold_accuracy": 0.514266304347826,
+        "worst_symbol_accuracy": 0.5229142185663925
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4014,
+        "coverage": 0.590554656466088,
+        "hits": 2142,
+        "accuracy": 0.5336322869955157,
+        "wilson_low_95": 0.5181746782601924,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1138,
+            "accuracy": 0.539543057996485
+          },
+          {
+            "fold_index": "1",
+            "signals": 1028,
+            "accuracy": 0.5252918287937743
+          },
+          {
+            "fold_index": "2",
+            "signals": 223,
+            "accuracy": 0.5919282511210763
+          },
+          {
+            "fold_index": "3",
+            "signals": 730,
+            "accuracy": 0.5493150684931507
+          },
+          {
+            "fold_index": "4",
+            "signals": 895,
+            "accuracy": 0.5083798882681564
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 521,
+            "accuracy": 0.527831094049904
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 505,
+            "accuracy": 0.5227722772277228
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 480,
+            "accuracy": 0.5458333333333333
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 499,
+            "accuracy": 0.5250501002004008
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 497,
+            "accuracy": 0.5352112676056338
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 513,
+            "accuracy": 0.5224171539961013
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 493,
+            "accuracy": 0.5436105476673428
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 506,
+            "accuracy": 0.5474308300395256
+          }
+        ],
+        "worst_fold_accuracy": 0.5083798882681564,
+        "worst_symbol_accuracy": 0.5224171539961013
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4066,
+        "coverage": 0.5982050904810946,
+        "hits": 2130,
+        "accuracy": 0.5238563698967044,
+        "wilson_low_95": 0.5084899820179168,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 632,
+            "accuracy": 0.555379746835443
+          },
+          {
+            "fold_index": "1",
+            "signals": 447,
+            "accuracy": 0.5324384787472036
+          },
+          {
+            "fold_index": "2",
+            "signals": 1385,
+            "accuracy": 0.511913357400722
+          },
+          {
+            "fold_index": "3",
+            "signals": 1200,
+            "accuracy": 0.5258333333333334
+          },
+          {
+            "fold_index": "4",
+            "signals": 402,
+            "accuracy": 0.5
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 517,
+            "accuracy": 0.5164410058027079
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 508,
+            "accuracy": 0.5177165354330708
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 491,
+            "accuracy": 0.515274949083503
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 505,
+            "accuracy": 0.5405940594059406
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 507,
+            "accuracy": 0.5325443786982249
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 526,
+            "accuracy": 0.5057034220532319
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 526,
+            "accuracy": 0.5038022813688213
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 486,
+            "accuracy": 0.5617283950617284
+          }
+        ],
+        "worst_fold_accuracy": 0.5,
+        "worst_symbol_accuracy": 0.5038022813688213
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 2275,
+        "coverage": 0.33470648815653964,
+        "hits": 1155,
+        "accuracy": 0.5076923076923077,
+        "wilson_low_95": 0.4871530855142433,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 605,
+            "accuracy": 0.5223140495867769
+          },
+          {
+            "fold_index": "1",
+            "signals": 618,
+            "accuracy": 0.5307443365695793
+          },
+          {
+            "fold_index": "2",
+            "signals": 482,
+            "accuracy": 0.4854771784232365
+          },
+          {
+            "fold_index": "3",
+            "signals": 358,
+            "accuracy": 0.4776536312849162
+          },
+          {
+            "fold_index": "4",
+            "signals": 212,
+            "accuracy": 0.5
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 321,
+            "accuracy": 0.4984423676012461
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 296,
+            "accuracy": 0.4864864864864865
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 214,
+            "accuracy": 0.5233644859813084
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 299,
+            "accuracy": 0.5484949832775919
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 257,
+            "accuracy": 0.48249027237354086
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 324,
+            "accuracy": 0.5216049382716049
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 287,
+            "accuracy": 0.4878048780487805
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 277,
+            "accuracy": 0.5126353790613718
+          }
+        ],
+        "worst_fold_accuracy": 0.4776536312849162,
+        "worst_symbol_accuracy": 0.48249027237354086
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 6060,
+        "coverage": 0.891569810210387,
+        "hits": 3163,
+        "accuracy": 0.5219471947194719,
+        "wilson_low_95": 0.5093606749517988,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1187,
+            "accuracy": 0.5408593091828138
+          },
+          {
+            "fold_index": "1",
+            "signals": 1417,
+            "accuracy": 0.5271700776287932
+          },
+          {
+            "fold_index": "2",
+            "signals": 1168,
+            "accuracy": 0.5102739726027398
+          },
+          {
+            "fold_index": "3",
+            "signals": 962,
+            "accuracy": 0.5363825363825364
+          },
+          {
+            "fold_index": "4",
+            "signals": 1326,
+            "accuracy": 0.49924585218702866
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 762,
+            "accuracy": 0.5118110236220472
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 747,
+            "accuracy": 0.5448460508701473
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 752,
+            "accuracy": 0.5146276595744681
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 771,
+            "accuracy": 0.5278858625162127
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 766,
+            "accuracy": 0.5456919060052219
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 752,
+            "accuracy": 0.5053191489361702
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 757,
+            "accuracy": 0.5270805812417437
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 753,
+            "accuracy": 0.49800796812749004
+          }
+        ],
+        "worst_fold_accuracy": 0.49924585218702866,
+        "worst_symbol_accuracy": 0.49800796812749004
+      }
+    ],
+    "final_holdout_2026_h1": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1255,
+        "coverage": 0.8763966480446927,
+        "hits": 635,
+        "accuracy": 0.5059760956175299,
+        "wilson_low_95": 0.478339259812958,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1255,
+            "accuracy": 0.5059760956175299
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 162,
+            "accuracy": 0.5370370370370371
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 152,
+            "accuracy": 0.4934210526315789
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 145,
+            "accuracy": 0.4689655172413793
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 161,
+            "accuracy": 0.5341614906832298
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 153,
+            "accuracy": 0.5228758169934641
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 160,
+            "accuracy": 0.48125
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 163,
+            "accuracy": 0.50920245398773
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 159,
+            "accuracy": 0.4968553459119497
+          }
+        ],
+        "worst_fold_accuracy": 0.5059760956175299,
+        "worst_symbol_accuracy": 0.4689655172413793
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 601,
+        "coverage": 0.4196927374301676,
+        "hits": 286,
+        "accuracy": 0.47587354409317806,
+        "wilson_low_95": 0.4362257416210938,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 601,
+            "accuracy": 0.47587354409317806
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 97,
+            "accuracy": 0.4536082474226804
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 45,
+            "accuracy": 0.5111111111111111
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 47,
+            "accuracy": 0.40425531914893614
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 85,
+            "accuracy": 0.47058823529411764
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 77,
+            "accuracy": 0.5064935064935064
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 85,
+            "accuracy": 0.5294117647058824
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 90,
+            "accuracy": 0.45555555555555555
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 75,
+            "accuracy": 0.4666666666666667
+          }
+        ],
+        "worst_fold_accuracy": 0.47587354409317806,
+        "worst_symbol_accuracy": 0.40425531914893614
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1175,
+        "coverage": 0.8205307262569832,
+        "hits": 622,
+        "accuracy": 0.5293617021276595,
+        "wilson_low_95": 0.5007727232746397,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1175,
+            "accuracy": 0.5293617021276595
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 156,
+            "accuracy": 0.5256410256410257
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 136,
+            "accuracy": 0.5441176470588235
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 132,
+            "accuracy": 0.5075757575757576
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 148,
+            "accuracy": 0.5067567567567568
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 147,
+            "accuracy": 0.54421768707483
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "accuracy": 0.5419354838709678
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 157,
+            "accuracy": 0.5286624203821656
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 144,
+            "accuracy": 0.5347222222222222
+          }
+        ],
+        "worst_fold_accuracy": 0.5293617021276595,
+        "worst_symbol_accuracy": 0.5067567567567568
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1268,
+        "coverage": 0.8854748603351955,
+        "hits": 602,
+        "accuracy": 0.4747634069400631,
+        "wilson_low_95": 0.4473955066302559,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1268,
+            "accuracy": 0.4747634069400631
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 166,
+            "accuracy": 0.4759036144578313
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 154,
+            "accuracy": 0.4805194805194805
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 147,
+            "accuracy": 0.5102040816326531
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 161,
+            "accuracy": 0.484472049689441
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 159,
+            "accuracy": 0.4779874213836478
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 165,
+            "accuracy": 0.4121212121212121
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 163,
+            "accuracy": 0.4723926380368098
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 153,
+            "accuracy": 0.49019607843137253
+          }
+        ],
+        "worst_fold_accuracy": 0.4747634069400631,
+        "worst_symbol_accuracy": 0.4121212121212121
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1432,
+        "coverage": 1.0,
+        "hits": 752,
+        "accuracy": 0.5251396648044693,
+        "wilson_low_95": 0.49924286565787385,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5251396648044693
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 179,
+            "accuracy": 0.5251396648044693
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.49162011173184356
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 179,
+            "accuracy": 0.5642458100558659
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.5195530726256983
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 179,
+            "accuracy": 0.5195530726256983
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 179,
+            "accuracy": 0.5754189944134078
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          }
+        ],
+        "worst_fold_accuracy": 0.5251396648044693,
+        "worst_symbol_accuracy": 0.49162011173184356
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 777,
+        "coverage": 0.5425977653631285,
+        "hits": 406,
+        "accuracy": 0.5225225225225225,
+        "wilson_low_95": 0.4873770697776184,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 777,
+            "accuracy": 0.5225225225225225
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 109,
+            "accuracy": 0.5137614678899083
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 110,
+            "accuracy": 0.4727272727272727
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 93,
+            "accuracy": 0.5053763440860215
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 91,
+            "accuracy": 0.5054945054945055
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 89,
+            "accuracy": 0.5393258426966292
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 101,
+            "accuracy": 0.5445544554455446
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 86,
+            "accuracy": 0.5465116279069767
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 98,
+            "accuracy": 0.5612244897959183
+          }
+        ],
+        "worst_fold_accuracy": 0.5225225225225225,
+        "worst_symbol_accuracy": 0.4727272727272727
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 469,
+        "coverage": 0.32751396648044695,
+        "hits": 235,
+        "accuracy": 0.5010660980810234,
+        "wilson_low_95": 0.4559903649966059,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 469,
+            "accuracy": 0.5010660980810234
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 95,
+            "accuracy": 0.49473684210526314
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 12,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 8,
+            "accuracy": 0.375
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 87,
+            "accuracy": 0.4367816091954023
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 51,
+            "accuracy": 0.47058823529411764
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 90,
+            "accuracy": 0.5777777777777777
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 79,
+            "accuracy": 0.5443037974683544
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 47,
+            "accuracy": 0.46808510638297873
+          }
+        ],
+        "worst_fold_accuracy": 0.5010660980810234,
+        "worst_symbol_accuracy": 0.375
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 585,
+        "coverage": 0.4085195530726257,
+        "hits": 285,
+        "accuracy": 0.48717948717948717,
+        "wilson_low_95": 0.44689142631014045,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 585,
+            "accuracy": 0.48717948717948717
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 76,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 70,
+            "accuracy": 0.4857142857142857
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 70,
+            "accuracy": 0.4714285714285714
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 76,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 71,
+            "accuracy": 0.4647887323943662
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 72,
+            "accuracy": 0.4444444444444444
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 74,
+            "accuracy": 0.581081081081081
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 76,
+            "accuracy": 0.5
+          }
+        ],
+        "worst_fold_accuracy": 0.48717948717948717,
+        "worst_symbol_accuracy": 0.4444444444444444
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1189,
+        "coverage": 0.8303072625698324,
+        "hits": 577,
+        "accuracy": 0.4852817493692178,
+        "wilson_low_95": 0.4569670017925445,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1189,
+            "accuracy": 0.4852817493692178
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 146,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 152,
+            "accuracy": 0.5328947368421053
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 150,
+            "accuracy": 0.4666666666666667
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 145,
+            "accuracy": 0.5241379310344828
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 147,
+            "accuracy": 0.3945578231292517
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 149,
+            "accuracy": 0.4899328859060403
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 150,
+            "accuracy": 0.49333333333333335
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 150,
+            "accuracy": 0.48
+          }
+        ],
+        "worst_fold_accuracy": 0.4852817493692178,
+        "worst_symbol_accuracy": 0.3945578231292517
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 891,
+        "coverage": 0.6222067039106145,
+        "hits": 456,
+        "accuracy": 0.5117845117845118,
+        "wilson_low_95": 0.4789828963950575,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 891,
+            "accuracy": 0.5117845117845118
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 115,
+            "accuracy": 0.5304347826086957
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 108,
+            "accuracy": 0.5185185185185185
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 110,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 113,
+            "accuracy": 0.48672566371681414
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 108,
+            "accuracy": 0.4722222222222222
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 106,
+            "accuracy": 0.5849056603773585
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 117,
+            "accuracy": 0.5299145299145299
+          }
+        ],
+        "worst_fold_accuracy": 0.5117845117845118,
+        "worst_symbol_accuracy": 0.4722222222222222
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1432,
+        "coverage": 1.0,
+        "hits": 752,
+        "accuracy": 0.5251396648044693,
+        "wilson_low_95": 0.49924286565787385,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5251396648044693
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 179,
+            "accuracy": 0.5251396648044693
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.49162011173184356
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 179,
+            "accuracy": 0.5642458100558659
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.5195530726256983
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 179,
+            "accuracy": 0.5195530726256983
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 179,
+            "accuracy": 0.5754189944134078
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          }
+        ],
+        "worst_fold_accuracy": 0.5251396648044693,
+        "worst_symbol_accuracy": 0.49162011173184356
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 895,
+        "coverage": 0.625,
+        "hits": 455,
+        "accuracy": 0.5083798882681564,
+        "wilson_low_95": 0.4756615341160841,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 895,
+            "accuracy": 0.5083798882681564
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 116,
+            "accuracy": 0.49137931034482757
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 121,
+            "accuracy": 0.48760330578512395
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 108,
+            "accuracy": 0.5370370370370371
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 107,
+            "accuracy": 0.5327102803738317
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 107,
+            "accuracy": 0.4672897196261682
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 109,
+            "accuracy": 0.5321100917431193
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 113,
+            "accuracy": 0.5486725663716814
+          }
+        ],
+        "worst_fold_accuracy": 0.5083798882681564,
+        "worst_symbol_accuracy": 0.4672897196261682
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 402,
+        "coverage": 0.2807262569832402,
+        "hits": 201,
+        "accuracy": 0.5,
+        "wilson_low_95": 0.45135481155268725,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 402,
+            "accuracy": 0.5
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 59,
+            "accuracy": 0.5254237288135594
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 44,
+            "accuracy": 0.5227272727272727
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 35,
+            "accuracy": 0.5142857142857142
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 49,
+            "accuracy": 0.4897959183673469
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 48,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 58,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 60,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 49,
+            "accuracy": 0.4489795918367347
+          }
+        ],
+        "worst_fold_accuracy": 0.5,
+        "worst_symbol_accuracy": 0.4489795918367347
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 212,
+        "coverage": 0.14804469273743018,
+        "hits": 106,
+        "accuracy": 0.5,
+        "wilson_low_95": 0.4332961868041994,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 212,
+            "accuracy": 0.5
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 35,
+            "accuracy": 0.5142857142857142
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 17,
+            "accuracy": 0.5882352941176471
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 11,
+            "accuracy": 0.45454545454545453
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 35,
+            "accuracy": 0.5142857142857142
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 24,
+            "accuracy": 0.4166666666666667
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 41,
+            "accuracy": 0.43902439024390244
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 24,
+            "accuracy": 0.5416666666666666
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 25,
+            "accuracy": 0.56
+          }
+        ],
+        "worst_fold_accuracy": 0.5,
+        "worst_symbol_accuracy": 0.4166666666666667
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1326,
+        "coverage": 0.9259776536312849,
+        "hits": 662,
+        "accuracy": 0.49924585218702866,
+        "wilson_low_95": 0.4723749368254707,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1326,
+            "accuracy": 0.49924585218702866
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 166,
+            "accuracy": 0.4879518072289157
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 149,
+            "accuracy": 0.5369127516778524
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 159,
+            "accuracy": 0.4779874213836478
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 173,
+            "accuracy": 0.45664739884393063
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 169,
+            "accuracy": 0.5739644970414202
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 167,
+            "accuracy": 0.4311377245508982
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 175,
+            "accuracy": 0.5771428571428572
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 168,
+            "accuracy": 0.4523809523809524
+          }
+        ],
+        "worst_fold_accuracy": 0.49924585218702866,
+        "worst_symbol_accuracy": 0.4311377245508982
+      }
+    ],
+    "admitted_70": [],
+    "admitted_75": [],
+    "admitted_80": []
+  },
+  "sentiment": {
+    "methodology": {
+      "data": "Verified Binance USD-M archive, 2022-01-01 through 2026-06-30",
+      "assets": [
+        "ADAUSDT",
+        "BNBUSDT",
+        "BTCUSDT",
+        "DOGEUSDT",
+        "ETHUSDT",
+        "LINKUSDT",
+        "SOLUSDT",
+        "XRPUSDT"
+      ],
+      "horizon": "24h",
+      "folds": "Five fixed calendar half-years from 2024-H1 through 2026-H1",
+      "nested_policy": "For each fold, the preceding 180 days are split chronologically into reliability training, probability calibration, and policy selection. Test labels never select the threshold.",
+      "field": "Actual wavemind.core.WaveField correct-vs-wrong regime memory",
+      "feature_count": 131,
+      "lightgbm_expert": true
+    },
+    "policies": [
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 140,
+        "policy_accuracy": 0.6285714285714286
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 139,
+        "policy_accuracy": 0.6330935251798561
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.6499999999999998,
+        "policy_effective_signals": 123,
+        "policy_accuracy": 0.6666666666666666
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 140,
+        "policy_accuracy": 0.6428571428571429
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.44999999999999996,
+        "policy_effective_signals": 50,
+        "policy_accuracy": 0.72
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 47,
+        "policy_accuracy": 0.7021276595744681
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.29999999999999993,
+        "policy_effective_signals": 112,
+        "policy_accuracy": 0.6339285714285714
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.35,
+        "policy_effective_signals": 78,
+        "policy_accuracy": 0.7307692307692307
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.15,
+        "policy_effective_signals": 93,
+        "policy_accuracy": 0.6236559139784946
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.1,
+        "policy_effective_signals": 130,
+        "policy_accuracy": 0.45384615384615384
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 81,
+        "policy_accuracy": 0.37037037037037035
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 42,
+        "policy_accuracy": 0.7142857142857143
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.125,
+        "policy_effective_signals": 115,
+        "policy_accuracy": 0.6956521739130435
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 57,
+        "policy_accuracy": 0.7192982456140351
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 7065,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1787,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 66,
+        "policy_accuracy": 0.6818181818181818
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.51875
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5499999999999999,
+        "policy_effective_signals": 63,
+        "policy_accuracy": 0.6984126984126984
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 60,
+        "policy_accuracy": 0.7
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.6999999999999998,
+        "policy_effective_signals": 60,
+        "policy_accuracy": 0.7
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 149,
+        "policy_accuracy": 0.5637583892617449
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 53,
+        "policy_accuracy": 0.8679245283018868
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 89,
+        "policy_accuracy": 0.6629213483146067
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.35,
+        "policy_effective_signals": 76,
+        "policy_accuracy": 0.7236842105263158
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.35,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.85
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 132,
+        "policy_accuracy": 0.6363636363636364
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 141,
+        "policy_accuracy": 0.40425531914893614
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 109,
+        "policy_accuracy": 0.5963302752293578
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.44999999999999996,
+        "policy_effective_signals": 48,
+        "policy_accuracy": 0.7291666666666666
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 49,
+        "policy_accuracy": 0.5306122448979592
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 104,
+        "policy_accuracy": 0.5673076923076923
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 14132,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 53,
+        "policy_accuracy": 0.6415094339622641
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5749999999999998,
+        "policy_effective_signals": 119,
+        "policy_accuracy": 0.5294117647058824
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 149,
+        "policy_accuracy": 0.5570469798657718
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.7249999999999999,
+        "policy_effective_signals": 149,
+        "policy_accuracy": 0.5100671140939598
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 134,
+        "policy_accuracy": 0.5298507462686567
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3999999999999999,
+        "policy_effective_signals": 50,
+        "policy_accuracy": 0.64
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 121,
+        "policy_accuracy": 0.5371900826446281
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.4999999999999999,
+        "policy_effective_signals": 46,
+        "policy_accuracy": 0.6086956521739131
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.3749999999999999,
+        "policy_effective_signals": 47,
+        "policy_accuracy": 0.5957446808510638
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 139,
+        "policy_accuracy": 0.5251798561151079
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 122,
+        "policy_accuracy": 0.47540983606557374
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 144,
+        "policy_accuracy": 0.4861111111111111
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 155,
+        "policy_accuracy": 0.5870967741935483
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 125,
+        "policy_accuracy": 0.56
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 154,
+        "policy_accuracy": 0.551948051948052
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 22964,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.19999999999999998,
+        "policy_effective_signals": 60,
+        "policy_accuracy": 0.5333333333333333
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.4125
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.4375
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 149,
+        "policy_accuracy": 0.47651006711409394
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 82,
+        "policy_accuracy": 0.4634146341463415
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.45625
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.24999999999999997,
+        "policy_effective_signals": 69,
+        "policy_accuracy": 0.4927536231884058
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 52,
+        "policy_accuracy": 0.3269230769230769
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 94,
+        "policy_accuracy": 0.48936170212765956
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 52,
+        "policy_accuracy": 0.5192307692307693
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 91,
+        "policy_accuracy": 0.5164835164835165
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.47499999999999987,
+        "policy_effective_signals": 41,
+        "policy_accuracy": 0.7073170731707317
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 125,
+        "policy_accuracy": 0.576
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 118,
+        "policy_accuracy": 0.4915254237288136
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 64,
+        "policy_accuracy": 0.59375
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 157,
+        "policy_accuracy": 0.46496815286624205
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 31652,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 47,
+        "policy_accuracy": 0.6382978723404256
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 160,
+        "policy_accuracy": 0.64375
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.4999999999999999,
+        "policy_effective_signals": 88,
+        "policy_accuracy": 0.7159090909090909
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 143,
+        "policy_accuracy": 0.6783216783216783
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5999999999999999,
+        "policy_effective_signals": 156,
+        "policy_accuracy": 0.6794871794871795
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5749999999999998,
+        "policy_effective_signals": 69,
+        "policy_accuracy": 0.7681159420289855
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.42499999999999993,
+        "policy_effective_signals": 50,
+        "policy_accuracy": 0.56
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.27499999999999997,
+        "policy_effective_signals": 49,
+        "policy_accuracy": 0.7551020408163265
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 156,
+        "policy_accuracy": 0.46794871794871795
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 42,
+        "policy_accuracy": 0.8095238095238095
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.175,
+        "policy_effective_signals": 91,
+        "policy_accuracy": 0.5934065934065934
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 58,
+        "policy_accuracy": 0.3448275862068966
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 128,
+        "policy_accuracy": 0.484375
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.1,
+        "policy_effective_signals": 137,
+        "policy_accuracy": 0.7372262773722628
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.125,
+        "policy_effective_signals": 112,
+        "policy_accuracy": 0.5982142857142857
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.5999999999999999,
+        "policy_effective_signals": 42,
+        "policy_accuracy": 0.8095238095238095
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 39036,
+        "reliability_rows": 1920,
+        "probability_rows": 1920,
+        "policy_rows": 1920,
+        "threshold": 0.15,
+        "policy_effective_signals": 93,
+        "policy_accuracy": 0.5483870967741935
+      }
+    ],
+    "summaries": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4304,
+        "coverage": 0.6332205384728556,
+        "hits": 2234,
+        "accuracy": 0.5190520446096655,
+        "wilson_low_95": 0.50411491132809,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.5296052631578947
+          },
+          {
+            "fold_index": "1",
+            "signals": 505,
+            "accuracy": 0.5287128712871287
+          },
+          {
+            "fold_index": "2",
+            "signals": 1297,
+            "accuracy": 0.5242868157286045
+          },
+          {
+            "fold_index": "3",
+            "signals": 943,
+            "accuracy": 0.5206786850477201
+          },
+          {
+            "fold_index": "4",
+            "signals": 1255,
+            "accuracy": 0.5059760956175299
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 579,
+            "accuracy": 0.5284974093264249
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 453,
+            "accuracy": 0.5165562913907285
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 426,
+            "accuracy": 0.5070422535211268
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 608,
+            "accuracy": 0.5180921052631579
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 504,
+            "accuracy": 0.5476190476190477
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 598,
+            "accuracy": 0.5117056856187291
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 601,
+            "accuracy": 0.5074875207986689
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 535,
+            "accuracy": 0.5158878504672897
+          }
+        ],
+        "worst_fold_accuracy": 0.5059760956175299,
+        "worst_symbol_accuracy": 0.5070422535211268
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4345,
+        "coverage": 0.6392526114462262,
+        "hits": 2072,
+        "accuracy": 0.4768699654775604,
+        "wilson_low_95": 0.4620458643297132,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1069,
+            "accuracy": 0.4593077642656688
+          },
+          {
+            "fold_index": "1",
+            "signals": 1355,
+            "accuracy": 0.4907749077490775
+          },
+          {
+            "fold_index": "2",
+            "signals": 1000,
+            "accuracy": 0.483
+          },
+          {
+            "fold_index": "3",
+            "signals": 320,
+            "accuracy": 0.459375
+          },
+          {
+            "fold_index": "4",
+            "signals": 601,
+            "accuracy": 0.47587354409317806
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 607,
+            "accuracy": 0.4728171334431631
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 439,
+            "accuracy": 0.5034168564920274
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 426,
+            "accuracy": 0.47183098591549294
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 604,
+            "accuracy": 0.48344370860927155
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 535,
+            "accuracy": 0.44672897196261685
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 605,
+            "accuracy": 0.46942148760330576
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 587,
+            "accuracy": 0.49233390119250425
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 542,
+            "accuracy": 0.477859778597786
+          }
+        ],
+        "worst_fold_accuracy": 0.4593077642656688,
+        "worst_symbol_accuracy": 0.44672897196261685
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4410,
+        "coverage": 0.6488156539649845,
+        "hits": 2329,
+        "accuracy": 0.5281179138321995,
+        "wilson_low_95": 0.5133661630080594,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1036,
+            "accuracy": 0.5125482625482626
+          },
+          {
+            "fold_index": "1",
+            "signals": 644,
+            "accuracy": 0.5295031055900621
+          },
+          {
+            "fold_index": "2",
+            "signals": 952,
+            "accuracy": 0.5493697478991597
+          },
+          {
+            "fold_index": "3",
+            "signals": 603,
+            "accuracy": 0.5174129353233831
+          },
+          {
+            "fold_index": "4",
+            "signals": 1175,
+            "accuracy": 0.5293617021276595
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 624,
+            "accuracy": 0.5336538461538461
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 443,
+            "accuracy": 0.5530474040632054
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 427,
+            "accuracy": 0.5128805620608899
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 617,
+            "accuracy": 0.5299837925445705
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 532,
+            "accuracy": 0.5488721804511278
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 620,
+            "accuracy": 0.5306451612903226
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 598,
+            "accuracy": 0.4983277591973244
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 549,
+            "accuracy": 0.5209471766848816
+          }
+        ],
+        "worst_fold_accuracy": 0.5125482625482626,
+        "worst_symbol_accuracy": 0.4983277591973244
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 5458,
+        "coverage": 0.8030013241135795,
+        "hits": 2605,
+        "accuracy": 0.4772810553316233,
+        "wilson_low_95": 0.4640505666054969,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 844,
+            "accuracy": 0.471563981042654
+          },
+          {
+            "fold_index": "1",
+            "signals": 1106,
+            "accuracy": 0.4656419529837251
+          },
+          {
+            "fold_index": "2",
+            "signals": 1221,
+            "accuracy": 0.4799344799344799
+          },
+          {
+            "fold_index": "3",
+            "signals": 1019,
+            "accuracy": 0.4946025515210991
+          },
+          {
+            "fold_index": "4",
+            "signals": 1268,
+            "accuracy": 0.4747634069400631
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 725,
+            "accuracy": 0.4689655172413793
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 607,
+            "accuracy": 0.4612850082372323
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 592,
+            "accuracy": 0.4831081081081081
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 724,
+            "accuracy": 0.468232044198895
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 672,
+            "accuracy": 0.49255952380952384
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 750,
+            "accuracy": 0.45866666666666667
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 723,
+            "accuracy": 0.48686030428769017
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 665,
+            "accuracy": 0.5007518796992482
+          }
+        ],
+        "worst_fold_accuracy": 0.4656419529837251,
+        "worst_symbol_accuracy": 0.45866666666666667
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 5514,
+        "coverage": 0.8112402530528174,
+        "hits": 2900,
+        "accuracy": 0.5259339862169025,
+        "wilson_low_95": 0.5127409830002008,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1191,
+            "accuracy": 0.5474391267842149
+          },
+          {
+            "fold_index": "1",
+            "signals": 1306,
+            "accuracy": 0.5045941807044411
+          },
+          {
+            "fold_index": "2",
+            "signals": 1311,
+            "accuracy": 0.5072463768115942
+          },
+          {
+            "fold_index": "3",
+            "signals": 1176,
+            "accuracy": 0.5569727891156463
+          },
+          {
+            "fold_index": "4",
+            "signals": 530,
+            "accuracy": 0.5075471698113208
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 683,
+            "accuracy": 0.5168374816983895
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 691,
+            "accuracy": 0.5224312590448625
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 706,
+            "accuracy": 0.5169971671388102
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 695,
+            "accuracy": 0.5366906474820143
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 693,
+            "accuracy": 0.5295815295815296
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 687,
+            "accuracy": 0.537117903930131
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 679,
+            "accuracy": 0.5169366715758469
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 680,
+            "accuracy": 0.5308823529411765
+          }
+        ],
+        "worst_fold_accuracy": 0.5045941807044411,
+        "worst_symbol_accuracy": 0.5168374816983895
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 5478,
+        "coverage": 0.8059437987347359,
+        "hits": 2902,
+        "accuracy": 0.5297553851770719,
+        "wilson_low_95": 0.5165220337293673,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 884,
+            "accuracy": 0.5475113122171946
+          },
+          {
+            "fold_index": "1",
+            "signals": 981,
+            "accuracy": 0.527013251783894
+          },
+          {
+            "fold_index": "2",
+            "signals": 1338,
+            "accuracy": 0.5104633781763827
+          },
+          {
+            "fold_index": "3",
+            "signals": 1005,
+            "accuracy": 0.5751243781094527
+          },
+          {
+            "fold_index": "4",
+            "signals": 1270,
+            "accuracy": 0.5039370078740157
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 680,
+            "accuracy": 0.5205882352941177
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 700,
+            "accuracy": 0.5514285714285714
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 678,
+            "accuracy": 0.5294985250737463
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 691,
+            "accuracy": 0.5397973950795948
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 684,
+            "accuracy": 0.5350877192982456
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 700,
+            "accuracy": 0.5171428571428571
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 667,
+            "accuracy": 0.5232383808095952
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 678,
+            "accuracy": 0.5206489675516224
+          }
+        ],
+        "worst_fold_accuracy": 0.5039370078740157,
+        "worst_symbol_accuracy": 0.5171428571428571
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4547,
+        "coverage": 0.6689716051199058,
+        "hits": 2508,
+        "accuracy": 0.551572465361777,
+        "wilson_low_95": 0.5370794714255107,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1168,
+            "accuracy": 0.5436643835616438
+          },
+          {
+            "fold_index": "1",
+            "signals": 812,
+            "accuracy": 0.5283251231527094
+          },
+          {
+            "fold_index": "2",
+            "signals": 755,
+            "accuracy": 0.5324503311258278
+          },
+          {
+            "fold_index": "3",
+            "signals": 1231,
+            "accuracy": 0.5824532900081235
+          },
+          {
+            "fold_index": "4",
+            "signals": 581,
+            "accuracy": 0.5593803786574871
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 659,
+            "accuracy": 0.5614567526555387
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 386,
+            "accuracy": 0.5544041450777202
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 344,
+            "accuracy": 0.5087209302325582
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 713,
+            "accuracy": 0.5666199158485273
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 528,
+            "accuracy": 0.5265151515151515
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 692,
+            "accuracy": 0.546242774566474
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 668,
+            "accuracy": 0.5643712574850299
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 557,
+            "accuracy": 0.5601436265709157
+          }
+        ],
+        "worst_fold_accuracy": 0.5283251231527094,
+        "worst_symbol_accuracy": 0.5087209302325582
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3916,
+        "coverage": 0.5761365308224217,
+        "hits": 2024,
+        "accuracy": 0.5168539325842697,
+        "wilson_low_95": 0.5011937970688984,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 515,
+            "accuracy": 0.570873786407767
+          },
+          {
+            "fold_index": "1",
+            "signals": 1153,
+            "accuracy": 0.5299219427580225
+          },
+          {
+            "fold_index": "2",
+            "signals": 1045,
+            "accuracy": 0.49856459330143543
+          },
+          {
+            "fold_index": "3",
+            "signals": 703,
+            "accuracy": 0.492176386913229
+          },
+          {
+            "fold_index": "4",
+            "signals": 500,
+            "accuracy": 0.504
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 490,
+            "accuracy": 0.5102040816326531
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 492,
+            "accuracy": 0.5264227642276422
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 481,
+            "accuracy": 0.5218295218295218
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 489,
+            "accuracy": 0.50920245398773
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 489,
+            "accuracy": 0.5214723926380368
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 495,
+            "accuracy": 0.5111111111111111
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 492,
+            "accuracy": 0.5142276422764228
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 488,
+            "accuracy": 0.5204918032786885
+          }
+        ],
+        "worst_fold_accuracy": 0.492176386913229,
+        "worst_symbol_accuracy": 0.50920245398773
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3279,
+        "coverage": 0.48241871413859055,
+        "hits": 1712,
+        "accuracy": 0.5221103995120464,
+        "wilson_low_95": 0.5049974175083249,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 546,
+            "accuracy": 0.5457875457875457
+          },
+          {
+            "fold_index": "1",
+            "signals": 944,
+            "accuracy": 0.5328389830508474
+          },
+          {
+            "fold_index": "2",
+            "signals": 406,
+            "accuracy": 0.5221674876847291
+          },
+          {
+            "fold_index": "3",
+            "signals": 826,
+            "accuracy": 0.5108958837772397
+          },
+          {
+            "fold_index": "4",
+            "signals": 557,
+            "accuracy": 0.49730700179533216
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 415,
+            "accuracy": 0.5301204819277109
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 397,
+            "accuracy": 0.5264483627204031
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 404,
+            "accuracy": 0.5123762376237624
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 412,
+            "accuracy": 0.5339805825242718
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 414,
+            "accuracy": 0.538647342995169
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 414,
+            "accuracy": 0.5144927536231884
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 410,
+            "accuracy": 0.5097560975609756
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 413,
+            "accuracy": 0.5108958837772397
+          }
+        ],
+        "worst_fold_accuracy": 0.49730700179533216,
+        "worst_symbol_accuracy": 0.5097560975609756
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4487,
+        "coverage": 0.6601441812564367,
+        "hits": 2295,
+        "accuracy": 0.5114776019612213,
+        "wilson_low_95": 0.4968480363473199,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 932,
+            "accuracy": 0.5418454935622318
+          },
+          {
+            "fold_index": "1",
+            "signals": 954,
+            "accuracy": 0.5073375262054507
+          },
+          {
+            "fold_index": "2",
+            "signals": 343,
+            "accuracy": 0.5568513119533528
+          },
+          {
+            "fold_index": "3",
+            "signals": 971,
+            "accuracy": 0.5200823892893924
+          },
+          {
+            "fold_index": "4",
+            "signals": 1287,
+            "accuracy": 0.473970473970474
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 558,
+            "accuracy": 0.5017921146953405
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 557,
+            "accuracy": 0.5098743267504489
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 545,
+            "accuracy": 0.5100917431192661
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 558,
+            "accuracy": 0.517921146953405
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 561,
+            "accuracy": 0.5133689839572193
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 580,
+            "accuracy": 0.5120689655172413
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 575,
+            "accuracy": 0.5147826086956522
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 553,
+            "accuracy": 0.5117540687160941
+          }
+        ],
+        "worst_fold_accuracy": 0.473970473970474,
+        "worst_symbol_accuracy": 0.5017921146953405
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4912,
+        "coverage": 0.72267176695601,
+        "hits": 2489,
+        "accuracy": 0.5067182410423453,
+        "wilson_low_95": 0.4927370846593487,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 783,
+            "accuracy": 0.5376756066411239
+          },
+          {
+            "fold_index": "1",
+            "signals": 1338,
+            "accuracy": 0.5059790732436472
+          },
+          {
+            "fold_index": "2",
+            "signals": 1079,
+            "accuracy": 0.5134383688600556
+          },
+          {
+            "fold_index": "3",
+            "signals": 797,
+            "accuracy": 0.5094102885821832
+          },
+          {
+            "fold_index": "4",
+            "signals": 915,
+            "accuracy": 0.4710382513661202
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 631,
+            "accuracy": 0.5055467511885895
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 596,
+            "accuracy": 0.5033557046979866
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 595,
+            "accuracy": 0.5126050420168067
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 640,
+            "accuracy": 0.525
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 596,
+            "accuracy": 0.511744966442953
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 633,
+            "accuracy": 0.48183254344391785
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 619,
+            "accuracy": 0.505654281098546
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 602,
+            "accuracy": 0.5083056478405316
+          }
+        ],
+        "worst_fold_accuracy": 0.4710382513661202,
+        "worst_symbol_accuracy": 0.48183254344391785
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 6797,
+        "coverage": 1.0,
+        "hits": 3617,
+        "accuracy": 0.5321465352361335,
+        "wilson_low_95": 0.5202696571311294,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 1205,
+            "accuracy": 0.5452282157676348
+          },
+          {
+            "fold_index": "1",
+            "signals": 1472,
+            "accuracy": 0.5054347826086957
+          },
+          {
+            "fold_index": "2",
+            "signals": 1448,
+            "accuracy": 0.5179558011049724
+          },
+          {
+            "fold_index": "3",
+            "signals": 1240,
+            "accuracy": 0.5887096774193549
+          },
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 851,
+            "accuracy": 0.5299647473560517
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 851,
+            "accuracy": 0.5311398354876615
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 851,
+            "accuracy": 0.5111633372502937
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 851,
+            "accuracy": 0.5558166862514688
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.5229142185663925
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 851,
+            "accuracy": 0.5381903642773208
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 840,
+            "accuracy": 0.5428571428571428
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 851,
+            "accuracy": 0.5252643948296122
+          }
+        ],
+        "worst_fold_accuracy": 0.5054347826086957,
+        "worst_symbol_accuracy": 0.5111633372502937
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3336,
+        "coverage": 0.4908047668088863,
+        "hits": 1764,
+        "accuracy": 0.5287769784172662,
+        "wilson_low_95": 0.5118147152731921,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 697,
+            "accuracy": 0.5796269727403156
+          },
+          {
+            "fold_index": "1",
+            "signals": 795,
+            "accuracy": 0.5106918238993711
+          },
+          {
+            "fold_index": "2",
+            "signals": 397,
+            "accuracy": 0.5138539042821159
+          },
+          {
+            "fold_index": "3",
+            "signals": 788,
+            "accuracy": 0.5101522842639594
+          },
+          {
+            "fold_index": "4",
+            "signals": 659,
+            "accuracy": 0.5280728376327769
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 425,
+            "accuracy": 0.548235294117647
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 415,
+            "accuracy": 0.5180722891566265
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 404,
+            "accuracy": 0.5173267326732673
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 420,
+            "accuracy": 0.5404761904761904
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 413,
+            "accuracy": 0.513317191283293
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 423,
+            "accuracy": 0.5130023640661938
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 417,
+            "accuracy": 0.5419664268585132
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 419,
+            "accuracy": 0.5369928400954654
+          }
+        ],
+        "worst_fold_accuracy": 0.5101522842639594,
+        "worst_symbol_accuracy": 0.5130023640661938
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 4480,
+        "coverage": 0.659114315139032,
+        "hits": 2270,
+        "accuracy": 0.5066964285714286,
+        "wilson_low_95": 0.49205699474149234,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 535,
+            "accuracy": 0.5383177570093458
+          },
+          {
+            "fold_index": "1",
+            "signals": 950,
+            "accuracy": 0.5126315789473684
+          },
+          {
+            "fold_index": "2",
+            "signals": 1334,
+            "accuracy": 0.5157421289355323
+          },
+          {
+            "fold_index": "3",
+            "signals": 1214,
+            "accuracy": 0.4769357495881384
+          },
+          {
+            "fold_index": "4",
+            "signals": 447,
+            "accuracy": 0.5100671140939598
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 569,
+            "accuracy": 0.4850615114235501
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 558,
+            "accuracy": 0.496415770609319
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 557,
+            "accuracy": 0.5116696588868941
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 552,
+            "accuracy": 0.5072463768115942
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 560,
+            "accuracy": 0.5392857142857143
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 572,
+            "accuracy": 0.5017482517482518
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 560,
+            "accuracy": 0.49464285714285716
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 552,
+            "accuracy": 0.5181159420289855
+          }
+        ],
+        "worst_fold_accuracy": 0.4769357495881384,
+        "worst_symbol_accuracy": 0.4850615114235501
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 2540,
+        "coverage": 0.37369427688686185,
+        "hits": 1328,
+        "accuracy": 0.5228346456692914,
+        "wilson_low_95": 0.5033903931481963,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 528,
+            "accuracy": 0.5606060606060606
+          },
+          {
+            "fold_index": "1",
+            "signals": 465,
+            "accuracy": 0.4838709677419355
+          },
+          {
+            "fold_index": "2",
+            "signals": 617,
+            "accuracy": 0.513776337115073
+          },
+          {
+            "fold_index": "3",
+            "signals": 491,
+            "accuracy": 0.5336048879837068
+          },
+          {
+            "fold_index": "4",
+            "signals": 439,
+            "accuracy": 0.5193621867881549
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 364,
+            "accuracy": 0.4945054945054945
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 266,
+            "accuracy": 0.5488721804511278
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 211,
+            "accuracy": 0.5118483412322274
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 385,
+            "accuracy": 0.522077922077922
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 302,
+            "accuracy": 0.5364238410596026
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 389,
+            "accuracy": 0.532133676092545
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 318,
+            "accuracy": 0.5062893081761006
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 305,
+            "accuracy": 0.5344262295081967
+          }
+        ],
+        "worst_fold_accuracy": 0.4838709677419355,
+        "worst_symbol_accuracy": 0.4945054945054945
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 40702,
+        "effective_events": 6797,
+        "selected_signals": 3732,
+        "coverage": 0.5490657643077829,
+        "hits": 1904,
+        "accuracy": 0.5101822079314041,
+        "wilson_low_95": 0.4941417240080154,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 642,
+            "accuracy": 0.514018691588785
+          },
+          {
+            "fold_index": "1",
+            "signals": 432,
+            "accuracy": 0.4976851851851852
+          },
+          {
+            "fold_index": "2",
+            "signals": 890,
+            "accuracy": 0.5157303370786517
+          },
+          {
+            "fold_index": "3",
+            "signals": 727,
+            "accuracy": 0.53232462173315
+          },
+          {
+            "fold_index": "4",
+            "signals": 1041,
+            "accuracy": 0.49279538904899134
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 487,
+            "accuracy": 0.5092402464065708
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 472,
+            "accuracy": 0.527542372881356
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 431,
+            "accuracy": 0.5034802784222738
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 485,
+            "accuracy": 0.49690721649484537
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 427,
+            "accuracy": 0.5081967213114754
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 510,
+            "accuracy": 0.5235294117647059
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 469,
+            "accuracy": 0.5223880597014925
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 451,
+            "accuracy": 0.4878048780487805
+          }
+        ],
+        "worst_fold_accuracy": 0.49279538904899134,
+        "worst_symbol_accuracy": 0.4878048780487805
+      }
+    ],
+    "final_holdout_2026_h1": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1255,
+        "coverage": 0.8763966480446927,
+        "hits": 635,
+        "accuracy": 0.5059760956175299,
+        "wilson_low_95": 0.478339259812958,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1255,
+            "accuracy": 0.5059760956175299
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 162,
+            "accuracy": 0.5370370370370371
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 152,
+            "accuracy": 0.4934210526315789
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 145,
+            "accuracy": 0.4689655172413793
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 161,
+            "accuracy": 0.5341614906832298
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 153,
+            "accuracy": 0.5228758169934641
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 160,
+            "accuracy": 0.48125
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 163,
+            "accuracy": 0.50920245398773
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 159,
+            "accuracy": 0.4968553459119497
+          }
+        ],
+        "worst_fold_accuracy": 0.5059760956175299,
+        "worst_symbol_accuracy": 0.4689655172413793
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 601,
+        "coverage": 0.4196927374301676,
+        "hits": 286,
+        "accuracy": 0.47587354409317806,
+        "wilson_low_95": 0.4362257416210938,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 601,
+            "accuracy": 0.47587354409317806
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 97,
+            "accuracy": 0.4536082474226804
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 45,
+            "accuracy": 0.5111111111111111
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 47,
+            "accuracy": 0.40425531914893614
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 85,
+            "accuracy": 0.47058823529411764
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 77,
+            "accuracy": 0.5064935064935064
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 85,
+            "accuracy": 0.5294117647058824
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 90,
+            "accuracy": 0.45555555555555555
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 75,
+            "accuracy": 0.4666666666666667
+          }
+        ],
+        "worst_fold_accuracy": 0.47587354409317806,
+        "worst_symbol_accuracy": 0.40425531914893614
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1175,
+        "coverage": 0.8205307262569832,
+        "hits": 622,
+        "accuracy": 0.5293617021276595,
+        "wilson_low_95": 0.5007727232746397,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1175,
+            "accuracy": 0.5293617021276595
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 156,
+            "accuracy": 0.5256410256410257
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 136,
+            "accuracy": 0.5441176470588235
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 132,
+            "accuracy": 0.5075757575757576
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 148,
+            "accuracy": 0.5067567567567568
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 147,
+            "accuracy": 0.54421768707483
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 155,
+            "accuracy": 0.5419354838709678
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 157,
+            "accuracy": 0.5286624203821656
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 144,
+            "accuracy": 0.5347222222222222
+          }
+        ],
+        "worst_fold_accuracy": 0.5293617021276595,
+        "worst_symbol_accuracy": 0.5067567567567568
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1268,
+        "coverage": 0.8854748603351955,
+        "hits": 602,
+        "accuracy": 0.4747634069400631,
+        "wilson_low_95": 0.4473955066302559,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1268,
+            "accuracy": 0.4747634069400631
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 166,
+            "accuracy": 0.4759036144578313
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 154,
+            "accuracy": 0.4805194805194805
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 147,
+            "accuracy": 0.5102040816326531
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 161,
+            "accuracy": 0.484472049689441
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 159,
+            "accuracy": 0.4779874213836478
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 165,
+            "accuracy": 0.4121212121212121
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 163,
+            "accuracy": 0.4723926380368098
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 153,
+            "accuracy": 0.49019607843137253
+          }
+        ],
+        "worst_fold_accuracy": 0.4747634069400631,
+        "worst_symbol_accuracy": 0.4121212121212121
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 530,
+        "coverage": 0.37011173184357543,
+        "hits": 269,
+        "accuracy": 0.5075471698113208,
+        "wilson_low_95": 0.46508339354805445,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 530,
+            "accuracy": 0.5075471698113208
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 63,
+            "accuracy": 0.4126984126984127
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 64,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 65,
+            "accuracy": 0.5538461538461539
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 70,
+            "accuracy": 0.5571428571428572
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 70,
+            "accuracy": 0.5285714285714286
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 69,
+            "accuracy": 0.4927536231884058
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 71,
+            "accuracy": 0.49295774647887325
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 58,
+            "accuracy": 0.5172413793103449
+          }
+        ],
+        "worst_fold_accuracy": 0.5075471698113208,
+        "worst_symbol_accuracy": 0.4126984126984127
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1270,
+        "coverage": 0.8868715083798883,
+        "hits": 640,
+        "accuracy": 0.5039370078740157,
+        "wilson_low_95": 0.4764685209587281,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1270,
+            "accuracy": 0.5039370078740157
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 161,
+            "accuracy": 0.4720496894409938
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 167,
+            "accuracy": 0.5089820359281437
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 160,
+            "accuracy": 0.49375
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 154,
+            "accuracy": 0.5324675324675324
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 160,
+            "accuracy": 0.5625
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 156,
+            "accuracy": 0.4935897435897436
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 157,
+            "accuracy": 0.5031847133757962
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 155,
+            "accuracy": 0.4645161290322581
+          }
+        ],
+        "worst_fold_accuracy": 0.5039370078740157,
+        "worst_symbol_accuracy": 0.4645161290322581
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 581,
+        "coverage": 0.4057262569832402,
+        "hits": 325,
+        "accuracy": 0.5593803786574871,
+        "wilson_low_95": 0.5187524791018718,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 581,
+            "accuracy": 0.5593803786574871
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 115,
+            "accuracy": 0.5652173913043478
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 17,
+            "accuracy": 0.17647058823529413
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 16,
+            "accuracy": 0.4375
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 102,
+            "accuracy": 0.5686274509803921
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 64,
+            "accuracy": 0.5625
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 104,
+            "accuracy": 0.5576923076923077
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 97,
+            "accuracy": 0.5979381443298969
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 66,
+            "accuracy": 0.6060606060606061
+          }
+        ],
+        "worst_fold_accuracy": 0.5593803786574871,
+        "worst_symbol_accuracy": 0.17647058823529413
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 500,
+        "coverage": 0.34916201117318435,
+        "hits": 252,
+        "accuracy": 0.504,
+        "wilson_low_95": 0.460312154390353,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 500,
+            "accuracy": 0.504
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 62,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 63,
+            "accuracy": 0.47619047619047616
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 61,
+            "accuracy": 0.4918032786885246
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 62,
+            "accuracy": 0.4838709677419355
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 63,
+            "accuracy": 0.5238095238095238
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 64,
+            "accuracy": 0.515625
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 63,
+            "accuracy": 0.5238095238095238
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 62,
+            "accuracy": 0.5161290322580645
+          }
+        ],
+        "worst_fold_accuracy": 0.504,
+        "worst_symbol_accuracy": 0.47619047619047616
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 557,
+        "coverage": 0.3889664804469274,
+        "hits": 277,
+        "accuracy": 0.49730700179533216,
+        "wilson_low_95": 0.45594532371938723,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 557,
+            "accuracy": 0.49730700179533216
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 71,
+            "accuracy": 0.4507042253521127
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 68,
+            "accuracy": 0.5588235294117647
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 72,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 70,
+            "accuracy": 0.4857142857142857
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 72,
+            "accuracy": 0.5138888888888888
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 66,
+            "accuracy": 0.5303030303030303
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 66,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 72,
+            "accuracy": 0.4444444444444444
+          }
+        ],
+        "worst_fold_accuracy": 0.49730700179533216,
+        "worst_symbol_accuracy": 0.4444444444444444
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1287,
+        "coverage": 0.8987430167597765,
+        "hits": 610,
+        "accuracy": 0.473970473970474,
+        "wilson_low_95": 0.44680875174424106,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1287,
+            "accuracy": 0.473970473970474
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 163,
+            "accuracy": 0.4723926380368098
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 162,
+            "accuracy": 0.4876543209876543
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 160,
+            "accuracy": 0.49375
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 155,
+            "accuracy": 0.45161290322580644
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 162,
+            "accuracy": 0.48148148148148145
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 159,
+            "accuracy": 0.4968553459119497
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 163,
+            "accuracy": 0.48466257668711654
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 163,
+            "accuracy": 0.4233128834355828
+          }
+        ],
+        "worst_fold_accuracy": 0.473970473970474,
+        "worst_symbol_accuracy": 0.4233128834355828
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 915,
+        "coverage": 0.6389664804469274,
+        "hits": 431,
+        "accuracy": 0.4710382513661202,
+        "wilson_low_95": 0.43888397488110786,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 915,
+            "accuracy": 0.4710382513661202
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 118,
+            "accuracy": 0.4576271186440678
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 110,
+            "accuracy": 0.4727272727272727
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 117,
+            "accuracy": 0.49572649572649574
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 114,
+            "accuracy": 0.47368421052631576
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 114,
+            "accuracy": 0.4473684210526316
+          }
+        ],
+        "worst_fold_accuracy": 0.4710382513661202,
+        "worst_symbol_accuracy": 0.4473684210526316
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1432,
+        "coverage": 1.0,
+        "hits": 736,
+        "accuracy": 0.5139664804469274,
+        "wilson_low_95": 0.4880770155164062,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1432,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 179,
+            "accuracy": 0.5195530726256983
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.4748603351955307
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 179,
+            "accuracy": 0.5251396648044693
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 179,
+            "accuracy": 0.5418994413407822
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 179,
+            "accuracy": 0.5586592178770949
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 179,
+            "accuracy": 0.5027932960893855
+          }
+        ],
+        "worst_fold_accuracy": 0.5139664804469274,
+        "worst_symbol_accuracy": 0.4748603351955307
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 659,
+        "coverage": 0.46019553072625696,
+        "hits": 348,
+        "accuracy": 0.5280728376327769,
+        "wilson_low_95": 0.48990593917854036,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 659,
+            "accuracy": 0.5280728376327769
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 83,
+            "accuracy": 0.5542168674698795
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 87,
+            "accuracy": 0.4827586206896552
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 84,
+            "accuracy": 0.5119047619047619
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 86,
+            "accuracy": 0.5348837209302325
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 80,
+            "accuracy": 0.5125
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 80,
+            "accuracy": 0.5375
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 79,
+            "accuracy": 0.5569620253164557
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 80,
+            "accuracy": 0.5375
+          }
+        ],
+        "worst_fold_accuracy": 0.5280728376327769,
+        "worst_symbol_accuracy": 0.4827586206896552
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 447,
+        "coverage": 0.3121508379888268,
+        "hits": 228,
+        "accuracy": 0.5100671140939598,
+        "wilson_low_95": 0.4638369493517397,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 447,
+            "accuracy": 0.5100671140939598
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 72,
+            "accuracy": 0.5416666666666666
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 53,
+            "accuracy": 0.5283018867924528
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 54,
+            "accuracy": 0.48148148148148145
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 56,
+            "accuracy": 0.5357142857142857
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 48,
+            "accuracy": 0.5
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 56,
+            "accuracy": 0.4642857142857143
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 47,
+            "accuracy": 0.48936170212765956
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 61,
+            "accuracy": 0.5245901639344263
+          }
+        ],
+        "worst_fold_accuracy": 0.5100671140939598,
+        "worst_symbol_accuracy": 0.4642857142857143
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 439,
+        "coverage": 0.30656424581005587,
+        "hits": 228,
+        "accuracy": 0.5193621867881549,
+        "wilson_low_95": 0.4726601714848782,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 439,
+            "accuracy": 0.5193621867881549
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 59,
+            "accuracy": 0.4915254237288136
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 33,
+            "accuracy": 0.6060606060606061
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 41,
+            "accuracy": 0.5609756097560976
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 72,
+            "accuracy": 0.4722222222222222
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 51,
+            "accuracy": 0.49019607843137253
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 70,
+            "accuracy": 0.5857142857142857
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 56,
+            "accuracy": 0.4107142857142857
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 57,
+            "accuracy": 0.5789473684210527
+          }
+        ],
+        "worst_fold_accuracy": 0.5193621867881549,
+        "worst_symbol_accuracy": 0.4107142857142857
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 8592,
+        "effective_events": 1432,
+        "selected_signals": 1041,
+        "coverage": 0.7269553072625698,
+        "hits": 513,
+        "accuracy": 0.49279538904899134,
+        "wilson_low_95": 0.46250754757698015,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 1041,
+            "accuracy": 0.49279538904899134
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "ADAUSDT",
+            "signals": 137,
+            "accuracy": 0.5109489051094891
+          },
+          {
+            "symbol": "BNBUSDT",
+            "signals": 111,
+            "accuracy": 0.5045045045045045
+          },
+          {
+            "symbol": "BTCUSDT",
+            "signals": 119,
+            "accuracy": 0.47058823529411764
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "signals": 140,
+            "accuracy": 0.4642857142857143
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 123,
+            "accuracy": 0.4959349593495935
+          },
+          {
+            "symbol": "LINKUSDT",
+            "signals": 143,
+            "accuracy": 0.48951048951048953
+          },
+          {
+            "symbol": "SOLUSDT",
+            "signals": 137,
+            "accuracy": 0.5109489051094891
+          },
+          {
+            "symbol": "XRPUSDT",
+            "signals": 131,
+            "accuracy": 0.4961832061068702
+          }
+        ],
+        "worst_fold_accuracy": 0.49279538904899134,
+        "worst_symbol_accuracy": 0.4642857142857143
+      }
+    ],
+    "admitted_70": [],
+    "admitted_75": [],
+    "admitted_80": []
+  },
+  "admitted_70": [],
+  "data_audit": {
+    "futures": [
+      {
+        "symbol": "ADAUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "BNBUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "BTCUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "ETHUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "LINKUSDT",
+        "bars": 9852,
+        "intraday_bars": 0,
+        "metrics": 472762,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "SOLUSDT",
+        "bars": 9822,
+        "intraday_bars": 0,
+        "metrics": 472742,
+        "funding": 5001,
+        "premium": 9840
+      },
+      {
+        "symbol": "XRPUSDT",
+        "bars": 9822,
+        "intraday_bars": 0,
+        "metrics": 472762,
+        "funding": 4926,
+        "premium": 9840
+      }
+    ],
+    "fear_greed_observations": 3093,
+    "fear_greed_source_url": "https://api.alternative.me/fng/?limit=0&format=json",
+    "fear_greed_source_sha256": "ab01134ee29ec53e2bf2cba03143787933a54975a4138d91ab67594e9c1bc64d",
+    "publication_lag_hours": 24
+  }
+}

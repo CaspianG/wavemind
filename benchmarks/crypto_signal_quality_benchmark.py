@@ -264,6 +264,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "The price forecast always exists. The signal tier is a historical evidence filter, not a calibrated probability.",
         "",
+        "Coverage-frontier thresholds are same-event diagnostics, not proof that a selected policy transfers to the next period.",
+        "",
         "## Summary",
         "",
         "| tier | selected | coverage | direction hit | MAE return | MAPE | within 50 bps | worst slice hit | mean agreement | mean strength |",
