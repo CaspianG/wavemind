@@ -938,21 +938,29 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     At 7d, the direct WaveField control reaches `0.544` all-period and `0.560`
     on 50 final independent forecasts, while on-chain and fusion degrade it;
     no selective 7d WaveField policy survives the final period.
-30. Next: add genuinely new, timestamp-verifiable information such as options
-    skew, liquidations, and archived news sentiment. The current market,
-    derivatives, volatility, macro, and on-chain feature families have not
-    supported a universal 70% daily edge.
-31. Next: build a WaveMind-native temporal market-state model that beats the
+30. Done: added fingerprinted Deribit historical option-trade samples for BTC
+    and ETH from 2023-07-01 through 2026-06-30. Three deterministic windows per
+    UTC day produce 2,192 next-day-available summaries with no missing days.
+    On 24h, the WaveField-gated treatment moves the final period from `0.506`
+    to `0.514` but degrades all-period accuracy from `0.542` to `0.530`; the
+    direct WaveField moves final accuracy from `0.494` to `0.506`. On 7d, the
+    direct WaveField repairs `0.300` to `0.420`, but remains unusable and its
+    worst final asset is `0.320`. No options arm passes admission.
+31. Next: add genuinely new, timestamp-verifiable liquidation history and
+    archived news sentiment. Current market, derivatives, volatility, macro,
+    on-chain, and sampled options features have not supported a universal 70%
+    daily edge.
+32. Next: build a WaveMind-native temporal market-state model that beats the
     WaveField-gated statistical direction on aggregate, fold, and symbol
     robustness.
-32. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+33. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-33. Next: validate the market-field target on more exchanges, date ranges,
+34. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-34. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+35. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-35. Add signal construction only after retrieval quality is stable.
-36. Publish results separately from the main README to avoid confusing memory
+36. Add signal construction only after retrieval quality is stable.
+37. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

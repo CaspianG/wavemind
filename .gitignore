@@ -51,6 +51,10 @@ benchmarks/results/crypto/binance_*
 !benchmarks/results/crypto/binance_evidence_fusion_24h.md
 !benchmarks/results/crypto/binance_evidence_fusion_7d.json
 !benchmarks/results/crypto/binance_evidence_fusion_7d.md
+!benchmarks/results/crypto/deribit_options_24h.json
+!benchmarks/results/crypto/deribit_options_24h.md
+!benchmarks/results/crypto/deribit_options_7d.json
+!benchmarks/results/crypto/deribit_options_7d.md
 
 .env
 .env.*

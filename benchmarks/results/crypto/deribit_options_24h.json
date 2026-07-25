@@ -1,0 +1,3704 @@
+{
+  "methodology": {
+    "protocol": "Control and Deribit options treatment use identical BTC/ETH rows and calendar folds. Three deterministic trade samples per UTC day are fingerprinted and become visible only at the next UTC midnight.",
+    "selection": "Thresholds use past folds only; 2026-H1 remains the final holdout.",
+    "features": [
+      "options_atm_iv",
+      "options_skew_iv",
+      "options_term_spread_iv",
+      "options_put_call_log_ratio",
+      "options_directional_flow",
+      "options_skew_change_1d",
+      "options_skew_change_7d",
+      "options_flow_mean_7d",
+      "options_atm_iv_z30",
+      "options_skew_z30",
+      "options_volume_log",
+      "btc_options_skew_iv",
+      "btc_options_directional_flow",
+      "options_age_days"
+    ],
+    "rows": 12040,
+    "assets": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ]
+  },
+  "full_coverage_comparison": [
+    {
+      "engine": "LightGBM direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.5352526439482961,
+      "options_all": 0.5223266745005876,
+      "delta_all": -0.012925969447708519,
+      "control_final": 0.4860335195530726,
+      "options_final": 0.48044692737430167,
+      "delta_final": -0.005586592178770944,
+      "options_worst_final_asset": 0.4692737430167598,
+      "options_final_wilson_low_95": 0.4291755078093591
+    },
+    {
+      "engine": "Tabular ensemble direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.5252643948296122,
+      "options_all": 0.5317273795534665,
+      "delta_all": 0.006462984723854315,
+      "control_final": 0.48324022346368717,
+      "options_final": 0.48324022346368717,
+      "delta_final": 0.0,
+      "options_worst_final_asset": 0.4581005586592179,
+      "options_final_wilson_low_95": 0.4319288020712503
+    },
+    {
+      "engine": "WaveField-gated Logistic direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.5423031727379554,
+      "options_all": 0.5299647473560517,
+      "delta_all": -0.012338425381903662,
+      "control_final": 0.505586592178771,
+      "options_final": 0.5139664804469274,
+      "delta_final": 0.008379888268156388,
+      "options_worst_final_asset": 0.4860335195530726,
+      "options_final_wilson_low_95": 0.4623201028187881
+    },
+    {
+      "engine": "Calibrated WaveField-gated Logistic direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.5423031727379554,
+      "options_all": 0.5299647473560517,
+      "delta_all": -0.012338425381903662,
+      "control_final": 0.505586592178771,
+      "options_final": 0.5139664804469274,
+      "delta_final": 0.008379888268156388,
+      "options_worst_final_asset": 0.4860335195530726,
+      "options_final_wilson_low_95": 0.4623201028187881
+    },
+    {
+      "engine": "WaveField outcome direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.5199764982373678,
+      "options_all": 0.518213866039953,
+      "delta_all": -0.001762632197414793,
+      "control_final": 0.49441340782122906,
+      "options_final": 0.505586592178771,
+      "delta_final": 0.011173184357541943,
+      "options_worst_final_asset": 0.4972067039106145,
+      "options_final_wilson_low_95": 0.45401247169848163
+    },
+    {
+      "engine": "WaveField regime memory direction",
+      "all_signals": 1702,
+      "final_signals": 358,
+      "control_all": 0.518801410105758,
+      "options_all": 0.4970622796709753,
+      "delta_all": -0.02173913043478265,
+      "control_final": 0.5195530726256983,
+      "options_final": 0.4888268156424581,
+      "delta_final": -0.030726256983240163,
+      "options_worst_final_asset": 0.48044692737430167,
+      "options_final_wilson_low_95": 0.437440170210425
+    }
+  ],
+  "policy_comparison": [
+    {
+      "engine": "LightGBM direction",
+      "control_all": 0.5272108843537415,
+      "options_all": 0.5133333333333333,
+      "control_final": null,
+      "options_final": null,
+      "options_final_signals": 0
+    },
+    {
+      "engine": "Tabular ensemble direction",
+      "control_all": 0.5389830508474577,
+      "options_all": 0.5441696113074205,
+      "control_final": null,
+      "options_final": null,
+      "options_final_signals": 0
+    },
+    {
+      "engine": "WaveField-gated Logistic direction",
+      "control_all": 0.5163329820864068,
+      "options_all": 0.4965753424657534,
+      "control_final": null,
+      "options_final": null,
+      "options_final_signals": 0
+    },
+    {
+      "engine": "Calibrated WaveField-gated Logistic direction",
+      "control_all": 0.5404101326899879,
+      "options_all": 0.5296803652968036,
+      "control_final": 0.5083798882681564,
+      "options_final": 0.5139664804469274,
+      "options_final_signals": 358
+    },
+    {
+      "engine": "WaveField outcome direction",
+      "control_all": 0.49557522123893805,
+      "options_all": null,
+      "control_final": null,
+      "options_final": null,
+      "options_final_signals": 0
+    },
+    {
+      "engine": "WaveField regime memory direction",
+      "control_all": 0.4901315789473684,
+      "options_all": 0.4901315789473684,
+      "control_final": null,
+      "options_final": null,
+      "options_final_signals": 0
+    }
+  ],
+  "control": {
+    "methodology": {
+      "data": "Verified Binance USD-M archive, 2022-01-01 through 2026-06-30",
+      "assets": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "horizon": "24h",
+      "folds": "Five fixed calendar half-years from 2024-H1 through 2026-H1",
+      "nested_policy": "For each fold, the preceding 180 days are split chronologically into reliability training, probability calibration, and policy selection. Test labels never select the threshold.",
+      "field": "Actual wavemind.core.WaveField correct-vs-wrong regime memory",
+      "feature_count": 133,
+      "lightgbm_expert": true
+    },
+    "policies": [
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.29999999999999993,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.6
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.125,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.7
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.675
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.32499999999999996,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.55
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.3749999999999999,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.45
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.15,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.375
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.45
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.44999999999999996,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.45
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.22499999999999998,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.6
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      }
+    ],
+    "summaries": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1658,
+        "coverage": 0.9741480611045829,
+        "hits": 896,
+        "accuracy": 0.5404101326899879,
+        "wilson_low_95": 0.5163557979807092,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.5131578947368421
+          },
+          {
+            "fold_index": "1",
+            "signals": 336,
+            "accuracy": 0.5416666666666666
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5580110497237569
+          },
+          {
+            "fold_index": "3",
+            "signals": 298,
+            "accuracy": 0.5838926174496645
+          },
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5083798882681564
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 826,
+            "accuracy": 0.5435835351089588
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 832,
+            "accuracy": 0.5372596153846154
+          }
+        ],
+        "worst_fold_accuracy": 0.5083798882681564,
+        "worst_symbol_accuracy": 0.5372596153846154
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 942,
+        "coverage": 0.5534665099882491,
+        "hits": 479,
+        "accuracy": 0.5084925690021231,
+        "wilson_low_95": 0.4765980220772881,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 299,
+            "accuracy": 0.48494983277591974
+          },
+          {
+            "fold_index": "2",
+            "signals": 356,
+            "accuracy": 0.5308988764044944
+          },
+          {
+            "fold_index": "4",
+            "signals": 287,
+            "accuracy": 0.5052264808362369
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 467,
+            "accuracy": 0.49464668094218417
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 475,
+            "accuracy": 0.5221052631578947
+          }
+        ],
+        "worst_fold_accuracy": 0.48494983277591974,
+        "worst_symbol_accuracy": 0.49464668094218417
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1700,
+        "coverage": 0.9988249118683902,
+        "hits": 923,
+        "accuracy": 0.5429411764705883,
+        "wilson_low_95": 0.5191906350414545,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 302,
+            "accuracy": 0.5165562913907285
+          },
+          {
+            "fold_index": "1",
+            "signals": 368,
+            "accuracy": 0.5380434782608695
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5580110497237569
+          },
+          {
+            "fold_index": "3",
+            "signals": 310,
+            "accuracy": 0.6
+          },
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.505586592178771
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 849,
+            "accuracy": 0.5477031802120141
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.5381903642773208
+          }
+        ],
+        "worst_fold_accuracy": 0.505586592178771,
+        "worst_symbol_accuracy": 0.5381903642773208
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 300,
+        "coverage": 0.1762632197414806,
+        "hits": 160,
+        "accuracy": 0.5333333333333333,
+        "wilson_low_95": 0.476814907585406,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 300,
+            "accuracy": 0.5333333333333333
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 150,
+            "accuracy": 0.5066666666666667
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 150,
+            "accuracy": 0.56
+          }
+        ],
+        "worst_fold_accuracy": 0.5333333333333333,
+        "worst_symbol_accuracy": 0.5066666666666667
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 588,
+        "coverage": 0.345475910693302,
+        "hits": 310,
+        "accuracy": 0.5272108843537415,
+        "wilson_low_95": 0.48681117015060577,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 296,
+            "accuracy": 0.5236486486486487
+          },
+          {
+            "fold_index": "3",
+            "signals": 292,
+            "accuracy": 0.5308219178082192
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 294,
+            "accuracy": 0.5238095238095238
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 294,
+            "accuracy": 0.5306122448979592
+          }
+        ],
+        "worst_fold_accuracy": 0.5236486486486487,
+        "worst_symbol_accuracy": 0.5238095238095238
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 299,
+        "coverage": 0.17567567567567569,
+        "hits": 141,
+        "accuracy": 0.47157190635451507,
+        "wilson_low_95": 0.41570921678819456,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 299,
+            "accuracy": 0.47157190635451507
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 150,
+            "accuracy": 0.48
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 149,
+            "accuracy": 0.46308724832214765
+          }
+        ],
+        "worst_fold_accuracy": 0.47157190635451507,
+        "worst_symbol_accuracy": 0.46308724832214765
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1702,
+        "coverage": 1.0,
+        "hits": 923,
+        "accuracy": 0.5423031727379554,
+        "wilson_low_95": 0.5185654677227514,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.5131578947368421
+          },
+          {
+            "fold_index": "1",
+            "signals": 368,
+            "accuracy": 0.5380434782608695
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5580110497237569
+          },
+          {
+            "fold_index": "3",
+            "signals": 310,
+            "accuracy": 0.6
+          },
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.505586592178771
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 851,
+            "accuracy": 0.5464159811985899
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.5381903642773208
+          }
+        ],
+        "worst_fold_accuracy": 0.505586592178771,
+        "worst_symbol_accuracy": 0.5381903642773208
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 295,
+        "coverage": 0.17332549941245592,
+        "hits": 159,
+        "accuracy": 0.5389830508474577,
+        "wilson_low_95": 0.48196342859821767,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 295,
+            "accuracy": 0.5389830508474577
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 146,
+            "accuracy": 0.5547945205479452
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 149,
+            "accuracy": 0.5234899328859061
+          }
+        ],
+        "worst_fold_accuracy": 0.5389830508474577,
+        "worst_symbol_accuracy": 0.5234899328859061
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 339,
+        "coverage": 0.1991774383078731,
+        "hits": 168,
+        "accuracy": 0.49557522123893805,
+        "wilson_low_95": 0.4427005620450552,
+        "by_fold": [
+          {
+            "fold_index": "1",
+            "signals": 339,
+            "accuracy": 0.49557522123893805
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 173,
+            "accuracy": 0.5202312138728323
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 166,
+            "accuracy": 0.46987951807228917
+          }
+        ],
+        "worst_fold_accuracy": 0.49557522123893805,
+        "worst_symbol_accuracy": 0.46987951807228917
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 304,
+        "coverage": 0.17861339600470036,
+        "hits": 149,
+        "accuracy": 0.4901315789473684,
+        "wilson_low_95": 0.43441143449237585,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.4901315789473684
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 152,
+            "accuracy": 0.4934210526315789
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 152,
+            "accuracy": 0.4868421052631579
+          }
+        ],
+        "worst_fold_accuracy": 0.4901315789473684,
+        "worst_symbol_accuracy": 0.4868421052631579
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 949,
+        "coverage": 0.5575793184488836,
+        "hits": 490,
+        "accuracy": 0.5163329820864068,
+        "wilson_low_95": 0.484536637376882,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 301,
+            "accuracy": 0.5016611295681063
+          },
+          {
+            "fold_index": "1",
+            "signals": 301,
+            "accuracy": 0.4983388704318937
+          },
+          {
+            "fold_index": "2",
+            "signals": 347,
+            "accuracy": 0.5446685878962536
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 477,
+            "accuracy": 0.5220125786163522
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 472,
+            "accuracy": 0.510593220338983
+          }
+        ],
+        "worst_fold_accuracy": 0.4983388704318937,
+        "worst_symbol_accuracy": 0.510593220338983
+      }
+    ],
+    "final_holdout_2026_h1": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 358,
+        "coverage": 1.0,
+        "hits": 182,
+        "accuracy": 0.5083798882681564,
+        "wilson_low_95": 0.4567800904168468,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5083798882681564
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.5307262569832403
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.5083798882681564,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 287,
+        "coverage": 0.8016759776536313,
+        "hits": 145,
+        "accuracy": 0.5052264808362369,
+        "wilson_low_95": 0.447697329665989,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 287,
+            "accuracy": 0.5052264808362369
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 138,
+            "accuracy": 0.4855072463768116
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 149,
+            "accuracy": 0.5234899328859061
+          }
+        ],
+        "worst_fold_accuracy": 0.5052264808362369,
+        "worst_symbol_accuracy": 0.4855072463768116
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 358,
+        "coverage": 1.0,
+        "hits": 181,
+        "accuracy": 0.505586592178771,
+        "wilson_low_95": 0.45401247169848163,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.505586592178771
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.5251396648044693
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.505586592178771,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 358,
+        "coverage": 1.0,
+        "hits": 181,
+        "accuracy": 0.505586592178771,
+        "wilson_low_95": 0.45401247169848163,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.505586592178771
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.5251396648044693
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.505586592178771,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      }
+    ],
+    "admitted_70": [],
+    "admitted_75": [],
+    "admitted_80": []
+  },
+  "options": {
+    "methodology": {
+      "data": "Verified Binance USD-M archive, 2022-01-01 through 2026-06-30",
+      "assets": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "horizon": "24h",
+      "folds": "Five fixed calendar half-years from 2024-H1 through 2026-H1",
+      "nested_policy": "For each fold, the preceding 180 days are split chronologically into reliability training, probability calibration, and policy selection. Test labels never select the threshold.",
+      "field": "Actual wavemind.core.WaveField correct-vs-wrong regime memory",
+      "feature_count": 147,
+      "lightgbm_expert": true
+    },
+    "policies": [
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.42499999999999993,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.6
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.65
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.175,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.675
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 0,
+        "test_start_utc": "2024-01-01T03:59:59+00:00",
+        "base_rows": 396,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.575
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.15,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.55
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 1,
+        "test_start_utc": "2024-07-01T03:59:59+00:00",
+        "base_rows": 2214,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.425
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 2,
+        "test_start_utc": "2025-01-01T03:59:59+00:00",
+        "base_rows": 4422,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.35
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.15,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.45
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.35,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.5
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 3,
+        "test_start_utc": "2025-07-01T03:59:59+00:00",
+        "base_rows": 6594,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Event-probability gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Direction-margin gate",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.525
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 0.1,
+        "policy_effective_signals": 40,
+        "policy_accuracy": 0.475
+      },
+      {
+        "engine": "Histogram direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "24h mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "fold_index": 4,
+        "test_start_utc": "2026-01-01T03:59:59+00:00",
+        "base_rows": 8440,
+        "reliability_rows": 480,
+        "probability_rows": 480,
+        "policy_rows": 480,
+        "threshold": 1.0,
+        "policy_effective_signals": 0,
+        "policy_accuracy": null
+      }
+    ],
+    "summaries": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1314,
+        "coverage": 0.7720329024676851,
+        "hits": 696,
+        "accuracy": 0.5296803652968036,
+        "wilson_low_95": 0.5026461149707472,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.48026315789473684
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5497237569060773
+          },
+          {
+            "fold_index": "3",
+            "signals": 290,
+            "accuracy": 0.5758620689655173
+          },
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 659,
+            "accuracy": 0.5402124430955993
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 655,
+            "accuracy": 0.5190839694656488
+          }
+        ],
+        "worst_fold_accuracy": 0.48026315789473684,
+        "worst_symbol_accuracy": 0.5190839694656488
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1359,
+        "coverage": 0.7984723854289072,
+        "hits": 721,
+        "accuracy": 0.5305371596762325,
+        "wilson_low_95": 0.5039547233680879,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 297,
+            "accuracy": 0.5218855218855218
+          },
+          {
+            "fold_index": "1",
+            "signals": 356,
+            "accuracy": 0.5224719101123596
+          },
+          {
+            "fold_index": "2",
+            "signals": 357,
+            "accuracy": 0.5434173669467787
+          },
+          {
+            "fold_index": "4",
+            "signals": 349,
+            "accuracy": 0.5329512893982808
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 680,
+            "accuracy": 0.5367647058823529
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 679,
+            "accuracy": 0.524300441826215
+          }
+        ],
+        "worst_fold_accuracy": 0.5218855218855218,
+        "worst_symbol_accuracy": 0.524300441826215
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1697,
+        "coverage": 0.9970622796709753,
+        "hits": 895,
+        "accuracy": 0.5274012964054213,
+        "wilson_low_95": 0.5036128633277299,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 303,
+            "accuracy": 0.49504950495049505
+          },
+          {
+            "fold_index": "1",
+            "signals": 368,
+            "accuracy": 0.5190217391304348
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5497237569060773
+          },
+          {
+            "fold_index": "3",
+            "signals": 307,
+            "accuracy": 0.5700325732899023
+          },
+          {
+            "fold_index": "4",
+            "signals": 357,
+            "accuracy": 0.5042016806722689
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 846,
+            "accuracy": 0.533096926713948
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.5217391304347826
+          }
+        ],
+        "worst_fold_accuracy": 0.49504950495049505,
+        "worst_symbol_accuracy": 0.5217391304347826
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 656,
+        "coverage": 0.3854289071680376,
+        "hits": 349,
+        "accuracy": 0.5320121951219512,
+        "wilson_low_95": 0.4937533127000738,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 303,
+            "accuracy": 0.49834983498349833
+          },
+          {
+            "fold_index": "1",
+            "signals": 353,
+            "accuracy": 0.5609065155807366
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 328,
+            "accuracy": 0.5304878048780488
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 328,
+            "accuracy": 0.5335365853658537
+          }
+        ],
+        "worst_fold_accuracy": 0.49834983498349833,
+        "worst_symbol_accuracy": 0.5304878048780488
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 300,
+        "coverage": 0.1762632197414806,
+        "hits": 154,
+        "accuracy": 0.5133333333333333,
+        "wilson_low_95": 0.4569640167618392,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 300,
+            "accuracy": 0.5133333333333333
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 150,
+            "accuracy": 0.5066666666666667
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 150,
+            "accuracy": 0.52
+          }
+        ],
+        "worst_fold_accuracy": 0.5133333333333333,
+        "worst_symbol_accuracy": 0.5066666666666667
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 300,
+        "coverage": 0.1762632197414806,
+        "hits": 143,
+        "accuracy": 0.4766666666666667,
+        "wilson_low_95": 0.42080166187431245,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 300,
+            "accuracy": 0.4766666666666667
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 150,
+            "accuracy": 0.47333333333333333
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 150,
+            "accuracy": 0.48
+          }
+        ],
+        "worst_fold_accuracy": 0.4766666666666667,
+        "worst_symbol_accuracy": 0.47333333333333333
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 1702,
+        "coverage": 1.0,
+        "hits": 902,
+        "accuracy": 0.5299647473560517,
+        "wilson_low_95": 0.5062124953916921,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.48026315789473684
+          },
+          {
+            "fold_index": "1",
+            "signals": 368,
+            "accuracy": 0.5190217391304348
+          },
+          {
+            "fold_index": "2",
+            "signals": 362,
+            "accuracy": 0.5497237569060773
+          },
+          {
+            "fold_index": "3",
+            "signals": 310,
+            "accuracy": 0.5870967741935483
+          },
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 851,
+            "accuracy": 0.5381903642773208
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 851,
+            "accuracy": 0.5217391304347826
+          }
+        ],
+        "worst_fold_accuracy": 0.48026315789473684,
+        "worst_symbol_accuracy": 0.5217391304347826
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 283,
+        "coverage": 0.1662749706227967,
+        "hits": 154,
+        "accuracy": 0.5441696113074205,
+        "wilson_low_95": 0.48593876878940867,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 283,
+            "accuracy": 0.5441696113074205
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 139,
+            "accuracy": 0.5467625899280576
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 144,
+            "accuracy": 0.5416666666666666
+          }
+        ],
+        "worst_fold_accuracy": 0.5441696113074205,
+        "worst_symbol_accuracy": 0.5416666666666666
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 304,
+        "coverage": 0.17861339600470036,
+        "hits": 149,
+        "accuracy": 0.4901315789473684,
+        "wilson_low_95": 0.43441143449237585,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 304,
+            "accuracy": 0.4901315789473684
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 152,
+            "accuracy": 0.4934210526315789
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 152,
+            "accuracy": 0.4868421052631579
+          }
+        ],
+        "worst_fold_accuracy": 0.4901315789473684,
+        "worst_symbol_accuracy": 0.4868421052631579
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 10192,
+        "effective_events": 1702,
+        "selected_signals": 292,
+        "coverage": 0.17156286721504113,
+        "hits": 145,
+        "accuracy": 0.4965753424657534,
+        "wilson_low_95": 0.43964557351503164,
+        "by_fold": [
+          {
+            "fold_index": "0",
+            "signals": 292,
+            "accuracy": 0.4965753424657534
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 140,
+            "accuracy": 0.4928571428571429
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 152,
+            "accuracy": 0.5
+          }
+        ],
+        "worst_fold_accuracy": 0.4965753424657534,
+        "worst_symbol_accuracy": 0.4928571428571429
+      }
+    ],
+    "final_holdout_2026_h1": [
+      {
+        "engine": "24h mean-reversion direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "24h momentum direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d mean-reversion direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "6d momentum direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Calibrated WaveField-gated Logistic direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 358,
+        "coverage": 1.0,
+        "hits": 184,
+        "accuracy": 0.5139664804469274,
+        "wilson_low_95": 0.4623201028187881,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.5418994413407822
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.5139664804469274,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "Direction-margin gate",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 349,
+        "coverage": 0.9748603351955307,
+        "hits": 186,
+        "accuracy": 0.5329512893982808,
+        "wilson_low_95": 0.4805338265430936,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 349,
+            "accuracy": 0.5329512893982808
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 174,
+            "accuracy": 0.5172413793103449
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 175,
+            "accuracy": 0.5485714285714286
+          }
+        ],
+        "worst_fold_accuracy": 0.5329512893982808,
+        "worst_symbol_accuracy": 0.5172413793103449
+      },
+      {
+        "engine": "Event-probability gate",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 357,
+        "coverage": 0.9972067039106145,
+        "hits": 180,
+        "accuracy": 0.5042016806722689,
+        "wilson_low_95": 0.4525694233012901,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 357,
+            "accuracy": 0.5042016806722689
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 178,
+            "accuracy": 0.5224719101123596
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.5042016806722689,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "ExtraTrees direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Histogram direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "LightGBM direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Return-regression direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "Static directional baseline",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 358,
+        "coverage": 1.0,
+        "hits": 184,
+        "accuracy": 0.5139664804469274,
+        "wilson_low_95": 0.4623201028187881,
+        "by_fold": [
+          {
+            "fold_index": "4",
+            "signals": 358,
+            "accuracy": 0.5139664804469274
+          }
+        ],
+        "by_symbol": [
+          {
+            "symbol": "BTCUSDT",
+            "signals": 179,
+            "accuracy": 0.5418994413407822
+          },
+          {
+            "symbol": "ETHUSDT",
+            "signals": 179,
+            "accuracy": 0.4860335195530726
+          }
+        ],
+        "worst_fold_accuracy": 0.5139664804469274,
+        "worst_symbol_accuracy": 0.4860335195530726
+      },
+      {
+        "engine": "Tabular ensemble direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField outcome direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField regime memory direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      },
+      {
+        "engine": "WaveField-gated Logistic direction",
+        "raw_events": 2148,
+        "effective_events": 358,
+        "selected_signals": 0,
+        "coverage": 0.0,
+        "hits": 0,
+        "accuracy": null,
+        "wilson_low_95": null,
+        "by_fold": [],
+        "by_symbol": [],
+        "worst_fold_accuracy": null,
+        "worst_symbol_accuracy": null
+      }
+    ],
+    "admitted_70": [],
+    "admitted_75": [],
+    "admitted_80": []
+  },
+  "admitted_70": [],
+  "data_audit": {
+    "futures": [
+      {
+        "symbol": "BTCUSDT",
+        "bars": 9852,
+        "intraday_bars": 472896,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      },
+      {
+        "symbol": "ETHUSDT",
+        "bars": 9852,
+        "intraday_bars": 472896,
+        "metrics": 472760,
+        "funding": 4926,
+        "premium": 9834
+      }
+    ],
+    "options_summaries": 2192,
+    "options_missing_days": 0,
+    "options_sample_count_per_window": 250,
+    "options_sample_windows": [
+      "open",
+      "midday",
+      "close"
+    ],
+    "options_source_endpoint": "https://history.deribit.com/api/v2/public/get_last_trades_by_currency_and_time"
+  }
+}

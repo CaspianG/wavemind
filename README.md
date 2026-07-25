@@ -91,6 +91,8 @@ Full reports:
 - [Strict OOS stacking benchmark](benchmarks/results/crypto/binance_oos_stacking_24h.md)
 - [Causal source fusion 24h benchmark](benchmarks/results/crypto/binance_evidence_fusion_24h.md)
 - [Causal source fusion 7d benchmark](benchmarks/results/crypto/binance_evidence_fusion_7d.md)
+- [Deribit options evidence 24h benchmark](benchmarks/results/crypto/deribit_options_24h.md)
+- [Deribit options evidence 7d benchmark](benchmarks/results/crypto/deribit_options_7d.md)
 
 ### Multi-year Binance regime holdout
 
@@ -142,9 +144,10 @@ same OHLCV and derivatives features.
 
 ### Causal source ablations
 
-The latest benchmark adds five independent, timestamped evidence families:
+The latest benchmark adds six independent, timestamped evidence families:
 Binance book depth, Binance Options BVOL, Binance spot flow, six FRED market
-series, and Coin Metrics on-chain activity. The on-chain source includes
+series, Coin Metrics on-chain activity, and sampled Deribit option trades. The
+on-chain source includes
 exchange inflows/outflows, exchange supply, active addresses, transactions,
 fees, and MVRV. Historical source timestamps are accepted only when they fall
 inside the initial publication window; late recomputation timestamps fall back
@@ -180,6 +183,22 @@ The checked source audit contains 637,632 spot 5-minute bars, 2,162 BVOL daily
 summaries, 6,777 FRED observations, and 3,284 Coin Metrics on-chain
 observations. Binance archive files are checksum-verified; FRED and Coin
 Metrics responses carry SHA-256 fingerprints in the benchmark artifact.
+
+The Deribit arm is evaluated separately because its historical window starts in
+July 2023. It contains 2,192 complete BTC/ETH daily summaries with no missing
+days. Three deterministic windows of the official historical option-trade tape
+are sampled per UTC day, fingerprinted, and exposed to the model only at the
+next midnight. This is not represented as complete exchange volume.
+
+| options evidence | control all/final | options all/final | worst final asset | verdict |
+|---|---:|---:|---:|---|
+| 24h WaveField-gated Logistic | 54.2% / 50.6% | 53.0% / 51.4% | 48.6% | negative all-period transfer, rejected |
+| 24h direct WaveField outcome | 52.0% / 49.4% | 51.8% / 50.6% | 49.7% | rejected |
+| 7d direct WaveField outcome | 42.7% / 30.0% | 49.2% / 42.0% | 32.0% | large relative repair, unusable absolute result |
+| 7d best final engine | 52.8% / 50.0% | 50.0% / 52.0% | 48.0% | rejected |
+
+Options skew and directional flow therefore remain research evidence, not a
+production feature. No options treatment passes the 70% admission gate.
 
 ### Official Binance futures stress test
 
@@ -324,9 +343,10 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 2. Replace the current projected outcome map with a WaveMind-native temporal
    field whose state update is trained and ablated against the static head;
    the first online expert-memory and error-correction variants were rejected.
-3. Add options skew, liquidation history, and timestamped news sentiment one
-   source at a time. BVOL, book depth, spot flow, macro, and on-chain ablations
-   are complete; naive all-source fusion was rejected.
+3. Add liquidation history and timestamped news sentiment one source at a
+   time. BVOL, book depth, spot flow, macro, on-chain, and sampled Deribit
+   options ablations are complete; options and naive all-source fusion were
+   rejected.
 4. Improve target magnitude and publish prediction intervals only after their
    empirical coverage is stable by fold and asset.
 5. Validate the 1d/7d policy before allowing trade signals.
