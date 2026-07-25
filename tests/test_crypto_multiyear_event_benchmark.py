@@ -123,8 +123,8 @@ def test_nested_benchmark_runs_train_field_policy_and_future_test():
         calibration_timestamps=90,
     )
 
-    assert len(payload["summaries"]) == 13
-    assert len(payload["policies"]) == 13
+    assert len(payload["summaries"]) == 15
+    assert len(payload["policies"]) == 15
     assert payload["admitted_70"] == []
     assert payload["admitted_80"] == []
 
@@ -163,6 +163,76 @@ def test_nested_benchmark_supports_optional_lightgbm_expert():
     )
 
     assert payload["methodology"]["lightgbm_expert"] is True
-    assert len(payload["summaries"]) == 14
-    assert len(payload["policies"]) == 14
+    assert len(payload["summaries"]) == 16
+    assert len(payload["policies"]) == 16
     assert any(row["engine"] == "LightGBM direction" for row in payload["summaries"])
+
+
+def test_wavefield_outcome_direction_separates_simple_regimes():
+    import numpy as np
+
+    from benchmarks.crypto_multiyear_event_benchmark import (
+        _wavefield_direction_scores,
+    )
+
+    rng = np.random.default_rng(71)
+    down = rng.normal(loc=-1.0, scale=0.1, size=(60, 6))
+    up = rng.normal(loc=1.0, scale=0.1, size=(60, 6))
+    training = np.vstack((down, up))
+    labels = np.asarray([0] * len(down) + [1] * len(up))
+
+    scores = _wavefield_direction_scores(
+        training,
+        labels,
+        (training,),
+        feature_names=tuple(f"feature_{index}" for index in range(6)),
+        seed=2027,
+    )[0]
+
+    assert np.all(np.isfinite(scores))
+    assert float(np.mean(scores[labels == 1])) > float(
+        np.mean(scores[labels == 0])
+    )
+
+
+def test_wavefield_regime_memory_separates_multimodal_outcomes():
+    import numpy as np
+
+    from benchmarks.crypto_multiyear_event_benchmark import (
+        _wavefield_regime_memory_scores,
+    )
+
+    rng = np.random.default_rng(79)
+    centers = np.asarray(
+        [
+            [-2.0, -2.0, 0.0, 0.0],
+            [2.0, 2.0, 0.0, 0.0],
+            [-2.0, 2.0, 0.0, 0.0],
+            [2.0, -2.0, 0.0, 0.0],
+        ]
+    )
+    labels_by_center = (0, 0, 1, 1)
+    blocks = [
+        rng.normal(loc=center, scale=0.12, size=(80, 4))
+        for center in centers
+    ]
+    training = np.vstack(blocks)
+    labels = np.concatenate(
+        [
+            np.full(len(block), label, dtype=int)
+            for block, label in zip(blocks, labels_by_center, strict=True)
+        ]
+    )
+
+    scores = _wavefield_regime_memory_scores(
+        training,
+        labels,
+        (training,),
+        feature_names=tuple(f"feature_{index}" for index in range(4)),
+        seed=2027,
+        max_regimes=8,
+    )[0]
+
+    assert np.all(np.isfinite(scores))
+    assert float(np.mean(scores[labels == 1])) > 0.55
+    assert float(np.mean(scores[labels == 0])) < 0.45

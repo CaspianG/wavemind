@@ -275,6 +275,33 @@ class FieldProjector:
         pattern = projected.reshape(self.height, self.width).astype(np.float32)
         return _l2_normalize(pattern)
 
+    def to_patterns(self, vectors: np.ndarray) -> np.ndarray:
+        matrix = np.asarray(vectors, dtype=np.float32)
+        if matrix.ndim != 2 or matrix.shape[1] != self.vector_dim:
+            raise ValueError(
+                f"Expected vectors with shape (n, {self.vector_dim}), "
+                f"received {matrix.shape}"
+            )
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        normalized = np.divide(
+            matrix,
+            np.where(norms <= 1e-12, 1.0, norms),
+            out=np.zeros_like(matrix),
+        )
+        raw = normalized @ self._matrix.T
+        projected = np.maximum(raw, 0.0)
+        empty = ~np.any(projected, axis=1)
+        projected[empty] = np.abs(raw[empty])
+        pattern_norms = np.linalg.norm(projected, axis=1, keepdims=True)
+        patterns = np.divide(
+            projected,
+            np.where(pattern_norms <= 1e-12, 1.0, pattern_norms),
+            out=np.zeros_like(projected),
+        )
+        return patterns.reshape(
+            len(matrix), self.height, self.width
+        ).astype(np.float32)
+
 
 TextEncoder = HashingTextEncoder
 

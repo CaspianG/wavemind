@@ -101,6 +101,32 @@ def test_field_projector_compresses_vectors_to_2d_pattern():
     assert np.isclose(np.linalg.norm(pattern), 1.0)
 
 
+def test_field_projector_batch_matches_scalar_projection():
+    projector = FieldProjector(width=8, height=4, vector_dim=6, seed=123)
+    vectors = np.asarray(
+        [
+            [1.0, 2.0, 0.0, -1.0, 3.0, 0.5],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [-2.0, 1.0, 4.0, 0.0, 0.5, -1.0],
+        ],
+        dtype=np.float32,
+    )
+
+    batch = projector.to_patterns(vectors)
+    scalar = np.stack([projector.to_pattern(vector) for vector in vectors])
+
+    assert batch.shape == (3, 4, 8)
+    assert batch.dtype == np.float32
+    assert np.allclose(batch, scalar, atol=1e-6)
+
+
+def test_field_projector_batch_rejects_wrong_shape():
+    projector = FieldProjector(width=8, height=4, vector_dim=6, seed=123)
+
+    with pytest.raises(ValueError, match="Expected vectors"):
+        projector.to_patterns(np.ones((3, 5), dtype=np.float32))
+
+
 def test_numpy_vector_index_returns_exact_cosine_neighbors_with_filters():
     index = NumpyVectorIndex(vector_dim=3)
     index.add(1, np.array([1.0, 0.0, 0.0], dtype=np.float32))

@@ -287,3 +287,13 @@ def test_premium_parser_supports_legacy_headerless_archives(tmp_path):
 
     assert point.timestamp == 1_640_995_200
     assert point.close == -0.0004
+
+
+def test_timestamp_parser_normalizes_seconds_milliseconds_and_microseconds():
+    from benchmarks.crypto_binance_archive import _milliseconds
+
+    expected = 1_735_689_600
+
+    assert _milliseconds(expected) == expected
+    assert _milliseconds(expected * 1_000) == expected
+    assert _milliseconds(expected * 1_000_000) == expected

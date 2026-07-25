@@ -47,6 +47,10 @@ benchmarks/results/crypto/binance_*
 !benchmarks/results/crypto/binance_online_wavefield_router_24h.md
 !benchmarks/results/crypto/binance_oos_stacking_24h.json
 !benchmarks/results/crypto/binance_oos_stacking_24h.md
+!benchmarks/results/crypto/binance_evidence_fusion_24h.json
+!benchmarks/results/crypto/binance_evidence_fusion_24h.md
+!benchmarks/results/crypto/binance_evidence_fusion_7d.json
+!benchmarks/results/crypto/binance_evidence_fusion_7d.md
 
 .env
 .env.*

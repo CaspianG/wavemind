@@ -501,7 +501,9 @@ def _sha256(path: Path) -> str:
 
 def _milliseconds(value: Any) -> int:
     number = int(float(value))
-    return number // 1000 if number >= 10_000_000_000 else number
+    while number >= 10_000_000_000:
+        number //= 1000
+    return number
 
 
 def _utc_seconds(value: str) -> int:

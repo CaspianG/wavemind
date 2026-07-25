@@ -89,6 +89,8 @@ Full reports:
 - [Multi-year Binance 7d LightGBM benchmark](benchmarks/results/crypto/binance_multiyear_intraday_lightgbm_7d.md)
 - [Causal online router benchmark](benchmarks/results/crypto/binance_online_wavefield_router_24h.md)
 - [Strict OOS stacking benchmark](benchmarks/results/crypto/binance_oos_stacking_24h.md)
+- [Causal source fusion 24h benchmark](benchmarks/results/crypto/binance_evidence_fusion_24h.md)
+- [Causal source fusion 7d benchmark](benchmarks/results/crypto/binance_evidence_fusion_7d.md)
 
 ### Multi-year Binance regime holdout
 
@@ -137,6 +139,47 @@ the gain is nowhere near deployment quality. The 7d transfer fails. These
 tests narrow the next work to genuinely new causal information such as options,
 liquidations, macro, and timestamped news rather than more wrappers around the
 same OHLCV and derivatives features.
+
+### Causal source ablations
+
+The latest benchmark adds five independent, timestamped evidence families:
+Binance book depth, Binance Options BVOL, Binance spot flow, six FRED market
+series, and Coin Metrics on-chain activity. The on-chain source includes
+exchange inflows/outflows, exchange supply, active addresses, transactions,
+fees, and MVRV. Historical source timestamps are accepted only when they fall
+inside the initial publication window; late recomputation timestamps fall back
+to a conservative two-day lag.
+
+All rows, folds, model settings, and thresholds are held constant. The table
+uses the same WaveField-gated Logistic direction for every arm, so source
+quality is not confused with a model change.
+
+| 24h evidence arm | all periods | untouched 2026-H1 | verdict |
+|---|---:|---:|---|
+| control | 54.1% | 52.3% | rejected |
+| book depth | 54.0% | 54.0% | rejected |
+| options BVOL | 54.2% | 53.8% | rejected |
+| spot flow | 54.0% | 52.9% | rejected |
+| macro | 53.5% | 53.5% | rejected |
+| **on-chain** | **54.6%** | **54.0%** | best aggregate arm, rejected |
+| all-source fusion | 52.5% | 52.3% | negative transfer, rejected |
+
+The direct WaveField outcome head is reported separately from the
+WaveField-gated statistical direction. On-chain evidence raises its
+past-selected 2026-H1 result to `54.5%` on `334` independent forecasts, but
+full-coverage accuracy remains `50.0%`. A clustered multi-field direction
+ablation also failed transfer and remains in the report as negative evidence.
+No source or model passes the 70% admission gate.
+
+At 7d, the direct WaveField control reaches `54.4%` across all periods and
+`56.0%` on 50 independent `2026-H1` forecasts. On-chain and all-source fusion
+both make that result worse, and no past-selected 7d WaveField policy produces
+enough final signals. The 7d layer therefore remains disabled for trading.
+
+The checked source audit contains 637,632 spot 5-minute bars, 2,162 BVOL daily
+summaries, 6,777 FRED observations, and 3,284 Coin Metrics on-chain
+observations. Binance archive files are checksum-verified; FRED and Coin
+Metrics responses carry SHA-256 fingerprints in the benchmark artifact.
 
 ### Official Binance futures stress test
 
@@ -223,6 +266,12 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_ohlcv.py` | CSV/CCXT import, completed-candle handling, feature windows |
 | `benchmarks/crypto_derivatives.py` | strict CCXT funding/open-interest/long-short import and causal alignment |
 | `benchmarks/crypto_binance_archive.py` | checksum-verified Binance futures candles, 5m intraday paths, derivatives metrics, and book depth |
+| `benchmarks/crypto_binance_bvol.py` | checksum-verified Binance Options BVOL history and causal daily features |
+| `benchmarks/crypto_binance_depth.py` | checksum-verified Binance book-depth history and bundle enrichment |
+| `benchmarks/crypto_binance_spot.py` | checksum-verified Binance spot 5m flow history |
+| `benchmarks/crypto_fred_macro.py` | fingerprinted FRED market-risk series with publication lag |
+| `benchmarks/crypto_coinmetrics_onchain.py` | fingerprinted Coin Metrics on-chain and exchange-flow history |
+| `benchmarks/crypto_evidence_fusion_benchmark.py` | equal-row causal source ablation and fusion benchmark |
 | `benchmarks/crypto_derivatives_field_benchmark.py` | 8-asset 24h/7d causal derivatives stress test and admission gate |
 | `benchmarks/crypto_wavefield_outcome_ablation.py` | direct signed/unsigned core WaveField outcome ablation |
 | `benchmarks/crypto_multiyear_event_benchmark.py` | nested 2022-2026 regime/event benchmark with a direct WaveField reliability ablation |
@@ -275,8 +324,9 @@ Scale and consolidation checks remain available through `wavemind scale-plan --t
 2. Replace the current projected outcome map with a WaveMind-native temporal
    field whose state update is trained and ablated against the static head;
    the first online expert-memory and error-correction variants were rejected.
-3. Add archived options, liquidation, on-chain, news, and macro features one source
-   at a time; each source must improve the untouched folds to remain.
+3. Add options skew, liquidation history, and timestamped news sentiment one
+   source at a time. BVOL, book depth, spot flow, macro, and on-chain ablations
+   are complete; naive all-source fusion was rejected.
 4. Improve target magnitude and publish prediction intervals only after their
    empirical coverage is stable by fold and asset.
 5. Validate the 1d/7d policy before allowing trade signals.

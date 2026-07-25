@@ -920,21 +920,39 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     `0.460` on the final period. All 70% gates remain rejected. Repeated online
     updates also exposed numeric overflow in `WaveField`; bounded feed/evolution
     amplitude and a repeated-strong-update stress test now keep the core finite.
-28. Next: add genuinely new, timestamp-verifiable information such as options
-    skew, liquidations, macro risk state, and archived news sentiment. The
-    current OHLCV, funding, open-interest, premium, trader-ratio, and intraday
-    flow feature family has not supported a universal 70% daily edge.
-29. Next: build a WaveMind-native market-state memory model that beats these
-    statistical baselines on aggregate, fold, and symbol robustness. Direct
-    WaveField outcome and relationship-memory ablations have not done so.
-30. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
+28. Done: added equal-row, causal source ablations for checksum-verified Binance
+    book depth, Binance Options BVOL, Binance spot 5m flow, six fingerprinted
+    FRED market series, and ten Coin Metrics Community on-chain metrics. The
+    checked source audit contains 637,632 spot bars, 2,162 BVOL summaries,
+    6,777 FRED observations, and 3,284 on-chain observations. Coin Metrics
+    source completion timestamps are used only inside the initial seven-day
+    publication window; late recomputation timestamps fall back to a fixed
+    two-day lag.
+29. Done: added a true WaveField outcome direction head and a clustered
+    multi-field regime-memory ablation. On 24h independent events, the best
+    same-engine source arm is on-chain at `0.546` all-period and `0.540` on
+    untouched 2026-H1. The direct WaveField outcome reaches `0.545` on 334
+    past-selected final forecasts but only `0.500` at full coverage. Naive
+    all-source fusion and clustered regime memory fail transfer. All 70% gates
+    remain rejected.
+    At 7d, the direct WaveField control reaches `0.544` all-period and `0.560`
+    on 50 final independent forecasts, while on-chain and fusion degrade it;
+    no selective 7d WaveField policy survives the final period.
+30. Next: add genuinely new, timestamp-verifiable information such as options
+    skew, liquidations, and archived news sentiment. The current market,
+    derivatives, volatility, macro, and on-chain feature families have not
+    supported a universal 70% daily edge.
+31. Next: build a WaveMind-native temporal market-state model that beats the
+    WaveField-gated statistical direction on aggregate, fold, and symbol
+    robustness.
+32. Next: build a dedicated 4h/slice-stable perpetual policy. The current 1h
     perp layer is risk-adjusted progress, but 4h high-conviction perps still
     block broad robustness.
-31. Next: validate the market-field target on more exchanges, date ranges,
+33. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-32. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+34. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-33. Add signal construction only after retrieval quality is stable.
-34. Publish results separately from the main README to avoid confusing memory
+35. Add signal construction only after retrieval quality is stable.
+36. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import warnings
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -335,7 +336,7 @@ def run_multiyear_benchmark(
             ("test", test_rows),
         ):
             x = _matrix(selected, feature_names)
-            expert = np.column_stack([model.predict_proba(x)[:, 1] for model in models])
+            expert = _predict_probabilities(models, x)
             ensemble_weights = (
                 np.asarray([0.10, 0.20, 0.25, 0.45])
                 if include_lightgbm
@@ -371,6 +372,38 @@ def run_multiyear_benchmark(
 
         for prediction in prediction_sets.values():
             prediction["direction"] = np.asarray(prediction["expert"][:, 0], dtype=float)
+
+        wave_directions = _wavefield_direction_scores(
+            x_base,
+            y_base,
+            tuple(prediction["x"] for prediction in prediction_sets.values()),
+            feature_names=feature_names,
+            seed=random_state + fold * 101 + 53,
+        )
+        regime_memory_directions = _wavefield_regime_memory_scores(
+            x_base,
+            y_base,
+            tuple(prediction["x"] for prediction in prediction_sets.values()),
+            feature_names=feature_names,
+            seed=random_state + fold * 101 + 79,
+        )
+        for prediction, wave_direction, regime_memory_direction in zip(
+            prediction_sets.values(),
+            wave_directions,
+            regime_memory_directions,
+            strict=True,
+        ):
+            prediction["wave_direction"] = wave_direction
+            prediction["wavefield_regime_memory_direction"] = (
+                regime_memory_direction
+            )
+            prediction["candidates"] = np.column_stack(
+                (
+                    prediction["candidates"],
+                    wave_direction,
+                    regime_memory_direction,
+                )
+            )
 
         field_scores = _wavefield_reliability_scores(
             prediction_sets["reliability"],
@@ -436,13 +469,13 @@ def run_multiyear_benchmark(
                 policy_margin,
                 test_margin,
             ),
-            "Direct WaveField regime gate": (
+            "WaveField-gated Logistic direction": (
                 policy_prediction,
                 test_prediction,
                 field_scores[2],
                 field_scores[3],
             ),
-            "Calibrated WaveField meta gate": (
+            "Calibrated WaveField-gated Logistic direction": (
                 policy_prediction,
                 test_prediction,
                 policy_quality,
@@ -456,6 +489,8 @@ def run_multiyear_benchmark(
             "6d momentum direction",
             "24h mean-reversion direction",
             "6d mean-reversion direction",
+            "WaveField outcome direction",
+            "WaveField regime memory direction",
         )
         for candidate_index, candidate_name in enumerate(candidate_names[1:], start=1):
             policy_direction = np.asarray(
@@ -597,6 +632,213 @@ def _wavefield_reliability_scores(
         return 1.0 / (1.0 + np.exp(-np.clip(differences * 80.0, -30.0, 30.0)))
 
     return (scores(train_x), *(scores(matrix) for matrix in eval_x))
+
+
+def _wavefield_direction_scores(
+    training_x: np.ndarray,
+    training_y: np.ndarray,
+    evaluations: Sequence[np.ndarray],
+    *,
+    feature_names: Sequence[str],
+    seed: int,
+) -> tuple[np.ndarray, ...]:
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import StandardScaler
+
+    imputer = SimpleImputer(strategy="median")
+    scaler = StandardScaler()
+    train_x = scaler.fit_transform(imputer.fit_transform(training_x))
+    eval_x = [
+        scaler.transform(imputer.transform(matrix))
+        for matrix in evaluations
+    ]
+    labels = np.asarray(training_y, dtype=int)
+    if set(labels.tolist()) != {0, 1}:
+        raise ValueError("WaveField direction training requires both classes")
+
+    projector = FieldProjector(32, 32, len(feature_names), seed=seed)
+    previous_state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        down = WaveField(
+            width=32,
+            height=32,
+            layers=4,
+            decay=0.998,
+            speed=0.08,
+            nonlin=0.008,
+            max_amplitude=1_000_000.0,
+        )
+        up = WaveField(
+            width=32,
+            height=32,
+            layers=4,
+            decay=0.998,
+            speed=0.08,
+            nonlin=0.008,
+            max_amplitude=1_000_000.0,
+        )
+        counts = {
+            0: max(1, int(np.sum(labels == 0))),
+            1: max(1, int(np.sum(labels == 1))),
+        }
+        for vector, label in zip(train_x, labels, strict=True):
+            target = up if label else down
+            target.feed(
+                projector.to_pattern(vector),
+                strength=600.0 / counts[int(label)],
+            )
+        up.evolve(5)
+        down.evolve(5)
+    finally:
+        np.random.set_state(previous_state)
+
+    up_magnitude = np.sum(np.abs(up.state), axis=2).reshape(-1)
+    down_magnitude = np.sum(np.abs(down.state), axis=2).reshape(-1)
+    up_norm = max(float(np.linalg.norm(up_magnitude)), 1e-9)
+    down_norm = max(float(np.linalg.norm(down_magnitude)), 1e-9)
+
+    def raw_scores(matrix: np.ndarray) -> np.ndarray:
+        patterns = projector.to_patterns(matrix).reshape(len(matrix), -1)
+        return (
+            patterns @ up_magnitude / up_norm
+            - patterns @ down_magnitude / down_norm
+        ).astype(float)
+
+    train_raw = raw_scores(train_x)
+    center = float(np.median(train_raw))
+    scale = max(
+        float(np.quantile(np.abs(train_raw - center), 0.75)),
+        float(np.std(train_raw)) * 0.25,
+        1e-9,
+    )
+
+    def probabilities(matrix: np.ndarray) -> np.ndarray:
+        raw = raw_scores(matrix)
+        return 1.0 / (
+            1.0 + np.exp(-np.clip((raw - center) / scale, -30.0, 30.0))
+        )
+
+    return tuple(probabilities(matrix) for matrix in eval_x)
+
+
+def _wavefield_regime_memory_scores(
+    training_x: np.ndarray,
+    training_y: np.ndarray,
+    evaluations: Sequence[np.ndarray],
+    *,
+    feature_names: Sequence[str],
+    seed: int,
+    max_regimes: int = 24,
+) -> tuple[np.ndarray, ...]:
+    from sklearn.cluster import MiniBatchKMeans
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import StandardScaler
+
+    imputer = SimpleImputer(strategy="median")
+    scaler = StandardScaler()
+    train_x = scaler.fit_transform(imputer.fit_transform(training_x))
+    eval_x = [
+        scaler.transform(imputer.transform(matrix))
+        for matrix in evaluations
+    ]
+    labels = np.asarray(training_y, dtype=int)
+    if set(labels.tolist()) != {0, 1}:
+        raise ValueError("WaveField regime memory requires both classes")
+    regime_count = min(max_regimes, max(4, len(train_x) // 120))
+    regime_count = min(regime_count, len(train_x))
+    assignments = MiniBatchKMeans(
+        n_clusters=regime_count,
+        batch_size=min(1024, len(train_x)),
+        n_init=5,
+        max_iter=200,
+        random_state=seed,
+    ).fit_predict(train_x)
+
+    projector = FieldProjector(32, 32, len(feature_names), seed=seed)
+    patterns = projector.to_patterns(train_x)
+    prior = float(np.mean(labels))
+    field_vectors = []
+    outcome_rates = []
+    previous_state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        for regime in range(regime_count):
+            selected = np.flatnonzero(assignments == regime)
+            if not len(selected):
+                continue
+            field = WaveField(
+                width=32,
+                height=32,
+                layers=4,
+                decay=0.998,
+                speed=0.08,
+                nonlin=0.008,
+                max_amplitude=1_000_000.0,
+            )
+            strength = 600.0 / len(selected)
+            for index in selected:
+                field.feed(patterns[index], strength=strength)
+            field.evolve(5)
+            magnitude = np.sum(np.abs(field.state), axis=2).reshape(-1)
+            norm = float(np.linalg.norm(magnitude))
+            if norm <= 1e-9:
+                continue
+            field_vectors.append(magnitude / norm)
+            up_count = float(np.sum(labels[selected]))
+            shrinkage = 30.0
+            outcome_rates.append(
+                (up_count + shrinkage * prior) / (len(selected) + shrinkage)
+            )
+    finally:
+        np.random.set_state(previous_state)
+    if len(field_vectors) < 2:
+        return tuple(
+            np.full(len(matrix), prior, dtype=float)
+            for matrix in eval_x
+        )
+
+    field_matrix = np.asarray(field_vectors, dtype=np.float32)
+    rates = np.asarray(outcome_rates, dtype=float)
+
+    def probabilities(matrix: np.ndarray) -> np.ndarray:
+        query_patterns = projector.to_patterns(matrix).reshape(len(matrix), -1)
+        resonances = query_patterns @ field_matrix.T
+        neighbours = 1
+        selected = np.argpartition(
+            resonances,
+            kth=field_matrix.shape[0] - neighbours,
+            axis=1,
+        )[:, -neighbours:]
+        selected_resonance = np.take_along_axis(resonances, selected, axis=1)
+        centered = selected_resonance - np.max(
+            selected_resonance, axis=1, keepdims=True
+        )
+        weights = np.exp(np.clip(centered / 0.03, -30.0, 0.0))
+        selected_rates = rates[selected]
+        return np.sum(weights * selected_rates, axis=1) / np.sum(
+            weights, axis=1
+        )
+
+    return tuple(probabilities(matrix) for matrix in eval_x)
+
+
+def _predict_probabilities(
+    models: Sequence[Any],
+    matrix: np.ndarray,
+) -> np.ndarray:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=(
+                "X does not have valid feature names, but LGBMClassifier "
+                "was fitted with feature names"
+            ),
+            category=UserWarning,
+        )
+        return np.column_stack(
+            [model.predict_proba(matrix)[:, 1] for model in models]
+        )
 
 
 def _heuristic_probability(
