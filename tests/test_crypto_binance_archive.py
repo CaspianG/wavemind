@@ -218,6 +218,23 @@ def test_archive_spec_can_explicitly_exclude_book_depth():
     assert {kind for kind, _, _ in specs} == {"klines", "premium", "funding", "metrics"}
 
 
+def test_optional_daily_archive_records_404_as_missing(monkeypatch, tmp_path):
+    from benchmarks import crypto_binance_archive as archive
+
+    def missing(*_args, **_kwargs):
+        raise RuntimeError("Archive request failed (404): fixture")
+
+    monkeypatch.setattr(archive, "_download_checked", missing)
+
+    assert (
+        archive._download_optional_checked(
+            url="https://example/metrics.zip",
+            destination=tmp_path / "metrics.zip",
+        )
+        is None
+    )
+
+
 def test_bundle_gzip_round_trip(tmp_path):
     from benchmarks.crypto_binance_archive import ArchiveBundle, FuturesBar, load_bundle, save_bundle
 

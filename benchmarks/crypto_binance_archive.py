@@ -165,7 +165,11 @@ def download_archive_bundle(
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
-                _download_optional_checked if kind == "book_depth" else _download_checked,
+                (
+                    _download_optional_checked
+                    if kind in {"book_depth", "metrics"}
+                    else _download_checked
+                ),
                 url=url,
                 destination=root / relative,
             ): (kind, url)

@@ -68,6 +68,26 @@ Real OKX 4h candles, 1,200 bars per asset, four walk-forward folds, 90 test wind
 | ADA / AVAX / DOGE / LINK / XRP holdout | previous WaveMind target | 1,800 | 0.469 | 261.3 bps | 0.311 |
 | ADA / AVAX / DOGE / LINK / XRP holdout | momentum | 1,800 | 0.468 | 275.8 bps | 0.344 |
 
+### Frozen capitulation rebound signal
+
+A separate sparse-event experiment found a causal extreme-state pattern and
+froze it before a third, asset-disjoint holdout. The signal fires only when the
+previous 48-hour return is in the past-only lower 1% tail and the latest 4-hour
+open-interest change is in the past-only lower 10% tail. It predicts a rebound
+over the next 24 hours.
+
+| split | assets | independent signals | coverage | direction accuracy | Wilson low 95% |
+|---|---:|---:|---:|---:|---:|
+| development walk-forward | 16 | 112 | 0.8% | 92.9% | 86.5% |
+| frozen asset holdout | 8 | 58 | 0.9% | **82.8%** | **71.1%** |
+
+The holdout clears the aggregate 70% evidence threshold without target leakage
+or overlapping forecasts. It is not a universal 82.8% market predictor:
+coverage is only 0.9%, and FILUSDT is 7/11 (63.6%), below the predeclared 65%
+per-asset stability threshold. The aggregate result is admitted as evidence of
+a conditional edge; the stricter cross-asset stability gate remains rejected.
+See the [full frozen-transfer report](benchmarks/results/crypto/capitulation_field_24h.md).
+
 Full reports:
 
 - [Core assets 4h target benchmark](benchmarks/results/crypto/core_assets_4h_price_target.md)
@@ -98,6 +118,7 @@ Full reports:
 - [Fear & Greed 24h source ablation](benchmarks/results/crypto/fear_greed_24h.md)
 - [Fear & Greed 7d source ablation](benchmarks/results/crypto/fear_greed_7d.md)
 - [Nested OKX perpetual signal transfer](benchmarks/results/crypto/okx_perp_signal_transfer.md)
+- [Frozen asset-transfer capitulation field](benchmarks/results/crypto/capitulation_field_24h.md)
 
 ### Latest causal ablations
 
@@ -328,6 +349,8 @@ SQLite remains the source of truth for WaveMind memory. Market benchmarks compar
 | `benchmarks/crypto_oos_stacking_benchmark.py` | strict fold-separated meta-model and confidence-frontier evaluation |
 | `benchmarks/crypto_accuracy_gate.py` | non-overlapping, coverage-aware 80% admission test |
 | `benchmarks/crypto_signal_transfer_benchmark.py` | past-only threshold selection followed by frozen next-fold transfer |
+| `benchmarks/crypto_capitulation_field_benchmark.py` | frozen 24h extreme-return/open-interest rebound signal with asset-disjoint holdout |
+| `benchmarks/crypto_binance_liquidations.py` | checksum-verified Binance COIN-M liquidation snapshots and causal 4h aggregation |
 | `benchmarks/crypto_walk_forward_benchmark.py` | field retrieval and trade-policy walk-forward tests |
 | `benchmarks/crypto_price_target_benchmark.py` | future-close target benchmarks and baselines |
 | `benchmarks/crypto_current_forecast.py` | fresh 24h/7d forecasts and ledger recording |

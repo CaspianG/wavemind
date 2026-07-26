@@ -308,6 +308,37 @@ online-expert result reaches 90.9% on one threshold, but only 11 independent
 signals and 2.3% coverage remain. It is therefore rejected rather than marketed
 as an 80% edge.
 
+### Frozen asset-transfer capitulation field
+
+`benchmarks/crypto_capitulation_field_benchmark.py` evaluates a rule that was
+frozen before its final asset holdout:
+
+1. take one independent observation per asset and 24-hour forecast horizon;
+2. calculate thresholds only from observations whose targets matured before
+   the current half-year fold;
+3. trigger when `return_12` is in the lower 1% historical tail and
+   `oi_change_1` is in the lower 10% historical tail;
+4. predict a positive return over the following 24 hours.
+
+The rule was discovered on 16 Binance USD-M assets and then evaluated once on
+eight different assets: AAVE, ALGO, FIL, MANA, SAND, UNI, XTZ, and ZEC.
+
+| split | signals | coverage | accuracy | Wilson low 95% | aggregate 70% | stable gate |
+|---|---:|---:|---:|---:|---:|---:|
+| development walk-forward | 112 | 0.8% | 0.929 | 0.865 | yes | yes |
+| frozen asset holdout | 58 | 0.9% | 0.828 | 0.711 | yes | no |
+
+All five holdout time folds are at or above 0.700. Seven of eight assets are
+at or above 0.700, but FIL is 7/11 (`0.636`). The aggregate result is therefore
+real evidence for a sparse capitulation-rebound pattern, while the
+predeclared per-asset stability gate remains rejected. It must not be described
+as 82.8% accuracy on ordinary market days or as a universal price forecast.
+
+Reproducible outputs:
+
+- `benchmarks/results/crypto/capitulation_field_24h.json`
+- `benchmarks/results/crypto/capitulation_field_24h.md`
+
 ### Official Binance USD-M derivatives benchmark
 
 The derivatives-cache milestone is now complete on official Binance Data
@@ -969,11 +1000,21 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     overlap collapse and past-only policy selection, the old retrospective
     `0.806` frontier transfers at only `0.486` across 148 signals. A dedicated
     4h/slice-stable policy is still required.
-34. Next: validate the market-field target on more exchanges, date ranges,
+34. Done: added checksum-verified Binance COIN-M liquidation snapshots, exact
+    duplicate removal, causal 4h aggregation, and a past-only cascade-policy
+    benchmark API. The source is ready for reproducible ablations; no
+    liquidation-based production claim is admitted.
+35. Done, conditional evidence: froze a joint 48h return / 4h open-interest
+    capitulation rule before an eight-asset holdout. It reaches `0.828` on 58
+    independent holdout signals with Wilson low `0.711` and all five folds at
+    or above `0.700`. Coverage is only `0.009`, and FIL is `0.636`, so the
+    aggregate 70% evidence threshold passes while the cross-asset stability
+    gate remains rejected.
+36. Next: validate the market-field target on more exchanges, date ranges,
     assets, and walk-forward folds before any live-trading claim.
-35. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
+37. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
-36. Add signal construction only after retrieval quality is stable.
-37. Publish results separately from the main README to avoid confusing memory
+38. Add signal construction only after retrieval quality is stable.
+39. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.
