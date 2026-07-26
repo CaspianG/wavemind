@@ -26,6 +26,18 @@ from benchmarks.crypto_multiyear_event_benchmark import (  # noqa: E402
     assign_calendar_folds,
 )
 
+DEFAULT_FOLD_BOUNDARIES = (
+    ("2024-01-01", "2024-07-01"),
+    ("2024-07-01", "2025-01-01"),
+    ("2025-01-01", "2025-07-01"),
+    ("2025-07-01", "2026-01-01"),
+    ("2026-01-01", "2026-07-01"),
+)
+EARLY_REPLICATION_BOUNDARIES = (
+    ("2023-07-01", "2023-10-01"),
+    ("2023-10-01", "2024-01-01"),
+)
+
 
 @dataclass(frozen=True)
 class TailCondition:
@@ -68,6 +80,21 @@ def load_feature_rows(
     bundle_paths: Sequence[str | Path],
     *,
     horizon_bars: int = 6,
+    boundaries: Sequence[tuple[str, str]] = DEFAULT_FOLD_BOUNDARIES,
+) -> list[FeatureRow]:
+    return assign_calendar_folds(
+        load_unfolded_feature_rows(
+            bundle_paths,
+            horizon_bars=horizon_bars,
+        ),
+        boundaries=boundaries,
+    )
+
+
+def load_unfolded_feature_rows(
+    bundle_paths: Sequence[str | Path],
+    *,
+    horizon_bars: int = 6,
 ) -> list[FeatureRow]:
     if not bundle_paths:
         raise ValueError("bundle_paths must not be empty")
@@ -86,7 +113,7 @@ def load_feature_rows(
             include_intraday=False,
             extended_features=True,
         )
-        rows.extend(assign_calendar_folds(feature_rows))
+        rows.extend(feature_rows)
     return rows
 
 
@@ -214,18 +241,20 @@ def run_benchmark(
     *,
     development_bundle_paths: Sequence[str | Path],
     holdout_bundle_paths: Sequence[str | Path],
+    replication_bundle_paths: Sequence[str | Path] = (),
     rule: CapitulationRule = FROZEN_CAPITULATION_RULE,
 ) -> dict[str, Any]:
     development_rows = load_feature_rows(development_bundle_paths)
     holdout_rows = load_feature_rows(holdout_bundle_paths)
     development_assets = sorted({row.symbol for row in development_rows})
     holdout_assets = sorted({row.symbol for row in holdout_rows})
-    overlap = sorted(set(development_assets) & set(holdout_assets))
-    if overlap:
-        raise ValueError("Development and holdout assets overlap: " + ", ".join(overlap))
+    _validate_disjoint_asset_sets(
+        development=development_assets,
+        holdout=holdout_assets,
+    )
     development = evaluate_capitulation_rule(development_rows, rule=rule)
     holdout = evaluate_capitulation_rule(holdout_rows, rule=rule)
-    return {
+    payload = {
         "benchmark": "frozen asset-transfer capitulation field",
         "data": "official Binance USD-M futures archives with SHA-256 verification",
         "development_assets": development_assets,
@@ -235,6 +264,98 @@ def run_benchmark(
         "aggregate_evidence_70": bool(holdout["aggregate_evidence_70"]),
         "admitted_70": bool(holdout["admitted_70"]),
     }
+    if replication_bundle_paths:
+        replication_base_rows = load_unfolded_feature_rows(
+            replication_bundle_paths
+        )
+        replication_rows = assign_calendar_folds(
+            replication_base_rows,
+            boundaries=DEFAULT_FOLD_BOUNDARIES,
+        )
+        early_replication_rows = assign_calendar_folds(
+            replication_base_rows,
+            boundaries=EARLY_REPLICATION_BOUNDARIES,
+        )
+        replication_assets = sorted({row.symbol for row in replication_rows})
+        early_replication_assets = sorted(
+            {row.symbol for row in early_replication_rows}
+        )
+        if replication_assets != early_replication_assets:
+            raise ValueError("Replication asset sets differ between time windows")
+        _validate_disjoint_asset_sets(
+            development=development_assets,
+            holdout=holdout_assets,
+            replication=replication_assets,
+        )
+        replication = evaluate_capitulation_rule(
+            replication_rows,
+            rule=rule,
+        )
+        early_replication = evaluate_capitulation_rule(
+            early_replication_rows,
+            rule=rule,
+        )
+        combined_summary = summarize_with_slices(
+            list(holdout["events"]) + list(replication["events"]),
+            min_slice_support=5,
+        )
+        combined_test_rows = (
+            int(holdout["summary"]["independent_test_rows"])
+            + int(replication["summary"]["independent_test_rows"])
+        )
+        combined_summary["independent_test_rows"] = combined_test_rows
+        combined_summary["coverage"] = (
+            int(combined_summary["signals"]) / combined_test_rows
+            if combined_test_rows
+            else None
+        )
+        combined_assets = sorted(holdout_assets + replication_assets)
+        payload |= {
+            "replication_assets": replication_assets,
+            "combined_replication_assets": combined_assets,
+            "asset_disjoint_replication": replication,
+            "early_period_replication": early_replication,
+            "combined_asset_replications": {
+                "summary": combined_summary,
+                "aggregate_evidence_70": aggregate_evidence_70(
+                    combined_summary
+                ),
+                "admitted_70": admitted_70(
+                    combined_summary,
+                    expected_folds=len(DEFAULT_FOLD_BOUNDARIES),
+                    min_slice_support=5,
+                ),
+            },
+            "replication_protocol": {
+                "asset_selection": (
+                    "Eight active Binance USD-M perpetual assets not present in "
+                    "development or the first holdout."
+                ),
+                "current_period_folds": [list(item) for item in DEFAULT_FOLD_BOUNDARIES],
+                "early_period_folds": [
+                    list(item) for item in EARLY_REPLICATION_BOUNDARIES
+                ],
+                "early_period_note": (
+                    "A frozen retrospective time stress on previously unused "
+                    "assets, not prospective post-freeze market evidence."
+                ),
+            },
+        }
+    return payload
+
+
+def _validate_disjoint_asset_sets(**asset_sets: Sequence[str]) -> None:
+    labels = list(asset_sets)
+    for index, left_label in enumerate(labels):
+        for right_label in labels[index + 1 :]:
+            overlap = sorted(
+                set(asset_sets[left_label]) & set(asset_sets[right_label])
+            )
+            if overlap:
+                raise ValueError(
+                    f"{left_label} and {right_label} assets overlap: "
+                    + ", ".join(overlap)
+                )
 
 
 def summarize_with_slices(
@@ -336,14 +457,43 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
             "|---|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
-    for label, key in (
-        ("development walk-forward", "development"),
-        ("asset-disjoint holdout", "asset_disjoint_holdout"),
-    ):
+    result_rows = [
+        (
+            "development walk-forward",
+            "development",
+            "development_assets",
+        ),
+        (
+            "first asset-disjoint holdout",
+            "asset_disjoint_holdout",
+            "holdout_assets",
+        ),
+    ]
+    if "asset_disjoint_replication" in payload:
+        result_rows.extend(
+            [
+                (
+                    "second asset-disjoint replication",
+                    "asset_disjoint_replication",
+                    "replication_assets",
+                ),
+                (
+                    "early-2023 temporal stress",
+                    "early_period_replication",
+                    "replication_assets",
+                ),
+                (
+                    "combined asset replications",
+                    "combined_asset_replications",
+                    "combined_replication_assets",
+                ),
+            ]
+        )
+    for label, key, asset_key in result_rows:
         result = payload[key]
         summary = result["summary"]
         lines.append(
-            f"| {label} | {len(payload['development_assets' if key == 'development' else 'holdout_assets'])} | "
+            f"| {label} | {len(payload[asset_key])} | "
             f"{summary['signals']} | {_percent(summary['coverage'])} | "
             f"{_percent(summary['accuracy'])} | "
             f"{_percent(summary['wilson_low_95'])} | "
@@ -363,6 +513,34 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         lines.append(
             f"| {row['symbol']} | {row['signals']} | {_percent(row['accuracy'])} | "
             f"{_percent(row['wilson_low_95'])} |"
+        )
+    if "asset_disjoint_replication" in payload:
+        lines.extend(
+            [
+                "",
+                "## Replication Slices",
+                "",
+                "| period | asset | signals | accuracy | Wilson low 95% |",
+                "|---|---|---:|---:|---:|",
+            ]
+        )
+        for period, key in (
+            ("2024-2026", "asset_disjoint_replication"),
+            ("2023", "early_period_replication"),
+        ):
+            for row in payload[key]["summary"]["by_symbol"]:
+                lines.append(
+                    f"| {period} | {row['symbol']} | {row['signals']} | "
+                    f"{_percent(row['accuracy'])} | "
+                    f"{_percent(row['wilson_low_95'])} |"
+                )
+        lines.extend(
+            [
+                "",
+                "The early-2023 result is a frozen retrospective time stress on "
+                "previously unused assets. It is not prospective post-freeze "
+                "market evidence.",
+            ]
         )
     lines.extend(
         [
@@ -475,6 +653,12 @@ def main() -> int:
         required=True,
         type=Path,
     )
+    parser.add_argument(
+        "--replication-bundle",
+        action="append",
+        default=[],
+        type=Path,
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown-output", type=Path)
     args = parser.parse_args()
@@ -482,6 +666,7 @@ def main() -> int:
     payload = run_benchmark(
         development_bundle_paths=args.development_bundle,
         holdout_bundle_paths=args.holdout_bundle,
+        replication_bundle_paths=args.replication_bundle,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

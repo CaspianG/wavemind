@@ -5,7 +5,10 @@ from dataclasses import replace
 from pathlib import Path
 
 from benchmarks.crypto_capitulation_field_benchmark import (
+    DEFAULT_FOLD_BOUNDARIES,
+    EARLY_REPLICATION_BOUNDARIES,
     FROZEN_CAPITULATION_RULE,
+    _validate_disjoint_asset_sets,
     aggregate_evidence_70,
     admitted_70,
     evaluate_capitulation_rule,
@@ -45,6 +48,40 @@ def test_frozen_rule_is_explicit_and_immutable():
         ("return_12", 0.01, "low"),
         ("oi_change_1", 0.10, "low"),
     ]
+
+
+def test_replication_periods_are_explicit_and_non_overlapping():
+    assert DEFAULT_FOLD_BOUNDARIES == (
+        ("2024-01-01", "2024-07-01"),
+        ("2024-07-01", "2025-01-01"),
+        ("2025-01-01", "2025-07-01"),
+        ("2025-07-01", "2026-01-01"),
+        ("2026-01-01", "2026-07-01"),
+    )
+    assert EARLY_REPLICATION_BOUNDARIES == (
+        ("2023-07-01", "2023-10-01"),
+        ("2023-10-01", "2024-01-01"),
+    )
+    assert EARLY_REPLICATION_BOUNDARIES[-1][1] <= DEFAULT_FOLD_BOUNDARIES[0][0]
+
+
+def test_replication_assets_must_be_disjoint():
+    _validate_disjoint_asset_sets(
+        development=["AAAUSDT"],
+        holdout=["BBBUSDT"],
+        replication=["CCCUSDT"],
+    )
+
+    try:
+        _validate_disjoint_asset_sets(
+            development=["AAAUSDT"],
+            holdout=["BBBUSDT"],
+            replication=["AAAUSDT"],
+        )
+    except ValueError as exc:
+        assert "development and replication assets overlap" in str(exc)
+    else:
+        raise AssertionError("Expected overlapping replication assets to fail")
 
 
 def test_current_fold_labels_do_not_change_selection_or_thresholds():
@@ -163,3 +200,61 @@ def test_checked_in_asset_holdout_result_is_internally_consistent():
     assert summary["wilson_low_95"] > 0.70
     assert payload["aggregate_evidence_70"]
     assert not payload["admitted_70"]
+
+
+def test_checked_in_replication_result_is_internally_consistent():
+    result_path = (
+        Path(__file__).resolve().parents[1]
+        / "benchmarks"
+        / "results"
+        / "crypto"
+        / "capitulation_field_replication_24h.json"
+    )
+    assert result_path.exists()
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+    asset_sets = (
+        set(payload["development_assets"]),
+        set(payload["holdout_assets"]),
+        set(payload["replication_assets"]),
+    )
+
+    pairs = (
+        (asset_sets[0], asset_sets[1]),
+        (asset_sets[0], asset_sets[2]),
+        (asset_sets[1], asset_sets[2]),
+    )
+    assert all(not left & right for left, right in pairs)
+    assert len(payload["replication_assets"]) == 8
+    assert payload["replication_protocol"]["current_period_folds"] == [
+        list(item) for item in DEFAULT_FOLD_BOUNDARIES
+    ]
+    assert payload["replication_protocol"]["early_period_folds"] == [
+        list(item) for item in EARLY_REPLICATION_BOUNDARIES
+    ]
+    for key in ("asset_disjoint_replication", "early_period_replication"):
+        summary = payload[key]["summary"]
+        assert summary["hits"] <= summary["signals"]
+        assert summary["accuracy"] == summary["hits"] / summary["signals"]
+
+    replication = payload["asset_disjoint_replication"]
+    assert replication["summary"]["signals"] == 60
+    assert replication["summary"]["hits"] == 50
+    assert replication["summary"]["accuracy"] == 50 / 60
+    assert replication["summary"]["wilson_low_95"] > 0.70
+    assert replication["aggregate_evidence_70"]
+    assert not replication["admitted_70"]
+
+    combined = payload["combined_asset_replications"]
+    assert len(payload["combined_replication_assets"]) == 16
+    assert combined["summary"]["signals"] == 118
+    assert combined["summary"]["hits"] == 98
+    assert combined["summary"]["accuracy"] == 98 / 118
+    assert combined["summary"]["wilson_low_95"] > 0.75
+    assert combined["aggregate_evidence_70"]
+    assert not combined["admitted_70"]
+
+    early = payload["early_period_replication"]
+    assert early["summary"]["signals"] == 3
+    assert early["summary"]["hits"] == 1
+    assert not early["aggregate_evidence_70"]
+    assert not early["admitted_70"]

@@ -79,14 +79,20 @@ over the next 24 hours.
 | split | assets | independent signals | coverage | direction accuracy | Wilson low 95% |
 |---|---:|---:|---:|---:|---:|
 | development walk-forward | 16 | 112 | 0.8% | 92.9% | 86.5% |
-| frozen asset holdout | 8 | 58 | 0.9% | **82.8%** | **71.1%** |
+| first frozen asset holdout | 8 | 58 | 0.9% | **82.8%** | **71.1%** |
+| second frozen asset replication | 8 | 60 | 0.9% | **83.3%** | **72.0%** |
+| both asset replications | 16 | 118 | 0.9% | **83.1%** | **75.3%** |
+| early-2023 temporal stress | 8 | 3 | 0.2% | 33.3% | 6.1% |
 
-The holdout clears the aggregate 70% evidence threshold without target leakage
-or overlapping forecasts. It is not a universal 82.8% market predictor:
-coverage is only 0.9%, and FILUSDT is 7/11 (63.6%), below the predeclared 65%
-per-asset stability threshold. The aggregate result is admitted as evidence of
-a conditional edge; the stricter cross-asset stability gate remains rejected.
-See the [full frozen-transfer report](benchmarks/results/crypto/capitulation_field_24h.md).
+The second untouched universe contains COMP, DASH, GRT, HBAR, RUNE, THETA, VET,
+and XMR. Its result independently reproduces the aggregate edge without target
+leakage or overlapping forecasts. This is not a universal 83% market
+predictor: coverage is only 0.9%, the 2026-H1 replication fold is 3/5, and the
+early-2023 stress has only three signals. The aggregate result is evidence of a
+sparse conditional rebound pattern; the stricter time-and-asset stability gate
+remains rejected. See the
+[original holdout report](benchmarks/results/crypto/capitulation_field_24h.md)
+and [replication report](benchmarks/results/crypto/capitulation_field_replication_24h.md).
 
 Full reports:
 
@@ -119,6 +125,7 @@ Full reports:
 - [Fear & Greed 7d source ablation](benchmarks/results/crypto/fear_greed_7d.md)
 - [Nested OKX perpetual signal transfer](benchmarks/results/crypto/okx_perp_signal_transfer.md)
 - [Frozen asset-transfer capitulation field](benchmarks/results/crypto/capitulation_field_24h.md)
+- [Frozen asset and time replication](benchmarks/results/crypto/capitulation_field_replication_24h.md)
 
 ### Latest causal ablations
 

@@ -320,24 +320,35 @@ frozen before its final asset holdout:
    `oi_change_1` is in the lower 10% historical tail;
 4. predict a positive return over the following 24 hours.
 
-The rule was discovered on 16 Binance USD-M assets and then evaluated once on
-eight different assets: AAVE, ALGO, FIL, MANA, SAND, UNI, XTZ, and ZEC.
+The rule was discovered on 16 Binance USD-M assets and then evaluated on two
+disjoint eight-asset universes. The first contains AAVE, ALGO, FIL, MANA, SAND,
+UNI, XTZ, and ZEC. The second, evaluated without changing the rule, contains
+COMP, DASH, GRT, HBAR, RUNE, THETA, VET, and XMR.
 
 | split | signals | coverage | accuracy | Wilson low 95% | aggregate 70% | stable gate |
 |---|---:|---:|---:|---:|---:|---:|
 | development walk-forward | 112 | 0.8% | 0.929 | 0.865 | yes | yes |
-| frozen asset holdout | 58 | 0.9% | 0.828 | 0.711 | yes | no |
+| first frozen asset holdout | 58 | 0.9% | 0.828 | 0.711 | yes | no |
+| second frozen asset replication | 60 | 0.9% | 0.833 | 0.720 | yes | no |
+| both asset replications | 118 | 0.9% | 0.831 | 0.753 | yes | no |
+| early-2023 temporal stress | 3 | 0.2% | 0.333 | 0.061 | no | no |
 
-All five holdout time folds are at or above 0.700. Seven of eight assets are
-at or above 0.700, but FIL is 7/11 (`0.636`). The aggregate result is therefore
-real evidence for a sparse capitulation-rebound pattern, while the
-predeclared per-asset stability gate remains rejected. It must not be described
-as 82.8% accuracy on ordinary market days or as a universal price forecast.
+The second asset universe independently reproduces the aggregate result:
+50/60 signals are correct and all eight assets are at or above `0.700`.
+However, its final half-year fold is 3/5 (`0.600`), while FIL remains 7/11
+(`0.636`) in the first holdout. The early-2023 test is underpowered because the
+complete derivatives feature set starts on 2023-01-13 and the frozen rule emits
+only three independent signals in 2023-H2. This is real evidence for a sparse
+capitulation-rebound pattern, while the predeclared time-and-asset stability
+gate remains rejected. It must not be described as 83% accuracy on ordinary
+market days or as a universal price forecast.
 
 Reproducible outputs:
 
 - `benchmarks/results/crypto/capitulation_field_24h.json`
 - `benchmarks/results/crypto/capitulation_field_24h.md`
+- `benchmarks/results/crypto/capitulation_field_replication_24h.json`
+- `benchmarks/results/crypto/capitulation_field_replication_24h.md`
 
 ### Official Binance USD-M derivatives benchmark
 
@@ -1010,8 +1021,13 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     or above `0.700`. Coverage is only `0.009`, and FIL is `0.636`, so the
     aggregate 70% evidence threshold passes while the cross-asset stability
     gate remains rejected.
-36. Next: validate the market-field target on more exchanges, date ranges,
-    assets, and walk-forward folds before any live-trading claim.
+36. Done, conditional replication: kept the rule frozen and evaluated eight
+    more assets. It reaches `0.833` on 60 independent signals with Wilson low
+    `0.720`; the two asset holdouts combine to `0.831` on 118 signals with
+    Wilson low `0.753`. The final replication fold is only `0.600`, and an
+    early-2023 stress has just three signals, so the stability gate and every
+    live-trading claim remain rejected. The next validation must add another
+    exchange and a genuinely post-freeze forward period.
 37. Add richer baselines: buy-and-hold, moving-average crossovers, RSI rules,
     volatility filters, DTW on smaller samples, matrix-profile style analogues,
     and ML classifiers.
