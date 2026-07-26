@@ -7,11 +7,12 @@ The market forecast is always up/down with a target price because a future close
 
 | symbol | horizon | data end UTC | market forecast | expected move | target price | trade validation | last close | evidence strength | validation reason | policy signal | policy candidate | policy target | calibrated probability | probability kind |
 |---|---:|---|---|---:|---:|---|---:|---:|---|---|---|---:|---:|---|
-| BTC/USDT:USDT | 24h | 2026-07-24T20:00:00+00:00 | down | -0.20% | 64064.6 | no_trade | 64196.2 | 0.958 | adaptive_field_opposition | flat | down | 64196.2 |  | none |
-| ETH/USDT:USDT | 24h | 2026-07-24T20:00:00+00:00 | down | -0.13% | 1860.35 | no_trade | 1862.71 | 0.544 | low_expected_edge | flat | down | 1862.71 |  | none |
-| SOL/USDT:USDT | 24h | 2026-07-24T20:00:00+00:00 | down | -0.20% | 73.7736 | no_trade | 73.92 | 0.456 | ta_conflict | flat | down | 73.92 |  | none |
-| XRP/USDT:USDT | 24h | 2026-07-24T20:00:00+00:00 | down | -0.03% | 1.08828 | no_trade | 1.0886 | 0.736 | low_expected_edge | flat | down | 1.0886 |  | none |
-| HYPE/USDT:USDT | 24h | 2026-07-24T20:00:00+00:00 | down | -0.54% | 57.8254 | no_trade | 58.14 | 0.886 | adaptive_trend_mismatch | flat | up | 58.14 |  | none |
+| BTC/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.64% | 64065.8 | no_trade | 64477.7 | 0.884 | adaptive_trend_mismatch | flat | up | 64477.7 |  | none |
+| ETH/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.18% | 1881.67 | no_trade | 1884.98 | 0.894 | adaptive_trend_mismatch | flat | up | 1884.98 |  | none |
+| SOL/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.24% | 74.7296 | no_trade | 74.91 | 0.507 | adaptive_trend_mismatch | flat | up | 74.91 |  | none |
+| XRP/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.18% | 1.09789 | no_trade | 1.0999 | 0.789 | adaptive_trend_mismatch | flat | up | 1.0999 |  | none |
+| BNB/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.25% | 568.994 | no_trade | 570.4 | 0.616 | adaptive_trend_mismatch | flat | up | 570.4 |  | none |
+| DOGE/USDT:USDT | 24h | 2026-07-26T12:00:00+00:00 | down | -0.57% | 0.0727802 | no_trade | 0.0732 | 0.924 | adaptive_trend_mismatch | flat | up | 0.0732 |  | none |
 
 Validation profile: historical active direction accuracy 0.586, signal rate 0.018, positive market slices 7/27.
 

@@ -40,20 +40,20 @@ The live ledger is the non-selective reality check. As of the latest settlement:
 
 | metric | result |
 |---|---:|
-| physical forecasts | 25 |
-| evaluated / pending | 15 / 10 |
-| evaluated direction accuracy | **26.7%** |
-| 95% Wilson lower bound | 10.9% |
-| target touch rate | 53.3% |
-| target return MAE | 216.1 bps |
+| physical forecasts | 37 |
+| evaluated / pending | 20 / 17 |
+| evaluated direction accuracy | **25.0%** |
+| 95% Wilson lower bound | 11.2% |
+| target touch rate | 65.0% |
+| target return MAE | 180.5 bps |
 | strict 70% live admission | **rejected** |
-| ledger integrity | verified, 15 legacy rows anchored + 10 hashed rows |
+| ledger integrity | verified, 15 legacy rows anchored + 22 hashed rows |
 
-The first live sample is small and materially worse than the historical
-walk-forward tests. It is therefore evidence against deployment, not a
-breakthrough claim. All 15 failed or successful matured forecasts remain in
+The live sample is small and materially worse than the historical walk-forward
+tests. It is therefore evidence against deployment, not a breakthrough claim.
+All 20 failed or successful matured forecasts remain in
 [`forecast_ledger.jsonl`](benchmarks/results/crypto/forecast_ledger.jsonl);
-the next ten are pending and will be settled from completed OKX candles.
+the next 17 are pending and will be settled from completed OKX candles.
 
 ## Current Evidence
 
