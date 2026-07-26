@@ -1060,8 +1060,15 @@ and Freqtrade remains responsible for risk, execution, and backtesting.
     Guard inversion reaches only `0.503`, mean reversion `0.522`, and causal
     orientation memory `0.486`. This rejects post-hoc inversion as a repair for
     the live sample and keeps every full-coverage 70% claim disabled.
-38. Add remaining richer baselines: moving-average crossovers, volatility
+38. Done, negative: added a causal cross-asset market-wave benchmark over eight
+    assets with completed 5-minute path and derivatives features. Fold 1
+    selects the fixed rolling-memory policy; folds 2-4 remain untouched. The
+    selected hybrid reaches `0.587` market-direction accuracy on validation but
+    only `0.497` on the final folds and `0.498` across individual assets. A
+    future-market-factor oracle explains `0.887` of asset directions, proving
+    that common movement is strong but not that its future sign is predictable.
+39. Add remaining richer baselines: moving-average crossovers, volatility
     filters, DTW on smaller samples, and matrix-profile style analogues.
-39. Add signal construction only after retrieval quality is stable.
-40. Publish results separately from the main README to avoid confusing memory
+40. Add signal construction only after retrieval quality is stable.
+41. Publish results separately from the main README to avoid confusing memory
     benchmarks with market-performance claims.

@@ -113,6 +113,30 @@ seeing their outcomes. The
 [universal-direction report](benchmarks/results/crypto/orientation_memory_24h.md)
 keeps that distinction explicit.
 
+### Cross-asset market wave
+
+A second causal test asks whether WaveMind can first predict the shared market
+direction and then apply that wave to individual assets. The experiment uses
+eight Binance USD-M assets, checksum-verified 5-minute path and derivatives
+features, one non-overlapping panel per day, and rolling memory that observes an
+outcome only after it matures. Fold 1 selects the engine and memory length;
+folds 2-4 are untouched final tests.
+
+| measurement | result |
+|---|---:|
+| validation-selected hybrid | 58.7% market direction |
+| final market direction | 49.7% |
+| final individual-asset direction | 49.8% |
+| worst final fold | 48.2% |
+| future-market-factor diagnostic ceiling | 88.7% asset direction |
+
+The 88.7% ceiling is not a forecast: it uses the future cross-asset majority
+direction and exists only to measure how much individual coin movement is
+explained by the common market factor. The causal model cannot yet predict that
+factor out of sample, so the hypothesis is rejected rather than promoted from
+its 58.7% validation result. See the
+[cross-asset market-wave report](benchmarks/results/crypto/market_wave_24h.md).
+
 Full reports:
 
 - [Core assets 4h target benchmark](benchmarks/results/crypto/core_assets_4h_price_target.md)
@@ -146,6 +170,7 @@ Full reports:
 - [Frozen asset-transfer capitulation field](benchmarks/results/crypto/capitulation_field_24h.md)
 - [Frozen asset and time replication](benchmarks/results/crypto/capitulation_field_replication_24h.md)
 - [Universal full-coverage direction gate](benchmarks/results/crypto/orientation_memory_24h.md)
+- [Causal cross-asset market-wave gate](benchmarks/results/crypto/market_wave_24h.md)
 
 ### Latest causal ablations
 
